@@ -1,11 +1,14 @@
 # Operator workspace implementation specification
 
-Status: specification and plan review requested; no product changes authorized
-by this document.
+Status: the original plan was approved; this lean revision applies the
+subsequent user clarification for a smaller execution scope without a
+generalized training backend.
 [Concept A approval](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253399573)
 permits planning. The
 [training scope clarification](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253414196)
-requires the entire Operator system, not just calls/conferences. Both apply to
+requires the entire Operator system, not just calls/conferences. The
+[execution approval](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253561956)
+and later lean clarification also apply to
 [issue 376](https://github.com/bcl1713/starlink-dashboard/issues/376).
 
 Read the approved [revision 2 contracts](../../design/issue-376/revision-2.md),
@@ -95,13 +98,15 @@ identity change quarantines the old envelope. Receipt completion updates the
 named tray even on another view; it retires only the submitted revision, not
 subsequent edits. Receipt accepted/current unreadable is not a new unsent write.
 
-Adapt `useOperatorJournal.ts` into shared owners without changing API headers or
-expected-version semantics. Existing pending storage is opt-in for issue,
-capability and transport callers; unsent call/conference/note recovery is new
-frontend work. Read legacy draft/pending keys once, preserve ambiguous data in
-recovery, and never replay an envelope twice. Corrupt/unavailable session
-storage keeps recoverable in-memory input and exposes the failure. Backout must
-not silently strand new drafts in an older editor.
+Lift/adapt existing `useOperatorJournal.ts` owners and durable hooks rather than
+writing another save/retry/reconciliation engine. Keep its existing API headers
+and expected-version semantics; the registries are thin ownership/persistence
+adapters. Existing pending storage is opt-in for issue, capability and transport
+callers; unsent call/conference/note recovery is new frontend work. Read legacy
+draft/pending keys once, preserve ambiguous data in recovery, and never replay
+an envelope twice. Corrupt/unavailable session storage keeps recoverable
+in-memory input and exposes the failure. Backout must not silently strand new
+drafts in an older editor.
 
 ## Performance budgets
 
@@ -109,10 +114,10 @@ One health query at the existing 15-second interval; one event feed at 15
 seconds visible / 60 seconds hidden, using the existing source identity checks.
 Preset polling remains lazy at its existing five seconds only while controls are
 open. Normal record views read on mount/focus/reconnect/accepted save and
-explicit page load; do not add per-row polling. Training status polls once per
-five seconds only while its guide is visible (60 seconds hidden), with immediate
-invalidation after stage actions. Abort obsolete reads. Render initially at most
-50 list rows per working view; offer explicit continuation without claiming
+explicit page load; do not add per-row polling. Training evaluation consumes
+existing query snapshots and accepted-action notifications; it adds no
+independent status polling endpoint. Abort obsolete reads. Render initially at
+most 50 list rows per working view; offer explicit continuation without claiming
 complete coverage. Foreground cue deduplication and capability failures remain
 supported.
 
@@ -123,107 +128,83 @@ against the same machine/run conditions, preserving raw evidence rather than
 asserting a generic performance win. Bounded resource owners must tear down
 their checks.
 
-## Guided training architecture and tradeoff
+## Lean guided training architecture
 
-Training is a required shipped subsystem, not an HTML tour or optional
-follow-up. Use two isolated local instances of the same production
-frontend/backend images: the learner instance and a clean synthetic import
-destination. They have separate origins, private
-mission/Operator/settings/route/telemetry volumes and simulation configuration;
-neither mounts operational data or connects to real hardware. They are an
-explicitly provisioned local Compose profile, not a server launched from an
-ordinary user request. Production Help links to the configured training origin
-via full-page/new-tab navigation; it never silently switches the live client's
-API base. Unprovisioned training has clear setup instructions and no
-working-looking Start button; release acceptance requires provisioning it.
+The user runs three computers, one being the aircraft production machine. Run
+training as one separate local app instance/data root on a nonproduction
+computer. The second clean import destination is temporary for T10 and
+acceptance only. Do not build a permanent second stack, `app/training` service,
+production training APIs, server progress/session registry or general
+clock/replay persistence engine. The
+[reuse map](../../design/issue-376/lean-training-reuse.md) identifies existing
+APIs/helpers for every T01–T11 stage and the small fixture adaptations needed.
 
-This costs two additional local app stacks while training is in use, additional
-isolated storage and a deployment/setup procedure. It avoids contaminating
-global Overview settings, mission/telemetry or exports on the operational
-installation. A shared-process training mode would require namespacing every
-mutable global service and is rejected for this release. This architecture
-addition needs plan review, even though Concept A itself is approved.
+Use production frontend/backend images with a tooling-only training entrypoint,
+following the existing `tools/acceptance/operator-journal/backend_fixture.py`
+startup injection pattern. The launcher requires an explicit nonproduction root
+marker and simulation configuration, binds loopback by default, uses private
+volumes/data and disables real aircraft/provider discovery. It must not mount
+operational data or switch a running live coordinator into simulation. Preserve
+the actor Docker context/daemon; document setup and stop/reset commands. The
+normal app does not gain plausible-but-unprovisioned training start actions:
+Help explains how to start/open the local training instance if absent.
 
-New training orchestration APIs are registered only with explicit training
-deployment configuration AND coordinator simulation mode. They reject a live
-mode, unknown instance, foreign session/mission/store or unsupported scenario;
-ordinary record APIs remain unchanged. Seed raw synthetic mission/routes,
-satellite/coverage/PoP inputs and training prerequisites; never seed completed
-learner actions or canned predictor outputs. Reuse the existing mission APIs,
-`SimulationRunRuntime` / `SimulationRunService`, flight state, production live
-timing/PoP adapters and export code. Acceptance-only monkey patches are
-references, not shipped runtime imports.
+Reuse existing scenario/seed/raw-input/clock/ownership/archive tools. Add only a
+prerequisite-only seed variant and a raw-input helper excluding the existing
+fixture's seeded learner records and direct flight-phase restoration. Normal
+flight-status/replay services and flight-event capture must create lifecycle and
+archival outcomes. Production ETA/PoP adapters still compute predictions; the
+guide never substitutes canned outcomes or frontend physics.
 
-### Identity, clock, reset and restart
+### Minimal identity and time seam
 
-Current `main.py::_operator_context` binds the Operator namespace to the active
-paced replay run, and `OperatorRuntimeBinding` opens existing stores without
-initialization. A training mission spanning preflight and two legs cannot ignore
-this: activating a replay must not hide prior training records.
+Existing normal replay changes Operator namespaces. The nonproduction fixture
+entrypoint supplies a stable simulation ID for its private data root through the
+existing binding/context injection seam, consistently for journal, model/PoP
+context and source validation. No production `main.py` namespace policy changes.
+A small test proves preflight, both replay legs, acknowledgments and receipts
+remain visible; expose the actual replay ID separately. Reuse ScenarioClock /
+EventsClock and persisted raw checkpoint files; no new TrainingClock class.
 
-In the guarded training deployment only, the current training session UUID is
-the stable Operator simulation namespace. Pass it consistently to Operator and
-PoP/model source context; expose the actual paced replay run ID separately in
-training status. Normal simulation/live binding behavior is unchanged. Each
-session explicitly initializes ONLY its own new simulation store using existing
-maintenance/store admission primitives; invalid existing stores fail rather than
-being reinitialized. Preflight, both legs and postflight share that namespace.
+Test clock/observation/speed freshness with the real prediction/flight services.
+Use either controlled raw telemetry + normal manual phase APIs or paced replay;
+manual flight endpoints cannot edit an active replay that disallows it. Label
+manual synthetic progression accurately. Raw phase overwrite in the acceptance
+fixture is NOT evidence of lifecycle correctness. Reuse existing clock injection
+for deterministic fixture tests rather than rewriting the flight/replay engine.
 
-Use a persisted `TrainingClock` implementing Operator `Clock` and the existing
-replay runtime's injected monotonic/UTC callables, at pacing multiplier 1.
-Freeze between explicit synthetic progression actions so trainees have time to
-operate. Advance only nonnegative deterministic offsets; then collect normal
-replay/coordinator telemetry and existing flight lifecycle. Align observation/
-speed timestamps to the same clock. Planned times, freshness, actual validation,
-notifications, snapshot expiry and recorded UTC use that common timeline. Do not
-add frontend ETA physics or replace phases/events with prescribed answers.
+### Reset, progress and recovery
 
-Persist session/fixture version, clock offset, mission IDs, namespace/store
-identity, stage/checkpoint, replay-plan identity, actual replay ID and resolved
-evidence references. On restart rebuild replay through its supported plan/start
-and injected clock progression; a new ephemeral replay ID is explicit, but the
-training journal namespace and receipts remain unchanged. Revalidate stages
-against current records; never replay learner writes from completion flags. If
-deterministic reconstruction cannot match stored plan/input identity, stop with
-recovery/reset guidance rather than claim resumed flight state.
+The launcher supports `start`, `stop`, `reset`, `import-start`, `import-stop`
+for its exact owned project/root. Reset stops the training project, retains its
+old root and creates a fresh sibling seed. It never deletes immutable history or
+rewrites a live store. The guide's Reset mission displays the exact local
+launcher command and explains the restart; Reset guide only resets guidance
+progress and is separately labeled. This is an intentional tradeoff of
+documented local commands for automatic hot reset, permitted by the deployment
+clarification.
 
-Reset creates a new session, namespace, mission IDs and progress; it does not
-rewrite/delete immutable history, flush live settings or restore a live backup.
-Retain old sessions in private training storage subject to its explicit storage
-capacity; capacity failure is visible. Reset is an explicit training action and
-cannot proceed while an old outcome is uncertain; reconcile it or deliberately
-leave it quarantined in the old session. Back changes guidance only, not time or
-records. Skip marks the stage skipped (incomplete), never successful.
+Next/back/skip/resume are in-product, dismissible guidance over real controls.
+Keep browser progress keyed by fixture version, origin, store identity and
+mission; revalidate outcomes from existing records/events/receipts/export state
+on resume. Completion flags/Next clicks are not proof. Back does not rewind
+time/records; Skip remains skipped. Keep cross-view drafts and frozen pending
+commands under the same correct product owner used outside training.
 
-### Training APIs and progress
+Restart resumes guide and persisted records/raw fixture inputs, without
+replaying learner writes. If a paced run cannot resume an exact frame,
+explicitly offer restart of that flight segment using existing
+preview/activation; do not claim an exact replay snapshot was restored. The
+stable fixture journal ID remains the same. A mismatched root/store/fixture
+version cannot silently resume old work.
 
-Proposed `/api/v2/operator/training` routes: GET `/session`; POST `/sessions`;
-POST `/sessions/{id}/progress`; POST `/sessions/{id}/advance`; POST
-`/sessions/{id}/exercise`; POST `/sessions/{id}/reset`. Mutations require
-training-instance ID, expected session revision and idempotency key; admission
-rechecks coordinator mode and owned paths/IDs. Progress is stored separately
-from the immutable Operator journal and supports conflict/reload recovery. A
-requested stage completion is validated from real current/revision/event/export
-evidence, not a frontend click flag. Reset itself is idempotent and
-transactional.
-
-The dismissible guide uses real route links/stable accessible target IDs, next,
-back, skip, resume and reset; it does not duplicate forms. It pins concise
-progress outside Now/Next, keeps mobile focus/keyboard space, and names any
-inaccessible target instead of guessing coordinates. Documentation can be read
-when training is unavailable. An observation/decision is recorded through the
-same application controllers as operational use, with unmistakable Training
-context.
-
-Exercises are explicitly labeled simulation effects. Lost receipt performs a
-real training command and once suppresses its acknowledgment; retry returns the
-same receipt/record. Conflict uses a real counterpart edit and actual 409.
-Offline exercise rejects requests at the training client's transport boundary
-without inventing success or changing the host network. Stale/missing provider
-exercises alter raw owned inputs/freshness only. Allowlisted effects cannot
-target live or foreign records, and expire after the named session exercise.
-None run in normal deployments. Browser acceptance also tests genuine network
-interception/loss.
+Lost receipt/offline exercises reuse fixture transport interception/relay tools
+or documented browser controls. Counterpart browser edits produce real
+conflicts; retry goes to the real backend receipt. No production fault API is
+needed. Guide controls that require a local command show that command instead of
+pretending an automated effect occurred. File extraction is human-observed;
+production acceptance independently checks actual ZIP/PDF contents and import
+sentinels.
 
 ## Whole-mission curriculum
 
@@ -273,22 +254,23 @@ not certify that human run.
 Develop reviewable tasks behind a private workspace switch; expose the complete
 new shell atomically after parity gates, not a long-lived mixed workflow.
 Preserve the prior page until cutover acceptance. No Operator SQL schema change
-is planned; training progress is a separate versioned file under private
-training data. Legacy clients remain subject to existing expected-version/store
-authority.
+is planned; guide progress is versioned browser data and existing fixture
+manifests/raw inputs remain under the private training root. Legacy clients
+remain subject to existing expected-version/store authority.
 
 Backout stops new submissions, reconciles accepted/uncertain commands, preserves
 new draft/transaction envelopes and returns to the old page only with explicit
 recovery access for retained work. Do not rewrite history or downgrade/delete
 the Operator store. Training can be stopped independently; its private volumes
-are never mounted into operational backout. Scope-only training endpoints stay
-absent from a normal deployment. Keep exact candidate evidence and open-PR
-worktrees, but terminate all task runtime resources after checks.
+are never mounted into operational backout. Fixture endpoints/injection remain
+confined to the explicit tooling entrypoint; normal application imports do not
+register them. Keep exact candidate evidence and open-PR worktrees, but
+terminate all task runtime resources after checks.
 
 Release requires 100% parity matrix coverage; actual normal/busy timing against
 the recorded baseline; exact-SHA Docker/Nginx browser journeys at all three
 viewports; real-device keyboard/accessibility; two clients, restart, reset,
 storage failure/invalid, conflict/lost receipt and backup/restore; real
-predictors/ flight archival; both training instances' isolation and ZIP import;
-every guide procedure and an uncoached first-use full mission. No aircraft
-certification.
+predictors/ flight archival; learner and temporary import instances' isolation
+and ZIP import; every guide procedure and an uncoached first-use full mission.
+No aircraft certification.

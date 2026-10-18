@@ -11,9 +11,10 @@ capability preserved and verified.
 
 **Architecture:** An application-level provider owns parked drafts, frozen
 commands and the active editor while task views consume shared reads. Training
-uses two isolated local deployments of the same app and existing simulation,
-predictor, record and archive contracts, with guarded session orchestration. Cut
-over the operational workspace once parity is complete.
+uses one separate app/data root on a nonproduction computer and existing
+fixture, simulation, predictor, record and archive contracts. A clean import
+target is temporary for that lesson; no general training orchestration backend
+is planned. Cut over the operational workspace once parity is complete.
 
 **Tech Stack:** Existing React/TypeScript, TanStack Query, Radix,
 FastAPI/Pydantic, SQLite Operator services, Python 3.11 backend selection, Node
@@ -54,8 +55,8 @@ Read it with the
   create/establish/verify/reuse/close conference without interpreting database
   entities; Tasks 5 and 11 test empty states and uncoached journeys.
 - Reset/back/resume must not replay learner commands, rewind immutable history
-  or claim a skipped stage passed; Tasks 7–9 test restart reconstruction and
-  revisioned progress.
+  or claim a skipped stage passed; Tasks 7–9 test persisted fixture restart,
+  explicit segment-restart limits and identity-scoped browser progress.
 - Import practice and display presets can mutate global services; Tasks 7, 10
   and 12 test distinct origins/volumes, destination Operator sentinels and
   operational baseline hashes.
@@ -66,19 +67,25 @@ Concept A is approved in the
 [user approval record](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253399573).
 The
 [whole-system training clarification](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253414196)
-is included here. This specification/plan, especially the two-instance training
-architecture and stable session identity, requires separate review before any
-product code. PR #382 remains the design/planning artifact; it is not a merge or
-implementation approval.
+is included here. The
+[spec/plan approval](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253561956)
+authorizes cohesive staged execution. The subsequent
+[user clarification](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253613063)
+simplifies deployment and prioritizes reuse; this amendment applies it directly.
+See the [lean reuse map](../../design/issue-376/lean-training-reuse.md) for the
+launcher/reset tradeoff and exact T01–T11 capabilities. No new generalized
+training subsystem is authorized or required. PR #382 remains a design/planning
+artifact, not implementation/merge/release evidence.
 
 Tasks are sequential reviewable commits, not separate partly shipped UIs. Tasks
-2–6 build a hidden workspace; 7–10 supply required training; 11–12 supply
-documentation/acceptance and atomic cutover. Rebase the implementation branch on
-reviewed `origin/dev` in a new `.worktrees/` worktree after plan approval;
-preserve this design worktree while its PR is open. Reconcile newer API/features
-before executing Task 1. Native inline execution is recommended because
-state/training interfaces are tightly coupled; confirm execution approach at the
-plan handoff.
+2–6 prioritize a complete usable workspace by adapting existing components; 7–10
+supply required training; 11–12 supply documentation/acceptance and atomic
+cutover. Rebase the implementation branch on reviewed `origin/dev` in a new
+`.worktrees/` worktree under the recorded plan approval; preserve this design
+worktree while its PR is open. Reconcile newer API/features before executing
+Task 1. Use one cohesive inline implementation context with staged reviewable
+commits, as recommended in the recorded execution review. No renewed choice of
+execution method is needed for this clarification.
 
 ## File and interface map
 
@@ -94,8 +101,8 @@ fixed interfaces for the implementer.
 | Shared reads     | `F/hooks/api/useOperatorJournal.ts`, `operatorReadSession.ts`, `useOperatorEvents.ts`: preserve request/identity semantics, move mutation ownership, avoid duplicated polling                                                                    |
 | Shell/editor     | `O/workspace/OperatorWorkspace.tsx`, `WorkspaceAwareness.tsx`, `WorkspaceEditor.tsx`, `MissionContextChooser.tsx`, `WorkspaceHelp.tsx`, `workspace.css`: responsive context and explicit navigation                                              |
 | Work views       | `O/workspace/{OperationsView,CommunicationsView,TransportView,IssuesView,HistoryView,ToolsView}.tsx`: contextual actions; existing typed editors/commands adapted rather than dropped                                                            |
-| Training server  | `A/training/{models,settings,clock,session,context,fixtures,simulation,exercises,progress,api}.py`: isolated orchestration using existing app services                                                                                           |
-| Training browser | `F/components/operator/training/{GuidedMission,TrainingStep}.tsx`, `trainingSteps.ts`, `useTrainingSession.ts`, `F/services/operator-training.ts`: real-control guidance and backend-validated progress                                          |
+| Training fixture | `tools/training/operator-mission/{backend.py,scenario.py,control.py}` and existing `tools/acceptance/operator-journal` helpers: prerequisite seed, raw inputs and thin binding/clock seam; no `app/training` package                             |
+| Training browser | `F/components/operator/training/{GuidedMission,TrainingStep}.tsx`, `trainingSteps.ts`, `trainingProgress.ts`: real-control guidance and actual-evidence evaluation using existing query/services                                                 |
 | Deployment       | `docker-compose.operator-training.yml`, `scripts/operator-training.sh`, `docs/development/operator-training.md`: private learner/import app instances; no operational volume reuse                                                               |
 | Acceptance       | `tools/acceptance/operator-workspace/{run.py,compose.yml,fixtures.py,parity.json}` and `frontend/mission-planner/tests/e2e/operator-workspace.spec.ts`, `operator-training.spec.ts`, `operator-guide.spec.ts`: production narrative and evidence |
 | Help             | `docs/operations/operator-user-guide.md`, `operator-quick-reference.md`, `frontend/mission-planner/public/operator-help/images/`; `F/pages/OperatorHelpPage.tsx`: packaged offline docs and checked screenshots                                  |
@@ -168,7 +175,9 @@ never hidden exceptions.
 `F/hooks/api/{useOperatorJournal.ts,operatorReadSession.ts}`; preserve existing
 identity/recovery tests and add route-change cases.
 
-**Interfaces:** `useOperatorWorkspace()` exposes `openDraft(draftId)`,
+**Interfaces:** Preserve the existing hook save/retry/reconcile implementation;
+hoist its owners and expose thin registry adapters rather than implement another
+write-state engine. `useOperatorWorkspace()` exposes `openDraft(draftId)`,
 `submitDraft(draftId): Promise<void>`, `retryExact(commandId): Promise<void>`,
 `rereadAndReconcile(commandId): Promise<void>`, selected editor and named tray
 states. `PendingEnvelope` contains the spec's exact frozen command and revision.
@@ -274,107 +283,120 @@ search endpoint.
       with evidence. Commit. Do not expose incomplete candidate views to
       ordinary users.
 
-## Task 7: Isolated training deployment, session identity and deterministic replay
+## Task 7: Single-instance training fixture and early namespace/time proof
 
 **Files:** Create
-`A/training/{models,settings,clock,session,context,fixtures,simulation,api}.py`,
-`B/tests/training/test_training_runtime.py`,
+`tools/training/operator-mission/{backend.py,scenario.py,control.py}`,
+`tools/tests/test_operator_training_fixture.py`,
 `docker-compose.operator-training.yml`, `scripts/operator-training.sh`,
-`docs/development/operator-training.md`; modify `B/main.py` to register guarded
-training dependencies, not normal-mode behavior.
+`docs/development/operator-training.md`. Selectively adapt
+`tools/acceptance/operator-journal/{seed.py,scenario.py,model_inputs_fixture.py}`
+with defaults preserving current acceptance. Do not modify normal `main.py` or
+create `app/training` APIs/services.
 
-**Interfaces:** `TrainingClock.now()/monotonic()/advance(seconds)` implements
-existing injected clock contracts. `TrainingSession` is the spec manifest;
-`TrainingSessionService.start(key): TrainingSession`,
-`status(): TrainingSession`,
-`advance(session_id, expected_revision, checkpoint, key): TrainingSession`,
-`reset(session_id, expected_revision, key): TrainingSession`. GET session and
-start/advance/reset routes use typed models, explicit instance/session authority
-and existing service admission. Stable namespace is session UUID; paced run ID
-remains a separate field. No global environment-mode switch from a browser.
+**Interfaces:** Launcher commands `start`, `stop`, `reset`, `import-start`,
+`import-stop` take an explicit marked nonproduction data root/project. Tooling
+`scenario.seed_prerequisites(root)` creates fictional mission/routes/planned
+requirements, not completed learner actions.
+`control.apply_checkpoint(root, checkpoint_id)` applies predefined raw
+position/speed/freshness/clock values through existing fixture helpers. The thin
+fixture entrypoint uses the existing binding/context seam with a stable
+root-scoped simulation ID; existing ScenarioClock/EventsClock and persisted
+input files remain the clock authority.
 
-- [ ] Write tests rejecting normal/live mode, foreign IDs, operational paths,
-      missing marker, invalid stores and reset during uncertain writes. Assert
-      preflight + leg 1 + leg 2 + postflight records share the training
-      namespace, reset creates a new namespace and normal replay binding remains
-      unchanged.
-- [ ] Test clock/telemetry freshness alignment, deterministic route progression
-      through existing replay/flight/predictor code, restart reconstruction with
-      new replay ID but same journal receipts, plan fingerprint mismatch
-      recovery, and idempotent concurrent starts/resets. No canned event
-      payloads or SQL edits.
+- [ ] Write tests rejecting live mode/unmarked roots and operational volume
+      mounts; assert actual preflight/leg 1/leg 2 records, acknowledgments and
+      receipts share the fixture journal namespace while normal runtime behavior
+      is unchanged.
+- [ ] Test raw inputs feed production ETA/PoP and normal flight/replay services,
+      not the fixture's direct phase restore; clock/sample freshness align;
+      restart retains records/raw checkpoint inputs without replaying learner
+      writes. Test actual preview/activation, leg changes and documented
+      segment-restart limits.
 - [ ] From backend run
-      `timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt python -m pytest tests/training/test_training_runtime.py`
+      `timeout --kill-after=10s 10m uv run --with-requirements requirements-dev.txt python -m pytest ../../tools/tests/test_operator_training_fixture.py`
       red.
-- [ ] Implement the guarded adapter and explicit fresh simulation-store
-      initialization, preserving existing-store failure semantics. Compose
-      learner and clean import destination use the production images,
-      independent origins/ private volumes and offline synthetic inputs; no
-      operational mounts/discovery.
-- [ ] Run tests green and an isolated exact-SHA deployment check. Compare all
-      mutable volume mounts and instance identities with the live installation;
-      prove display/config changes and reset cannot cross them. Stop the task
-      stack and verify resources gone. Commit runtime/profile/setup docs.
+- [ ] Adapt existing seed/raw helpers only as needed; inject stable fixture
+      context locally, not through a new production policy. Start one private
+      learner stack with normal production images and the explicit fixture
+      module. Bind loopback, disable aircraft discovery, preserve Docker
+      daemon/context and document setup.
+- [ ] Implement CLI reset as owned stop + retained old root + fresh sibling
+      seed; refuse ambiguous/unowned roots and never delete operational data.
+      Import target is a separate temporary project using existing
+      archive-destination patterns.
+- [ ] Run tests green and one exact-SHA fixture integration proof before
+      investing in guidance. If the seam fails, report the smallest evidenced
+      change required; do not expand into the former session/clock/orchestration
+      subsystem. Teardown task resources and commit tooling/setup evidence.
 
-## Task 8: Training exercises and authoritative progress
+## Task 8: Whole-mission steps, progress and recovery using existing contracts
 
-**Files:** Create `A/training/{exercises,progress}.py`,
-`B/tests/training/{test_training_exercises,test_training_progress}.py`; extend
-training API/models from Task 7 only.
+**Files:** Create
+`F/components/operator/training/{trainingSteps.ts,trainingProgress.ts,trainingProgress.test.ts}`;
+reuse existing record/event/export/simulation services and tooling control/relay
+patterns. No training status/progress/command API or extra polling owner.
 
-**Interfaces:** `exercise(session_id, expected_revision, kind, target, key)`
-supports allowlisted `lost_receipt`, `counterpart_conflict`, `stale_inputs`,
-`missing_provider` effects.
-`progress(session_id, expected_revision, stage_id, action, key)` accepts
-next/back/skip; evidence evaluation returns passed/skipped/
-incomplete/unavailable and named unmet outcomes. Ordinary learner writes still
-use existing record services/API, never the progress endpoint.
+**Interfaces:** `TrainingProgress` schema 1 contains fixture version, origin,
+store identity, mission ID, current stage, visited/skipped IDs and explicitly
+manual evidence. `evaluateStep(stepId, evidence): StepEvaluation` returns
+passed/skipped/incomplete/unavailable and missing outcomes. Evidence is existing
+backend records/events/receipts/export state, not progress flags.
+`loadProgress(storage, identity)` and `saveProgress(storage, progress)` validate
+identity/version and return explicit storage errors. `trainingSteps` maps every
+T01–T11 and parity branch to a real route/target, evidence and guide section.
 
-- [ ] Test real persisted command with one suppressed acknowledgment and exact
-      replay receipt, actual counterpart version conflict, foreign target
-      rejection, effect expiry and no fault middleware in normal deployment.
-- [ ] Test progress evaluates real versions/events/export artifacts, skip never
-      becomes pass, back never rewinds data/time, reset rejects foreign/pending
-      work, restart never replays learner writes, and concurrent progress
-      receives 409.
-- [ ] Run those named pytest files red under the backend command from Task 7;
-      implement narrow training-only effects and atomic progress manifests.
-- [ ] Run tests green; verify old session history remains immutable and the
-      clean import instance's Operator sentinel is unchanged. Commit.
+- [ ] Test Next cannot pass from clicks alone, Back does not undo writes, Skip
+      is not success, stale/unavailable evidence is not all-clear, and
+      mismatched origin/ store/fixture version cannot resume. No stale draft
+      retargeting on reset.
+- [ ] Map the concrete APIs in the reuse appendix for every T01–T11 branch.
+      Evaluate actual joined/left intervals, applied-only receipt, issue
+      correction, archive/download outcome; identify PDF extraction as
+      human-observed and check its actual files independently in acceptance.
+- [ ] Define lost-receipt/offline exercises using existing relay/browser
+      controls, counterpart browser for real 409, and private maintenance
+      backup/restore CLI. Tests require one real committed write and same-key
+      replay, never a canned success response or a new production fault
+      injection API.
+- [ ] Run
+      `timeout --kill-after=10s 10m npm run test:unit -- src/components/operator/training/trainingProgress.test.ts`
+      red; implement the small evaluator and browser progress adapter using
+      shared reads.
+- [ ] Run green, checking all matrix IDs have instruction/real control/evidence/
+      guide coverage. Commit curriculum/progress and narrow fixture exercises.
 
-## Task 9: Whole-system hands-on guide in the real UI
+## Task 9: Hands-on guidance over the completed workspace
 
-**Files:** Create `F/services/operator-training.ts`,
-`F/components/operator/training/{GuidedMission.tsx,TrainingStep.tsx,trainingSteps.ts,useTrainingSession.ts}`
-and tests; modify `O/workspace/WorkspaceHelp.tsx`, existing same-app route
-targets with stable accessible `data-training-target` anchors, and `F/App.tsx`.
+**Files:** Create
+`F/components/operator/training/{GuidedMission.tsx,TrainingStep.tsx}` and tests;
+modify `O/workspace/WorkspaceHelp.tsx`, existing real control targets with
+stable accessible `data-training-target` anchors, and `F/App.tsx`.
 
-**Interfaces:** `operatorTrainingApi` mirrors Task 7–8 typed routes without
-changing the operational API base. `useTrainingSession()` supplies one validated
-session/progress read owner. `trainingSteps` maps stage/branch ID to
-instruction, real route/target, required evidence and related guide section.
-GuidedMission renders dismissible current stage, next/back/skip/resume/reset,
-never duplicate record forms. The live Help entry navigates to configured
-training origin.
+**Interfaces:** GuidedMission consumes Task 8's progress/evaluator and ordinary
+product query/receipt state. It displays dismissible in-context instructions,
+next/back/skip/resume, Reset guide and Reset mission. Reset mission provides the
+exact local launcher command and restart instructions; it does not fake a hot
+reset. Help opens the configured nonproduction instance or clearly explains
+setup.
 
-- [ ] Test Help discovery, absent training setup instructions, unmistakable
-      Training context, real-controller targets, first-use calls/conferences,
-      navigation while drafts/pending work are retained, and stage mismatch
-      recovery.
-- [ ] Test every T01–T11 stage/branch from the spec and every parity ID has a
-      real target/evidence/guide mapping. Include Overview window + foreground
-      cues, all record lifecycle branches, typed UTC/unknown fields and actual
-      ZIP import.
-- [ ] Test next/back/skip/resume/reset revision handling, hidden/stale session
-      reads, mobile keyboard/assistive focus and training-client offline
-      exercise without service worker/network reconfiguration. No
-      fake-completion flags.
-- [ ] Run new focused Vitest and real-browser training tests red; implement
-      guide controls and raw transport failure simulation gated to training
-      instance. Apply the specified five-second visible/60-second hidden read
-      budget.
-- [ ] Run to green across three viewports; verify full navigation/context and
-      saved input survive dismiss/resume/restart. Commit required training UI.
+- [ ] Test obvious Help → Guided mission walkthrough discovery, source/training
+      label, absent setup, and actual first-use Create call/Create conference
+      paths. Preserve ordinary real forms and lifecycle command handlers, not
+      duplicate toys.
+- [ ] Test T01–T11 route targets and parity branches, dismissal/resume with
+      draft/ pending preservation, long labels, unknown times, unsupported
+      cues/recenter, keyboard/mobile accessibility, and explicit local-command
+      prerequisites.
+- [ ] Test reset wording versus actual CLI reset, restart progress revalidation,
+      and optional replay segment restart without claiming an exact restored
+      frame. No second predictor, PWA, background notification or production
+      mode switch.
+- [ ] Run focused Vitest and actual-browser guidance cases red; implement the
+      guide with existing service reads, no independent training status polling.
+- [ ] Run green at all three viewports through the real UI; retain clear passed/
+      skipped/manual-observed distinctions. Commit guidance and checked
+      journeys.
 
 ## Task 10: Full production narrative and archive transfer acceptance
 
@@ -505,21 +527,26 @@ the whole approved workspace; update `docs/development/operator-training.md`,
 
 ## Effort, risks and completion gate
 
-Planning estimate: **30–45 engineer-days**, excluding reviewer turnaround and
-availability of first-time users/devices. Indicative allocation: baseline/owners
-6–9; shell/views/lifecycle 7–10; isolated training runtime/exercises/curriculum
-9–14; guide/first-use/production acceptance/backout 8–12. This is a range, not a
-delivery date or authorization to reduce scope. Training is a required part of
-the estimate; it is not deferred to another issue.
+Revised planning estimate: **12–20 engineer-days**, excluding review turnaround
+and first-time-user/device availability. This replaces 30–45 days by removing
+unnecessary generalized training infrastructure, not by cutting deliverables.
+Milestones: M1 baseline/state adapters 2–3; M2 reused workspace/components 3–5;
+M3 one-instance fixture/curriculum 2–3; M4 complete guide/Help 2–3; M5
+production, first-use, timing and backout evidence 3–6. M2 provides a fast
+usable full-parity candidate in **5–8 cumulative engineer-days**; final release
+still requires M3–M5. See the
+[explicit keep/reuse/remove and T01–T11 API map](../../design/issue-376/lean-training-reuse.md).
+This is a planning range, not a fixed delivery promise.
 
 The largest risks are replay/Operator namespace and clock alignment, legacy
 draft migration and cross-route receipts, offline predictor inputs and full ZIP
-isolation. Tasks 2–3 and 7 gate dependent work early. If existing replay
-services cannot reconstruct a checkpoint through their injected dependencies,
-stop for plan revision with evidence; do not add a second engine or fake
-successful resume.
+isolation. Tasks 2–3 and 7 gate dependent work early. If the thin fixture seam
+fails, report the exact failing case and propose the smallest change before
+adding infrastructure. Explicit segment restart is allowed; do not promise exact
+replay restoration or create a new reconstruction engine. Record/draft
+correctness cannot be traded away.
 
-No product code has been written for this plan. Completion requires separate
-plan approval, implementation review, all parity/training/guide checks, actual
-timing and uncoached first-use evidence, exact candidate checks and resource
-teardown. Merely passing the HTML preview checks cannot satisfy any of those.
+No product code has been written for this plan. Completion requires
+implementation review, all parity/training/guide checks, actual timing and
+uncoached first-use evidence, exact candidate checks and resource teardown.
+Merely passing the HTML preview checks cannot satisfy any of those.

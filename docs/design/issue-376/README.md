@@ -2,8 +2,9 @@
 
 Draft design for
 [issue 376](https://github.com/bcl1713/starlink-dashboard/issues/376), based on
-merged `dev` commit `1a3e77d3`. Concept A is approved; the detailed
-implementation plan requires separate review. No product UI changes.
+merged `dev` commit `1a3e77d3`. Concept A and the implementation plan are
+approved; the latest amendment prioritizes reuse and one nonproduction training
+instance. No product UI changes.
 
 [Implementation specification](../../superpowers/specs/2026-10-18-operator-workspace-implementation.md)
 and
@@ -11,9 +12,16 @@ and
 include the approved persistent owners, whole-system guided training, manual and
 quick reference. The
 [approval record](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253399573)
-approves design, not product changes; the
+records design approval; the
+[execution review](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253561956)
+approves staged implementation, not merge/release; the
 [training clarification](https://github.com/bcl1713/starlink-dashboard/pull/382#issuecomment-6253414196)
 is mandatory scope in the plan.
+
+[Lean deployment, API reuse and milestone estimate](lean-training-reuse.md)
+apply the user's nonproduction-computer clarification. The permanent second
+training stack and generalized training orchestration are removed; the full
+walkthrough, guide, quick reference and correctness gates remain required.
 
 **Download and open [the current standalone prototype](review-v2.html).** It
 opens with Start here; Start here / Help remains visible. Working-view buttons
