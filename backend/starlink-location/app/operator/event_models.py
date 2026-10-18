@@ -26,6 +26,7 @@ class EventNotification(StrictModel):
     acknowledged: bool = False
     acknowledged_at: UtcTimestamp | None = None
     retired: bool = False
+    preview: bool = False
     eligible: bool = False
     priority: Annotated[int, Field(ge=0, le=4)] = 4
     threshold_at: UtcTimestamp | None = None

@@ -1,13 +1,12 @@
 """Operator-only operational timeline and local notification API."""
 
-from fastapi import APIRouter, Query, Request, Header
+from fastapi import APIRouter, Header, Query, Request
 from fastapi.responses import JSONResponse
 
-from app.operator.event_ack import acknowledge
-from app.operator.event_models import AckRequest
-
 from app.operator.common import Identifier
+from app.operator.event_ack import acknowledge
 from app.operator.event_feed import snapshot_page
+from app.operator.event_models import AckRequest
 from app.operator.event_sources import EventSourceAdapter
 from app.operator.runtime import runtime_for
 

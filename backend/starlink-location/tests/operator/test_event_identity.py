@@ -120,3 +120,47 @@ def test_ambiguous_split_is_visual_until_stable_captures(service, clock):
     assert all(not e.notification.available for e in save(split))
     clock.advance(15)
     assert all(e.notification.available for e in save(split))
+
+
+def test_unstable_split_previews_do_not_write_each_forecast_refresh(service, clock):
+    from app.operator.event_identity import ModelStability
+    from app.operator.event_ledger import reconcile
+    from app.operator.event_models import OperationalEvent
+    from app.operator.event_policy import EventPolicy
+
+    stability, policy = ModelStability(), EventPolicy()
+    base = OperationalEvent(
+        event_id="initial",
+        family_key="family",
+        mission_id="demo-mission",
+        kind="restriction",
+        provenance="modeled",
+        title="Synthetic",
+        due_at=clock.now() + timedelta(minutes=10),
+        end_at=clock.now() + timedelta(minutes=30),
+        schedule_key="source",
+    )
+    with service.store.connect(write=True) as db:
+        reconcile(db, [base], as_of=clock.now(), policy=policy, stability=stability)
+        for second in range(5):
+            split = [
+                base.model_copy(
+                    update={
+                        "end_at": base.due_at + timedelta(minutes=5, seconds=second)
+                    }
+                ),
+                base.model_copy(
+                    update={
+                        "event_id": "second",
+                        "due_at": base.due_at + timedelta(minutes=8, seconds=second),
+                    }
+                ),
+            ]
+            previews = reconcile(
+                db, split, as_of=clock.now(), policy=policy, stability=stability
+            )
+            assert all(event.notification.generation is None for event in previews)
+            assert db.execute("SELECT count(*) FROM event_occurrences").fetchone() == (
+                1,
+            )
+            clock.advance(1)

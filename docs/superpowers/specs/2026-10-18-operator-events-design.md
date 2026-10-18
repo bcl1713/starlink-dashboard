@@ -2,9 +2,8 @@
 
 Issue: [#368](https://github.com/bcl1713/starlink-dashboard/issues/368). Parent:
 [#361](https://github.com/bcl1713/starlink-dashboard/issues/361). Status: review
-clarifications from PR #379 comment 6244453274 incorporated; user requested
-implementation planning. Product implementation awaits plan review and execution
-selection. Base: `origin/dev` at `30d628c8`. Branch: `feat/issue-368-events`.
+clarifications approved in PR #379 comment 6244505182; native implementation
+authorized by the user. Product acceptance, final review and merge remain separate. Base: `origin/dev` at `30d628c8`. Branch: `feat/issue-368-events`.
 
 ## Purpose and boundaries
 
@@ -508,10 +507,8 @@ only, not aircraft readiness.
 
 ## Delivery and review boundary
 
-This specification and the requested implementation plan are review artifacts.
-The user authorized review fixes and plan preparation after PR #379 review. No
-product implementation, dependency installation, database migration or runtime
-stack is authorized by that step. Review the plan and select its execution
-method before implementation. Work stays in the issue worktree and PR #379
-targets `dev`. Product review and applicable exact-head checks precede merge.
-Keep #369 allocation, #370 export and #376 layout consolidation separate.
+The written specification and plan were approved in PR #379 comment 6244505182,
+and the user selected native execution. Implementation stays in the issue worktree
+and draft PR #379 targets `dev`. Product review, applicable exact-head CI and fresh
+production acceptance precede merge. Keep #369 allocation, #370 export and #376
+layout consolidation separate.

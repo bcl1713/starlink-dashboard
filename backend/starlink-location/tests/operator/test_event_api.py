@@ -45,9 +45,9 @@ def test_feed_pagination_is_pinned_during_new_writes(api, record_data):
         params={"mission_id": "demo-mission", "limit": 2, "cursor": first["cursor"]},
     ).json()
     assert second["H"] == first["H"] == 3
-    assert not set(e["event_id"] for e in first["events"]) & set(
+    assert not {e["event_id"] for e in first["events"]} & {
         e["event_id"] for e in second["events"]
-    )
+    }
 
 
 def test_unknown_call_time_stays_visible_without_eligible_alert(api, record_data):
@@ -88,3 +88,71 @@ def test_rescheduled_history_cannot_resurrect_old_pending_occurrences(api, recor
     ]
     assert len(obsolete) == 2
     assert all(e["notification"]["retired"] and not e["active"] for e in obsolete)
+
+
+def test_feed_keeps_unstable_topology_transient_until_two_spaced_captures(
+    api, service, clock
+):
+    from dataclasses import replace
+
+    from app.operator.event_models import SourceCapture
+    from app.operator.event_sources import EventSourceAdapter
+
+    model = {
+        "segments": [
+            {
+                "start_time": "2026-10-17T16:00:00Z",
+                "end_time": "2026-10-17T16:10:00Z",
+                "ka_state": "offline",
+            }
+        ]
+    }
+
+    class Adapter:
+        def capture(self, mission_id, *, as_of):
+            captured = EventSourceAdapter(service).capture(mission_id, as_of=as_of)
+            return replace(
+                captured,
+                sources=[
+                    SourceCapture(
+                        source="model:leg-a",
+                        generation="one",
+                        freshness="fresh",
+                        aligned=True,
+                        captured_at=clock.now(),
+                    )
+                ],
+                models={"leg-a": model},
+            )
+
+    api.app.state.operator_runtime.event_source_adapter = Adapter()
+    initial = api.get(BASE + "/events", params={"mission_id": "demo-mission"}).json()
+    old = initial["events"][0]["notification"]["generation"]
+    model["segments"] = [
+        {
+            "start_time": "2026-10-17T16:00:00Z",
+            "end_time": "2026-10-17T16:04:00Z",
+            "ka_state": "offline",
+        },
+        {
+            "start_time": "2026-10-17T16:06:00Z",
+            "end_time": "2026-10-17T16:10:00Z",
+            "ka_state": "offline",
+        },
+    ]
+    first = api.get(BASE + "/events", params={"mission_id": "demo-mission"}).json()
+    assert sum(e["notification"].get("preview", False) for e in first["events"]) == 2
+    assert all(
+        e["notification"]["generation"] is None
+        for e in first["events"]
+        if e["notification"].get("preview")
+    )
+    clock.advance(1)
+    second = api.get(BASE + "/events", params={"mission_id": "demo-mission"}).json()
+    assert sum(e["notification"].get("preview", False) for e in second["events"]) == 2
+    clock.advance(14)
+    third = api.get(BASE + "/events", params={"mission_id": "demo-mission"}).json()
+    assert len(third["events"]) == 2
+    assert all(
+        e["notification"]["generation"] not in (None, old) for e in third["events"]
+    )

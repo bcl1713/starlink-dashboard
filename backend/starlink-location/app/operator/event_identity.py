@@ -22,7 +22,11 @@ class ModelStability:
         restrictions = [
             e
             for e in events
-            if e.kind == "restriction" and e.family_key and e.due_at and e.end_at
+            if e.active
+            and e.kind == "restriction"
+            and e.family_key
+            and e.due_at
+            and e.end_at
         ]
         matches = {}
         for event in restrictions:
@@ -43,27 +47,41 @@ class ModelStability:
             if len(group) == 1 and uses[group[0]["event_id"]] == 1:
                 event.event_id = group[0]["event_id"]
             elif group:
-                topology = identity(event.family_key, event.due_at, event.end_at)
-                key = "topology:" + topology
+                family = sorted(
+                    [e for e in restrictions if e.family_key == event.family_key],
+                    key=lambda e: (e.due_at, e.end_at),
+                )
+                ordinal = next(
+                    index for index, item in enumerate(family) if item is event
+                )
+                key = "topology:" + identity(event.family_key, len(family), ordinal)
                 candidate = self.candidates.get(key)
-                if candidate is None:
-                    candidate = (None, as_of, 1)
+                if candidate is None or as_of < candidate[1]:
+                    candidate = ((event.due_at, event.end_at), as_of, 1)
                 elif (
                     as_of - candidate[1]
                 ).total_seconds() >= policy.model_capture_spacing_seconds:
-                    candidate = (None, as_of, candidate[2] + 1)
-                self.candidates[key] = candidate
-                event.event_id = topology
+                    candidate = (candidate[0], as_of, candidate[2] + 1)
+                self._remember(key, candidate)
+                event.event_id = identity(
+                    event.family_key, "reshaped", candidate[0], ordinal
+                )
                 if (
                     event.freshness != "fresh"
                     or candidate[2] < policy.model_stable_captures
                 ):
                     event.notification.available = False
+                    event.notification.preview = True
                     event.notification.reason = (
                         "Changed prediction topology; awaiting stable captures"
                     )
             elif any(previous.get("event_id") == event.event_id for previous in old):
                 event.event_id = identity(event.event_id, event.due_at)
+
+    def _remember(self, key, value):
+        self.candidates[key] = value
+        while len(self.candidates) > 1000:
+            self.candidates.pop(next(iter(self.candidates)))
 
     def select(self, connection, event, *, as_of, policy):
         row = connection.execute(
@@ -102,7 +120,7 @@ class ModelStability:
             proposed_tier if escalated else accepted_tier,
         )
         if candidate is None or candidate[0] != target or as_of < candidate[1]:
-            self.candidates[event.event_id] = (target, as_of, 1)
+            self._remember(event.event_id, (target, as_of, 1))
             event.notification.severity_generation = min(proposed_tier, accepted_tier)
             return
         count = candidate[2]
@@ -110,7 +128,7 @@ class ModelStability:
             as_of - candidate[1]
         ).total_seconds() >= policy.model_capture_spacing_seconds:
             count += 1
-            self.candidates[event.event_id] = (target, as_of, count)
+            self._remember(event.event_id, (target, as_of, count))
         required = max(
             policy.model_stable_captures if moved else 2,
             policy.model_escalation_captures if escalated else 2,

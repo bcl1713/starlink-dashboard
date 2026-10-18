@@ -15,8 +15,13 @@ class EventPublication:
         self._lock = RLock()
         self._sources = {}
 
-    def publish(self, source):
+    def publish(self, source, *, update=None):
         with self._lock:
+            if update is not None:
+                # Input mutation and its replacement publication share the gate.
+                # A failed update leaves the source invalid, never falsely current.
+                self._sources.pop(source.source, None)
+                update()
             self._sources[source.source] = source.model_copy(deep=True)
 
     def invalidate(self, source):
@@ -34,7 +39,9 @@ class EventPublication:
                 ):
                     raise OperatorError("event_source_unavailable", retryable=True)
                 current = self._sources.get(source.source)
-                if current is None or current != source:
+                if current is None:
+                    raise OperatorError("event_source_unavailable", retryable=True)
+                if current != source:
                     raise OperatorError("event_snapshot_changed", retryable=True)
             yield
 

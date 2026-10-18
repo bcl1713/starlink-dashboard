@@ -49,12 +49,14 @@ def select_eligible(events, *, as_of):
         if event.kind == "issue_followup":
             if as_of > event.due_at + timedelta(minutes=15):
                 continue
-        elif event.end_at is not None and as_of >= event.end_at:
-            continue
         elif (
-            event.kind == "call_start"
-            and event.end_at is None
-            and as_of > event.due_at + timedelta(minutes=15)
+            event.end_at is not None
+            and as_of >= event.end_at
+            or (
+                event.kind == "call_start"
+                and event.end_at is None
+                and as_of > event.due_at + timedelta(minutes=15)
+            )
         ):
             continue
         note.eligible = True

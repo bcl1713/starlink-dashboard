@@ -22,8 +22,8 @@ import pytest
     ],
 )
 def test_server_eligibility_thresholds(clock, kind, offset, want):
-    from app.operator.event_models import OperationalEvent, EventNotification
     from app.operator.event_eligibility import select_eligible
+    from app.operator.event_models import EventNotification, OperationalEvent
 
     event = OperationalEvent(
         event_id="event",
@@ -49,8 +49,8 @@ def test_server_eligibility_thresholds(clock, kind, offset, want):
     ],
 )
 def test_uncertain_or_inactive_events_never_cue(clock, field, value):
-    from app.operator.event_models import OperationalEvent, EventNotification
     from app.operator.event_eligibility import select_eligible
+    from app.operator.event_models import EventNotification, OperationalEvent
 
     event = OperationalEvent(
         event_id="event",

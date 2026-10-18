@@ -272,6 +272,6 @@ def journal(
         )
 
 
-from .operator_events import make_router  # noqa: E402
+from .operator_events import make_router
 
 router.include_router(make_router())

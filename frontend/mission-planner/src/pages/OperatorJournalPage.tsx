@@ -21,7 +21,7 @@ export function OperatorJournalPage() {
   const journal = useOperatorJournal(missionId);
   const eventFeed = useOperatorEvents(
     missionId,
-    !journal.health.isError && !journal.blocked ? journal.identity : null
+    !journal.blocked ? journal.identity : null
   );
   const brief = useInfiniteQuery({
     queryKey: ['operator-brief', missionId, journal.identity],

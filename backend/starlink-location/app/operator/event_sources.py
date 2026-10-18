@@ -106,6 +106,7 @@ class EventSourceAdapter:
                             and publication.get("leg_id") == leg_id
                             and publication.get("simulation_run_id")
                             == health.simulation_run_id
+                            and publication.get("inputs_aligned") is True
                         )
                         source = SourceCapture(
                             source="model:" + leg_id,

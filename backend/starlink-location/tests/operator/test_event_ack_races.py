@@ -1,10 +1,10 @@
 """External publication replacement must not be acknowledged as an obsolete model."""
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import replace
 from datetime import timedelta
 from threading import Event
-from concurrent.futures import ThreadPoolExecutor
 
 from app.operator.event_models import SourceCapture
 from app.operator.event_sources import EventSourceAdapter
@@ -53,12 +53,12 @@ def model_feed(api, service, clock, *, guardable=True):
     return (
         runtime,
         source,
-        dict(
-            schema_version=1,
-            occurrence_id=event["notification"]["generation"],
-            severity_generation=event["notification"]["severity_generation"],
-            snapshot_token=feed["snapshot_token"],
-        ),
+        {
+            "schema_version": 1,
+            "occurrence_id": event["notification"]["generation"],
+            "severity_generation": event["notification"]["severity_generation"],
+            "snapshot_token": feed["snapshot_token"],
+        },
     )
 
 

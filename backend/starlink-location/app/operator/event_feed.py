@@ -43,30 +43,6 @@ def build_snapshot(runtime, mission_id, adapter):
                 (mission_id,),
             )
         ]
-        present = {event.event_id for event in events}
-        # Missing optional models keep their last known rows; a fresh replacement
-        # or an authoritative changed Operator record may retire a generation.
-        for previous in old:
-            if previous.event_id in present:
-                continue
-            if previous.provenance == "modeled":
-                source = next(
-                    (s for s in sources if s.source == previous.source_ref), None
-                )
-                if (
-                    source is None
-                    or source.freshness in ("stale", "unknown")
-                    or not source.aligned
-                ):
-                    previous.freshness, previous.state = "unknown", "unknown"
-                    previous.notification.available = False
-                    previous.notification.reason = (
-                        "Source unavailable; last known prediction"
-                    )
-                    events.append(previous)
-                    continue
-            previous.active = False
-            events.append(previous)
         events = reconcile(
             connection,
             events,
@@ -74,6 +50,46 @@ def build_snapshot(runtime, mission_id, adapter):
             policy=runtime.event_policy,
             stability=runtime.event_stability,
         )
+        present = {event.event_id for event in events}
+        # Reconcile new candidates before retiring prior model families. Ambiguous
+        # previews do not turn into durable refresh noise or an all-clear.
+        for previous in old:
+            if previous.event_id in present:
+                continue
+            if previous.source_ref and previous.source_ref.startswith("model:"):
+                source = next(
+                    (s for s in sources if s.source == previous.source_ref), None
+                )
+                waiting = any(
+                    e.notification.preview and e.family_key == previous.family_key
+                    for e in events
+                )
+                if (
+                    waiting
+                    or source is None
+                    or source.freshness in ("stale", "unknown")
+                    or not source.aligned
+                ):
+                    previous.freshness, previous.state = "unknown", "unknown"
+                    previous.notification.available = False
+                    previous.notification.reason = (
+                        "Source unavailable or changing; last known prediction"
+                    )
+                    events.extend(
+                        reconcile(
+                            connection,
+                            [previous],
+                            as_of=now,
+                            policy=runtime.event_policy,
+                        )
+                    )
+                    continue
+            previous.active = False
+            events.extend(
+                reconcile(
+                    connection, [previous], as_of=now, policy=runtime.event_policy
+                )
+            )
         for event in events:
             if inputs.clock_regression:
                 event.state = "unknown"

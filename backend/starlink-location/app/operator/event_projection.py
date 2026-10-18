@@ -76,14 +76,14 @@ def derive_events(inputs, *, as_of, policy):
     events = []
     for record in inputs.records:
         payload = record.payload
-        common = dict(
-            mission_id=record.mission_id,
-            leg_id=record.leg_id,
-            source_ref=str(record.record_id),
-            source_revision=str(record.version),
-            source_captured_at=record.recorded_at,
-            dependent_versions={str(record.record_id): record.version},
-        )
+        common = {
+            "mission_id": record.mission_id,
+            "leg_id": record.leg_id,
+            "source_ref": str(record.record_id),
+            "source_revision": str(record.version),
+            "source_captured_at": record.recorded_at,
+            "dependent_versions": {str(record.record_id): record.version},
+        }
         if payload.entry_type == "call":
             active = not record.deleted and payload.status not in (
                 "completed",
@@ -154,17 +154,21 @@ def derive_events(inputs, *, as_of, policy):
             if source and source.freshness in ("fresh", "stale")
             else "unknown"
         )
-        common = dict(
-            mission_id=mission_id,
-            leg_id=leg_id,
-            provenance="modeled",
-            source_ref="model:" + leg_id,
-            source_revision=source.revision if source else None,
-            source_captured_at=source.captured_at if source else None,
-            freshness=freshness,
-            confidence="Modeled estimate",
-            continuity_status="modeled" if source and source.aligned else "unknown",
-        )
+        common = {
+            "mission_id": mission_id,
+            "leg_id": leg_id,
+            "provenance": "modeled",
+            "source_ref": "model:" + leg_id,
+            "source_revision": source.revision if source else None,
+            "source_captured_at": source.captured_at if source else None,
+            "freshness": freshness,
+            "confidence": "Modeled estimate",
+            "continuity_status": (
+                "modeled"
+                if source and source.aligned and model.get("call_continuity")
+                else "unknown"
+            ),
+        }
         forecast = model.get("pop_forecast") or {}
         transitions = (
             forecast.get("transitions", []) if forecast.get("status") == "ready" else []
@@ -172,6 +176,7 @@ def derive_events(inputs, *, as_of, policy):
         for window in transitions:
             crossing = window["crossing"]
             key = identity(
+                mission_id,
                 leg_id,
                 "pop",
                 forecast.get("catalog_fingerprint"),
@@ -196,6 +201,44 @@ def derive_events(inputs, *, as_of, policy):
                 significance="advisory",
                 state=_state(start, end, as_of, True),
                 schedule_key=key,
+            )
+            _protect(event, inputs.records)
+            events.append(event)
+        # #348 publishes observation/overdue advisories independently of its
+        # future-window list. Missing observed PoP never means service down.
+        for advisory in model.get("pop_advisories", []):
+            kind = advisory.get("kind")
+            if kind not in ("observation_unknown", "mismatch", "overdue"):
+                continue
+            key = identity(
+                mission_id,
+                leg_id,
+                "pop-state",
+                kind,
+                advisory.get("transition_id") if kind == "overdue" else None,
+            )
+            values = dict(common)
+            values["provenance"] = "observed" if kind != "overdue" else "modeled"
+            values["freshness"] = (
+                "unknown" if kind == "observation_unknown" else freshness
+            )
+            event = OperationalEvent(
+                **values,
+                event_id=key,
+                kind="pop_advisory",
+                title={
+                    "observation_unknown": "PoP observation unknown",
+                    "mismatch": "Observed PoP differs from route estimate",
+                    "overdue": "PoP handover not confirmed",
+                }[kind],
+                significance="advisory",
+                schedule_key=key,
+                state="unknown",
+                notification=EventNotification(
+                    available=False,
+                    acknowledgment_available=False,
+                    reason="Continuity advisory; not an observed service outage",
+                ),
             )
             _protect(event, inputs.records)
             events.append(event)
@@ -249,6 +292,7 @@ def derive_events(inputs, *, as_of, policy):
                     merged.append((start, end, severity))
             for index, (start, end, severity) in enumerate(merged):
                 key = identity(
+                    mission_id,
                     leg_id,
                     "restriction",
                     model.get("route_geometry_identity"),
@@ -270,7 +314,11 @@ def derive_events(inputs, *, as_of, policy):
                     state=_state(start, end, as_of, True),
                     schedule_key=key,
                     family_key=identity(
-                        leg_id, model.get("route_geometry_identity"), transport, causes
+                        mission_id,
+                        leg_id,
+                        model.get("route_geometry_identity"),
+                        transport,
+                        causes,
                     ),
                     notification=EventNotification(
                         severity_generation={

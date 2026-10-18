@@ -42,6 +42,7 @@ def test_real_model_status_survives_capture(tmp_path, monkeypatch, state, want):
         pop.snapshot(sample, **inputs)
         published = pop.read_publication()
         published.update(
+            inputs_aligned=True,
             mission_id="synthetic-mission-a",
             leg_id="synthetic-leg-1",
             simulation_run_id=seeded["run_id"],

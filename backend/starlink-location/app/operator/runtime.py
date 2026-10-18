@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from threading import RLock
 
 from .clock import Clock
-from .event_policy import EventPolicy
-from .event_identity import ModelStability
-from .event_publication import EventPublication, SnapshotRegistry
 from .errors import OperatorError
+from .event_identity import ModelStability
+from .event_policy import EventPolicy
+from .event_publication import EventPublication, SnapshotRegistry
 from .models import Actor, StoreHealth
 from .references import MissionReferences
 from .service import OperatorService

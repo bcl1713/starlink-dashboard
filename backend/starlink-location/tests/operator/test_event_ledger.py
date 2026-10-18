@@ -70,10 +70,11 @@ def test_acknowledgment_receipt_recovers_without_operational_revision(
     service, clock, tmp_path
 ):
     from uuid import uuid4
-    from app.operator.event_models import AckReceipt
-    from app.operator.event_ledger import reconcile
-    from app.operator.event_policy import EventPolicy
+
     from app.operator.backup import backup_store, validated_backup
+    from app.operator.event_ledger import reconcile
+    from app.operator.event_models import AckReceipt
+    from app.operator.event_policy import EventPolicy
     from app.operator.recovery import verify_store
 
     command_id, acknowledgment_id = str(uuid4()), str(uuid4())

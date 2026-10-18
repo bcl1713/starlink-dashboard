@@ -57,3 +57,32 @@ it('keeps one shared timeline accessible across work sections without losing the
   }
   expect(read).toHaveBeenCalledTimes(1);
 });
+it('retains last-known event rows when health and feed requests fail offline', async () => {
+  const readHealth = vi
+    .spyOn(api, 'getOperatorHealth')
+    .mockResolvedValue(health);
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+  const readEvents = vi
+    .spyOn(eventApi, 'readEventSnapshot')
+    .mockResolvedValue(eventSnapshot());
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={['/operator?mission_id=mission-a']}>
+        <OperatorJournalPage />
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+  await screen.findByRole('button', { name: 'Open events' });
+  await waitFor(() => expect(readEvents).toHaveBeenCalledTimes(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Open events' }));
+  await screen.findByText('Synthetic requirement');
+  readHealth.mockRejectedValue(new Error('Offline'));
+  readEvents.mockRejectedValue(new Error('Offline'));
+  await client.invalidateQueries({ queryKey: ['operator-health'] });
+  await client.invalidateQueries({ queryKey: ['operator-events'] });
+  await waitFor(() =>
+    expect(screen.getAllByText(/Feed unavailable/).length).toBeGreaterThan(0)
+  );
+  expect(screen.getByText('Synthetic requirement')).toBeTruthy();
+});

@@ -99,7 +99,7 @@ def test_synthetic_fixture_is_deterministic_and_local(tmp_path, monkeypatch):
     assert fixture["synthetic"] and fixture["run_id"] == demo["run_id"]
 
 
-def test_acceptance_wrapper_and_private_production_compose():
+def test_acceptance_wrapper_and_private_production_compose(tmp_path):
     assert (HARNESS / "backend_fixture.py").is_file(), "missing startup injection seam"
     import yaml
 
@@ -121,8 +121,39 @@ def test_acceptance_wrapper_and_private_production_compose():
         "127.0.0.1:${OPERATOR_ACCEPTANCE_PORT:?"
         in services["mission-planner"]["ports"][0]
     )
-    wrapper = (HARNESS / "backend_fixture.py").read_text()
-    assert "@app." not in wrapper  # No clock/identity/reset HTTP endpoints.
+    # Exercise route registration in separate, resource-free imports. Only the
+    # explicitly selected synthetic event slice has clock/source controls.
+    import os
+    import subprocess
+    import sys
+
+    for enabled in ("false", "true"):
+        env = dict(
+            os.environ,
+            OPERATOR_ACCEPTANCE_FIXTURE="synthetic-local-only",
+            OPERATOR_ACCEPTANCE_ROOT=str(tmp_path / enabled),
+            STARLINK_MODE="simulation",
+            OPERATOR_EVENTS_ACCEPTANCE=enabled,
+            PYTHONPATH=str(HARNESS)
+            + os.pathsep
+            + str(ROOT / "backend/starlink-location"),
+        )
+        script = (
+            "import runpy,json; value=runpy.run_path("
+            + repr(str(HARNESS / "backend_fixture.py"))
+            + "); print(json.dumps([getattr(route,'path','') for route in value['app'].routes]))"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        routes = json.loads(result.stdout.splitlines()[-1])
+        assert ("/api/_synthetic/operator-events" in routes) == (enabled == "true")
 
 
 def test_shell_scenarios_cover_preflight_leg_and_between_leg_records():

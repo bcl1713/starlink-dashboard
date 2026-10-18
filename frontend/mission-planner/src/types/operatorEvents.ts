@@ -4,6 +4,7 @@ export interface EventNotification {
   acknowledged: boolean;
   acknowledged_at: string | null;
   retired: boolean;
+  preview?: boolean;
   eligible: boolean;
   priority: number;
   threshold_at: string | null;

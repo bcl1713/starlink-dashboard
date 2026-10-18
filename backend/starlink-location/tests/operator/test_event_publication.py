@@ -9,8 +9,8 @@ from app.operator.errors import OperatorError
 
 
 def test_replaced_publication_rejects_stale_guard(clock):
-    from app.operator.event_publication import EventPublication
     from app.operator.event_models import SourceCapture
+    from app.operator.event_publication import EventPublication
 
     gate = EventPublication()
     old = SourceCapture(
@@ -24,14 +24,15 @@ def test_replaced_publication_rejects_stale_guard(clock):
     )
     gate.publish(old)
     gate.publish(old.model_copy(update={"generation": "two"}))
-    with pytest.raises(OperatorError, match="event_snapshot_changed"):
-        with gate.guard((old,)):
-            pytest.fail("stale publication was admitted")
+    with pytest.raises(OperatorError, match="event_snapshot_changed"), gate.guard(
+        (old,)
+    ):
+        pytest.fail("stale publication was admitted")
 
 
 def test_publisher_waits_until_lease_released(clock):
-    from app.operator.event_publication import EventPublication
     from app.operator.event_models import SourceCapture
+    from app.operator.event_publication import EventPublication
 
     gate = EventPublication()
     old = SourceCapture(
@@ -60,20 +61,21 @@ def test_publisher_waits_until_lease_released(clock):
 
 
 def test_unknown_or_unguardable_sources_fail_closed(clock):
-    from app.operator.event_publication import EventPublication
     from app.operator.event_models import SourceCapture
+    from app.operator.event_publication import EventPublication
 
     gate = EventPublication()
     source = SourceCapture(source="saved", generation="one")
     gate.publish(source)
-    with pytest.raises(OperatorError, match="event_source_unavailable"):
-        with gate.guard((source,)):
-            pytest.fail("unguardable source admitted")
+    with pytest.raises(OperatorError, match="event_source_unavailable"), gate.guard(
+        (source,)
+    ):
+        pytest.fail("unguardable source admitted")
 
 
 def test_registry_is_pinned_expires_and_is_bounded(clock):
-    from app.operator.event_publication import SnapshotRegistry
     from app.operator.event_models import EventSnapshot
+    from app.operator.event_publication import SnapshotRegistry
 
     registry = SnapshotRegistry(clock=clock, capacity=2)
     original = EventSnapshot(
@@ -95,3 +97,44 @@ def test_registry_is_pinned_expires_and_is_bounded(clock):
     with pytest.raises(OperatorError):
         registry.resolve(tokens[0])
     assert registry.resolve(tokens[-1]).generation == "mutated"
+
+
+def test_source_input_update_invalidates_before_publishing_and_failure_stays_unknown(
+    clock,
+):
+    from app.operator.event_models import SourceCapture
+    from app.operator.event_publication import EventPublication
+
+    gate = EventPublication()
+    source = SourceCapture(
+        source="model",
+        generation="one",
+        aligned=True,
+        guardable=True,
+        freshness="fresh",
+        captured_at=clock.now(),
+    )
+    gate.publish(source)
+    next_source = source.model_copy(update={"generation": "two"})
+    updated = []
+
+    def update():
+        with pytest.raises(OperatorError, match="event_source_unavailable"), gate.guard(
+            (source,)
+        ):
+            pytest.fail("source was still eligible while its inputs changed")
+        updated.append(True)
+
+    gate.publish(next_source, update=update)
+    with gate.guard((next_source,)):
+        assert updated == [True]
+
+    def fail():
+        raise ValueError("synthetic input failure")
+
+    with pytest.raises(ValueError):
+        gate.publish(source, update=fail)
+    with pytest.raises(OperatorError, match="event_source_unavailable"), gate.guard(
+        (next_source,)
+    ):
+        pytest.fail("failed input publication retained old source eligibility")

@@ -29,7 +29,13 @@ class ControlledClock(ScenarioClock):
         )
 
 
-scenario_clock = ControlledClock()
+events_enabled = os.getenv("OPERATOR_EVENTS_ACCEPTANCE") == "true"
+if events_enabled:
+    from events_fixture import EventsClock
+
+    scenario_clock = EventsClock(root)
+else:
+    scenario_clock = ControlledClock()
 seed = seed_demo(root, clock=scenario_clock, mode="simulation", include_shell=True)
 storage.MISSIONS_DIR = root / "missions"
 os.environ["OPERATOR_ROOT"] = seed["roots"]["operator"]
@@ -46,9 +52,26 @@ def fixture_binding(*, clock, context):
     binding = original_binding(clock=scenario_clock, context=context)
     with binding.access() as runtime:
         runtime.freshness_policies["accepted_position"] = OBSERVATION_FRESHNESS_SECONDS
+        if events_enabled and runtime.service is not None:
+            from events_fixture import EventsFixture
+
+            main.app.state.synthetic_events = EventsFixture(
+                runtime, root, scenario_clock
+            )
     return binding
 
 
 # Only this uvicorn module replaces the constructor argument for the real app.
 main.OperatorRuntimeBinding = fixture_binding
 app = main.app
+
+
+if events_enabled:
+    from fastapi import HTTPException
+
+    @app.post("/api/_synthetic/operator-events")
+    def synthetic_events_control(body: dict):
+        try:
+            return app.state.synthetic_events.update(body)
+        except (ValueError, TypeError, KeyError):
+            raise HTTPException(422, "Invalid synthetic input") from None

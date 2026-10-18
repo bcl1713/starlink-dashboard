@@ -23,6 +23,10 @@ def reconcile(connection, events, *, as_of, policy, stability=None):
         event = original.model_copy(deep=True)
         if stability is not None and event.provenance == "modeled":
             stability.select(connection, event, as_of=as_of, policy=policy)
+        if event.notification.preview:
+            event.notification.generation = None
+            result.append(event)
+            continue
         occurrence = identity(event.mission_id, event.event_id, event.schedule_key)
         head = connection.execute(
             "SELECT occurrence_id, retired FROM event_heads WHERE event_id=?",

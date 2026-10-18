@@ -13,9 +13,9 @@ from tests.operator.test_issue_api import issue_data
 
 
 def derive(service, clock, **updates):
+    from app.operator.event_policy import EventPolicy
     from app.operator.event_projection import derive_events
     from app.operator.event_sources import EventSourceAdapter
-    from app.operator.event_policy import EventPolicy
 
     inputs = EventSourceAdapter(service).capture("demo-mission", as_of=clock.now())
     return derive_events(
@@ -93,9 +93,9 @@ def test_connected_customer_survives_conference_discrepancy(
             },
         ),
     )
-    from app.operator.event_sources import EventSourceAdapter
-    from app.operator.event_projection import derive_events
     from app.operator.event_policy import EventPolicy
+    from app.operator.event_projection import derive_events
+    from app.operator.event_sources import EventSourceAdapter
 
     inputs = EventSourceAdapter(service).capture("demo-mission", as_of=clock.now())
     if conference_state == "missing":
@@ -148,6 +148,7 @@ def test_real_pop_windows_remain_advisory_and_fallback_protects_plan(
 
 def test_forecast_revision_does_not_change_crossing_event_identity(service, clock):
     from copy import deepcopy
+
     from tests.operator.fixtures import pop_inputs
 
     model = pop_inputs(clock)["timeline"].model_dump(mode="json")
@@ -178,4 +179,81 @@ def test_forecast_revision_does_not_change_crossing_event_identity(service, cloc
             }
         )
         == 2
+    )
+
+
+def test_actual_pop_advisories_survive_without_future_forecast_windows(service, clock):
+    events = derive(
+        service,
+        clock,
+        models={
+            "leg-a": {
+                "pop_forecast": {"status": "ready", "transitions": []},
+                "pop_advisories": [
+                    {"kind": "observation_unknown"},
+                    {"kind": "overdue", "transition_id": "synthetic-crossing"},
+                ],
+            }
+        },
+    )
+    assert len(events) == 2
+    assert {event.provenance for event in events} == {"observed", "modeled"}
+    assert all(
+        event.kind == "pop_advisory" and event.significance == "advisory"
+        for event in events
+    )
+    assert all(not event.notification.available for event in events)
+    assert any("not confirmed" in event.title for event in events)
+
+
+def test_model_identity_is_scoped_to_mission_even_when_leg_ids_are_reused(
+    service, clock
+):
+    from app.operator.event_policy import EventPolicy
+    from app.operator.event_projection import derive_events
+    from app.operator.event_sources import EventSourceAdapter
+    from tests.operator.fixtures import pop_inputs
+
+    model = pop_inputs(clock)["timeline"].model_dump(mode="json")
+    original = EventSourceAdapter(service).capture("demo-mission", as_of=clock.now())
+    a = derive_events(
+        replace(original, models={"leg-a": model}),
+        as_of=clock.now(),
+        policy=EventPolicy(),
+    )
+    b = derive_events(
+        replace(original, mission_id="other-mission", models={"leg-a": model}),
+        as_of=clock.now(),
+        policy=EventPolicy(),
+    )
+    assert not {event.event_id for event in a} & {event.event_id for event in b}
+
+
+def test_fresh_source_without_continuity_evidence_stays_unknown(service, clock):
+    from app.operator.event_models import SourceCapture
+    from app.operator.event_policy import EventPolicy
+    from app.operator.event_projection import derive_events
+    from app.operator.event_sources import EventSourceAdapter
+
+    original = EventSourceAdapter(service).capture("demo-mission", as_of=clock.now())
+    inputs = replace(
+        original,
+        sources=[SourceCapture(source="model:leg-a", freshness="fresh", aligned=True)],
+        models={
+            "leg-a": {
+                "segments": [
+                    {
+                        "start_time": "2026-10-17T16:00:00Z",
+                        "end_time": "2026-10-17T16:10:00Z",
+                        "ka_state": "offline",
+                    }
+                ]
+            }
+        },
+    )
+    assert (
+        derive_events(inputs, as_of=clock.now(), policy=EventPolicy())[
+            0
+        ].continuity_status
+        == "unknown"
     )

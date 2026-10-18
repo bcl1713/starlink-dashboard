@@ -15,12 +15,12 @@ def pending(api, record_data):
     return (
         data,
         record,
-        dict(
-            schema_version=1,
-            occurrence_id=event["notification"]["generation"],
-            severity_generation=event["notification"]["severity_generation"],
-            snapshot_token=feed["snapshot_token"],
-        ),
+        {
+            "schema_version": 1,
+            "occurrence_id": event["notification"]["generation"],
+            "severity_generation": event["notification"]["severity_generation"],
+            "snapshot_token": feed["snapshot_token"],
+        },
     )
 
 
@@ -29,7 +29,7 @@ def test_acknowledgment_is_shared_without_mutating_call(
 ):
     from app.operator.recovery import verify_store
 
-    data, record, body = pending(api, record_data)
+    _data, _record, body = pending(api, record_data)
     key = str(uuid4())
     first = api.post(BASE + "/events/acknowledge", json=body, headers=headers(api, key))
     assert first.status_code == 200, first.text

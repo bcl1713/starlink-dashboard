@@ -2,8 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution, or superpowers:subagent-driven-development if the user
-> selects delegation. Steps use checkbox syntax for tracking. Implementation
-> awaits plan review and execution-method selection.
+> selects delegation. Steps use checkbox syntax for tracking. Native execution
+> authorized by the user after approval in PR #379 comment 6244505182. Tasks 1–7
+> implemented; Task 8 acceptance and final review in progress.
 
 **Goal:** Deliver #368's authoritative UTC event feed and separate local alerts,
 with durable shared acknowledgment and bounded reconnect behavior.
@@ -481,7 +482,7 @@ mutation endpoint.
       retry.
 - [ ] Commit the product/harness/docs candidate, then execute from repository
       root:
-      `timeout --kill-after=10s 90m python tools/acceptance/operator-journal/run.py --candidate "$(git rev-parse HEAD)" --project starlink-issue-368-events --evidence test-results/issue-368-events --events`.
+      `timeout --kill-after=10s 90m python tools/acceptance/operator-journal/run.py --candidate "$(git rev-parse HEAD)" --project starlink-operator-events-368 --evidence test-results/issue-368-events --events`.
       Extend the existing parser/run selection to support the new `--events`
       flag. Internal build/browser probes retain tighter ownership-aware limits.
       Any product fix requires a new candidate SHA and rerun of affected
