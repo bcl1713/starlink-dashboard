@@ -135,8 +135,20 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
       await expect(
         drawer.getByText(restriction.title, { exact: true }).first()
       ).toBeVisible();
+      await expect
+        .poll(async () =>
+          drawer.evaluate((element) => {
+            const bounds = element.getBoundingClientRect();
+            return (
+              Math.abs(bounds.top) < 1 &&
+              Math.abs(bounds.right - window.innerWidth) < 1
+            );
+          })
+        )
+        .toBe(true);
       await noOverflow(page);
       await page.screenshot({
+        animations: 'disabled',
         path: join(
           evidence,
           `model-alerts-${viewport.width}x${viewport.height}.png`
@@ -147,6 +159,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
         await noOverflow(page);
         await page.screenshot({
           path: join(evidence, 'model-alerts-844x390.png'),
+          animations: 'disabled',
         });
       }
       await drawer
