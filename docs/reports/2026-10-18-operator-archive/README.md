@@ -96,3 +96,10 @@ tags, browser/renderer children, byte-relay listener and temporary source
 archives. Raw command logs and ownership evidence remain in
 `/tmp/issue-370/acceptance-a8` without live resources. The feature worktree is
 retained for the open PR. No merge was performed.
+
+## Portability review follow-up
+
+The [review follow-up evidence](review-followup/README.md) records the larger
+spooled-import limit, independent planning bounds, snapshot capacities, actual
+148 MiB and 2 GiB HTTP imports, memory measurements and recovery cleanup for
+production candidate `5f3bc636`.

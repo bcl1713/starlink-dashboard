@@ -1,0 +1,33 @@
+{
+  "synthetic": true,
+  "customerPdf": "exports/mission/Synthetic Mission A-brief.pdf",
+  "customerPdfPages": 2,
+  "archivedLegs": 2,
+  "records": 22,
+  "revisions": 24,
+  "modeledPopOccurrences": 1,
+  "sourceMode": "simulation",
+  "telemetrySourceMode": "live",
+  "syntheticOperationalFormatTelemetry": true,
+  "independentChecksums": true,
+  "cleanSeparateInstanceImport": {
+    "success": true,
+    "mission_id": "synthetic-mission-a",
+    "mission_name": "Synthetic Mission A",
+    "leg_count": 2,
+    "routes_imported": 1,
+    "pois_imported": 0,
+    "endpoint_pois_restored": 4,
+    "satellites_imported": 0,
+    "satellites_updated": 0,
+    "warnings": []
+  },
+  "destinationJournalUnmodified": true,
+  "legacyImport": true,
+  "repeatBytesIdentical": true,
+  "retrospectiveNewSnapshot": true,
+  "correctedEffectiveChronology": true,
+  "originalDownloadImmutable": true,
+  "sha256": "2fe8377d35d591e9655af1b3a5fb2a4832d7875cfceaf4f5a06ae57f736b4f1e",
+  "latestSha256": "aa4480191e070400885b406030777b97f64f93be8de90647b9d36b9864ad9afa"
+}

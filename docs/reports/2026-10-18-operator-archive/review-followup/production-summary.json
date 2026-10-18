@@ -1,0 +1,129 @@
+{
+  "candidateSha": "5f3bc63695c596d4ebc71f5e2d6f0dbded17f026",
+  "project": "starlink-operator-370-r2",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-370-r2-backend:5f3bc63695c596d4ebc71f5e2d6f0dbded17f026",
+      "id": "sha256:873b228c3d74a6319b071e595bf597c3e1be58ed5e04eec24bb8beeaafdb06e7",
+      "revision": "5f3bc63695c596d4ebc71f5e2d6f0dbded17f026"
+    },
+    "frontend": {
+      "tag": "starlink-operator-370-r2-frontend:5f3bc63695c596d4ebc71f5e2d6f0dbded17f026",
+      "id": "sha256:5974a433c4bff19924fb8a35a771bfa61332c6a5d1167eaf0c609f15bad2e847",
+      "revision": "5f3bc63695c596d4ebc71f5e2d6f0dbded17f026"
+    }
+  },
+  "sourceArchiveSha256": "dc18e2412fe211398d27d54cdaa3b749809f0f4640072ef3cab089c43f4d5c8b",
+  "qualification": {
+    "singlePackageRoundTrip": {
+      "synthetic": true,
+      "customerPdf": "exports/mission/Synthetic Mission A-brief.pdf",
+      "customerPdfPages": 2,
+      "archivedLegs": 2,
+      "records": 22,
+      "revisions": 24,
+      "modeledPopOccurrences": 1,
+      "sourceMode": "simulation",
+      "telemetrySourceMode": "live",
+      "syntheticOperationalFormatTelemetry": true,
+      "independentChecksums": true,
+      "cleanSeparateInstanceImport": {
+        "success": true,
+        "mission_id": "synthetic-mission-a",
+        "mission_name": "Synthetic Mission A",
+        "leg_count": 2,
+        "routes_imported": 1,
+        "pois_imported": 0,
+        "endpoint_pois_restored": 4,
+        "satellites_imported": 0,
+        "satellites_updated": 0,
+        "warnings": []
+      },
+      "destinationJournalUnmodified": true,
+      "legacyImport": true,
+      "repeatBytesIdentical": true,
+      "retrospectiveNewSnapshot": true,
+      "correctedEffectiveChronology": true,
+      "originalDownloadImmutable": true,
+      "sha256": "2fe8377d35d591e9655af1b3a5fb2a4832d7875cfceaf4f5a06ae57f736b4f1e",
+      "latestSha256": "aa4480191e070400885b406030777b97f64f93be8de90647b9d36b9864ad9afa"
+    },
+    "largeArchiveAndLimits": {
+      "synthetic": true,
+      "coverage": "Large fixture exercises frozen-supplement persistence, ZIP assembly and HTTP import; not source capture capacity. Full capture is covered by singlePackageRoundTrip.",
+      "source": "36-hour, 13-channel, 1 Hz CSV size fixture; not aircraft observations",
+      "storageQuotaRejectionAtomic": true,
+      "snapshotQuotaRejectionAtomic": true,
+      "expiredSnapshotAndArtifactRemoved": true,
+      "rows": 1684800,
+      "expandedTelemetryBytes": 153351912,
+      "preparedZipBytes": 11637260,
+      "largeTransferZipBytes": 154703848,
+      "databasePeakBytes": 155525120,
+      "databaseAfterReleaseBytes": 155525120,
+      "liveSnapshotsAfterRelease": 0,
+      "cleanDestinationJournalUnchanged": true,
+      "sourceJournalUnchanged": true,
+      "directAndProductionNginxImport": true,
+      "uploadBoundaries": [
+        {
+          "zipBytes": 2147483648,
+          "status": 200,
+          "layer": null
+        },
+        {
+          "zipBytes": 2147483649,
+          "status": 413,
+          "layer": "application"
+        },
+        {
+          "zipBytes": 2149580800,
+          "status": 413,
+          "layer": "mission-planner-nginx"
+        }
+      ],
+      "backendHighWaterBeforeBytes": 291774464,
+      "backendHighWaterAfterBytes": 294436864,
+      "probePeakRssBytes": 967196672,
+      "elapsedSeconds": 19.93,
+      "temporaryFilesRemoved": true
+    },
+    "exportFailure": {
+      "enabledUnreadableJournalReturns503": true,
+      "noFalseArchiveDownload": true
+    },
+    "restartFrozenDownload": {
+      "readyDownloadAfterRestartIdentical": true,
+      "sha256": "aa4480191e070400885b406030777b97f64f93be8de90647b9d36b9864ad9afa"
+    },
+    "productionBrowser": {
+      "synthetic": true,
+      "captures": [
+        "1920x1080",
+        "390x844",
+        "844x390"
+      ],
+      "existingExportControls": true,
+      "failedNetworkRetry": true,
+      "downloadableZip": true,
+      "existingImportControls": true,
+      "uiImportSucceededWithoutJournalMutation": true,
+      "operatorResponsive": true,
+      "browserErrors": []
+    }
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

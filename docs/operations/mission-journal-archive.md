@@ -79,13 +79,14 @@ Import uses Starlette's disk-spooled upload directly, without reading the whole
 ZIP into memory. Before constructing ZIP entries, a bounded standard-library
 classic/ZIP64 footer read enforces at most 10,000 entries and a 16 MiB central
 directory. Planning members (`mission.json`, `planning/`, `routes/`, `pois/` and
-`itinerary/`) have a separate **100 MiB expanded-byte total**. This preserves the
-previous planning capacity while rejecting compressed planning expansion before
-reading or publishing it. Journal, telemetry and briefing members are neither
-inflated nor applied during plan import. Keep adequate temporary disk capacity
-for both the Nginx request body and backend upload spool; a near-limit upload
-can temporarily use approximately 4 GiB across the two services. The limits
-apply to legacy and enhanced packages alike. The import rate limit is unchanged.
+`itinerary/`) have a separate **100 MiB expanded-byte total**. This keeps
+planning materialization bounded while rejecting excessive compressed planning
+expansion before reading or publishing it. Journal, telemetry and briefing
+members are neither inflated nor applied during plan import. Keep adequate
+temporary disk capacity for both the Nginx request body and backend upload
+spool; a near-limit upload can temporarily use approximately 4 GiB across the
+two services. The limits apply to legacy and enhanced packages alike. The import
+rate limit is unchanged.
 
 Export still uses the existing local capture/build architecture. Each journal
 and telemetry capture has a **128 MiB input budget**; journal rows and unsealed

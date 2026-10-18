@@ -1008,6 +1008,14 @@ class TestMissionV2UpdateEndpoint:
 class TestMissionPackageImportLimits:
     """Regression coverage for the mission-package upload contract."""
 
+    @pytest.fixture(autouse=True)
+    def isolate_import_rate_limit(self):
+        # These boundary requests must not consume another test's shared
+        # five-per-minute allowance. Keep production rate limiting enabled.
+        mission_routes_v2.limiter.reset()
+        yield
+        mission_routes_v2.limiter.reset()
+
     def test_import_rejects_an_oversize_package_with_attributable_413(
         self, client, monkeypatch
     ):
