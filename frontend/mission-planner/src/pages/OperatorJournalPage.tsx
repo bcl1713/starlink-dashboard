@@ -306,6 +306,7 @@ export function OperatorJournalPage() {
                 )}
                 <button
                   className="min-h-11 rounded-md border px-3"
+                  disabled={journal.saving}
                   onClick={async () => {
                     const reconciled = await journal.reconcile();
                     if (reconciled) select(reconciled.current);
