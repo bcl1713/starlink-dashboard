@@ -54,6 +54,10 @@ import { trainingContext } from '../training/trainingContext';
 import { collectEventEvidence } from '../training/trainingEventEvidence';
 import { readTrainingRecords } from '../training/readTrainingRecords';
 import type { TrainingEvidence } from '../training/trainingSteps';
+import {
+  isCurrentTrainingEvidence,
+  type CheckedTrainingEvidence,
+} from '../training/trainingEvidence';
 import './workspace.css';
 
 const views = [
@@ -105,14 +109,8 @@ export function OperatorWorkspace() {
   const [tools, setTools] = useState(false);
   const [help, setHelp] = useState(false);
   const [guide, setGuide] = useState(false);
-  const [checkedTraining, setCheckedTraining] = useState<
-    | (TrainingEvidence & {
-        identity: string;
-        H: number | undefined;
-        checkedAt: number;
-      })
-    | null
-  >(null);
+  const [checkedTraining, setCheckedTraining] =
+    useState<CheckedTrainingEvidence | null>(null);
   const training = trainingContext(
     health.data,
     mission.data,
@@ -130,10 +128,12 @@ export function OperatorWorkspace() {
         activeModelIdentity: null,
       })
     : null;
-  const trainingRecordsCurrent =
-    checkedTraining?.identity === trainingIdentity &&
-    checkedTraining.H === events.snapshot?.H &&
-    performance.now() - checkedTraining.checkedAt < 30_000;
+  const trainingRecordsCurrent = isCurrentTrainingEvidence(
+    checkedTraining,
+    trainingIdentity,
+    events.snapshot?.H,
+    performance.now()
+  );
   const trainingEvidence: TrainingEvidence = {
     available: trainingEvents?.available ?? false,
     fresh: !events.failed && (trainingEvents?.fresh ?? false),

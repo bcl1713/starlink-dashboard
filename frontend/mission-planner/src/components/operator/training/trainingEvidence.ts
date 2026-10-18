@@ -117,7 +117,8 @@ export function collectRecordEvidence(
         prior &&
         prior.record_id !== r.record_id &&
         prior.payload.entry_type === 'participation' &&
-        prior.payload.state === 'left' &&
+        (prior.payload.state === 'left' ||
+          prior.payload.state === 'interrupted') &&
         prior.time.occurred_at &&
         prior.time.ended_at &&
         r.time.occurred_at &&
@@ -192,4 +193,26 @@ export function collectRecordEvidence(
     fresh: source.fresh,
     outcomes: [...outcomes],
   };
+}
+
+export interface CheckedTrainingEvidence extends TrainingEvidence {
+  identity: string;
+  H: number | undefined;
+  checkedAt: number;
+}
+export function isCurrentTrainingEvidence(
+  checked: CheckedTrainingEvidence | null,
+  identity: string | undefined,
+  H: number | undefined,
+  now: number
+): checked is CheckedTrainingEvidence {
+  return (
+    !!checked &&
+    !!identity &&
+    checked.identity === identity &&
+    H !== undefined &&
+    checked.H === H &&
+    now >= checked.checkedAt &&
+    now - checked.checkedAt < 30_000
+  );
 }

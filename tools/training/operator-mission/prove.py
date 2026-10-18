@@ -59,17 +59,18 @@ def main():
         images = {}
         for service in ("backend", "frontend"):
             tag = f"{training.project}-{service}:{current}"
-            inspected = json.loads(runner.execute(["docker", "image", "inspect", tag]))[
-                0
-            ]
-            revision = inspected["Config"]["Labels"].get(
-                "org.opencontainers.image.revision"
+            image_format = '{"id":{{json .Id}},"revision":{{json (index .Config.Labels "org.opencontainers.image.revision")}}}'
+            inspected = json.loads(
+                runner.execute(
+                    ["docker", "image", "inspect", "--format", image_format, tag]
+                )
             )
+            revision = inspected["revision"]
             if revision != current:
                 raise ValueError(
                     "Training image revision does not match the committed candidate"
                 )
-            images[service] = {"tag": tag, "id": inspected["Id"], "revision": revision}
+            images[service] = {"tag": tag, "id": inspected["id"], "revision": revision}
         (root / "image-identity.json").write_text(
             json.dumps(
                 {

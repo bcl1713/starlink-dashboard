@@ -216,3 +216,74 @@ it('revalidates a learner write from complete authoritative history after receip
     }).outcomes
   ).not.toContain('scoped-note');
 });
+
+it('never matches absent identities or missing evidence during cold load', async () => {
+  const { isCurrentTrainingEvidence } = await import('./trainingEvidence');
+  expect(isCurrentTrainingEvidence(null, undefined, undefined, 100)).toBe(
+    false
+  );
+  const checked = {
+    identity: 'private',
+    H: 9,
+    checkedAt: 50,
+    available: true,
+    fresh: true,
+    outcomes: ['scoped-note'],
+  };
+  expect(isCurrentTrainingEvidence(checked, 'private', 9, 100)).toBe(true);
+  expect(isCurrentTrainingEvidence(checked, 'other', 9, 100)).toBe(false);
+  expect(isCurrentTrainingEvidence(checked, 'private', 10, 100)).toBe(false);
+  expect(isCurrentTrainingEvidence(checked, 'private', 9, 31000)).toBe(false);
+});
+it('accepts the preserved interrupted interval used by the real Restore connection command', () => {
+  const earlier: SavedRecord = {
+    ...note,
+    record_type: 'participation',
+    record_id: 'interrupted',
+    payload: {
+      ...note.payload,
+      entry_type: 'participation',
+      call_id: null,
+      conference_id: 'bridge',
+      participant: 'Meridian',
+      state: 'interrupted',
+      resumes_participation_id: null,
+    },
+    time: {
+      ...note.time,
+      occurred_at: '2026-10-18T10:00:00Z',
+      ended_at: '2026-10-18T10:02:00Z',
+      end_state: 'known',
+    },
+  };
+  const current: SavedRecord = {
+    ...earlier,
+    record_id: 'restored',
+    command_id: 'restore',
+    payload: {
+      ...earlier.payload,
+      entry_type: 'participation',
+      call_id: null,
+      conference_id: 'bridge',
+      participant: 'Meridian',
+      state: 'connected',
+      resumes_participation_id: earlier.record_id,
+    },
+    time: {
+      ...earlier.time,
+      occurred_at: '2026-10-18T10:03:00Z',
+      ended_at: null,
+      end_state: 'ongoing',
+    },
+  };
+  const evidence = {
+    ...source,
+    records: [earlier, current],
+    history: [earlier, current],
+    historyComplete: true,
+    receipts: [],
+  };
+  expect(collectRecordEvidence(evidence).outcomes).toContain(
+    'participation-resumed-new-interval'
+  );
+});
