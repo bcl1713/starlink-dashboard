@@ -3,7 +3,11 @@
 Issue #368, epic #361; draft PR #379. All inputs are synthetic. These checks
 establish software behavior, not aircraft readiness or physical sound delivery.
 
-## Production acceptance
+Latest production modeled-alert qualification, review fixes and decisions are in
+[the follow-up report](modeled-alerts.md). It supersedes the initial limitation
+that withheld normal modeled cues.
+
+## Initial production acceptance
 
 Candidate: `7d0c61fde80a1dd541474d54a812ac4e98a932c8`. Production backend and
 frontend Dockerfiles, with Nginx serving the compiled application on ordinary

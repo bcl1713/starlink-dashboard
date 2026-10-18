@@ -42,13 +42,39 @@ adapter, inject prediction results or manually designate a source guardable. It
 supplies route points/timing, telemetry, coverage and satellite/PoP catalogs to
 the real application and records actual browser audio oscillator attempts.
 
-Candidate `45c4a93bf55fc18eb8465504faa70a5e39b35d96` passed desktop/mobile
-foreground sound, two-client acknowledgment, route/position updates, stale and
-unavailable sources, explicit deactivation and restart; Overview compatibility,
-acknowledgment crash/backup recovery, storage failures and existing #349 exports
-also passed. Its complete task-owned runtime was removed. This intermediate run
-preceded the final review fixes; final candidate evidence is recorded below when
-qualification completes.
+Final production candidate: `3e216a26d0607fa9f6892baa0f8eef5019eceedd`.
+
+All three browser scenarios passed: Overview/display compatibility, actual
+nonsecure aircraft-LAN HTTP without secure-context UUID support, and modeled
+foreground alerts. The model scenario asserts that the significant X restriction
+is still in the future and within five minutes when it becomes eligible, then
+records one actual audio oscillator attempt per client after the enable gesture.
+Desktop/mobile captures are 1920×1080, 390×844 and 844×390; settled drawer
+bounds and horizontal overflow are checked.
+
+- [Exact image/archive identity, checks and cleanup](model-alerts/summary.json)
+- [Operational browser assertions](model-alerts/model-alerts-proof.json)
+- [All qualification results](model-alerts/qualification.json)
+- [LAN HTTP evidence](model-alerts/events-lan-http.json)
+- [Acknowledgment crash/backup recovery](model-alerts/events-backend.json)
+- [Desktop capture](model-alerts/model-alerts-1920x1080.png),
+  [mobile capture](model-alerts/model-alerts-390x844.png),
+  [landscape capture](model-alerts/model-alerts-844x390.png)
+- [Selected evidence hashes](model-alerts/hashes.json)
+
+The final seed contains no injected model timelines. Earlier intermediate runs
+retained legacy example planning rows and exposed ambiguous selectors, audio
+readiness timing and premature animation captures; those are superseded by the
+raw-only, approaching-warning run above. No prediction result was altered to
+make a test pass. All task containers, networks, volumes, processes, listeners,
+images and temporary build trees were removed after each run.
+
+Full verification: backend **4,125 passed, 20 skipped**; frontend **1,829
+passed**; production build and canonical static gate passed; **31
+acceptance/ownership harness tests passed**. The final evidence commit changes
+documentation only;
+[PR-head CI](https://github.com/bcl1713/starlink-dashboard/pull/379/checks)
+verifies the submitted branch after that commit.
 
 Fresh review identified two important defects: per-leg retirement during a
 switch, and malformed optional Ka coverage suppressing independent X warnings.
