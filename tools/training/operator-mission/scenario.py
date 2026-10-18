@@ -109,6 +109,7 @@ def seed_prerequisites(root, *, routes_dir=None):
     fixture["mission"]["legs"][1]["name"] = "Second flight · Harbor to Meridian"
     for index, leg in enumerate(fixture["mission"]["legs"], 1):
         leg["route_id"] = f"operator-training-leg-{index}"
+        leg["transports"]["initial_ka_satellite_ids"] = ["AOR"]
     later = copy.deepcopy(fixture["planned_commands"][:2])
     for index, command in enumerate(later):
         command["leg_id"] = fixture["mission"]["legs"][1]["id"]
@@ -116,7 +117,18 @@ def seed_prerequisites(root, *, routes_dir=None):
         start = _existing_clock_module().START + timedelta(minutes=65 + index * 5)
         command["time"]["planned_start_at"] = start.isoformat()
         command["time"]["planned_end_at"] = (start + timedelta(minutes=15)).isoformat()
-    commands = fixture["planned_commands"] + later
+    overdue = copy.deepcopy(fixture["planned_commands"][0])
+    overdue["scope"] = "mission"
+    overdue["leg_id"] = None
+    overdue["payload"]["title"] = "Synthetic overdue coordination"
+    overdue["payload"]["party"] = "Synthetic overdue customer"
+    overdue["time"]["planned_start_at"] = (
+        _existing_clock_module().START - timedelta(minutes=15)
+    ).isoformat()
+    overdue["time"]["planned_end_at"] = (
+        _existing_clock_module().START - timedelta(minutes=5)
+    ).isoformat()
+    commands = fixture["planned_commands"] + later + [overdue]
     routes = (
         Path(routes_dir) if routes_dir is not None else root / "route-data" / "routes"
     )
@@ -252,6 +264,7 @@ def apply_checkpoint(root, checkpoint_id):
         "latitude": 0,
         "longitude": step["longitude"],
         "speed": step["speed"],
+        "heading": 270 if checkpoint_id in ("leg-two", "postflight") else 90,
         "stale": False,
         "invalid_ka": False,
         "missing_pop": False,

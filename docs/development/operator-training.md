@@ -55,7 +55,7 @@ The initial preflight clock is 2026-10-17 16:00 UTC. The first route starts then
 the second starts at 16:45 UTC. Checkpoints move forward only. Back in the guide
 must not rewind time or undo journal writes.
 
-The fixture seeds two routes and seven **planned** requirements. Calls,
+The fixture seeds two routes and eight **planned** requirements, including one past planned requirement. Additional calls,
 conferences, customer intervals, transport reports, issue updates, observations,
 acknowledgments and completion evidence must come from actual learner actions.
 Each private root supplies a stable fixture journal namespace across actual

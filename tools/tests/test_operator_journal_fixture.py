@@ -105,9 +105,20 @@ def test_acceptance_wrapper_and_private_production_compose(tmp_path):
 
     compose = yaml.safe_load((HARNESS / "compose.yml").read_text())
     services = compose["services"]
-    assert set(services) == {"starlink-location", "mission-planner"}
+    assert set(services) == {
+        "starlink-location",
+        "mission-planner",
+        "import-destination",
+    }
+    assert {
+        name for name, service in services.items() if not service.get("profiles")
+    } == {"starlink-location", "mission-planner"}
+    assert services["import-destination"]["profiles"] == ["archive"]
+    assert "ports" not in services["import-destination"]
     backend = services["starlink-location"]
-    assert "backend_fixture:app" in backend["command"]
+    assert (
+        "${OPERATOR_ACCEPTANCE_ENTRYPOINT:-backend_fixture}:app" in backend["command"]
+    )
     assert backend["environment"]["STARLINK_MODE"] == "simulation"
     assert backend["environment"]["OPERATOR_ENABLED"] == "true"
     assert compose["networks"]["default"]["internal"] is True

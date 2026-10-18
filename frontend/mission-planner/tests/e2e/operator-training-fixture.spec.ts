@@ -50,7 +50,7 @@ test('training fixture: normal replay across two legs preserves journal, receipt
       ).json()
     ).items;
   const prerequisites = await records();
-  expect(prerequisites).toHaveLength(7);
+  expect(prerequisites).toHaveLength(8);
   expect(
     prerequisites.every(
       (item: { record: { record_type: string; version: number } }) =>
@@ -155,11 +155,28 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   const firstFeed = await (
     await page.request.get(`/api/v2/operator/events?mission_id=${id}`)
   ).json();
+  writeFileSync(
+    join(root, 'first-airborne-source-proof.json'),
+    JSON.stringify({ initial, firstRun: first, airborne, firstFeed }, null, 2)
+  );
   expect(
     firstFeed.events.some(
       (event: { provenance: string }) => event.provenance === 'modeled'
     )
   ).toBe(true);
+  for (const transport of ['X', 'Ka', 'Starshield'])
+    expect(
+      firstFeed.events.some(
+        (event: { provenance: string; transport: string }) =>
+          event.provenance === 'modeled' && event.transport === transport
+      )
+    ).toBe(true);
+  const firstModel = firstFeed.sources.find(
+    (source: { source: string }) =>
+      source.source === `model:${mission.legs[0].id}`
+  );
+  expect(firstModel).toMatchObject({ freshness: 'fresh', aligned: true });
+  expect(firstModel.captured_at).toMatch(/^2026-10-17T16:15/);
   await expect(
     page.getByRole('region', { name: 'Next requirement', exact: true })
   ).toContainText('Synthetic customer 1 briefing');
@@ -179,6 +196,10 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   const feed = await (
     await page.request.get(`/api/v2/operator/events?mission_id=${id}`)
   ).json();
+  writeFileSync(
+    join(root, 'overdue-source-proof.json'),
+    JSON.stringify(feed, null, 2)
+  );
   expect(
     feed.events.some(
       (event: { state: string; kind: string }) =>
@@ -218,6 +239,12 @@ test('training fixture: normal replay across two legs preserves journal, receipt
     await page.request.get(`/api/v2/operator/events?mission_id=${id}`)
   ).json();
   expect(secondFeed.as_of).toMatch(/^2026-10-17T17:05/);
+  const secondModel = secondFeed.sources.find(
+    (source: { source: string }) =>
+      source.source === `model:${mission.legs[1].id}`
+  );
+  expect(secondModel).toMatchObject({ freshness: 'fresh', aligned: true });
+  expect(secondModel.captured_at).toMatch(/^2026-10-17T17:05/);
   const replay = await page.request.post(
     '/api/v2/operator/events/acknowledge',
     { data: ackBody, headers: frozenHeaders }
@@ -225,7 +252,7 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   expect(replay.ok()).toBe(true);
   expect(await replay.json()).toEqual(ackReceipt);
   const beforeRestart = await records();
-  expect(beforeRestart).toHaveLength(11);
+  expect(beforeRestart).toHaveLength(12);
   // Use the recorded project's normal restart. Stopped replay is not reconstructed.
   host('restart');
   await expect

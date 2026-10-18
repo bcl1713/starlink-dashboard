@@ -76,6 +76,7 @@ async def apply_raw_checkpoint(request, call_next):
                         seed=False,
                         manage_route=False,
                         restore_phase=False,
+                        ka_east_longitude=0,
                         initial_inputs={
                             key: inputs[key]
                             for key in (
@@ -83,6 +84,7 @@ async def apply_raw_checkpoint(request, call_next):
                                 "latitude",
                                 "longitude",
                                 "speed",
+                                "heading",
                                 "stale",
                                 "invalid_ka",
                                 "missing_pop",
@@ -101,6 +103,7 @@ async def apply_raw_checkpoint(request, call_next):
                         "latitude",
                         "longitude",
                         "speed",
+                        "heading",
                         "stale",
                         "invalid_ka",
                         "missing_pop",

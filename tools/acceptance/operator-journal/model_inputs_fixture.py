@@ -35,10 +35,12 @@ class ModelInputsFixture:
         seed=True,
         manage_route=True,
         restore_phase=True,
-        initial_inputs=None
+        initial_inputs=None,
+        ka_east_longitude=20
     ):
         self.main, self.runtime, self.clock = main, runtime, clock
         self.manage_route, self.restore_phase = manage_route, restore_phase
+        self.ka_east_longitude = ka_east_longitude
         self.path = Path(root) / "operator" / "synthetic-model-inputs.json"
         self.state = (
             json.loads(self.path.read_text())
@@ -48,6 +50,7 @@ class ModelInputsFixture:
                 "longitude": -9.5,
                 "latitude": 0,
                 "speed": 600,
+                "heading": 90,
                 "route_latitude": 0,
                 "phase": "in_flight",
                 "route_shift": 14,
@@ -87,8 +90,8 @@ class ModelInputsFixture:
                                     "coordinates": [
                                         [
                                             [-20, -10],
-                                            [20, -10],
-                                            [20, 10],
+                                            [self.ka_east_longitude, -10],
+                                            [self.ka_east_longitude, 10],
                                             [-20, 10],
                                             [-20, -10],
                                         ]
@@ -174,7 +177,9 @@ class ModelInputsFixture:
                 state["latitude"],
                 state["longitude"],
             )
-            sample.position.speed, sample.position.heading = state["speed"], 90
+            sample.position.speed, sample.position.heading = state["speed"], state.get(
+                "heading", 90
+            )
             observed = self.clock.now() - timedelta(seconds=60 if state["stale"] else 0)
             sample.position.observed_at = observed
             sample.position.speed_observed_at = observed

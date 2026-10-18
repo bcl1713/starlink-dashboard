@@ -69,7 +69,7 @@ def test_prerequisites_seed_only_planned_requirements_and_reopen_without_replayi
     assert first["H"] == second["H"]
     assert first["learner_actions_seeded"] is False
     assert len(first["leg_ids"]) == 2
-    assert len(first["record_ids"]) >= 5
+    assert len(first["record_ids"]) == 8
 
 
 def test_real_records_acknowledgments_and_receipts_share_fixture_namespace_across_segments(
