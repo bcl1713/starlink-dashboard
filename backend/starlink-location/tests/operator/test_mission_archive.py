@@ -245,3 +245,42 @@ def test_concurrent_correction_cannot_change_prepared_journal(
         release.set()
         preparation.close()
         runtime.close()
+
+
+def test_empty_draft_mission_still_exports_with_healthy_telemetry(
+    service, clock, tmp_path
+):
+    from types import SimpleNamespace
+    from app.mission import storage
+    from app.mission.models import Mission
+    from app.operator.runtime import OperatorRuntime
+    from app.mission.package.operations_archive import capture_archive
+    from app.services.telemetry_archive.preparation import TelemetryPreparationService
+    from app.services.telemetry_archive.store import ArchiveStore
+
+    storage.save_mission_v2(Mission(id="empty-draft", name="Synthetic draft", legs=[]))
+    archive = ArchiveStore(tmp_path / "empty-archive.db")
+    telemetry = TelemetryPreparationService(
+        tmp_path / "telemetry", archive, storage.load_mission_v2
+    )
+    runtime = OperatorRuntime.start(service.store.settings, clock=clock)
+    request = SimpleNamespace(
+        app=SimpleNamespace(
+            state=SimpleNamespace(
+                operator_runtime=runtime,
+                flight_event_runtime=SimpleNamespace(preparations=telemetry),
+            )
+        )
+    )
+    try:
+        snapshot = capture_archive(request, "empty-draft")
+        assert snapshot["components"]["telemetry"]["status"] == "not_applicable"
+        assert snapshot["components"]["telemetry"]["reason"] == "no_executable_legs"
+        assert "operations/journal.json" in snapshot["files"]
+        import pytest
+
+        with pytest.raises(ValueError, match="incomplete"):
+            telemetry.start("empty-draft", allow_partial=True)
+    finally:
+        runtime.close()
+        telemetry.close()

@@ -40,6 +40,19 @@ test('single mission ZIP archive uses existing export and import controls', asyn
         path: join(evidence, `archive-export-${width}x${height}.png`),
         fullPage: true,
       });
+      if (width === 1920) {
+        await page.route(
+          '**/api/v2/missions/synthetic-mission-a/export',
+          (route) => route.abort('failed')
+        );
+        await dialog
+          .getByRole('button', { name: 'Export', exact: true })
+          .click();
+        await expect(
+          dialog.getByText('Export failed. Please try again.', { exact: true })
+        ).toBeVisible();
+        await page.unroute('**/api/v2/missions/synthetic-mission-a/export');
+      }
       const downloading = page.waitForEvent('download', { timeout: 600_000 });
       await dialog.getByRole('button', { name: 'Export', exact: true }).click();
       const download = await downloading;
@@ -85,6 +98,7 @@ test('single mission ZIP archive uses existing export and import controls', asyn
         synthetic: true,
         captures,
         existingExportControls: true,
+        failedNetworkRetry: true,
         downloadableZip: true,
         existingImportControls: true,
         operatorResponsive: true,

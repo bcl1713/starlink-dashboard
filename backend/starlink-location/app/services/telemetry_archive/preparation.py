@@ -52,7 +52,9 @@ class TelemetryPreparationService:
                 (job.model_dump_json(), job.id, job.mission_id),
             )
 
-    def capture_snapshot(self, mission_id: str, allow_partial: bool = False):
+    def capture_snapshot(
+        self, mission_id: str, allow_partial: bool = False, *, allow_empty: bool = False
+    ):
         mission = self.load_mission(mission_id)
         if mission is None:
             raise KeyError("Mission not found")
@@ -82,7 +84,7 @@ class TelemetryPreparationService:
                     )
                 }
             captures.append(capture)
-        if not captures or (
+        if (not captures and not allow_empty) or (
             not allow_partial
             and any(not capture.get("complete") for capture in captures)
         ):

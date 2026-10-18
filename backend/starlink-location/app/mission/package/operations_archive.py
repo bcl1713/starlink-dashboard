@@ -130,35 +130,46 @@ def capture_archive(request, mission_id):
         }
     else:
         started = datetime.now(timezone.utc).isoformat()
-        data = flight.preparations.capture_snapshot(mission_id, allow_partial=True)
-        from app.services.telemetry_archive.package import build_telemetry_package
-
-        payload = build_telemetry_package(
-            mission_id, data["captures"], allow_partial=True
+        data = flight.preparations.capture_snapshot(
+            mission_id, allow_partial=True, allow_empty=True
         )
-        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-            files.update(
-                {"telemetry/" + name: archive.read(name) for name in archive.namelist()}
+        if not data["captures"]:
+            components["telemetry"] = {
+                "status": "not_applicable",
+                "reason": "no_executable_legs",
+            }
+        else:
+            from app.services.telemetry_archive.package import build_telemetry_package
+
+            payload = build_telemetry_package(
+                mission_id, data["captures"], allow_partial=True
             )
-        components["telemetry"] = {
-            "status": "included",
-            "capture_started_at": started,
-            "capture_finished_at": datetime.now(timezone.utc).isoformat(),
-            "legs": [
-                {
-                    k: c.get(k)
-                    for k in (
-                        "mission_id",
-                        "leg_id",
-                        "revision",
-                        "state",
-                        "complete",
-                        "source_mode",
-                    )
-                }
-                for c in data["captures"]
-            ],
-        }
+            with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+                files.update(
+                    {
+                        "telemetry/" + name: archive.read(name)
+                        for name in archive.namelist()
+                    }
+                )
+            components["telemetry"] = {
+                "status": "included",
+                "capture_started_at": started,
+                "capture_finished_at": datetime.now(timezone.utc).isoformat(),
+                "legs": [
+                    {
+                        k: c.get(k)
+                        for k in (
+                            "mission_id",
+                            "leg_id",
+                            "revision",
+                            "state",
+                            "complete",
+                            "source_mode",
+                        )
+                    }
+                    for c in data["captures"]
+                ],
+            }
     return {
         "schema_version": 1,
         "capture_policy": "sequential_component_snapshots",

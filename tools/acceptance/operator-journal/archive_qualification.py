@@ -1,9 +1,7 @@
 """Production single-package acceptance, restart controls and rendered workflows."""
 
-import hashlib
 import json
 import os
-from pathlib import Path
 
 
 def qualify_archive(owner):
@@ -34,9 +32,53 @@ def qualify_archive(owner):
             )
         return result
 
+    def export_failure():
+        database = "/app/data/operator/simulation/synthetic-operator-demo-v1/operations.sqlite3"
+
+        def media(mode, directory_mode):
+            script = f"from pathlib import Path; p=Path({database!r}); p.parent.chmod({directory_mode}); [(f.chmod({mode})) for f in p.parent.glob('operations.sqlite3*')]"
+            owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "0",
+                "starlink-location",
+                "python",
+                "-c",
+                script,
+                timeout=30,
+            )
+
+        try:
+            media("0o400", "0o500")
+            script = """import httpx,json
+with httpx.Client(base_url='http://127.0.0.1:8000',timeout=30) as client:
+ responses=[client.post('/api/v2/missions/synthetic-mission-a/export-preparations'), client.post('/api/v2/missions/synthetic-mission-a/export')]
+ assert all(r.status_code==503 for r in responses), [(r.status_code,r.text) for r in responses]
+ assert all('application/zip' not in r.headers.get('content-type','') for r in responses)
+ print(json.dumps({'enabledUnreadableJournalReturns503':True,'noFalseArchiveDownload':True}))
+"""
+            output = owner.compose(
+                "exec",
+                "-T",
+                "--user",
+                "appuser",
+                "starlink-location",
+                "python",
+                "-c",
+                script,
+                timeout=60,
+            )
+            result = json.loads(output.splitlines()[-1])
+            (owner.root / "archive-failure.json").write_text(
+                json.dumps(result, indent=2)
+            )
+            return result
+        finally:
+            media("0o600", "0o700")
+
     def restart():
         script = """import hashlib,json
-from pathlib import Path
 import httpx
 root=Path('/app/data')
 job=json.loads((root/'synthetic-ready-job.json').read_text())
@@ -100,6 +142,7 @@ with httpx.Client(base_url='http://127.0.0.1:8000',timeout=30) as client:
         owner.root,
         {
             "singlePackageRoundTrip": backend,
+            "exportFailure": export_failure,
             "restartFrozenDownload": restart,
             "productionBrowser": browser,
         },

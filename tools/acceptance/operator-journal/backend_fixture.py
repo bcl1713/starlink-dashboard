@@ -120,9 +120,15 @@ if models_enabled:
 if os.getenv("OPERATOR_ARCHIVE_ACCEPTANCE") == "true":
     from archive_fixture import initialize
 
-    async def initialize_archive():
-        import asyncio
+    from contextlib import asynccontextmanager
+    import asyncio
 
-        await asyncio.to_thread(initialize, main, root)
+    original_lifespan = app.router.lifespan_context
 
-    app.add_event_handler("startup", initialize_archive)
+    @asynccontextmanager
+    async def archive_lifespan(application):
+        async with original_lifespan(application):
+            await asyncio.to_thread(initialize, main, root)
+            yield
+
+    app.router.lifespan_context = archive_lifespan
