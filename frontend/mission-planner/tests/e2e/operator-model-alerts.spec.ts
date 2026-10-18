@@ -433,6 +433,8 @@ test('real model foreground warning follows airborne progress after late departu
           )
         )
         .toBe(1);
+      await card.scrollIntoViewIfNeeded();
+      await expect(card).toBeInViewport();
       await noOverflow(page);
       await page.screenshot({
         animations: 'disabled',
