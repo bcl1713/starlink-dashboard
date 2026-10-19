@@ -15,6 +15,7 @@ class OperatorSettings:
     simulation_run_id: str | None = None
     mission_journal: bool = False
     replay_run_id: str | None = None
+    operating_context_id: str | None = None
     capacity_bytes: int = 1024**3
     backup_count: int = 3
 

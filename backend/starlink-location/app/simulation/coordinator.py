@@ -242,12 +242,13 @@ class SimulationCoordinator:
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,
+            metric_source="simulated" if replay_frame is None else "unavailable",
             metric_availability=MetricAvailability(
-                latency_ms=True,
-                throughput_down_mbps=True,
-                throughput_up_mbps=True,
-                packet_loss_percent=True,
-                obstruction_percent=True,
+                latency_ms=replay_frame is None,
+                throughput_down_mbps=replay_frame is None,
+                throughput_up_mbps=replay_frame is None,
+                packet_loss_percent=replay_frame is None,
+                obstruction_percent=replay_frame is None,
             ),
             environmental=environmental_data,
         )

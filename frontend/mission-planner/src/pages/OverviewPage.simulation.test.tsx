@@ -15,6 +15,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, type ReactNode } from 'react';
 import { runningStatus, completedStatus } from '@/test/simulation-run-fixtures';
+import type { StatusResponse } from '@/services/status';
 import type { SimulationRunStatus } from '@/services/simulation-run';
 vi.hoisted(() => {
   vi.stubGlobal(
@@ -36,6 +37,7 @@ vi.hoisted(() => {
 });
 const state = vi.hoisted(() => ({
   run: undefined as SimulationRunStatus | undefined,
+  status: undefined as StatusResponse | undefined,
   failed: false,
   mounts: 0,
   historyReads: 0,
@@ -82,7 +84,9 @@ vi.mock('@/hooks/api/useRoutes', () => ({
     return {};
   },
 }));
-vi.mock('@/hooks/api/useStatus', () => ({ useStatus: () => ({}) }));
+vi.mock('@/hooks/api/useStatus', () => ({
+  useStatus: () => ({ data: state.status }),
+}));
 vi.mock('@/hooks/api/useOverviewHistory', () => ({
   useOverviewHistory: () => {
     state.historyReads++;
@@ -126,6 +130,7 @@ import { OverviewPage } from './OverviewPage';
 afterEach(cleanup);
 beforeEach(() => {
   state.run = undefined;
+  state.status = undefined;
   state.failed = false;
   state.mounts = 0;
   state.historyReads = 0;
@@ -157,7 +162,7 @@ it('keeps configured network cards visible with unavailable measurements during 
   expect(screen.getByLabelText('Overview metric history')).toBeVisible();
   expect(screen.getByLabelText('Network history context')).toBeVisible();
   expect(
-    screen.getByText('Simulation · network measurements unavailable')
+    screen.getByText('Paced simulation · network measurements unavailable')
   ).toBeVisible();
   expect(screen.queryByLabelText('Simulation run')).toBeNull();
   expect(screen.getByText('SIMULATED TIME')).toBeVisible();
@@ -245,4 +250,55 @@ it('preserves selected and hidden panels across replay states and failed refresh
   view.rerenderOverview();
   expect(screen.queryByLabelText('Overview metric history')).toBeNull();
   expect(state.mounts).toBe(1);
+});
+
+it('shows ordinary simulated metrics, makes paced performance unavailable, and restores them after ordinary activation', () => {
+  state.run = { ...runningStatus(), state: 'idle', run: null };
+  state.status = {
+    timestamp: '2026-10-05T00:00:00Z',
+    metric_source: 'simulated',
+    metric_availability: { latency_ms: true },
+    network: { latency_ms: 42 },
+  };
+  const view = mount();
+  const latency = screen.getByLabelText('Network latency history');
+  expect(latency.querySelector('strong')?.textContent).toBe('42 ms');
+  expect(screen.getByText('SIMULATED DATA')).toBeVisible();
+  state.run = runningStatus();
+  view.rerenderOverview();
+  expect(
+    screen.getByLabelText('Network latency history').querySelector('strong')
+      ?.textContent
+  ).toBe('Unavailable');
+  state.status = {
+    ...state.status,
+    metric_source: 'unavailable',
+    metric_availability: {},
+    network: { latency_ms: null },
+  };
+  view.rerenderOverview();
+  state.run = { ...runningStatus(), state: 'idle', run: null };
+  state.status = {
+    ...state.status,
+    metric_source: 'simulated',
+    metric_availability: { latency_ms: true },
+    network: { latency_ms: 43 },
+  };
+  view.rerenderOverview();
+  expect(
+    screen.getByLabelText('Network latency history').querySelector('strong')
+      ?.textContent
+  ).toBe('43 ms');
+  state.run = { ...state.run, service_mode: 'live' };
+  state.status = {
+    ...state.status,
+    metric_source: 'observed',
+    network: { latency_ms: 7 },
+  };
+  view.rerenderOverview();
+  expect(
+    screen.getByLabelText('Network latency history').querySelector('strong')
+      ?.textContent
+  ).toBe('7 ms');
+  expect(screen.queryByText('SIMULATED DATA')).toBeNull();
 });

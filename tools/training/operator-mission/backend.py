@@ -39,7 +39,7 @@ main._operator_context = scenario.stable_context(root, original_context)
 original_binding = main.OperatorRuntimeBinding
 
 
-def training_binding(*, clock, context, mission_journals=False):
+def training_binding(*, clock, context, mission_journals=False, operating_context=None):
     # Preserve the existing explicitly marked training namespace, independently
     # from the normal dashboard's mission-journal storage family.
     return original_binding(clock=clock, context=context)

@@ -74,6 +74,8 @@ class OperatorService:
         # This additive optional marker must not change pre-upgrade retry hashes.
         if not body.get("replacement_check_row_ids"):
             body.pop("replacement_check_row_ids", None)
+        if not body.get("establish_session"):
+            body.pop("establish_session", None)
         encoded = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
         if len(encoded) > 65536:
             raise OperatorError(
@@ -143,6 +145,7 @@ class OperatorService:
                 clock=self.clock,
                 actor=self.actor,
                 replay_run_id=self.store.settings.replay_run_id,
+                operating_context_id=self.store.settings.operating_context_id,
             )
             return ExecutionResult(receipt, replayed=False)
 

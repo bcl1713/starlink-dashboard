@@ -20,7 +20,9 @@ export function operatorIdentity(health?: OperatorHealth) {
         health.api_epoch,
         health.source_mode,
         health.mission_journal
-          ? (health.replay_run_id ?? `idle:${health.simulation_run_id}`)
+          ? (health.operating_context_id ??
+            health.replay_run_id ??
+            `idle:${health.simulation_run_id}`)
           : health.simulation_run_id,
       ])
     : null;

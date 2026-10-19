@@ -20,7 +20,9 @@ export function createEditorDraft(
       epoch: source.api_epoch,
       sourceMode: source.source_mode,
       simulationRunId: source.mission_journal
-        ? (source.replay_run_id ?? `idle:${source.simulation_run_id}`)
+        ? (source.operating_context_id ??
+          source.replay_run_id ??
+          `idle:${source.simulation_run_id}`)
         : source.simulation_run_id,
       missionId: input.mission_id,
       recordType: input.record_type,

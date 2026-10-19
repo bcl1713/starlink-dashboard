@@ -320,6 +320,7 @@ class OperatorStore:
             source_mode=self.settings.source_mode,
             simulation_run_id=self.settings.simulation_run_id,
             replay_run_id=self.settings.replay_run_id,
+            operating_context_id=self.settings.operating_context_id,
             mission_journal=self.settings.mission_journal,
             clock_regression=regression,
             error_code=(None if self._ready and not self._closed else self._error_code),

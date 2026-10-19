@@ -89,7 +89,7 @@ it('Restore connection and Restore record are distinct', () => {
     screen.queryByRole('button', { name: 'Restore connection' })
   ).toBeNull();
 });
-it('makes closing a previous-leg session the next action rather than claiming it is ready', () => {
+it('offers explicit reestablishment of a historical session without claiming readiness', () => {
   const current = {
     scope: 'leg' as const,
     leg_id: 'return',
@@ -123,8 +123,6 @@ it('makes closing a previous-leg session the next action rather than claiming it
   );
   expect(screen.getByText(/not assumed available/i)).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Close previous session' })
-  );
-  expect(action).toHaveBeenCalledWith('close');
+  fireEvent.click(screen.getByRole('button', { name: /establish/i }));
+  expect(action).toHaveBeenCalledWith('establish');
 });

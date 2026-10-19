@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import {
   defaultAssociation,
   operatingMission,
+  operationalRelevant,
   replayCurrent,
 } from './operatingContext';
 import {
@@ -116,5 +117,41 @@ it('retains unfulfilled mission requirements across replay changes without treat
       { ...call, time: { ...call.time, occurred_at: '2026-10-17T16:00:00Z' } },
       source
     )
+  ).toBe(false);
+});
+
+it('keeps accepted conference definitions available without admitting historical session readiness', () => {
+  const conference = {
+    ...savedRecord,
+    record_type: 'conference' as const,
+    payload: {
+      ...noteInput.payload,
+      entry_type: 'conference' as const,
+      status: 'established' as const,
+      verified_at: '2026-10-17T16:00:00Z',
+    },
+  };
+  const ordinary = {
+    ...health,
+    mission_journal: true,
+    replay_run_id: null,
+    operating_context_id: 'ordinary:runtime:1:route-a',
+  };
+  expect(operationalRelevant(conference, ordinary)).toBe(true);
+  expect(replayCurrent(conference, ordinary)).toBe(false);
+  const current = {
+    ...conference,
+    provenance: {
+      ...conference.provenance,
+      replay_run_id: null,
+      operating_context_id: ordinary.operating_context_id,
+    },
+  };
+  expect(replayCurrent(current, ordinary)).toBe(true);
+  expect(
+    replayCurrent(current, {
+      ...ordinary,
+      operating_context_id: 'ordinary:runtime:2:route-b',
+    })
   ).toBe(false);
 });

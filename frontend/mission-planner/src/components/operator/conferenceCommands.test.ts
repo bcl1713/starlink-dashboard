@@ -142,7 +142,7 @@ it('does not move an open session or clear independent customer reports on close
   };
   expect(() =>
     conferenceCommand(established, 'verify', now, association)
-  ).toThrow(/close/i);
+  ).toThrow(/establish/i);
   expect(
     conferenceCommand(established, 'close', now, association)
   ).toMatchObject({
@@ -222,4 +222,27 @@ it('does not replace a deliberately unassigned initial activity with an inferred
       label: 'Inferred',
     })
   ).toMatchObject({ body: { scope: 'mission', leg_id: null } });
+});
+
+it('explicitly reestablishes a retained verified definition without duplicating it', () => {
+  const retained = {
+    ...conference,
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'established' as const,
+      verified_at: now,
+    },
+  };
+  const command = conferenceCommand(retained, 'establish', now, null, false);
+  expect(command).toMatchObject({
+    operation: 'update',
+    record_id: retained.record_id,
+    body: {
+      establish_session: true,
+      expected_version: retained.version,
+      payload: { status: 'established', verified_at: null },
+    },
+  });
+  expect(retained.payload.verified_at).toBe(now);
 });

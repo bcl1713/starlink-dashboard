@@ -33,7 +33,7 @@ import {
   useMissionAssociation,
   type AssociationMission,
 } from '../useMissionAssociation';
-import { replayCurrent } from './operatingContext';
+import { operationalRelevant } from './operatingContext';
 import { commandLane, targetIdentity } from './commandRegistry';
 
 export type EditorMission = AssociationMission;
@@ -76,7 +76,7 @@ export function WorkspaceEditor({
     relationships.data?.pages.flatMap((page) =>
       page.items
         .map((item) => item.record)
-        .filter((record) => replayCurrent(record, health.data))
+        .filter((record) => operationalRelevant(record, health.data))
     ) ?? [];
   const timing = useMissionAssociation(
     mission?.id === draft?.target.missionId ? mission : undefined,

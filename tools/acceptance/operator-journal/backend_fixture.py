@@ -59,7 +59,7 @@ main = importlib.import_module("main")
 original_binding = main.OperatorRuntimeBinding
 
 
-def fixture_binding(*, clock, context, mission_journals=False):
+def fixture_binding(*, clock, context, mission_journals=False, operating_context=None):
     binding = original_binding(clock=scenario_clock, context=context)
     with binding.access() as runtime:
         runtime.freshness_policies["accepted_position"] = OBSERVATION_FRESHNESS_SECONDS

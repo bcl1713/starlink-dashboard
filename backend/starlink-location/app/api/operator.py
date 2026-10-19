@@ -218,8 +218,8 @@ def operating_context(request: Request):
             "leg_name": context.leg.name if context else None,
             "phase": (
                 (
-                    (run.phase if run else None)
-                    if state.source_mode == "simulation"
+                    run.phase
+                    if run and state.source_mode == "simulation"
                     else flight.phase.value
                 )
                 if context
@@ -227,6 +227,7 @@ def operating_context(request: Request):
             ),
             "source_mode": state.source_mode,
             "replay_run_id": state.replay_run_id,
+            "operating_context_id": state.operating_context_id,
         }
 
 

@@ -1363,12 +1363,18 @@ export function OverviewPage() {
                 )}
                 {showMetricPanels && (
                   <OverviewMetricHistoryPanels
-                    key={`${simulationRun?.runtime_id ?? 'unknown'}:${simulationRun?.service_mode ?? 'unknown'}`}
+                    key={`${simulationRun?.runtime_id ?? 'unknown'}:${simulationRun?.service_mode ?? 'unknown'}:${simulationRun?.run?.run_id ?? 'ordinary'}:${status?.metric_source ?? 'unknown'}`}
+                    simulated={status?.metric_source === 'simulated'}
                     unavailableReason={
-                      simulationRun?.service_mode === 'simulation' ||
-                      status?.pop_observation?.source === 'simulation'
-                        ? 'Simulation · network measurements unavailable'
-                        : simulationRun?.service_mode !== 'live'
+                      ((simulationRun?.state === 'running' ||
+                        simulationRun?.state === 'completed') &&
+                        simulationRun?.run &&
+                        status?.metric_source !== 'observed') ||
+                      status?.metric_source === 'unavailable'
+                        ? 'Paced simulation · network measurements unavailable'
+                        : status?.metric_source === 'unknown' ||
+                            (!status?.metric_source &&
+                              simulationRun?.service_mode !== 'live')
                           ? 'Network source unavailable'
                           : undefined
                     }

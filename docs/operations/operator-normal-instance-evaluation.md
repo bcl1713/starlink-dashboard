@@ -65,7 +65,11 @@ mission-filtered journals for this evaluation. Changing mission, leg, replay or
 restarting the backend does not replace this namespace. Live paths, identity,
 versioning, receipts and recovery are unchanged.
 
-Each new simulation report carries its actual `provenance.replay_run_id`. The
+Each paced simulation report carries its actual `provenance.replay_run_id`.
+Ordinary Activate has no replay ID: new reports instead carry an additive
+`provenance.operating_context_id` derived from the existing runtime identity,
+activation revision and active route. Reactivation or backend restart retires
+readiness evidence without changing journals. Reloading a page does not. The
 health `simulation_run_id` identifies the durable evaluation namespace;
 `replay_run_id` identifies the current flight replay. These are deliberately
 separate. Corrections preserve the report's original replay. Explicitly starting
@@ -76,9 +80,13 @@ Unfulfilled call requirements and unresolved issues remain actionable mission
 obligations. Old connections, started/completed calls, conference verification,
 transport checks and capability assessments do not establish readiness in a new
 replay. Find those reports in **History**, with their original associations and
-revision history. Reuse a previous conference **definition** to create a new
-preparing record; establishment, verification and customer joins must be
-reported again. Missing replay/source data does not prove readiness.
+revision history. Conference **definitions** remain visible and selectable for
+calls throughout the mission, including accepted records created before this
+fix. Use **Reestablish** on the same definition to explicitly report a new
+session, then verify it and report customer joins independently. No clone or
+migration is required. A new immutable revision records the new context; earlier
+revisions retain their original provenance. Corrections alone never refresh
+readiness. Missing replay/source data does not prove readiness.
 
 Automatic context uses the existing active mission/route resolver, flight phase
 and simulation run. Preflight/ground-gap/postflight defaults follow the ordered
@@ -127,19 +135,21 @@ setting. No session service or training environment is involved.
 ## Short human acceptance sequence
 
 Use one explicitly disposable fictional mission with two timed legs and a
-reasonable ground stop. Use the planner's ordinary simulation pacing. Note the
-mission ID, evaluation name and deployed commit. For each step, record the first
-confusing control, unnecessary selection or unclear outcome—not merely API
-success. Stop on a confusing action and report the screen/action and expected
-result. Existing source-specific tests stand; absent optional telemetry is not a
-reason to manufacture providers.
+reasonable ground stop. Use **Activate** for routine work with real elapsed time
+and normal simulation telemetry. Use **Simulate leg** only for paced flight/time
+progression; its network panels are Unavailable when no valid metric source
+exists. Note the mission ID, evaluation name and deployed commit. For each step,
+record the first confusing control, unnecessary selection or unclear outcome—not
+merely API success. Stop on a confusing action and report the screen/action and
+expected result. Existing source-specific tests stand; absent optional telemetry
+is not a reason to manufacture providers.
 
-1. **Enter and orient.** Start leg one through Missions, then open Operator
-   through navigation. Confirm its mission/leg names and phase without selecting
-   them. Create a note and check its suggested association. Park an unsaved
-   draft. Reload: automatic context and the draft should remain available.
-   Browse another mission, confirm aircraft activation stays unchanged, then use
-   Return to active mission.
+1. **Enter and orient.** Use **Activate** for leg one through Missions, then
+   open Operator through navigation. Confirm its mission/leg names and phase
+   without selecting them. Create a note and check its suggested association.
+   Park an unsaved draft. Reload: automatic context and the draft should remain
+   available. Browse another mission, confirm aircraft activation stays
+   unchanged, then use Return to active mission.
 2. **Move a transport.** In Transport, record intention and request, then the
    actual applied transport and verification independently. Try an applied-only
    change during a reported customer connection. Inspect the review's timing,
@@ -174,3 +184,24 @@ reason to manufacture providers.
    in a clean destination or explicitly isolated namespace, with a new mission
    ID. Confirm no Operator records are restored and unrelated destination
    missions/journals are unchanged. Do not overwrite ordinary stored missions.
+
+## Focused regression check before resuming evaluation
+
+- With ordinary **Activate**, confirm mission/leg/phase, create CABLES, and
+  select it in a scheduled call. Existing accepted definitions must also be
+  selectable.
+- Establish and verify it; associate a second call without recreating the
+  bridge.
+- Deactivate and activate another leg, or start **Simulate leg**. The definition
+  remains; old establishment, verification and customer connections are marked
+  historical. Explicitly reestablish and verify the same definition. Inspect its
+  earlier revisions in History.
+- Check ordinary Overview values marked **SIMULATED DATA**. Start a paced
+  replay: selected network panels show **Unavailable**. Deactivate and
+  **Activate** again: ordinary values return. Exercise a preset and one
+  visibility toggle.
+- Keep a draft and a pending save across the transition: their original context
+  stays pinned, and exact retry resolves the original request without
+  duplication.
+
+No existing per-run journal is migrated or combined by this regression fix.

@@ -132,6 +132,7 @@ class OperatorRuntime:
             simulation_run_id=self.settings.simulation_run_id,
             error_code=self.error_code,
             replay_run_id=self.settings.replay_run_id,
+            operating_context_id=self.settings.operating_context_id,
             mission_journal=self.settings.mission_journal,
         )
 
@@ -147,9 +148,12 @@ class OperatorRuntime:
 class OperatorRuntimeBinding:
     """Serialize whole requests with rebind/close so namespaces never overlap."""
 
-    def __init__(self, *, clock, context, mission_journals=False):
+    def __init__(
+        self, *, clock, context, mission_journals=False, operating_context=None
+    ):
         self.clock, self.context = clock, context
         self.mission_journals = mission_journals
+        self.operating_context = operating_context
         self.lock = RLock()
         self.runtime = None
         self.identity = None
@@ -168,7 +172,18 @@ class OperatorRuntimeBinding:
         if mission_journal:
             # New path family: never adopt, merge or modify legacy per-run stores.
             run = session
-        identity = (mode, run, enabled, actual_run if mission_journal else None)
+        context_id = (
+            self.operating_context()
+            if mission_journal and self.operating_context
+            else None
+        )
+        identity = (
+            mode,
+            run,
+            enabled,
+            actual_run if mission_journal else None,
+            context_id,
+        )
         if identity != self.identity or (
             enabled and self.runtime is not None and self.runtime.service is None
         ):
@@ -180,6 +195,7 @@ class OperatorRuntimeBinding:
                 "simulation_run_id": run,
                 "mission_journal": mission_journal,
                 "replay_run_id": actual_run if mission_journal else None,
+                "operating_context_id": context_id,
                 "root": os.getenv("OPERATOR_ROOT", "data/operator"),
             }
             try:

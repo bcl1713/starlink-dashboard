@@ -139,15 +139,25 @@ export function OperatorWorkspace() {
   const identity = operatorIdentity(health.data);
   useEffect(() => {
     void queryClient.invalidateQueries({ queryKey: ['operator-health'] });
-  }, [queryClient, active.data?.source_mode, active.data?.replay_run_id]);
+  }, [
+    queryClient,
+    active.data?.source_mode,
+    active.data?.replay_run_id,
+    active.data?.operating_context_id,
+  ]);
   const contextMismatch =
     !active.isError &&
     !!health.data?.mission_journal &&
     !!active.data &&
     (active.data.source_mode !== health.data.source_mode ||
-      active.data.replay_run_id !== health.data.replay_run_id);
+      active.data.replay_run_id !== health.data.replay_run_id ||
+      active.data.operating_context_id !== health.data.operating_context_id);
   const currentSource = contextMismatch
-    ? { ...health.data!, replay_run_id: active.data!.replay_run_id }
+    ? {
+        ...health.data!,
+        replay_run_id: active.data!.replay_run_id,
+        operating_context_id: active.data!.operating_context_id,
+      }
     : health.data;
   const events = useOperatorEvents(
     missionId,
@@ -185,7 +195,9 @@ export function OperatorWorkspace() {
   );
   const currentLoaded = currentItems.map((item) => item.record);
   const retained = items.filter(
-    (item) => !replayCurrent(item.record, currentSource)
+    (item) =>
+      item.record.record_type !== 'conference' &&
+      !replayCurrent(item.record, currentSource)
   );
   const incomplete = !records.data || records.isError || !!records.hasNextPage;
   const disabled =
@@ -897,6 +909,9 @@ export function OperatorWorkspace() {
               <CommunicationsView
                 items={currentItems}
                 currentAssociation={currentAssociation}
+                isSessionCurrent={(record) =>
+                  replayCurrent(record, currentSource)
+                }
                 mission={mission.data}
                 disabled={
                   disabled || acting || records.isFetching || missionSaveBusy
@@ -921,7 +936,13 @@ export function OperatorWorkspace() {
                 onTransition={transition}
                 onConferenceAction={(record, intent) =>
                   void action(record, (latest, now) =>
-                    conferenceCommand(latest, intent, now, currentAssociation)
+                    conferenceCommand(
+                      latest,
+                      intent,
+                      now,
+                      currentAssociation,
+                      replayCurrent(latest, currentSource)
+                    )
                   )
                 }
                 onCustomerAction={(record, intent) =>
@@ -1018,8 +1039,10 @@ export function OperatorWorkspace() {
             )}
             {!!retained.length &&
               ['Communications', 'Transport', 'Issues'].includes(view) && (
-                <section aria-label="Previous replay records">
-                  <h3>Previous replay records · {retained.length} loaded</h3>
+                <section aria-label="Previous operational records">
+                  <h3>
+                    Previous operational records · {retained.length} loaded
+                  </h3>
                   <p>Historical reports, not current operational evidence.</p>
                   <button
                     className="ws-button"
@@ -1027,35 +1050,6 @@ export function OperatorWorkspace() {
                   >
                     Browse retained records and history
                   </button>
-                  {view === 'Communications' &&
-                    retained
-                      .filter(
-                        (item) =>
-                          !item.record.deleted &&
-                          item.record.record_type === 'conference'
-                      )
-                      .map(({ record }) => (
-                        <button
-                          key={record.record_id}
-                          className="ws-button"
-                          disabled={disabled}
-                          onClick={() => {
-                            const input = conferenceDraft(missionId);
-                            if (record.payload.entry_type !== 'conference')
-                              return;
-                            input.payload = {
-                              ...input.payload,
-                              title: record.payload.title,
-                              coordinator: record.payload.coordinator,
-                              intended_transport:
-                                record.payload.intended_transport,
-                            };
-                            openInput(input);
-                          }}
-                        >
-                          Reuse definition: {record.payload.title}
-                        </button>
-                      ))}
                 </section>
               )}
             {incomplete && (

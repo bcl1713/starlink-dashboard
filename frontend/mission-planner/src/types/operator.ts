@@ -180,6 +180,7 @@ export type OperatorCommand =
       body: OperatorInput & {
         expected_version: number;
         replacement_check_row_ids?: string[];
+        establish_session?: boolean;
         audit_note?: string | null;
       };
     }
@@ -205,6 +206,7 @@ export interface SavedRecord
   author: { backend: string; operator_label: string | null };
   provenance: {
     replay_run_id?: string | null;
+    operating_context_id?: string | null;
     kind: 'operator_reported' | 'observed' | 'modeled';
     source_mode: 'live' | 'simulation';
     observed_at: string | null;
@@ -256,6 +258,7 @@ export interface CommandReceipt {
 }
 export interface OperatorHealth {
   replay_run_id?: string | null;
+  operating_context_id?: string | null;
   mission_journal?: boolean;
   schema_version: 1;
   enabled: boolean;

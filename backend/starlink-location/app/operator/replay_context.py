@@ -7,10 +7,7 @@ def current_records(records, health):
     return [
         r
         for r in records
-        if (
-            health.replay_run_id is not None
-            and r.provenance.replay_run_id == health.replay_run_id
-        )
+        if evidence_current(r, health)
         or (
             not r.deleted
             and (
@@ -32,4 +29,19 @@ def source_run(health):
 def operating_run(health):
     if not health.mission_journal:
         return health.simulation_run_id
-    return health.replay_run_id or "idle:" + health.simulation_run_id
+    return (
+        health.operating_context_id
+        or health.replay_run_id
+        or "idle:" + health.simulation_run_id
+    )
+
+
+def evidence_current(record, health):
+    if not health.mission_journal:
+        return True
+    if health.operating_context_id is not None:
+        return record.provenance.operating_context_id == health.operating_context_id
+    return (
+        health.replay_run_id is not None
+        and record.provenance.replay_run_id == health.replay_run_id
+    )

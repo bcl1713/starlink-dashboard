@@ -43,11 +43,9 @@ def read_record(record, runtime, *, as_of=None):
             policies=runtime.freshness_policies,
         ),
     }
-    health = runtime.health()
-    result["operational_current"] = not health.mission_journal or (
-        health.replay_run_id is not None
-        and record.provenance.replay_run_id == health.replay_run_id
-    )
+    from .replay_context import evidence_current
+
+    result["operational_current"] = evidence_current(record, runtime.health())
     if record.record_type == "issue":
         result["follow_up"] = derive_issue_followup(
             record,

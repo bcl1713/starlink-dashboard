@@ -28,6 +28,7 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 const BUFFER_SECONDS = 7.5;
 
 interface Props {
+  simulated?: boolean;
   sourceUnavailable?: boolean;
   descriptor: OverviewMetricGraphDescriptor;
   history: OverviewHistoryBundle | undefined;
@@ -46,6 +47,7 @@ export function OverviewMetricHistoryPanel({
   nowMs,
   readout,
   sourceUnavailable,
+  simulated = false,
 }: Props) {
   const reducedMotion = usePrefersReducedMotion();
   const accepted = useRef<{
@@ -436,9 +438,9 @@ export function OverviewMetricHistoryPanel({
           className={`overview-metric-history__age${readout?.state === 'stale' ? '' : ' overview-visually-hidden'}`}
         >
           {readout?.state === 'stale'
-            ? `Last observed ${formatMetricValue(readout.value, descriptor.unit)} · ${Math.floor(readout.ageMs / 1000)}s old`
+            ? `Last ${simulated ? 'simulated' : 'observed'} ${formatMetricValue(readout.value, descriptor.unit)} · ${Math.floor(readout.ageMs / 1000)}s old`
             : readout
-              ? `Observed ${new Date(readout.observedAtMs).toISOString().slice(11, 19)} UTC; exact value ${readout.value} ${descriptor.unit}`
+              ? `${simulated ? 'Simulated' : 'Observed'} ${new Date(readout.observedAtMs).toISOString().slice(11, 19)} UTC; exact value ${readout.value} ${descriptor.unit}`
               : 'No timestamped observation'}
         </span>
         {status && (
@@ -463,7 +465,7 @@ export function OverviewMetricHistoryPanel({
           className="overview-metric-history__viewport"
           ref={viewport}
           role="img"
-          aria-label={`${descriptor.label} time history; ${descriptor.unit}${logarithmic ? `; logarithmic scale; values at or below ${formatMetricAxis(yRange.min)}% shown at baseline` : ''}; cyan observed, dashed five-minute average, shaded five-minute low–high range${status ? `; ${status}` : ''}`}
+          aria-label={`${descriptor.label} time history; ${descriptor.unit}${logarithmic ? `; logarithmic scale; values at or below ${formatMetricAxis(yRange.min)}% shown at baseline` : ''}; cyan ${simulated ? 'simulated' : 'observed'}, dashed five-minute average, shaded five-minute low–high range${status ? `; ${status}` : ''}`}
         >
           <div className="overview-metric-history__surface" ref={surface}>
             <div ref={host} />

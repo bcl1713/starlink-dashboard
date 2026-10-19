@@ -389,3 +389,42 @@ it('explicitly copies an old replay draft without retargeting or discarding its 
   expect(copy.target.simulationRunId).toBe('new-run');
   expect(copy.input).toEqual(input);
 });
+
+it('offers an already accepted ordinary-activation conference in the call chooser without migration', async () => {
+  const source = {
+    ...health,
+    source_mode: 'simulation' as const,
+    mission_journal: true,
+    simulation_run_id: 'default',
+    replay_run_id: null,
+    operating_context_id: 'ordinary:runtime:1:route',
+  };
+  const accepted = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    payload: { ...conferenceDraft('mission-a').payload, title: 'CABLES' },
+    provenance: {
+      ...record.provenance,
+      source_mode: 'simulation' as const,
+      replay_run_id: null,
+    },
+  };
+  vi.mocked(api.getOperatorHealth).mockResolvedValue(source);
+  vi.mocked(api.readOperatorRecords).mockResolvedValue(page([accepted]));
+  const { registry, draft } = mount(
+    callDraft(undefined, 'planned', 'mission-a'),
+    false,
+    true,
+    undefined,
+    { sourceMode: 'simulation', simulationRunId: source.operating_context_id },
+    source
+  );
+  const option = await screen.findByRole('option', { name: /CABLES/ });
+  fireEvent.change(option.parentElement!, {
+    target: { value: accepted.record_id },
+  });
+  expect(registry.resumeDraft(draft.draftId)?.input.payload).toHaveProperty(
+    'conference_id',
+    accepted.record_id
+  );
+});

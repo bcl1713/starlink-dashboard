@@ -11,6 +11,7 @@ import { OverviewMetricHistoryPanel } from './OverviewMetricHistoryPanel';
 import { statusObservationAgeMs } from './status-freshness';
 
 interface Props {
+  simulated?: boolean;
   unavailableReason?: string;
   settings?: Partial<OverviewLinkSettings>;
   history: OverviewHistoryBundle | undefined;
@@ -31,6 +32,7 @@ export function OverviewMetricHistoryPanels({
   nowMs,
   settings,
   unavailableReason,
+  simulated = false,
 }: Props) {
   const [acceptedStatus, setAcceptedStatus] = useState<StatusResponse>();
   const timestamp = status ? Date.parse(status.timestamp) : NaN;
@@ -86,6 +88,12 @@ export function OverviewMetricHistoryPanels({
         <div className="overview-metric-history-panels__freshness">
           <p role="status">
             Network
+            {simulated && !unavailableReason && (
+              <span>
+                {' '}
+                · <span>SIMULATED DATA</span>
+              </span>
+            )}
             <span
               className={
                 state === 'fresh' ? 'overview-visually-hidden' : undefined
@@ -129,7 +137,7 @@ export function OverviewMetricHistoryPanels({
               className="overview-metric-history__key--observed"
               aria-hidden="true"
             />
-            Observed
+            {simulated ? 'Simulated' : 'Observed'}
           </li>
           <li>
             <span
@@ -153,6 +161,7 @@ export function OverviewMetricHistoryPanels({
           key={`${descriptor.id}:${unavailableReason ?? 'observed'}`}
         >
           <OverviewMetricHistoryPanel
+            simulated={simulated}
             descriptor={descriptor}
             sourceUnavailable={!!unavailableReason}
             history={unavailableReason ? undefined : history}

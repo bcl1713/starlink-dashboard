@@ -27,7 +27,9 @@ export function CommunicationsView({
   onCallAction,
   currentAssociation,
   mission,
+  isSessionCurrent = () => true,
 }: {
+  isSessionCurrent?: (record: SavedRecord) => boolean;
   items: ReadRecord[];
   disabled: boolean;
   incomplete: boolean;
@@ -107,6 +109,7 @@ export function CommunicationsView({
         onCallAction={onCallAction}
         onConferenceAction={onConferenceAction}
         currentAssociation={currentAssociation}
+        isSessionCurrent={isSessionCurrent}
         onCustomerAction={onCustomerAction}
       />
       <h3>Conferences</h3>
@@ -120,6 +123,7 @@ export function CommunicationsView({
         <div key={record.record_id} className="space-y-2">
           <ConferenceCard
             compactActions
+            sessionCurrent={isSessionCurrent(record)}
             currentAssociation={currentAssociation}
             activityAssociationLabel={
               record.scope === 'leg'
@@ -138,6 +142,7 @@ export function CommunicationsView({
           {!record.deleted &&
             record.payload.entry_type === 'conference' &&
             record.payload.status === 'established' &&
+            isSessionCurrent(record) &&
             !sessionOutsideContext(record, currentAssociation) && (
               <button
                 className="ws-button"

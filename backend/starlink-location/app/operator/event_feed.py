@@ -25,6 +25,7 @@ def build_snapshot(runtime, mission_id, adapter):
     if runtime.health().mission_journal:
         for event in events:
             event.replay_run_id = runtime.health().replay_run_id
+            event.operating_context_id = runtime.health().operating_context_id
             event.event_id = identity(event.event_id, inputs.simulation_run_id)
             event.family_key = identity(
                 event.family_key or event.event_id, inputs.simulation_run_id
@@ -79,9 +80,10 @@ def build_snapshot(runtime, mission_id, adapter):
         for previous in old:
             if previous.event_id in present:
                 continue
-            same_replay = (
-                not runtime.health().mission_journal
-                or previous.replay_run_id == runtime.health().replay_run_id
+            same_replay = not runtime.health().mission_journal or (
+                previous.replay_run_id == runtime.health().replay_run_id
+                and previous.operating_context_id
+                == runtime.health().operating_context_id
             )
             if (
                 same_replay

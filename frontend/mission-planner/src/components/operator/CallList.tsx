@@ -23,7 +23,9 @@ export function CallList({
   onConferenceAction,
   onCustomerAction,
   currentAssociation,
+  isSessionCurrent = () => true,
 }: {
+  isSessionCurrent?: (record: SavedRecord) => boolean;
   items: ReadRecord[];
   disabled: boolean;
   incomplete: boolean;
@@ -80,7 +82,8 @@ export function CallList({
         bridge &&
         bridge.payload.entry_type === 'conference' &&
         ['established', 'interrupted'].includes(bridge.payload.status ?? '') &&
-        sessionOutsideContext(bridge, currentAssociation);
+        (!isSessionCurrent(bridge) ||
+          sessionOutsideContext(bridge, currentAssociation));
       const bridgePayload =
         bridge?.payload.entry_type === 'conference' ? bridge.payload : null;
       const customers = records.filter(
@@ -185,21 +188,10 @@ export function CallList({
                   )}
                   {bridge && bridgePayload && onConferenceAction && (
                     <>
-                      {previousSession &&
-                        ['established', 'interrupted'].includes(
-                          bridgePayload.status ?? ''
-                        ) && (
-                          <button
-                            className={button}
-                            disabled={disabled}
-                            onClick={() => onConferenceAction(bridge, 'close')}
-                          >
-                            Close previous bridge session
-                          </button>
-                        )}
-                      {['preparing', 'unknown', 'closed'].includes(
+                      {(['preparing', 'unknown', 'closed'].includes(
                         bridgePayload.status ?? 'unknown'
-                      ) && (
+                      ) ||
+                        previousSession) && (
                         <button
                           className={button}
                           disabled={disabled}
@@ -207,7 +199,7 @@ export function CallList({
                             onConferenceAction(bridge, 'establish')
                           }
                         >
-                          {bridgePayload.status === 'closed'
+                          {bridgePayload.status === 'closed' || previousSession
                             ? 'Reopen bridge'
                             : 'Establish bridge'}
                         </button>

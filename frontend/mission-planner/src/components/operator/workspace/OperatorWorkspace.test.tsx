@@ -12,9 +12,10 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { OperatorWorkspace } from './OperatorWorkspace';
 import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
+import { conferenceDraft } from '../conferenceCommands';
 import * as api from '@/services/operator';
 import * as eventsApi from '@/services/operatorEvents';
-import { health, page } from '@/test/operator-fixtures';
+import { health, page, record } from '@/test/operator-fixtures';
 const missionState = vi.hoisted(() => ({
   pending: false,
   error: false,
@@ -44,7 +45,11 @@ afterEach(() => {
   localStorage.clear();
   vi.restoreAllMocks();
 });
-function mount(route = '/operator?workspace=1', ready = false) {
+function mount(
+  route = '/operator?workspace=1',
+  ready = false,
+  source = health
+) {
   if (!vi.isMockFunction(api.readOperatingContext))
     vi.spyOn(api, 'readOperatingContext').mockResolvedValue({
       state: 'no_active_mission',
@@ -60,7 +65,7 @@ function mount(route = '/operator?workspace=1', ready = false) {
     new Error('Optional feed unavailable')
   );
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue({
-    ...health,
+    ...source,
     ready,
   });
   const client = new QueryClient({
@@ -254,4 +259,62 @@ it('preserves deliberate historical browsing across active mission changes and r
   expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe(
     'next-mission'
   );
+});
+
+it('renders newly accepted and older ordinary-Activate conference definitions without historical clone buttons', async () => {
+  missionState.mission = {
+    id: 'mission-a',
+    name: 'Fictional mission',
+    legs: [{ id: 'leg-1', name: 'Outbound' }],
+  };
+  const source = {
+    ...health,
+    source_mode: 'simulation' as const,
+    mission_journal: true,
+    simulation_run_id: 'default',
+    replay_run_id: null,
+    operating_context_id: 'ordinary:runtime:1:route',
+  };
+  vi.spyOn(api, 'readOperatingContext').mockResolvedValue({
+    state: 'available',
+    mission_id: 'mission-a',
+    mission_name: 'Fictional mission',
+    leg_id: 'leg-1',
+    leg_name: 'Outbound',
+    phase: 'pre_departure',
+    source_mode: 'simulation',
+    replay_run_id: null,
+    operating_context_id: source.operating_context_id,
+  });
+  const accepted = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    payload: { ...conferenceDraft('mission-a').payload, title: 'CABLES' },
+    provenance: {
+      ...record.provenance,
+      source_mode: 'simulation' as const,
+      replay_run_id: null,
+      operating_context_id: source.operating_context_id,
+    },
+  };
+  const older = {
+    ...accepted,
+    record_id: 'older-conference',
+    payload: { ...accepted.payload, title: 'Existing accepted conference' },
+    provenance: { ...accepted.provenance, operating_context_id: null },
+  };
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(
+    page([accepted, older])
+  );
+  mount(
+    '/operator?workspace=1&mission_id=mission-a&view=communications',
+    true,
+    source
+  );
+  await screen.findByRole('heading', { name: /CABLES/ });
+  expect(
+    screen.getByRole('heading', { name: /Existing accepted conference/ })
+  ).toBeTruthy();
+  expect(screen.queryByText(/No conferences recorded/)).toBeNull();
+  expect(screen.queryByRole('button', { name: /Reuse definition/ })).toBeNull();
 });

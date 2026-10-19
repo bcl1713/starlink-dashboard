@@ -8,6 +8,7 @@ import { revisionUtc } from './revisionUtc';
 const button = 'min-h-11 rounded border px-3 disabled:opacity-50';
 export function ConferenceCard({
   record,
+  sessionCurrent = true,
   participations,
   disabled,
   onAction,
@@ -19,6 +20,7 @@ export function ConferenceCard({
   onHistory,
   onRemove,
 }: {
+  sessionCurrent?: boolean;
   record: SavedRecord;
   participations: SavedRecord[];
   disabled: boolean;
@@ -35,7 +37,7 @@ export function ConferenceCard({
   const p = record.payload;
   const previousSession =
     ['established', 'interrupted'].includes(p.status ?? '') &&
-    sessionOutsideContext(record, currentAssociation);
+    (!sessionCurrent || sessionOutsideContext(record, currentAssociation));
   const connected = participations.filter(
     (r) =>
       !r.deleted &&
@@ -54,7 +56,7 @@ export function ConferenceCard({
       </h4>
       <p className="rounded bg-muted p-2 text-sm">
         {previousSession
-          ? 'This session is not assumed available here. Close the previous session, then establish again for the current leg.'
+          ? 'This session is not assumed available here. Establish again for the current leg; previous reports remain in history.'
           : p.status === 'closed'
             ? 'Closed. Establish again to reuse this bridge.'
             : p.status === 'interrupted'
@@ -66,7 +68,8 @@ export function ConferenceCard({
                 : 'Next: establish this bridge, then verify it before use.'}
       </p>
       <p>
-        Conference: {p.status ?? 'Unknown'} · Operator verification:{' '}
+        Conference: {previousSession ? 'Historical session report · ' : ''}
+        {p.status ?? 'Unknown'} · Operator verification:{' '}
         {revisionUtc(p.verified_at ?? null)}
       </p>
       {compactActions && (
@@ -115,13 +118,15 @@ export function ConferenceCard({
         {!record.deleted && (
           <>
             {(!p.status ||
-              ['unknown', 'preparing', 'closed'].includes(p.status)) && (
+              ['unknown', 'preparing', 'closed'].includes(p.status) ||
+              previousSession) && (
               <button
                 className={button + ' bg-primary text-primary-foreground'}
                 disabled={disabled}
                 onClick={() => onAction('establish')}
               >
-                {p.status === 'closed' && currentAssociation
+                {(p.status === 'closed' || previousSession) &&
+                currentAssociation
                   ? `Reestablish · ${currentAssociation.label}`
                   : 'Establish'}
               </button>
@@ -144,15 +149,6 @@ export function ConferenceCard({
                 onClick={() => onAction('restore_connection')}
               >
                 Restore conference connection
-              </button>
-            )}
-            {previousSession && (
-              <button
-                className={button + ' bg-primary text-primary-foreground'}
-                disabled={disabled}
-                onClick={() => onAction('close')}
-              >
-                Close previous session
               </button>
             )}
             <details open={!compactActions}>

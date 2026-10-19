@@ -3,15 +3,15 @@
 import json
 from datetime import datetime, timedelta
 
-import pytest
-from prometheus_client import generate_latest
-
 import main
+import pytest
 from app.api import status as status_api
 from app.core.metrics import REGISTRY
 from app.mission.pop_status import PopStatusService
 from app.services import ground_entry_point as gep
 from app.simulation.pop import SimulationPopObservationProvider
+from prometheus_client import generate_latest
+
 from tests.integration.test_simulation_run_api import LEG, api
 
 __all__ = ["api"]
@@ -153,9 +153,9 @@ def test_first_ip_change_matches_forecast_center_to_one_emitted_frame(
     assert service.status().state == "running"
     if center_second == 750:
         assert result["position"]["speed"] < before["position"]["speed"] / 2
-    # Synthetic observation does not alter emitted transport/network availability.
-    assert result["metric_availability"]["packet_loss_percent"] is True
-    assert result["network"]["packet_loss_percent"] == 0
+    # A PoP observation is not a network performance measurement.
+    assert result["metric_availability"]["packet_loss_percent"] is False
+    assert result["network"]["packet_loss_percent"] is None
     assert service.status().run.transport_states["Ku"] == "available"
 
 
@@ -222,3 +222,26 @@ def test_catalog_failure_clears_current_synthetic_ip_and_metrics(pop_api):
     assert result["ground_entry_point"] is None
     assert result["pop_forecast"]["status"] == "unavailable"
     assert "starlink_ground_entry_point_info{" not in generate_latest(REGISTRY).decode()
+
+
+def test_ordinary_metrics_paced_gap_and_return_to_activate(pop_api):
+    client, service, _clocks, _pops, _sites = pop_api
+    assert client.post(LEG + "/activate").status_code == 200
+    main._background_update_tick(service.poi_manager, 10, 0, 0)
+    ordinary = client.get("/api/status").json()
+    assert ordinary["metric_source"] == "simulated"
+    assert all(ordinary["metric_availability"].values())
+    assert ordinary["network"]["latency_ms"] > 0
+    start_paced(client, 2)
+    paced = client.get("/api/status").json()
+    assert paced["metric_source"] == "unavailable"
+    assert not any(paced["metric_availability"].values())
+    assert all(value is None for value in paced["network"].values())
+    assert paced["obstruction"]["obstruction_percent"] is None
+    assert client.post("/api/v2/missions/mission-1/legs/deactivate").status_code == 200
+    assert client.post(LEG + "/activate").status_code == 200
+    main._background_update_tick(service.poi_manager, 10, 0, 0)
+    restored = client.get("/api/status").json()
+    assert restored["metric_source"] == "simulated"
+    assert all(restored["metric_availability"].values())
+    assert restored["network"]["latency_ms"] > 0

@@ -14,6 +14,7 @@ export interface OperatingContext {
   phase: string | null;
   source_mode: 'live' | 'simulation';
   replay_run_id: string | null;
+  operating_context_id?: string | null;
 }
 
 export function operatingMission(
@@ -45,8 +46,10 @@ export function defaultAssociation<T extends OperatorInput>(
 export function replayCurrent(record: SavedRecord, health?: OperatorHealth) {
   return (
     !health?.mission_journal ||
-    (!!health.replay_run_id &&
-      record.provenance.replay_run_id === health.replay_run_id)
+    (health.operating_context_id != null
+      ? record.provenance.operating_context_id === health.operating_context_id
+      : !!health.replay_run_id &&
+        record.provenance.replay_run_id === health.replay_run_id)
   );
 }
 
@@ -110,11 +113,12 @@ export function operationalRelevant(
   return (
     replayCurrent(record, health) ||
     (!record.deleted &&
-      ((record.payload.entry_type === 'call' &&
-        record.time.occurred_at === null &&
-        ['tentative', 'scheduled', 'delayed'].includes(
-          record.payload.status
-        )) ||
+      (record.payload.entry_type === 'conference' ||
+        (record.payload.entry_type === 'call' &&
+          record.time.occurred_at === null &&
+          ['tentative', 'scheduled', 'delayed'].includes(
+            record.payload.status
+          )) ||
         (record.payload.entry_type === 'issue' &&
           record.payload.status !== 'resolved')))
   );
