@@ -291,9 +291,8 @@ Storage failures return 503 and preserve the previous file. The UI waits for
 this acknowledgment before showing a saved/applied state.
 
 Presets are additive `operator_presets` metadata in the existing Overview link
-settings JSON file, with no database schema migration, new volume or new
-infrastructure. Existing settings writes preserve that metadata and unfamiliar
-future fields. Back up settings with the deployment's normal configuration
+settings JSON file, without database migration or new infrastructure.
+Existing writes preserve that metadata and unfamiliar future fields. Back up settings with the deployment's normal configuration
 backup. Old binaries ignore and retain the metadata;
 rolling back the frontend/backend leaves saved visibility and preset data in
 place. Disable Operator to hide controls; Configuration remains available.
