@@ -1,16 +1,16 @@
 {
-  "candidateSha": "4ea5876a98078550298ccf1fce3a35196d204125",
-  "sourceArchiveSha256": "c78a33c538c2ecf1cd820c9ff10cf18e2d878e3b6171ab56ed0678a451d29184",
+  "candidateSha": "3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724",
+  "sourceArchiveSha256": "683353a6074d52081e4f1b2bc08518ed47872aa48e0cbed06eb1cb283090abbf",
   "images": {
     "backend": {
-      "tag": "starlink-operator-training-cdf1ab62ec72-backend:4ea5876a98078550298ccf1fce3a35196d204125",
-      "id": "sha256:5cdaecbde79809c5ff88648007df2a1160d3a2fc668bdf86b2bbb86df0e4e7f1",
-      "revision": "4ea5876a98078550298ccf1fce3a35196d204125"
+      "tag": "starlink-operator-training-feac396136f0-backend:3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724",
+      "id": "sha256:7215b4b491014d732a8ac159bb4a6f3f1257a4016a03920751d2ebeba1128e5b",
+      "revision": "3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724"
     },
     "frontend": {
-      "tag": "starlink-operator-training-cdf1ab62ec72-frontend:4ea5876a98078550298ccf1fce3a35196d204125",
-      "id": "sha256:769857945f0c77811306370e4654f91de77c10e82fb58cbe801fad859691e570",
-      "revision": "4ea5876a98078550298ccf1fce3a35196d204125"
+      "tag": "starlink-operator-training-feac396136f0-frontend:3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724",
+      "id": "sha256:af3abf7a39a548a3462c10ea676476ed505db2bbda399f523e26ee0706d3b4e4",
+      "revision": "3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724"
     }
   },
   "capturedBeforeArchiveBrowser": true

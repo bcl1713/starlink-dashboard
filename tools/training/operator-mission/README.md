@@ -26,8 +26,8 @@ not need it.
 
 This is an implementation candidate, not a fully accepted release. T01–T11
 remain honest about missing machine evidence and manual observations. At this
-checkpoint, draft-switch/offline/conflict/backup and the remaining T11 recovery
-adapters are unfinished; full parity crosswalk, final performance/accessibility,
+checkpoint, the real conflict and backup/epoch adapters and remaining T11
+provider/field coverage are unfinished; full parity crosswalk, final performance/accessibility,
 mobile-keyboard checks and an actual uncoached person's walkthrough remain open.
 The original shell is still the default; `?workspace=1` selects the candidate.
 Do not interpret a green lesson or a passing browser test as human usability
@@ -80,7 +80,7 @@ Each browser phase retains successful and failed traces under its own
 does not erase an earlier trace. Retain these synthetic artifacts with the
 source/image identities; this does not keep any runtime resource alive.
 
-Archive evidence retains distinct destination records/history/H before and after each import, actual ready-preparation responses and the downloaded response fingerprint/briefing status/ZIP hash. The inspector retains expected and computed member checksums. These raw facts support the pending guide handoff; a single post-import snapshot or a generic success flag is not that evidence.
+Archive evidence retains distinct destination records/history/H before and after each import, actual ready-preparation responses and the downloaded response fingerprint/briefing status/ZIP hash. The inspector retains expected and computed member checksums. These raw facts support the guide handoff; a single post-import snapshot or a generic success flag is not that evidence.
 
 The private archive handoff uses `archive_evidence.py baseline|check --root ROOT
 --label empty|nonempty --browser-origin ORIGIN`. Run it in the existing backend
@@ -105,8 +105,12 @@ origin/store/epoch reports remain unavailable. PDF review and a client-visible
 failure are explicit human observations; cancellation/ready state cannot prove
 that a browser experienced a network failure. Stop the child with `import-stop`
 after checking. See the canonical packaged guide's archive procedure for exact
-commands and the managed-cloud relay option. This handoff still requires its
-new exact-source CLI/browser gate before acceptance is claimed.
+commands and the managed-cloud relay option. The combined exact-source CLI/browser handoff passes at
+`3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724`, including both imports, selected-file
+rejection, three-size guide revalidation and explicit missing human observations.
+The same run verifies raw parked-draft, offline/reconnect and native storage-quota
+recovery evidence with actual saved revisions. The complete course and human
+usability gates remain open; see the retained course-archive report.
 
 Normal re-import can replace a mission under the same ID. The private checker
 records actual destination plan-file hashes and device/inode/modification facts

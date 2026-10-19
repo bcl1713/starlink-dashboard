@@ -1,8 +1,8 @@
 
 Running 1 test using 1 worker
 
-(node:1429807) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:1880552) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  1 tests/e2e/operator-training-records.spec.ts:10:1 › guided T02 call lifecycle retains all milestones after a later edit at three sizes (14.8s)
+  ✓  1 tests/e2e/operator-training-records.spec.ts:10:1 › guided T02 call lifecycle retains all milestones after a later edit at three sizes (16.0s)
 
-  1 passed (15.8s)
+  1 passed (17.0s)
