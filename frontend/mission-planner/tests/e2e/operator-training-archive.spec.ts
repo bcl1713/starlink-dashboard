@@ -166,16 +166,19 @@ test('original training mission ZIP transfers through Missions without restoring
   const downloadedResponse = page.waitForResponse(
     (response) =>
       response.status() === 200 &&
-      response.headers()['content-type']?.includes('application/zip')
+      response.headers()['content-type']?.includes('application/zip'),
+    { timeout: 620_000 }
   );
   const downloaded = page.waitForEvent('download', { timeout: 620_000 });
   await dialog.getByRole('button', { name: 'Export', exact: true }).click();
-  const download = await downloaded;
+  const [download, zipResponse] = await Promise.all([
+    downloaded,
+    downloadedResponse,
+  ]);
   expect(download.suggestedFilename()).toBe(`${id}.zip`);
   expect(await download.failure()).toBeNull();
   await download.saveAs(join(root, 'original-mission.zip'));
   expect(downloads).toEqual([`${id}.zip`]);
-  const zipResponse = await downloadedResponse;
   const readyPreparations = await Promise.all(preparationReads);
   expect(readyPreparations).toEqual(
     expect.arrayContaining([
