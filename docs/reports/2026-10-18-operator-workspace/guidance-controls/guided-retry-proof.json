@@ -2,7 +2,7 @@
   "synthetic": true,
   "receipt": {
     "schema_version": 1,
-    "command_id": "9fff9207-4079-476c-8522-c80c7ffb12b0",
+    "command_id": "53c3a002-764a-4768-96d0-f3a1759d383e",
     "saved_records": [
       {
         "schema_version": 1,
@@ -26,11 +26,11 @@
           "next_leg_id": null,
           "entry_type": "note"
         },
-        "record_id": "426c30a0-96b1-4b89-82bf-0d7e2c8e2822",
+        "record_id": "6594dcb0-9b7e-4682-8d04-7781a5409a58",
         "version": 1,
         "previous_version": null,
         "journal_seq": 13,
-        "command_id": "9fff9207-4079-476c-8522-c80c7ffb12b0",
+        "command_id": "53c3a002-764a-4768-96d0-f3a1759d383e",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
@@ -76,8 +76,8 @@
           "next_leg_id": null
         }
       },
-      "key": "47275046-bf2f-460d-a5af-b8525ada4a82",
-      "epoch": "10b09dd4-eab4-4194-b616-cad5503036e6"
+      "key": "67a14c0b-dd12-4354-b64d-3fa25804d399",
+      "epoch": "a575e52b-83f2-4d3e-bae5-a6cebadc8e55"
     },
     {
       "body": {
@@ -103,8 +103,35 @@
           "next_leg_id": null
         }
       },
-      "key": "47275046-bf2f-460d-a5af-b8525ada4a82",
-      "epoch": "10b09dd4-eab4-4194-b616-cad5503036e6"
+      "key": "67a14c0b-dd12-4354-b64d-3fa25804d399",
+      "epoch": "a575e52b-83f2-4d3e-bae5-a6cebadc8e55"
+    },
+    {
+      "body": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "note",
+          "title": "Fictional later note retires original accepted tray row",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null
+        }
+      },
+      "key": "e1933b82-d565-40a8-9aa3-7be892c547e9",
+      "epoch": "a575e52b-83f2-4d3e-bae5-a6cebadc8e55"
     }
   ],
   "history": {
@@ -134,11 +161,11 @@
             "next_leg_id": null,
             "entry_type": "note"
           },
-          "record_id": "426c30a0-96b1-4b89-82bf-0d7e2c8e2822",
+          "record_id": "6594dcb0-9b7e-4682-8d04-7781a5409a58",
           "version": 1,
           "previous_version": null,
           "journal_seq": 13,
-          "command_id": "9fff9207-4079-476c-8522-c80c7ffb12b0",
+          "command_id": "53c3a002-764a-4768-96d0-f3a1759d383e",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -175,5 +202,6 @@
   },
   "observedBeforeRetry": true,
   "resumedProgressAfterReload": true,
+  "retainedAfterReceiptRetirementAndLaterReload": true,
   "wholeLessonStillIncomplete": true
 }

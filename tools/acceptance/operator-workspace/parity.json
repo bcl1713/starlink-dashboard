@@ -10,7 +10,7 @@
       "action_or_field": "mission",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -27,7 +27,7 @@
       "action_or_field": "scope",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -44,7 +44,7 @@
       "action_or_field": "preflight",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -61,7 +61,7 @@
       "action_or_field": "leg",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -78,7 +78,7 @@
       "action_or_field": "between_legs",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -95,7 +95,7 @@
       "action_or_field": "postflight",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -112,7 +112,7 @@
       "action_or_field": "previous_leg",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -129,7 +129,7 @@
       "action_or_field": "next_leg",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -146,7 +146,7 @@
       "action_or_field": "mission_switch",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -163,7 +163,7 @@
       "action_or_field": "dirty_draft_switch",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -180,7 +180,7 @@
       "action_or_field": "missing_mission",
       "baseline_journey": "Mission selection: URL `mission_id`, journal Mission ID form, Missions links",
       "target_journey": "Persistent mission selector with readable itinerary/leg names; visibly pinned draft target; scope chooser in common editor; Missions owns itinerary",
-      "guide_section": "mission",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -197,7 +197,7 @@
       "action_or_field": "next_requirement",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -214,7 +214,7 @@
       "action_or_field": "overdue_separate",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -231,7 +231,7 @@
       "action_or_field": "risks",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -248,7 +248,7 @@
       "action_or_field": "issues",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -265,7 +265,7 @@
       "action_or_field": "unknown_time",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -282,7 +282,7 @@
       "action_or_field": "incomplete_pages",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -299,7 +299,7 @@
       "action_or_field": "refresh_source_failure",
       "baseline_journey": "Quick brief: summary above Display tools",
       "target_journey": "Persistent current activity and next requirement, with separate attention queue; source status detail; incomplete coverage stays visible",
-      "guide_section": "brief",
+      "guide_section": "context",
       "training_stage": "T01",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -316,7 +316,7 @@
       "action_or_field": "create",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -333,7 +333,7 @@
       "action_or_field": "edit",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -350,7 +350,7 @@
       "action_or_field": "schedule",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -367,7 +367,7 @@
       "action_or_field": "tentative",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -384,7 +384,7 @@
       "action_or_field": "delayed",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -401,7 +401,7 @@
       "action_or_field": "completed",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -418,7 +418,7 @@
       "action_or_field": "cancelled",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -435,7 +435,7 @@
       "action_or_field": "retrospective",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -452,7 +452,7 @@
       "action_or_field": "reschedule_signed_minutes",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -469,7 +469,7 @@
       "action_or_field": "reschedule_signed_hours",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -486,7 +486,7 @@
       "action_or_field": "duration_preserved",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -503,7 +503,7 @@
       "action_or_field": "unknown_duration",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -520,7 +520,7 @@
       "action_or_field": "prep_default_10",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -537,7 +537,7 @@
       "action_or_field": "prep_zero",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -554,7 +554,7 @@
       "action_or_field": "prep_unknown",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -571,7 +571,7 @@
       "action_or_field": "party",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -588,7 +588,7 @@
       "action_or_field": "coordinator",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -605,7 +605,7 @@
       "action_or_field": "communications_kind",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -622,7 +622,7 @@
       "action_or_field": "conference_link",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -639,7 +639,7 @@
       "action_or_field": "planned_start",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -656,7 +656,7 @@
       "action_or_field": "planned_end",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -673,7 +673,7 @@
       "action_or_field": "occurred_at",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -690,7 +690,7 @@
       "action_or_field": "ended_at",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -707,7 +707,7 @@
       "action_or_field": "precision",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -724,7 +724,7 @@
       "action_or_field": "end_state",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -741,7 +741,7 @@
       "action_or_field": "scope",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -758,7 +758,7 @@
       "action_or_field": "operator_label",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -775,7 +775,7 @@
       "action_or_field": "validation",
       "baseline_journey": "Schedule, reschedule and retrospectively log calls: Communications",
       "target_journey": "Add call; Scheduled/Log actual modes; labeled UTC date/time; conference lookup; edit/reschedule from call; advanced timing and all nullable fields retained",
-      "guide_section": "call",
+      "guide_section": "calls",
       "training_stage": "T02",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -792,7 +792,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -809,7 +809,7 @@
       "action_or_field": "restore",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -826,7 +826,7 @@
       "action_or_field": "history",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -843,7 +843,7 @@
       "action_or_field": "invalid_reference",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -860,7 +860,7 @@
       "action_or_field": "cancellation_independent",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -877,7 +877,7 @@
       "action_or_field": "conference_not_closed",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -894,7 +894,7 @@
       "action_or_field": "participation_not_closed",
       "baseline_journey": "Call correction, removal and restoration",
       "target_journey": "Call detail \u2192 Edit, History, More \u2192 Remove; History includes removed filter and Restore; cancellation is a status edit",
-      "guide_section": "call-record",
+      "guide_section": "calls",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -911,7 +911,7 @@
       "action_or_field": "create",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -928,7 +928,7 @@
       "action_or_field": "edit",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -945,7 +945,7 @@
       "action_or_field": "establish",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -962,7 +962,7 @@
       "action_or_field": "verify",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -979,7 +979,7 @@
       "action_or_field": "interrupt",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -996,7 +996,7 @@
       "action_or_field": "restore_connection",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1013,7 +1013,7 @@
       "action_or_field": "close",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1030,7 +1030,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1047,7 +1047,7 @@
       "action_or_field": "restore_record",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1064,7 +1064,7 @@
       "action_or_field": "history",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1081,7 +1081,7 @@
       "action_or_field": "intended_transport",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1098,7 +1098,7 @@
       "action_or_field": "configured_transport",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1115,7 +1115,7 @@
       "action_or_field": "configuration_reported_at",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1132,7 +1132,7 @@
       "action_or_field": "coordinator",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1149,7 +1149,7 @@
       "action_or_field": "verified_at",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1166,7 +1166,7 @@
       "action_or_field": "unknown_times",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1183,7 +1183,7 @@
       "action_or_field": "customer_not_inferred",
       "baseline_journey": "Reusable conferences: collapsed Communications disclosure",
       "target_journey": "Communications \u2192 Conferences; active conference beside participants; direct lifecycle actions; advanced correction fields and history",
-      "guide_section": "conference",
+      "guide_section": "conferences",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1200,7 +1200,7 @@
       "action_or_field": "join",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1217,7 +1217,7 @@
       "action_or_field": "leave",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1234,7 +1234,7 @@
       "action_or_field": "interrupt",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1251,7 +1251,7 @@
       "action_or_field": "resume_new_interval",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1268,7 +1268,7 @@
       "action_or_field": "edit",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1285,7 +1285,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1302,7 +1302,7 @@
       "action_or_field": "restore_record",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1319,7 +1319,7 @@
       "action_or_field": "history",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1336,7 +1336,7 @@
       "action_or_field": "participant",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1353,7 +1353,7 @@
       "action_or_field": "call_link",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1370,7 +1370,7 @@
       "action_or_field": "conference_link",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1387,7 +1387,7 @@
       "action_or_field": "resumes_link",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1404,7 +1404,7 @@
       "action_or_field": "unknown_times",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1421,7 +1421,7 @@
       "action_or_field": "gap_preserved",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1438,7 +1438,7 @@
       "action_or_field": "conference_not_closed",
       "baseline_journey": "Independent customer participation",
       "target_journey": "Connected customer rows in Now and Communications; direct Leave; interruption/restore in detail; Join on conference; selectors for links; continuity discrepancy remains visible",
-      "guide_section": "participation",
+      "guide_section": "customers",
       "training_stage": "T03",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1455,7 +1455,7 @@
       "action_or_field": "unknown_time_connected",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1472,7 +1472,7 @@
       "action_or_field": "call_window",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1489,7 +1489,7 @@
       "action_or_field": "conference_window",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1506,7 +1506,7 @@
       "action_or_field": "overlap",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1523,7 +1523,7 @@
       "action_or_field": "optional_source_failure",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1540,7 +1540,7 @@
       "action_or_field": "controls_remain_usable",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1557,7 +1557,7 @@
       "action_or_field": "no_acknowledgment_gate",
       "baseline_journey": "Protected activity and modeled overlap",
       "target_journey": "Active customer context remains visible during Transport entry; inline overlap advisory with source detail; no acknowledgment gate",
-      "guide_section": "protection",
+      "guide_section": "flight-predictions",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1574,7 +1574,7 @@
       "action_or_field": "create",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1591,7 +1591,7 @@
       "action_or_field": "edit",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1608,7 +1608,7 @@
       "action_or_field": "open",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1625,7 +1625,7 @@
       "action_or_field": "monitoring",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1642,7 +1642,7 @@
       "action_or_field": "resolve",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1659,7 +1659,7 @@
       "action_or_field": "reopen",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1676,7 +1676,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1693,7 +1693,7 @@
       "action_or_field": "restore",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1710,7 +1710,7 @@
       "action_or_field": "history",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1727,7 +1727,7 @@
       "action_or_field": "priority",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1744,7 +1744,7 @@
       "action_or_field": "mitigation",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1761,7 +1761,7 @@
       "action_or_field": "functional_area",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1778,7 +1778,7 @@
       "action_or_field": "responsible_party",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1795,7 +1795,7 @@
       "action_or_field": "follow_up_set",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1812,7 +1812,7 @@
       "action_or_field": "follow_up_reschedule",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1829,7 +1829,7 @@
       "action_or_field": "follow_up_clear",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1846,7 +1846,7 @@
       "action_or_field": "resolution_clears_follow_up",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1863,7 +1863,7 @@
       "action_or_field": "reopen_no_old_follow_up",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1880,7 +1880,7 @@
       "action_or_field": "capability_link",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1897,7 +1897,7 @@
       "action_or_field": "call_link",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1914,7 +1914,7 @@
       "action_or_field": "conference_link",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1931,7 +1931,7 @@
       "action_or_field": "transport_link",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1948,7 +1948,7 @@
       "action_or_field": "update_text",
       "baseline_journey": "Issues and follow-ups: Issues",
       "target_journey": "Attention row \u2192 Update/follow up; Issues view; concise issue editor; operational Activity vs immutable History clearly labeled",
-      "guide_section": "issue",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1965,7 +1965,7 @@
       "action_or_field": "select_update",
       "baseline_journey": "Historical issue correction",
       "target_journey": "Issue detail \u2192 Activity \u2192 Correct update; show effective and recorded UTC; immutable History beside it",
-      "guide_section": "issue-correction",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1982,7 +1982,7 @@
       "action_or_field": "correct_text",
       "baseline_journey": "Historical issue correction",
       "target_journey": "Issue detail \u2192 Activity \u2192 Correct update; show effective and recorded UTC; immutable History beside it",
-      "guide_section": "issue-correction",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -1999,7 +1999,7 @@
       "action_or_field": "correct_effective_time",
       "baseline_journey": "Historical issue correction",
       "target_journey": "Issue detail \u2192 Activity \u2192 Correct update; show effective and recorded UTC; immutable History beside it",
-      "guide_section": "issue-correction",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2016,7 +2016,7 @@
       "action_or_field": "recorded_time",
       "baseline_journey": "Historical issue correction",
       "target_journey": "Issue detail \u2192 Activity \u2192 Correct update; show effective and recorded UTC; immutable History beside it",
-      "guide_section": "issue-correction",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2033,7 +2033,7 @@
       "action_or_field": "original_preserved",
       "baseline_journey": "Historical issue correction",
       "target_journey": "Issue detail \u2192 Activity \u2192 Correct update; show effective and recorded UTC; immutable History beside it",
-      "guide_section": "issue-correction",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2050,7 +2050,7 @@
       "action_or_field": "no_lifecycle_replay",
       "baseline_journey": "Historical issue correction",
       "target_journey": "Issue detail \u2192 Activity \u2192 Correct update; show effective and recorded UTC; immutable History beside it",
-      "guide_section": "issue-correction",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2067,7 +2067,7 @@
       "action_or_field": "create",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2084,7 +2084,7 @@
       "action_or_field": "edit",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2101,7 +2101,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2118,7 +2118,7 @@
       "action_or_field": "restore",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2135,7 +2135,7 @@
       "action_or_field": "history",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2152,7 +2152,7 @@
       "action_or_field": "functional_status",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2169,7 +2169,7 @@
       "action_or_field": "redundancy_status",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2186,7 +2186,7 @@
       "action_or_field": "functional_observed_at",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2203,7 +2203,7 @@
       "action_or_field": "redundancy_observed_at",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2220,7 +2220,7 @@
       "action_or_field": "functional_time_precision",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2237,7 +2237,7 @@
       "action_or_field": "redundancy_time_precision",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2254,7 +2254,7 @@
       "action_or_field": "legacy_preserved",
       "baseline_journey": "Manual capability and redundancy assessments",
       "target_journey": "Issues \u2192 Capabilities; exception summary in Now; separate functional/backup observations in detail; never require duplicate crew forms",
-      "guide_section": "capability",
+      "guide_section": "issues-capability",
       "training_stage": "T07",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2271,7 +2271,7 @@
       "action_or_field": "call_prep",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2288,7 +2288,7 @@
       "action_or_field": "call_start",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2305,7 +2305,7 @@
       "action_or_field": "follow_up",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2322,7 +2322,7 @@
       "action_or_field": "restriction",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2339,7 +2339,7 @@
       "action_or_field": "pop",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2356,7 +2356,7 @@
       "action_or_field": "active",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2373,7 +2373,7 @@
       "action_or_field": "upcoming",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2390,7 +2390,7 @@
       "action_or_field": "overdue",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2407,7 +2407,7 @@
       "action_or_field": "unknown",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2424,7 +2424,7 @@
       "action_or_field": "history",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2441,7 +2441,7 @@
       "action_or_field": "acknowledge_supported_occurrence",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2458,7 +2458,7 @@
       "action_or_field": "future_visible_with_overdue",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2475,7 +2475,7 @@
       "action_or_field": "incomplete_snapshot",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2492,7 +2492,7 @@
       "action_or_field": "identity_rotation",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2509,7 +2509,7 @@
       "action_or_field": "optional_source_failure",
       "baseline_journey": "Operational events: sticky strip \u2192 Open events",
       "target_journey": "Now includes actionable timeline; separate future requirement remains pinned despite overdue backlog; acknowledgment only where backend offers it",
-      "guide_section": "event",
+      "guide_section": "display-alerts",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2526,7 +2526,7 @@
       "action_or_field": "enable",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2543,7 +2543,7 @@
       "action_or_field": "mute",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2560,7 +2560,7 @@
       "action_or_field": "test",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2577,7 +2577,7 @@
       "action_or_field": "in_app",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2594,7 +2594,7 @@
       "action_or_field": "sound",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2611,7 +2611,7 @@
       "action_or_field": "vibration",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2628,7 +2628,7 @@
       "action_or_field": "unsupported",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2645,7 +2645,7 @@
       "action_or_field": "permission_failure",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2662,7 +2662,7 @@
       "action_or_field": "delivery_failure",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2679,7 +2679,7 @@
       "action_or_field": "cross_tab_dedup",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2696,7 +2696,7 @@
       "action_or_field": "preferences_persist",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2713,7 +2713,7 @@
       "action_or_field": "foreground_lifecycle",
       "baseline_journey": "Local cues: Local alerts popover",
       "target_journey": "Header Alerts control; enabled/muted/failure state; same local preferences and foreground lifecycle",
-      "guide_section": "alert",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2730,7 +2730,7 @@
       "action_or_field": "preflight_planned",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2747,7 +2747,7 @@
       "action_or_field": "airborne_live_eta",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2764,7 +2764,7 @@
       "action_or_field": "live_unavailable_no_schedule_fallback",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2781,7 +2781,7 @@
       "action_or_field": "pop_publication_identity",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2798,7 +2798,7 @@
       "action_or_field": "stale_position",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2815,7 +2815,7 @@
       "action_or_field": "stale_speed",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2832,7 +2832,7 @@
       "action_or_field": "missing_pop",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2849,7 +2849,7 @@
       "action_or_field": "raw_provenance",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -2866,7 +2866,7 @@
       "action_or_field": "no_frontend_prediction",
       "baseline_journey": "Airborne modeled timing and live PoP",
       "target_journey": "Live events authoritative for airborne advisory timing; basis chip (Live ETA / Planned / Unavailable), expanded provenance; no frontend prediction",
-      "guide_section": "live-timing",
+      "guide_section": "calls",
       "training_stage": "T05",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3206,7 +3206,7 @@
       "action_or_field": "correct_application",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3223,7 +3223,7 @@
       "action_or_field": "clears_old_check",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3240,7 +3240,7 @@
       "action_or_field": "explicit_replacement_check",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3257,7 +3257,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3274,7 +3274,7 @@
       "action_or_field": "restore",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3291,7 +3291,7 @@
       "action_or_field": "history",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3308,7 +3308,7 @@
       "action_or_field": "reference_constraints",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3325,7 +3325,7 @@
       "action_or_field": "no_routing_claim",
       "baseline_journey": "Transport correction and checks",
       "target_journey": "Decision detail \u2192 Correct; show clearing check in editor; More \u2192 Remove/Restore; History; routing stays unknown",
-      "guide_section": "transport-correction",
+      "guide_section": "transport",
       "training_stage": "T06",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3342,7 +3342,7 @@
       "action_or_field": "create",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3359,7 +3359,7 @@
       "action_or_field": "note",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3376,7 +3376,7 @@
       "action_or_field": "call_observation",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3393,7 +3393,7 @@
       "action_or_field": "edit",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3410,7 +3410,7 @@
       "action_or_field": "remove",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3427,7 +3427,7 @@
       "action_or_field": "restore",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3444,7 +3444,7 @@
       "action_or_field": "history",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3461,7 +3461,7 @@
       "action_or_field": "title",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3478,7 +3478,7 @@
       "action_or_field": "note",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3495,7 +3495,7 @@
       "action_or_field": "scope",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3512,7 +3512,7 @@
       "action_or_field": "leg",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3529,7 +3529,7 @@
       "action_or_field": "previous_leg",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3546,7 +3546,7 @@
       "action_or_field": "next_leg",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3563,7 +3563,7 @@
       "action_or_field": "occurred_at",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3580,7 +3580,7 @@
       "action_or_field": "ended_at",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3597,7 +3597,7 @@
       "action_or_field": "precision",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3614,7 +3614,7 @@
       "action_or_field": "end_state",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3631,7 +3631,7 @@
       "action_or_field": "planned_start",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3648,7 +3648,7 @@
       "action_or_field": "planned_end",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3665,7 +3665,7 @@
       "action_or_field": "audit_note",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3682,7 +3682,7 @@
       "action_or_field": "operator_label",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3699,7 +3699,7 @@
       "action_or_field": "validation",
       "baseline_journey": "Manual journal observation and correction: Journal",
       "target_journey": "Persistent Note action; short observation editor; details disclose timing/scope; browse and correct in History",
-      "guide_section": "journal",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3716,7 +3716,7 @@
       "action_or_field": "paged",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3733,7 +3733,7 @@
       "action_or_field": "original",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3750,7 +3750,7 @@
       "action_or_field": "replacement",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3767,7 +3767,7 @@
       "action_or_field": "removed",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3784,7 +3784,7 @@
       "action_or_field": "restored",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3801,7 +3801,7 @@
       "action_or_field": "actual_time",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3818,7 +3818,7 @@
       "action_or_field": "planned_time",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3835,7 +3835,7 @@
       "action_or_field": "recorded_time",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3852,7 +3852,7 @@
       "action_or_field": "author",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3869,7 +3869,7 @@
       "action_or_field": "source",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3886,7 +3886,7 @@
       "action_or_field": "version",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3903,7 +3903,7 @@
       "action_or_field": "provenance",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3920,7 +3920,7 @@
       "action_or_field": "association",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3937,7 +3937,7 @@
       "action_or_field": "loaded_filter",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3954,7 +3954,7 @@
       "action_or_field": "incomplete_coverage",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3971,7 +3971,7 @@
       "action_or_field": "pagination_error",
       "baseline_journey": "Immutable audit and provenance",
       "target_journey": "History view filters loaded records and explicitly shows incomplete pages; record detail \u2192 full paged immutable revisions; readable links; no claim of backend full-text search",
-      "guide_section": "history",
+      "guide_section": "notes-history",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -3988,7 +3988,7 @@
       "action_or_field": "link",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4005,7 +4005,7 @@
       "action_or_field": "metrics",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4022,7 +4022,7 @@
       "action_or_field": "map",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4039,7 +4039,7 @@
       "action_or_field": "panels",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4056,7 +4056,7 @@
       "action_or_field": "aircraft",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4073,7 +4073,7 @@
       "action_or_field": "boundaries",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4090,7 +4090,7 @@
       "action_or_field": "history_window",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4107,7 +4107,7 @@
       "action_or_field": "preset_normal",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4124,7 +4124,7 @@
       "action_or_field": "preset_communications",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4141,7 +4141,7 @@
       "action_or_field": "preset_weather",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4158,7 +4158,7 @@
       "action_or_field": "preset_save",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4175,7 +4175,7 @@
       "action_or_field": "preset_apply",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4192,7 +4192,7 @@
       "action_or_field": "version_conflict",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4209,7 +4209,7 @@
       "action_or_field": "shared_scope",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4226,7 +4226,7 @@
       "action_or_field": "configuration_link",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4243,7 +4243,7 @@
       "action_or_field": "lazy_mount",
       "baseline_journey": "Shared Overview display settings",
       "target_journey": "Display tools drawer, supported groups and preset actions; global scope label; Configuration link; no fullscreen command",
-      "guide_section": "display-settings",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4260,7 +4260,7 @@
       "action_or_field": "open_overview",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4277,7 +4277,7 @@
       "action_or_field": "discover",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4294,7 +4294,7 @@
       "action_or_field": "select_peer",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4311,7 +4311,7 @@
       "action_or_field": "recenter",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4328,7 +4328,7 @@
       "action_or_field": "no_peer",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4345,7 +4345,7 @@
       "action_or_field": "multiple_peers",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4362,7 +4362,7 @@
       "action_or_field": "lost_peer",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4379,7 +4379,7 @@
       "action_or_field": "acknowledged",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4396,7 +4396,7 @@
       "action_or_field": "unsupported",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4413,7 +4413,7 @@
       "action_or_field": "timeout",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4430,7 +4430,7 @@
       "action_or_field": "expired",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4447,7 +4447,7 @@
       "action_or_field": "failure",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4464,7 +4464,7 @@
       "action_or_field": "local_scope",
       "baseline_journey": "Overview window discovery and recenter",
       "target_journey": "Display tools \u2192 target window + Recenter; optional header shortcut only after unambiguous selection; shared settings and local window command have distinct scope labels",
-      "guide_section": "display-window",
+      "guide_section": "display-alerts",
       "training_stage": "T04",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4481,7 +4481,7 @@
       "action_or_field": "mission_records_link",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4498,7 +4498,7 @@
       "action_or_field": "prepare",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4515,7 +4515,7 @@
       "action_or_field": "export_pdf",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4532,7 +4532,7 @@
       "action_or_field": "export_plan",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4549,7 +4549,7 @@
       "action_or_field": "export_telemetry_each_leg",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4566,7 +4566,7 @@
       "action_or_field": "export_current",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4583,7 +4583,7 @@
       "action_or_field": "export_history",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4600,7 +4600,7 @@
       "action_or_field": "export_checksums",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4617,7 +4617,7 @@
       "action_or_field": "export_timing",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4634,7 +4634,7 @@
       "action_or_field": "cancel",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4651,7 +4651,7 @@
       "action_or_field": "preparation_failure",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4668,7 +4668,7 @@
       "action_or_field": "download",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4685,7 +4685,7 @@
       "action_or_field": "import_plan",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4702,7 +4702,7 @@
       "action_or_field": "import_no_operator_restore",
       "baseline_journey": "Mission ZIP and plan import",
       "target_journey": "Header Mission records link to existing mission page/export; preserve ExportDialog/ImportDialog, no duplicate export engine/status invention",
-      "guide_section": "archive",
+      "guide_section": "archive-transfer",
       "training_stage": "T10",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4719,7 +4719,7 @@
       "action_or_field": "frozen_key",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4736,7 +4736,7 @@
       "action_or_field": "frozen_body",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4753,7 +4753,7 @@
       "action_or_field": "frozen_time",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4770,7 +4770,7 @@
       "action_or_field": "expected_version",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4787,7 +4787,7 @@
       "action_or_field": "receipt_then_reread",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4804,7 +4804,7 @@
       "action_or_field": "reread_failure",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4821,7 +4821,7 @@
       "action_or_field": "conflict_reconcile",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4838,7 +4838,7 @@
       "action_or_field": "invalid_store",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4855,7 +4855,7 @@
       "action_or_field": "unavailable_store",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4872,7 +4872,7 @@
       "action_or_field": "epoch_rotation",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4889,7 +4889,7 @@
       "action_or_field": "source_rotation",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4906,7 +4906,7 @@
       "action_or_field": "retry_after_navigation",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4923,7 +4923,7 @@
       "action_or_field": "retry_after_mission_switch",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4940,7 +4940,7 @@
       "action_or_field": "retry_after_reload",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4957,7 +4957,7 @@
       "action_or_field": "late_receipt",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4974,7 +4974,7 @@
       "action_or_field": "edited_draft_not_cleared",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -4991,7 +4991,7 @@
       "action_or_field": "storage_failure",
       "baseline_journey": "Save/receipt/conflict/store recovery across all commands",
       "target_journey": "Common transaction status by action; same hooks/contracts; retained draft and explicit reconcile; store change quarantines old save; pending target always visible",
-      "guide_section": "save-recovery",
+      "guide_section": "drafts-recovery",
       "training_stage": "T08",
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
@@ -5008,7 +5008,7 @@
       "action_or_field": "open",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5024,7 +5024,7 @@
       "action_or_field": "close",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5040,7 +5040,7 @@
       "action_or_field": "offline",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5056,7 +5056,7 @@
       "action_or_field": "desktop_guide",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5072,7 +5072,7 @@
       "action_or_field": "mobile_guide",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5088,7 +5088,7 @@
       "action_or_field": "quick_reference",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5104,7 +5104,7 @@
       "action_or_field": "print",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5120,7 +5120,7 @@
       "action_or_field": "guide_progress_resume",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5136,7 +5136,7 @@
       "action_or_field": "guide_progress_reset",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
@@ -5152,7 +5152,7 @@
       "action_or_field": "mission_reset_command_distinct",
       "baseline_journey": "Unavailable in baseline",
       "target_journey": "Operator \u2192 Help",
-      "guide_section": "help",
+      "guide_section": "first-use",
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",

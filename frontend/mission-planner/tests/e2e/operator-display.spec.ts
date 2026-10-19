@@ -50,12 +50,12 @@ test('display presets restore actual weather rendering and report real conflicts
         .poll(
           async () => {
             const current = await windSnapshot(page);
-            return (
-              current?.present &&
-              current.wind === on &&
-              current.temperature === !on &&
-              current.bulletins?.[2] === on
-            );
+            return JSON.stringify({
+              present: !!current?.present,
+              wind: current?.wind,
+              temperature: current?.temperature,
+              sigmet: current?.bulletins?.[2],
+            });
           },
           { timeout: 180000 }
         )
