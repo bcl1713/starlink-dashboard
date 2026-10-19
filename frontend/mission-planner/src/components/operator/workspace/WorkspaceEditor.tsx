@@ -63,21 +63,39 @@ export function WorkspaceEditor({
       'operator-records',
       draft?.target.missionId,
       operatorIdentity(health.data),
-      'editor-relationships-v2',
+      'workspace-all',
     ],
     queryFn: ({ pageParam }) =>
-      readOperatorRecords({ mission_id: draft!.target.missionId }, pageParam),
+      readOperatorRecords(
+        { mission_id: draft!.target.missionId, include_removed: true },
+        pageParam
+      ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.cursor ?? undefined,
     enabled: usesRelationships && !!health.data?.ready,
     retry: false,
   });
-  const relatedRecords =
+  // Share the cockpit snapshot and its authoritative current-record reads.
+  // An accepted bridge must not disappear behind a separate relationship query.
+  const related = new Map(
     relationships.data?.pages.flatMap((page) =>
-      page.items
-        .map((item) => item.record)
-        .filter((record) => operationalRelevant(record, health.data))
-    ) ?? [];
+      page.items.map((item) => [item.record.record_id, item.record] as const)
+    ) ?? []
+  );
+  for (const row of workspace.confirmedRecords) {
+    const record = row.read.record;
+    if (
+      row.identity !== operatorIdentity(health.data) ||
+      record.mission_id !== draft?.target.missionId
+    )
+      continue;
+    const previous = related.get(record.record_id);
+    if (!previous || previous.version < record.version)
+      related.set(record.record_id, record);
+  }
+  const relatedRecords = [...related.values()].filter((record) =>
+    operationalRelevant(record, health.data)
+  );
   const timing = useMissionAssociation(
     mission?.id === draft?.target.missionId ? mission : undefined,
     draft?.input.record_type === 'call' ||
@@ -266,7 +284,9 @@ export function WorkspaceEditor({
         <div className="ws-editor-body">
           {usesRelationships && (
             <p role="status" aria-label="Related record coverage">
-              {relatedRecords.length} related records loaded.
+              {relationships.isPending
+                ? 'Loading related records…'
+                : `${relatedRecords.length} related records loaded.`}
             </p>
           )}
           {usesRelationships && relationships.isError && (

@@ -273,7 +273,7 @@ it('loads later relationship pages without dropping the pinned draft', async () 
     await screen.findByRole('option', { name: 'Related customer 51' })
   ).toBeTruthy();
   expect(api.readOperatorRecords).toHaveBeenCalledWith(
-    { mission_id: 'mission-a' },
+    { mission_id: 'mission-a', include_removed: true },
     'page-2'
   );
   expect(registry.resumeDraft(draft.draftId)?.target.missionId).toBe(
@@ -427,4 +427,49 @@ it('offers an already accepted ordinary-activation conference in the call choose
     'conference_id',
     accepted.record_id
   );
+});
+
+it('uses mission records already visible in Now while the list refresh is pending', async () => {
+  const accepted = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    payload: {
+      ...conferenceDraft('mission-a').payload,
+      title: 'Visible bridge',
+    },
+  };
+  vi.mocked(api.readOperatorRecords).mockImplementation(
+    () => new Promise(() => {})
+  );
+  const { client } = mount(callDraft(undefined, 'planned', 'mission-a'));
+  act(() => {
+    client.setQueryData(
+      [
+        'operator-records',
+        'mission-a',
+        JSON.stringify(['store', 'epoch-a', 'live', null]),
+        'workspace-all',
+      ],
+      { pages: [page([accepted])], pageParams: [undefined] }
+    );
+  });
+  expect(
+    await screen.findByRole('option', { name: 'Visible bridge' })
+  ).toBeTruthy();
+});
+
+it('closes the conference dialog after its exact draft is accepted', async () => {
+  const saved = { ...record, ...conferenceDraft('mission-a') };
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([saved]).items[0]);
+  const { registry, draft } = mount(conferenceDraft('mission-a'));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Save conference' })
+  );
+  await waitFor(() => expect(registry.resumeDraft(draft.draftId)).toBeNull());
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
