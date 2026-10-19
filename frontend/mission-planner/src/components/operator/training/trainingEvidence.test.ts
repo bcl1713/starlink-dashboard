@@ -793,3 +793,59 @@ it('retains a removed/restored call milestone after a later correction, using it
     }).outcomes
   ).not.toContain('call-removed-restored');
 });
+
+it('verifies complete immutable history including a removed latest record, not a receipt or completeness flag alone', () => {
+  const edited: SavedRecord = {
+    ...note,
+    version: 2,
+    previous_version: 1,
+    journal_seq: 2,
+    command_id: 'edit',
+    operation: 'update',
+  };
+  const removed: SavedRecord = {
+    ...edited,
+    version: 3,
+    previous_version: 2,
+    journal_seq: 3,
+    command_id: 'remove',
+    operation: 'remove',
+    deleted: true,
+  };
+  const complete = {
+    ...source,
+    historyComplete: true,
+    records: [removed],
+    history: [note, edited, removed],
+    receipts: [],
+  };
+  expect(collectRecordEvidence(complete).outcomes).toContain(
+    'immutable-history-complete'
+  );
+  for (const changed of [
+    { ...complete, history: [note, removed] },
+    {
+      ...complete,
+      history: [note, edited, { ...edited, reason: 'contradictory' }, removed],
+    },
+    {
+      ...complete,
+      history: [note, { ...edited, previous_version: null }, removed],
+    },
+    { ...complete, history: [note, { ...edited, journal_seq: 1 }, removed] },
+    { ...complete, historyComplete: false },
+    { ...complete, complete: false },
+    { ...complete, fresh: false },
+    { ...complete, ready: false },
+    { ...complete, records: [{ ...removed, mission_id: 'foreign' }] },
+    {
+      ...complete,
+      records: [note],
+      history: [note],
+      prerequisiteIds: [note.record_id],
+    },
+  ])
+    expect(collectRecordEvidence(changed).outcomes).not.toContain(
+      'immutable-history-complete'
+    );
+});

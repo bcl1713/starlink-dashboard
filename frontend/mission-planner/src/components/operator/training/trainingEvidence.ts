@@ -1,3 +1,4 @@
+import { hasCompleteImmutableHistory } from './trainingHistoryEvidence';
 import type { CommandReceipt, SavedRecord } from '@/types/operator';
 import type { TrainingEvidence } from './trainingSteps';
 import { lifecycleOutcomes } from './trainingLifecycleEvidence';
@@ -183,6 +184,8 @@ export function collectRecordEvidence(
         outcomes.add('issue-historical-correction');
     }
   }
+  if (hasCompleteImmutableHistory(source))
+    outcomes.add('immutable-history-complete');
   for (const outcome of lifecycleOutcomes(
     records,
     history,

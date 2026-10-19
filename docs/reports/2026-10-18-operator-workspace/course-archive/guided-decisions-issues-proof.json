@@ -7,7 +7,7 @@
         "width": 1920,
         "height": 1080
       },
-      "issueId": "93d18a32-275f-4757-82f2-ee3854481594",
+      "issueId": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
       "corrected": {
         "schema_version": 1,
         "record_type": "issue",
@@ -43,11 +43,11 @@
           "corrects_version": 3,
           "corrected_update_at": "2026-10-17T17:05:00.000000Z"
         },
-        "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+        "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
         "version": 6,
         "previous_version": 5,
         "journal_seq": 57,
-        "command_id": "c47b4216-f73a-4a68-a67c-74fb967918bc",
+        "command_id": "7920d7f2-d5ee-4374-8bfd-44780f2a59f2",
         "operation": "update",
         "reason": "Issue update corrected",
         "reason_origin": "automatic",
@@ -94,11 +94,11 @@
           "functional_time_precision": "exact",
           "redundancy_time_precision": "unknown"
         },
-        "record_id": "d36a696b-c57b-49e6-a0e7-1838d3279a7e",
+        "record_id": "9cd2ffb0-5d8a-4663-b57b-6d2bf1788db1",
         "version": 1,
         "previous_version": null,
         "journal_seq": 58,
-        "command_id": "6fe9d4ed-023d-47cc-8448-9426ca63ab41",
+        "command_id": "7664445a-ecda-4b02-b7be-700bc6f24773",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
@@ -140,7 +140,7 @@
           "entry_type": "transport_decision",
           "services": [
             {
-              "row_id": "0fc50304-1eb2-41d2-9097-7a1b82f0a052",
+              "row_id": "e2f7b778-0b55-4eb2-9fed-f2453eb8b71c",
               "service": "Fictional IPTV 1920",
               "intended": null,
               "requested": null,
@@ -161,7 +161,7 @@
               }
             },
             {
-              "row_id": "f5ce02a1-88b1-467e-80f4-e27ac6930101",
+              "row_id": "e55b310b-b2fb-460b-9cba-5b2f629ebe5d",
               "service": "Fictional secure voice 1920",
               "intended": null,
               "requested": null,
@@ -186,11 +186,11 @@
           "call_id": null,
           "conference_id": null
         },
-        "record_id": "1fd7e294-a066-4c6b-824c-b97bbfa6bba1",
+        "record_id": "810d2dbd-cc5b-45b9-88df-383eaf782e55",
         "version": 4,
         "previous_version": 3,
         "journal_seq": 62,
-        "command_id": "e8466a77-f8cf-43d5-966b-c4fcd24cead8",
+        "command_id": "77af0ab9-f6a7-46c9-bd5b-f8500af175f8",
         "operation": "update",
         "reason": "Transport decision corrected",
         "reason_origin": "automatic",
@@ -215,7 +215,7 @@
         "width": 390,
         "height": 844
       },
-      "issueId": "89499676-29ce-4406-9218-547653e69c1d",
+      "issueId": "a7092570-ae08-4e21-9aa0-9077f9caae77",
       "corrected": {
         "schema_version": 1,
         "record_type": "issue",
@@ -251,11 +251,11 @@
           "corrects_version": 3,
           "corrected_update_at": "2026-10-17T17:05:00.000000Z"
         },
-        "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+        "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
         "version": 6,
         "previous_version": 5,
         "journal_seq": 68,
-        "command_id": "c8d7e47d-6d0d-440c-ab49-ff9c0f8842d6",
+        "command_id": "30f4422f-1418-43d0-a796-71d251cd49fa",
         "operation": "update",
         "reason": "Issue update corrected",
         "reason_origin": "automatic",
@@ -302,11 +302,11 @@
           "functional_time_precision": "exact",
           "redundancy_time_precision": "unknown"
         },
-        "record_id": "ecd83e49-35ab-4b98-9886-f271d7167968",
+        "record_id": "6ea9b255-2b71-403f-b370-6026f84f0182",
         "version": 1,
         "previous_version": null,
         "journal_seq": 69,
-        "command_id": "813ccfca-d875-4531-8b48-70a81b2ee985",
+        "command_id": "6e2a9571-a6f1-4bd5-ad3f-a8f02fa54e75",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
@@ -348,7 +348,7 @@
           "entry_type": "transport_decision",
           "services": [
             {
-              "row_id": "a81ee77f-b56e-4778-bb60-124fc8aa620f",
+              "row_id": "9e1d416a-ccb1-4efa-ae4b-aff297b466f3",
               "service": "Fictional IPTV 390",
               "intended": null,
               "requested": null,
@@ -369,7 +369,7 @@
               }
             },
             {
-              "row_id": "93dec1d0-ea37-4d06-a064-cd2244f229de",
+              "row_id": "763a7753-6f3d-4745-9c4a-2771c993434d",
               "service": "Fictional secure voice 390",
               "intended": null,
               "requested": null,
@@ -394,11 +394,11 @@
           "call_id": null,
           "conference_id": null
         },
-        "record_id": "2563fe18-c620-4c63-bdf7-a8586c0c8c52",
+        "record_id": "c14eaada-8057-453f-b2e3-cfe206840921",
         "version": 4,
         "previous_version": 3,
         "journal_seq": 73,
-        "command_id": "e731424b-4da2-47f1-a913-abbbed9fdfca",
+        "command_id": "238f6802-46d0-46f9-923b-af9fe33bbf6d",
         "operation": "update",
         "reason": "Transport decision corrected",
         "reason_origin": "automatic",
@@ -423,7 +423,7 @@
         "width": 844,
         "height": 390
       },
-      "issueId": "b12eed97-a600-4625-9120-9752a884c555",
+      "issueId": "fa430acf-8809-473e-ab46-3025fcfb0984",
       "corrected": {
         "schema_version": 1,
         "record_type": "issue",
@@ -459,11 +459,11 @@
           "corrects_version": 3,
           "corrected_update_at": "2026-10-17T17:05:00.000000Z"
         },
-        "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+        "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
         "version": 6,
         "previous_version": 5,
         "journal_seq": 79,
-        "command_id": "0690cb09-7521-467d-947a-cac835a07925",
+        "command_id": "41d2f0cb-b9fb-4fd4-8908-cb72fc3af4c2",
         "operation": "update",
         "reason": "Issue update corrected",
         "reason_origin": "automatic",
@@ -510,11 +510,11 @@
           "functional_time_precision": "exact",
           "redundancy_time_precision": "unknown"
         },
-        "record_id": "e3b60926-cc2a-4445-952a-10af9e70e82c",
+        "record_id": "a6427e8f-35ba-4be6-9a98-224b09bed20d",
         "version": 1,
         "previous_version": null,
         "journal_seq": 80,
-        "command_id": "3e64442b-03a2-47ae-abee-6a7b509a0216",
+        "command_id": "fe40be6e-222d-462c-af11-781cb6bcec12",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
@@ -556,7 +556,7 @@
           "entry_type": "transport_decision",
           "services": [
             {
-              "row_id": "d42f2693-a641-4794-b782-8007ae8174f8",
+              "row_id": "4e816d52-a01f-4d12-a3ef-520f46f06079",
               "service": "Fictional IPTV 844",
               "intended": null,
               "requested": null,
@@ -577,7 +577,7 @@
               }
             },
             {
-              "row_id": "85711785-15c3-4667-844b-926fcbb780d7",
+              "row_id": "9fbd3d05-00ea-4aad-acf0-10ac10fbda5d",
               "service": "Fictional secure voice 844",
               "intended": null,
               "requested": null,
@@ -602,11 +602,11 @@
           "call_id": null,
           "conference_id": null
         },
-        "record_id": "07e7aa87-1832-40c0-8978-d7a040d3c99c",
+        "record_id": "a0bb52e5-97bd-4e0d-9e93-9b0cdb6addfd",
         "version": 4,
         "previous_version": 3,
         "journal_seq": 84,
-        "command_id": "6900d211-a97b-4f4c-aadd-0846b60907d1",
+        "command_id": "8b2fb33d-526b-4cf2-b357-ed32d1eb00de",
         "operation": "update",
         "reason": "Transport decision corrected",
         "reason_origin": "automatic",
@@ -630,7 +630,7 @@
   "receipts": [
     {
       "schema_version": 1,
-      "command_id": "86167708-d549-49d1-b3a9-4cb3982c29b7",
+      "command_id": "88730cc9-3835-4a4d-9786-74c0bdc01393",
       "saved_records": [
         {
           "schema_version": 1,
@@ -667,11 +667,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+          "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
           "version": 1,
           "previous_version": null,
           "journal_seq": 52,
-          "command_id": "86167708-d549-49d1-b3a9-4cb3982c29b7",
+          "command_id": "88730cc9-3835-4a4d-9786-74c0bdc01393",
           "operation": "create",
           "reason": "Issue opened",
           "reason_origin": "automatic",
@@ -694,7 +694,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "7b07398b-a1d1-4f23-898f-09ba82dc0445",
+      "command_id": "c0611322-444a-45f1-8ebe-6cdc4e9d2536",
       "saved_records": [
         {
           "schema_version": 1,
@@ -731,11 +731,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+          "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 53,
-          "command_id": "7b07398b-a1d1-4f23-898f-09ba82dc0445",
+          "command_id": "c0611322-444a-45f1-8ebe-6cdc4e9d2536",
           "operation": "update",
           "reason": "Issue monitoring",
           "reason_origin": "automatic",
@@ -758,7 +758,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "cf18e246-38b3-49f8-be23-534a45577e27",
+      "command_id": "319d8f24-686c-4399-a3f6-49c59342d7b2",
       "saved_records": [
         {
           "schema_version": 1,
@@ -795,11 +795,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+          "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 54,
-          "command_id": "cf18e246-38b3-49f8-be23-534a45577e27",
+          "command_id": "319d8f24-686c-4399-a3f6-49c59342d7b2",
           "operation": "update",
           "reason": "Issue update recorded",
           "reason_origin": "automatic",
@@ -822,7 +822,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "cc4a390d-bac4-41d2-9a12-a18de318487a",
+      "command_id": "715173a8-6cfd-41e6-acde-8f944f0e3ebd",
       "saved_records": [
         {
           "schema_version": 1,
@@ -859,11 +859,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+          "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 55,
-          "command_id": "cc4a390d-bac4-41d2-9a12-a18de318487a",
+          "command_id": "715173a8-6cfd-41e6-acde-8f944f0e3ebd",
           "operation": "update",
           "reason": "Issue resolved; Issue follow-up updated",
           "reason_origin": "automatic",
@@ -886,7 +886,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "92d153a9-4512-41ed-926b-b85d07cf2765",
+      "command_id": "e6785397-32a7-452c-8197-f295f1093add",
       "saved_records": [
         {
           "schema_version": 1,
@@ -923,11 +923,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+          "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 56,
-          "command_id": "92d153a9-4512-41ed-926b-b85d07cf2765",
+          "command_id": "e6785397-32a7-452c-8197-f295f1093add",
           "operation": "update",
           "reason": "Issue reopened",
           "reason_origin": "automatic",
@@ -950,7 +950,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "c47b4216-f73a-4a68-a67c-74fb967918bc",
+      "command_id": "7920d7f2-d5ee-4374-8bfd-44780f2a59f2",
       "saved_records": [
         {
           "schema_version": 1,
@@ -987,11 +987,11 @@
             "corrects_version": 3,
             "corrected_update_at": "2026-10-17T17:05:00.000000Z"
           },
-          "record_id": "93d18a32-275f-4757-82f2-ee3854481594",
+          "record_id": "9e8e22e1-e5b8-46da-add9-7ee14c62cb98",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 57,
-          "command_id": "c47b4216-f73a-4a68-a67c-74fb967918bc",
+          "command_id": "7920d7f2-d5ee-4374-8bfd-44780f2a59f2",
           "operation": "update",
           "reason": "Issue update corrected",
           "reason_origin": "automatic",
@@ -1014,7 +1014,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "6fe9d4ed-023d-47cc-8448-9426ca63ab41",
+      "command_id": "7664445a-ecda-4b02-b7be-700bc6f24773",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1044,11 +1044,11 @@
             "functional_time_precision": "exact",
             "redundancy_time_precision": "unknown"
           },
-          "record_id": "d36a696b-c57b-49e6-a0e7-1838d3279a7e",
+          "record_id": "9cd2ffb0-5d8a-4663-b57b-6d2bf1788db1",
           "version": 1,
           "previous_version": null,
           "journal_seq": 58,
-          "command_id": "6fe9d4ed-023d-47cc-8448-9426ca63ab41",
+          "command_id": "7664445a-ecda-4b02-b7be-700bc6f24773",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -1071,7 +1071,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "98123ed3-3db2-4864-ae22-536a715d3279",
+      "command_id": "e6c93999-2211-44eb-a260-e8fc37288c26",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1096,7 +1096,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "0fc50304-1eb2-41d2-9097-7a1b82f0a052",
+                "row_id": "e2f7b778-0b55-4eb2-9fed-f2453eb8b71c",
                 "service": "Fictional IPTV 1920",
                 "intended": null,
                 "requested": null,
@@ -1114,11 +1114,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "1fd7e294-a066-4c6b-824c-b97bbfa6bba1",
+          "record_id": "810d2dbd-cc5b-45b9-88df-383eaf782e55",
           "version": 1,
           "previous_version": null,
           "journal_seq": 59,
-          "command_id": "98123ed3-3db2-4864-ae22-536a715d3279",
+          "command_id": "e6c93999-2211-44eb-a260-e8fc37288c26",
           "operation": "create",
           "reason": "Transport decision recorded",
           "reason_origin": "automatic",
@@ -1141,7 +1141,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "a9fd3554-0b61-4dd8-9f02-5f295cfdcef5",
+      "command_id": "b3283818-5bf7-4d80-ab87-c21f3384f107",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1166,7 +1166,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "0fc50304-1eb2-41d2-9097-7a1b82f0a052",
+                "row_id": "e2f7b778-0b55-4eb2-9fed-f2453eb8b71c",
                 "service": "Fictional IPTV 1920",
                 "intended": null,
                 "requested": null,
@@ -1187,7 +1187,7 @@
                 }
               },
               {
-                "row_id": "f5ce02a1-88b1-467e-80f4-e27ac6930101",
+                "row_id": "e55b310b-b2fb-460b-9cba-5b2f629ebe5d",
                 "service": "Fictional secure voice 1920",
                 "intended": null,
                 "requested": null,
@@ -1212,11 +1212,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "1fd7e294-a066-4c6b-824c-b97bbfa6bba1",
+          "record_id": "810d2dbd-cc5b-45b9-88df-383eaf782e55",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 60,
-          "command_id": "a9fd3554-0b61-4dd8-9f02-5f295cfdcef5",
+          "command_id": "b3283818-5bf7-4d80-ab87-c21f3384f107",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -1239,7 +1239,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "c823d9d1-ecd6-4dce-aa69-15b9f7b4f3ca",
+      "command_id": "a1091e9f-b758-4695-908f-0a933f445c01",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1264,7 +1264,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "0fc50304-1eb2-41d2-9097-7a1b82f0a052",
+                "row_id": "e2f7b778-0b55-4eb2-9fed-f2453eb8b71c",
                 "service": "Fictional IPTV 1920",
                 "intended": null,
                 "requested": null,
@@ -1278,7 +1278,7 @@
                 "checked": null
               },
               {
-                "row_id": "f5ce02a1-88b1-467e-80f4-e27ac6930101",
+                "row_id": "e55b310b-b2fb-460b-9cba-5b2f629ebe5d",
                 "service": "Fictional secure voice 1920",
                 "intended": null,
                 "requested": null,
@@ -1303,11 +1303,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "1fd7e294-a066-4c6b-824c-b97bbfa6bba1",
+          "record_id": "810d2dbd-cc5b-45b9-88df-383eaf782e55",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 61,
-          "command_id": "c823d9d1-ecd6-4dce-aa69-15b9f7b4f3ca",
+          "command_id": "a1091e9f-b758-4695-908f-0a933f445c01",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -1330,7 +1330,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "e8466a77-f8cf-43d5-966b-c4fcd24cead8",
+      "command_id": "77af0ab9-f6a7-46c9-bd5b-f8500af175f8",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1355,7 +1355,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "0fc50304-1eb2-41d2-9097-7a1b82f0a052",
+                "row_id": "e2f7b778-0b55-4eb2-9fed-f2453eb8b71c",
                 "service": "Fictional IPTV 1920",
                 "intended": null,
                 "requested": null,
@@ -1376,7 +1376,7 @@
                 }
               },
               {
-                "row_id": "f5ce02a1-88b1-467e-80f4-e27ac6930101",
+                "row_id": "e55b310b-b2fb-460b-9cba-5b2f629ebe5d",
                 "service": "Fictional secure voice 1920",
                 "intended": null,
                 "requested": null,
@@ -1401,11 +1401,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "1fd7e294-a066-4c6b-824c-b97bbfa6bba1",
+          "record_id": "810d2dbd-cc5b-45b9-88df-383eaf782e55",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 62,
-          "command_id": "e8466a77-f8cf-43d5-966b-c4fcd24cead8",
+          "command_id": "77af0ab9-f6a7-46c9-bd5b-f8500af175f8",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -1428,7 +1428,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "587a70bf-6adf-4587-a1fe-f4ecc0d1eb78",
+      "command_id": "0c5a4777-d55c-4df1-a441-0e357b306ef3",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1465,11 +1465,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+          "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
           "version": 1,
           "previous_version": null,
           "journal_seq": 63,
-          "command_id": "587a70bf-6adf-4587-a1fe-f4ecc0d1eb78",
+          "command_id": "0c5a4777-d55c-4df1-a441-0e357b306ef3",
           "operation": "create",
           "reason": "Issue opened",
           "reason_origin": "automatic",
@@ -1492,7 +1492,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "a53e415a-da4b-4b2e-bf9a-aad063702b4c",
+      "command_id": "239a118f-315d-42fe-b9f5-d53b00783ef7",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1529,11 +1529,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+          "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 64,
-          "command_id": "a53e415a-da4b-4b2e-bf9a-aad063702b4c",
+          "command_id": "239a118f-315d-42fe-b9f5-d53b00783ef7",
           "operation": "update",
           "reason": "Issue monitoring",
           "reason_origin": "automatic",
@@ -1556,7 +1556,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "4e12cf63-408d-4bbe-8072-605c91989ebc",
+      "command_id": "a58dcbf9-b1ba-4494-81dd-b7514bb532f4",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1593,11 +1593,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+          "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 65,
-          "command_id": "4e12cf63-408d-4bbe-8072-605c91989ebc",
+          "command_id": "a58dcbf9-b1ba-4494-81dd-b7514bb532f4",
           "operation": "update",
           "reason": "Issue update recorded",
           "reason_origin": "automatic",
@@ -1620,7 +1620,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "74350152-4027-484e-8760-a890fc1e4ab1",
+      "command_id": "5a224ab7-0d5d-49cd-8d84-b9d972290f5e",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1657,11 +1657,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+          "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 66,
-          "command_id": "74350152-4027-484e-8760-a890fc1e4ab1",
+          "command_id": "5a224ab7-0d5d-49cd-8d84-b9d972290f5e",
           "operation": "update",
           "reason": "Issue resolved; Issue follow-up updated",
           "reason_origin": "automatic",
@@ -1684,7 +1684,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "22604ea3-e57d-4583-b183-674d3d20f173",
+      "command_id": "8013312b-c846-4f7d-8728-631c89f1741e",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1721,11 +1721,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+          "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 67,
-          "command_id": "22604ea3-e57d-4583-b183-674d3d20f173",
+          "command_id": "8013312b-c846-4f7d-8728-631c89f1741e",
           "operation": "update",
           "reason": "Issue reopened",
           "reason_origin": "automatic",
@@ -1748,7 +1748,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "c8d7e47d-6d0d-440c-ab49-ff9c0f8842d6",
+      "command_id": "30f4422f-1418-43d0-a796-71d251cd49fa",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1785,11 +1785,11 @@
             "corrects_version": 3,
             "corrected_update_at": "2026-10-17T17:05:00.000000Z"
           },
-          "record_id": "89499676-29ce-4406-9218-547653e69c1d",
+          "record_id": "a7092570-ae08-4e21-9aa0-9077f9caae77",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 68,
-          "command_id": "c8d7e47d-6d0d-440c-ab49-ff9c0f8842d6",
+          "command_id": "30f4422f-1418-43d0-a796-71d251cd49fa",
           "operation": "update",
           "reason": "Issue update corrected",
           "reason_origin": "automatic",
@@ -1812,7 +1812,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "813ccfca-d875-4531-8b48-70a81b2ee985",
+      "command_id": "6e2a9571-a6f1-4bd5-ad3f-a8f02fa54e75",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1842,11 +1842,11 @@
             "functional_time_precision": "exact",
             "redundancy_time_precision": "unknown"
           },
-          "record_id": "ecd83e49-35ab-4b98-9886-f271d7167968",
+          "record_id": "6ea9b255-2b71-403f-b370-6026f84f0182",
           "version": 1,
           "previous_version": null,
           "journal_seq": 69,
-          "command_id": "813ccfca-d875-4531-8b48-70a81b2ee985",
+          "command_id": "6e2a9571-a6f1-4bd5-ad3f-a8f02fa54e75",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -1869,7 +1869,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "b44ac37e-6c7c-4d7b-8c5c-425ab3e86629",
+      "command_id": "8bca5009-c216-42cc-8d12-7567c2dd7d74",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1894,7 +1894,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "a81ee77f-b56e-4778-bb60-124fc8aa620f",
+                "row_id": "9e1d416a-ccb1-4efa-ae4b-aff297b466f3",
                 "service": "Fictional IPTV 390",
                 "intended": null,
                 "requested": null,
@@ -1912,11 +1912,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "2563fe18-c620-4c63-bdf7-a8586c0c8c52",
+          "record_id": "c14eaada-8057-453f-b2e3-cfe206840921",
           "version": 1,
           "previous_version": null,
           "journal_seq": 70,
-          "command_id": "b44ac37e-6c7c-4d7b-8c5c-425ab3e86629",
+          "command_id": "8bca5009-c216-42cc-8d12-7567c2dd7d74",
           "operation": "create",
           "reason": "Transport decision recorded",
           "reason_origin": "automatic",
@@ -1939,7 +1939,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "a1c06f11-f891-48b7-9b7c-a350fedd1fa4",
+      "command_id": "f21271f4-95df-4c4f-84b2-429c127fad3a",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1964,7 +1964,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "a81ee77f-b56e-4778-bb60-124fc8aa620f",
+                "row_id": "9e1d416a-ccb1-4efa-ae4b-aff297b466f3",
                 "service": "Fictional IPTV 390",
                 "intended": null,
                 "requested": null,
@@ -1985,7 +1985,7 @@
                 }
               },
               {
-                "row_id": "93dec1d0-ea37-4d06-a064-cd2244f229de",
+                "row_id": "763a7753-6f3d-4745-9c4a-2771c993434d",
                 "service": "Fictional secure voice 390",
                 "intended": null,
                 "requested": null,
@@ -2010,11 +2010,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "2563fe18-c620-4c63-bdf7-a8586c0c8c52",
+          "record_id": "c14eaada-8057-453f-b2e3-cfe206840921",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 71,
-          "command_id": "a1c06f11-f891-48b7-9b7c-a350fedd1fa4",
+          "command_id": "f21271f4-95df-4c4f-84b2-429c127fad3a",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -2037,7 +2037,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "f636ab00-fa43-4629-b1f2-9fab61d17586",
+      "command_id": "7c8d9802-0361-479e-bd47-35b057f6fbae",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2062,7 +2062,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "a81ee77f-b56e-4778-bb60-124fc8aa620f",
+                "row_id": "9e1d416a-ccb1-4efa-ae4b-aff297b466f3",
                 "service": "Fictional IPTV 390",
                 "intended": null,
                 "requested": null,
@@ -2076,7 +2076,7 @@
                 "checked": null
               },
               {
-                "row_id": "93dec1d0-ea37-4d06-a064-cd2244f229de",
+                "row_id": "763a7753-6f3d-4745-9c4a-2771c993434d",
                 "service": "Fictional secure voice 390",
                 "intended": null,
                 "requested": null,
@@ -2101,11 +2101,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "2563fe18-c620-4c63-bdf7-a8586c0c8c52",
+          "record_id": "c14eaada-8057-453f-b2e3-cfe206840921",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 72,
-          "command_id": "f636ab00-fa43-4629-b1f2-9fab61d17586",
+          "command_id": "7c8d9802-0361-479e-bd47-35b057f6fbae",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -2128,7 +2128,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "e731424b-4da2-47f1-a913-abbbed9fdfca",
+      "command_id": "238f6802-46d0-46f9-923b-af9fe33bbf6d",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2153,7 +2153,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "a81ee77f-b56e-4778-bb60-124fc8aa620f",
+                "row_id": "9e1d416a-ccb1-4efa-ae4b-aff297b466f3",
                 "service": "Fictional IPTV 390",
                 "intended": null,
                 "requested": null,
@@ -2174,7 +2174,7 @@
                 }
               },
               {
-                "row_id": "93dec1d0-ea37-4d06-a064-cd2244f229de",
+                "row_id": "763a7753-6f3d-4745-9c4a-2771c993434d",
                 "service": "Fictional secure voice 390",
                 "intended": null,
                 "requested": null,
@@ -2199,11 +2199,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "2563fe18-c620-4c63-bdf7-a8586c0c8c52",
+          "record_id": "c14eaada-8057-453f-b2e3-cfe206840921",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 73,
-          "command_id": "e731424b-4da2-47f1-a913-abbbed9fdfca",
+          "command_id": "238f6802-46d0-46f9-923b-af9fe33bbf6d",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -2226,7 +2226,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "7a992725-c8df-4c57-8661-01378a47d5e0",
+      "command_id": "ce4d9b24-2b7d-4eb0-9040-208f62d43c26",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2263,11 +2263,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+          "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
           "version": 1,
           "previous_version": null,
           "journal_seq": 74,
-          "command_id": "7a992725-c8df-4c57-8661-01378a47d5e0",
+          "command_id": "ce4d9b24-2b7d-4eb0-9040-208f62d43c26",
           "operation": "create",
           "reason": "Issue opened",
           "reason_origin": "automatic",
@@ -2290,7 +2290,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "cf2951ff-3dbc-461c-ad4e-a3358d4eea83",
+      "command_id": "11fd5f11-baad-43fd-bb13-8674429b9254",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2327,11 +2327,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+          "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 75,
-          "command_id": "cf2951ff-3dbc-461c-ad4e-a3358d4eea83",
+          "command_id": "11fd5f11-baad-43fd-bb13-8674429b9254",
           "operation": "update",
           "reason": "Issue monitoring",
           "reason_origin": "automatic",
@@ -2354,7 +2354,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "1f2d479e-0a09-43a3-970a-5e15c3342929",
+      "command_id": "02361430-6395-4434-ac92-dd5301a41f6e",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2391,11 +2391,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+          "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 76,
-          "command_id": "1f2d479e-0a09-43a3-970a-5e15c3342929",
+          "command_id": "02361430-6395-4434-ac92-dd5301a41f6e",
           "operation": "update",
           "reason": "Issue update recorded",
           "reason_origin": "automatic",
@@ -2418,7 +2418,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "149cb3bb-0bed-4d89-bb3b-34075db25f18",
+      "command_id": "4cf31eb6-9490-4720-be41-d5ad1fb7c042",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2455,11 +2455,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+          "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 77,
-          "command_id": "149cb3bb-0bed-4d89-bb3b-34075db25f18",
+          "command_id": "4cf31eb6-9490-4720-be41-d5ad1fb7c042",
           "operation": "update",
           "reason": "Issue resolved; Issue follow-up updated",
           "reason_origin": "automatic",
@@ -2482,7 +2482,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "c325d6fc-c512-4859-a012-4b378a0ac491",
+      "command_id": "64b1268d-f827-45c1-acbb-3cb174813a6d",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2519,11 +2519,11 @@
             "corrects_version": null,
             "corrected_update_at": null
           },
-          "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+          "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 78,
-          "command_id": "c325d6fc-c512-4859-a012-4b378a0ac491",
+          "command_id": "64b1268d-f827-45c1-acbb-3cb174813a6d",
           "operation": "update",
           "reason": "Issue reopened",
           "reason_origin": "automatic",
@@ -2546,7 +2546,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "0690cb09-7521-467d-947a-cac835a07925",
+      "command_id": "41d2f0cb-b9fb-4fd4-8908-cb72fc3af4c2",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2583,11 +2583,11 @@
             "corrects_version": 3,
             "corrected_update_at": "2026-10-17T17:05:00.000000Z"
           },
-          "record_id": "b12eed97-a600-4625-9120-9752a884c555",
+          "record_id": "fa430acf-8809-473e-ab46-3025fcfb0984",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 79,
-          "command_id": "0690cb09-7521-467d-947a-cac835a07925",
+          "command_id": "41d2f0cb-b9fb-4fd4-8908-cb72fc3af4c2",
           "operation": "update",
           "reason": "Issue update corrected",
           "reason_origin": "automatic",
@@ -2610,7 +2610,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "3e64442b-03a2-47ae-abee-6a7b509a0216",
+      "command_id": "fe40be6e-222d-462c-af11-781cb6bcec12",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2640,11 +2640,11 @@
             "functional_time_precision": "exact",
             "redundancy_time_precision": "unknown"
           },
-          "record_id": "e3b60926-cc2a-4445-952a-10af9e70e82c",
+          "record_id": "a6427e8f-35ba-4be6-9a98-224b09bed20d",
           "version": 1,
           "previous_version": null,
           "journal_seq": 80,
-          "command_id": "3e64442b-03a2-47ae-abee-6a7b509a0216",
+          "command_id": "fe40be6e-222d-462c-af11-781cb6bcec12",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -2667,7 +2667,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "0804efd6-79ce-4709-bd04-ed0b77bcad9c",
+      "command_id": "9beebf99-cff7-4bb8-9c35-d6eb7b007585",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2692,7 +2692,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "d42f2693-a641-4794-b782-8007ae8174f8",
+                "row_id": "4e816d52-a01f-4d12-a3ef-520f46f06079",
                 "service": "Fictional IPTV 844",
                 "intended": null,
                 "requested": null,
@@ -2710,11 +2710,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "07e7aa87-1832-40c0-8978-d7a040d3c99c",
+          "record_id": "a0bb52e5-97bd-4e0d-9e93-9b0cdb6addfd",
           "version": 1,
           "previous_version": null,
           "journal_seq": 81,
-          "command_id": "0804efd6-79ce-4709-bd04-ed0b77bcad9c",
+          "command_id": "9beebf99-cff7-4bb8-9c35-d6eb7b007585",
           "operation": "create",
           "reason": "Transport decision recorded",
           "reason_origin": "automatic",
@@ -2737,7 +2737,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "e3060758-ebde-4cc8-bb70-29e78aad129f",
+      "command_id": "834c87ff-9cb4-4092-989c-dbe106fd8bf0",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2762,7 +2762,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "d42f2693-a641-4794-b782-8007ae8174f8",
+                "row_id": "4e816d52-a01f-4d12-a3ef-520f46f06079",
                 "service": "Fictional IPTV 844",
                 "intended": null,
                 "requested": null,
@@ -2783,7 +2783,7 @@
                 }
               },
               {
-                "row_id": "85711785-15c3-4667-844b-926fcbb780d7",
+                "row_id": "9fbd3d05-00ea-4aad-acf0-10ac10fbda5d",
                 "service": "Fictional secure voice 844",
                 "intended": null,
                 "requested": null,
@@ -2808,11 +2808,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "07e7aa87-1832-40c0-8978-d7a040d3c99c",
+          "record_id": "a0bb52e5-97bd-4e0d-9e93-9b0cdb6addfd",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 82,
-          "command_id": "e3060758-ebde-4cc8-bb70-29e78aad129f",
+          "command_id": "834c87ff-9cb4-4092-989c-dbe106fd8bf0",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -2835,7 +2835,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "04dca17c-263e-4007-9239-fd4d6fe84c69",
+      "command_id": "e357e6b2-8d7d-4bcb-b415-80dfe39a356b",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2860,7 +2860,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "d42f2693-a641-4794-b782-8007ae8174f8",
+                "row_id": "4e816d52-a01f-4d12-a3ef-520f46f06079",
                 "service": "Fictional IPTV 844",
                 "intended": null,
                 "requested": null,
@@ -2874,7 +2874,7 @@
                 "checked": null
               },
               {
-                "row_id": "85711785-15c3-4667-844b-926fcbb780d7",
+                "row_id": "9fbd3d05-00ea-4aad-acf0-10ac10fbda5d",
                 "service": "Fictional secure voice 844",
                 "intended": null,
                 "requested": null,
@@ -2899,11 +2899,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "07e7aa87-1832-40c0-8978-d7a040d3c99c",
+          "record_id": "a0bb52e5-97bd-4e0d-9e93-9b0cdb6addfd",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 83,
-          "command_id": "04dca17c-263e-4007-9239-fd4d6fe84c69",
+          "command_id": "e357e6b2-8d7d-4bcb-b415-80dfe39a356b",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",
@@ -2926,7 +2926,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "6900d211-a97b-4f4c-aadd-0846b60907d1",
+      "command_id": "8b2fb33d-526b-4cf2-b357-ed32d1eb00de",
       "saved_records": [
         {
           "schema_version": 1,
@@ -2951,7 +2951,7 @@
             "entry_type": "transport_decision",
             "services": [
               {
-                "row_id": "d42f2693-a641-4794-b782-8007ae8174f8",
+                "row_id": "4e816d52-a01f-4d12-a3ef-520f46f06079",
                 "service": "Fictional IPTV 844",
                 "intended": null,
                 "requested": null,
@@ -2972,7 +2972,7 @@
                 }
               },
               {
-                "row_id": "85711785-15c3-4667-844b-926fcbb780d7",
+                "row_id": "9fbd3d05-00ea-4aad-acf0-10ac10fbda5d",
                 "service": "Fictional secure voice 844",
                 "intended": null,
                 "requested": null,
@@ -2997,11 +2997,11 @@
             "call_id": null,
             "conference_id": null
           },
-          "record_id": "07e7aa87-1832-40c0-8978-d7a040d3c99c",
+          "record_id": "a0bb52e5-97bd-4e0d-9e93-9b0cdb6addfd",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 84,
-          "command_id": "6900d211-a97b-4f4c-aadd-0846b60907d1",
+          "command_id": "8b2fb33d-526b-4cf2-b357-ed32d1eb00de",
           "operation": "update",
           "reason": "Transport decision corrected",
           "reason_origin": "automatic",

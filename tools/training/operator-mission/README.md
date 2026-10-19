@@ -32,3 +32,5 @@ Each browser phase retains successful and failed traces under its own
 `ROOT/browser/{training,records,decisions,archive}` directory, so a later phase
 does not erase an earlier trace. Retain these synthetic artifacts with the
 source/image identities; this does not keep any runtime resource alive.
+
+Archive evidence retains distinct destination records/history/H before and after each import, actual ready-preparation responses and the downloaded response fingerprint/briefing status/ZIP hash. The inspector retains expected and computed member checksums. These raw facts support the pending guide handoff; a single post-import snapshot or a generic success flag is not that evidence.

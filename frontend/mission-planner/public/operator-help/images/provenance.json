@@ -18,6 +18,22 @@
       "file": "simulation-network-0cd98752d979.png",
       "capture": "configured-network-running.png",
       "sha256": "0cd98752d979a5618260a30f2cc4f8f93517d19646ea46b98b1761bfeab44fed"
+    },
+    {
+      "file": "transport-check-c4a20ed4a8a4.png",
+      "capture": "training-independent-checks-1920x1080.png",
+      "sha256": "c4a20ed4a8a4ade982d10916fdc4c033a4476cb4e699a0612a9a7f00187bca94",
+      "candidateSha": "85d516448f1a3ec289a0f541d7586f80aae8ed04",
+      "sourceArchiveSha256": "abc6100899fe55063bdf77c9a8e6e847a418c00206b94b5376949d8487d49a04",
+      "synthetic": true
+    },
+    {
+      "file": "issue-followup-b31b5113d832.png",
+      "capture": "training-issue-editor-1920x1080.png",
+      "sha256": "b31b5113d83274a3796df4de15081f928d2c8e44cb5452b87277b79e6c7e1008",
+      "candidateSha": "85d516448f1a3ec289a0f541d7586f80aae8ed04",
+      "sourceArchiveSha256": "abc6100899fe55063bdf77c9a8e6e847a418c00206b94b5376949d8487d49a04",
+      "synthetic": true
     }
   ]
 }

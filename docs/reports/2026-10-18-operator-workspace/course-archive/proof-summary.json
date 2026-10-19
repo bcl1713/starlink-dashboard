@@ -1,9 +1,9 @@
 {
-  "candidateSha": "27dab3f463cf3fc509b8abb96ff0963da90299ac",
+  "candidateSha": "85d516448f1a3ec289a0f541d7586f80aae8ed04",
   "checksPassed": true,
   "archiveInspection": {
     "synthetic": true,
-    "zipSha256": "e486ff8a09988236624206e8577037155492458ae280523d210a9dfaa22179bc",
+    "zipSha256": "d41e0564cd67a8d79553c058bde4836f78ac6e5221c993ea74b7c45aae5e64f4",
     "pdfPath": "exports/mission/Training mission \u00b7 Fictional Meridian 21-brief.pdf",
     "pdfSha256": "1808010c28756b2ef3c8c417ff441b767a0f393f2ffb074d43c284663fe50658",
     "pdfPages": 2,

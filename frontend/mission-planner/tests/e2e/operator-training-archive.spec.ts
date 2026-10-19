@@ -1,4 +1,5 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { test, expect, type APIRequestContext } from '@playwright/test';
@@ -149,7 +150,24 @@ test('original training mission ZIP transfers through Missions without restoring
     releasePoll();
     await page.unroute(pollPath);
   }
+  const preparationReads: Promise<unknown>[] = [];
+  page.on('response', (response) => {
+    if (
+      response.request().method() === 'GET' &&
+      response.status() === 200 &&
+      new URL(response.url()).pathname.startsWith(
+        `/api/v2/missions/${id}/export-preparations/`
+      ) &&
+      !response.url().endsWith('/download')
+    )
+      preparationReads.push(response.json());
+  });
   await card.getByRole('button', { name: 'Export', exact: true }).click();
+  const downloadedResponse = page.waitForResponse(
+    (response) =>
+      response.status() === 200 &&
+      response.headers()['content-type']?.includes('application/zip')
+  );
   const downloaded = page.waitForEvent('download', { timeout: 620_000 });
   await dialog.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloaded;
@@ -157,6 +175,31 @@ test('original training mission ZIP transfers through Missions without restoring
   expect(await download.failure()).toBeNull();
   await download.saveAs(join(root, 'original-mission.zip'));
   expect(downloads).toEqual([`${id}.zip`]);
+  const zipResponse = await downloadedResponse;
+  const readyPreparations = await Promise.all(preparationReads);
+  expect(readyPreparations).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ state: 'ready', mission_id: id }),
+    ])
+  );
+  const originalBytes = readFileSync(join(root, 'original-mission.zip'));
+  const downloadRead = {
+    url: zipResponse.url(),
+    status: zipResponse.status(),
+    fingerprint: zipResponse.headers()['x-export-fingerprint'],
+    briefingStatus: zipResponse.headers()['x-customer-briefing-status'],
+    sha256: createHash('sha256').update(originalBytes).digest('hex'),
+    size: originalBytes.length,
+  };
+  expect(downloadRead.briefingStatus).toBe('included');
+  expect(readyPreparations).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        state: 'ready',
+        fingerprint: downloadRead.fingerprint,
+      }),
+    ])
+  );
   // An omitted customer PDF keeps the dialog open and must fail this gate.
   await expect(dialog).not.toBeVisible({ timeout: 20_000 });
   expect(
@@ -198,7 +241,8 @@ test('original training mission ZIP transfers through Missions without restoring
       await expect(importing).not.toBeVisible();
     }
     await importOriginal();
-    expect(await allPages(target.request, journalPath)).toEqual(empty);
+    const emptyAfter = await allPages(target.request, journalPath);
+    expect(emptyAfter).toEqual(empty);
     const importedMission = await (
       await target.request.get(`/api/v2/missions/${id}`)
     ).json();
@@ -238,9 +282,14 @@ test('original training mission ZIP transfers through Missions without restoring
       await allPages(target.request, journalPath)
     );
     expect(afterImport).toEqual(frozenJournal(sentinel));
-    expect(frozenJournal(await allPages(target.request, historyPath))).toEqual(
-      sentinelHistory
+    const historyAfter = frozenJournal(
+      await allPages(target.request, historyPath)
     );
+    expect(historyAfter).toEqual(sentinelHistory);
+    const destinationHealthAfter = await (
+      await target.request.get('/api/v2/operator/health')
+    ).json();
+    expect(destinationHealthAfter).toEqual(destinationHealth);
     expect(
       await allPages(page.request, `/api/v2/operator/records?mission_id=${id}`)
     ).toEqual(current);
@@ -251,9 +300,18 @@ test('original training mission ZIP transfers through Missions without restoring
           synthetic: true,
           sourceHealth: health,
           destinationHealth,
-          emptyBeforeAndAfter: empty,
-          nonemptyBeforeAndAfter: afterImport,
-          nonemptyHistoryBeforeAndAfter: sentinelHistory,
+          sourceOrigin: new URL(page.url()).origin,
+          destinationOrigin: destination,
+          destinationHealthAfter,
+          emptyBefore: frozenJournal(empty),
+          emptyAfter: frozenJournal(emptyAfter),
+          importedMission,
+          nonemptyBefore: frozenJournal(sentinel),
+          nonemptyAfter: afterImport,
+          nonemptyHistoryBefore: sentinelHistory,
+          nonemptyHistoryAfter: historyAfter,
+          downloadRead,
+          readyPreparations,
           unchangedOriginalZipImportedTwice: true,
           actualMissionsControls: true,
           networkFailureRetry: true,

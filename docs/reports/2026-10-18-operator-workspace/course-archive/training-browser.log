@@ -1,11 +1,11 @@
 
 Running 4 tests using 1 worker
 
-(node:1141684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:1226146) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  1 tests/e2e/operator-training-fixture.spec.ts:22:1 › training fixture: normal replay across two legs preserves journal, receipts, acknowledgments and Next (47.8s)
-  ✓  2 tests/e2e/operator-training-fixture.spec.ts:493:1 › training guide verifies a committed lost receipt before an exact retry (4.1s)
-  ✓  3 tests/e2e/operator-training-fixture.spec.ts:627:1 › guided conference milestones survive closure, reload and private instance restart (11.0s)
-  ✓  4 tests/e2e/operator-training-fixture.spec.ts:841:1 › packaged guide and print reference work without external services and retain unsent work (2.1s)
+  ✓  1 tests/e2e/operator-training-fixture.spec.ts:22:1 › training fixture: normal replay across two legs preserves journal, receipts, acknowledgments and Next (46.5s)
+  ✓  2 tests/e2e/operator-training-fixture.spec.ts:499:1 › training guide verifies a committed lost receipt before an exact retry (4.6s)
+  ✓  3 tests/e2e/operator-training-fixture.spec.ts:633:1 › guided conference milestones survive closure, reload and private instance restart (11.2s)
+  ✓  4 tests/e2e/operator-training-fixture.spec.ts:847:1 › packaged guide and print reference work without external services and retain unsent work (2.1s)
 
   4 passed (1.1m)

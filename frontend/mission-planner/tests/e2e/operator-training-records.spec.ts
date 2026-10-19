@@ -178,7 +178,21 @@ test('guided T02 call lifecycle retains all milestones after a later edit at thr
         `guided-call-lifecycle-${viewport.width}x${viewport.height}.png`
       ),
     });
-    captures.push({ viewport, record });
+    await guide
+      .getByRole('combobox', { name: 'Lesson', exact: true })
+      .selectOption('T11');
+    await guide
+      .getByRole('button', { name: 'Check current evidence', exact: true })
+      .click();
+    await expect(
+      guide
+        .getByRole('listitem')
+        .filter({ hasText: 'immutable history complete' })
+    ).toContainText('Verified from current data');
+    await expect(
+      guide.getByRole('status').filter({ hasText: /^Incomplete$/ })
+    ).toBeVisible();
+    captures.push({ viewport, record, completeImmutableHistoryVerified: true });
     await guide
       .getByRole('button', { name: 'Dismiss guide', exact: true })
       .click();

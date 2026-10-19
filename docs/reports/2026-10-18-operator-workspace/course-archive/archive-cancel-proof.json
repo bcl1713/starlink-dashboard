@@ -1,20 +1,20 @@
 {
   "job": {
-    "id": "de6356b8c8b747b19d7d7d4afdf11d0f",
+    "id": "236a0b49c1fa43b7af7241d7293adf24",
     "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
     "state": "queued",
-    "fingerprint": "e0f3cd289cd1585c3a9540e4367fa3f4436fd2aa4fc11dc4d9c4feeb3a63be33",
+    "fingerprint": "beb0060b82854a8422c73bdef525e0dca142c488322481eb96bec2fc7e503f01",
     "revision": null,
     "stage": "queued",
     "stage_started_at": null,
     "stage_timings": {
-      "capture": 0.07602885202504694
+      "capture": 0.060794209130108356
     },
     "leg_states": {},
-    "queued_at": 1792375898.9847238,
+    "queued_at": 1792376688.6446707,
     "started_at": null,
     "finished_at": null,
-    "deadline": 1792376498.9847238,
+    "deadline": 1792377288.6446707,
     "expires_at": null,
     "error_code": null,
     "warning_code": null,
@@ -22,25 +22,25 @@
     "download_url": null
   },
   "cancellation": {
-    "id": "de6356b8c8b747b19d7d7d4afdf11d0f",
+    "id": "236a0b49c1fa43b7af7241d7293adf24",
     "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
     "state": "cancelled",
-    "fingerprint": "e0f3cd289cd1585c3a9540e4367fa3f4436fd2aa4fc11dc4d9c4feeb3a63be33",
+    "fingerprint": "beb0060b82854a8422c73bdef525e0dca142c488322481eb96bec2fc7e503f01",
     "revision": null,
     "stage": "cancelled",
-    "stage_started_at": 1792375899.0847034,
+    "stage_started_at": 1792376688.736155,
     "stage_timings": {
-      "capture": 0.07602885202504694,
-      "queue": 0.023954124888405204
+      "capture": 0.060794209130108356,
+      "queue": 0.03069558274000883
     },
     "leg_states": {
       "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
       "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
     },
-    "queued_at": 1792375898.9847238,
-    "started_at": 1792375899.0847032,
-    "finished_at": 1792375899.1474955,
-    "deadline": 1792376498.9847238,
+    "queued_at": 1792376688.6446707,
+    "started_at": 1792376688.7361548,
+    "finished_at": 1792376688.796141,
+    "deadline": 1792377288.6446707,
     "expires_at": null,
     "error_code": null,
     "warning_code": null,

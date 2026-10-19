@@ -3,7 +3,7 @@
   "receipts": [
     {
       "schema_version": 1,
-      "command_id": "0a6680a4-cd0b-40d1-982f-8e39c973a497",
+      "command_id": "d2c2be60-c739-48d6-a3f3-2f1397ac3ed9",
       "saved_records": [
         {
           "schema_version": 1,
@@ -33,11 +33,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 1,
           "previous_version": null,
           "journal_seq": 15,
-          "command_id": "0a6680a4-cd0b-40d1-982f-8e39c973a497",
+          "command_id": "d2c2be60-c739-48d6-a3f3-2f1397ac3ed9",
           "operation": "create",
           "reason": "Conference preparation",
           "reason_origin": "automatic",
@@ -60,7 +60,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "d77a81f6-a555-4190-82e5-7a8923bc4459",
+      "command_id": "1eb56a45-b106-4c5a-977b-1e36fbb415ba",
       "saved_records": [
         {
           "schema_version": 1,
@@ -90,11 +90,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 16,
-          "command_id": "d77a81f6-a555-4190-82e5-7a8923bc4459",
+          "command_id": "1eb56a45-b106-4c5a-977b-1e36fbb415ba",
           "operation": "update",
           "reason": "Conference established",
           "reason_origin": "automatic",
@@ -117,7 +117,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8c55edce-ed6f-4cd8-9518-070a8dbab742",
+      "command_id": "30efd249-c4c5-4abd-a095-6ee84a9786d7",
       "saved_records": [
         {
           "schema_version": 1,
@@ -147,11 +147,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 17,
-          "command_id": "8c55edce-ed6f-4cd8-9518-070a8dbab742",
+          "command_id": "30efd249-c4c5-4abd-a095-6ee84a9786d7",
           "operation": "update",
           "reason": "Conference verification updated",
           "reason_origin": "automatic",
@@ -174,7 +174,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8ede2646-7abf-4f3e-a48e-d93d3c4eeb50",
+      "command_id": "e4fd23ec-78d0-4365-b8c1-51e8425a7c1f",
       "saved_records": [
         {
           "schema_version": 1,
@@ -204,11 +204,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 18,
-          "command_id": "8ede2646-7abf-4f3e-a48e-d93d3c4eeb50",
+          "command_id": "e4fd23ec-78d0-4365-b8c1-51e8425a7c1f",
           "operation": "update",
           "reason": "Conference interrupted",
           "reason_origin": "automatic",
@@ -231,7 +231,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "830d0bf0-23c1-44a1-8503-2f6124bfd2b3",
+      "command_id": "cd586bfb-8ec5-477d-8bee-c9d4a7b225e4",
       "saved_records": [
         {
           "schema_version": 1,
@@ -261,11 +261,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 19,
-          "command_id": "830d0bf0-23c1-44a1-8503-2f6124bfd2b3",
+          "command_id": "cd586bfb-8ec5-477d-8bee-c9d4a7b225e4",
           "operation": "update",
           "reason": "Conference connection restored",
           "reason_origin": "automatic",
@@ -288,7 +288,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "16970cf1-4374-454b-8aa1-1ed7a25fe352",
+      "command_id": "7758771a-b3e6-4c64-8360-9f3e0fabcf51",
       "saved_records": [
         {
           "schema_version": 1,
@@ -316,13 +316,13 @@
             "coordinator": null,
             "communications_kind": null,
             "prep_lead_minutes": 10,
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "f13c58a6-7697-41d2-b1ad-9f88bee8985c",
+          "record_id": "d0226b30-b2f1-4fc8-b694-ab08e250ba9f",
           "version": 1,
           "previous_version": null,
           "journal_seq": 20,
-          "command_id": "16970cf1-4374-454b-8aa1-1ed7a25fe352",
+          "command_id": "7758771a-b3e6-4c64-8360-9f3e0fabcf51",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -345,7 +345,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "2d53f6b6-fbfd-44cb-be71-0950bcf2c798",
+      "command_id": "96dff5b0-a3d6-4e47-880b-6986b1f396a5",
       "saved_records": [
         {
           "schema_version": 1,
@@ -373,13 +373,13 @@
             "coordinator": null,
             "communications_kind": null,
             "prep_lead_minutes": 10,
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "d9da4f89-fba8-42d4-8c90-4ee2d8504ba4",
+          "record_id": "427a8eca-f186-444a-a57a-2369142c7665",
           "version": 1,
           "previous_version": null,
           "journal_seq": 21,
-          "command_id": "2d53f6b6-fbfd-44cb-be71-0950bcf2c798",
+          "command_id": "96dff5b0-a3d6-4e47-880b-6986b1f396a5",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -402,7 +402,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "a1f4a44d-5e22-4194-a2e0-d70ebea0ae4a",
+      "command_id": "13371500-96cc-4cd4-b70d-ec1b620f38ad",
       "saved_records": [
         {
           "schema_version": 1,
@@ -428,14 +428,14 @@
             "participant": "Fictional first guided customer",
             "state": "connected",
             "resumes_participation_id": null,
-            "call_id": "f13c58a6-7697-41d2-b1ad-9f88bee8985c",
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "call_id": "d0226b30-b2f1-4fc8-b694-ab08e250ba9f",
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "da67882e-d540-4f2c-9471-579f5322fea5",
+          "record_id": "c14fcb69-b24a-4915-9ce0-12312a3bc5bf",
           "version": 1,
           "previous_version": null,
           "journal_seq": 22,
-          "command_id": "a1f4a44d-5e22-4194-a2e0-d70ebea0ae4a",
+          "command_id": "13371500-96cc-4cd4-b70d-ec1b620f38ad",
           "operation": "create",
           "reason": "Customer joined",
           "reason_origin": "automatic",
@@ -458,7 +458,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "706c268a-2587-46ac-a1f9-4b007d657221",
+      "command_id": "f45538af-f107-4189-a656-4001d3fd27fc",
       "saved_records": [
         {
           "schema_version": 1,
@@ -484,14 +484,14 @@
             "participant": "Fictional first guided customer",
             "state": "interrupted",
             "resumes_participation_id": null,
-            "call_id": "f13c58a6-7697-41d2-b1ad-9f88bee8985c",
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "call_id": "d0226b30-b2f1-4fc8-b694-ab08e250ba9f",
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "da67882e-d540-4f2c-9471-579f5322fea5",
+          "record_id": "c14fcb69-b24a-4915-9ce0-12312a3bc5bf",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 23,
-          "command_id": "706c268a-2587-46ac-a1f9-4b007d657221",
+          "command_id": "f45538af-f107-4189-a656-4001d3fd27fc",
           "operation": "update",
           "reason": "Customer connection interrupted",
           "reason_origin": "automatic",
@@ -514,7 +514,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "e0f129b2-48ed-424b-a56f-34189cf47314",
+      "command_id": "e69e75d8-8ebb-44a0-a1a9-449b6ebf126c",
       "saved_records": [
         {
           "schema_version": 1,
@@ -539,15 +539,15 @@
             "entry_type": "participation",
             "participant": "Fictional first guided customer",
             "state": "connected",
-            "resumes_participation_id": "da67882e-d540-4f2c-9471-579f5322fea5",
-            "call_id": "f13c58a6-7697-41d2-b1ad-9f88bee8985c",
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "resumes_participation_id": "c14fcb69-b24a-4915-9ce0-12312a3bc5bf",
+            "call_id": "d0226b30-b2f1-4fc8-b694-ab08e250ba9f",
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "ea83f6da-97d9-4571-90ca-4de626afc5b7",
+          "record_id": "17b63fad-af16-4386-907c-1378c6e33dbb",
           "version": 1,
           "previous_version": null,
           "journal_seq": 24,
-          "command_id": "e0f129b2-48ed-424b-a56f-34189cf47314",
+          "command_id": "e69e75d8-8ebb-44a0-a1a9-449b6ebf126c",
           "operation": "create",
           "reason": "Customer connection restored",
           "reason_origin": "automatic",
@@ -570,7 +570,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "d34e9a5d-f143-490d-93b5-af86a08bd413",
+      "command_id": "67a9fbcb-db14-45cf-a18d-993e2ec1aef6",
       "saved_records": [
         {
           "schema_version": 1,
@@ -596,14 +596,14 @@
             "participant": "Fictional second guided customer",
             "state": "connected",
             "resumes_participation_id": null,
-            "call_id": "d9da4f89-fba8-42d4-8c90-4ee2d8504ba4",
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "call_id": "427a8eca-f186-444a-a57a-2369142c7665",
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "236618ed-f858-48b5-a247-174537b3f6e6",
+          "record_id": "21ac6d5a-39b1-463f-af0f-604dac9cbfd1",
           "version": 1,
           "previous_version": null,
           "journal_seq": 25,
-          "command_id": "d34e9a5d-f143-490d-93b5-af86a08bd413",
+          "command_id": "67a9fbcb-db14-45cf-a18d-993e2ec1aef6",
           "operation": "create",
           "reason": "Customer joined",
           "reason_origin": "automatic",
@@ -626,7 +626,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "aa120838-67b8-41eb-96b4-c478e8826177",
+      "command_id": "4aebc027-1dea-4c70-bd4e-aa19f4e7ff8c",
       "saved_records": [
         {
           "schema_version": 1,
@@ -652,14 +652,14 @@
             "participant": "Fictional second guided customer",
             "state": "left",
             "resumes_participation_id": null,
-            "call_id": "d9da4f89-fba8-42d4-8c90-4ee2d8504ba4",
-            "conference_id": "694eb7b8-9118-4630-b960-22fb498968d1"
+            "call_id": "427a8eca-f186-444a-a57a-2369142c7665",
+            "conference_id": "3877f6c5-9ea7-4425-9f58-e398a878218f"
           },
-          "record_id": "236618ed-f858-48b5-a247-174537b3f6e6",
+          "record_id": "21ac6d5a-39b1-463f-af0f-604dac9cbfd1",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 26,
-          "command_id": "aa120838-67b8-41eb-96b4-c478e8826177",
+          "command_id": "4aebc027-1dea-4c70-bd4e-aa19f4e7ff8c",
           "operation": "update",
           "reason": "Customer left",
           "reason_origin": "automatic",
@@ -682,7 +682,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8c62a5cc-7fa3-4768-8464-0a3946f0f220",
+      "command_id": "914e3bf8-ef79-4d7b-8ed4-841b9ba5aa8a",
       "saved_records": [
         {
           "schema_version": 1,
@@ -712,11 +712,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 27,
-          "command_id": "8c62a5cc-7fa3-4768-8464-0a3946f0f220",
+          "command_id": "914e3bf8-ef79-4d7b-8ed4-841b9ba5aa8a",
           "operation": "update",
           "reason": "Conference closed",
           "reason_origin": "automatic",
@@ -771,11 +771,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 1,
           "previous_version": null,
           "journal_seq": 15,
-          "command_id": "0a6680a4-cd0b-40d1-982f-8e39c973a497",
+          "command_id": "d2c2be60-c739-48d6-a3f3-2f1397ac3ed9",
           "operation": "create",
           "reason": "Conference preparation",
           "reason_origin": "automatic",
@@ -835,11 +835,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 16,
-          "command_id": "d77a81f6-a555-4190-82e5-7a8923bc4459",
+          "command_id": "1eb56a45-b106-4c5a-977b-1e36fbb415ba",
           "operation": "update",
           "reason": "Conference established",
           "reason_origin": "automatic",
@@ -899,11 +899,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 17,
-          "command_id": "8c55edce-ed6f-4cd8-9518-070a8dbab742",
+          "command_id": "30efd249-c4c5-4abd-a095-6ee84a9786d7",
           "operation": "update",
           "reason": "Conference verification updated",
           "reason_origin": "automatic",
@@ -963,11 +963,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 18,
-          "command_id": "8ede2646-7abf-4f3e-a48e-d93d3c4eeb50",
+          "command_id": "e4fd23ec-78d0-4365-b8c1-51e8425a7c1f",
           "operation": "update",
           "reason": "Conference interrupted",
           "reason_origin": "automatic",
@@ -1027,11 +1027,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 19,
-          "command_id": "830d0bf0-23c1-44a1-8503-2f6124bfd2b3",
+          "command_id": "cd586bfb-8ec5-477d-8bee-c9d4a7b225e4",
           "operation": "update",
           "reason": "Conference connection restored",
           "reason_origin": "automatic",
@@ -1091,11 +1091,11 @@
             "configured_transport": null,
             "configuration_reported_at": null
           },
-          "record_id": "694eb7b8-9118-4630-b960-22fb498968d1",
+          "record_id": "3877f6c5-9ea7-4425-9f58-e398a878218f",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 27,
-          "command_id": "8c62a5cc-7fa3-4768-8464-0a3946f0f220",
+          "command_id": "914e3bf8-ef79-4d7b-8ed4-841b9ba5aa8a",
           "operation": "update",
           "reason": "Conference closed",
           "reason_origin": "automatic",

@@ -27,12 +27,17 @@ def inspect(root):
         assert manifest["version"] == "2.0"
         assert manifest["statistics"]["total_files"] == len(names)
         checked = set()
+        checksum_reads = []
 
         def checksums(items, prefix=""):
             assert items, "Missing archive checksums"
             for name, expected in items.items():
                 path = prefix + name
-                assert digest(archive.read(path)) == expected, path
+                actual = digest(archive.read(path))
+                assert actual == expected, path
+                checksum_reads.append(
+                    {"path": path, "expected": expected, "actual": actual}
+                )
                 checked.add(path)
 
         checksums(manifest["archive_components"]["checksums"])
@@ -155,6 +160,7 @@ def inspect(root):
             "records": len(records),
             "revisions": len(revisions),
             "checkedMembers": sorted(checked),
+            "checksumReads": checksum_reads,
             "telemetry": telemetry_states,
             "telemetryInputProvenance": provenance,
             "originalZipUnchanged": digest((root / "original-mission.zip").read_bytes())
