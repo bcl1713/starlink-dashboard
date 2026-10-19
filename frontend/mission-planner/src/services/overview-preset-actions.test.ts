@@ -108,7 +108,30 @@ it('reports partial acknowledgment accurately and supports a fresh-baseline retr
   await expect(applyDisplayPreset(preset)).rejects.toThrow(
     /Confirmed: Panels and map, Radar.*Unconfirmed: Aviation weather/
   );
+  // Another operator changes forecast selection after the partial application.
+  // Applying visibility again must use this revision and leave that choice alone.
+  const newer = {
+    ...aviation,
+    revision: 11,
+    gfs_selection: {
+      vertical: { kind: 'pressure' as const, pressure_pa: 85000 as const },
+      horizon_hours: 24 as const,
+    },
+  };
+  vi.mocked(aviationWeatherApi.getSettings).mockResolvedValue(newer);
+  let server: Awaited<ReturnType<typeof aviationWeatherApi.getSettings>> = newer;
+  vi.mocked(aviationWeatherApi.updateSettings).mockImplementation(
+    async (update) => {
+      expect(update.expected_revision).toBe(server.revision);
+      expect(update).not.toHaveProperty('gfs_selection');
+      const changes = { ...update };
+      delete changes.expected_revision;
+      server = { ...server, ...changes, revision: server.revision + 1 };
+      return server;
+    }
+  );
   await expect(applyDisplayPreset(preset)).resolves.toEqual({ legacy: false });
+  expect(server.gfs_selection).toEqual(newer.gfs_selection);
 });
 it('does not change any store if preflight cannot read weather; labels legacy presets', async () => {
   vi.mocked(overviewWeatherApi.getSettings).mockRejectedValue(

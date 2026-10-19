@@ -75,17 +75,15 @@ test('guided T02 call lifecycle retains all milestones after a later edit at thr
       record.payload.entry_type === 'call' && record.payload.prep_lead_minutes
     ).toBe(0);
     const row = () =>
-      communications
-        .getByRole('listitem')
-        .filter({
-          has: page.getByRole('heading', {
-            name:
-              record.payload.entry_type === 'call'
-                ? record.payload.party!
-                : title,
-            exact: true,
-          }),
-        });
+      communications.getByRole('listitem').filter({
+        has: page.getByRole('heading', {
+          name:
+            record.payload.entry_type === 'call'
+              ? record.payload.party!
+              : title,
+          exact: true,
+        }),
+      });
     async function edit() {
       const history = communications.getByText(
         'Completed, canceled and removed calls',
@@ -157,7 +155,7 @@ test('guided T02 call lifecycle retains all milestones after a later edit at thr
       .getByRole('dialog')
       .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
       .click();
-    const guide = page.getByRole('region', {
+    const guide = page.getByRole('complementary', {
       name: 'Guided mission walkthrough',
     });
     await guide
