@@ -1,4 +1,3 @@
-import type { RetryObservation } from './trainingRetryEvidence';
 import { useState } from 'react';
 import {
   createProgress,
@@ -9,6 +8,7 @@ import {
   saveProgress,
   type TrainingIdentity,
   type TrainingProgress,
+  type TrainingObservations,
 } from './trainingProgress';
 import {
   evaluateStep,
@@ -30,8 +30,8 @@ interface Props {
   onOpenTarget: (stage: TrainingStageId) => void;
   onDismiss: () => void;
   onCheckEvidence?: (
-    observations: readonly RetryObservation[]
-  ) => Promise<RetryObservation[] | void>;
+    observations: TrainingObservations
+  ) => Promise<TrainingObservations | void>;
 }
 export function GuidedMission(props: Props) {
   return <Guide key={JSON.stringify(props.identity)} {...props} />;
@@ -68,10 +68,11 @@ function Guide({
     setChecking(true);
     setCheckError(null);
     try {
-      const observations = await onCheckEvidence(
-        progress.retryObservations ?? []
-      );
-      if (observations) keep({ ...progress, retryObservations: observations });
+      const observations = await onCheckEvidence({
+        retryObservations: progress.retryObservations ?? [],
+        replayObservations: progress.replayObservations ?? [],
+      });
+      if (observations) keep({ ...progress, ...observations });
     } catch (reason) {
       setCheckError(
         reason instanceof Error

@@ -3,9 +3,14 @@
 import hashlib
 import io
 import json
+import re
 import sys
+import unicodedata
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
+from xml.etree import ElementTree
+from zoneinfo import ZoneInfo
 
 from pypdf import PdfReader
 
@@ -78,6 +83,49 @@ def inspect(root):
         assert any(
             (page.extract_text() or "").strip() for page in reader.pages
         ), "Empty customer PDF"
+        text = unicodedata.normalize(
+            "NFKC", "\n".join(page.extract_text() or "" for page in reader.pages)
+        )
+        printed_clocks = []
+        ns = {"k": "http://www.opengis.net/kml/2.2"}
+        for leg in mission["legs"]:
+            assert unicodedata.normalize("NFKC", leg["name"]) in text
+            route = ElementTree.fromstring(
+                archive.read(f'routes/{leg["route_id"]}.kml')
+            )
+            stamps = []
+            for point in route.findall(".//k:Placemark", ns):
+                if point.find("k:Point", ns) is None:
+                    continue
+                description = point.findtext("k:description", "", ns)
+                match = re.search(
+                    r"Time Over Waypoint: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}Z)",
+                    description,
+                )
+                if match:
+                    stamps.append(
+                        datetime.strptime(match[1], "%Y-%m-%d %H:%M:%SZ").replace(
+                            tzinfo=timezone.utc
+                        )
+                    )
+            assert len(stamps) >= 2, "Missing declared route clocks"
+            departure = (
+                datetime.fromisoformat(leg["adjusted_departure_time"])
+                if leg.get("adjusted_departure_time")
+                else min(stamps)
+            )
+            arrival = departure + (max(stamps) - min(stamps))
+            eastern = ZoneInfo("America/New_York")
+            expected = f"DEP {departure.astimezone(eastern):%H:%M} ET | ARR {arrival.astimezone(eastern):%H:%M} ET"
+            assert expected in text, expected
+            printed_clocks.append(
+                {
+                    "legId": leg["id"],
+                    "departureUtc": departure.isoformat(),
+                    "arrivalUtc": arrival.isoformat(),
+                    "pdfEasternHeader": expected,
+                }
+            )
         (root / "original-customer-brief.pdf").write_bytes(pdf)
         telemetry = json.loads(archive.read("telemetry/manifest.json"))
         assert len(telemetry["legs"]) == 2
@@ -103,6 +151,7 @@ def inspect(root):
             "pdfPath": pdfs[0],
             "pdfSha256": digest(pdf),
             "pdfPages": len(reader.pages),
+            "pdfClocksFromOriginalRouteInputs": printed_clocks,
             "records": len(records),
             "revisions": len(revisions),
             "checkedMembers": sorted(checked),

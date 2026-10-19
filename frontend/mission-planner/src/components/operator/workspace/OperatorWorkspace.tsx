@@ -63,6 +63,10 @@ import {
 import { readEventSnapshot } from '@/services/operatorEvents';
 import { simulationRunApi } from '@/services/simulation-run';
 import { readTrainingRecords } from '../training/readTrainingRecords';
+import {
+  retainReplayObservation,
+  collectHistoricalReplayEvidence,
+} from '../training/trainingReplayEvidence';
 import type { TrainingEvidence } from '../training/trainingSteps';
 import {
   isCurrentTrainingEvidence,
@@ -148,6 +152,9 @@ export function OperatorWorkspace() {
   const trainingEvidence: TrainingEvidence = {
     available: (trainingEvents?.available ?? false) && !records.isError,
     fresh: !events.failed && (trainingEvents?.fresh ?? false),
+    historicalOutcomes: trainingRecordsCurrent
+      ? checkedTraining.historicalOutcomes
+      : [],
     outcomes: [
       ...(trainingEvents?.outcomes ?? []),
       ...(trainingRecordsCurrent ? checkedTraining.outcomes : []),
@@ -403,17 +410,34 @@ export function OperatorWorkspace() {
             identity={training.identity}
             evidence={trainingEvidence}
             onDismiss={() => setGuide(false)}
-            onCheckEvidence={async (previousObservations) => {
+            onCheckEvidence={async (previous) => {
               setCheckedTraining(null);
               const checked = await readTrainingRecords(
                 training.identity,
                 health.data!.simulation_run_id!,
                 training.prerequisiteIds
               );
-              const [replay, snapshot] = await Promise.all([
+              const [replay, snapshot, currentMission] = await Promise.all([
                 simulationRunApi.get(),
                 readEventSnapshot(missionId),
+                mission.refetch(),
               ]);
+              const currentContext = trainingContext(
+                health.data,
+                currentMission.data,
+                window.location.origin
+              );
+              if (
+                currentMission.isError ||
+                !currentMission.data ||
+                !currentContext ||
+                JSON.stringify(currentContext.identity) !== trainingIdentity ||
+                JSON.stringify(currentContext.prerequisiteIds) !==
+                  JSON.stringify(training.prerequisiteIds)
+              )
+                throw new Error(
+                  'Private mission changed or is unavailable; reopen it before checking evidence.'
+                );
               const observed = collectEventEvidence({
                 identity: training.identity,
                 namespace: health.data!.simulation_run_id!,
@@ -433,7 +457,7 @@ export function OperatorWorkspace() {
                   'Training evidence changed while checking; check again.'
                 );
               const namespace = health.data!.simulation_run_id!;
-              const observations = [...previousObservations];
+              const observations = [...(previous.retryObservations ?? [])];
               for (const transaction of workspace.tray) {
                 if (
                   observations.some(
@@ -466,18 +490,39 @@ export function OperatorWorkspace() {
                 workspace.tray,
                 checked.evidenceRecords
               );
+              const replayObservations = retainReplayObservation(
+                training.identity,
+                namespace,
+                currentMission.data.legs,
+                snapshot,
+                replay,
+                previous.replayObservations ?? []
+              );
+              const currentReplayOutcomes = collectReplayEvidence(
+                snapshot,
+                replay,
+                currentMission.data.legs
+              );
+              const historicalReplayOutcomes = collectHistoricalReplayEvidence(
+                training.identity,
+                namespace,
+                currentMission.data.legs,
+                snapshot.as_of,
+                snapshot.H,
+                replayObservations
+              );
               setCheckedTraining({
                 ...checked,
+                historicalOutcomes: historicalReplayOutcomes.filter(
+                  (outcome) => !currentReplayOutcomes.includes(outcome)
+                ),
                 outcomes: [
                   ...new Set([
                     ...checked.outcomes,
                     ...retryOutcomes,
                     ...observed.outcomes,
-                    ...collectReplayEvidence(
-                      snapshot,
-                      replay,
-                      mission.data!.legs
-                    ),
+                    ...currentReplayOutcomes,
+                    ...historicalReplayOutcomes,
                   ]),
                 ],
                 identity: trainingIdentity,
@@ -485,7 +530,10 @@ export function OperatorWorkspace() {
                 checkedAt: performance.now(),
               });
               events.refresh();
-              return retainedObservations;
+              return {
+                retryObservations: retainedObservations,
+                replayObservations,
+              };
             }}
             onOpenTarget={(stage) => {
               if (stage === 'T10') navigate('/missions');

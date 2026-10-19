@@ -31,6 +31,10 @@ async function allPages(request: APIRequestContext, path: string) {
   } while (cursor);
   return { rows, H };
 }
+const frozenJournal = (page: Awaited<ReturnType<typeof allPages>>) => ({
+  H: page.H,
+  records: page.rows.map((item) => item.record),
+});
 
 test('original training mission ZIP transfers through Missions without restoring Operator records', async ({
   page,
@@ -97,12 +101,62 @@ test('original training mission ZIP transfers through Missions without restoring
     dialog.getByText('Export failed. Please try again.', { exact: true })
   ).toBeVisible();
   await page.unroute(`**/api/v2/missions/${id}/export`);
+  let heldPoll = false;
+  let releasePoll!: () => void;
+  const holdPoll = new Promise<void>((resolve) => {
+    releasePoll = resolve;
+  });
+  const downloads: string[] = [];
+  page.on('download', (download) =>
+    downloads.push(download.suggestedFilename())
+  );
+  const pollPath = `**/api/v2/missions/${id}/export-preparations/*`;
+  await page.route(pollPath, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    heldPoll = true;
+    await holdPoll;
+    await route.abort('aborted').catch(() => {});
+  });
+  let cancellation;
+  try {
+    const starting = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        response.url().endsWith(`/missions/${id}/export`)
+    );
+    await dialog.getByRole('button', { name: 'Export', exact: true }).click();
+    const started = await starting;
+    expect(started.status()).toBe(202);
+    const job = await started.json();
+    await expect.poll(() => heldPoll).toBe(true);
+    const cancelled = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'DELETE' &&
+        response.url().endsWith(`/export-preparations/${job.id}`)
+    );
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    const result = await cancelled;
+    expect(result.ok()).toBe(true);
+    cancellation = await result.json();
+    expect(cancellation.state).toBe('cancelled');
+    await expect(dialog).not.toBeVisible();
+    expect(downloads).toEqual([]);
+    writeFileSync(
+      join(root, 'archive-cancel-proof.json'),
+      JSON.stringify({ job, cancellation, noDownload: true }, null, 2)
+    );
+  } finally {
+    releasePoll();
+    await page.unroute(pollPath);
+  }
+  await card.getByRole('button', { name: 'Export', exact: true }).click();
   const downloaded = page.waitForEvent('download', { timeout: 620_000 });
   await dialog.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloaded;
   expect(download.suggestedFilename()).toBe(`${id}.zip`);
   expect(await download.failure()).toBeNull();
   await download.saveAs(join(root, 'original-mission.zip'));
+  expect(downloads).toEqual([`${id}.zip`]);
   // An omitted customer PDF keeps the dialog open and must fail this gate.
   await expect(dialog).not.toBeVisible({ timeout: 20_000 });
   expect(
@@ -175,8 +229,18 @@ test('original training mission ZIP transfers through Missions without restoring
     expect((await saved).ok()).toBe(true);
     const sentinel = await allPages(target.request, journalPath);
     expect(sentinel.rows).toHaveLength(1);
+    const historyPath = `/api/v2/operator/records/${sentinel.rows[0].record.record_id}/history`;
+    const sentinelHistory = frozenJournal(
+      await allPages(target.request, historyPath)
+    );
     await importOriginal();
-    expect(await allPages(target.request, journalPath)).toEqual(sentinel);
+    const afterImport = frozenJournal(
+      await allPages(target.request, journalPath)
+    );
+    expect(afterImport).toEqual(frozenJournal(sentinel));
+    expect(frozenJournal(await allPages(target.request, historyPath))).toEqual(
+      sentinelHistory
+    );
     expect(
       await allPages(page.request, `/api/v2/operator/records?mission_id=${id}`)
     ).toEqual(current);
@@ -188,11 +252,12 @@ test('original training mission ZIP transfers through Missions without restoring
           sourceHealth: health,
           destinationHealth,
           emptyBeforeAndAfter: empty,
-          nonemptyBeforeAndAfter: sentinel,
+          nonemptyBeforeAndAfter: afterImport,
+          nonemptyHistoryBeforeAndAfter: sentinelHistory,
           unchangedOriginalZipImportedTwice: true,
           actualMissionsControls: true,
           networkFailureRetry: true,
-          preparationCancel: 'pending dedicated branch',
+          preparationCancel: cancellation,
         },
         null,
         2

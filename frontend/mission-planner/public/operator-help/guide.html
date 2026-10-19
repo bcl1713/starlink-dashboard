@@ -945,9 +945,9 @@ scripts/operator-training.sh archive-inputs --root /tmp/operator-learner</pre
           </li>
           <li>
             Extract the original archive. Open the original briefing PDF and
-            inspect the itinerary, leg names, UTCs and reported mission
-            outcomes. Check the included journal/history, telemetry and checksum
-            information using the archive's manifest.
+            inspect the itinerary, leg names, printed time zone and predicted
+            communications windows. Check the included journal/history,
+            telemetry and checksum information using the archive's manifest.
           </li>
           <li>
             Use the existing Import workflow in a separate intended destination.
@@ -961,6 +961,12 @@ scripts/operator-training.sh archive-inputs --root /tmp/operator-learner</pre
             look-alike PDF for the downloaded artifact.
           </li>
         </ol>
+        <p>
+          The original customer briefing uses Eastern Time (ET), as printed on
+          its pages. Operator records remain UTC. Read each artifact's time-zone
+          label; the PDF's predicted posture does not replace the separate
+          reported journal or telemetry archive.
+        </p>
         <p>
           A download is not evidence that somebody reviewed its PDF. Mission
           import is not Operator backup/restore, and it must not silently
@@ -1087,6 +1093,16 @@ scripts/operator-training.sh start --root /tmp/operator-learner</pre
           replay state. Missing, stale or unavailable evidence is not all-clear.
           Human observations are explicitly recorded as such and are separate
           from machine-verified outcomes.
+        </p>
+        <p>
+          A flight exercise can retain its original replay and source-read facts
+          after you start the next leg or restart the private instance. These
+          are labeled “Verified from retained source observation”; they describe
+          an earlier check, not current prediction availability. First-leg and
+          second-leg model checks are separate. Changed store/epoch, replaced
+          leg routes, inconsistent reads or a journal boundary older than the
+          recorded observation cannot establish those outcomes. Reset guide
+          progress also clears these local observations.
         </p>
         <p>
           Open lesson controls takes you to the actual controls and compacts the

@@ -74,7 +74,10 @@ export function collectEventEvidence(source: {
 
 /** Normal replay status is distinct from the fixture's stable journal namespace. */
 export function collectReplayEvidence(
-  snapshot: EventSnapshot,
+  snapshot: Pick<
+    EventSnapshot,
+    'as_of' | 'mission_id' | 'source_mode' | 'sources'
+  >,
   status: import('@/services/simulation-run').SimulationRunStatus,
   legs: readonly { id: string; route_id: string }[]
 ): string[] {
@@ -109,7 +112,10 @@ export function collectReplayEvidence(
         Date.parse(capture.captured_at) >= Date.parse(run.started_at) &&
         Date.parse(capture.captured_at) <= Date.parse(status.served_at)
     )
-  )
+  ) {
     outcomes.push('current-model-sources');
+    if (index === 0) outcomes.push('first-leg-model-sources');
+    if (index === 1) outcomes.push('second-leg-model-sources');
+  }
   return outcomes;
 }

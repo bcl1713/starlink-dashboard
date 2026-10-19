@@ -10,7 +10,7 @@ timeout --kill-after=10s 35m uv run --offline --python 3.11 \
 ```
 
 Start that disposable source with the normal launcher first. The proof checks the
-four training browser cases, then downloads the original mission ZIP through
+four training browser cases and the three-size call lifecycle, then downloads the original mission ZIP through
 Missions and imports unchanged bytes through the destination's Missions UI.
 It compares empty and nonempty destination journal sentinels and inspects the
 original PDF, complete source revisions and archive checksums. Both stacks are
@@ -22,5 +22,7 @@ as live data, overwrite replay flight phase, or seed learner journal records.
 Its independent synthetic provenance is included in the mission metadata.
 The normal PDF coordinator is owned by the private application's lifespan;
 aircraft/provider background discovery stays disabled. Telemetry states are reported verbatim;
-this slice does not certify the complete narrative, preparation cancellation,
-all parity branches, or human PDF review.
+The archive browser also cancels a real known preparation before downloading,
+then retries and checks immutable destination records/history and H separately
+from changing read-time freshness. This slice does not certify the complete
+narrative, all parity branches, or human PDF review.

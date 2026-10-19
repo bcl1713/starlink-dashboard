@@ -54,7 +54,9 @@ export function TrainingStep({
               ? 'Needs evidence'
               : evaluation.manualOutcomes.includes(outcome)
                 ? 'Human observation'
-                : 'Verified from current data'}
+                : evaluation.historicalOutcomes?.includes(outcome)
+                  ? 'Verified from retained source observation'
+                  : 'Verified from current data'}
           </li>
         ))}
       </ul>

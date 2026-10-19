@@ -3,6 +3,10 @@ import {
   type RetryObservation,
 } from './trainingRetryEvidence';
 import { trainingSteps, type TrainingStageId } from './trainingSteps';
+import {
+  decodeReplayObservation,
+  type ReplayObservation,
+} from './trainingReplayEvidence';
 
 export interface TrainingIdentity {
   fixtureVersion: number;
@@ -16,13 +20,18 @@ export interface ManualEvidence {
   observedAt: string;
   note: string;
 }
-export interface TrainingProgress extends TrainingIdentity {
+export interface TrainingObservations {
+  retryObservations?: RetryObservation[];
+  replayObservations?: ReplayObservation[];
+}
+export interface TrainingProgress
+  extends TrainingIdentity,
+    TrainingObservations {
   schemaVersion: 1;
   currentStage: TrainingStageId;
   visited: TrainingStageId[];
   skipped: TrainingStageId[];
   manualEvidence: ManualEvidence[];
-  retryObservations?: RetryObservation[];
 }
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const fields = [
@@ -67,6 +76,16 @@ function validProgress(
   )
     return false;
   try {
+    if (value.replayObservations !== undefined) {
+      if (
+        !Array.isArray(value.replayObservations) ||
+        value.replayObservations.length > 12
+      )
+        return false;
+      value.replayObservations.forEach((item) =>
+        decodeReplayObservation(item, identity)
+      );
+    }
     if (value.retryObservations !== undefined) {
       if (
         !Array.isArray(value.retryObservations) ||

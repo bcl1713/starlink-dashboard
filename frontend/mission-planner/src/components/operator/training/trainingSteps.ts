@@ -66,7 +66,7 @@ export const trainingSteps = [
     guide: 'flight-predictions',
     outcomes: [
       'first-leg-replay',
-      'current-model-sources',
+      'first-leg-model-sources',
       'future-next-with-overdue',
       'unavailable-model-inputs',
     ],
@@ -125,6 +125,7 @@ export const trainingSteps = [
     outcomes: [
       'between-legs-note',
       'second-leg-replay',
+      'second-leg-model-sources',
       'stable-journal-across-legs',
       'restart-preserved-records',
     ],
@@ -166,11 +167,13 @@ export interface TrainingEvidence {
   fresh: boolean;
   /** Produced by adapters over existing service responses; never persisted progress. */
   outcomes: readonly string[];
+  historicalOutcomes?: readonly string[];
 }
 export interface StepEvaluation {
   status: 'passed' | 'skipped' | 'incomplete' | 'unavailable';
   missing: string[];
   manualOutcomes: string[];
+  historicalOutcomes?: readonly string[];
 }
 export function evaluateStep(
   id: TrainingStageId,
@@ -186,7 +189,7 @@ export function evaluateStep(
         Number.isFinite(Date.parse(item.observedAt))
     )
   );
-  const missing = [
+  const missing: string[] = [
     ...step.outcomes.filter(
       (outcome) =>
         !evidence.available ||
@@ -206,5 +209,8 @@ export function evaluateStep(
             : 'passed',
     missing,
     manualOutcomes,
+    historicalOutcomes: evidence.historicalOutcomes?.filter(
+      (outcome) => !missing.includes(outcome)
+    ),
   };
 }

@@ -294,7 +294,7 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   await expect(
     flightGuide
       .getByRole('listitem')
-      .filter({ hasText: 'current model sources' })
+      .filter({ hasText: 'first leg model sources' })
   ).toContainText('Verified from current data');
   await flightGuide
     .getByRole('button', { name: 'Dismiss guide', exact: true })
@@ -371,6 +371,43 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   );
   expect(secondModel).toMatchObject({ freshness: 'fresh', aligned: true });
   expect(secondModel.captured_at).toMatch(/^2026-10-17T17:05/);
+  async function inspectFlightLesson(
+    stage: string,
+    outcomes: string[],
+    retained: boolean
+  ) {
+    await page.goto(`/operator?workspace=1&mission_id=${id}`);
+    await page.getByRole('button', { name: 'Help', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+      .click();
+    const guide = page.getByRole('complementary', {
+      name: 'Guided mission walkthrough',
+    });
+    await guide
+      .getByRole('combobox', { name: 'Lesson', exact: true })
+      .selectOption(stage);
+    await guide
+      .getByRole('button', { name: 'Check current evidence', exact: true })
+      .click();
+    for (const outcome of outcomes)
+      await expect(
+        guide.getByRole('listitem').filter({ hasText: outcome })
+      ).toContainText(
+        retained
+          ? 'Verified from retained source observation'
+          : 'Verified from current data'
+      );
+    await guide
+      .getByRole('button', { name: 'Dismiss guide', exact: true })
+      .click();
+  }
+  await inspectFlightLesson(
+    'T09',
+    ['second leg replay', 'second leg model sources'],
+    false
+  );
   const replay = await page.request.post(
     '/api/v2/operator/events/acknowledge',
     { data: ackBody, headers: frozenHeaders }
@@ -400,6 +437,16 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   expect(
     (await (await page.request.get('/api/simulation/run')).json()).state
   ).toBe('idle');
+  await inspectFlightLesson(
+    'T05',
+    ['first leg replay', 'first leg model sources'],
+    true
+  );
+  await inspectFlightLesson(
+    'T09',
+    ['second leg replay', 'second leg model sources'],
+    true
+  );
   await display.reload();
   await expect(display.locator('[data-paced-running="false"]')).toBeVisible();
   await expect(metricPanels.locator('[data-metric-panel]')).toHaveCount(3);
@@ -433,6 +480,7 @@ test('training fixture: normal replay across two legs preserves journal, receipt
         ),
         restartPreservedJournalAndAcknowledgment: true,
         stoppedReplayNotReconstructed: true,
+        earlierReplayAndSourceObservationsRetainedAfterReloadAndRestart: true,
         configuredNetworkVisibilityPreservedAcrossRunningCompletedAndRestart: true,
         syntheticNetworkReadoutsSuppressed: true,
       },
