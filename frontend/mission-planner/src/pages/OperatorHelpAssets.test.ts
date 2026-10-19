@@ -31,12 +31,21 @@ it('packages unchanged synthetic screenshots with capture identity and readable 
   expect(manifest.synthetic).toBe(true);
   expect(manifest.candidateSha).toMatch(/^[a-f0-9]{40}$/);
   const guide = parse('guide.html');
-  expect(guide.querySelectorAll('figure')).toHaveLength(3);
+  expect(manifest.files.length).toBeGreaterThanOrEqual(5);
+  expect(guide.querySelectorAll('figure')).toHaveLength(manifest.files.length);
+  for (const id of ['transport', 'issues-capability'])
+    expect(guide.getElementById(id)?.querySelector('figure')).not.toBeNull();
   for (const image of guide.querySelectorAll('img')) {
     expect(image.getAttribute('alt')!.length).toBeGreaterThan(40);
     expect(existsSync(join(root, image.getAttribute('src')!))).toBe(true);
   }
   for (const image of manifest.files) {
+    expect(image.candidateSha ?? manifest.candidateSha).toMatch(
+      /^[a-f0-9]{40}$/
+    );
+    expect(image.sourceArchiveSha256 ?? manifest.sourceArchiveSha256).toMatch(
+      /^[a-f0-9]{64}$/
+    );
     const bytes = readFileSync(join(root, `images/${image.file}`));
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(image.sha256);
   }

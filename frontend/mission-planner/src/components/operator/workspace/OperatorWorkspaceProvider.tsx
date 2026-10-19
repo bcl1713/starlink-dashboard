@@ -52,6 +52,7 @@ interface Workspace {
   retryExact: (commandId: string) => Promise<void>;
   rereadAndReconcile: (commandId: string) => Promise<void>;
   tray: TransactionTrayItem[];
+  busyLanes: readonly string[];
   attempts: readonly CommandAttempt[];
   recoveryErrors: string[];
   refreshDrafts: () => void;
@@ -193,6 +194,7 @@ export function OperatorWorkspaceProvider({
   const apis = useRef(new Map<string, JournalOwner>());
   const waiters = useRef(new Map<string, ((api: JournalOwner) => void)[]>());
   const busy = useRef(new Set<string>());
+  const [busyLanes, setBusyLanes] = useState<string[]>([]);
   const trayRef = useRef(tray);
   trayRef.current = tray;
 
@@ -310,6 +312,7 @@ export function OperatorWorkspaceProvider({
     )
       return;
     busy.current.add(lane);
+    setBusyLanes([...busy.current]);
     setTray((rows) => [
       ...rows.filter((row) => row.lane !== lane),
       {
@@ -358,6 +361,8 @@ export function OperatorWorkspaceProvider({
       if (result)
         update(lane, {
           status: result.current ? 'accepted' : 'accepted_unreadable',
+          pending: undefined,
+          retryReady: false,
           receipt: result.receipt,
           current: result.current,
           message: result.current
@@ -374,18 +379,22 @@ export function OperatorWorkspaceProvider({
       });
     } finally {
       busy.current.delete(lane);
+      setBusyLanes([...busy.current]);
     }
   }
   async function retryExact(commandId: string) {
     const row = trayRef.current.find((row) => row.commandId === commandId);
     if (!row || busy.current.has(row.lane) || !row.retryReady) return;
     busy.current.add(row.lane);
+    setBusyLanes([...busy.current]);
     try {
       const api = await ensureOwner(row.target);
       const result = await api.retry();
       if (result)
         update(row.lane, {
           status: result.current ? 'accepted' : 'accepted_unreadable',
+          pending: undefined,
+          retryReady: false,
           receipt: result.receipt,
           current: result.current,
           message: result.current
@@ -394,6 +403,7 @@ export function OperatorWorkspaceProvider({
         });
     } finally {
       busy.current.delete(row.lane);
+      setBusyLanes([...busy.current]);
     }
   }
   async function rereadAndReconcile(commandId: string) {
@@ -424,6 +434,7 @@ export function OperatorWorkspaceProvider({
         retryExact,
         rereadAndReconcile,
         tray,
+        busyLanes,
         attempts,
         recoveryErrors: [
           ...restored.errors,

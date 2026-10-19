@@ -566,3 +566,43 @@ it('keeps recovered retry unavailable until its actual owner has restored the re
   await act(async () => workspace.retryExact(workspace.tray[0].commandId));
   expect(save.mock.calls[1]).toEqual(original);
 });
+
+it('keeps the command lane visibly busy until an accepted save finishes its current-record reread', async () => {
+  let finishRead!: (value: ReturnType<typeof page>['items'][number]) => void;
+  vi.mocked(api.readOperatorRecord).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishRead = resolve;
+      })
+  );
+  const send = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [record],
+    });
+  const { registry } = mount();
+  const first = registry.createDraft(target, input);
+  let saving!: Promise<void>;
+  await act(async () => {
+    saving = workspace.submitDraft(first.draftId);
+  });
+  await waitFor(() => expect(api.readOperatorRecord).toHaveBeenCalledTimes(1));
+  expect(registry.resumeDraft(first.draftId)).toBeNull();
+  expect(workspace.busyLanes).toContain(commandLane(first.target));
+  const next = registry.createDraft(target, {
+    ...input,
+    payload: { ...input.payload, title: 'next action' },
+  });
+  await submit(next.draftId);
+  expect(send).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    finishRead(page().items[0]);
+    await saving;
+  });
+  await waitFor(() => expect(workspace.busyLanes).toEqual([]));
+  expect(workspace.tray[0].pending).toBeUndefined();
+  await submit(next.draftId);
+  expect(send).toHaveBeenCalledTimes(2);
+});

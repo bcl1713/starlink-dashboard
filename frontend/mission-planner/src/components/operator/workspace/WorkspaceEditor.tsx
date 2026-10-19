@@ -81,7 +81,11 @@ export function WorkspaceEditor({
     operatorIdentity(health.data) !== targetIdentity(draft.target);
   const unavailable = health.isError || !health.data?.ready;
   const saveDisabled =
-    unavailable || wrongStore || !!tray?.pending || tray?.status === 'saving';
+    unavailable ||
+    wrongStore ||
+    !!tray?.pending ||
+    tray?.status === 'saving' ||
+    workspace.busyLanes.includes(commandLane(draft.target));
   const legs = mission?.id === draft.target.missionId ? mission.legs : [];
   function update(input: OperatorInput) {
     if (!draft) return;

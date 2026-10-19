@@ -124,6 +124,11 @@ export function OperatorWorkspace() {
   const loaded = items.map((item) => item.record);
   const incomplete = !records.data || records.isError || !!records.hasNextPage;
   const disabled = !missionId || !health.data?.ready || health.isError;
+  const missionSaveBusy = workspace.tray.some(
+    (row) =>
+      row.target.missionId === missionId &&
+      workspace.busyLanes.includes(row.lane)
+  );
   const [tools, setTools] = useState(false);
   const [help, setHelp] = useState(false);
   const [guide, setGuide] = useState(false);
@@ -649,7 +654,9 @@ export function OperatorWorkspace() {
             {view === 'Communications' ? (
               <CommunicationsView
                 items={items}
-                disabled={disabled || acting || records.isFetching}
+                disabled={
+                  disabled || acting || records.isFetching || missionSaveBusy
+                }
                 incomplete={incomplete}
                 asOf={records.data?.pages[0]?.as_of}
                 onCreateCall={() =>
@@ -686,7 +693,9 @@ export function OperatorWorkspace() {
               <TransportView
                 records={loaded}
                 events={events}
-                disabled={disabled || acting || records.isFetching}
+                disabled={
+                  disabled || acting || records.isFetching || missionSaveBusy
+                }
                 onCreate={() => openInput(newTransportDraft(missionId).input)}
                 onEdit={openRecord}
                 onHistory={setHistoryId}
@@ -697,7 +706,9 @@ export function OperatorWorkspace() {
                 pages={records.data?.pages ?? []}
                 incomplete={incomplete}
                 unavailable={records.isError}
-                disabled={disabled || acting || records.isFetching}
+                disabled={
+                  disabled || acting || records.isFetching || missionSaveBusy
+                }
                 onCreate={() => openInput(issueInput(missionId))}
                 onCreateCapability={() => openInput(capabilityInput(missionId))}
                 onEdit={openRecord}
@@ -747,7 +758,9 @@ export function OperatorWorkspace() {
               <HistoryView
                 items={items}
                 incomplete={incomplete}
-                disabled={disabled || acting || records.isFetching}
+                disabled={
+                  disabled || acting || records.isFetching || missionSaveBusy
+                }
                 onEdit={openRecord}
                 onHistory={setHistoryId}
                 onTransition={transition}
