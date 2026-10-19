@@ -126,3 +126,43 @@ it('offers explicit reestablishment of a historical session without claiming rea
   fireEvent.click(screen.getByRole('button', { name: /establish/i }));
   expect(action).toHaveBeenCalledWith('establish');
 });
+
+it('keeps active bridge actions visible without expanding a disclosure', () => {
+  const action = vi.fn();
+  const join = vi.fn();
+  render(
+    <ConferenceCard
+      record={{
+        ...conference,
+        payload: {
+          ...conference.payload,
+          entry_type: 'conference',
+          status: 'established',
+        },
+      }}
+      participations={[]}
+      disabled={false}
+      compactActions
+      prominentActions
+      onAction={action}
+      onEdit={vi.fn()}
+      onJoin={join}
+      onHistory={vi.fn()}
+      onRemove={vi.fn()}
+    />
+  );
+  for (const name of [
+    'Verify',
+    'Interrupt conference',
+    'Close conference',
+    'Correct conference',
+    'Customer Joined',
+  ]) {
+    const button = screen.getByRole('button', { name });
+    expect(button.closest('details')).toBeNull();
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Customer Joined' }));
+  expect(action).toHaveBeenCalledWith('verify');
+  expect(join).toHaveBeenCalledTimes(1);
+});

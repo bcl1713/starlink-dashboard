@@ -5,7 +5,8 @@ import {
 } from './conferenceCommands';
 import type { CallAssociation } from './callAssociation';
 import { revisionUtc } from './revisionUtc';
-const button = 'min-h-11 rounded border px-3 disabled:opacity-50';
+const button =
+  'min-h-11 rounded-lg border bg-background px-4 py-2 font-medium shadow-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
 export function ConferenceCard({
   record,
   sessionCurrent = true,
@@ -49,10 +50,15 @@ export function ConferenceCard({
   ).length;
   return (
     <article
-      className="min-w-0 space-y-2 rounded border p-3 break-words"
+      className={
+        'min-w-0 space-y-3 rounded-xl border p-4 break-words ' +
+        (prominentActions
+          ? 'border-2 border-l-4 border-teal-500/60 border-l-teal-500 bg-teal-500/5 shadow-md'
+          : 'bg-card shadow-sm')
+      }
       aria-label={`Conference ${p.title}`}
     >
-      <h4 className="font-semibold">
+      <h4 className="text-xl font-bold">
         {p.title}
         {record.deleted ? ' · Removed' : ''}
       </h4>
@@ -69,7 +75,7 @@ export function ConferenceCard({
                   : 'Established. Verify the bridge next; each call test is reported separately.'
                 : 'Next: establish this bridge, then verify it before use.'}
       </p>
-      <p>
+      <p className="inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold">
         Conference: {previousSession ? 'Historical session report · ' : ''}
         {p.status ?? 'Unknown'} · Operator verification:{' '}
         {revisionUtc(p.verified_at ?? null)}
@@ -97,25 +103,6 @@ export function ConferenceCard({
             {record.deleted ? 'removed' : p.status}. Continuity unknown.
           </p>
         )}
-      <p>
-        Intended transport: {p.intended_transport ?? 'Unknown'} ·
-        Operator-reported configuration: {p.configured_transport ?? 'Unknown'}
-      </p>
-      {compactActions && (
-        <p className="text-sm text-muted-foreground">
-          Close at leg end. Configuration stays saved; a later leg requires an
-          explicit reestablishment and verification.
-        </p>
-      )}
-      <p className="text-sm text-muted-foreground">
-        Closing this bridge does not disconnect customer reports or finish
-        calls.
-      </p>
-      <p className="text-sm">
-        Configuration reported:{' '}
-        {revisionUtc(p.configuration_reported_at ?? null)} · Coordinator:{' '}
-        {p.coordinator ?? 'Unknown'}
-      </p>
       <div className="flex flex-wrap gap-2">
         {!record.deleted && (
           <>
@@ -162,56 +149,68 @@ export function ConferenceCard({
                 Close conference
               </button>
             )}
-            <details open={!compactActions}>
-              <summary className="min-h-11 cursor-pointer py-2">
-                Other bridge actions
-              </summary>
-              <div className="flex flex-wrap gap-2">
-                {!previousSession &&
-                  p.status !== 'closed' &&
-                  p.status !== 'interrupted' && (
-                    <button
-                      className={button}
-                      disabled={disabled}
-                      onClick={() => onAction('interrupt')}
-                    >
-                      Interrupt conference
-                    </button>
-                  )}
-                {!prominentActions &&
-                  !previousSession &&
-                  p.status !== 'closed' && (
-                    <button
-                      className={button}
-                      disabled={disabled}
-                      onClick={() => onAction('close')}
-                    >
-                      Close conference
-                    </button>
-                  )}
-                {!compactActions && (
+            <div className="flex flex-wrap gap-2">
+              {!previousSession &&
+                p.status !== 'closed' &&
+                p.status !== 'interrupted' && (
                   <button
                     className={button}
                     disabled={disabled}
-                    onClick={onJoin}
+                    onClick={() => onAction('interrupt')}
                   >
-                    Customer Joined
+                    Interrupt conference
                   </button>
                 )}
-                <button className={button} disabled={disabled} onClick={onEdit}>
-                  Correct conference
+              {!prominentActions &&
+                !previousSession &&
+                p.status !== 'closed' && (
+                  <button
+                    className={button}
+                    disabled={disabled}
+                    onClick={() => onAction('close')}
+                  >
+                    Close conference
+                  </button>
+                )}
+              {(!compactActions || prominentActions) && (
+                <button className={button} disabled={disabled} onClick={onJoin}>
+                  Customer Joined
                 </button>
-              </div>
-            </details>
+              )}
+              <button className={button} disabled={disabled} onClick={onEdit}>
+                Correct conference
+              </button>
+            </div>
           </>
         )}
-        <button className={button} disabled={disabled} onClick={onRemove}>
-          {record.deleted ? 'Restore record' : 'Remove conference record'}
-        </button>
+      </div>
+      <div className="flex flex-wrap gap-2 border-t pt-3">
         <button className={button} onClick={onHistory}>
           Conference history
         </button>
+        <button className={button} disabled={disabled} onClick={onRemove}>
+          {record.deleted ? 'Restore record' : 'Remove conference record'}
+        </button>
       </div>
+      <p>
+        Intended transport: {p.intended_transport ?? 'Unknown'} ·
+        Operator-reported configuration: {p.configured_transport ?? 'Unknown'}
+      </p>
+      {compactActions && (
+        <p className="text-sm text-muted-foreground">
+          Close at leg end. Configuration stays saved; a later leg requires an
+          explicit reestablishment and verification.
+        </p>
+      )}
+      <p className="text-sm text-muted-foreground">
+        Closing this bridge does not disconnect customer reports or finish
+        calls.
+      </p>
+      <p className="text-sm">
+        Configuration reported:{' '}
+        {revisionUtc(p.configuration_reported_at ?? null)} · Coordinator:{' '}
+        {p.coordinator ?? 'Unknown'}
+      </p>
     </article>
   );
 }

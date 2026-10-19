@@ -10,7 +10,8 @@ const callUtc = (value: string | null) =>
   value
     ? `${new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))} UTC`
     : 'Unknown';
-const button = 'min-h-11 rounded-md border px-3 disabled:opacity-50';
+const button =
+  'min-h-11 rounded-lg border bg-background px-4 py-2 font-medium shadow-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
 export function CallList({
   items,
   activeOnly = false,
@@ -107,12 +108,17 @@ export function CallList({
       return (
         <li
           key={r.record_id}
-          className="min-w-0 space-y-2 break-words rounded-lg border p-3 [overflow-wrap:anywhere]"
+          className={
+            'min-w-0 space-y-3 break-words rounded-xl border p-4 [overflow-wrap:anywhere] ' +
+            (ongoing && onCallAction
+              ? 'border-2 border-l-4 border-l-sky-500 border-sky-500/60 bg-sky-500/5 shadow-md'
+              : 'bg-card shadow-sm')
+          }
         >
-          <h4 className="font-semibold">
+          <h4 className="text-xl font-bold">
             {r.payload.party ?? r.payload.title}
           </h4>
-          <p className="text-sm">
+          <p className="inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold">
             {r.deleted ? 'Removed · ' : ''}
             {r.payload.status === 'cancelled'
               ? 'Canceled'
