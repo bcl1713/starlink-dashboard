@@ -1,5 +1,9 @@
 import type { SavedRecord } from '@/types/operator';
-import type { ConferenceAction } from './conferenceCommands';
+import {
+  sessionOutsideContext,
+  type ConferenceAction,
+} from './conferenceCommands';
+import type { CallAssociation } from './callAssociation';
 import { revisionUtc } from './revisionUtc';
 const button = 'min-h-11 rounded border px-3 disabled:opacity-50';
 export function ConferenceCard({
@@ -10,6 +14,8 @@ export function ConferenceCard({
   onEdit,
   onJoin,
   compactActions = false,
+  currentAssociation,
+  activityAssociationLabel,
   onHistory,
   onRemove,
 }: {
@@ -19,12 +25,17 @@ export function ConferenceCard({
   onAction: (action: ConferenceAction) => void;
   onEdit: () => void;
   compactActions?: boolean;
+  currentAssociation?: CallAssociation | null;
+  activityAssociationLabel?: string;
   onJoin: () => void;
   onHistory: () => void;
   onRemove: () => void;
 }) {
   if (record.payload.entry_type !== 'conference') return null;
   const p = record.payload;
+  const previousSession =
+    ['established', 'interrupted'].includes(p.status ?? '') &&
+    sessionOutsideContext(record, currentAssociation);
   const connected = participations.filter(
     (r) =>
       !r.deleted &&
@@ -42,20 +53,32 @@ export function ConferenceCard({
         {record.deleted ? ' · Removed' : ''}
       </h4>
       <p className="rounded bg-muted p-2 text-sm">
-        {p.status === 'closed'
-          ? 'Closed. Establish again to reuse this bridge.'
-          : p.status === 'interrupted'
-            ? 'Connection interrupted. Restore the bridge, then verify it again.'
-            : p.status === 'established'
-              ? p.verified_at
-                ? 'Bridge verification reported. Ready to use with customers; report each customer joining and leaving.'
-                : 'Established. Verify the bridge next; each call test is reported separately.'
-              : 'Next: establish this bridge, then verify it before use.'}
+        {previousSession
+          ? 'This session is not assumed available here. Close the previous session, then establish again for the current leg.'
+          : p.status === 'closed'
+            ? 'Closed. Establish again to reuse this bridge.'
+            : p.status === 'interrupted'
+              ? 'Connection interrupted. Restore the bridge, then verify it again.'
+              : p.status === 'established'
+                ? p.verified_at
+                  ? 'Bridge verification reported for this session. Report each customer joining and leaving.'
+                  : 'Established. Verify the bridge next; each call test is reported separately.'
+                : 'Next: establish this bridge, then verify it before use.'}
       </p>
       <p>
         Conference: {p.status ?? 'Unknown'} · Operator verification:{' '}
         {revisionUtc(p.verified_at ?? null)}
       </p>
+      {compactActions && (
+        <p>
+          Last reported activity:{' '}
+          {activityAssociationLabel ??
+            (record.scope === 'mission'
+              ? 'Association unknown'
+              : record.scope.replaceAll('_', ' '))}
+          . Saved configuration is kept across the mission.
+        </p>
+      )}
       <p>Customer reported connected: {connected}</p>
       {connected > 0 &&
         (p.status === 'closed' ||
@@ -73,6 +96,12 @@ export function ConferenceCard({
         Intended transport: {p.intended_transport ?? 'Unknown'} ·
         Operator-reported configuration: {p.configured_transport ?? 'Unknown'}
       </p>
+      {compactActions && (
+        <p className="text-sm text-muted-foreground">
+          Close at leg end. Configuration stays saved; a later leg requires an
+          explicit reestablishment and verification.
+        </p>
+      )}
       <p className="text-sm text-muted-foreground">
         Closing this bridge does not disconnect customer reports or finish
         calls.
@@ -92,19 +121,23 @@ export function ConferenceCard({
                 disabled={disabled}
                 onClick={() => onAction('establish')}
               >
-                Establish
+                {p.status === 'closed' && currentAssociation
+                  ? `Reestablish · ${currentAssociation.label}`
+                  : 'Establish'}
               </button>
             )}
-            {p.status === 'established' && !p.verified_at && (
-              <button
-                className={button}
-                disabled={disabled}
-                onClick={() => onAction('verify')}
-              >
-                Verify
-              </button>
-            )}
-            {p.status === 'interrupted' && (
+            {!previousSession &&
+              p.status === 'established' &&
+              !p.verified_at && (
+                <button
+                  className={button}
+                  disabled={disabled}
+                  onClick={() => onAction('verify')}
+                >
+                  Verify
+                </button>
+              )}
+            {!previousSession && p.status === 'interrupted' && (
               <button
                 className={button}
                 disabled={disabled}
@@ -113,21 +146,32 @@ export function ConferenceCard({
                 Restore conference connection
               </button>
             )}
+            {previousSession && (
+              <button
+                className={button + ' bg-primary text-primary-foreground'}
+                disabled={disabled}
+                onClick={() => onAction('close')}
+              >
+                Close previous session
+              </button>
+            )}
             <details open={!compactActions}>
               <summary className="min-h-11 cursor-pointer py-2">
                 Other bridge actions
               </summary>
               <div className="flex flex-wrap gap-2">
-                {p.status !== 'closed' && p.status !== 'interrupted' && (
-                  <button
-                    className={button}
-                    disabled={disabled}
-                    onClick={() => onAction('interrupt')}
-                  >
-                    Interrupt conference
-                  </button>
-                )}
-                {p.status !== 'closed' && (
+                {!previousSession &&
+                  p.status !== 'closed' &&
+                  p.status !== 'interrupted' && (
+                    <button
+                      className={button}
+                      disabled={disabled}
+                      onClick={() => onAction('interrupt')}
+                    >
+                      Interrupt conference
+                    </button>
+                  )}
+                {!previousSession && p.status !== 'closed' && (
                   <button
                     className={button}
                     disabled={disabled}

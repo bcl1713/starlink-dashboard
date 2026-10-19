@@ -89,3 +89,42 @@ it('Restore connection and Restore record are distinct', () => {
     screen.queryByRole('button', { name: 'Restore connection' })
   ).toBeNull();
 });
+it('makes closing a previous-leg session the next action rather than claiming it is ready', () => {
+  const current = {
+    scope: 'leg' as const,
+    leg_id: 'return',
+    previous_leg_id: null,
+    next_leg_id: null,
+    label: 'Return',
+  };
+  const action = vi.fn();
+  render(
+    <ConferenceCard
+      record={{
+        ...conference,
+        scope: 'leg',
+        leg_id: 'outbound',
+        payload: {
+          ...conference.payload,
+          entry_type: 'conference',
+          status: 'established',
+        },
+      }}
+      currentAssociation={current}
+      compactActions
+      participations={[]}
+      disabled={false}
+      onAction={action}
+      onEdit={vi.fn()}
+      onJoin={vi.fn()}
+      onHistory={vi.fn()}
+      onRemove={vi.fn()}
+    />
+  );
+  expect(screen.getByText(/not assumed available/i)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Close previous session' })
+  );
+  expect(action).toHaveBeenCalledWith('close');
+});

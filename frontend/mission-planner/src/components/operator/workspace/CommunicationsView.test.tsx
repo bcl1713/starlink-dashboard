@@ -68,7 +68,11 @@ it('exposes conference reuse and independent customer interruption with the actu
     conference,
     'establish'
   );
-  expect(screen.queryByRole('button', { name: 'Reuse conference' })).toBeNull();
+  expect(
+    screen.queryByRole('button', {
+      name: 'Use this session for another customer',
+    })
+  ).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Interrupt customer' }));
   expect(actions.onCustomerAction).toHaveBeenCalledWith(
     customer,
@@ -93,6 +97,10 @@ it('offers reuse once a bridge is established', () => {
       {...actions}
     />
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Reuse conference' }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Use this session for another customer',
+    })
+  );
   expect(actions.onJoin).toHaveBeenCalledWith(conference);
 });

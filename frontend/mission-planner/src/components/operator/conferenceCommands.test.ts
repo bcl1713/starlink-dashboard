@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { record } from '@/test/operator-fixtures';
 import {
   conferenceCommand,
+  sessionOutsideContext,
   leaveCommand,
   resumeCommand,
 } from './conferenceCommands';
@@ -81,4 +82,144 @@ it('creates participation payloads accepted by the closed public contract', asyn
     state: 'connected',
     resumes_participation_id: null,
   });
+});
+
+it('reestablishes the saved configuration on a later leg with fresh verification and preserved identity', () => {
+  const closed = {
+    ...conference,
+    scope: 'leg' as const,
+    leg_id: 'outbound',
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'closed' as const,
+      coordinator: 'Saved coordinator',
+      configured_transport: 'Ka' as const,
+    },
+  };
+  const command = conferenceCommand(closed, 'establish', now, {
+    scope: 'leg',
+    leg_id: 'return',
+    previous_leg_id: null,
+    next_leg_id: null,
+    label: 'Return',
+  });
+  expect(command).toMatchObject({
+    operation: 'update',
+    record_id: closed.record_id,
+    body: {
+      expected_version: closed.version,
+      scope: 'leg',
+      leg_id: 'return',
+      payload: {
+        status: 'established',
+        verified_at: null,
+        coordinator: 'Saved coordinator',
+        configured_transport: 'Ka',
+      },
+    },
+  });
+  expect(closed.leg_id).toBe('outbound');
+  expect(closed.payload.status).toBe('closed');
+});
+it('does not move an open session or clear independent customer reports on close', () => {
+  const established = {
+    ...conference,
+    scope: 'leg' as const,
+    leg_id: 'outbound',
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'established' as const,
+    },
+  };
+  const association = {
+    scope: 'leg' as const,
+    leg_id: 'return',
+    previous_leg_id: null,
+    next_leg_id: null,
+    label: 'Return',
+  };
+  expect(() =>
+    conferenceCommand(established, 'verify', now, association)
+  ).toThrow(/close/i);
+  expect(
+    conferenceCommand(established, 'close', now, association)
+  ).toMatchObject({
+    operation: 'update',
+    body: { scope: 'leg', leg_id: 'outbound', payload: { status: 'closed' } },
+  });
+});
+it('preserves an explicit association when current timing is unavailable', () => {
+  const chosen = {
+    ...conference,
+    scope: 'leg' as const,
+    leg_id: 'operator-chosen-leg',
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'preparing' as const,
+    },
+  };
+  expect(conferenceCommand(chosen, 'establish', now, null)).toMatchObject({
+    body: { scope: 'leg', leg_id: 'operator-chosen-leg' },
+  });
+});
+it('keeps the first establishment on the explicitly saved leg', () => {
+  const chosen = {
+    ...conference,
+    scope: 'leg' as const,
+    leg_id: 'operator-chosen-leg',
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'preparing' as const,
+    },
+  };
+  const current = {
+    scope: 'leg' as const,
+    leg_id: 'current-leg',
+    previous_leg_id: null,
+    next_leg_id: null,
+    label: 'Current leg',
+  };
+  expect(conferenceCommand(chosen, 'establish', now, current)).toMatchObject({
+    body: { scope: 'leg', leg_id: 'operator-chosen-leg' },
+  });
+});
+
+it('does not carry an open leg report through a known ground gap', () => {
+  expect(
+    sessionOutsideContext(
+      { ...conference, scope: 'leg', leg_id: 'outbound' },
+      {
+        scope: 'between_legs',
+        leg_id: null,
+        previous_leg_id: 'outbound',
+        next_leg_id: 'return',
+        label: 'Between legs',
+      }
+    )
+  ).toBe(true);
+});
+it('does not replace a deliberately unassigned initial activity with an inferred leg', () => {
+  const chosen = {
+    ...conference,
+    scope: 'mission' as const,
+    leg_id: null,
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'preparing' as const,
+    },
+  };
+  expect(
+    conferenceCommand(chosen, 'establish', now, {
+      scope: 'leg',
+      leg_id: 'inferred',
+      previous_leg_id: null,
+      next_leg_id: null,
+      label: 'Inferred',
+    })
+  ).toMatchObject({ body: { scope: 'mission', leg_id: null } });
 });

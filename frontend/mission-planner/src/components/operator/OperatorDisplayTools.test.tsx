@@ -25,6 +25,8 @@ vi.mock('@/services/api-client', () => ({
 let client: QueryClient;
 let saved: Record<string, boolean>;
 let presets: Record<string, unknown>;
+let radar = { enabled: true, revision: 2 };
+let aircraft = adsbSettings({ enabled: false });
 beforeEach(() => {
   saved = {
     ...OVERVIEW_VISIBILITY_DEFAULTS,
@@ -35,6 +37,8 @@ beforeEach(() => {
     country_borders_enabled: false,
     state_borders_enabled: false,
   };
+  radar = { enabled: true, revision: 2 };
+  aircraft = adsbSettings({ enabled: false });
   presets = { normal: null, communications: null, weather: null };
   client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -42,13 +46,13 @@ beforeEach(() => {
   vi.mocked(apiClient.get).mockImplementation(async (url) => ({
     data:
       url === '/api/overview-adsb/settings'
-        ? adsbSettings({ enabled: false })
+        ? aircraft
         : url === '/api/overview-links/presets'
           ? presets
           : url === '/api/overview-history/settings'
             ? { window_seconds: 1800 }
             : url === '/api/overview-weather/settings'
-              ? { enabled: true, revision: 2 }
+              ? radar
               : url === '/api/aviation-weather/v1/settings'
                 ? {
                     metar: false,
@@ -63,6 +67,10 @@ beforeEach(() => {
   }));
   vi.mocked(apiClient.put).mockImplementation(async (url, value) => {
     const body = value as Record<string, unknown>;
+    if (url === '/api/overview-adsb/settings') {
+      aircraft = { ...aircraft, ...body, revision: aircraft.revision + 1 };
+      return { data: aircraft };
+    }
     if (url === '/api/overview-links/settings') {
       const changes = Object.fromEntries(
         Object.entries(body).filter(([key]) => key !== 'expected_values')
@@ -70,8 +78,13 @@ beforeEach(() => {
       saved = { ...saved, ...changes } as Record<string, boolean>;
       return { data: saved };
     }
-    if (url === '/api/overview-weather/settings')
-      return { data: { enabled: body.enabled, revision: 3 } };
+    if (url === '/api/overview-weather/settings') {
+      radar = {
+        enabled: body.enabled as boolean,
+        revision: radar.revision + 1,
+      };
+      return { data: radar };
+    }
     if (url === '/api/aviation-weather/v1/settings') {
       const flags = Object.fromEntries(
         Object.entries(body).filter(([key]) => key !== 'expected_revision')
@@ -228,4 +241,31 @@ it('keeps mission planning reachable without an ambiguous Configuration link', (
   expect(
     screen.getByRole('switch', { name: 'ADS-B aircraft layer' })
   ).toBeVisible();
+});
+
+it('writes radar and ADS-B on/off to their existing shared settings APIs without querying provider traffic', async () => {
+  mount();
+  await open();
+  for (const [name, endpoint] of [
+    ['Precipitation radar', '/api/overview-weather/settings'],
+    ['ADS-B aircraft layer', '/api/overview-adsb/settings'],
+  ] as const) {
+    const control = screen.getByRole('switch', { name });
+    await waitFor(() => expect(control).toBeEnabled());
+    const before = (control as HTMLInputElement).checked;
+    fireEvent.click(control);
+    await waitFor(() => expect(control).toHaveProperty('checked', !before));
+    expect(apiClient.put).toHaveBeenCalledWith(endpoint, { enabled: !before });
+    await waitFor(() => expect(control).toBeEnabled());
+    fireEvent.click(control);
+    await waitFor(() => expect(control).toHaveProperty('checked', before));
+    expect(apiClient.put).toHaveBeenCalledWith(endpoint, { enabled: before });
+  }
+  expect(
+    vi
+      .mocked(apiClient.get)
+      .mock.calls.some(([url]) =>
+        String(url).includes('/overview-adsb/catalog')
+      )
+  ).toBe(false);
 });

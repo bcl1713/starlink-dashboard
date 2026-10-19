@@ -1,7 +1,11 @@
 import type { ReadRecord, SavedRecord } from '@/types/operator';
 import { preparationAt } from './callTiming';
 import { callTestReported, type CallAction } from './callCommands';
-import type { ConferenceAction } from './conferenceCommands';
+import {
+  sessionOutsideContext,
+  type ConferenceAction,
+} from './conferenceCommands';
+import type { CallAssociation } from './callAssociation';
 const callUtc = (value: string | null) =>
   value
     ? `${new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))} UTC`
@@ -18,6 +22,7 @@ export function CallList({
   onCallAction,
   onConferenceAction,
   onCustomerAction,
+  currentAssociation,
 }: {
   items: ReadRecord[];
   disabled: boolean;
@@ -26,6 +31,7 @@ export function CallList({
   onEdit: (record: SavedRecord) => void;
   onHistory: (id: string) => void;
   onTransition: (record: SavedRecord) => void;
+  currentAssociation?: CallAssociation | null;
   onCallAction?: (record: SavedRecord, intent: CallAction) => void;
   onConferenceAction?: (record: SavedRecord, intent: ConferenceAction) => void;
   onCustomerAction?: (
@@ -70,6 +76,11 @@ export function CallList({
           !record.deleted &&
           record.payload.entry_type === 'conference'
       );
+      const previousSession =
+        bridge &&
+        bridge.payload.entry_type === 'conference' &&
+        ['established', 'interrupted'].includes(bridge.payload.status ?? '') &&
+        sessionOutsideContext(bridge, currentAssociation);
       const bridgePayload =
         bridge?.payload.entry_type === 'conference' ? bridge.payload : null;
       const customers = records.filter(
@@ -129,6 +140,9 @@ export function CallList({
             <>
               <p className="text-sm">
                 Bridge:{' '}
+                {previousSession && bridgePayload?.status !== 'closed'
+                  ? 'Previous activity report · not assumed available here · '
+                  : ''}
                 {bridgePayload
                   ? `${bridgePayload.status ?? 'unknown'} · ${bridgePayload.verified_at ? 'verification reported' : 'not verified'}`
                   : payload.conference_id
@@ -171,6 +185,18 @@ export function CallList({
                   )}
                   {bridge && bridgePayload && onConferenceAction && (
                     <>
+                      {previousSession &&
+                        ['established', 'interrupted'].includes(
+                          bridgePayload.status ?? ''
+                        ) && (
+                          <button
+                            className={button}
+                            disabled={disabled}
+                            onClick={() => onConferenceAction(bridge, 'close')}
+                          >
+                            Close previous bridge session
+                          </button>
+                        )}
                       {['preparing', 'unknown', 'closed'].includes(
                         bridgePayload.status ?? 'unknown'
                       ) && (
@@ -186,18 +212,20 @@ export function CallList({
                             : 'Establish bridge'}
                         </button>
                       )}
-                      {bridgePayload.status === 'interrupted' && (
-                        <button
-                          className={button}
-                          disabled={disabled}
-                          onClick={() =>
-                            onConferenceAction(bridge, 'restore_connection')
-                          }
-                        >
-                          Restore bridge
-                        </button>
-                      )}
-                      {bridgePayload.status === 'established' &&
+                      {!previousSession &&
+                        bridgePayload.status === 'interrupted' && (
+                          <button
+                            className={button}
+                            disabled={disabled}
+                            onClick={() =>
+                              onConferenceAction(bridge, 'restore_connection')
+                            }
+                          >
+                            Restore bridge
+                          </button>
+                        )}
+                      {!previousSession &&
+                        bridgePayload.status === 'established' &&
                         !bridgePayload.verified_at && (
                           <button
                             className={button}

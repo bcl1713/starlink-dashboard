@@ -5,6 +5,7 @@ import { useOverviewDisplayController } from '@/hooks/useOverviewDisplayControll
 import type {
   CommandFeedback,
   DisplayPeer,
+  DisplayAction,
 } from '@/services/overview-display-protocol';
 
 function commandMessage(
@@ -16,9 +17,13 @@ function commandMessage(
     case 'pending':
       return 'Waiting for the Overview display to acknowledge…';
     case 'accepted':
-      return 'Recenter accepted. The view is returning to its current automatic camera behavior.';
+      return feedback.action === 'follow_aircraft'
+        ? 'Follow aircraft accepted by the selected window. Camera motion still depends on current position data.'
+        : 'Recenter accepted. The view is returning to its current automatic camera behavior.';
     case 'unsupported':
-      return 'Recenter is unavailable on this display.';
+      return feedback.action === 'follow_aircraft'
+        ? 'Follow aircraft is unavailable on this display; check for a current aircraft position.'
+        : 'Recenter is unavailable on this display.';
     case 'timeout':
       return 'Request timed out. The display did not acknowledge within three seconds; check its actual state before retrying.';
     case 'expired':
@@ -85,7 +90,7 @@ export function OverviewDisplaySettingsCard(): React.JSX.Element {
         : popup?.status === 'opened'
           ? 'Overview display connected.'
           : null));
-  const canSend = (action: 'recenter') =>
+  const canSend = (action: DisplayAction) =>
     available && selected?.actions.includes(action) && !pending;
   return (
     <Card className="min-w-0" role="region" aria-label="Overview displays">
@@ -138,6 +143,15 @@ export function OverviewDisplaySettingsCard(): React.JSX.Element {
             }}
           >
             Recenter view
+          </Button>
+          <Button
+            type="button"
+            disabled={!canSend('follow_aircraft')}
+            onClick={() => {
+              if (selected) send(selected.id, 'follow_aircraft');
+            }}
+          >
+            Follow aircraft
           </Button>
           <Button
             type="button"

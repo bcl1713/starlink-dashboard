@@ -94,3 +94,34 @@ it('StrictMode unmount removes presence and releases owned resources', async () 
   expect(vi.getTimerCount()).toBe(1); // Only the controller remains.
   expect(Channel.instances.filter((peer) => !peer.closed)).toHaveLength(1);
 });
+it('follows only the selected display without changing the saved browser preference', async () => {
+  const selected = vi.fn(() => true),
+    other = vi.fn(() => true);
+  const first = renderHook(() => useOverviewDisplayHost(() => {}, selected));
+  renderHook(() => useOverviewDisplayHost(() => {}, other));
+  await act(Channel.flush);
+  const peer = snapshot.peers.find(
+    (p) => p.label === first.result.current.label
+  )!;
+  expect(peer.actions).toContain('follow_aircraft');
+  const before = localStorage.getItem('overview.follow-aircraft');
+  act(() => {
+    controller.request(peer.id, 'follow_aircraft');
+  });
+  await act(Channel.flush);
+  expect(selected).toHaveBeenCalledOnce();
+  expect(other).not.toHaveBeenCalled();
+  expect(localStorage.getItem('overview.follow-aircraft')).toBe(before);
+  expect(snapshot.feedback?.status).toBe('accepted');
+});
+it('acknowledges unavailable follow truthfully when position becomes unavailable', async () => {
+  const follow = vi.fn(() => false);
+  renderHook(() => useOverviewDisplayHost(() => {}, follow));
+  await act(Channel.flush);
+  act(() => {
+    controller.request(snapshot.peers[0].id, 'follow_aircraft');
+  });
+  await act(Channel.flush);
+  expect(follow).toHaveBeenCalledOnce();
+  expect(snapshot.feedback?.status).toBe('unsupported');
+});

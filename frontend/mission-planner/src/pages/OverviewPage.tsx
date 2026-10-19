@@ -886,7 +886,6 @@ export function OverviewPage() {
     setResetRevision((value) => value + 1);
     setExploration({ mode: layout.mode, active: false });
   }, [layout.mode]);
-  const displayHost = useOverviewDisplayHost(onReset);
   const followUnavailable = statusError
     ? 'Status refresh unavailable'
     : !aircraftPosition || !status
@@ -894,6 +893,13 @@ export function OverviewPage() {
       : isStatusStale(status.timestamp, currentTime)
         ? 'Aircraft position stale'
         : null;
+  const onFollowAircraft = useCallback(() => {
+    if (followUnavailable) return false;
+    setCameraIntent('follow');
+    setExploration({ mode: layout.mode, active: false });
+    return true;
+  }, [followUnavailable, layout.mode]);
+  const displayHost = useOverviewDisplayHost(onReset, onFollowAircraft);
   useEffect(() => {
     const page = pageRef.current;
     const rail =

@@ -65,6 +65,7 @@ import { WorkspaceAwareness } from './WorkspaceAwareness';
 import { nextRequirement } from './awarenessModel';
 import { WorkspaceEditor } from './WorkspaceEditor';
 import { MissionContextChooser } from './MissionContextChooser';
+import { useMissionAssociation } from '../useMissionAssociation';
 import { createEditorDraft } from './editorDraft';
 import { CommunicationsView } from './CommunicationsView';
 import { JournalHistory } from '../JournalHistory';
@@ -137,6 +138,13 @@ export function OperatorWorkspace() {
     retry: false,
     networkMode: 'always',
   });
+  const missionTiming = useMissionAssociation(
+    mission.data,
+    view === 'Communications'
+  );
+  const currentAssociation = missionTiming.current(
+    records.data?.pages[0]?.as_of ?? null
+  );
   const items = records.data?.pages.flatMap((page) => page.items) ?? [];
   const loaded = items.map((item) => item.record);
   const incomplete = !records.data || records.isError || !!records.hasNextPage;
@@ -811,6 +819,8 @@ export function OperatorWorkspace() {
             {view === 'Communications' ? (
               <CommunicationsView
                 items={items}
+                currentAssociation={currentAssociation}
+                mission={mission.data}
                 disabled={
                   disabled || acting || records.isFetching || missionSaveBusy
                 }
@@ -834,7 +844,12 @@ export function OperatorWorkspace() {
                 onTransition={transition}
                 onConferenceAction={(record, intent) =>
                   void action(record, (latest, now) =>
-                    conferenceCommand(latest, intent, now)
+                    conferenceCommand(
+                      latest,
+                      intent,
+                      now,
+                      missionTiming.current(now)
+                    )
                   )
                 }
                 onCustomerAction={(record, intent) =>

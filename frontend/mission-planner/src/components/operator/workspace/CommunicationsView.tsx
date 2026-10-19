@@ -3,7 +3,12 @@ import { CallList } from '../CallList';
 import { ConferenceCard } from '../ConferenceCard';
 import { ParticipationRow } from '../ParticipationRow';
 import type { CallAction } from '../callCommands';
-import type { ConferenceAction } from '../conferenceCommands';
+import {
+  sessionOutsideContext,
+  type ConferenceAction,
+} from '../conferenceCommands';
+import type { CallAssociation } from '../callAssociation';
+import type { AssociationMission } from '../useMissionAssociation';
 
 export function CommunicationsView({
   items,
@@ -20,6 +25,8 @@ export function CommunicationsView({
   onConferenceAction,
   onCustomerAction,
   onCallAction,
+  currentAssociation,
+  mission,
 }: {
   items: ReadRecord[];
   disabled: boolean;
@@ -33,6 +40,8 @@ export function CommunicationsView({
   onHistory: (id: string) => void;
   onTransition: (record: SavedRecord) => void;
   onConferenceAction: (record: SavedRecord, action: ConferenceAction) => void;
+  currentAssociation?: CallAssociation | null;
+  mission?: AssociationMission;
   onCallAction?: (record: SavedRecord, intent: CallAction) => void;
   onCustomerAction: (
     record: SavedRecord,
@@ -97,6 +106,7 @@ export function CommunicationsView({
         onTransition={onTransition}
         onCallAction={onCallAction}
         onConferenceAction={onConferenceAction}
+        currentAssociation={currentAssociation}
         onCustomerAction={onCustomerAction}
       />
       <h3>Conferences</h3>
@@ -110,6 +120,12 @@ export function CommunicationsView({
         <div key={record.record_id} className="space-y-2">
           <ConferenceCard
             compactActions
+            currentAssociation={currentAssociation}
+            activityAssociationLabel={
+              record.scope === 'leg'
+                ? mission?.legs.find((leg) => leg.id === record.leg_id)?.name
+                : undefined
+            }
             record={record}
             participations={customers}
             disabled={disabled}
@@ -121,13 +137,14 @@ export function CommunicationsView({
           />
           {!record.deleted &&
             record.payload.entry_type === 'conference' &&
-            record.payload.status === 'established' && (
+            record.payload.status === 'established' &&
+            !sessionOutsideContext(record, currentAssociation) && (
               <button
                 className="ws-button"
                 disabled={disabled}
                 onClick={() => onJoin(record)}
               >
-                Reuse conference
+                Use this session for another customer
               </button>
             )}
         </div>

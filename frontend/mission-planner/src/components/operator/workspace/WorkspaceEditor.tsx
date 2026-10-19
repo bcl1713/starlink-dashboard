@@ -24,23 +24,16 @@ import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
 import { joinCommand } from '../conferenceCommands';
 import { ParticipationEditor } from '../ParticipationEditor';
-import { useInfiniteQuery, useQueries } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { readOperatorRecords } from '@/services/operator';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
-import { routesApi } from '@/services/routes';
-import { inferCallAssociation } from '../callAssociation';
+import {
+  useMissionAssociation,
+  type AssociationMission,
+} from '../useMissionAssociation';
 import { commandLane, targetIdentity } from './commandRegistry';
 
-export interface EditorMission {
-  id: string;
-  name: string;
-  legs: {
-    id: string;
-    name: string;
-    route_id?: string;
-    adjusted_departure_time?: string | null;
-  }[];
-}
+export type EditorMission = AssociationMission;
 
 export function WorkspaceEditor({
   mission,
@@ -57,6 +50,7 @@ export function WorkspaceEditor({
   const health = useOperatorHealth(false);
   const usesRelationships = [
     'participation',
+    'conference',
     'call',
     'issue',
     'transport_decision',
@@ -79,19 +73,11 @@ export function WorkspaceEditor({
     relationships.data?.pages.flatMap((page) =>
       page.items.map((item) => item.record)
     ) ?? [];
-  const routeQueries = useQueries({
-    queries: (mission?.legs ?? []).map((leg) => ({
-      queryKey: ['routes', leg.route_id],
-      queryFn: ({ signal }: { signal: AbortSignal }) =>
-        routesApi.get(leg.route_id!, signal),
-      enabled:
-        !!leg.route_id &&
-        draft?.input.record_type === 'call' &&
-        mission?.id === draft.target.missionId,
-      staleTime: 30_000,
-      retry: false,
-    })),
-  });
+  const timing = useMissionAssociation(
+    mission?.id === draft?.target.missionId ? mission : undefined,
+    draft?.input.record_type === 'call' ||
+      draft?.input.record_type === 'conference'
+  );
   const returnFocus = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (!draft) return null;
@@ -127,40 +113,23 @@ export function WorkspaceEditor({
     tray?.status === 'saving' ||
     workspace.busyLanes.includes(commandLane(draft.target));
   const legs = mission?.id === draft.target.missionId ? mission.legs : [];
-  const timedLegs = legs.map((leg, index) => {
-    const profile = routeQueries[index]?.data?.timing_profile;
-    const departure =
-      typeof profile?.departure_time === 'string'
-        ? profile.departure_time
-        : null;
-    const arrival =
-      typeof profile?.arrival_time === 'string' ? profile.arrival_time : null;
-    const start = leg.adjusted_departure_time ?? departure;
-    const duration = Date.parse(arrival ?? '') - Date.parse(departure ?? '');
-    const end =
-      start &&
-      Number.isFinite(Date.parse(start)) &&
-      Number.isFinite(duration) &&
-      duration > 0
-        ? new Date(Date.parse(start) + duration).toISOString()
-        : null;
-    return { id: leg.id, name: leg.name, start, end };
-  });
   const automatic =
-    draft.input.record_type === 'call' &&
+    ['call', 'conference'].includes(draft.input.record_type) &&
     (draft.editorState?.associationMode === 'auto' ||
       (!draft.target.recordId &&
         draft.editorState?.associationMode !== 'manual'));
-  const inferred = inferCallAssociation(
-    timedLegs,
-    draft.input.time.planned_start_at
+  const contextualAssociation = ['call', 'conference'].includes(
+    draft.input.record_type
   );
+  const associationExpanded = draft.editorState?.associationExpanded === true;
+  const suggestion = (input: OperatorInput) =>
+    input.record_type === 'conference'
+      ? timing.current(relationships.data?.pages[0]?.as_of ?? null)
+      : timing.at(input.time.planned_start_at);
+  const inferred = suggestion(draft.input);
   function associate(input: OperatorInput): OperatorInput {
     if (!automatic) return input;
-    const inferred = inferCallAssociation(
-      timedLegs,
-      input.time.planned_start_at
-    );
+    const inferred = suggestion(input);
     return {
       ...input,
       scope: inferred?.scope ?? 'mission',
@@ -373,7 +342,7 @@ export function WorkspaceEditor({
                   )}
               </div>
             )}
-          {draft.input.record_type === 'call' && (
+          {contextualAssociation && (
             <div className="rounded border p-3 space-y-2">
               <p className="font-medium">
                 Mission association:{' '}
@@ -383,33 +352,57 @@ export function WorkspaceEditor({
                   : draft.input.scope === 'leg'
                     ? (legs.find((leg) => leg.id === draft.input.leg_id)
                         ?.name ?? 'Unresolved leg')
-                    : draft.input.scope.replaceAll('_', ' ')}
+                    : draft.input.record_type === 'conference' &&
+                        draft.input.scope === 'mission'
+                      ? 'Association unknown'
+                      : draft.input.scope.replaceAll('_', ' ')}
               </p>
-              <label className="ws-touch">
-                <input
-                  type="checkbox"
-                  checked={automatic}
-                  onChange={(event) => {
+              {!associationExpanded ? (
+                <button
+                  type="button"
+                  className="ws-button"
+                  onClick={() => {
                     if (automatic) update(draft.input);
                     editorState({
-                      associationMode: event.target.checked ? 'auto' : 'manual',
+                      associationExpanded: true,
+                      associationMode: 'manual',
                     });
                   }}
-                />{' '}
-                Use planned time to associate automatically
-              </label>
-              <p className="ws-meta">
-                Turn off automatic association to override. Saved associations
-                stay unchanged until you choose otherwise.
-              </p>
+                >
+                  Change association
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="ws-button"
+                  onClick={() =>
+                    editorState({
+                      associationExpanded: false,
+                      associationMode: 'auto',
+                    })
+                  }
+                >
+                  Use suggested association
+                </button>
+              )}
+              {draft.input.record_type === 'conference' && (
+                <p className="ws-meta">
+                  Configuration is kept for reuse. Establish, verify and close
+                  report activity on one leg; a later leg needs a new
+                  establishment report.
+                </p>
+              )}
             </div>
           )}
           <div
             className="ws-draft-context"
-            hidden={!!draft.target.correctionVersion || automatic}
+            hidden={
+              !!draft.target.correctionVersion ||
+              (contextualAssociation && !associationExpanded)
+            }
           >
             <label>
-              Draft scope
+              {contextualAssociation ? 'Association' : 'Draft scope'}
               <select
                 className="ws-field"
                 value={draft.input.scope}
@@ -424,7 +417,13 @@ export function WorkspaceEditor({
                   })
                 }
               >
-                <option value="mission">Mission</option>
+                <option value="mission">
+                  {draft.input.record_type === 'conference'
+                    ? 'Unassigned activity'
+                    : contextualAssociation
+                      ? 'Entire mission'
+                      : 'Mission'}
+                </option>
                 <option value="preflight">Preflight</option>
                 <option value="leg">Leg</option>
                 <option value="between_legs">Between legs</option>

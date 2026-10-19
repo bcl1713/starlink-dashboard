@@ -23,7 +23,7 @@ import type { DraftTarget } from './types';
 import type { OperatorInput } from '@/types/operator';
 import { callDraft } from '../callDraft';
 import { routesApi } from '@/services/routes';
-import { participationDraft } from '../conferenceCommands';
+import { conferenceDraft, participationDraft } from '../conferenceCommands';
 
 const clients: QueryClient[] = [];
 const target: DraftTarget = {
@@ -41,11 +41,23 @@ const target: DraftTarget = {
   nextLegId: input.payload.next_leg_id,
   correctionVersion: null,
 };
-function mount(initial: OperatorInput = input, timed = false) {
+function mount(
+  initial: OperatorInput = input,
+  timed = false,
+  active = false,
+  saved?: typeof record
+) {
   const registry = new DraftRegistry(sessionStorage);
   const draft = registry.createDraft(
-    { ...target, recordType: initial.record_type },
-    initial
+    {
+      ...target,
+      recordType: initial.record_type,
+      recordId: saved?.record_id ?? null,
+      scope: initial.scope,
+      legId: initial.leg_id,
+    },
+    initial,
+    saved
   );
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -66,6 +78,7 @@ function mount(initial: OperatorInput = input, timed = false) {
             {
               id: 'leg-1',
               name: 'First flight',
+              is_active: active,
               ...(timed ? { route_id: 'outbound' } : {}),
             },
             {
@@ -302,12 +315,8 @@ it('associates a picked UTC call time and preserves an explicit override across 
     leg_id: null,
     payload: { previous_leg_id: 'leg-1', next_leg_id: 'leg-2' },
   });
-  fireEvent.click(
-    screen.getByRole('checkbox', {
-      name: 'Use planned time to associate automatically',
-    })
-  );
-  fireEvent.change(screen.getByLabelText('Draft scope'), {
+  fireEvent.click(screen.getByRole('button', { name: 'Change association' }));
+  fireEvent.change(screen.getByLabelText('Association'), {
     target: { value: 'preflight' },
   });
   fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
@@ -317,4 +326,32 @@ it('associates a picked UTC call time and preserves an explicit override across 
   expect(registry.resumeDraft(draft.draftId)?.target.missionId).toBe(
     'mission-a'
   );
+});
+
+it('shows a readable current-leg association for new conferences without scope controls', async () => {
+  mount(conferenceDraft('mission-a'), false, true);
+  await screen.findByText('Mission association: First flight');
+  expect(screen.queryByRole('combobox', { name: 'Association' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Change association' }));
+  fireEvent.change(screen.getByRole('combobox', { name: 'Association' }), {
+    target: { value: 'mission' },
+  });
+  expect(
+    screen.getByRole('option', { name: 'Unassigned activity' })
+  ).toBeTruthy();
+});
+
+it('keeps an explicitly saved conference association until the operator changes it', async () => {
+  const initial = {
+    ...conferenceDraft('mission-a'),
+    scope: 'preflight' as const,
+  };
+  const saved = { ...record, ...initial };
+  const { registry, draft } = mount(initial, false, true, saved);
+  await screen.findByText('Mission association: preflight');
+  expect(screen.queryByRole('combobox', { name: 'Association' })).toBeNull();
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Saved definition' },
+  });
+  expect(registry.resumeDraft(draft.draftId)?.input.scope).toBe('preflight');
 });
