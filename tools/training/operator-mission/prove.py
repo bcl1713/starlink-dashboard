@@ -18,8 +18,9 @@ spec.loader.exec_module(launcher)
 def main():
     root = Path(sys.argv[1]).absolute()
     archive = sys.argv[2:] == ["--archive"]
-    if sys.argv[2:] and not archive:
-        raise ValueError("Only the optional --archive proof is supported")
+    clients_only = sys.argv[2:] == ["--clients-only"]
+    if sys.argv[2:] and not (archive or clients_only):
+        raise ValueError("Use --archive, --clients-only, or the default guide proof")
     if not str(root).startswith("/tmp/issue-376-training-proof-"):
         raise ValueError("Explicit task-owned disposable proof root required")
     training = launcher.open_owner(root)
@@ -51,7 +52,15 @@ def main():
         number: signal.signal(number, runner.signal)
         for number in (signal.SIGINT, signal.SIGTERM)
     }
-    report = {"candidateSha": training.ownership["candidateSha"], "checksPassed": False}
+    report = {
+        "candidateSha": training.ownership["candidateSha"],
+        "checksPassed": False,
+        "scope": (
+            "clients-only"
+            if clients_only
+            else "course-archive" if archive else "guide-clients"
+        ),
+    }
     try:
         current = runner.execute(
             ["git", "rev-parse", "HEAD"], cwd=launcher.SOURCE
@@ -88,21 +97,22 @@ def main():
                 indent=2,
             )
         )
-        runner.execute(
-            [
-                "timeout",
-                "--kill-after=10s",
-                "10m",
-                "npx",
-                "--no-install",
-                "playwright",
-                "test",
-                "--config",
-                "playwright.operator-training.config.ts",
-            ],
-            cwd=launcher.SOURCE / "frontend/mission-planner",
-            timeout=620,
-        )
+        if not clients_only:
+            runner.execute(
+                [
+                    "timeout",
+                    "--kill-after=10s",
+                    "10m",
+                    "npx",
+                    "--no-install",
+                    "playwright",
+                    "test",
+                    "--config",
+                    "playwright.operator-training.config.ts",
+                ],
+                cwd=launcher.SOURCE / "frontend/mission-planner",
+                timeout=620,
+            )
         runner.env["OPERATOR_TRAINING_CLIENTS_ONLY"] = "true"
         runner.execute(
             [

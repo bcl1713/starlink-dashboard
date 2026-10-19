@@ -120,3 +120,9 @@ mission must still match the original legs/transports, and every destination
 Operator record, immutable revision and H must remain unchanged. Read-time leg
 stub timestamps are excluded from catalog consistency checks; saved mission
 metadata and identities remain checked.
+
+For a targeted client-recovery check on a fresh owned disposable proof root,
+`prove.py ROOT --clients-only` runs the three-size parked-draft/offline/storage and
+actual two-browser conflict cases, then tears down the source. The proof summary
+labels this narrower scope explicitly; it does not certify the full course or
+archive. The normal `--archive` proof still includes every linked phase.

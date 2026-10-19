@@ -92,7 +92,7 @@ test('guide revalidates scoped parked drafts, actual browser offline recovery an
           .selectOption('approximate');
         await editor
           .getByLabel('Occurred at (UTC)', { exact: true })
-          .fill('2026-10-17T17:05:00Z');
+          .fill('2026-10-17T15:55:00Z');
       }
       await park();
       await check();
@@ -205,7 +205,7 @@ test('guide revalidates scoped parked drafts, actual browser offline recovery an
         for (let index = 0; index < 6; index++) {
           await resume(other);
           await editor
-            .getByLabel('Note', { exact: true })
+            .getByRole('textbox', { name: 'Note', exact: true })
             .fill(`Later retained work ${index}`);
           await park();
           await check();
@@ -337,7 +337,7 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
       .getByRole('button', { name: `Edit ${title}`, exact: true })
       .click();
     await editor
-      .getByLabel('Note', { exact: true })
+      .getByRole('textbox', { name: 'Note', exact: true })
       .fill('Learner retained input after reviewing counterpart');
     const peer = await browser.newContext({
       baseURL: process.env.OPERATOR_TRAINING_ORIGIN,
@@ -351,7 +351,7 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
         .click();
       const peerEditor = peerPage.getByRole('dialog');
       await peerEditor
-        .getByLabel('Note', { exact: true })
+        .getByRole('textbox', { name: 'Note', exact: true })
         .fill('Genuine second-client update');
       const peerSaving = peerPage.waitForResponse(
         (r) =>
@@ -415,7 +415,7 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
         .getByRole('region', { name: 'Retained drafts', exact: true })
         .getByRole('button', { name: new RegExp(title) })
         .click();
-      await expect(editor.getByLabel('Note', { exact: true })).toHaveValue(
+      await expect(editor.getByRole('textbox', { name: 'Note', exact: true })).toHaveValue(
         'Learner retained input after reviewing counterpart'
       );
       await editor
