@@ -488,7 +488,8 @@ export function OperatorWorkspace() {
               return retainedObservations;
             }}
             onOpenTarget={(stage) => {
-              if (['T05', 'T09', 'T10'].includes(stage))
+              if (stage === 'T10') navigate('/missions');
+              else if (['T05', 'T09'].includes(stage))
                 navigate(`/missions/${encodeURIComponent(missionId)}`);
               else
                 navigateView(

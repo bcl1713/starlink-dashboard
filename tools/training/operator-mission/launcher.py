@@ -314,6 +314,7 @@ def main():
             "restart",
             "import-start",
             "import-stop",
+            "archive-inputs",
         ],
     )
     parser.add_argument("--root", required=True, type=Path)
@@ -366,6 +367,21 @@ def main():
             validate(owner)
             owner.compose("restart", "starlink-location", timeout=120)
             print(json.dumps({"restarted": owner.project}))
+        elif args.command == "archive-inputs":
+            validate(owner)
+            print(
+                owner.compose(
+                    "exec",
+                    "-T",
+                    "--user",
+                    "appuser",
+                    "starlink-location",
+                    "python",
+                    "/source/tools/training/operator-mission/archive_inputs.py",
+                    "/app/data",
+                    timeout=180,
+                )
+            )
         elif args.command == "checkpoint":
             if not args.stage:
                 raise ValueError("--stage is required")

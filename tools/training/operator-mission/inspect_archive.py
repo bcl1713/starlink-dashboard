@@ -54,6 +54,9 @@ def inspect(root):
             row["scope"] for row in revisions
         }
         mission = json.loads(archive.read("mission.json"))
+        provenance = mission["metadata"]["operator_training_archive_inputs"]
+        assert provenance["synthetic"] is True
+        assert provenance["source_format"] == "synthetic-operational-format"
         assert len(mission["legs"]) == 2
         assert [leg["id"] for leg in mission["legs"]] == [
             leg["id"] for leg in snapshot["mission"]["legs"]
@@ -82,6 +85,10 @@ def inspect(root):
         for leg in telemetry["legs"]:
             prefix = "telemetry/" + leg["path"] + "/"
             details = json.loads(archive.read(prefix + "manifest.json"))
+            assert details["state"] == "sealed"
+            assert {"takeoff", "landed", "on_blocks"} <= {
+                event["kind"] for event in details["events"]
+            }
             checksums(leg["checksum"], prefix)
             telemetry_states.append(
                 {
@@ -100,6 +107,7 @@ def inspect(root):
             "revisions": len(revisions),
             "checkedMembers": sorted(checked),
             "telemetry": telemetry_states,
+            "telemetryInputProvenance": provenance,
             "originalZipUnchanged": digest((root / "original-mission.zip").read_bytes())
             == digest(payload),
             "humanPdfReview": "pending",

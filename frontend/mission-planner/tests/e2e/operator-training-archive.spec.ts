@@ -1,4 +1,5 @@
 import { writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
@@ -36,6 +37,20 @@ test('original training mission ZIP transfers through Missions without restoring
   browser,
 }) => {
   test.setTimeout(720_000);
+  const archiveInputs = execFileSync(
+    'python3',
+    [
+      join(
+        process.env.OPERATOR_TRAINING_TEST_SOURCE!,
+        'tools/training/operator-mission/launcher.py'
+      ),
+      'archive-inputs',
+      '--root',
+      root,
+    ],
+    { encoding: 'utf8', timeout: 200_000 }
+  );
+  writeFileSync(join(root, 'archive-input-provenance.json'), archiveInputs);
   const health = await (
     await page.request.get('/api/v2/operator/health')
   ).json();

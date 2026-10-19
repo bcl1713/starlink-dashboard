@@ -89,12 +89,11 @@ def test_real_records_acknowledgments_and_receipts_share_fixture_namespace_acros
     from types import SimpleNamespace
     from uuid import uuid4
 
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
-
     from app.api.operator import router
     from app.mission import storage
     from app.operator.runtime import OperatorRuntimeBinding
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
 
     root = tmp_path / "learner"
     scenario.mark_root(root)
@@ -608,3 +607,48 @@ def test_lifecycle_reads_cli_json_after_compose_progress():
     assert proof.maintenance(
         owned, "restore", manifest="/app/data/operator/private.json", offline=True
     ) == {"ready": True}
+
+
+def test_archive_inputs_use_existing_detector_without_seeding_learner_records(
+    tmp_path, monkeypatch
+):
+    import json
+
+    from app.mission import storage
+
+    root = tmp_path / "archive-training"
+    scenario.mark_root(root)
+    before = scenario.seed_prerequisites(root)
+    monkeypatch.setenv("OPERATOR_TRAINING_FIXTURE", "explicit-private-training-v1")
+    monkeypatch.syspath_prepend(str(ROOT / "tools/acceptance/operator-journal"))
+    spec = importlib.util.spec_from_file_location(
+        "training_archive_inputs_test",
+        ROOT / "tools/training/operator-mission/archive_inputs.py",
+    )
+    inputs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(inputs)
+    monkeypatch.setattr(storage, "MISSIONS_DIR", root / "missions")
+    result = inputs.run(root)
+    assert result["synthetic"] and result["sealedLegs"] == 2
+    assert "not replay measurements" in result["relation_to_replay"]
+    assert scenario.seed_prerequisites(root)["H"] == before["H"]
+    assert inputs.run(root) == result
+    mission = json.loads(
+        (root / "missions" / before["mission_id"] / "mission.json").read_text()
+    )
+    assert mission["metadata"]["operator_training_archive_inputs"]["synthetic"] is True
+
+
+def test_archive_inputs_refuse_unmarked_or_nonprivate_roots(tmp_path, monkeypatch):
+    spec = importlib.util.spec_from_file_location(
+        "training_archive_guard_test",
+        ROOT / "tools/training/operator-mission/archive_inputs.py",
+    )
+    inputs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(inputs)
+    monkeypatch.delenv("OPERATOR_TRAINING_FIXTURE", raising=False)
+    with pytest.raises(ValueError, match="Explicit private"):
+        inputs.run(tmp_path)
+    monkeypatch.setenv("OPERATOR_TRAINING_FIXTURE", "explicit-private-training-v1")
+    with pytest.raises(ValueError, match="marked"):
+        inputs.run(tmp_path)

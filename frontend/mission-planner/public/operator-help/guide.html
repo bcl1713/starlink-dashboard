@@ -921,6 +921,18 @@
       </section>
       <section id="archive-transfer">
         <h2>13. One mission ZIP and import</h2>
+        <aside>
+          In the private course, replay remains simulation data. The operational
+          telemetry archive exercise uses the existing synthetic
+          operational-format input corpus, separately from replay measurements.
+          Supply it explicitly before exporting; its provenance is retained in
+          the mission metadata. These are fictional detector/capture inputs,
+          never aircraft observations. Do not use this command on an operational
+          installation.
+          <pre>
+scripts/operator-training.sh archive-inputs --root /tmp/operator-learner</pre
+          >
+        </aside>
         <ol>
           <li>
             Open the mission's existing Export workflow in Missions. Review

@@ -14,6 +14,13 @@ four training browser cases, then downloads the original mission ZIP through
 Missions and imports unchanged bytes through the destination's Missions UI.
 It compares empty and nonempty destination journal sentinels and inspects the
 original PDF, complete source revisions and archive checksums. Both stacks are
-stopped in the proof's cleanup handler. Telemetry states are reported verbatim;
+stopped in the proof's cleanup handler. The archive exercise explicitly invokes
+`scripts/operator-training.sh archive-inputs --root MARKED_PRIVATE_ROOT`.
+This reuses #370's existing synthetic operational-format observations and raw
+reader with the real detector/capture services. It does not admit replay samples
+as live data, overwrite replay flight phase, or seed learner journal records.
+Its independent synthetic provenance is included in the mission metadata.
+The normal PDF coordinator is owned by the private application's lifespan;
+aircraft/provider background discovery stays disabled. Telemetry states are reported verbatim;
 this slice does not certify the complete narrative, preparation cancellation,
 all parity branches, or human PDF review.

@@ -4,6 +4,7 @@ import asyncio
 import importlib
 import importlib.util
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 if (
@@ -52,6 +53,30 @@ def pop_context():
 
 main._simulation_pop_context = pop_context
 app = main.app
+original_lifespan = app.router.lifespan_context
+
+
+@asynccontextmanager
+async def training_lifespan(application):
+    async with original_lifespan(application):
+        from app.mission.slide_cache.coordinator import start_runtime
+        from app.services.flight_events.live_adapter import FlightEventRuntime
+
+        # This archive has only explicitly supplied synthetic operational-format
+        # inputs. Simulation replay is never admitted as live measurements.
+        app.state.flight_event_runtime = FlightEventRuntime(
+            root / "synthetic-operational-archive"
+        )
+
+        # The normal background polling loop remains disabled. Own only the
+        # existing PDF worker, whose normal application shutdown closes it.
+        app.state.customer_pdf_coordinator = await asyncio.to_thread(
+            start_runtime, main._route_manager, app.state.poi_manager
+        )
+        yield
+
+
+app.router.lifespan_context = training_lifespan
 applied_checkpoint = None
 raw_helper = None
 checkpoint_lock = asyncio.Lock()
