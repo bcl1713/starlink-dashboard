@@ -53,15 +53,22 @@ without outside verbal coaching:
    fictional data only. Uncoached use and physical-device accessibility remain
    pending until a real person supplies these observations.
 
-Known release gates: the 147 candidate production assertions and 176 partial parity
-crosswalk entries still need final exact assertion reconciliation; final
-performance/accessibility/device checks remain open. The latest connected native
-Overview test failed wind restoration after preset reversal; its foreground-window
-diagnostic correction still needs a sequential rerun. This private checkpoint is
-for testing, with no merge/cutover or human-usability acceptance claimed. The old
-shell remains the default; `?workspace=1` selects the candidate. The launcher binds
-loopback; real-phone access requires a separately chosen private connection to
-the nonproduction computer.
+Current verification update: all 323 parity entries are reconciled as an evidence
+crosswalk. Original ZIP/PDF/import/backup and guide adapters pass the linked RC1
+run. Connected native weather reversal, replay panels and restart pass later
+checkpoints; the diagnosed wind restoration issue is fixed by one bounded grid
+retry. Original/candidate task comparisons, sixty-second CPU/polling samples and
+retained-work backout also pass. The current workspace revision
+`9b07dbb48c6036c3c3c217dc46f88583eb682fdd` adds persistent Save/Discard actions;
+its dedicated browser and canonical checks are recorded separately from RC1's
+complete guide run. No human acceptance is inferred from either checkpoint.
+
+Remaining release gates are final canonical verification and actual uncoached
+human desktop/mobile use, including physical keyboard, screen reader and contrast
+observations. This private checkpoint is for testing, with no merge/cutover or
+human-usability acceptance claimed. The old shell remains the default;
+`?workspace=1` selects the candidate. The launcher binds loopback; real-phone access
+requires a separately chosen private connection to the nonproduction computer.
 
 Stop the private exercise as soon as its checks finish:
 
