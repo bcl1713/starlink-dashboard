@@ -127,3 +127,73 @@ it('retains an unresolved saved association instead of silently clearing it', ()
   ).toBeTruthy();
   expect(screen.getByText(/Choices cover loaded records only/)).toBeTruthy();
 });
+
+it('submits independent intended and requested reports, explicit precision, reason and multiple services', () => {
+  const save = vi.fn().mockResolvedValue(false);
+  function Form() {
+    const [draft, setDraft] = useState(newTransportDraft('mission-a'));
+    return (
+      <TransportForm
+        draft={draft}
+        onDraftChange={setDraft}
+        disabled={false}
+        onSave={save}
+        contextual
+      />
+    );
+  }
+  render(<Form />);
+  const change = (name: string, value: string) =>
+    fireEvent.change(screen.getByLabelText(name), { target: { value } });
+  change('Service 1', 'Fictional VTC');
+  fireEvent.click(screen.getByLabelText('Intended 1'));
+  change('Intended transport 1', 'Ka');
+  fireEvent.click(screen.getByLabelText('Requested 1'));
+  change('Requested transport 1', 'X');
+  change('Requested time 1 UTC', '2026-10-17T15:00:00');
+  change('Requested time 1 precision', 'approximate');
+  fireEvent.click(screen.getByLabelText('Reported Applied 1'));
+  change('Applied transport 1', 'Starshield');
+  change('Applied time 1 UTC', '2026-10-17T15:02:00');
+  fireEvent.click(screen.getByLabelText('Operator Checked 1'));
+  change('Check result 1', 'satisfactory');
+  fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+  change('Service 2', 'Fictional IPTV');
+  fireEvent.click(screen.getByLabelText('Reported Applied 2'));
+  change('Applied transport 2', 'Ka');
+  fireEvent.click(
+    screen.getByText('Reason, timing and associations (optional)')
+  );
+  change('Reason', 'Fictional allocation choice');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Save transport decision' })
+  );
+  const body = save.mock.calls[0][0].body;
+  expect(body.payload.reason).toBe('Fictional allocation choice');
+  expect(body.payload.services).toHaveLength(2);
+  expect(body.payload.services[0]).toMatchObject({
+    intended: { transport: 'Ka' },
+    requested: {
+      transport: 'X',
+      time: { at: '2026-10-17T15:00:00.000Z', precision: 'approximate' },
+    },
+    applied: {
+      transport: 'Starshield',
+      time: { at: '2026-10-17T15:02:00.000Z', precision: 'exact' },
+    },
+    checked: {
+      result: 'satisfactory',
+      time: { at: null, precision: 'unknown' },
+    },
+  });
+  expect(body.payload.services[1]).toMatchObject({
+    intended: null,
+    requested: null,
+    checked: null,
+    applied: { transport: 'Ka', time: { at: null, precision: 'unknown' } },
+  });
+  expect(
+    new Set(body.payload.services.map((row: { row_id: string }) => row.row_id))
+      .size
+  ).toBe(2);
+});

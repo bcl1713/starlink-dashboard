@@ -138,12 +138,37 @@ it('retains dirty drafts through refresh and uncertain retry uses the same reque
       ) as HTMLInputElement
     ).value
   ).toBe('Local unsaved participant');
-  writes.mockRejectedValueOnce(failure(503, 'commit_outcome_unknown'));
+  let rejectFirst!: (reason: unknown) => void;
+  writes.mockImplementationOnce(
+    () =>
+      new Promise((_resolve, reject) => {
+        rejectFirst = reject;
+      })
+  );
   fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
   await waitFor(() =>
     expect(
       screen.getByRole('button', { name: 'Retry same call save' })
     ).toBeTruthy()
+  );
+  // Pending is persisted before sending, so Retry can already be rendered
+  // while that original write is still busy. Wait for actual recovery readiness.
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Retry same call save',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  await act(async () => rejectFirst(failure(503, 'commit_outcome_unknown')));
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Retry same call save',
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false)
   );
   expect(screen.queryByText('Call saved.')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Retry same call save' }));

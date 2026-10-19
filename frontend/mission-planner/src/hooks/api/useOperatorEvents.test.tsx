@@ -156,3 +156,25 @@ it('creates a valid frozen acknowledgment key on ordinary aircraft HTTP', async 
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   );
 });
+
+it('withholds a foreign epoch snapshot until the same mission source identity is reconciled', async () => {
+  const get = vi
+    .spyOn(api, 'readEventSnapshot')
+    .mockResolvedValue(eventSnapshot({ api_epoch: 'epoch-b' }));
+  const post = vi.spyOn(api, 'acknowledgeOperatorEvent');
+  const hook = renderHook(
+    ({ source }) => useOperatorEvents('mission-a', source),
+    { initialProps: { source: identity }, wrapper: wrapper() }
+  );
+  await waitFor(() => expect(hook.result.current.failed).toBe(true));
+  expect(hook.result.current.snapshot).toBeUndefined();
+  expect(post).not.toHaveBeenCalled();
+  const replacement = JSON.stringify(['store', 'epoch-b', 'live', null]);
+  hook.rerender({ source: replacement });
+  await waitFor(() =>
+    expect(hook.result.current.snapshot?.api_epoch).toBe('epoch-b')
+  );
+  expect(get).toHaveBeenCalledTimes(2);
+  expect(hook.result.current.failed).toBe(false);
+  hook.unmount();
+});

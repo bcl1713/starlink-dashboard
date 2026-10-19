@@ -1,0 +1,966 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner
+
+ ❯ src/components/operator/OperatorCommunications.test.tsx (7 tests | 1 failed) 2852ms
+   × retains dirty drafts through refresh and uncertain retry uses the same request 1260ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/operator/OperatorCommunications.test.tsx > retains dirty drafts through refresh and uncertain retry uses the same request
+TestingLibraryElementError: Unable to find an element with the text: Call saved.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<p[39m
+      [33mdata-testid[39m=[32m"independent-summary"[39m
+    [36m>[39m
+      [0mRetain me[0m
+    [36m</p>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Communications"[39m
+      [33mclass[39m=[32m"min-w-0 scroll-mt-4 space-y-4"[39m
+      [33mid[39m=[32m"operator-communications"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"text-xl font-semibold"[39m
+      [36m>[39m
+        [0mCommunications[0m
+      [36m</h2>[39m
+      [36m<details>[39m
+        [36m<summary>[39m
+          [0mConferences and customers[0m
+        [36m</summary>[39m
+      [36m</details>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+      [36m>[39m
+        [0mPlan requirements or record completed calls. Conference sessions remain independent. UTC snapshot; refresh to update.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mSchedule call[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mLog unscheduled/completed call[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+          [33mdisabled[39m=[32m""[39m
+        [36m>[39m
+          [0mRefresh calls[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mrole[39m=[32m"status"[39m
+      [36m>[39m
+        [0mUnsaved call draft — save or discard before switching calls or missions.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<p>[39m
+          [0mcommit_outcome_unknown[0m
+          [0m · [0m
+          [0mcommit_outcome_unknown[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+      [36m>[39m
+        [0mRetry same call save[0m
+      [36m</button>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid min-w-0 gap-4 lg:grid-cols-2"[39m
+      [36m>[39m
+        [36m<form[39m
+          [33maria-label[39m=[32m"Call editor"[39m
+          [33mclass[39m=[32m"min-w-0 space-y-3 rounded-xl border bg-card p-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-semibold"[39m
+          [36m>[39m
+            [0mCompleted / unscheduled call[0m
+          [36m</h3>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mAll dates and times are UTC. Blank optional fields remain unknown.[0m
+          [36m</p>[39m
+          [36m<fieldset[39m
+            [33mclass[39m=[32m"min-w-0 space-y-3 disabled:opacity-60"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block"[39m
+            [36m>[39m
+              [0mParty / participant (optional)[0m
+              [36m<input[39m
+                [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                [33mmaxlength[39m=[32m"200"[39m
+                [33mvalue[39m=[32m"Local unsaved participant"[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block"[39m
+            [36m>[39m
+              [0mPlanned start (UTC)[0m
+              [36m<input[39m
+                [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                [33mplaceholder[39m=[32m"2026-10-17T16:00:00Z"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"block"[39m
+            [36m>[39m
+              [0mStatus[0m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Status"[39m
+                [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"tentative"[39m
+                [36m>[39m
+                  [0mTentative[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"scheduled"[39m
+                [36m>[39m
+                  [0mScheduled[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"delayed"[39m
+                [36m>[39m
+                  [0mDelayed[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"cancelled"[39m
+                [36m>[39m
+                  [0mCanceled[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"completed"[39m
+                [36m>[39m
+                  [0mCompleted[0m
+                [36m</option>[39m
+              [36m</select>[39m
+            [36m</label>[39m
+            [36m<details>[39m
+              [36m<summary[39m
+                [33mclass[39m=[32m"min-h-11 cursor-pointer py-2"[39m
+              [36m>[39m
+                [0mTiming, association and optional details[0m
+              [36m</summary>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-3"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mCommunications type[0m
+                  [36m<select[39m
+                    [33maria-label[39m=[32m"Communications type"[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                  [36m>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m>[39m
+                      [0mUnknown[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"voice"[39m
+                    [36m>[39m
+                      [0mVoice[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"vtc"[39m
+                    [36m>[39m
+                      [0mVTC[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"other"[39m
+                    [36m>[39m
+                      [0mOther[0m
+                    [36m</option>[39m
+                  [36m</select>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mDuration minutes (blank = unknown)[0m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33minputmode[39m=[32m"numeric"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mPreparation lead minutes (blank = unknown)[0m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33minputmode[39m=[32m"numeric"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</label>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex min-w-0 flex-wrap items-end gap-2"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"min-w-0 flex-1"[39m
+                  [36m>[39m
+                    [0mShift amount[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33minputmode[39m=[32m"text"[39m
+                      [33mplaceholder[39m=[32m"+2 or -15"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<label>[39m
+                    [0mShift unit[0m
+                    [36m<select[39m
+                      [33maria-label[39m=[32m"Shift unit"[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [36m>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"minutes"[39m
+                      [36m>[39m
+                        [0mMinutes[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"hours"[39m
+                      [36m>[39m
+                        [0mHours[0m
+                      [36m</option>[39m
+                    [36m</select>[39m
+                  [36m</label>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mApply shift[0m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mActual start (UTC, optional)[0m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33mplaceholder[39m=[32m"2026-10-17T14:30:00Z"[39m
+                    [33mvalue[39m=[32m"2026-10-17T10:11:12.123456Z"[39m
+                  [36m/>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mActual end (UTC, optional)[0m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33mplaceholder[39m=[32m"2026-10-17T14:42:00Z"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mActual time precision[0m
+                  [36m<select[39m
+                    [33maria-label[39m=[32m"Actual time precision"[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                  [36m>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"unknown"[39m
+                    [36m>[39m
+                      [0mUnknown[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"exact"[39m
+                    [36m>[39m
+                      [0mExact[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"approximate"[39m
+                    [36m>[39m
+                      [0mApproximate[0m
+                    [36m</option>[39m
+                  [36m</select>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mGround coordinator (optional)[0m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33mmaxlength[39m=[32m"200"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mConference record ID (optional)[0m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mScope[0m
+                  [36m<select[39m
+                    [33maria-label[39m=[32m"Scope"[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                  [36m>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"mission"[39m
+                    [36m>[39m
+                      [0mmission[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"preflight"[39m
+                    [36m>[39m
+                      [0mpreflight[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"leg"[39m
+                    [36m>[39m
+                      [0mleg[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"between_legs"[39m
+                    [36m>[39m
+                      [0mbetween legs[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"postflight"[39m
+                    [36m>[39m
+                      [0mpostflight[0m
+                    [36m</option>[39m
+                  [36m</select>[39m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block"[39m
+                [36m>[39m
+                  [0mNotes (optional)[0m
+                  [36m<textarea[39m
+                    [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [33mmaxlength[39m=[32m"8000"[39m
+                  [36m>[39m
+                    [0mRetain me[0m
+                  [36m</textarea>[39m
+                [36m</label>[39m
+              [36m</div>[39m
+            [36m</details>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"min-h-11 rounded-md bg-primary px-4 text-primary-foreground disabled:opacity-50"[39m
+              [33mtype[39m=[32m"submit"[39m
+            [36m>[39m
+              [0mSave call[0m
+            [36m</button>[39m
+          [36m</fieldset>[39m
+        [36m</form>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-w-0 space-y-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"Call list"[39m
+            [33mclass[39m=[32m"min-w-0 space-y-3"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold"[39m
+            [36m>[39m
+              [0mActive requirements[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mNo recorded active requirements.[0m
+            [36m</p>[39m
+            [36m<ul[39m
+              [33mclass[39m=[32m"space-y-3"[39m
+            [36m/>[39m
+            [36m<details[39m
+              [33mopen[39m=[32m""[39m
+            [36m>[39m
+              [36m<summary[39m
+                [33mclass[39m=[32m"min-h-11 cursor-pointer py-2"[39m
+              [36m>[39m
+                [0mCompleted, canceled and removed calls[0m
+              [36m</summary>[39m
+              [36m<ul[39m
+                [33mclass[39m=[32m"space-y-3"[39m
+              [36m>[39m
+                [36m<li[39m
+                  [33mclass[39m=[32m"min-w-0 space-y-2 break-words rounded-lg border p-3 [overflow-wrap:anywhere]"[39m
+                [36m>[39m
+                  [36m<h4[39m
+                    [33mclass[39m=[32m"font-semibold"[39m
+                  [36m>[39m
+                    [0mSynthetic party[0m
+                  [36m</h4>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm"[39m
+                  [36m>[39m
+                    [0mcompleted[0m
+                    [0m ·[0m
+                    [0m [0m
+                    [0mType unknown[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm"[39m
+                  [36m>[39m
+                    [0mPlanned: [0m
+                    [0mUnknown[0m
+                    [0m · End:[0m
+                    [0m [0m
+                    [0mUnknown[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm"[39m
+                  [36m>[39m
+                    [0mActual: [0m
+                    [0m2026-10-17 10:11:12.123456 UTC[0m
+                    [0m · End:[0m
+                    [0m [0m
+                    [0mUnknown[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-xs text-muted-foreground"[39m
+                  [36m>[39m
+                    [0mOperator reported · freshness [0m
+                    [0munknown[0m
+                    [0m · association[0m
+                    [0m [0m
+                    [0mresolved[0m
+                    [0m · [0m
+                    [0mmission[0m
+                  [36m</p>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+                  [36m>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                      [33mdisabled[39m=[32m""[39m
+                    [36m>[39m
+                      [0mEdit call[0m
+                    [36m</button>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                    [36m>[39m
+                      [0mCall history[0m
+                    [36m</button>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                      [33mdisabled[39m=[32m""[39m
+                    [36m>[39m
+                      [0mRemove call[0m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                [36m</li>[39m
+              [36m</ul>[39m
+            [36m</details>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<p[39m
+        [33mdata-testid[39m=[32m"independent-summary"[39m
+      [36m>[39m
+        [0mRetain me[0m
+      [36m</p>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Communications"[39m
+        [33mclass[39m=[32m"min-w-0 scroll-mt-4 space-y-4"[39m
+        [33mid[39m=[32m"operator-communications"[39m
+      [36m>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"text-xl font-semibold"[39m
+        [36m>[39m
+          [0mCommunications[0m
+        [36m</h2>[39m
+        [36m<details>[39m
+          [36m<summary>[39m
+            [0mConferences and customers[0m
+          [36m</summary>[39m
+        [36m</details>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+        [36m>[39m
+          [0mPlan requirements or record completed calls. Conference sessions remain independent. UTC snapshot; refresh to update.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mSchedule call[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mLog unscheduled/completed call[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mRefresh calls[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mrole[39m=[32m"status"[39m
+        [36m>[39m
+          [0mUnsaved call draft — save or discard before switching calls or missions.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mrole[39m=[32m"alert"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mcommit_outcome_unknown[0m
+            [0m · [0m
+            [0mcommit_outcome_unknown[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+        [36m>[39m
+          [0mRetry same call save[0m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid min-w-0 gap-4 lg:grid-cols-2"[39m
+        [36m>[39m
+          [36m<form[39m
+            [33maria-label[39m=[32m"Call editor"[39m
+            [33mclass[39m=[32m"min-w-0 space-y-3 rounded-xl border bg-card p-4"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-lg font-semibold"[39m
+            [36m>[39m
+              [0mCompleted / unscheduled call[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mAll dates and times are UTC. Blank optional fields remain unknown.[0m
+            [36m</p>[39m
+            [36m<fieldset[39m
+              [33mclass[39m=[32m"min-w-0 space-y-3 disabled:opacity-60"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"block"[39m
+              [36m>[39m
+                [0mParty / participant (optional)[0m
+                [36m<input[39m
+                  [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                  [33mmaxlength[39m=[32m"200"[39m
+                  [33mvalue[39m=[32m"Local unsaved participant"[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"block"[39m
+              [36m>[39m
+                [0mPlanned start (UTC)[0m
+                [36m<input[39m
+                  [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                  [33mplaceholder[39m=[32m"2026-10-17T16:00:00Z"[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m/>[39m
+              [36m</label>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"block"[39m
+              [36m>[39m
+                [0mStatus[0m
+                [36m<select[39m
+                  [33maria-label[39m=[32m"Status"[39m
+                  [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"tentative"[39m
+                  [36m>[39m
+                    [0mTentative[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"scheduled"[39m
+                  [36m>[39m
+                    [0mScheduled[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"delayed"[39m
+                  [36m>[39m
+                    [0mDelayed[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"cancelled"[39m
+                  [36m>[39m
+                    [0mCanceled[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"completed"[39m
+                  [36m>[39m
+                    [0mCompleted[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+              [36m</label>[39m
+              [36m<details>[39m
+                [36m<summary[39m
+                  [33mclass[39m=[32m"min-h-11 cursor-pointer py-2"[39m
+                [36m>[39m
+                  [0mTiming, association and optional details[0m
+                [36m</summary>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"space-y-3"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mCommunications type[0m
+                    [36m<select[39m
+                      [33maria-label[39m=[32m"Communications type"[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [36m>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m""[39m
+                      [36m>[39m
+                        [0mUnknown[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"voice"[39m
+                      [36m>[39m
+                        [0mVoice[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"vtc"[39m
+                      [36m>[39m
+                        [0mVTC[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"other"[39m
+                      [36m>[39m
+                        [0mOther[0m
+                      [36m</option>[39m
+                    [36m</select>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mDuration minutes (blank = unknown)[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33minputmode[39m=[32m"numeric"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mPreparation lead minutes (blank = unknown)[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33minputmode[39m=[32m"numeric"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex min-w-0 flex-wrap items-end gap-2"[39m
+                  [36m>[39m
+                    [36m<label[39m
+                      [33mclass[39m=[32m"min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [0mShift amount[0m
+                      [36m<input[39m
+                        [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                        [33minputmode[39m=[32m"text"[39m
+                        [33mplaceholder[39m=[32m"+2 or -15"[39m
+                        [33mvalue[39m=[32m""[39m
+                      [36m/>[39m
+                    [36m</label>[39m
+                    [36m<label>[39m
+                      [0mShift unit[0m
+                      [36m<select[39m
+                        [33maria-label[39m=[32m"Shift unit"[39m
+                        [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [36m>[39m
+                        [36m<option[39m
+                          [33mvalue[39m=[32m"minutes"[39m
+                        [36m>[39m
+                          [0mMinutes[0m
+                        [36m</option>[39m
+                        [36m<option[39m
+                          [33mvalue[39m=[32m"hours"[39m
+                        [36m>[39m
+                          [0mHours[0m
+                        [36m</option>[39m
+                      [36m</select>[39m
+                    [36m</label>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mApply shift[0m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mActual start (UTC, optional)[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33mplaceholder[39m=[32m"2026-10-17T14:30:00Z"[39m
+                      [33mvalue[39m=[32m"2026-10-17T10:11:12.123456Z"[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mActual end (UTC, optional)[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33mplaceholder[39m=[32m"2026-10-17T14:42:00Z"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mActual time precision[0m
+                    [36m<select[39m
+                      [33maria-label[39m=[32m"Actual time precision"[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [36m>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"unknown"[39m
+                      [36m>[39m
+                        [0mUnknown[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"exact"[39m
+                      [36m>[39m
+                        [0mExact[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"approximate"[39m
+                      [36m>[39m
+                        [0mApproximate[0m
+                      [36m</option>[39m
+                    [36m</select>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mGround coordinator (optional)[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33mmaxlength[39m=[32m"200"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mConference record ID (optional)[0m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mScope[0m
+                    [36m<select[39m
+                      [33maria-label[39m=[32m"Scope"[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                    [36m>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"mission"[39m
+                      [36m>[39m
+                        [0mmission[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"preflight"[39m
+                      [36m>[39m
+                        [0mpreflight[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"leg"[39m
+                      [36m>[39m
+                        [0mleg[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"between_legs"[39m
+                      [36m>[39m
+                        [0mbetween legs[0m
+                      [36m</option>[39m
+                      [36m<option[39m
+                        [33mvalue[39m=[32m"postflight"[39m
+                      [36m>[39m
+                        [0mpostflight[0m
+                      [36m</option>[39m
+                    [36m</select>[39m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block"[39m
+                  [36m>[39m
+                    [0mNotes (optional)[0m
+                    [36m<textarea[39m
+                      [33mclass[39m=[32m"min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2"[39m
+                      [33mmaxlength[39m=[32m"8000"[39m
+                    [36m>[39m
+                      [0mRetain me[0m
+                    [36m</textarea>[39m
+                  [36m</label>[39m
+                [36m</div>[39m
+              [36m</details>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"min-h-11 rounded-md bg-primary px-4 text-primary-foreground disabled:opacity-50"[39m
+                [33mtype[39m=[32m"submit"[39m
+              [36m>[39m
+                [0mSave call[0m
+              [36m</button>[39m
+            [36m</fieldset>[39m
+          [36m</form>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 space-y-3"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Call list"[39m
+              [33mclass[39m=[32m"min-w-0 space-y-3"[39m
+            [36m>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"font-semibold"[39m
+              [36m>[39m
+                [0mActive requirements[0m
+              [36m</h3>[39m
+              [36m<p>[39m
+                [0mNo recorded active requirements.[0m
+              [36m</p>[39m
+              [36m<ul[39m
+                [33mclass[39m=[32m"space-y-3"[39m
+              [36m/>[39m
+              [36m<details[39m
+                [33mopen[39m=[32m""[39m
+              [36m>[39m
+                [36m<summary[39m
+                  [33mclass[39m=[32m"min-h-11 cursor-pointer py-2"[39m
+                [36m>[39m
+                  [0mCompleted, canceled and removed calls[0m
+                [36m</summary>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"space-y-3"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"min-w-0 space-y-2 break-words rounded-lg border p-3 [overflow-wrap:anywhere]"[39m
+                  [36m>[39m
+                    [36m<h4[39m
+                      [33mclass[39m=[32m"font-semibold"[39m
+                    [36m>[39m
+                      [0mSynthetic party[0m
+                    [36m</h4>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-sm"[39m
+                    [36m>[39m
+                      [0mcompleted[0m
+                      [0m ·[0m
+                      [0m [0m
+                      [0mType unknown[0m
+                    [36m</p>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-sm"[39m
+                    [36m>[39m
+                      [0mPlanned: [0m
+                      [0mUnknown[0m
+                      [0m · End:[0m
+                      [0m [0m
+                      [0mUnknown[0m
+                    [36m</p>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-sm"[39m
+                    [36m>[39m
+                      [0mActual: [0m
+                      [0m2026-10-17 10:11:12.123456 UTC[0m
+                      [0m · End:[0m
+                      [0m [0m
+                      [0mUnknown[0m
+                    [36m</p>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-xs text-muted-foreground"[39m
+                    [36m>[39m
+                      [0mOperator reported · freshness [0m
+                      [0munknown[0m
+                      [0m · association[0m
+                      [0m [0m
+                      [0mresolved[0m
+                      [0m · [0m
+                      [0mmission[0m
+                    [36m</p>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+                    [36m>[39m
+                      [36m<button[39m
+                        [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                        [33mdisabled[39m=[32m""[39m
+                      [36m>[39m
+                        [0mEdit call[0m
+                      [36m</button>[39m
+                      [36m<button[39m
+                        [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                      [36m>[39m
+                        [0mCall history[0m
+                      [36m</button>[39m
+                      [36m<button[39m
+                        [33mclass[39m=[32m"min-h-11 rounded-md border px-3 disabled:opacity-50"[39m
+                        [33mdisabled[39m=[32m""[39m
+                      [36m>[39m
+                        [0mRemove call[0m
+                      [36m</button>[39m
+                    [36m</div>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</details>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ src/components/operator/OperatorCommunications.test.tsx:150:9
+    148|   expect(screen.queryByText('Call saved.')).toBeNull();
+    149|   fireEvent.click(screen.getByRole('button', { name: 'Retry same call …
+    150|   await waitFor(() => expect(screen.getByText('Call saved.')).toBeTrut…
+       |         ^
+    151|   expect(writes.mock.calls[1]).toEqual(writes.mock.calls[0]);
+    152| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 304 passed (305)
+      Tests  1 failed | 2055 passed (2056)
+   Start at  06:15:50
+   Duration  39.24s (transform 11.61s, setup 0ms, import 63.38s, tests 97.45s, environment 142.26s)
+

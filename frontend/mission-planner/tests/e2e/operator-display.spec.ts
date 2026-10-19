@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   installWeatherProbe,
@@ -286,6 +286,99 @@ test('display presets restore actual weather rendering and report real conflicts
       join(output, 'operator-display-last-observation.json'),
       JSON.stringify(proof, null, 2)
     );
+    await secondary.close();
+  }
+});
+
+test('persisted display settings and native rendering survive ordinary backend and worker restart', async ({
+  browser,
+  context,
+  request,
+}) => {
+  const output = process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR!;
+  const original = JSON.parse(
+    await readFile(join(output, 'operator-display-proof.json'), 'utf8')
+  );
+  const secondary = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+  });
+  try {
+    await expect
+      .poll(
+        async () =>
+          (await request.get('/api/aviation-weather/v1/settings')).status(),
+        { timeout: 90000 }
+      )
+      .toBe(200);
+    const settings = {
+      radar: await (await request.get('/api/overview-weather/settings')).json(),
+      aviation: await (
+        await request.get('/api/aviation-weather/v1/settings')
+      ).json(),
+    };
+    expect(settings).toEqual(original.retry);
+    expect(
+      await (await request.get('/api/overview-links/presets')).json()
+    ).toEqual(original.presets);
+    const checks = [];
+    for (const owner of [context, secondary]) {
+      const page = await owner.newPage();
+      await page.clock.setFixedTime(new Date('2026-10-06T06:00:00Z'));
+      await installWeatherProbe(page);
+      const started = performance.now();
+      await page.goto('/overview');
+      await page.bringToFront();
+      await expect
+        .poll(
+          async () => {
+            const native = await windSnapshot(page);
+            return {
+              present: native?.present,
+              wind: native?.wind,
+              temperature: native?.temperature,
+              sigmet: native?.bulletins?.[2],
+            };
+          },
+          { timeout: 180000 }
+        )
+        .toEqual({
+          present: true,
+          wind: true,
+          temperature: false,
+          sigmet: true,
+        });
+      await expect
+        .poll(async () => !!(await weatherSnapshot(page)).radar)
+        .toBe(true);
+      const metrics = page.getByRole('region', {
+        name: 'Overview metric history',
+        exact: true,
+      });
+      await expect(metrics.locator('[data-metric-panel]')).toHaveCount(5);
+      await expect(
+        metrics.getByText('Unavailable', { exact: true })
+      ).toHaveCount(5);
+      checks.push({
+        elapsedMs: performance.now() - started,
+        native: await windSnapshot(page),
+        weather: await weatherSnapshot(page),
+      });
+    }
+    await writeFile(
+      join(output, 'operator-display-restart-proof.json'),
+      JSON.stringify(
+        {
+          synthetic: true,
+          scope:
+            'Fresh connected windows after actual backend/worker restart with the original persistent settings volumes; does not claim uninterrupted open-tab recovery',
+          settings,
+          checks,
+        },
+        null,
+        2
+      )
+    );
+  } finally {
     await secondary.close();
   }
 });

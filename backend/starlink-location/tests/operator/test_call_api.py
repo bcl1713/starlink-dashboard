@@ -4,7 +4,6 @@ from copy import deepcopy
 from uuid import uuid4
 
 import pytest
-
 from tests.operator.api_helpers import BASE, create, headers
 
 
@@ -218,3 +217,28 @@ def test_legacy_scheduled_unknown_start_can_be_corrected(api, record_data):
     response = api.put(path, json=dict(body, expected_version=1), headers=headers(api))
     assert response.status_code == 200, response.text
     assert response.json()["saved_records"][0]["time"]["planned_start_at"] is None
+
+
+@pytest.mark.parametrize("reference", ["missing", "wrong_type", "other_mission"])
+def test_invalid_conference_reference_does_not_append_call(api, record_data, reference):
+    from tests.operator.test_conference_api import conference_data
+
+    if reference == "missing":
+        target_id = str(uuid4())
+    else:
+        target = (
+            deepcopy(record_data)
+            if reference == "wrong_type"
+            else conference_data(record_data)
+        )
+        if reference == "other_mission":
+            target["mission_id"] = "other-mission"
+        response = create(api, target)
+        assert response.status_code == 201, response.text
+        target_id = response.json()["saved_records"][0]["record_id"]
+    before = api.get(BASE + "/journal", params={"mission_id": "demo-mission"}).json()
+    denied = create(api, call_data(record_data, conference_id=target_id))
+    assert denied.status_code in (409, 422), denied.text
+    after = api.get(BASE + "/journal", params={"mission_id": "demo-mission"}).json()
+    assert after["items"] == before["items"]
+    assert after["H"] == before["H"]

@@ -199,3 +199,14 @@ it('does not confirm a save when the server returns a malformed acknowledgment',
   expect(screen.queryByText('Normal preset saved')).toBeNull();
   expect(screen.getByRole('button', { name: 'Apply Normal' })).toBeDisabled();
 });
+
+it('keeps existing Configuration and selected mission planning destinations reachable before lazy controls mount', () => {
+  mount();
+  expect(
+    screen.getByRole('link', { name: 'Display settings' }).getAttribute('href')
+  ).toBe('/configuration');
+  expect(
+    screen.getByRole('link', { name: 'Mission planning' }).getAttribute('href')
+  ).toBe('/missions/synthetic-demo');
+  expect(apiClient.get).not.toHaveBeenCalled();
+});

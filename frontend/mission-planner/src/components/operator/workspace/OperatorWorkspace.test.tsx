@@ -109,3 +109,10 @@ it('offers an explicit failed mission read retry without treating it as an unmar
     screen.queryByText(/Training requires a separate private instance/)
   ).toBeNull();
 });
+
+it('links the selected mission to its existing Missions records destination', () => {
+  mount('/operator?workspace=1&mission_id=mission%20%2F%20one');
+  expect(
+    screen.getByRole('link', { name: 'Mission records' }).getAttribute('href')
+  ).toBe('/missions/mission%20%2F%20one');
+});

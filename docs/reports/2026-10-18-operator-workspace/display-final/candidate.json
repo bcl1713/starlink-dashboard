@@ -1,0 +1,16 @@
+{
+  "sha": "5e2aaf719fd192fc26e19b3f6d7f588825abd353",
+  "source_hashes": {
+    "u.grib2": "2fb8a8e9eee6ce83b8f45eb9706ca2b5f3acd0944b989d687f3587470c7d9d5a",
+    "v.grib2": "3bbc970941225e00d87533699f9cc91800e24638c7ffcdbfe47e8e772ddf6dc3",
+    "t.grib2": "74c1fa79de720173ab3c385f55e6777301392f6978abe6c3d6e2f668af79e056",
+    "sp.grib2": "e0f4246f4e8ae2802cdc68595c721ea767e9a52409439d38a3279311c0f6fc2f",
+    "source.idx": "ecd6fd7f8205f510498bdd26896199454aa43092921fe4403aaa404f3f499e9a"
+  },
+  "browser": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+  "browser_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+  "browser_version": "Google Chrome for Testing 153.0.8010.12",
+  "rendering": "software SwiftShader; fixture-source historical replay",
+  "acceptance_scope": "GFS operator-display-synthetic-sources",
+  "docker_host": "unix:///run/user/1002/docker.sock"
+}

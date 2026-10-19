@@ -608,3 +608,61 @@ it('keeps the command lane visibly busy until an accepted save finishes its curr
   await submit(next.draftId);
   expect(send).toHaveBeenCalledTimes(2);
 });
+
+it('retries the original uncertain mission command after another mission draft is opened', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(new Error('lost receipt'))
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'original-mission-receipt',
+      saved_records: [record],
+    });
+  const { registry } = mount();
+  const first = registry.createDraft(target, input);
+  await submit(first.draftId);
+  const original = structuredClone(save.mock.calls[0]);
+  const other = registry.createDraft(
+    { ...target, missionId: 'mission-b' },
+    {
+      ...input,
+      mission_id: 'mission-b',
+      payload: { ...input.payload, title: 'Other mission retained' },
+    }
+  );
+  act(() => workspace.openDraft(other.draftId));
+  await act(async () => workspace.retryExact(workspace.tray[0].commandId));
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(save.mock.calls[1]).toEqual(original);
+  expect(workspace.tray[0].target.missionId).toBe('mission-a');
+  expect(registry.resumeDraft(other.draftId)?.input.payload.title).toBe(
+    'Other mission retained'
+  );
+});
+
+it.each([
+  { store_id: 'other-store' },
+  { source_mode: 'simulation' as const, simulation_run_id: 'other-run' },
+])(
+  'quarantines a frozen request after identity rotation %j without retargeting',
+  async (changed) => {
+    const save = vi
+      .spyOn(api, 'saveOperatorCommand')
+      .mockRejectedValue(new Error('uncertain'));
+    const { registry, client } = mount();
+    const draft = registry.createDraft(target, input);
+    await submit(draft.draftId);
+    const original = structuredClone(workspace.tray[0].pending);
+    vi.mocked(api.getOperatorHealth).mockResolvedValue({
+      ...health,
+      ...changed,
+    });
+    await act(async () => {
+      await client.refetchQueries({ queryKey: ['operator-health'] });
+    });
+    await act(async () => workspace.retryExact(workspace.tray[0].commandId));
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(workspace.tray[0].status).toBe('quarantined');
+    expect(workspace.tray[0].pending).toEqual(original);
+  }
+);

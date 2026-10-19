@@ -154,6 +154,9 @@ it('labels live route timing and keeps original UTC in source details', () => {
         provenance: 'modeled',
         kind: 'restriction',
         time_basis: 'live_route_eta',
+        source_ref: 'model:leg-a',
+        source_revision: 'live-revision-7',
+        source_captured_at: '2026-10-17T15:33:44.123456Z',
         planned_due_at: '2026-10-17T15:00:00Z',
         planned_end_at: '2026-10-17T15:10:00Z',
       }),
@@ -167,4 +170,16 @@ it('labels live route timing and keeps original UTC in source details', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Open events' }));
   expect(screen.getByText(/Live route ETA/)).toBeVisible();
   expect(screen.getByText(/Plan reference/)).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Source details', { exact: true }));
+  expect(
+    screen.getByText(/Captured 2026-10-17 15:33:44 UTC · freshness fresh/)
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      /Plan reference 2026-10-17 15:00:00 UTC — 2026-10-17 15:10:00 UTC/
+    )
+  ).toBeVisible();
+  expect(
+    screen.getByText(/Source model:leg-a · revision live-revision-7/)
+  ).toBeVisible();
 });

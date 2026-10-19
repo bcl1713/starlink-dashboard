@@ -184,10 +184,39 @@ def main():
                 "test",
                 "--config",
                 "playwright.operator-display.config.ts",
+                "--grep",
+                "display presets restore",
             ],
             seconds=1040,
             cwd=runner.source / "frontend/mission-planner",
             name="browser.log",
+        )
+        # Reuse the same owned persistent volumes: ordinary services restart,
+        # then fresh connected Overview windows must admit the saved preset.
+        runner.command(
+            [*runner.compose, "restart", "starlink-location", "gfs-worker"],
+            seconds=180,
+            name="display-restart.log",
+        )
+        runner.command(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "7m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-display.config.ts",
+                "--grep",
+                "persisted display settings",
+                "--output",
+                str(runner.output / "display-restart-browser"),
+            ],
+            seconds=440,
+            cwd=runner.source / "frontend/mission-planner",
+            name="display-restart-browser.log",
         )
         report["checksPassed"] = True
     except BaseException as error:

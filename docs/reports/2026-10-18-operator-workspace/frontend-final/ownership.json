@@ -1,0 +1,42 @@
+{
+  "pid": 2788742,
+  "pgid": 2788740,
+  "project": "starlink-operator-parity-376",
+  "composeFile": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/tools/acceptance/operator-journal/compose.yml",
+  "commands": [
+    {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "5m",
+        "npx",
+        "--no-install",
+        "vitest",
+        "run",
+        "src"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner",
+      "timeout": 320,
+      "started": 1792390665.31887,
+      "pid": 2788743,
+      "pgid": 2788743,
+      "log": "/tmp/issue-376-frontend-final-validation-5e2aaf71-r3/command-001.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792390705.1881886
+    }
+  ],
+  "volumes": [],
+  "containers": [],
+  "images": [],
+  "temporaryPaths": [
+    "/tmp/issue-376-frontend-final-validation-5e2aaf71-r3/pytest",
+    "/tmp/issue-376-parity-validation.py"
+  ],
+  "dockerHost": "unix:///run/user/1002/docker.sock",
+  "dockerContext": null,
+  "fixture": "issue376 existing parity regression suites; no Docker runtime",
+  "evidence": "/tmp/issue-376-frontend-final-validation-5e2aaf71-r3",
+  "candidateSha": "5e2aaf719fd192fc26e19b3f6d7f588825abd353"
+}
