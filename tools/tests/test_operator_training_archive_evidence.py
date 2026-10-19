@@ -177,3 +177,53 @@ def test_empty_catalog_still_reads_a_mission_filtered_page_to_pin_global_h():
     result = evidence.read_snapshot(get)
     assert result["H"] == 0 and result["records"] == []
     assert any("include_removed=true" in path for path in calls)
+
+
+def test_catalog_stub_read_times_are_not_persisted_plan_revisions():
+    base = snapshot()
+    reads = 0
+
+    def get(path):
+        nonlocal reads
+        if path.endswith("/health"):
+            return base["health"]
+        if path.endswith("/missions"):
+            reads += 1
+            return [
+                {
+                    "id": "m",
+                    "name": "Private mission",
+                    "legs": [
+                        {
+                            "id": "leg-one",
+                            "created_at": str(reads),
+                            "updated_at": str(reads),
+                        }
+                    ],
+                }
+            ]
+        return {"H": 0, "cursor": None, "items": []}
+
+    assert evidence.read_snapshot(get)["H"] == 0
+    reads = 0
+
+    def changed_plan(path):
+        result = get(path)
+        if path.endswith("/missions") and reads > 1:
+            result[0]["name"] = "Actually changed plan"
+        return result
+
+    with pytest.raises(ValueError, match="mission list changed"):
+        evidence.read_snapshot(changed_plan)
+
+
+def test_catalog_that_may_be_truncated_cannot_claim_complete_preservation():
+    base = snapshot()
+
+    def get(path):
+        if path.endswith("/health"):
+            return base["health"]
+        return [{"id": str(index)} for index in range(10)]
+
+    with pytest.raises(ValueError, match="complete course boundary"):
+        evidence.read_snapshot(get)

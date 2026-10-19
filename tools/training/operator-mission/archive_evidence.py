@@ -7,6 +7,28 @@ def _ordered(rows):
     return sorted(rows, key=lambda row: (row["record_id"], row["version"]))
 
 
+def _catalog_revision(missions):
+    # The list API constructs ID-only leg stubs with default_factory timestamps
+    # on each read (storage.load_mission_metadata_v2). They are not saved edits.
+    return sorted(
+        [
+            dict(
+                mission,
+                legs=[
+                    {
+                        key: value
+                        for key, value in leg.items()
+                        if key not in {"created_at", "updated_at"}
+                    }
+                    for leg in mission.get("legs", [])
+                ],
+            )
+            for mission in missions
+        ],
+        key=lambda mission: mission["id"],
+    )
+
+
 def read_snapshot(get, mission_id=None):
     """Read complete ordinary pages at one H and reject identity rotation."""
     health = get("/api/v2/operator/health")
@@ -19,6 +41,10 @@ def read_snapshot(get, mission_id=None):
     missions = get("/api/v2/missions")
     if not isinstance(missions, list):
         raise TypeError("Complete private mission list required")
+    # This course owns one source mission and at most two import copies. The
+    # ordinary list defaults to ten: never call a possibly full page complete.
+    if len(missions) >= 10:
+        raise ValueError("Private mission catalog exceeds the complete course boundary")
     boundary = None
 
     def pages(path):
@@ -62,7 +88,7 @@ def read_snapshot(get, mission_id=None):
                 + "/history"
             )
         )
-    if get("/api/v2/missions") != missions:
+    if _catalog_revision(get("/api/v2/missions")) != _catalog_revision(missions):
         raise ValueError("Private mission list changed during evidence read")
     if get("/api/v2/operator/health") != health:
         raise ValueError("Private store identity changed during evidence read")
