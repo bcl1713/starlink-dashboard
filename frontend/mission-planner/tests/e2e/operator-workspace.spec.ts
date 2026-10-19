@@ -192,6 +192,15 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         const dialog = page.getByRole('dialog');
         const party = dialog.getByLabel('Party / participant (optional)');
         const checkFooter = async () => {
+          // A resize notification can precede dynamic viewport-unit layout.
+          // Require the actual dialog to reach the requested height first.
+          await expect
+            .poll(async () =>
+              dialog.evaluate((element) =>
+                Math.round(element.getBoundingClientRect().height)
+              )
+            )
+            .toBe(page.viewportSize()!.height);
           const geometry = await dialog.evaluate((element) => {
             const body = element.querySelector('.ws-editor-body')!;
             const footer = element.querySelector('.ws-editor-footer')!;
