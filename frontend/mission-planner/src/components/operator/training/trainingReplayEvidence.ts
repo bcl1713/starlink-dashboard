@@ -140,13 +140,16 @@ export function retainReplayObservation(
         legs
       );
       if (!outcomes.length) return;
-      // Retain an aligned and an unavailable sample per leg, so later missing
-      // inputs cannot erase the earlier real aligned observation.
+      // Preserve aligned inputs and explicit unavailable advisories independently;
+      // both can occur in the same ordinary source snapshot.
       const sameKind = (other: ReplayObservation) =>
         other.status.run!.leg_id === observation.status.run!.leg_id &&
         collectReplayEvidence(other.source, other.status, legs).includes(
           'current-model-sources'
-        ) === outcomes.includes('current-model-sources');
+        ) === outcomes.includes('current-model-sources') &&
+        collectReplayEvidence(other.source, other.status, legs).includes(
+          'unavailable-model-inputs'
+        ) === outcomes.includes('unavailable-model-inputs');
       const index = retained.findIndex(sameKind);
       if (index >= 0) retained[index] = observation;
       else retained.push(observation);

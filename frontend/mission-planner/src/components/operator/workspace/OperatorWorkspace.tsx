@@ -1,3 +1,4 @@
+import { readTrainingDisplayEvidence } from '../training/trainingDisplayEvidence';
 import { collectArchiveEvidence } from '../training/trainingArchiveEvidence';
 import {
   retainJournalObservation,
@@ -430,11 +431,13 @@ export function OperatorWorkspace() {
                 health.data!.simulation_run_id!,
                 training.prerequisiteIds
               );
-              const [replay, snapshot, currentMission] = await Promise.all([
-                simulationRunApi.get(),
-                readEventSnapshot(missionId),
-                mission.refetch(),
-              ]);
+              const [replay, snapshot, currentMission, displayOutcomes] =
+                await Promise.all([
+                  simulationRunApi.get(),
+                  readEventSnapshot(missionId),
+                  mission.refetch(),
+                  readTrainingDisplayEvidence(),
+                ]);
               const currentContext = trainingContext(
                 health.data,
                 currentMission.data,
@@ -561,6 +564,7 @@ export function OperatorWorkspace() {
                 outcomes: [
                   ...new Set([
                     ...checked.outcomes,
+                    ...displayOutcomes,
                     ...retryOutcomes,
                     ...journalOutcomes,
                     ...archiveOutcomes,

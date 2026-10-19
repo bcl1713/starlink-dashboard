@@ -45,10 +45,14 @@ def read_snapshot(get, mission_id=None):
                 raise ValueError("Private evidence pagination did not finish")
             cursors.add(cursor)
 
-    query = {"include_removed": "true"}
-    if mission_id:
-        query["mission_id"] = mission_id
-    records = pages("/api/v2/operator/records?" + urlencode(query))
+    # The ordinary API requires a mission filter. Read every catalog mission at
+    # one global H, including removed rows. An empty private store still needs
+    # a valid filtered read to observe H=0 rather than inventing that boundary.
+    mission_ids = [mission_id] if mission_id else [item["id"] for item in missions]
+    records = []
+    for selected in mission_ids or ["operator-training-empty-destination"]:
+        query = {"include_removed": "true", "mission_id": selected}
+        records.extend(pages("/api/v2/operator/records?" + urlencode(query)))
     history = []
     for row in records:
         history.extend(

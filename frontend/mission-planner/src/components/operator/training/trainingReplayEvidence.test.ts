@@ -238,3 +238,48 @@ it('resumes only validated raw observations in the same private progress identit
   expect(loadProgress(storage, identity).progress).toBeNull();
   expect(loadProgress(storage, identity).error).toBeTruthy();
 });
+
+it('retains an unavailable advisory read even when aligned model inputs remain available', () => {
+  const missing = {
+    ...snapshot,
+    sources: [
+      ...snapshot.sources,
+      {
+        ...snapshot.sources[0],
+        source: 'model:leg-1:live-pop',
+        freshness: 'unknown' as const,
+        aligned: false,
+        guardable: false,
+        input_identity: null,
+        captured_at: null,
+        reason: 'Timing unavailable',
+      },
+    ],
+  };
+  let reads = retainReplayObservation(
+    identity,
+    namespace,
+    legs,
+    missing,
+    status,
+    []
+  );
+  reads = retainReplayObservation(
+    identity,
+    namespace,
+    legs,
+    snapshot,
+    status,
+    reads
+  );
+  expect(
+    collectHistoricalReplayEvidence(
+      identity,
+      namespace,
+      legs,
+      snapshot.as_of,
+      snapshot.H,
+      reads
+    )
+  ).toContain('unavailable-model-inputs');
+});

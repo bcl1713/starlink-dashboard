@@ -117,5 +117,21 @@ export function collectReplayEvidence(
     if (index === 0) outcomes.push('first-leg-model-sources');
     if (index === 1) outcomes.push('second-leg-model-sources');
   }
+  if (
+    Date.parse(snapshot.as_of) === Date.parse(status.served_at) &&
+    snapshot.sources.some(
+      (capture) =>
+        [`model:${run.leg_id}`, `model:${run.leg_id}:live-pop`].includes(
+          capture.source
+        ) &&
+        ['unknown', 'stale', 'disabled'].includes(capture.freshness) &&
+        !capture.aligned &&
+        !!capture.reason?.trim() &&
+        (capture.captured_at === null ||
+          (Date.parse(capture.captured_at) >= Date.parse(run.started_at) &&
+            Date.parse(capture.captured_at) <= Date.parse(status.served_at)))
+    )
+  )
+    outcomes.push('unavailable-model-inputs');
   return outcomes;
 }

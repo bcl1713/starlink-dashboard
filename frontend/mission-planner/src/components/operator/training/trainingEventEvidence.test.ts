@@ -139,3 +139,49 @@ it('pins replay evidence to the actual mission leg, route and served source time
     collectReplayEvidence({ ...feed, mission_id: 'other' }, status, legs)
   ).toEqual([]);
 });
+
+it('credits an explicit unavailable active-leg model read without inferring an outage or aligned inputs', async () => {
+  const { collectReplayEvidence } = await import('./trainingEventEvidence');
+  const { runningStatus } = await import('@/test/simulation-run-fixtures');
+  const status = runningStatus();
+  const legs = [{ id: 'leg-1', route_id: 'route-1' }];
+  const unavailable = {
+    source: 'model:leg-1:live-pop',
+    revision: null,
+    generation: null,
+    input_identity: null,
+    captured_at: null,
+    freshness: 'unknown' as const,
+    aligned: false,
+    guardable: false,
+    reason: 'Live timing unavailable',
+  };
+  const feed = eventSnapshot({
+    mission_id: 'mission-1',
+    source_mode: 'simulation',
+    as_of: status.served_at,
+    sources: [unavailable],
+  });
+  expect(collectReplayEvidence(feed, status, legs)).toContain(
+    'unavailable-model-inputs'
+  );
+  expect(collectReplayEvidence(feed, status, legs)).not.toContain(
+    'current-model-sources'
+  );
+  for (const sources of [
+    [],
+    [{ ...unavailable, source: 'model:other:live-pop' }],
+    [{ ...unavailable, reason: null }],
+    [{ ...unavailable, captured_at: '2099-01-01T00:00:00Z' }],
+  ])
+    expect(
+      collectReplayEvidence({ ...feed, sources }, status, legs)
+    ).not.toContain('unavailable-model-inputs');
+  expect(
+    collectReplayEvidence(
+      { ...feed, as_of: '2020-01-01T00:00:00Z' },
+      status,
+      legs
+    )
+  ).not.toContain('unavailable-model-inputs');
+});

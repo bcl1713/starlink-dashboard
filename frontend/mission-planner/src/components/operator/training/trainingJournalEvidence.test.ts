@@ -261,3 +261,45 @@ it('persists only structurally valid raw reads and rejects dropped revisions aft
   values.set(key, JSON.stringify(corrupt));
   expect(loadProgress(storage, identity).progress).toBeNull();
 });
+
+it('keeps both leg boundaries through repeated later runtime restarts', () => {
+  let retained = retainJournalObservation(
+    identity,
+    namespace,
+    snapshot,
+    status,
+    [saved],
+    []
+  );
+  retained = retainJournalObservation(
+    identity,
+    namespace,
+    snapshot,
+    second,
+    [saved],
+    retained
+  );
+  for (let index = 0; index < 8; index++) {
+    retained = retainJournalObservation(
+      identity,
+      namespace,
+      snapshot,
+      {
+        ...status,
+        runtime_id: `restart-${index}`,
+        revision: 0,
+        state: 'idle',
+        run: null,
+      },
+      [saved],
+      retained
+    );
+    expect(retained.length).toBeLessThanOrEqual(4);
+    expect(read(retained)).toEqual(
+      expect.arrayContaining([
+        'stable-journal-across-legs',
+        'restart-preserved-records',
+      ])
+    );
+  }
+});

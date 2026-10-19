@@ -1,3 +1,50 @@
+# Private Operator candidate
+
+Use a nonproduction Linux computer with Git, Python 3, Docker Engine and the
+Docker Compose plugin. The launcher builds the committed application source;
+initial builds need access to the image and dependency registries. Keep the
+computer's configured Docker context and `DOCKER_HOST` unchanged.
+
+From the implementation checkout at the candidate SHA reported on PR #383:
+
+```sh
+git rev-parse HEAD
+docker info
+export operator_training_root="$(mktemp -d /tmp/operator-training-XXXXXX)"
+timeout --kill-after=10s 20m scripts/operator-training.sh start \
+  --root "$operator_training_root" --disposable
+```
+
+Open the printed `origin`, including `/operator?workspace=1`. In Operator, select
+**Fictional Meridian 21**, open **Help**, then **Guided mission walkthrough**.
+Use the normal Operator/Missions controls for each lesson; **Read this procedure**
+opens the packaged offline guide. The root contains the command/resource ownership
+and launch logs. Keep its path for the checkpoint, restart and archive commands.
+Managed-cloud sessions whose daemon cannot expose its loopback port need the
+launcher's existing `--relay` option. A local Docker installation normally does
+not need it.
+
+This is an implementation candidate, not a fully accepted release. T01–T11
+remain honest about missing machine evidence and manual observations. At this
+checkpoint, draft-switch/offline/conflict/backup and the remaining T11 recovery
+adapters are unfinished; full parity crosswalk, final performance/accessibility,
+mobile-keyboard checks and an actual uncoached person's walkthrough remain open.
+The original shell is still the default; `?workspace=1` selects the candidate.
+Do not interpret a green lesson or a passing browser test as human usability
+acceptance. For the first-use check, note where finding the next action, deciding
+what a status means, or recovering a mistake needed outside help. Record screen
+size and the lesson; never include operational data.
+
+Stop the private exercise as soon as its checks finish:
+
+```sh
+timeout --kill-after=10s 5m scripts/operator-training.sh stop \
+  --root "$operator_training_root"
+```
+
+With `--disposable`, stopping removes the exercise's private containers, network
+and data volumes. Downloaded files and logs under the root remain available for
+review. No production service or shared development project is used.
 
 Archive acceptance can extend the exact-source browser proof with a separate
 private import destination on loopback port 56534:

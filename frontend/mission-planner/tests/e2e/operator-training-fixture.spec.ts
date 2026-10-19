@@ -291,10 +291,27 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   await expect(
     flightGuide.getByRole('listitem').filter({ hasText: 'first leg replay' })
   ).toContainText('Verified from current data');
+  await flightGuide
+    .getByRole('combobox', { name: 'Lesson', exact: true })
+    .selectOption('T04');
+  await expect(
+    flightGuide
+      .getByRole('listitem')
+      .filter({ hasText: 'display settings read' })
+  ).toContainText('Verified from current data');
+  await expect(flightGuide).not.toContainText('Human observation');
+  await flightGuide
+    .getByRole('combobox', { name: 'Lesson', exact: true })
+    .selectOption('T05');
   await expect(
     flightGuide
       .getByRole('listitem')
       .filter({ hasText: 'first leg model sources' })
+  ).toContainText('Verified from current data');
+  await expect(
+    flightGuide
+      .getByRole('listitem')
+      .filter({ hasText: 'unavailable model inputs' })
   ).toContainText('Verified from current data');
   await flightGuide
     .getByRole('button', { name: 'Dismiss guide', exact: true })

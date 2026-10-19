@@ -91,6 +91,7 @@ def test_snapshot_pages_and_final_health_must_share_one_boundary():
         if path == "/api/v2/missions":
             return base["missions"]
         if path.startswith("/api/v2/operator/records?"):
+            assert "mission_id=m" in path
             return {"H": 2, "cursor": None, "items": [{"record": base["records"][0]}]}
         if path == "/api/v2/operator/records/a/history":
             return {
@@ -158,3 +159,21 @@ def test_snapshot_rejects_cursor_loops_and_rotated_epoch():
 
     with pytest.raises(ValueError, match="identity"):
         evidence.read_snapshot(rotating)
+
+
+def test_empty_catalog_still_reads_a_mission_filtered_page_to_pin_global_h():
+    base = snapshot()
+    calls = []
+
+    def get(path):
+        calls.append(path)
+        if path.endswith("/health"):
+            return base["health"]
+        if path.endswith("/missions"):
+            return []
+        assert "mission_id=" in path
+        return {"H": 0, "cursor": None, "items": []}
+
+    result = evidence.read_snapshot(get)
+    assert result["H"] == 0 and result["records"] == []
+    assert any("include_removed=true" in path for path in calls)

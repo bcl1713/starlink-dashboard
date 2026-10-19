@@ -105,7 +105,26 @@ export function retainJournalObservation(
     status,
     records: unique,
   });
-  return retained.slice(-4);
+  // Keep the first boundary for each of the private mission's two legs.
+  // Later idle/restart reads must not evict the evidence of the earlier flight.
+  const legs = new Map<string, JournalObservation>();
+  for (const read of retained) {
+    const run = read.status.run;
+    if (
+      run &&
+      ['running', 'completed'].includes(read.status.state) &&
+      !legs.has(run.leg_id) &&
+      legs.size < 2
+    )
+      legs.set(run.leg_id, read);
+  }
+  const boundaries = [...legs.values()];
+  const later = retained.filter((read) => !boundaries.includes(read));
+  const selected = new Set([
+    ...boundaries,
+    ...later.slice(-(4 - boundaries.length)),
+  ]);
+  return retained.filter((read) => selected.has(read));
 }
 
 export function collectJournalContinuityEvidence(
