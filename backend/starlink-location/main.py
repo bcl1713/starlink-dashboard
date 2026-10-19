@@ -748,7 +748,8 @@ def _current_runtime_config():
 def _operator_context():
     config = _current_runtime_config()
     run_service = getattr(app.state, "simulation_run_service", None)
-    run = run_service.status().run if run_service is not None else None
+    status = run_service.status() if run_service is not None else None
+    run = status.run if status and status.state in ("running", "completed") else None
     return config.mode, run.run_id if run is not None else None
 
 

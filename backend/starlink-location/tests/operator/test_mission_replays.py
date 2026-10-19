@@ -324,3 +324,26 @@ def test_explicit_start_of_carried_call_reports_new_run_without_refreshing_old_s
         assert corrected.provenance.replay_run_id == "run-b"
         assert current_records([corrected], runtime.health()) == []
     binding.close()
+
+
+def test_cancelled_or_failed_replay_is_not_current_operational_evidence(monkeypatch):
+    from types import SimpleNamespace
+
+    import main
+
+    monkeypatch.setattr(
+        main, "_current_runtime_config", lambda: SimpleNamespace(mode="simulation")
+    )
+    status = SimpleNamespace(state="running", run=SimpleNamespace(run_id="run-a"))
+    monkeypatch.setattr(
+        main.app.state,
+        "simulation_run_service",
+        SimpleNamespace(status=lambda: status),
+        raising=False,
+    )
+    assert main._operator_context() == ("simulation", "run-a")
+    status.state = "completed"
+    assert main._operator_context() == ("simulation", "run-a")
+    for state in ("cancelled", "failed", "idle"):
+        status.state = state
+        assert main._operator_context() == ("simulation", None)

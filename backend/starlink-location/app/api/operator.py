@@ -188,7 +188,10 @@ def operating_context(request: Request):
         state = runtime.health()
         flight = get_flight_state_manager().get_status()
         run_service = getattr(request.app.state, "simulation_run_service", None)
-        run = run_service.status().run if run_service else None
+        status = run_service.status() if run_service else None
+        run = (
+            status.run if status and status.state in ("running", "completed") else None
+        )
         if (
             context
             and state.source_mode == "simulation"
@@ -215,8 +218,8 @@ def operating_context(request: Request):
             "leg_name": context.leg.name if context else None,
             "phase": (
                 (
-                    run.phase
-                    if run and state.source_mode == "simulation"
+                    (run.phase if run else None)
+                    if state.source_mode == "simulation"
                     else flight.phase.value
                 )
                 if context
