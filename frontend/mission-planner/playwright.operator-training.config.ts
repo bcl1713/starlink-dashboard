@@ -7,9 +7,11 @@ if (
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch:
-    process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
-      ? 'operator-training-archive.spec.ts'
-      : 'operator-training-fixture.spec.ts',
+    process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
+      ? 'operator-training-records.spec.ts'
+      : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
+        ? 'operator-training-archive.spec.ts'
+        : 'operator-training-fixture.spec.ts',
   workers: 1,
   retries: 0,
   timeout: 240_000,

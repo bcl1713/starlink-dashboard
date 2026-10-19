@@ -235,7 +235,8 @@ def test_existing_raw_input_helper_can_leave_learner_actions_routes_and_phase_un
     from datetime import datetime, timezone
     from types import SimpleNamespace
 
-    monkeypatch.syspath_prepend(str(ROOT / "tools/acceptance/operator-journal"))
+    # Executing the CLI puts its own scenario.py first on sys.path.
+    monkeypatch.setitem(sys.modules, "scenario", scenario)
     import model_inputs_fixture
 
     monkeypatch.setattr(
@@ -389,7 +390,8 @@ def test_raw_helper_uses_current_checkpoint_time_even_if_restart_precedes_applic
     from datetime import datetime, timezone
     from types import SimpleNamespace
 
-    monkeypatch.syspath_prepend(str(ROOT / "tools/acceptance/operator-journal"))
+    # Executing the CLI puts its own scenario.py first on sys.path.
+    monkeypatch.setitem(sys.modules, "scenario", scenario)
     import model_inputs_fixture
 
     directory = tmp_path / "operator"
@@ -620,7 +622,8 @@ def test_archive_inputs_use_existing_detector_without_seeding_learner_records(
     scenario.mark_root(root)
     before = scenario.seed_prerequisites(root)
     monkeypatch.setenv("OPERATOR_TRAINING_FIXTURE", "explicit-private-training-v1")
-    monkeypatch.syspath_prepend(str(ROOT / "tools/acceptance/operator-journal"))
+    # Executing the CLI puts its own scenario.py first on sys.path.
+    monkeypatch.setitem(sys.modules, "scenario", scenario)
     spec = importlib.util.spec_from_file_location(
         "training_archive_inputs_test",
         ROOT / "tools/training/operator-mission/archive_inputs.py",

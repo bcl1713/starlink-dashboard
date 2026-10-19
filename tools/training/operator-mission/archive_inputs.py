@@ -18,7 +18,8 @@ def run(root):
     namespace = scenario.training_namespace(root, mode="simulation")
     from app.mission import storage
     from app.services.flight_events.live_adapter import FlightEventRuntime
-    from scenario import START, ScenarioClock, SyntheticRawReader, flight_observations
+
+    existing_inputs = scenario._existing_clock_module()
 
     storage.MISSIONS_DIR = root / "missions"
     missions = storage.list_mission_metadata_v2()
@@ -40,17 +41,21 @@ def run(root):
     runtime = FlightEventRuntime(root / "synthetic-operational-archive")
     try:
         for index, leg in enumerate(mission.legs):
-            for observation in flight_observations(
-                ScenarioClock(), mission.id, leg.id, offset=index * 2700
+            for observation in existing_inputs.flight_observations(
+                existing_inputs.ScenarioClock(), mission.id, leg.id, offset=index * 2700
             ):
                 observation.route_id = leg.route_id
                 runtime.accept(observation)
         from datetime import timedelta
 
-        clock = ScenarioClock(START + timedelta(hours=2))
+        clock = existing_inputs.ScenarioClock(
+            existing_inputs.START + timedelta(hours=2)
+        )
         for _ in range(500):
             clock.advance(300)
-            runtime.capture.backfill_one(SyntheticRawReader(), clock.now())
+            runtime.capture.backfill_one(
+                existing_inputs.SyntheticRawReader(), clock.now()
+            )
             runtime.capture.recover(clock.now())
         captures = [runtime.archive.capture(mission.id, leg.id) for leg in mission.legs]
         assert all(capture and capture["state"] == "sealed" for capture in captures)

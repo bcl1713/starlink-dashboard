@@ -103,6 +103,23 @@ def main():
             timeout=620,
         )
         if archive:
+            runner.env["OPERATOR_TRAINING_RECORDS_ONLY"] = "true"
+            runner.execute(
+                [
+                    "timeout",
+                    "--kill-after=10s",
+                    "5m",
+                    "npx",
+                    "--no-install",
+                    "playwright",
+                    "test",
+                    "--config",
+                    "playwright.operator-training.config.ts",
+                ],
+                cwd=launcher.SOURCE / "frontend/mission-planner",
+                timeout=320,
+            )
+            runner.env.pop("OPERATOR_TRAINING_RECORDS_ONLY")
             destination = launcher.open_owner(
                 root / "import-destination",
                 create=True,

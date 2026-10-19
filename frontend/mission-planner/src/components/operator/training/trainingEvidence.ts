@@ -94,8 +94,18 @@ export function collectRecordEvidence(
       )
         outcomes.add('call-cancelled-reinstated');
       if (
-        r.operation === 'restore' &&
-        versions.some((v) => v.deleted && v.operation === 'remove')
+        source.historyComplete &&
+        versions.some(
+          (restored) =>
+            restored.operation === 'restore' &&
+            !restored.deleted &&
+            versions.some(
+              (removed) =>
+                removed.operation === 'remove' &&
+                removed.deleted &&
+                restored.previous_version === removed.version
+            )
+        )
       )
         outcomes.add('call-removed-restored');
       if (

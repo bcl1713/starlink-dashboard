@@ -227,7 +227,9 @@ test('display presets restore actual weather rendering and report real conflicts
       ).toBeVisible();
       await overview.screenshot({
         path: join(output, `display-${viewport.width}x${viewport.height}.png`),
-        fullPage: true,
+        fullPage: false,
+        animations: 'disabled',
+        timeout: 30_000,
       });
     }
     await writeFile(

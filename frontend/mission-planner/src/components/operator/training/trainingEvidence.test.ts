@@ -760,3 +760,36 @@ it('never reuses checked evidence whose source reports unavailable or stale', as
     isCurrentTrainingEvidence({ ...checked, fresh: false }, 'private', 9, 100)
   ).toBe(false);
 });
+
+it('retains a removed/restored call milestone after a later correction, using its complete immutable pair', () => {
+  const initial = callRecord('restored-call', 'completed');
+  const removed = {
+    ...callRecord('restored-call', 'completed', 2),
+    operation: 'remove' as const,
+    deleted: true,
+  };
+  const restored = {
+    ...callRecord('restored-call', 'completed', 3),
+    operation: 'restore' as const,
+    deleted: false,
+  };
+  const corrected = {
+    ...callRecord('restored-call', 'completed', 4),
+    operation: 'update' as const,
+  };
+  const history = [initial, removed, restored, corrected];
+  expect(
+    collectRecordEvidence(authoritative([corrected], history)).outcomes
+  ).toContain('call-removed-restored');
+  expect(
+    collectRecordEvidence(
+      authoritative([corrected], [initial, restored, corrected])
+    ).outcomes
+  ).not.toContain('call-removed-restored');
+  expect(
+    collectRecordEvidence({
+      ...authoritative([corrected], history),
+      historyComplete: false,
+    }).outcomes
+  ).not.toContain('call-removed-restored');
+});
