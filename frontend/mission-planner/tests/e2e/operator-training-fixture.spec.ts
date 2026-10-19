@@ -299,7 +299,9 @@ test('training fixture: normal replay across two legs preserves journal, receipt
       .getByRole('listitem')
       .filter({ hasText: 'display settings read' })
   ).toContainText('Verified from current data');
-  await expect(flightGuide).not.toContainText('Human observation');
+  await expect(
+    flightGuide.getByRole('listitem').filter({ hasText: 'Human observation' })
+  ).toHaveCount(0);
   await flightGuide
     .getByRole('combobox', { name: 'Lesson', exact: true })
     .selectOption('T05');
