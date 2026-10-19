@@ -146,6 +146,11 @@ def test_custom_assignment_archive_preserves_history(service, record_data):
             ),
         ),
     )
+    catalog = catalog_store.read()
+    catalog.services[-1].name = "Renamed mission service"
+    catalog.services[-1].enabled = False
+    catalog.transports[-1].archived = True
+    catalog_store.update(catalog)
     changed = first.payload.model_dump(mode="json")
     changed["services"][0]["applied"] = {
         "transport": "Starshield",
@@ -159,6 +164,7 @@ def test_custom_assignment_archive_preserves_history(service, record_data):
         SavedRecord.model_validate_json(line)
         for line in files["operations/audit.jsonl"].splitlines()
     ]
+    assert revisions[0].payload.services[0].service == "Mission Data"
     assert revisions[0].payload.services[0].applied.transport == "Terrestrial"
     assert revisions[1].payload.services[0].applied.transport_id == "Starshield"
     assert (
