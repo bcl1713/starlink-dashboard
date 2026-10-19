@@ -1,0 +1,210 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner
+
+ ❯ src/components/operator/workspace/WorkspaceEditor.test.tsx (10 tests | 1 failed) 588ms
+   × keeps native form submission outside the scrolling editor body 27ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/operator/workspace/WorkspaceEditor.test.tsx > keeps native form submission outside the scrolling editor body
+AssertionError: expected <div class="ws-editor-body">…(3)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="ws-editor-body"
+>
+  <div
+    class="ws-draft-context"
+  >
+    <label>
+      Draft scope
+      <select
+        class="ws-field"
+      >
+        <option
+          value="mission"
+        >
+          Mission
+        </option>
+        <option
+          value="preflight"
+        >
+          Preflight
+        </option>
+        <option
+          value="leg"
+        >
+          Leg
+        </option>
+        <option
+          value="between_legs"
+        >
+          Between legs
+        </option>
+        <option
+          value="postflight"
+        >
+          Postflight
+        </option>
+      </select>
+    </label>
+  </div>
+  <form
+    class="min-w-0 space-y-4 rounded-lg border bg-card p-4"
+  >
+    <h2
+      class="text-lg font-semibold"
+    >
+      New journal entry
+    </h2>
+    <fieldset
+      class="min-w-0 space-y-4 disabled:opacity-70"
+    >
+      <label
+        class="block"
+      >
+        Entry type
+        <select
+          class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option
+            value="note"
+          >
+            Note
+          </option>
+          <option
+            value="call_observation"
+          >
+            Call observation
+          </option>
+        </select>
+      </label>
+      <label
+        class="block"
+      >
+        Title
+        <input
+          class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2"
+          maxlength="200"
+          name="title"
+          required=""
+          value="Original"
+        />
+      </label>
+      <label
+        class="block"
+      >
+        Note
+        <textarea
+          class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2"
+          maxlength="8000"
+          rows="5"
+        >
+          Retain me
+        </textarea>
+      </label>
+      <label
+        class="block"
+      >
+        Time precision
+        <select
+          class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option
+            value="unknown"
+          >
+            Unknown
+          </option>
+          <option
+            value="approximate"
+          >
+            Approximate
+          </option>
+          <option
+            value="exact"
+          >
+            Exact
+          </option>
+        </select>
+      </label>
+      <p
+        class="text-sm text-muted-foreground"
+      >
+        All times are UTC. Enter YYYY-MM-DDTHH:mm:ss.ssssssZ; leave unknown times blank.
+      </p>
+      <div
+        class="grid min-w-0 gap-4 sm:grid-cols-2"
+      >
+        <label>
+          Occurred at (UTC)
+          <input
+            class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2"
+            pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z"
+            placeholder="2026-10-17T12:00:00Z"
+            required=""
+            type="text"
+            value="2026-10-17T10:11:12.123456Z"
+          />
+        </label>
+        <label>
+          End state
+          <select
+            class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2"
+          >
+            <option
+              value="unknown"
+            >
+              Unknown
+            </option>
+            <option
+              value="instant"
+            >
+              Instant
+            </option>
+            <option
+              value="ongoing"
+            >
+              Ongoing
+            </option>
+            <option
+              value="known"
+            >
+              Known
+            </option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+    <button
+      class="min-h-11 rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+      type="submit"
+    >
+      Save entry
+    </button>
+  </form>
+  <button
+    class="ws-button ws-destructive"
+  >
+    Discard draft
+  </button>
+</div>
+
+ ❯ src/components/operator/workspace/WorkspaceEditor.test.tsx:263:43
+    261|     name: 'Save entry',
+    262|   })) as HTMLButtonElement;
+    263|   expect(save.closest('.ws-editor-body')).toBeNull();
+       |                                           ^
+    264|   expect(save.closest('.ws-editor-footer')).not.toBeNull();
+    265|   expect(save.form).toBeInstanceOf(HTMLFormElement);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  07:07:00
+   Duration  1.73s (transform 290ms, setup 0ms, import 542ms, tests 588ms, environment 502ms)
+

@@ -1,0 +1,32 @@
+{
+  "candidateSha": "9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+  "project": "starlink-operator-footer-376",
+  "checksPassed": false,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+      "id": "sha256:17ae7f057bb64b83d058f730314775e72d309b7462e00089291750875a7e336d",
+      "revision": "9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+    },
+    "frontend": {
+      "tag": "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+      "id": "sha256:5ed2da697aeb1ccd646939503ed196395c0e612dd3ffe623469e073182deb0f3",
+      "revision": "9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+    }
+  },
+  "sourceArchiveSha256": "31330ff885734491d9ff9bcba6ad647910fd0d2fa1bf2c034d1eb7745b33a46f",
+  "error": "Command failed (1): /tmp/issue-376-footer-browser-r1/command-019.log",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

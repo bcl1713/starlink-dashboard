@@ -1,0 +1,48 @@
+{
+  "pid": 3042088,
+  "pgid": 3042062,
+  "project": "starlink-operator-canonical-376",
+  "composeFile": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/tools/acceptance/operator-journal/compose.yml",
+  "commands": [
+    {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "30m",
+        "uv",
+        "run",
+        "--offline",
+        "--python",
+        "3.11",
+        "--with-requirements",
+        "backend/starlink-location/requirements-dev.txt",
+        "--with-requirements",
+        "backend/starlink-location/requirements-gfs.txt",
+        "python",
+        "tools/verify",
+        "backend"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 1820,
+      "started": 1792393203.156754,
+      "pid": 3042090,
+      "pgid": 3042090,
+      "log": "/tmp/issue-376-canonical-backend-r1/command-001.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393898.4965124
+    }
+  ],
+  "volumes": [],
+  "containers": [],
+  "images": [],
+  "temporaryPaths": [
+    "/tmp/issue-376-canonical-backend-r1/pytest"
+  ],
+  "dockerHost": "unix:///run/user/1002/docker.sock",
+  "dockerContext": null,
+  "fixture": "Canonical repository verification; no Docker runtime",
+  "evidence": "/tmp/issue-376-canonical-backend-r1",
+  "candidateSha": "88f3e46f9f77b6a5e20be64c1f4ed9ab2d76d0d8"
+}

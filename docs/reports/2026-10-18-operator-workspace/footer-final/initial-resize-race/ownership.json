@@ -1,0 +1,680 @@
+{
+  "pid": 3101959,
+  "pgid": 3101936,
+  "project": "starlink-operator-footer-376",
+  "composeFile": "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/compose.yml",
+  "commands": [
+    {
+      "command": [
+        "docker",
+        "container",
+        "ls",
+        "-q",
+        "-a",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-footer-376"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.5200117,
+      "pid": 3101972,
+      "pgid": 3101972,
+      "log": "/tmp/issue-376-footer-browser-r1/command-001.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.535954
+    },
+    {
+      "command": [
+        "docker",
+        "container",
+        "ls",
+        "-q",
+        "-a",
+        "--filter",
+        "name=^starlink-operator-footer-376[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.536175,
+      "pid": 3101986,
+      "pgid": 3101986,
+      "log": "/tmp/issue-376-footer-browser-r1/command-002.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.5521986
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-footer-376"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.5525262,
+      "pid": 3102004,
+      "pgid": 3102004,
+      "log": "/tmp/issue-376-footer-browser-r1/command-003.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.5685775
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "name=^starlink-operator-footer-376[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.568819,
+      "pid": 3102022,
+      "pgid": 3102022,
+      "log": "/tmp/issue-376-footer-browser-r1/command-004.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.5847418
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-footer-376"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.5849679,
+      "pid": 3102038,
+      "pgid": 3102038,
+      "log": "/tmp/issue-376-footer-browser-r1/command-005.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.6008954
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "name=^starlink-operator-footer-376[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.6011343,
+      "pid": 3102052,
+      "pgid": 3102052,
+      "log": "/tmp/issue-376-footer-browser-r1/command-006.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.617177
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=starlink-operator-footer-376-backend:*"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.61744,
+      "pid": 3102068,
+      "pgid": 3102068,
+      "log": "/tmp/issue-376-footer-browser-r1/command-007.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.6334312
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=starlink-operator-footer-376-frontend:*"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393712.6337097,
+      "pid": 3102082,
+      "pgid": 3102082,
+      "log": "/tmp/issue-376-footer-browser-r1/command-008.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393712.649735
+    },
+    {
+      "command": [
+        "git",
+        "archive",
+        "--format=tar",
+        "--output=/tmp/issue-376-footer-browser-r1/source.tar",
+        "9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 60,
+      "started": 1792393712.6504188,
+      "pid": 3102095,
+      "pgid": 3102095,
+      "log": "/tmp/issue-376-footer-browser-r1/command-009.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393713.1655536
+    },
+    {
+      "command": [
+        "docker",
+        "build",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/backend/starlink-location/Dockerfile",
+        "--build-arg",
+        "ACCEPTANCE_CANDIDATE_SHA=9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+        "-t",
+        "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+        "/tmp/issue-376-footer-browser-r1/source"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 2700,
+      "started": 1792393714.1894467,
+      "pid": 3102321,
+      "pgid": 3102321,
+      "log": "/tmp/issue-376-footer-browser-r1/command-010.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393721.8185701
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393721.8188853,
+      "pid": 3103367,
+      "pgid": 3103367,
+      "log": "/tmp/issue-376-footer-browser-r1/command-011.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393721.883181
+    },
+    {
+      "command": [
+        "docker",
+        "build",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/frontend/mission-planner/Dockerfile",
+        "--build-arg",
+        "ACCEPTANCE_CANDIDATE_SHA=9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+        "-t",
+        "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+        "/tmp/issue-376-footer-browser-r1/source/frontend/mission-planner"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 2700,
+      "started": 1792393721.8839517,
+      "pid": 3103388,
+      "pgid": 3103388,
+      "log": "/tmp/issue-376-footer-browser-r1/command-012.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393799.143788
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393799.1443489,
+      "pid": 3113636,
+      "pgid": 3113636,
+      "log": "/tmp/issue-376-footer-browser-r1/command-013.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393799.2093008
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-footer-376",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/compose.yml",
+        "up",
+        "-d",
+        "--no-build",
+        "--wait",
+        "--wait-timeout",
+        "180"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 210,
+      "started": 1792393799.210217,
+      "pid": 3113650,
+      "pgid": 3113650,
+      "log": "/tmp/issue-376-footer-browser-r1/command-014.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393805.6384199
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-footer-376",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/compose.yml",
+        "ps",
+        "-q",
+        "mission-planner"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 15,
+      "started": 1792393805.6390193,
+      "pid": 3114410,
+      "pgid": 3114410,
+      "log": "/tmp/issue-376-footer-browser-r1/command-015.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393805.7038684
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "b73d5679b3c1119cddcfaa3305d107c66bcddafcbb9be9f747219d082a6e1b08",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 15,
+      "started": 1792393805.7044344,
+      "pid": 3114459,
+      "pgid": 3114459,
+      "log": "/tmp/issue-376-footer-browser-r1/command-016.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393805.721114
+    },
+    {
+      "command": [
+        "python3",
+        "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/relay.py",
+        "--port",
+        "35729",
+        "--",
+        "docker",
+        "exec",
+        "-i",
+        "b73d5679b3c1119cddcfaa3305d107c66bcddafcbb9be9f747219d082a6e1b08",
+        "nc",
+        "-w",
+        "120",
+        "127.0.0.1",
+        "80"
+      ],
+      "role": "loopback-to-production-nginx",
+      "pid": 3114473,
+      "pgid": 3114473,
+      "log": "/tmp/issue-376-footer-browser-r1/relay.log",
+      "reaped": true,
+      "returncode": 0,
+      "groupRemaining": false
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-footer-376",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/compose.yml",
+        "exec",
+        "-T",
+        "--user",
+        "appuser",
+        "starlink-location",
+        "python",
+        "-c",
+        "\nimport json,sys\nfrom pathlib import Path\nfrom uuid import NAMESPACE_URL,uuid5\nfrom app.mission import storage\nfrom app.mission.models import Mission\nfrom app.operator.models import Actor,CreateRecord\nfrom app.operator.references import MissionReferences\nfrom app.operator.service import OperatorService\nfrom app.operator.settings import OperatorSettings\nfrom app.operator.store import OperatorStore\nfrom scenario import ScenarioClock,RUN_ID\nstorage.MISSIONS_DIR=Path('/app/data/missions')\nsettings=OperatorSettings(enabled=True,root=Path('/app/data/operator'),source_mode='simulation',simulation_run_id=RUN_ID)\nclock=ScenarioClock()\nstore=OperatorStore.open(settings,initialize=False,clock=clock)\ntry:\n service=OperatorService(store,clock=clock,actor=Actor(backend='synthetic workspace prerequisite'),references=MissionReferences())\n epoch=str(store.health().api_epoch)\n for fixture in json.loads(sys.argv[1]):\n  storage.save_mission_v2(Mission.model_validate(fixture['mission']))\n  for i,body in enumerate(fixture['planned_commands']):\n   service.execute(CreateRecord.model_validate(body),key=str(uuid5(NAMESPACE_URL,fixture['namespace']+'/call/'+str(i))),epoch=epoch)\nfinally:\n store.close()\n",
+        "[{\"synthetic\": true, \"seed\": \"normal\", \"namespace\": \"synthetic-operator-workspace-v1/normal\", \"started_at\": \"2026-10-17T16:00:00+00:00\", \"mission\": {\"id\": \"e83b5788-e9cb-5f6a-8654-4499956322b8\", \"name\": \"Synthetic workspace normal\", \"legs\": [{\"id\": \"705349bd-7687-5ee5-83c2-b037187bd02d\", \"name\": \"Synthetic leg 1\", \"route_id\": \"synthetic-route\", \"transports\": {\"initial_x_satellite_id\": \"X-1\"}}, {\"id\": \"5c9a462d-6117-597f-9356-612f3f427f92\", \"name\": \"Synthetic leg 2\", \"route_id\": \"synthetic-route\", \"transports\": {\"initial_x_satellite_id\": \"X-1\"}}]}, \"planned_commands\": [{\"schema_version\": 1, \"record_type\": \"call\", \"mission_id\": \"e83b5788-e9cb-5f6a-8654-4499956322b8\", \"leg_id\": \"705349bd-7687-5ee5-83c2-b037187bd02d\", \"scope\": \"leg\", \"time\": {\"occurred_at\": null, \"ended_at\": null, \"precision\": \"unknown\", \"end_state\": \"unknown\", \"planned_start_at\": \"2026-10-17T16:20:00+00:00\", \"planned_end_at\": \"2026-10-17T16:35:00+00:00\"}, \"payload\": {\"schema_version\": 1, \"entry_type\": \"call\", \"title\": \"Synthetic customer 1 briefing\", \"party\": \"Synthetic customer 1\", \"note\": \"Fictional planned prerequisite; no connection reported.\", \"previous_leg_id\": null, \"next_leg_id\": null, \"status\": \"scheduled\", \"conference_id\": null, \"coordinator\": \"Synthetic coordinator\", \"communications_kind\": \"voice\", \"prep_lead_minutes\": 10}}], \"raw_samples\": [{\"offset_seconds\": 0, \"latitude\": 0, \"longitude\": -10, \"speed_knots\": 600}, {\"offset_seconds\": 600, \"latitude\": 0, \"longitude\": 0, \"speed_knots\": 600}, {\"offset_seconds\": 2400, \"latitude\": 0, \"longitude\": 10, \"speed_knots\": 600}]}, {\"synthetic\": true, \"seed\": \"busy\", \"namespace\": \"synthetic-operator-workspace-v1/busy\", \"started_at\": \"2026-10-17T16:00:00+00:00\", \"mission\": {\"id\": \"4063022a-14a6-5c70-94b0-1d790a01311b\", \"name\": \"Synthetic workspace busy\", \"legs\": [{\"id\": \"257b7da5-6013-5532-bf2b-cc613e75e2e2\", \"name\": \"Synthetic leg 1\", \"route_id\": \"synthetic-route\", \"transports\": {\"initial_x_satellite_id\": \"X-1\"}}, {\"id\": \"4a05e4ce-36b7-5e95-88ac-121236fe2eac\", \"name\": \"Synthetic leg 2\", \"route_id\": \"synthetic-route\", \"transports\": {\"initial_x_satellite_id\": \"X-1\"}}]}, \"planned_commands\": [{\"schema_version\": 1, \"record_type\": \"call\", \"mission_id\": \"4063022a-14a6-5c70-94b0-1d790a01311b\", \"leg_id\": \"257b7da5-6013-5532-bf2b-cc613e75e2e2\", \"scope\": \"leg\", \"time\": {\"occurred_at\": null, \"ended_at\": null, \"precision\": \"unknown\", \"end_state\": \"unknown\", \"planned_start_at\": \"2026-10-17T16:20:00+00:00\", \"planned_end_at\": \"2026-10-17T16:35:00+00:00\"}, \"payload\": {\"schema_version\": 1, \"entry_type\": \"call\", \"title\": \"Synthetic customer 1 briefing\", \"party\": \"Synthetic customer 1\", \"note\": \"Fictional planned prerequisite; no connection reported.\", \"previous_leg_id\": null, \"next_leg_id\": null, \"status\": \"scheduled\", \"conference_id\": null, \"coordinator\": \"Synthetic coordinator\", \"communications_kind\": \"voice\", \"prep_lead_minutes\": 10}}, {\"schema_version\": 1, \"record_type\": \"call\", \"mission_id\": \"4063022a-14a6-5c70-94b0-1d790a01311b\", \"leg_id\": \"257b7da5-6013-5532-bf2b-cc613e75e2e2\", \"scope\": \"leg\", \"time\": {\"occurred_at\": null, \"ended_at\": null, \"precision\": \"unknown\", \"end_state\": \"unknown\", \"planned_start_at\": \"2026-10-17T16:23:00+00:00\", \"planned_end_at\": \"2026-10-17T16:38:00+00:00\"}, \"payload\": {\"schema_version\": 1, \"entry_type\": \"call\", \"title\": \"Synthetic customer 2 briefing\", \"party\": \"Synthetic customer 2\", \"note\": \"Fictional planned prerequisite; no connection reported.\", \"previous_leg_id\": null, \"next_leg_id\": null, \"status\": \"scheduled\", \"conference_id\": null, \"coordinator\": \"Synthetic coordinator\", \"communications_kind\": \"voice\", \"prep_lead_minutes\": 10}}, {\"schema_version\": 1, \"record_type\": \"call\", \"mission_id\": \"4063022a-14a6-5c70-94b0-1d790a01311b\", \"leg_id\": \"257b7da5-6013-5532-bf2b-cc613e75e2e2\", \"scope\": \"leg\", \"time\": {\"occurred_at\": null, \"ended_at\": null, \"precision\": \"unknown\", \"end_state\": \"unknown\", \"planned_start_at\": \"2026-10-17T16:26:00+00:00\", \"planned_end_at\": \"2026-10-17T16:41:00+00:00\"}, \"payload\": {\"schema_version\": 1, \"entry_type\": \"call\", \"title\": \"Synthetic customer 3 briefing\", \"party\": \"Synthetic customer 3\", \"note\": \"Fictional planned prerequisite; no connection reported.\", \"previous_leg_id\": null, \"next_leg_id\": null, \"status\": \"scheduled\", \"conference_id\": null, \"coordinator\": \"Synthetic coordinator\", \"communications_kind\": \"voice\", \"prep_lead_minutes\": 10}}, {\"schema_version\": 1, \"record_type\": \"call\", \"mission_id\": \"4063022a-14a6-5c70-94b0-1d790a01311b\", \"leg_id\": \"257b7da5-6013-5532-bf2b-cc613e75e2e2\", \"scope\": \"leg\", \"time\": {\"occurred_at\": null, \"ended_at\": null, \"precision\": \"unknown\", \"end_state\": \"unknown\", \"planned_start_at\": \"2026-10-17T16:29:00+00:00\", \"planned_end_at\": \"2026-10-17T16:44:00+00:00\"}, \"payload\": {\"schema_version\": 1, \"entry_type\": \"call\", \"title\": \"Synthetic customer 4 briefing\", \"party\": \"Synthetic customer 4\", \"note\": \"Fictional planned prerequisite; no connection reported.\", \"previous_leg_id\": null, \"next_leg_id\": null, \"status\": \"scheduled\", \"conference_id\": null, \"coordinator\": \"Synthetic coordinator\", \"communications_kind\": \"voice\", \"prep_lead_minutes\": 10}}, {\"schema_version\": 1, \"record_type\": \"call\", \"mission_id\": \"4063022a-14a6-5c70-94b0-1d790a01311b\", \"leg_id\": \"257b7da5-6013-5532-bf2b-cc613e75e2e2\", \"scope\": \"leg\", \"time\": {\"occurred_at\": null, \"ended_at\": null, \"precision\": \"unknown\", \"end_state\": \"unknown\", \"planned_start_at\": \"2026-10-17T16:32:00+00:00\", \"planned_end_at\": \"2026-10-17T16:47:00+00:00\"}, \"payload\": {\"schema_version\": 1, \"entry_type\": \"call\", \"title\": \"Synthetic customer 5 briefing\", \"party\": \"Synthetic customer 5\", \"note\": \"Fictional planned prerequisite; no connection reported.\", \"previous_leg_id\": null, \"next_leg_id\": null, \"status\": \"scheduled\", \"conference_id\": null, \"coordinator\": \"Synthetic coordinator\", \"communications_kind\": \"voice\", \"prep_lead_minutes\": 10}}], \"raw_samples\": [{\"offset_seconds\": 0, \"latitude\": 0, \"longitude\": -10, \"speed_knots\": 600}, {\"offset_seconds\": 600, \"latitude\": 0, \"longitude\": 0, \"speed_knots\": 600}, {\"offset_seconds\": 2400, \"latitude\": 0, \"longitude\": 10, \"speed_knots\": 600}]}]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 60,
+      "started": 1792393805.980465,
+      "pid": 3114523,
+      "pgid": 3114523,
+      "log": "/tmp/issue-376-footer-browser-r1/command-018.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393808.2230198
+    },
+    {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "10m",
+        "npx",
+        "--no-install",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.operator-workspace.config.ts",
+        "--grep",
+        "hidden workspace"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner",
+      "timeout": 620,
+      "started": 1792393808.2235026,
+      "pid": 3114910,
+      "pgid": 3114910,
+      "log": "/tmp/issue-376-footer-browser-r1/command-019.log",
+      "returncode": 1,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393893.6831534
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-footer-376",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/compose.yml",
+        "logs",
+        "--no-color"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393893.6835847,
+      "pid": 3126178,
+      "pgid": 3126178,
+      "log": "/tmp/issue-376-footer-browser-r1/command-020.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393893.7982728
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-footer-376",
+        "-f",
+        "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/compose.yml",
+        "down",
+        "--volumes",
+        "--remove-orphans"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 90,
+      "started": 1792393893.9002829,
+      "pid": 3126233,
+      "pgid": 3126233,
+      "log": "/tmp/issue-376-footer-browser-r1/command-021.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.5190668
+    },
+    {
+      "command": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-footer-376"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393896.5195417,
+      "pid": 3126592,
+      "pgid": 3126592,
+      "log": "/tmp/issue-376-footer-browser-r1/command-022.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.5359128
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-footer-376"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393896.536401,
+      "pid": 3126606,
+      "pgid": 3126606,
+      "log": "/tmp/issue-376-footer-browser-r1/command-023.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.5528061
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-footer-376"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393896.5533173,
+      "pid": 3126619,
+      "pgid": 3126619,
+      "log": "/tmp/issue-376-footer-browser-r1/command-024.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.5698752
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393896.5708442,
+      "pid": 3126633,
+      "pgid": 3126633,
+      "log": "/tmp/issue-376-footer-browser-r1/command-025.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.635491
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "rm",
+        "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 60,
+      "started": 1792393896.636044,
+      "pid": 3126652,
+      "pgid": 3126652,
+      "log": "/tmp/issue-376-footer-browser-r1/command-026.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.8510306
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 30,
+      "started": 1792393896.8515651,
+      "pid": 3126697,
+      "pgid": 3126697,
+      "log": "/tmp/issue-376-footer-browser-r1/command-027.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393896.8842113
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "rm",
+        "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation",
+      "timeout": 60,
+      "started": 1792393896.8847713,
+      "pid": 3126712,
+      "pgid": 3126712,
+      "log": "/tmp/issue-376-footer-browser-r1/command-028.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1792393897.0497177
+    }
+  ],
+  "volumes": [
+    "starlink-operator-footer-376_fixture-data",
+    "starlink-operator-footer-376_operator-data",
+    "starlink-operator-footer-376_route-data"
+  ],
+  "containers": [],
+  "images": [
+    "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+    "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+  ],
+  "temporaryPaths": [
+    "/tmp/issue-376-footer-browser-r1/source",
+    "/tmp/issue-376-footer-browser-r1/source.tar"
+  ],
+  "dockerHost": "unix:///run/user/1002/docker.sock",
+  "dockerContext": null,
+  "fixture": "synthetic-operator-demo-v1; simulation; 2026-10-17T16:00:00Z",
+  "evidence": "/tmp/issue-376-footer-browser-r1",
+  "reservation": {
+    "kind": "linux-abstract-socket",
+    "name": "operator-acceptance-c690de09c79044d3a7f072e06a9246af13bfd623f22513f4677edb1c40902fb8",
+    "released": true
+  },
+  "admitted": true,
+  "port": 35729,
+  "imageIdentity": {
+    "backend": {
+      "tag": "starlink-operator-footer-376-backend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+      "id": "sha256:17ae7f057bb64b83d058f730314775e72d309b7462e00089291750875a7e336d",
+      "revision": "9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+    },
+    "frontend": {
+      "tag": "starlink-operator-footer-376-frontend:9b07dbb48c6036c3c3c217dc46f88583eb682fdd",
+      "id": "sha256:5ed2da697aeb1ccd646939503ed196395c0e612dd3ffe623469e073182deb0f3",
+      "revision": "9b07dbb48c6036c3c3c217dc46f88583eb682fdd"
+    }
+  },
+  "relay": {
+    "command": [
+      "python3",
+      "/tmp/issue-376-footer-browser-r1/source/tools/acceptance/operator-journal/relay.py",
+      "--port",
+      "35729",
+      "--",
+      "docker",
+      "exec",
+      "-i",
+      "b73d5679b3c1119cddcfaa3305d107c66bcddafcbb9be9f747219d082a6e1b08",
+      "nc",
+      "-w",
+      "120",
+      "127.0.0.1",
+      "80"
+    ],
+    "role": "loopback-to-production-nginx",
+    "pid": 3114473,
+    "pgid": 3114473,
+    "log": "/tmp/issue-376-footer-browser-r1/relay.log",
+    "reaped": true,
+    "returncode": 0,
+    "groupRemaining": false
+  },
+  "originTraversal": {
+    "origin": "http://127.0.0.1:35729",
+    "nginx": "nginx/1.31.7",
+    "transport": "docker-exec-byte-relay",
+    "container": "b73d5679b3c1119cddcfaa3305d107c66bcddafcbb9be9f747219d082a6e1b08"
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}
