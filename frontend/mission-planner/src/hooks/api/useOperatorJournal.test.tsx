@@ -28,7 +28,7 @@ function mount(options: Parameters<typeof useOperatorJournal>[2] = {}) {
       ),
     }
   );
-  return { ...hook, reads };
+  return { ...hook, reads, client };
 }
 it.each([
   new Error('lost acknowledgment'),
@@ -343,4 +343,112 @@ it('observes both frozen attempts of a genuinely uncertain send and its exact re
   expect(save).toHaveBeenCalledTimes(2);
   expect(observe).toHaveBeenCalledTimes(2);
   expect(observe.mock.calls[1][0]).toEqual(observe.mock.calls[0][0]);
+});
+
+it('measures acknowledgment and current-read latency independently of slow list/history refreshes', async () => {
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const started: { at: number; receipt?: number } = { at: 0 };
+  vi.spyOn(api, 'saveOperatorCommand').mockImplementation(async () => {
+    await delay(50);
+    return {
+      schema_version: 1,
+      command_id: 'timing-receipt',
+      saved_records: [record],
+    };
+  });
+  vi.spyOn(api, 'readOperatorRecord').mockImplementation(async () => {
+    await delay(50);
+    return page().items[0];
+  });
+  const { result } = mount({
+    readRecords: false,
+    onReceipt: () => {
+      started.receipt = performance.now();
+    },
+  });
+  await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+  vi.spyOn(QueryClient.prototype, 'invalidateQueries').mockImplementation(
+    async (filters) => {
+      if (
+        ['operator-records', 'operator-history'].includes(
+          String(filters?.queryKey?.[0])
+        )
+      )
+        await delay(200);
+    }
+  );
+  started.at = performance.now();
+  await act(async () => {
+    await result.current.save({ operation: 'create', body: input });
+  });
+  const elapsed = performance.now() - started.at;
+  console.log(
+    JSON.stringify({
+      scenario:
+        'controlled 50ms POST + 50ms current GET + 200ms list/history refresh each',
+      receipt_ms: Math.round(started.receipt! - started.at),
+      current_return_ms: Math.round(elapsed),
+    })
+  );
+  expect(result.current.saved).toBe(true);
+  expect(elapsed).toBeLessThan(275);
+});
+
+it('publishes the current authoritative row rather than an older replay receipt', async () => {
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'older-receipt',
+    saved_records: [record],
+  });
+  const latest = page([
+    {
+      ...record,
+      version: 2,
+      payload: { ...record.payload, title: 'Later correction' },
+    },
+  ]).items[0];
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(latest);
+  const onCurrent = vi.fn();
+  const { result } = mount({ readRecords: false, onCurrent });
+  await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+  await act(async () => {
+    await result.current.save({ operation: 'create', body: input });
+  });
+  expect(onCurrent).toHaveBeenCalledTimes(1);
+  expect(onCurrent.mock.calls[0][1]).toEqual(latest);
+});
+
+it('does not publish a late current row into a replacement store', async () => {
+  let resolveRead!: (value: ReturnType<typeof page>['items'][number]) => void;
+  const read = vi.spyOn(api, 'readOperatorRecord').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveRead = resolve;
+      })
+  );
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [record],
+  });
+  const onCurrent = vi.fn();
+  const { result, client } = mount({ readRecords: false, onCurrent });
+  await waitFor(() => expect(result.current.health.data?.ready).toBe(true));
+  let submission!: ReturnType<typeof result.current.save>;
+  await act(async () => {
+    submission = result.current.save({ operation: 'create', body: input });
+  });
+  await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+  await act(async () => {
+    client.setQueryData(['operator-health'], {
+      ...health,
+      api_epoch: 'replacement',
+    });
+  });
+  await act(async () => {
+    resolveRead(page().items[0]);
+    await submission;
+  });
+  expect(onCurrent).not.toHaveBeenCalled();
 });

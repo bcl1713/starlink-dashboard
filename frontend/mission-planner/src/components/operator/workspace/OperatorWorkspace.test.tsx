@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -317,4 +318,115 @@ it('renders newly accepted and older ordinary-Activate conference definitions wi
   ).toBeTruthy();
   expect(screen.queryByText(/No conferences recorded/)).toBeNull();
   expect(screen.queryByRole('button', { name: /Reuse definition/ })).toBeNull();
+});
+
+it.each(['now', 'communications'])(
+  'shows prominent active call and bridge sections in %s',
+  async (view) => {
+    vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+    mount(`/operator?workspace=1&mission_id=mission-a&view=${view}`, true);
+    expect(
+      await screen.findByRole('heading', { name: 'Active Calls' })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('heading', { name: 'Active Bridges' })
+    ).toBeTruthy();
+    if (view === 'now') {
+      const headings = screen
+        .getAllByRole('heading')
+        .map((heading) => heading.textContent);
+      expect(headings.indexOf('Active Bridges')).toBeLessThan(
+        headings.indexOf('Mission activity')
+      );
+    }
+  }
+);
+
+it('shows pending immediately and the authoritative accepted conference while list refresh is still waiting', async () => {
+  missionState.mission = {
+    id: 'mission-a',
+    name: 'Fictional mission',
+    legs: [],
+  };
+  let acknowledged = false;
+  let accept!: (value: {
+    schema_version: 1;
+    command_id: string;
+    saved_records: (typeof accepted)[];
+  }) => void;
+  const accepted = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    payload: { ...conferenceDraft('mission-a').payload, title: 'FAST BRIDGE' },
+  };
+  const releaseReads: (() => void)[] = [];
+  const reads = vi
+    .spyOn(api, 'readOperatorRecords')
+    .mockImplementation(async () => {
+      if (acknowledged)
+        await new Promise<void>((resolve) => releaseReads.push(resolve));
+      return page([]);
+    });
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
+    page([accepted]).items[0]
+  );
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        accept = resolve;
+      })
+  );
+  const { client } = mount(
+    '/operator?workspace=1&mission_id=mission-a&view=communications',
+    true
+  );
+  const createButton = (
+    await screen.findAllByRole('button', { name: 'Create conference' })
+  )[0] as HTMLButtonElement;
+  await waitFor(() => expect(createButton.disabled).toBe(false));
+  fireEvent.click(createButton);
+  fireEvent.change(await screen.findByLabelText('Conference name (optional)'), {
+    target: { value: 'FAST BRIDGE' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save conference' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  expect(
+    screen.getAllByText(/saving.*FAST BRIDGE|FAST BRIDGE.*saving/).length
+  ).toBeGreaterThan(0);
+  expect(screen.queryByRole('heading', { name: 'FAST BRIDGE' })).toBeNull();
+  const started = performance.now();
+  try {
+    await act(async () => {
+      acknowledged = true;
+      accept({
+        schema_version: 1,
+        command_id: 'fast-receipt',
+        saved_records: [accepted],
+      });
+    });
+    await screen.findByRole('heading', { name: 'FAST BRIDGE' });
+    expect(performance.now() - started).toBeLessThan(300);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(releaseReads.length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: 'Establish' }) as HTMLButtonElement)
+          .disabled
+      ).toBe(false)
+    );
+    const snapshot = client
+      .getQueryCache()
+      .findAll({ queryKey: ['operator-records', 'mission-a'] })
+      .find(
+        (query) =>
+          query.queryKey[3] === 'workspace-all' &&
+          query.state.data !== undefined
+      )?.state.data;
+    expect(snapshot).toMatchObject({ pages: [{ items: [] }] });
+    expect(reads).toHaveBeenCalled();
+  } finally {
+    await act(async () => {
+      releaseReads.forEach((resolve) => resolve());
+    });
+  }
 });

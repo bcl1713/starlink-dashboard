@@ -245,6 +245,7 @@ export interface RecordPage {
 }
 export type HistoryPage = RecordPage;
 export interface RecordFilters {
+  limit?: number;
   mission_id: string;
   scope?: Scope;
   leg_id?: string;

@@ -15,6 +15,7 @@ export function ConferenceCard({
   onEdit,
   onJoin,
   compactActions = false,
+  prominentActions = false,
   currentAssociation,
   activityAssociationLabel,
   onHistory,
@@ -27,6 +28,7 @@ export function ConferenceCard({
   onAction: (action: ConferenceAction) => void;
   onEdit: () => void;
   compactActions?: boolean;
+  prominentActions?: boolean;
   currentAssociation?: CallAssociation | null;
   activityAssociationLabel?: string;
   onJoin: () => void;
@@ -151,6 +153,15 @@ export function ConferenceCard({
                 Restore conference connection
               </button>
             )}
+            {prominentActions && !previousSession && p.status !== 'closed' && (
+              <button
+                className={button}
+                disabled={disabled}
+                onClick={() => onAction('close')}
+              >
+                Close conference
+              </button>
+            )}
             <details open={!compactActions}>
               <summary className="min-h-11 cursor-pointer py-2">
                 Other bridge actions
@@ -167,15 +178,17 @@ export function ConferenceCard({
                       Interrupt conference
                     </button>
                   )}
-                {!previousSession && p.status !== 'closed' && (
-                  <button
-                    className={button}
-                    disabled={disabled}
-                    onClick={() => onAction('close')}
-                  >
-                    Close conference
-                  </button>
-                )}
+                {!prominentActions &&
+                  !previousSession &&
+                  p.status !== 'closed' && (
+                    <button
+                      className={button}
+                      disabled={disabled}
+                      onClick={() => onAction('close')}
+                    >
+                      Close conference
+                    </button>
+                  )}
                 {!compactActions && (
                   <button
                     className={button}

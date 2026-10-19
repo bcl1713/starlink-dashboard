@@ -1,3 +1,4 @@
+import { operatorTiming } from '@/lib/operatorTiming';
 import { createClientId } from '@/lib/clientId';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -54,6 +55,7 @@ export function useOperatorJournal(
     healthPolling?: boolean;
     onReceipt?: (request: Pending, receipt: CommandReceipt) => void;
     onAttempt?: (request: Pending) => void;
+    onCurrent?: (request: Pending, current: ReadRecord) => void;
   } = {}
 ) {
   const client = useQueryClient();
@@ -176,12 +178,17 @@ export function useOperatorJournal(
     );
   }
   async function refresh() {
+    const started = performance.now();
     // Summary reads must never delay journal receipt acknowledgment or recovery.
     void client.invalidateQueries({ queryKey: ['operator-brief', missionId] });
-    await client.invalidateQueries({
-      queryKey: ['operator-records', missionId],
-    });
-    await client.invalidateQueries({ queryKey: ['operator-history'] });
+    await Promise.all([
+      client.invalidateQueries({ queryKey: ['operator-records', missionId] }),
+      client.invalidateQueries({ queryKey: ['operator-history'] }),
+      client.invalidateQueries({
+        queryKey: ['operator-events', missionId, session.current],
+      }),
+    ]);
+    operatorTiming('refresh', started);
   }
   async function execute(
     request: Pending
@@ -201,6 +208,7 @@ export function useOperatorJournal(
           // Read-only observers must not change the outcome of a journal write.
         }
       }
+      const httpStarted = performance.now();
       const receipt = health.data?.mission_journal
         ? await saveOperatorCommand(
             request.command,
@@ -213,6 +221,7 @@ export function useOperatorJournal(
             request.key,
             request.epoch
           );
+      operatorTiming('http', httpStarted);
       setSaved(true);
       // The owner may be on a different route/mission by the time this arrives.
       options.onReceipt?.(request, receipt);
@@ -227,16 +236,25 @@ export function useOperatorJournal(
         }
       }
       if (!stillSameStore(request)) return;
-      await refresh();
+      // Read the authoritative row before broad list/history refreshes. These
+      // projections must not keep an accepted save or its current row waiting.
       // A replay receipt can predate later corrections. Reopen the current row.
       let current: SavedRecord | undefined;
+      const readStarted = performance.now();
       try {
-        current = (await readOperatorRecord(receipt.saved_records[0].record_id))
-          .record;
+        const read = await readOperatorRecord(
+          receipt.saved_records[0].record_id
+        );
+        if (stillSameStore(request)) {
+          current = read.record;
+          options.onCurrent?.(request, read);
+        }
       } catch {
         /* Saved receipt is still valid; current reads remain separately unavailable. */
       }
+      operatorTiming('current', readStarted);
       if (!stillSameStore(request)) return;
+      void refresh().catch(() => undefined);
       setLatest(null);
       reconciliationTarget.current = {
         recordId: current?.record_id ?? receipt.saved_records[0].record_id,
@@ -293,10 +311,12 @@ export function useOperatorJournal(
       setSaving(true);
       setSaved(false);
       setError(null);
+      const clockStarted = performance.now();
       try {
         const current = await readOperatorRecords({
           mission_id: missionId,
           record_type: recordType,
+          limit: 1,
         });
         if (frozen.operation === 'create' || frozen.operation === 'update') {
           if (context.captureCurrentTime)
@@ -321,6 +341,7 @@ export function useOperatorJournal(
         setError(operatorFailure(caught));
         return undefined;
       } finally {
+        operatorTiming('clock', clockStarted);
         inFlight.current = false;
         setSaving(false);
       }

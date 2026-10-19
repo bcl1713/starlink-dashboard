@@ -1,6 +1,7 @@
 """Gated public Operator API on the existing restricted LAN boundary."""
 
 import sqlite3
+from time import perf_counter
 from typing import Literal
 from uuid import uuid4
 
@@ -84,8 +85,11 @@ class OperatorRoute(APIRoute):
         original = super().get_route_handler()
 
         async def handle(request):
+            started = perf_counter()
+            gate_finished = started
             try:
                 await run_in_threadpool(gate, request)
+                gate_finished = perf_counter()
                 if request.method in ("POST", "PUT"):
                     chunks, size = [], 0
                     async for chunk in request.stream():
@@ -117,6 +121,16 @@ class OperatorRoute(APIRoute):
                 response = error_response(error)
             except (sqlite3.Error, OSError):
                 response = error_response(OperatorError("store_unavailable"))
+            response.headers["Server-Timing"] = ", ".join(
+                filter(
+                    None,
+                    [
+                        response.headers.get("Server-Timing"),
+                        f"operator_gate;dur={(gate_finished - started) * 1000:.3f}",
+                        f"operator_request;dur={(perf_counter() - started) * 1000:.3f}",
+                    ],
+                )
+            )
             response.headers["Cache-Control"] = "no-store"
             return response
 
@@ -137,7 +151,9 @@ def require_service(runtime):
 
 
 def mutate(request, command, key, epoch):
+    started = perf_counter()
     with runtime_for(request) as runtime:
+        admitted = perf_counter()
         result = require_service(runtime).execute_result(
             command,
             key=key,
@@ -159,7 +175,13 @@ def mutate(request, command, key, epoch):
         return JSONResponse(
             result.receipt.canonical_response,
             status_code=result.receipt.response_status,
-            headers={"Idempotency-Replayed": str(result.replayed).lower()},
+            headers={
+                "Idempotency-Replayed": str(result.replayed).lower(),
+                "Server-Timing": (
+                    f"operator_binding;dur={(admitted - started) * 1000:.3f}, "
+                    f"operator_command;dur={(perf_counter() - admitted) * 1000:.3f}"
+                ),
+            },
         )
 
 

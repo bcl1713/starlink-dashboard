@@ -13,6 +13,8 @@ const callUtc = (value: string | null) =>
 const button = 'min-h-11 rounded-md border px-3 disabled:opacity-50';
 export function CallList({
   items,
+  activeOnly = false,
+  archivedOnly = false,
   disabled,
   incomplete,
   asOf,
@@ -27,6 +29,8 @@ export function CallList({
 }: {
   isSessionCurrent?: (record: SavedRecord) => boolean;
   items: ReadRecord[];
+  activeOnly?: boolean;
+  archivedOnly?: boolean;
   disabled: boolean;
   incomplete: boolean;
   asOf?: string;
@@ -146,6 +150,7 @@ export function CallList({
                 {previousSession && bridgePayload?.status !== 'closed'
                   ? 'Previous activity report · not assumed available here · '
                   : ''}
+                {bridgePayload?.title ? `${bridgePayload.title} · ` : ''}
                 {bridgePayload
                   ? `${bridgePayload.status ?? 'unknown'} · ${bridgePayload.verified_at ? 'verification reported' : 'not verified'}`
                   : payload.conference_id
@@ -325,27 +330,35 @@ export function CallList({
           Call list incomplete. Load more calls to include remaining records.
         </p>
       )}
-      <h3 className="font-semibold">Active requirements</h3>
-      {!active.length && <p>No recorded active requirements.</p>}
-      <ul className="space-y-3">
-        {rows(active.filter((i) => !!i.record.time.planned_start_at))}
-      </ul>
-      {active.some((i) => !i.record.time.planned_start_at) && (
+      {!archivedOnly && (
         <>
-          <h4 className="font-medium">Unknown planned timing</h4>
+          {!activeOnly && (
+            <h3 className="font-semibold">Active requirements</h3>
+          )}
+          {!active.length && <p>No recorded active requirements.</p>}
           <ul className="space-y-3">
-            {rows(active.filter((i) => !i.record.time.planned_start_at))}
+            {rows(active.filter((i) => !!i.record.time.planned_start_at))}
           </ul>
+          {active.some((i) => !i.record.time.planned_start_at) && (
+            <>
+              <h4 className="font-medium">Unknown planned timing</h4>
+              <ul className="space-y-3">
+                {rows(active.filter((i) => !i.record.time.planned_start_at))}
+              </ul>
+            </>
+          )}
         </>
       )}
-      <details>
-        <summary className="min-h-11 cursor-pointer py-2">
-          Completed, canceled and removed calls
-        </summary>
-        <ul className="space-y-3">
-          {rows(ordered.filter((i) => !active.includes(i)))}
-        </ul>
-      </details>
+      {!activeOnly && (
+        <details>
+          <summary className="min-h-11 cursor-pointer py-2">
+            Completed, canceled and removed calls
+          </summary>
+          <ul className="space-y-3">
+            {rows(ordered.filter((i) => !active.includes(i)))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

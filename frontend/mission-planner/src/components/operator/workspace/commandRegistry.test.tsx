@@ -713,3 +713,87 @@ it('recovers a frozen receipt across replay changes in the same journal without 
     expect(workspace.tray[0].receipt?.command_id).toBe('recovered')
   );
 });
+
+it('retains multiple confirmed saves while list snapshots catch up without replacing their H or cursors', async () => {
+  const second = {
+    ...record,
+    record_id: 'record-b',
+    command_id: 'command-b',
+    journal_seq: 2,
+  };
+  vi.spyOn(api, 'saveOperatorCommand')
+    .mockResolvedValueOnce({
+      schema_version: 1,
+      command_id: 'command-a',
+      saved_records: [record],
+    })
+    .mockResolvedValueOnce({
+      schema_version: 1,
+      command_id: 'command-b',
+      saved_records: [second],
+    });
+  vi.mocked(api.readOperatorRecord).mockImplementation(
+    async (id) => page([id === second.record_id ? second : record]).items[0]
+  );
+  const { registry } = mount();
+  const firstDraft = registry.createDraft(target, input);
+  await submit(firstDraft.draftId);
+  const secondDraft = registry.createDraft(target, {
+    ...input,
+    payload: { ...input.payload, title: 'Second' },
+  });
+  await submit(secondDraft.draftId);
+  expect(
+    workspace.confirmedRecords.map((row) => row.read.record.record_id)
+  ).toEqual(['record-a', 'record-b']);
+  await act(async () =>
+    workspace.retireConfirmed(
+      JSON.stringify([
+        health.store_id,
+        health.api_epoch,
+        health.source_mode,
+        health.simulation_run_id,
+      ]),
+      [record]
+    )
+  );
+  expect(
+    workspace.confirmedRecords.map((row) => row.read.record.record_id)
+  ).toEqual(['record-b']);
+});
+
+it('reads the accepted current row before scheduling model-event refreshes', async () => {
+  let finishRead!: (value: ReturnType<typeof page>['items'][number]) => void;
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [record],
+  });
+  const read = vi.mocked(api.readOperatorRecord).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finishRead = resolve;
+      })
+  );
+  const { registry, client } = mount();
+  const invalidations = vi.spyOn(client, 'invalidateQueries');
+  const draft = registry.createDraft(target, input);
+  let submission!: Promise<void>;
+  await act(async () => {
+    submission = workspace.submitDraft(draft.draftId);
+  });
+  await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+  const refreshedEvents = () =>
+    invalidations.mock.calls.some(
+      ([filters]) => filters?.queryKey?.[0] === 'operator-events'
+    );
+  const beforeRead = refreshedEvents();
+  expect(workspace.tray[0].status).toBe('accepted_unreadable');
+  expect(workspace.tray[0].receipt?.command_id).toBe('receipt');
+  await act(async () => {
+    finishRead(page().items[0]);
+    await submission;
+  });
+  expect(beforeRead).toBe(false);
+  expect(refreshedEvents()).toBe(true);
+});

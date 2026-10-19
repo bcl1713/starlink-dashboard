@@ -1,5 +1,7 @@
+import { operatorTiming } from '@/lib/operatorTiming';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -8,7 +10,6 @@ import {
   type ReactNode,
 } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   useOperatorJournal,
   type Pending,
@@ -18,7 +19,12 @@ import {
   useOperatorHealth,
 } from '@/hooks/api/operatorReadSession';
 import { readOperatorRecords } from '@/services/operator';
-import type { CommandReceipt, OperatorCommand } from '@/types/operator';
+import type {
+  CommandReceipt,
+  OperatorCommand,
+  ReadRecord,
+  SavedRecord,
+} from '@/types/operator';
 import { createClientId } from '@/lib/clientId';
 import { DraftRegistry, getDraftRegistry } from './draftRegistry';
 import {
@@ -43,6 +49,12 @@ type SubmitOptions = {
   captureDimensions?: ('functional' | 'redundancy')[];
 };
 interface Workspace {
+  confirmedRecords: {
+    identity: string;
+    read: ReadRecord;
+    receivedAt: number;
+  }[];
+  retireConfirmed: (identity: string, records: SavedRecord[]) => void;
   ownsHealth: boolean;
   registry: DraftRegistry;
   selectedDraftId: string | null;
@@ -66,6 +78,7 @@ function Owner({
   publish,
   receipt,
   attempt,
+  current,
 }: {
   lane: string;
   target: DraftTarget;
@@ -73,6 +86,7 @@ function Owner({
   publish: (lane: string, api: JournalOwner) => void;
   receipt: (lane: string, request: Pending, value: CommandReceipt) => void;
   attempt: (request: Pending) => void;
+  current: (request: Pending, read: ReadRecord) => void;
 }) {
   const api = useOperatorJournal(
     target.missionId,
@@ -84,6 +98,7 @@ function Owner({
       healthPolling: false,
       onReceipt: (request, value) => receipt(lane, request, value),
       onAttempt: attempt,
+      onCurrent: current,
     }
   );
   useLayoutEffect(() => {
@@ -153,12 +168,14 @@ export function OperatorWorkspaceProvider({
       retryReady: false,
     }))
   );
+  const [confirmedRecords, setConfirmedRecords] = useState<
+    { identity: string; read: ReadRecord; receivedAt: number }[]
+  >([]);
   const [attempts, setAttempts] = useState<CommandAttempt[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [migrationErrors, setMigrationErrors] = useState<string[]>([]);
   const scannedIdentities = useRef(new Set<string>());
   const [, refreshDrafts] = useState(0);
-  const client = useQueryClient();
   const location = useLocation();
   const active =
     location.pathname === '/operator' &&
@@ -233,7 +250,7 @@ export function OperatorWorkspaceProvider({
       });
     else if (api.storageError)
       publishRow({ status: 'storage_error', message, pending });
-    else if (api.saving)
+    else if (api.saving && !row.receipt)
       publishRow({
         status: 'saving',
         message: null,
@@ -260,14 +277,6 @@ export function OperatorWorkspaceProvider({
   }
   function receipt(lane: string, request: Pending, value: CommandReceipt) {
     if (request.workspace)
-      void client.invalidateQueries({
-        queryKey: [
-          'operator-events',
-          request.workspace.target.missionId,
-          request.identity,
-        ],
-      });
-    if (request.workspace)
       registry.retireSubmitted(
         request.workspace.draftId,
         request.workspace.revision
@@ -281,6 +290,33 @@ export function OperatorWorkspaceProvider({
     });
     refreshDrafts((n) => n + 1);
   }
+  function current(request: Pending, read: ReadRecord) {
+    setConfirmedRecords((rows) => [
+      ...rows.filter(
+        (row) =>
+          row.identity !== request.identity ||
+          row.read.record.record_id !== read.record.record_id
+      ),
+      { identity: request.identity, read, receivedAt: performance.now() },
+    ]);
+  }
+  const retireConfirmed = useCallback(
+    (identity: string, records: SavedRecord[]) => {
+      setConfirmedRecords((rows) => {
+        const remaining = rows.filter(
+          (row) =>
+            row.identity !== identity ||
+            !records.some(
+              (record) =>
+                record.record_id === row.read.record.record_id &&
+                record.version >= row.read.record.version
+            )
+        );
+        return remaining.length === rows.length ? rows : remaining;
+      });
+    },
+    []
+  );
   async function ensureOwner(target: DraftTarget): Promise<JournalOwner> {
     const lane = commandLane(target);
     const current = apis.current.get(lane);
@@ -295,6 +331,7 @@ export function OperatorWorkspaceProvider({
     return ready;
   }
   async function submitDraft(draftId: string, options: SubmitOptions = {}) {
+    const submittedAt = performance.now();
     const draft = registry.resumeDraft(draftId);
     if (!draft) return;
     const lane = commandLane(draft.target);
@@ -330,12 +367,14 @@ export function OperatorWorkspaceProvider({
         return;
       }
       const api = await ensureOwner(draft.target);
+      operatorTiming('queue', submittedAt);
       const command = options.atCurrentTime
         ? options.atCurrentTime(
             (
               await readOperatorRecords({
                 mission_id: draft.target.missionId,
                 record_type: draft.target.recordType,
+                limit: 1,
               })
             ).as_of
           )
@@ -419,6 +458,8 @@ export function OperatorWorkspaceProvider({
     <Context.Provider
       value={{
         registry,
+        confirmedRecords,
+        retireConfirmed,
         selectedDraftId,
         openDraft: (draftId) => {
           if (registry.resumeDraft(draftId)) setSelectedDraftId(draftId);
@@ -449,6 +490,7 @@ export function OperatorWorkspaceProvider({
           publish={publish}
           receipt={receipt}
           attempt={observeAttempt}
+          current={current}
         />
       ))}
     </Context.Provider>

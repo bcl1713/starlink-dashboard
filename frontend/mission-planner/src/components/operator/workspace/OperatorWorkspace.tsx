@@ -1,3 +1,4 @@
+import { operatorTiming } from '@/lib/operatorTiming';
 import { readTrainingProviderEvidence } from '../training/trainingProviderEvidence';
 import {
   collectRecoveryEvidence,
@@ -188,7 +189,43 @@ export function OperatorWorkspace() {
       : active.data,
     mission.data
   );
-  const items = records.data?.pages.flatMap((page) => page.items) ?? [];
+  const snapshotItems = records.data?.pages.flatMap((page) => page.items) ?? [];
+  // Only current authoritative GET responses supplement a paginated snapshot.
+  // Its H/cursors stay untouched; replay receipts alone never enter this view.
+  const confirmed = workspace.confirmedRecords.filter(
+    (row) =>
+      row.identity === identity && row.read.record.mission_id === missionId
+  );
+  const merged = new Map(
+    snapshotItems.map((item) => [item.record.record_id, item])
+  );
+  for (const row of confirmed) {
+    const previous = merged.get(row.read.record.record_id);
+    if (!previous || previous.record.version < row.read.record.version)
+      merged.set(row.read.record.record_id, row.read);
+  }
+  const items = [...merged.values()];
+  const renderedConfirmed = useRef(new WeakSet<object>());
+  useEffect(() => {
+    for (const row of confirmed) {
+      if (!renderedConfirmed.current.has(row)) {
+        operatorTiming('visible', row.receivedAt);
+        renderedConfirmed.current.add(row);
+      }
+    }
+    if (identity)
+      workspace.retireConfirmed(
+        identity,
+        snapshotItems.map((item) => item.record)
+      );
+    // Snapshot and confirmed-row changes drive catch-up, never a polling timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    records.data,
+    identity,
+    workspace.confirmedRecords,
+    workspace.retireConfirmed,
+  ]);
   const loaded = items.map((item) => item.record);
   const currentItems = items.filter((item) =>
     operationalRelevant(item.record, currentSource)
@@ -367,11 +404,7 @@ export function OperatorWorkspace() {
           'This record changed. Review its current state before choosing the action again.'
         );
       }
-      const clock = await readOperatorRecords({
-        mission_id: record.mission_id,
-        record_type: record.record_type,
-      });
-      const command = build(latest.record, clock.as_of);
+      const command = build(latest.record, latest.freshness.as_of);
       const input =
         command.operation === 'create' || command.operation === 'update'
           ? command.body
@@ -899,60 +932,83 @@ export function OperatorWorkspace() {
               </p>
             ) : null}
             {records.isFetching && records.data && (
-              <p role="status">
-                Refreshing saved records… Record actions resume when the current
-                snapshot is ready.
-              </p>
+              <p role="status">Refreshing saved records…</p>
             )}
             {actionError && <p role="alert">{actionError}</p>}
-            {view === 'Communications' ? (
-              <CommunicationsView
-                items={currentItems}
-                currentAssociation={currentAssociation}
-                isSessionCurrent={(record) =>
-                  replayCurrent(record, currentSource)
-                }
-                mission={mission.data}
-                disabled={
-                  disabled || acting || records.isFetching || missionSaveBusy
-                }
-                incomplete={incomplete}
-                asOf={records.data?.pages[0]?.as_of}
-                onCreateCall={plannedCall}
-                onCallAction={callAction}
-                onCreateActualCall={() =>
-                  openInput(callDraft(undefined, 'retrospective', missionId))
-                }
-                onCreateConference={() => openInput(conferenceDraft(missionId))}
-                onJoin={(conference) =>
-                  openInput(
-                    participationDraft(missionId, conference?.record_id),
-                    undefined,
-                    true
-                  )
-                }
-                onEdit={openRecord}
-                onHistory={setHistoryId}
-                onTransition={transition}
-                onConferenceAction={(record, intent) =>
-                  void action(record, (latest, now) =>
-                    conferenceCommand(
-                      latest,
-                      intent,
-                      now,
-                      currentAssociation,
-                      replayCurrent(latest, currentSource)
+            {view === 'Communications' || view === 'Now' ? (
+              <>
+                <CommunicationsView
+                  activeOnly={view === 'Now'}
+                  items={currentItems}
+                  currentAssociation={currentAssociation}
+                  isSessionCurrent={(record) =>
+                    replayCurrent(record, currentSource)
+                  }
+                  mission={mission.data}
+                  disabled={
+                    disabled ||
+                    acting ||
+                    missionSaveBusy ||
+                    (!records.data && !confirmed.length)
+                  }
+                  incomplete={incomplete}
+                  asOf={records.data?.pages[0]?.as_of}
+                  onCreateCall={plannedCall}
+                  onCallAction={callAction}
+                  onCreateActualCall={() =>
+                    openInput(callDraft(undefined, 'retrospective', missionId))
+                  }
+                  onCreateConference={() =>
+                    openInput(conferenceDraft(missionId))
+                  }
+                  onJoin={(conference) =>
+                    openInput(
+                      participationDraft(missionId, conference?.record_id),
+                      undefined,
+                      true
                     )
-                  )
-                }
-                onCustomerAction={(record, intent) =>
-                  void action(record, (latest, now) =>
-                    intent === 'restore'
-                      ? resumeCommand(latest, now)
-                      : leaveCommand(latest, intent, now)
-                  )
-                }
-              />
+                  }
+                  onEdit={openRecord}
+                  onHistory={setHistoryId}
+                  onTransition={transition}
+                  onConferenceAction={(record, intent) =>
+                    void action(record, (latest, now) =>
+                      conferenceCommand(
+                        latest,
+                        intent,
+                        now,
+                        currentAssociation,
+                        replayCurrent(latest, currentSource)
+                      )
+                    )
+                  }
+                  onCustomerAction={(record, intent) =>
+                    void action(record, (latest, now) =>
+                      intent === 'restore'
+                        ? resumeCommand(latest, now)
+                        : leaveCommand(latest, intent, now)
+                    )
+                  }
+                />
+                {view === 'Now' && (
+                  <section aria-label="Mission activity">
+                    <h2>Mission activity</h2>
+                    <OperatorEventFeed
+                      events={events}
+                      onClose={() => undefined}
+                      onOpenSource={(event) =>
+                        navigateView(
+                          event.kind === 'issue_followup'
+                            ? 'Issues'
+                            : event.kind.startsWith('call_')
+                              ? 'Communications'
+                              : 'Transport'
+                        )
+                      }
+                    />
+                  </section>
+                )}
+              </>
             ) : view === 'Transport' ? (
               <TransportView
                 records={currentLoaded}
@@ -1006,23 +1062,6 @@ export function OperatorWorkspace() {
                   })
                 }
               />
-            ) : view === 'Now' ? (
-              <section aria-label="Mission activity">
-                <h2>Mission activity</h2>
-                <OperatorEventFeed
-                  events={events}
-                  onClose={() => undefined}
-                  onOpenSource={(event) =>
-                    navigateView(
-                      event.kind === 'issue_followup'
-                        ? 'Issues'
-                        : event.kind.startsWith('call_')
-                          ? 'Communications'
-                          : 'Transport'
-                    )
-                  }
-                />
-              </section>
             ) : (
               <HistoryView
                 items={items}

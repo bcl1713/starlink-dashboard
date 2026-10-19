@@ -205,3 +205,85 @@ is not a reason to manufacture providers.
   duplication.
 
 No existing per-run journal is migrated or combined by this regression fix.
+
+## Cockpit cards and save diagnostics
+
+**Now** and **Communications** show **Active Calls** and **Active Bridges**
+first. Use the existing call actions on each card. A finished call leaves its
+bridge session open: explicitly close the bridge from its card. Closed
+definitions stay reusable in Communications. Each customer interval remains an
+independent report. Earlier replay evidence does not create an active session.
+The sections cover loaded records; use Load more records when the
+incomplete-page notice appears.
+
+A submitted save immediately shows **saving**. Its receipt confirms acceptance;
+a separate authoritative current-row read makes the saved card visible without
+waiting for list, history or model-event refreshes. This is confirmed server
+data, not an optimistic save. Exact retry still uses the original request and
+receipt. Snapshot cursors/watermarks and historical provenance are unchanged.
+Record commands reread the latest version before acting, including during a
+background refresh. An unreadable current row still shows **accepted, current
+state unavailable**, never a fabricated current state.
+
+Focused local measurements for this follow-up (not a deployment latency
+promise):
+
+| Measurement                                                                            |  Before |   After |
+| -------------------------------------------------------------------------------------- | ------: | ------: |
+| Local conference SQLite/API save, median of five                                                  | 4.35 ms | 4.20 ms |
+| Same API save plus authoritative current GET                                           | 6.67 ms | 6.46 ms |
+| Controlled frontend receipt (50 ms POST)                                               |   52 ms |   52 ms |
+| Controlled frontend current row returned (50 ms GET, 200 ms list/history refresh each) |  504 ms |  104 ms |
+
+The controlled test uses delayed API responses to isolate frontend ordering; it
+is not a measurement of Docker or your network. It also verifies pending
+feedback, a visible accepted bridge while list reads are unresolved, and no
+second POST. The local API fixture did not reproduce the reported 5–6 second
+HTTP acknowledgment. No SQLite durability settings or journal storage were
+changed to chase that unverified cause.
+
+If acknowledgment is still slow after this update, inspect the save request in
+browser Network tools. `Server-Timing` separates `operator_request` (full server
+route), `operator_gate` (initial admission, including binding wait),
+`operator_binding` (mutation admission), and `operator_command` (validation,
+atomic journal write/commit and receipt). A slow HTTP request with a short
+`operator_request` points outside this handler; a long admission phase can
+identify contention with other Operator reads. These values contain no journal
+text. They do not separate storage fsync from each individual validation step.
+
+Browser Performance measures `operator.save.queue`, `.http`, `.current`,
+`.refresh`, `.visible` and, for actions requiring a captured clock, `.clock`
+record the corresponding stages. Queue covers command-owner dispatch, current
+covers the authoritative reread, refresh covers background query refreshes, and
+visible covers the confirmed-row-to-render interval. In browser DevTools
+Console:
+
+```js
+performance
+  .getEntriesByType("measure")
+  .filter((entry) => entry.name.startsWith("operator.save."))
+  .slice(-30)
+  .map((entry) => ({
+    stage: entry.name,
+    milliseconds: Math.round(entry.duration),
+  }));
+```
+
+## Arrival after ordinary Activate
+
+A fresh, moving position and valid destination route projection support an ETA.
+The reported one-way route projected its destination to `100.00000000000003`
+through floating-point rounding, making it ineligible. The actual response
+confirmed `upcoming: false` and null ETA values. Computed route projection is
+now bounded to the valid endpoint; invalid externally supplied projections
+remain rejected. No time offset or flight progression is added. Activate the leg
+normally after updating to rebuild its generated POI projections.
+
+Predeparture shows the scheduled departure. In flight, missing route progress
+now says **Route position unavailable — ETA unavailable**, while a missing or
+invalid destination projection says **Destination route position unavailable**.
+Position freshness and passed-destination explanations remain separate. Paced
+Simulate leg continues using its existing route and mission clock. If the
+one-way symptom persists, retain `/api/overview/upcoming-pois` fields `state`,
+`flight_phase`, `current_route_progress`, `position_state`, and the arrival POI;
+those identify the remaining source condition without sharing the entire route.
