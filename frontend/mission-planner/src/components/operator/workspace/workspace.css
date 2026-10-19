@@ -425,3 +425,30 @@
 .ws-editor [hidden] {
   display: none !important;
 }
+
+/* Keep service selection and Apply in reach without changing other workspace views. */
+.operator-workspace[data-view='transport'] .ws-quick-actions[hidden] {
+  display: none;
+}
+@media (max-width: 900px) {
+  .operator-workspace[data-view='transport'] .ws-header .ws-mission-chooser {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .operator-workspace[data-view='transport'] .ws-header-actions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .operator-workspace[data-view='transport'] [aria-label='Operating context'] {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .operator-workspace[data-view='transport'] .ws-replay-note,
+  .operator-workspace[data-view='transport'] .ws-now,
+  .operator-workspace[data-view='transport'] .ws-next {
+    display: none;
+  }
+}

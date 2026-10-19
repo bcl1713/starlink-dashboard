@@ -469,7 +469,7 @@ export function OperatorWorkspace() {
     )
   );
   return (
-    <main className="operator-workspace">
+    <main className="operator-workspace" data-view={view.toLowerCase()}>
       <header className="ws-header">
         <div>
           <h1>Operator</h1>
@@ -513,7 +513,7 @@ export function OperatorWorkspace() {
             </button>
           )}
           {health.data?.mission_journal && (
-            <p>
+            <p className="ws-replay-note">
               Mission journal retained across replays · Evaluation{' '}
               {health.data.simulation_run_id}. Prior replay reports remain in
               History; they do not establish current connections or readiness.
@@ -896,7 +896,7 @@ export function OperatorWorkspace() {
           </section>
         ) : (
           <>
-            <div className="ws-quick-actions">
+            <div className="ws-quick-actions" hidden={view === 'Transport'}>
               <button
                 className="ws-button ws-primary"
                 disabled={disabled}
