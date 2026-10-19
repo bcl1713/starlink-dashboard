@@ -43,7 +43,12 @@ it('packages unchanged synthetic screenshots with capture identity and readable 
 });
 
 it('resolves every parity matrix guide reference to the packaged manual', () => {
-  const matrix = JSON.parse(readFileSync(resolve('../../tools/acceptance/operator-workspace/parity.json'), 'utf8'));
+  const matrix = JSON.parse(
+    readFileSync(
+      resolve('../../tools/acceptance/operator-workspace/parity.json'),
+      'utf8'
+    )
+  );
   const guide = parse('guide.html');
   expect(matrix.entries).toHaveLength(323);
   for (const entry of matrix.entries)

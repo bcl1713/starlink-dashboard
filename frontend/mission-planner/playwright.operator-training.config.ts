@@ -6,7 +6,10 @@ if (
   throw new Error('Owned disposable training origin/root required');
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'operator-training-fixture.spec.ts',
+  testMatch:
+    process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
+      ? 'operator-training-archive.spec.ts'
+      : 'operator-training-fixture.spec.ts',
   workers: 1,
   retries: 0,
   timeout: 240_000,

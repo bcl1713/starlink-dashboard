@@ -17,6 +17,9 @@ spec.loader.exec_module(launcher)
 
 def main():
     root = Path(sys.argv[1]).absolute()
+    archive = sys.argv[2:] == ["--archive"]
+    if sys.argv[2:] and not archive:
+        raise ValueError("Only the optional --archive proof is supported")
     if not str(root).startswith("/tmp/issue-376-training-proof-"):
         raise ValueError("Explicit task-owned disposable proof root required")
     training = launcher.open_owner(root)
@@ -99,6 +102,78 @@ def main():
             cwd=launcher.SOURCE / "frontend/mission-planner",
             timeout=620,
         )
+        if archive:
+            destination = launcher.open_owner(
+                root / "import-destination",
+                create=True,
+                disposable=True,
+                destination=True,
+                port=56534,
+            )
+            for number in handlers:
+                signal.signal(number, destination.signal)
+            try:
+                launcher.start(destination, relay=True)
+            finally:
+                destination.stop_child()
+                for number in handlers:
+                    signal.signal(number, runner.signal)
+            if destination.ownership["candidateSha"] != current:
+                raise ValueError("Archive destination must use the same candidate")
+            destination_images = {}
+            for service in ("backend", "frontend"):
+                tag = f"{destination.project}-{service}:{current}"
+                inspected = json.loads(
+                    destination.execute(
+                        ["docker", "image", "inspect", "--format", image_format, tag]
+                    )
+                )
+                if inspected["revision"] != current:
+                    raise ValueError("Archive destination image revision differs")
+                destination_images[service] = {"tag": tag, **inspected}
+            (root / "destination-image-identity.json").write_text(
+                json.dumps(
+                    {
+                        "candidateSha": current,
+                        "sourceArchiveSha256": hashlib.sha256(
+                            (destination.root / "source.tar").read_bytes()
+                        ).hexdigest(),
+                        "images": destination_images,
+                        "capturedBeforeArchiveBrowser": True,
+                    },
+                    indent=2,
+                )
+            )
+            runner.env.update(
+                OPERATOR_TRAINING_ARCHIVE_ONLY="true",
+                OPERATOR_TRAINING_ARCHIVE_ORIGIN="http://127.0.0.1:56534",
+            )
+            runner.execute(
+                [
+                    "timeout",
+                    "--kill-after=10s",
+                    "15m",
+                    "npx",
+                    "--no-install",
+                    "playwright",
+                    "test",
+                    "--config",
+                    "playwright.operator-training.config.ts",
+                ],
+                cwd=launcher.SOURCE / "frontend/mission-planner",
+                timeout=920,
+            )
+            runner.execute(
+                [
+                    sys.executable,
+                    str(Path(__file__).with_name("inspect_archive.py")),
+                    str(root),
+                ],
+                timeout=120,
+            )
+            report["archiveInspection"] = json.loads(
+                (root / "archive-inspection.json").read_text()
+            )
         report["checksPassed"] = True
     except BaseException as error:
         report["error"] = str(error)
@@ -107,6 +182,11 @@ def main():
         runner.stop_child()
         try:
             report["cleanup"] = launcher.stop(launcher.open_owner(root))
+            child_state = root / "import-destination/ownership.json"
+            if child_state.exists():
+                report["destinationCleanup"] = json.loads(child_state.read_text())[
+                    "remaining"
+                ]
         finally:
             (root / "proof-summary.json").write_text(json.dumps(report, indent=2))
             for number, handler in handlers.items():
