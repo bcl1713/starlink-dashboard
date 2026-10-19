@@ -119,7 +119,8 @@ it('reports partial acknowledgment accurately and supports a fresh-baseline retr
     },
   };
   vi.mocked(aviationWeatherApi.getSettings).mockResolvedValue(newer);
-  let server: Awaited<ReturnType<typeof aviationWeatherApi.getSettings>> = newer;
+  let server: Awaited<ReturnType<typeof aviationWeatherApi.getSettings>> =
+    newer;
   vi.mocked(aviationWeatherApi.updateSettings).mockImplementation(
     async (update) => {
       expect(update.expected_revision).toBe(server.revision);

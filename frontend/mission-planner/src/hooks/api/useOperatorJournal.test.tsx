@@ -294,13 +294,11 @@ it('partitions calls from journal reads and refreshes independently loaded summa
 });
 
 it('observes actual send attempts without allowing observation to alter the transaction', async () => {
-  const save = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockResolvedValue({
-      schema_version: 1,
-      command_id: 'receipt',
-      saved_records: [record],
-    });
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [record],
+  });
   const observe = vi.fn((request: Pending) => {
     request.key = 'observer-mutated-key';
     if (request.command.operation === 'create')

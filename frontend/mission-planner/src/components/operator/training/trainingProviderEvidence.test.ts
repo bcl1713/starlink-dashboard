@@ -42,14 +42,12 @@ it('keeps a failed read distinct from an authoritative unavailable product and g
 it('releases an unresponsive optional catalog within three seconds', async () => {
   vi.useFakeTimers();
   let observed: AbortSignal | undefined;
-  vi.mocked(aviationWeatherApi.getCatalog).mockImplementation(
-    (signal) => {
-      observed = signal;
-      return new Promise((_, reject) =>
-        signal?.addEventListener('abort', () => reject(new Error('aborted')))
-      );
-    }
-  );
+  vi.mocked(aviationWeatherApi.getCatalog).mockImplementation((signal) => {
+    observed = signal;
+    return new Promise((_, reject) =>
+      signal?.addEventListener('abort', () => reject(new Error('aborted')))
+    );
+  });
   const pending = readTrainingProviderEvidence();
   await vi.advanceTimersByTimeAsync(3000);
   expect(observed?.aborted).toBe(true);
