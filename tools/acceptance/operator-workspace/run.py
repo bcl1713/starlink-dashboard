@@ -2,9 +2,11 @@
 """Workspace measurements using the existing owned production-image runner."""
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -45,36 +47,98 @@ finally:
 """
 
 
-def qualify(owner, *, workspace=False, fresh=False):
-    fixtures = [] if fresh else [build_workspace_fixture(seed) for seed in ("normal", "busy")]
+def qualify(owner, *, workspace=False, fresh=False, performance=None):
+    fixtures = (
+        [] if fresh else [build_workspace_fixture(seed) for seed in ("normal", "busy")]
+    )
     (owner.root / "workspace-inputs.json").write_text(json.dumps(fixtures, indent=2))
     if not fresh:
-        owner.compose("exec", "-T", "--user", "appuser", "starlink-location", "python", "-c", SEED,
-                      json.dumps(fixtures), timeout=60)
+        owner.compose(
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            SEED,
+            json.dumps(fixtures),
+            timeout=60,
+        )
     env = owner.env | {
         "OPERATOR_ACCEPTANCE_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
         "OPERATOR_ACCEPTANCE_EVIDENCE": str(owner.root),
         "OPERATOR_ACCEPTANCE_PROJECT": owner.project,
         "OPERATOR_WORKSPACE_INPUTS": str(owner.root / "workspace-inputs.json"),
         "PLAYWRIGHT_BROWSERS_PATH": os.environ.get(
-            "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"),
+            "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
+        ),
         "npm_config_offline": "true",
         "npm_config_update_notifier": "false",
+        "OPERATOR_BENCHMARK_MODE": performance or "",
     }
-    owner.execute(["timeout", "--kill-after=10s", "10m", "npx", "--no-install",
-                   "playwright", "test", "--config", "playwright.operator-workspace.config.ts",
-                   "--grep", "fresh install" if fresh else "hidden workspace" if workspace else "baseline"], timeout=620,
-                  cwd=ROOT / "frontend/mission-planner", env=env)
+    if performance:
+        browser_source = (
+            ROOT / "frontend/mission-planner/tests/e2e/operator-workspace.spec.ts"
+        )
+        owner.ownership["browserHarness"] = {
+            "sha": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30
+            ).strip(),
+            "testSha256": hashlib.sha256(browser_source.read_bytes()).hexdigest(),
+            "scope": "External scripted qualification source; runtime images retain their own exact candidate SHA",
+        }
+        owner.persist()
+    owner.execute(
+        [
+            "timeout",
+            "--kill-after=10s",
+            "10m",
+            "npx",
+            "--no-install",
+            "playwright",
+            "test",
+            "--config",
+            "playwright.operator-workspace.config.ts",
+            "--grep",
+            "performance:"
+            if performance
+            else "fresh install"
+            if fresh
+            else "hidden workspace"
+            if workspace
+            else "baseline",
+        ],
+        timeout=620,
+        cwd=ROOT / "frontend/mission-planner",
+        env=env,
+    )
+    if performance:
+        return json.loads((owner.root / "workspace-performance.json").read_text())
     if fresh:
         return json.loads((owner.root / "workspace-fresh-install.json").read_text())
     if workspace:
         return json.loads((owner.root / "workspace-candidate.json").read_text())
     result = json.loads((owner.root / "workspace-baseline.json").read_text())
     try:
-        owner.execute(["timeout", "--kill-after=10s", "3m", "npx", "--no-install",
-                       "playwright", "test", "--config", "playwright.operator-workspace.config.ts",
-                       "--grep", "approved workspace"], timeout=200,
-                      cwd=ROOT / "frontend/mission-planner", env=env)
+        owner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "3m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-workspace.config.ts",
+                "--grep",
+                "approved workspace",
+            ],
+            timeout=200,
+            cwd=ROOT / "frontend/mission-planner",
+            env=env,
+        )
     except RuntimeError:
         log = Path(owner.ownership["commands"][-1]["log"]).read_text()
         if "Operator workspace" not in log or "element(s) not found" not in log:
@@ -93,9 +157,64 @@ if __name__ == "__main__":
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True, type=Path)
-    parser.add_argument("--workspace", action="store_true", help="Exercise the hidden implementation shell")
-    parser.add_argument("--fresh", action="store_true", help="Exercise explicit provisioning without seeding an Operator store")
+    parser.add_argument(
+        "--workspace",
+        action="store_true",
+        help="Exercise the hidden implementation shell",
+    )
+    parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help="Exercise explicit provisioning without seeding an Operator store",
+    )
+    parser.add_argument(
+        "--performance",
+        choices=["baseline", "candidate"],
+        help="Measure the same bounded task outcomes with recorded scripted interactions",
+    )
+    parser.add_argument(
+        "--runtime-repository",
+        type=Path,
+        help="Clean isolated baseline checkout; only valid for baseline measurements",
+    )
     args = parser.parse_args()
-    print(json.dumps(journal.run(args.candidate, args.project, args.evidence,
-                                 entrypoint="fresh_operator_fixture" if args.fresh else None,
-                                 qualification=lambda owner: qualify(owner, workspace=args.workspace, fresh=args.fresh)), indent=2))
+    if args.performance:
+        if args.fresh or args.workspace:
+            parser.error("Use one qualification mode")
+        harness_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30
+        ).strip()
+        journal.validate_candidate(ROOT, harness_sha)
+        if args.performance == "baseline":
+            baseline = json.loads((Path(__file__).parent / "parity.json").read_text())[
+                "baseline_sha"
+            ]
+            if not args.runtime_repository or args.candidate != baseline:
+                parser.error(
+                    "Original baseline measurements require the frozen baseline SHA and its isolated clean checkout"
+                )
+    if args.runtime_repository:
+        if args.performance != "baseline":
+            parser.error(
+                "A separate runtime repository is only valid for the original baseline"
+            )
+        # Exact clean-HEAD admission still runs against this real isolated checkout;
+        # the external browser qualification source remains this candidate harness.
+        journal.ROOT = args.runtime_repository.resolve()
+    print(
+        json.dumps(
+            journal.run(
+                args.candidate,
+                args.project,
+                args.evidence,
+                entrypoint="fresh_operator_fixture" if args.fresh else None,
+                qualification=lambda owner: qualify(
+                    owner,
+                    workspace=args.workspace,
+                    fresh=args.fresh,
+                    performance=args.performance,
+                ),
+            ),
+            indent=2,
+        )
+    )

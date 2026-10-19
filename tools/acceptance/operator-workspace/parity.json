@@ -15,11 +15,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -42,11 +38,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -69,11 +61,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -108,11 +96,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -135,11 +119,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -174,11 +154,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -213,11 +189,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -252,11 +224,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -291,11 +259,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -326,11 +290,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -361,11 +321,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -388,11 +344,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -415,11 +367,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -442,11 +390,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -477,11 +421,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -512,11 +452,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -551,11 +487,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -590,11 +522,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -629,11 +557,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -656,11 +580,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -683,11 +603,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -710,11 +626,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -745,11 +657,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -780,11 +688,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -807,11 +711,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -834,11 +734,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -869,11 +765,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -904,11 +796,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -939,11 +827,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -974,11 +858,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1001,11 +881,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1036,11 +912,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1063,11 +935,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1098,11 +966,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1125,11 +989,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1160,11 +1020,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1195,11 +1051,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1230,11 +1082,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1257,11 +1105,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1292,11 +1136,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1319,11 +1159,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1346,11 +1182,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1381,11 +1213,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1416,11 +1244,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1451,11 +1275,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1486,11 +1306,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1521,11 +1337,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1548,11 +1360,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1575,11 +1383,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1602,11 +1406,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1645,11 +1445,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1680,11 +1476,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1715,11 +1507,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1750,11 +1538,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1777,11 +1561,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1812,11 +1592,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1839,11 +1615,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1866,11 +1638,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1893,11 +1661,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1920,11 +1684,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -1947,11 +1707,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -1982,11 +1738,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2017,11 +1769,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2044,11 +1792,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2079,11 +1823,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2114,11 +1854,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2149,11 +1885,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2184,11 +1916,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2219,11 +1947,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2262,11 +1986,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2289,11 +2009,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2316,11 +2032,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2343,11 +2055,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2370,11 +2078,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2397,11 +2101,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2432,11 +2132,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2467,11 +2163,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2502,11 +2194,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2529,11 +2217,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2564,11 +2248,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2591,11 +2271,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2618,11 +2294,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2645,11 +2317,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2680,11 +2348,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2707,11 +2371,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2734,11 +2394,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2773,11 +2429,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2812,11 +2464,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2851,11 +2499,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2890,11 +2534,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -2929,11 +2569,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2956,11 +2592,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -2983,11 +2615,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3010,11 +2638,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3037,11 +2661,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3072,11 +2692,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3099,11 +2715,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3126,11 +2738,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3153,11 +2761,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3188,11 +2792,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3223,11 +2823,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3258,11 +2854,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3293,11 +2885,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3320,11 +2908,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3355,11 +2939,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3390,11 +2970,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3417,11 +2993,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3452,11 +3024,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3479,11 +3047,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3506,11 +3070,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3533,11 +3093,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3568,11 +3124,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3603,11 +3155,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3638,11 +3186,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3673,11 +3217,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3700,11 +3240,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3727,11 +3263,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3754,11 +3286,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3789,11 +3317,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3824,11 +3348,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3851,11 +3371,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3878,11 +3394,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -3905,11 +3417,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3940,11 +3448,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -3975,11 +3479,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4010,11 +3510,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4045,11 +3541,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -4072,11 +3564,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -4099,11 +3587,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4134,11 +3618,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4169,11 +3649,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4204,11 +3680,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4239,11 +3711,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4274,11 +3742,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4309,11 +3773,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4344,11 +3804,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4379,11 +3835,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4414,11 +3866,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4449,11 +3897,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4484,11 +3928,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -4511,11 +3951,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -4538,11 +3974,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4573,11 +4005,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4608,11 +4036,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -4635,11 +4059,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -4662,11 +4082,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4697,11 +4113,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4732,11 +4144,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4767,11 +4175,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4802,11 +4206,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4837,11 +4237,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "baseline-correction",
       "evidence": [
@@ -4871,11 +4267,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4906,11 +4298,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4941,11 +4329,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -4976,11 +4360,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5011,11 +4391,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5046,11 +4422,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5081,11 +4453,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5116,11 +4484,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5151,11 +4515,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5186,11 +4546,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5221,11 +4577,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5256,11 +4608,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5291,11 +4639,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5326,11 +4670,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5361,11 +4701,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5396,11 +4732,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5431,11 +4763,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5466,11 +4794,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "architecture-inspected",
       "evidence": [
@@ -5515,11 +4839,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5542,11 +4862,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5569,11 +4885,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5608,11 +4920,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5647,11 +4955,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5674,11 +4978,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5701,11 +5001,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5728,11 +5024,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5755,11 +5047,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -5782,11 +5070,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5821,11 +5105,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5860,11 +5140,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5899,11 +5175,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5938,11 +5210,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -5977,11 +5245,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6016,11 +5280,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6067,11 +5327,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6094,11 +5350,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6121,11 +5373,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "baseline-correction",
       "evidence": [
@@ -6159,11 +5407,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6186,11 +5430,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6213,11 +5453,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6240,11 +5476,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6275,11 +5507,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6310,11 +5538,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6337,11 +5561,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6372,11 +5592,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6399,11 +5615,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6426,11 +5638,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6453,11 +5661,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6492,11 +5696,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6531,11 +5731,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6570,11 +5766,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6609,11 +5801,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6648,11 +5836,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6675,11 +5859,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6702,11 +5882,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6729,11 +5905,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6768,11 +5940,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6807,11 +5975,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6846,11 +6010,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6873,11 +6033,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6912,11 +6068,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -6939,11 +6091,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -6978,11 +6126,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7017,11 +6161,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7056,11 +6196,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7095,11 +6231,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7134,11 +6266,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7173,11 +6301,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7208,11 +6332,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7243,11 +6363,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7278,11 +6394,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7313,11 +6425,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7348,11 +6456,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7383,11 +6487,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7418,11 +6518,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7453,11 +6549,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7488,11 +6580,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7523,11 +6611,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7558,11 +6642,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7593,11 +6673,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7628,11 +6704,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7663,11 +6735,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7698,11 +6766,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7733,11 +6797,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7760,11 +6820,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7787,11 +6843,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7814,11 +6866,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7841,11 +6889,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7868,11 +6912,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7895,11 +6935,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -7930,11 +6966,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7957,11 +6989,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -7984,11 +7012,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8011,11 +7035,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8038,11 +7058,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8065,11 +7081,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8092,11 +7104,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8119,11 +7127,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8154,11 +7158,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8189,11 +7189,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8224,11 +7220,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8259,11 +7251,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8294,11 +7282,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8329,11 +7313,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8364,11 +7344,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8399,11 +7375,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8434,11 +7406,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8469,11 +7437,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8504,11 +7468,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8539,11 +7499,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8574,11 +7530,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8609,11 +7561,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "architecture-inspected",
       "evidence": [
@@ -8650,11 +7598,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -8685,11 +7629,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8712,11 +7652,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8739,11 +7675,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8766,11 +7698,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8793,11 +7721,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8820,11 +7744,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8847,11 +7767,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8874,11 +7790,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8901,11 +7813,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8928,11 +7836,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8963,11 +7867,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -8990,11 +7890,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9017,11 +7913,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9044,11 +7936,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9071,11 +7959,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9098,11 +7982,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9125,11 +8005,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9152,11 +8028,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9179,11 +8051,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9222,11 +8090,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9249,11 +8113,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9284,11 +8144,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9327,11 +8183,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9354,11 +8206,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9389,11 +8237,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9432,11 +8276,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9483,11 +8323,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9510,11 +8346,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "regression-covered",
       "evidence": [
@@ -9553,11 +8385,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9580,11 +8408,7 @@
       "expected_evidence": {
         "baseline": "real production browser observation and relevant existing regression assertion",
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9606,11 +8430,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9632,11 +8452,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9658,11 +8474,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9684,11 +8496,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9710,11 +8518,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9736,11 +8540,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9762,11 +8562,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9788,11 +8584,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9814,11 +8606,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9840,11 +8628,7 @@
       "training_stage": "T01",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9866,11 +8650,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9892,11 +8672,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9918,11 +8694,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9944,11 +8716,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9970,11 +8738,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -9996,11 +8760,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10022,11 +8782,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10048,11 +8804,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10074,11 +8826,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10100,11 +8848,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10126,11 +8870,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10152,11 +8892,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10178,11 +8914,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10204,11 +8936,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10230,11 +8958,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10256,11 +8980,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10282,11 +9002,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10308,11 +9024,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10334,11 +9046,7 @@
       "training_stage": "T11",
       "expected_evidence": {
         "candidate": "actual shipped UI/backend outcome; uncoached human completion remains separate",
-        "viewports": [
-          "1920x1080",
-          "390x844",
-          "844x390"
-        ]
+        "viewports": ["1920x1080", "390x844", "844x390"]
       },
       "status": "candidate-covered",
       "evidence": [
@@ -10386,9 +9094,9 @@
       "scope": "Normal/busy three-size real UI calls, independent conference/customer lifecycle, issue/correction/applied-only/capability. Earlier checkpoint."
     },
     "display": {
-      "sha": "5e2aaf719fd192fc26e19b3f6d7f588825abd353",
-      "report": "docs/reports/2026-10-18-operator-workspace/display-final/README.md",
-      "scope": "Accepted native connected windows, forward/reverse presets, actual409/partial/fresh retry/unavailable and replay panels at three sizes. Cold scenes bounded180s; separate restart remains pending."
+      "sha": "bd8069fb0c75558d6b58fc46639ae02bdca5aebc",
+      "report": "docs/reports/2026-10-18-operator-workspace/display-restart/README.md",
+      "scope": "Both exact-head native cases accepted: two connected windows, forward/reverse presets, actual409/partial/fresh retry/unavailable/replay panels, actual persistent backend/worker restart then fresh connected windows. Native scene budget180s unchanged; physical GPU/human use not claimed."
     },
     "guide": {
       "sha": "f4e7415537a9e298d443915ca98e98042d47e94b",
@@ -10413,12 +9121,14 @@
     "gap-regressions": {
       "runtime_sha": "5e2aaf719fd192fc26e19b3f6d7f588825abd353",
       "report": "docs/reports/2026-10-18-operator-workspace/parity-gaps/README.md",
-      "scope": "Native backend and controlled component assertions; exact test-source hashes retained, including added tests. Runtime product unchanged from5e2aaf71; test commit recorded after publication."
+      "scope": "Native backend and controlled component assertions; exact test-source hashes retained, including added tests. Runtime product unchanged from5e2aaf71; test commit recorded after publication.",
+      "test_commit": "bd8069fb0c75558d6b58fc46639ae02bdca5aebc"
     },
     "frontend-final": {
       "runtime_sha": "5e2aaf719fd192fc26e19b3f6d7f588825abd353",
       "report": "docs/reports/2026-10-18-operator-workspace/frontend-final/README.md",
-      "scope": "Full frontend suite with exact changed test-source hashes; component/mock scope is not production browser or human acceptance."
+      "scope": "Full frontend suite with exact changed test-source hashes; component/mock scope is not production browser or human acceptance.",
+      "test_commit": "bd8069fb0c75558d6b58fc46639ae02bdca5aebc"
     },
     "private-rc": {
       "sha": "c3ff657f2bfc91f2351956088ca5e15dc5efb227",

@@ -1311,3 +1311,515 @@ test('hidden workspace: real lost receipt exact retry and offline draft recovery
     JSON.stringify({ synthetic: true, proof }, null, 2)
   );
 });
+
+test('performance: matching operational tasks on original and candidate shells', async ({
+  browser,
+}) => {
+  const mode = process.env.OPERATOR_BENCHMARK_MODE;
+  test.skip(
+    !mode,
+    'Only the explicitly owned benchmark runner selects this case'
+  );
+  const candidate = mode === 'candidate';
+  const measurements: Record<string, unknown>[] = [];
+  const report = () =>
+    writeFileSync(
+      join(evidence, 'workspace-performance.json'),
+      JSON.stringify(
+        {
+          synthetic: true,
+          mode,
+          measurements,
+          scope:
+            'Scripted matching task outcomes; automatic scrolling and instantaneous text fills are included. Not human timing, mis-selection or physical-device evidence.',
+          budgets: { ordinaryTaskMs: 5000, injectedRecoveryTaskMs: 10000 },
+          humanMisSelections: null,
+          physicalKeyboard: 'pending human observation',
+        },
+        null,
+        2
+      )
+    );
+  try {
+    for (const fixture of fixtures)
+      for (const viewport of viewports) {
+        const context = await browser.newContext({
+          viewport,
+          timezoneId: 'Pacific/Honolulu',
+        });
+        try {
+          const page = await context.newPage();
+          const missionId = fixture.mission.id;
+          await page.goto(
+            `/operator?${candidate ? 'workspace=1&' : ''}mission_id=${missionId}`
+          );
+          if (candidate)
+            await expect(
+              page.getByRole('navigation', { name: 'Operator workspace' })
+            ).toBeVisible();
+          else
+            await expect(
+              page.getByRole('heading', {
+                name: 'Operator journal',
+                exact: true,
+              })
+            ).toBeVisible();
+          const calls = page.getByRole('region', {
+            name: 'Communications',
+            exact: true,
+          });
+          if (candidate)
+            await expect(
+              page
+                .getByRole('region', { name: 'Next requirement', exact: true })
+                .getByText('Synthetic customer 1 briefing', { exact: true })
+            ).toBeVisible();
+          else
+            await expect(
+              calls.getByRole('heading', {
+                name: 'Synthetic customer 1',
+                exact: true,
+              })
+            ).toBeVisible();
+          let counts = {
+            activations: 0,
+            textEdits: 0,
+            selectors: 0,
+            keypresses: 0,
+          };
+          let writes: unknown[] = [];
+          const click = async (target: import('@playwright/test').Locator) => {
+            counts.activations++;
+            await target.click();
+          };
+          const fill = async (
+            target: import('@playwright/test').Locator,
+            value: string
+          ) => {
+            counts.textEdits++;
+            await target.fill(value);
+          };
+          const select = async (
+            target: import('@playwright/test').Locator,
+            value: string
+          ) => {
+            counts.selectors++;
+            await target.selectOption(value);
+          };
+          const task = async (
+            name: string,
+            action: () => Promise<void>,
+            recovery = false
+          ) => {
+            counts = {
+              activations: 0,
+              textEdits: 0,
+              selectors: 0,
+              keypresses: 0,
+            };
+            writes = [];
+            const started = performance.now();
+            let recorded = false;
+            try {
+              await action();
+              const elapsedMs = performance.now() - started;
+              measurements.push({
+                scenario: fixture.seed,
+                viewport,
+                task: name,
+                ...counts,
+                elapsedMs,
+                writes,
+                recoveryActions: recovery ? 1 : 0,
+                outcome: 'authoritative receipt and visible UI asserted',
+              });
+              recorded = true;
+              report();
+              expect(elapsedMs).toBeLessThanOrEqual(recovery ? 10000 : 5000);
+            } catch (error) {
+              if (!recorded)
+                measurements.push({
+                  scenario: fixture.seed,
+                  viewport,
+                  task: name,
+                  ...counts,
+                  elapsedMs: performance.now() - started,
+                  writes,
+                  failed: true,
+                });
+              else measurements[measurements.length - 1].failed = true;
+              report();
+              throw error;
+            }
+          };
+          const save = async (method: string, action: () => Promise<void>) => {
+            const pending = page.waitForResponse(
+              (r) =>
+                r.request().method() === method &&
+                /\/api\/v2\/operator\/records(?:\/|$)/.test(
+                  new URL(r.url()).pathname
+                )
+            );
+            await action();
+            const response = await pending;
+            expect(response.ok()).toBe(true);
+            const receipt = await response.json();
+            await response.finished();
+            writes.push({
+              status: response.status(),
+              timing: response.request().timing(),
+              commandId: receipt.command_id,
+            });
+            expect(receipt.saved_records).toHaveLength(1);
+            return receipt;
+          };
+          const callName = `Benchmark ${fixture.seed} ${viewport.width} call`;
+          const callRow = () =>
+            calls.getByRole('listitem').filter({
+              has: page.getByRole('heading', { name: callName, exact: true }),
+            });
+          await task('Create planned call', async () => {
+            const editor = page.getByRole('form', { name: 'Call editor' });
+            if (candidate || !(await editor.isVisible()))
+              await click(
+                page.getByRole('button', {
+                  name: candidate ? 'Create call' : 'Schedule call',
+                  exact: true,
+                })
+              );
+            await fill(
+              editor.getByLabel('Party / participant (optional)'),
+              callName
+            );
+            await fill(
+              editor.getByLabel('Planned start (UTC)', { exact: true }),
+              '2026-10-17T17:00:00Z'
+            );
+            const receipt = await save('POST', () =>
+              click(
+                editor.getByRole('button', { name: 'Save call', exact: true })
+              )
+            );
+            expect(receipt.saved_records[0].payload.party).toBe(callName);
+            if (candidate)
+              await expect(page.getByRole('dialog')).toHaveCount(0);
+            else
+              await expect(
+                calls.getByText('Call saved.', { exact: true })
+              ).toBeVisible();
+            if (candidate)
+              await expect(
+                page.getByRole('region', { name: 'Save status', exact: true })
+              ).toContainText(`${callName} · accepted`);
+            else await expect(callRow()).toBeVisible();
+          });
+          await task('Reschedule same call', async () => {
+            if (candidate)
+              await click(
+                page
+                  .getByRole('navigation', { name: 'Operator workspace' })
+                  .getByRole('button', { name: 'Communications', exact: true })
+              );
+            const editor = page.getByRole('form', { name: 'Call editor' });
+            if (
+              candidate ||
+              (await editor
+                .getByLabel('Party / participant (optional)')
+                .inputValue()) !== callName
+            )
+              await click(
+                callRow().getByRole('button', {
+                  name: 'Edit call',
+                  exact: true,
+                })
+              );
+            // Optional details are a native disclosure in both shells.
+            await click(
+              editor.getByText('Timing, association and optional details', {
+                exact: true,
+              })
+            );
+            await fill(editor.getByLabel('Shift amount'), '15');
+            await select(editor.getByLabel('Shift unit'), 'minutes');
+            await click(
+              editor.getByRole('button', { name: 'Apply shift', exact: true })
+            );
+            const receipt = await save('PUT', () =>
+              click(
+                editor.getByRole('button', { name: 'Save call', exact: true })
+              )
+            );
+            expect(
+              Date.parse(receipt.saved_records[0].time.planned_start_at)
+            ).toBe(Date.parse('2026-10-17T17:15:00Z'));
+            if (candidate)
+              await expect(page.getByRole('dialog')).toHaveCount(0);
+            else
+              await expect(
+                calls.getByText('Call saved.', { exact: true })
+              ).toBeVisible();
+            await expect(callRow()).toContainText('17:15:00');
+          });
+          await task('Inspect original and replacement history', async () => {
+            await click(
+              callRow().getByRole('button', {
+                name: 'Call history',
+                exact: true,
+              })
+            );
+            const history = page.getByRole('region', {
+              name: 'Entry history',
+              exact: true,
+            });
+            await expect(history.getByRole('listitem')).toHaveCount(2);
+            await expect(history).toContainText('Version 1');
+            await expect(history).toContainText('Version 2');
+            await click(
+              history.getByRole('button', {
+                name: 'Close history',
+                exact: true,
+              })
+            );
+            await expect(history).toHaveCount(0);
+          });
+          const enterNote = async (title: string) => {
+            if (
+              candidate ||
+              (await page.getByLabel('Title', { exact: true }).inputValue())
+            )
+              await click(
+                page.getByRole('button', {
+                  name: candidate ? 'Note' : 'New entry',
+                  exact: true,
+                })
+              );
+            await fill(page.getByLabel('Title', { exact: true }), title);
+            await fill(
+              page.getByRole('textbox', { name: 'Note', exact: true }),
+              'Fictional operational observation'
+            );
+          };
+          await task('Log mission note', async () => {
+            const title = `Benchmark ${fixture.seed} ${viewport.width} note`;
+            await enterNote(title);
+            const receipt = await save('POST', () =>
+              click(
+                page.getByRole('button', { name: 'Save entry', exact: true })
+              )
+            );
+            expect(receipt.saved_records[0].payload.title).toBe(title);
+            if (candidate)
+              await expect(page.getByRole('dialog')).toHaveCount(0);
+            else
+              await expect(
+                page
+                  .getByRole('region', {
+                    name: 'Operator journal',
+                    exact: true,
+                  })
+                  .getByRole('status')
+              ).toHaveText('Saved.');
+          });
+          const issueName = `Benchmark ${fixture.seed} ${viewport.width} issue`;
+          await task('Log issue', async () => {
+            if (candidate)
+              await click(
+                page
+                  .getByRole('navigation', { name: 'Operator workspace' })
+                  .getByRole('button', { name: 'Issues', exact: true })
+              );
+            if (
+              candidate ||
+              (await page.getByLabel('Problem description').inputValue())
+            )
+              await click(
+                page.getByRole('button', { name: 'New issue', exact: true })
+              );
+            const editor = page.getByRole('form', { name: 'Issue editor' });
+            await fill(editor.getByLabel('Problem description'), issueName);
+            const receipt = await save('POST', () =>
+              click(
+                editor.getByRole('button', { name: 'Save issue', exact: true })
+              )
+            );
+            expect(receipt.saved_records[0].payload.title).toBe(issueName);
+            if (candidate)
+              await expect(page.getByRole('dialog')).toHaveCount(0);
+            await expect(
+              page.getByRole('heading', { name: issueName, exact: true })
+            ).toBeVisible();
+          });
+          await task('Resolve issue', async () => {
+            const row = candidate
+              ? page.getByRole('article', {
+                  name: `Issue ${issueName}`,
+                  exact: true,
+                })
+              : page
+                  .getByRole('region', {
+                    name: 'Issue management',
+                    exact: true,
+                  })
+                  .getByRole('listitem')
+                  .filter({
+                    has: page.getByRole('heading', {
+                      name: issueName,
+                      exact: true,
+                    }),
+                  });
+            const receipt = await save('PUT', () =>
+              click(row.getByRole('button', { name: 'Resolve', exact: true }))
+            );
+            expect(receipt.saved_records[0].payload.status).toBe('resolved');
+            await expect(
+              page.getByRole('heading', { name: issueName, exact: true })
+            ).not.toBeVisible();
+          });
+          await task('Change shared display history window', async () => {
+            if (candidate) {
+              if (
+                !(await page
+                  .getByRole('button', { name: 'Display tools', exact: true })
+                  .isVisible())
+              )
+                await click(
+                  page.getByRole('button', { name: 'Tools', exact: true })
+                );
+              await click(
+                page.getByRole('button', { name: 'Display tools', exact: true })
+              );
+            }
+            const tools = candidate
+              ? page.getByRole('dialog', { name: 'Display tools', exact: true })
+              : page.getByRole('region', {
+                  name: 'Display tools',
+                  exact: true,
+                });
+            await click(
+              tools.getByRole('button', {
+                name: 'Show display controls',
+                exact: true,
+              })
+            );
+            const control = tools.getByLabel('Overview history window');
+            await expect(control).toBeEnabled();
+            const value =
+              (await control.inputValue()) === '900' ? '1800' : '900';
+            const response = page.waitForResponse(
+              (r) =>
+                r.request().method() === 'PUT' &&
+                r.url().endsWith('/api/overview-history/settings')
+            );
+            await select(control, value);
+            const accepted = await response;
+            expect(accepted.ok()).toBe(true);
+            const savedWindow = await accepted.json();
+            expect(savedWindow.window_seconds).toBe(Number(value));
+            await accepted.finished();
+            writes.push({
+              status: accepted.status(),
+              timing: accepted.request().timing(),
+              windowSeconds: savedWindow.window_seconds,
+            });
+            await expect(control).toHaveValue(value);
+            if (candidate) {
+              counts.keypresses++;
+              await page.keyboard.press('Escape');
+              await expect(tools).toHaveCount(0);
+            } else
+              await click(
+                tools.getByRole('button', {
+                  name: 'Hide display controls',
+                  exact: true,
+                })
+              );
+          });
+          await task(
+            'Recover response loss with exact retry',
+            async () => {
+              const title = `Benchmark ${fixture.seed} ${viewport.width} recovery`;
+              await enterNote(title);
+              let committed: unknown = null;
+              const attempts: ReturnType<typeof snapshot>[] = [];
+              let dropped = false;
+              await page.route('**/api/v2/operator/records', async (route) => {
+                if (route.request().method() !== 'POST')
+                  return route.continue();
+                attempts.push(snapshot(route.request()));
+                if (dropped) return route.continue();
+                dropped = true;
+                const response = await route.fetch();
+                expect(response.ok()).toBe(true);
+                committed = await response.json();
+                await route.abort('connectionreset');
+              });
+              await click(
+                page.getByRole('button', { name: 'Save entry', exact: true })
+              );
+              if (candidate) {
+                await expect(page.getByRole('dialog')).toContainText(
+                  /uncertain/i
+                );
+                await click(
+                  page.getByRole('dialog').getByRole('button', {
+                    name: 'Keep draft and return',
+                    exact: true,
+                  })
+                );
+              }
+              const retry = page.getByRole('button', {
+                name: candidate ? 'Retry same save' : 'Retry exact save',
+                exact: true,
+              });
+              await expect(retry).toBeEnabled();
+              const receipt = await save('POST', () => click(retry));
+              expect(receipt).toEqual(committed);
+              expect(attempts).toHaveLength(2);
+              expect(attempts[1]).toEqual(attempts[0]);
+              const id = receipt.saved_records[0].record_id;
+              const history = await (
+                await page.request.get(`/api/v2/operator/records/${id}/history`)
+              ).json();
+              expect(history.items).toHaveLength(1);
+              expect(history.cursor).toBeNull();
+              await expect(retry).toHaveCount(0);
+              await page.unroute('**/api/v2/operator/records');
+            },
+            true
+          );
+          if (fixture.seed === 'normal')
+            for (const [name, path] of [
+              ['Overview', '/overview'],
+              ['Missions', '/missions'],
+              ['Configuration', '/configuration'],
+            ] as const) {
+              await page.goto(path);
+              if (name === 'Overview')
+                await expect(page.locator('main')).toBeVisible();
+              else
+                await expect(
+                  page.getByRole('heading', { name, exact: true })
+                ).toBeVisible();
+              if (candidate)
+                await auditControlNames(
+                  page,
+                  `candidate final ${name} ${viewport.width}x${viewport.height}`
+                );
+              await page.screenshot({
+                path: join(
+                  evidence,
+                  `${mode}-${name.toLowerCase()}-${viewport.width}x${viewport.height}.png`
+                ),
+                animations: 'disabled',
+                fullPage: false,
+              });
+            }
+        } finally {
+          await context.close();
+        }
+      }
+    expect(measurements).toHaveLength(fixtures.length * viewports.length * 8);
+  } finally {
+    report();
+  }
+});
