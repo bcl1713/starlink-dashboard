@@ -124,6 +124,9 @@ function Guide({
         </p>
       )}
       {checkError && <p role="alert">Evidence check failed: {checkError}</p>}
+      {step.id === 'T08' && (
+        <TrainingReceiptLoss identity={identity} compact={!expanded} />
+      )}
       {!expanded ? (
         <div className="flex flex-wrap items-center gap-2">
           <p>
@@ -155,7 +158,6 @@ function Guide({
             </select>
           </label>
           <TrainingStep stageId={step.id} evaluation={evaluation} />
-          {step.id === 'T08' && <TrainingReceiptLoss identity={identity} />}
           {step.id === 'T11' && (
             <section aria-label="Optional provider reads" className="space-y-2">
               <h3>Optional provider reads</h3>

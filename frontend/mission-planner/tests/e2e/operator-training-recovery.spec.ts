@@ -58,6 +58,15 @@ test('native backup restore changes epoch and quarantines an actual lost-receipt
     .getByRole('button', { name: 'Arm one note receipt loss', exact: true })
     .click();
   await expect(guide).toContainText('Armed for 60 seconds');
+  await guide
+    .getByRole('button', { name: 'Open lesson controls', exact: true })
+    .click();
+  await expect(
+    guide.getByRole('button', {
+      name: 'Cancel receipt-loss exercise',
+      exact: true,
+    })
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Note', exact: true }).click();
   await editor
     .getByRole('textbox', { name: 'Title', exact: true })

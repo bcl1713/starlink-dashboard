@@ -271,6 +271,26 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
   page,
   browser,
 }) => {
+  const observedWrites: unknown[] = [];
+  page.on('response', async (response) => {
+    const request = response.request();
+    if (
+      !['POST', 'PUT'].includes(request.method()) ||
+      !request.url().includes('/api/v2/operator/records')
+    )
+      return;
+    try {
+      observedWrites.push({
+        method: request.method(),
+        body: request.postDataJSON(),
+        headers: request.headers(),
+        status: response.status(),
+        reply: await response.json(),
+      });
+    } catch {
+      /* A deliberately lost response may have no readable body. */
+    }
+  });
   const missions = await (await page.request.get('/api/v2/missions')).json();
   const id = missions[0].id;
   const proofs = [];
@@ -415,9 +435,9 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
         .getByRole('region', { name: 'Retained drafts', exact: true })
         .getByRole('button', { name: new RegExp(title) })
         .click();
-      await expect(editor.getByRole('textbox', { name: 'Note', exact: true })).toHaveValue(
-        'Learner retained input after reviewing counterpart'
-      );
+      await expect(
+        editor.getByRole('textbox', { name: 'Note', exact: true })
+      ).toHaveValue('Learner retained input after reviewing counterpart');
       await editor
         .getByRole('button', {
           name: 'Keep my input using current version 2 as base',
@@ -443,6 +463,11 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
         2
       );
       await expect(editor).toHaveCount(0);
+      await expect(
+        page
+          .getByRole('region', { name: 'Save status', exact: true })
+          .getByText(`${title} · accepted`, { exact: true })
+      ).toBeVisible();
       await check();
       await expect
         .poll(
@@ -485,6 +510,28 @@ test('guide verifies a real counterpart conflict, explicit reread and a new revi
         history,
         observation: await observation(recordId),
       });
+    } catch (failure) {
+      writeFileSync(
+        join(root, `guided-conflict-failure-${viewport.width}.json`),
+        JSON.stringify(
+          {
+            viewport,
+            observedWrites,
+            completedViewports: proofs,
+            saveStatus: await page
+              .getByRole('region', { name: 'Save status', exact: true })
+              .innerText(),
+            retained: await page.evaluate(() =>
+              Object.keys(localStorage)
+                .filter((key) => key.startsWith('operator-training-progress:'))
+                .map((key) => JSON.parse(localStorage.getItem(key)!))
+            ),
+          },
+          null,
+          2
+        )
+      );
+      throw failure;
     } finally {
       await peer.close();
     }

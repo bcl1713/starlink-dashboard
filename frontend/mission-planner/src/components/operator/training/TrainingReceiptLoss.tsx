@@ -4,8 +4,10 @@ import { armPrivateReceiptLoss } from './trainingReceiptLoss';
 
 export function TrainingReceiptLoss({
   identity,
+  compact = false,
 }: {
   identity: TrainingIdentity;
+  compact?: boolean;
 }) {
   const pending = useRef<AbortController | null>(null);
   const [armed, setArmed] = useState(false);
@@ -45,11 +47,13 @@ export function TrainingReceiptLoss({
   return (
     <fieldset className="space-y-2 rounded border p-3">
       <legend>Private lost-receipt exercise</legend>
-      <p>
-        The normal backend save still runs. This exercise withholds one
-        successful note response from this tab’s journal owner; it does not
-        simulate an aircraft outage or create a replacement command.
-      </p>
+      {!compact && (
+        <p>
+          The normal backend save still runs. This exercise withholds one
+          successful note response from this tab’s journal owner; it does not
+          simulate an aircraft outage or create a replacement command.
+        </p>
+      )}
       <button className="ws-button" disabled={armed} onClick={() => void arm()}>
         Arm one note receipt loss
       </button>

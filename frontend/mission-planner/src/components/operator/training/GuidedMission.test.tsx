@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { GuidedMission } from './GuidedMission';
+import * as receiptExercise from './trainingReceiptLoss';
 const identity = {
   fixtureVersion: 1,
   origin: 'http://localhost:4567',
@@ -13,6 +14,33 @@ const evidence = { available: true, fresh: true, outcomes: [] };
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.restoreAllMocks();
+});
+it('keeps the explicitly armed receipt exercise alive when lesson instructions are compacted', async () => {
+  const arm = vi
+    .spyOn(receiptExercise, 'armPrivateReceiptLoss')
+    .mockResolvedValue(undefined);
+  render(
+    <GuidedMission
+      identity={identity}
+      evidence={evidence}
+      onOpenTarget={() => {}}
+      onDismiss={() => {}}
+    />
+  );
+  fireEvent.change(screen.getByRole('combobox', { name: 'Lesson' }), {
+    target: { value: 'T08' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Arm one note receipt loss' })
+  );
+  await screen.findByText(/Armed for 60 seconds/);
+  const signal = arm.mock.calls[0][1];
+  fireEvent.click(screen.getByRole('button', { name: 'Open lesson controls' }));
+  expect(signal.aborted).toBe(false);
+  expect(
+    screen.getByRole('button', { name: 'Cancel receipt-loss exercise' })
+  ).toBeTruthy();
 });
 it('offers real controls without treating Next or Skip as completion', () => {
   const open = vi.fn();
