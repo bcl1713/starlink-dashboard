@@ -290,10 +290,10 @@ the same file lock and returns the incremented version; conflicts return 409.
 Storage failures return 503 and preserve the previous file. The UI waits for
 this acknowledgment before showing a saved/applied state.
 
-Presets are additive `operator_presets` metadata in the existing Overview link
-settings JSON file, without database migration or new infrastructure.
-Existing writes preserve that metadata and unfamiliar future fields. Back up settings with the deployment's normal configuration
-backup. Old binaries ignore and retain the metadata;
-rolling back the frontend/backend leaves saved visibility and preset data in
-place. Disable Operator to hide controls; Configuration remains available.
-Do not delete shared configuration or Operator journal volumes for rollback.
+Presets add `operator_presets` metadata to existing Overview link settings JSON,
+without database migration or new infrastructure. Writes preserve that metadata
+and unfamiliar future fields. Include settings in normal configuration backups.
+Old binaries ignore and retain the metadata. Frontend/backend rollback preserves
+saved visibility and presets. Disable Operator to hide controls; Configuration
+remains available. Do not delete shared configuration or Operator journal
+volumes for rollback.
