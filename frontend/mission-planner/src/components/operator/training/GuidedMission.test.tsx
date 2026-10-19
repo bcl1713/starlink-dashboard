@@ -116,6 +116,7 @@ it('reports a failed evidence check separately from progress storage and permits
   ).toBeTruthy();
   expect(screen.getByText('Evidence unavailable')).toBeTruthy();
   expect(screen.queryByText(/Guide progress could not be saved/)).toBeNull();
+  expect(check.mock.calls[0][1]).toBe('T01');
   fireEvent.click(
     screen.getByRole('button', { name: 'Check current evidence' })
   );

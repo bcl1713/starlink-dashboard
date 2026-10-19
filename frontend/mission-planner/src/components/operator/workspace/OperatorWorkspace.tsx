@@ -443,7 +443,7 @@ export function OperatorWorkspace() {
             identity={training.identity}
             evidence={trainingEvidence}
             onDismiss={() => setGuide(false)}
-            onCheckEvidence={async (previous) => {
+            onCheckEvidence={async (previous, stage) => {
               setCheckedTraining(null);
               let clientObservations = retainClientObservation(
                 training.identity,
@@ -480,7 +480,9 @@ export function OperatorWorkspace() {
                 readEventSnapshot(missionId),
                 mission.refetch(),
                 readTrainingDisplayEvidence(),
-                readTrainingProviderEvidence(),
+                stage === 'T11'
+                  ? readTrainingProviderEvidence()
+                  : Promise.resolve({ providerStates: [], outcomes: [] }),
               ]);
               const currentContext = trainingContext(
                 health.data,

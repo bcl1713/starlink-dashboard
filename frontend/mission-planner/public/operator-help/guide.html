@@ -1446,35 +1446,42 @@ scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage pos
         <h2>15. Restart, reset and maintenance</h2>
         <h3>Private backup and changed-epoch warmup</h3>
         <p>
-          Do this before starting the first flight. Save a clearly named training
-          note, then make a native backup using the private root and the exact
-          browser origin (scheme, host and port, without a path). Preserve the
-          printed manifest path. Save a second note after the backup. The private
-          lost-receipt exercise can leave that second command uncertain; keep its
-          frozen request for the changed-epoch check and do not retry it before
-          restoring.
+          Do this before starting the first flight. Save a clearly named
+          training note, then make a native backup using the private root and
+          the exact browser origin (scheme, host and port, without a path).
+          Preserve the printed manifest path. Save a second note after the
+          backup. The private lost-receipt exercise can leave that second
+          command uncertain: in T08, choose Arm one note receipt loss, wait for
+          Armed, then create and save the second note within 60 seconds. Its
+          real successful response is withheld once from this tab's journal
+          owner. Keep draft and return; keep its frozen request for the
+          changed-epoch check and do not retry it before restoring. Cancel,
+          expiry or leaving the exercise removes the response interceptor. No
+          backend fault endpoint is installed.
         </p>
         <pre><code>scripts/operator-training.sh journal-check --root /tmp/operator-learner
 scripts/operator-training.sh journal-backup --root /tmp/operator-learner --browser-origin http://127.0.0.1:PORT
 # Use the exact manifest printed above, after the post-backup note.
 scripts/operator-training.sh journal-restore --root /tmp/operator-learner --manifest /app/data/operator/simulation/NAMESPACE/backups/BACKUP.json --browser-origin http://127.0.0.1:PORT</code></pre>
         <p>
-          The wrapper stops only this private backend writer, invokes the existing
-          offline restore and integrity check, restarts the backend and prints an
-          evidence JSON path. Reload Operator. Confirm that the first note remains,
-          the later note is absent and the old uncertain request is quarantined
-          with Retry same save disabled. Do not retarget or discard it. In the
-          restored guide, select this JSON under Native recovery report in T08 or
-          T11. Check current evidence revalidates the restored history and retained
-          old request. The tool records maintenance facts; it does not certify a
-          human observation. Without an old uncertain request, backup restoration
-          can be verified while the quarantine outcome remains incomplete.
+          The wrapper stops only this private backend writer, invokes the
+          existing offline restore and integrity check, restarts the backend and
+          prints an evidence JSON path. Reload Operator. Confirm that the first
+          note remains, the later note is absent and the old uncertain request
+          is quarantined with Retry same save disabled. Do not retarget or
+          discard it. In the restored guide, select this JSON under Native
+          recovery report in T08 or T11. Check current evidence revalidates the
+          restored history and retained old request. The tool records
+          maintenance facts; it does not certify a human observation. Without an
+          old uncertain request, backup restoration can be verified while the
+          quarantine outcome remains incomplete.
         </p>
         <p>
           Restore deliberately creates a new epoch. Earlier guide observations
-          remain associated with the old epoch and are not transferred. Return to
-          T01 after this warmup and conduct the flight lessons in the restored
-          epoch. Do not restore late in the mission to manufacture completion.
+          remain associated with the old epoch and are not transferred. Return
+          to T01 after this warmup and conduct the flight lessons in the
+          restored epoch. Do not restore late in the mission to manufacture
+          completion.
         </p>
         <p>
           <strong>Reset guide progress</strong> clears only local guide

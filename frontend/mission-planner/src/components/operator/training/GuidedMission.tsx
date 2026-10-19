@@ -1,5 +1,6 @@
 import { TrainingArchiveFiles } from './TrainingArchiveFiles';
 import { TrainingRecoveryFile } from './TrainingRecoveryFile';
+import { TrainingReceiptLoss } from './TrainingReceiptLoss';
 import type { RecoveryObservation } from './trainingRecoveryEvidence';
 import type { ArchiveObservation } from './trainingArchiveEvidence';
 import { useState } from 'react';
@@ -34,7 +35,8 @@ interface Props {
   onOpenTarget: (stage: TrainingStageId) => void;
   onDismiss: () => void;
   onCheckEvidence?: (
-    observations: TrainingObservations
+    observations: TrainingObservations,
+    stage: TrainingStageId
   ) => Promise<(TrainingObservations & { unavailableReason?: string }) | void>;
 }
 export function GuidedMission(props: Props) {
@@ -75,17 +77,20 @@ function Guide({
     setChecking(true);
     setCheckError(null);
     try {
-      const observations = await onCheckEvidence({
-        recoveryObservation:
-          recoveryObservation ?? progress.recoveryObservation,
-        conflictObservations: progress.conflictObservations ?? [],
-        clientObservations: progress.clientObservations ?? [],
-        retryObservations: progress.retryObservations ?? [],
-        replayObservations: progress.replayObservations ?? [],
-        journalObservations: progress.journalObservations ?? [],
-        archiveObservations:
-          archiveObservations ?? progress.archiveObservations ?? [],
-      });
+      const observations = await onCheckEvidence(
+        {
+          recoveryObservation:
+            recoveryObservation ?? progress.recoveryObservation,
+          conflictObservations: progress.conflictObservations ?? [],
+          clientObservations: progress.clientObservations ?? [],
+          retryObservations: progress.retryObservations ?? [],
+          replayObservations: progress.replayObservations ?? [],
+          journalObservations: progress.journalObservations ?? [],
+          archiveObservations:
+            archiveObservations ?? progress.archiveObservations ?? [],
+        },
+        progress.currentStage
+      );
       if (observations) {
         const { unavailableReason, ...retained } = observations;
         keep({ ...progress, ...retained });
@@ -150,6 +155,7 @@ function Guide({
             </select>
           </label>
           <TrainingStep stageId={step.id} evaluation={evaluation} />
+          {step.id === 'T08' && <TrainingReceiptLoss identity={identity} />}
           {step.id === 'T11' && (
             <section aria-label="Optional provider reads" className="space-y-2">
               <h3>Optional provider reads</h3>

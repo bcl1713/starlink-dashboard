@@ -25,11 +25,11 @@ launcher's existing `--relay` option. A local Docker installation normally does
 not need it.
 
 This is an implementation candidate, not a fully accepted release. T01–T11
-remain honest about missing machine evidence and manual observations. At this
-checkpoint, real conflict recovery has three-size browser acceptance; the native
-backup/epoch adapters have passed their separate three-size native restore browser
-exercise at `dc44e086`.
-Remaining T11 provider/field coverage is unfinished; full parity crosswalk, final performance/accessibility,
+remain honest about missing machine evidence and human observations. Real
+conflict recovery and native backup/epoch recovery have separate three-size
+browser acceptance. Current T11 provider reads, the 323-entry optional-branch
+reference and the private receipt-loss control await the fresh linked run.
+The release parity evidence crosswalk, final performance/accessibility,
 mobile-keyboard checks and an actual uncoached person's walkthrough remain open.
 The original shell is still the default; `?workspace=1` selects the candidate.
 Do not interpret a green lesson or a passing browser test as human usability

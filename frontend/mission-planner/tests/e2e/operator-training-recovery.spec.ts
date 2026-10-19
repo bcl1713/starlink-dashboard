@@ -47,11 +47,21 @@ test('native backup restore changes epoch and quarantines an actual lost-receipt
   const kept = await (await saved).json();
   await expect(editor).toHaveCount(0);
   const backup = host('journal-backup', '--browser-origin', origin);
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+    .click();
+  await guide
+    .getByRole('combobox', { name: 'Lesson', exact: true })
+    .selectOption('T08');
+  await guide
+    .getByRole('button', { name: 'Arm one note receipt loss', exact: true })
+    .click();
+  await expect(guide).toContainText('Armed for 60 seconds');
   await page.getByRole('button', { name: 'Note', exact: true }).click();
   await editor
     .getByRole('textbox', { name: 'Title', exact: true })
     .fill('Fictional discarded lost receipt');
-  let committed: unknown = null;
   const attempts: unknown[] = [];
   page.on('request', (request) => {
     if (
@@ -64,15 +74,15 @@ test('native backup restore changes epoch and quarantines an actual lost-receipt
         epoch: request.headers()['x-operator-store-epoch'],
       });
   });
-  await page.route('**/api/v2/operator/records', async (route) => {
-    if (route.request().method() !== 'POST') return route.continue();
-    const response = await route.fetch();
-    expect(response.ok()).toBe(true);
-    committed = await response.json();
-    await route.abort('connectionreset');
-  });
+  const realResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/v2/operator/records')
+  );
   await editor.getByRole('button', { name: 'Save entry', exact: true }).click();
-  await expect.poll(() => committed).not.toBeNull();
+  const observedResponse = await realResponse;
+  expect(observedResponse.ok()).toBe(true);
+  const committed = await observedResponse.json();
   await expect(editor).toContainText(/uncertain/i);
   await editor
     .getByRole('button', { name: 'Keep draft and return', exact: true })
@@ -131,6 +141,9 @@ test('native backup restore changes epoch and quarantines an actual lost-receipt
     await guide
       .getByRole('combobox', { name: 'Lesson', exact: true })
       .selectOption('T11');
+    await guide
+      .getByRole('button', { name: 'Check current evidence', exact: true })
+      .click();
     await expect(
       guide.getByRole('region', {
         name: 'Optional provider reads',
