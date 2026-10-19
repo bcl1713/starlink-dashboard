@@ -1,4 +1,8 @@
 import {
+  decodeClientObservation,
+  type ClientObservation,
+} from './trainingClientEvidence';
+import {
   decodeArchiveObservation,
   type ArchiveObservation,
 } from './trainingArchiveEvidence';
@@ -29,6 +33,7 @@ export interface ManualEvidence {
   note: string;
 }
 export interface TrainingObservations {
+  clientObservations?: ClientObservation[];
   archiveObservations?: ArchiveObservation[];
   journalObservations?: JournalObservation[];
   retryObservations?: RetryObservation[];
@@ -86,6 +91,16 @@ function validProgress(
   )
     return false;
   try {
+    if (value.clientObservations !== undefined) {
+      if (
+        !Array.isArray(value.clientObservations) ||
+        value.clientObservations.length > 8
+      )
+        return false;
+      value.clientObservations.forEach((item) =>
+        decodeClientObservation(item, identity)
+      );
+    }
     if (value.archiveObservations !== undefined) {
       if (
         !Array.isArray(value.archiveObservations) ||
@@ -214,7 +229,13 @@ export function saveProgress(
   try {
     const { fixtureVersion, origin, storeId, epoch, missionId } = progress;
     if (
-      !validProgress(progress, { fixtureVersion, origin, storeId, epoch, missionId })
+      !validProgress(progress, {
+        fixtureVersion,
+        origin,
+        storeId,
+        epoch,
+        missionId,
+      })
     )
       throw new Error('Invalid guide progress.');
     storage.setItem(key(progress), JSON.stringify(progress));

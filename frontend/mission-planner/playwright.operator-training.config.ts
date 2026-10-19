@@ -5,23 +5,27 @@ if (
 )
   throw new Error('Owned disposable training origin/root required');
 const phase =
-  process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
-    ? 'records'
-    : process.env.OPERATOR_TRAINING_DECISIONS_ONLY === 'true'
-      ? 'decisions'
-      : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
-        ? 'archive'
-        : 'training';
+  process.env.OPERATOR_TRAINING_CLIENTS_ONLY === 'true'
+    ? 'clients'
+    : process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
+      ? 'records'
+      : process.env.OPERATOR_TRAINING_DECISIONS_ONLY === 'true'
+        ? 'decisions'
+        : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
+          ? 'archive'
+          : 'training';
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch:
-    process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
-      ? 'operator-training-records.spec.ts'
-      : process.env.OPERATOR_TRAINING_DECISIONS_ONLY === 'true'
-        ? 'operator-training-decisions.spec.ts'
-        : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
-          ? 'operator-training-archive.spec.ts'
-          : 'operator-training-fixture.spec.ts',
+    process.env.OPERATOR_TRAINING_CLIENTS_ONLY === 'true'
+      ? 'operator-training-client.spec.ts'
+      : process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
+        ? 'operator-training-records.spec.ts'
+        : process.env.OPERATOR_TRAINING_DECISIONS_ONLY === 'true'
+          ? 'operator-training-decisions.spec.ts'
+          : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
+            ? 'operator-training-archive.spec.ts'
+            : 'operator-training-fixture.spec.ts',
   workers: 1,
   retries: 0,
   timeout: 240_000,

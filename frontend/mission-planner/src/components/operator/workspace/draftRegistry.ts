@@ -77,7 +77,10 @@ export function isOperatorInput(value: unknown): value is OperatorInput {
   );
 }
 
-function validEnvelope(value: unknown, key: string): value is DraftEnvelope {
+export function isDraftEnvelope(
+  value: unknown,
+  key: string
+): value is DraftEnvelope {
   if (!value || typeof value !== 'object') return false;
   const row = value as DraftEnvelope;
   const t = row.target;
@@ -123,7 +126,7 @@ export class DraftRegistry {
         if (!key?.startsWith(draftPrefix)) continue;
         try {
           const value: unknown = JSON.parse(storage.getItem(key)!);
-          if (!validEnvelope(value, key)) throw new Error('Invalid envelope');
+          if (!isDraftEnvelope(value, key)) throw new Error('Invalid envelope');
           this.drafts.set(value.draftId, { ...value, persistence: durable() });
         } catch {
           this.errors.push({
@@ -170,7 +173,7 @@ export class DraftRegistry {
   }
 
   parkDraft(envelope: DraftEnvelope): DraftEnvelope {
-    if (!validEnvelope(envelope, draftPrefix + envelope.draftId))
+    if (!isDraftEnvelope(envelope, draftPrefix + envelope.draftId))
       throw new Error('Invalid draft envelope.');
     const previous = this.drafts.get(envelope.draftId);
     if (previous && envelope.revision < previous.revision)

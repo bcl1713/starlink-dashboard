@@ -33,7 +33,7 @@ interface Props {
   onDismiss: () => void;
   onCheckEvidence?: (
     observations: TrainingObservations
-  ) => Promise<TrainingObservations | void>;
+  ) => Promise<(TrainingObservations & { unavailableReason?: string }) | void>;
 }
 export function GuidedMission(props: Props) {
   return <Guide key={JSON.stringify(props.identity)} {...props} />;
@@ -71,13 +71,18 @@ function Guide({
     setCheckError(null);
     try {
       const observations = await onCheckEvidence({
+        clientObservations: progress.clientObservations ?? [],
         retryObservations: progress.retryObservations ?? [],
         replayObservations: progress.replayObservations ?? [],
         journalObservations: progress.journalObservations ?? [],
         archiveObservations:
           archiveObservations ?? progress.archiveObservations ?? [],
       });
-      if (observations) keep({ ...progress, ...observations });
+      if (observations) {
+        const { unavailableReason, ...retained } = observations;
+        keep({ ...progress, ...retained });
+        if (unavailableReason) setCheckError(unavailableReason);
+      }
     } catch (reason) {
       setCheckError(
         reason instanceof Error

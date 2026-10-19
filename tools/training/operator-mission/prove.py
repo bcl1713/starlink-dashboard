@@ -103,6 +103,23 @@ def main():
             cwd=launcher.SOURCE / "frontend/mission-planner",
             timeout=620,
         )
+        runner.env["OPERATOR_TRAINING_CLIENTS_ONLY"] = "true"
+        runner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "6m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-training.config.ts",
+            ],
+            cwd=launcher.SOURCE / "frontend/mission-planner",
+            timeout=380,
+        )
+        runner.env.pop("OPERATOR_TRAINING_CLIENTS_ONLY")
         if archive:
             runner.env["OPERATOR_TRAINING_RECORDS_ONLY"] = "true"
             runner.execute(

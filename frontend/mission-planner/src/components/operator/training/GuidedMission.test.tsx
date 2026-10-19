@@ -143,3 +143,43 @@ it('distinguishes imported archive tooling evidence from current reads and human
   ).toContain('export downloaded · Verified from imported tooling evidence');
   expect(screen.getByText('Incomplete')).toBeTruthy();
 });
+
+it('retains an explicit offline browser read while leaving backend evidence unavailable', async () => {
+  const read = {
+    identity,
+    namespace: 'operator-training-v1-cc098a03-573a-4a89-ad78-167690ba631e',
+    observedAt: 1,
+    journalH: 0,
+    online: false,
+    drafts: [],
+  };
+  const check = vi
+    .fn()
+    .mockResolvedValueOnce({
+      clientObservations: [read],
+      unavailableReason:
+        'Offline: retain the draft and reconnect before checking backend evidence.',
+    })
+    .mockResolvedValue(undefined);
+  render(
+    <GuidedMission
+      identity={identity}
+      evidence={evidence}
+      onOpenTarget={() => {}}
+      onDismiss={() => {}}
+      onCheckEvidence={check}
+    />
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check current evidence' })
+  );
+  expect((await screen.findByRole('alert')).textContent).toContain(
+    'Offline: retain the draft'
+  );
+  expect(screen.getByText('Evidence unavailable')).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Check current evidence' })
+  );
+  await screen.findByText('Incomplete');
+  expect(check.mock.calls[1][0].clientObservations).toEqual([read]);
+});

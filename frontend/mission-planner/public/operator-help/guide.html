@@ -959,6 +959,73 @@
           clearing browser storage or closing the only retained copy during a
           storage error.
         </p>
+        <h3>Private parked-draft and offline evidence</h3>
+        <ol>
+          <li>
+            Create a fictional note, keep its intended unknown or reported time,
+            choose Keep draft and return, and use Check current evidence in T08.
+          </li>
+          <li>
+            Create another unsent note in the other leg or a different scope.
+            Park it and check again. Resume the first draft and confirm its
+            original target and text. Neither parked draft is a saved record.
+          </li>
+          <li>
+            On this private instance only, use your browser developer tools'
+            Network Offline control. Edit the first draft, park it, and check
+            evidence while offline. The guide retains a browser observation but
+            explicitly leaves backend evidence unavailable.
+          </li>
+          <li>
+            Turn Offline off. Reload and reopen the guide, then check evidence
+            before further editing. Resume and save the same draft normally,
+            then check again. Credit requires the retained offline and online
+            input plus a later matching backend revision.
+          </li>
+        </ol>
+        <details>
+          <summary>Private storage-unavailable exercise</summary>
+          <p>
+            Keep this tab open. On the disposable private instance, this bounded
+            console command fills only the tab's session storage with named
+            exercise keys. It preserves existing drafts and installs its cleanup
+            command before adding keys. Do not run it on an operational
+            instance.
+          </p>
+          <pre><code>(() =&gt; {
+  const keys = [];
+  const prefix = 'operator-training-quota:' + crypto.randomUUID() + ':';
+  window.restorePrivateTrainingStorage = () =&gt; {
+    for (const key of keys) sessionStorage.removeItem(key);
+  };
+  for (const size of [65536, 256]) {
+    for (let i = 0; i &lt; 256; i++) {
+      const key = prefix + keys.length;
+      keys.push(key);
+      try { sessionStorage.setItem(key, 'x'.repeat(size)); }
+      catch (error) {
+        if (error.name !== 'QuotaExceededError') throw error;
+        break;
+      }
+    }
+  }
+})();</code></pre>
+          <p>
+            Create a fictional note and read its actual retention error. Park it
+            and check T11 evidence. Do not reload or close the tab. Remove only
+            the exercise filler by running:
+          </p>
+          <pre><code>restorePrivateTrainingStorage();
+delete window.restorePrivateTrainingStorage;</code></pre>
+          <p>
+            Resume the note. Make and undo a small text edit so its original
+            input is now retained durably. Park it and check again, then save
+            normally and check once more. The adapter requires the memory-only
+            and durable registry reads and a later matching saved revision. If
+            any read is missing, the outcome stays incomplete. The exercise does
+            not certify another browser's storage or replace a backup.
+          </p>
+        </details>
         <p>
           In the private lost-receipt exercise, check guide evidence while the
           command is uncertain <em>before</em> retrying. Then use Retry same

@@ -1,3 +1,7 @@
+import {
+  collectClientEvidence,
+  retainClientObservation,
+} from '../training/trainingClientEvidence';
 import { readTrainingDisplayEvidence } from '../training/trainingDisplayEvidence';
 import { collectArchiveEvidence } from '../training/trainingArchiveEvidence';
 import {
@@ -142,6 +146,8 @@ export function OperatorWorkspace() {
     window.location.origin
   );
   const trainingIdentity = JSON.stringify(training?.identity);
+  const trainingLoading =
+    !!missionId && (mission.isPending || health.isPending);
   const trainingEvents = training
     ? collectEventEvidence({
         identity: training.identity,
@@ -426,6 +432,21 @@ export function OperatorWorkspace() {
             onDismiss={() => setGuide(false)}
             onCheckEvidence={async (previous) => {
               setCheckedTraining(null);
+              let clientObservations = retainClientObservation(
+                training.identity,
+                health.data!.simulation_run_id!,
+                events.snapshot?.H ?? -1,
+                navigator.onLine,
+                workspace.registry.listDrafts(),
+                previous.clientObservations ?? []
+              );
+              if (!navigator.onLine)
+                return {
+                  ...previous,
+                  clientObservations,
+                  unavailableReason:
+                    'Offline: retain the draft and reconnect before checking backend evidence.',
+                };
               const checked = await readTrainingRecords(
                 training.identity,
                 health.data!.simulation_run_id!,
@@ -473,6 +494,14 @@ export function OperatorWorkspace() {
                   'Training evidence changed while checking; check again.'
                 );
               const namespace = health.data!.simulation_run_id!;
+              clientObservations = retainClientObservation(
+                training.identity,
+                namespace,
+                checked.H!,
+                true,
+                workspace.registry.listDrafts(),
+                previous.clientObservations ?? []
+              );
               const observations = [...(previous.retryObservations ?? [])];
               for (const transaction of workspace.tray) {
                 if (
@@ -545,6 +574,13 @@ export function OperatorWorkspace() {
                 training.prerequisiteIds,
                 journalObservations
               );
+              const clientOutcomes = collectClientEvidence(
+                training.identity,
+                namespace,
+                checked.H,
+                checked.evidenceRecords,
+                clientObservations
+              );
               const archiveOutcomes = collectArchiveEvidence(
                 training.identity,
                 namespace,
@@ -556,6 +592,7 @@ export function OperatorWorkspace() {
                 ...checked,
                 toolingOutcomes: archiveOutcomes,
                 historicalOutcomes: [
+                  ...clientOutcomes,
                   ...journalOutcomes,
                   ...historicalReplayOutcomes.filter(
                     (outcome) => !currentReplayOutcomes.includes(outcome)
@@ -565,6 +602,7 @@ export function OperatorWorkspace() {
                   ...new Set([
                     ...checked.outcomes,
                     ...displayOutcomes,
+                    ...clientOutcomes,
                     ...retryOutcomes,
                     ...journalOutcomes,
                     ...archiveOutcomes,
@@ -579,6 +617,7 @@ export function OperatorWorkspace() {
               });
               events.refresh();
               return {
+                clientObservations,
                 retryObservations: retainedObservations,
                 replayObservations,
                 journalObservations,
@@ -994,6 +1033,7 @@ export function OperatorWorkspace() {
           </div>
           <button
             className="ws-button"
+            disabled={trainingLoading}
             onClick={() => {
               if (training) {
                 setHelp(false);
@@ -1003,6 +1043,11 @@ export function OperatorWorkspace() {
           >
             Guided mission walkthrough
           </button>
+          {trainingLoading && (
+            <p role="status">
+              Checking the selected mission and private training identity…
+            </p>
+          )}
           {guide && !training && (
             <p role="status">
               Training requires a separate private instance on a nonproduction

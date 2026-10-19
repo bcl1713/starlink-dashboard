@@ -8,19 +8,21 @@ import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
 import * as api from '@/services/operator';
 import { health } from '@/test/operator-fixtures';
+const missionState = vi.hoisted(() => ({ pending: false }));
 vi.mock('@/hooks/api/useMissions', () => ({
-  useMission: () => ({ data: undefined }),
+  useMission: () => ({ data: undefined, isPending: missionState.pending }),
   useMissionsPage: () => ({ data: { missions: [] } }),
 }));
 const clients: QueryClient[] = [];
 afterEach(() => {
+  missionState.pending = false;
   cleanup();
   clients.splice(0).forEach((client) => client.clear());
   sessionStorage.clear();
   localStorage.clear();
   vi.restoreAllMocks();
 });
-function mount() {
+function mount(route = '/operator?workspace=1') {
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue({
     ...health,
     ready: false,
@@ -31,7 +33,7 @@ function mount() {
   clients.push(client);
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/operator?workspace=1']}>
+      <MemoryRouter initialEntries={[route]}>
         <OperatorWorkspaceProvider registry={new DraftRegistry(sessionStorage)}>
           <OperatorWorkspace />
         </OperatorWorkspaceProvider>
@@ -60,4 +62,19 @@ it('explains separate nonproduction setup instead of opening training in an ordi
   expect(
     screen.queryByRole('complementary', { name: 'Guided mission walkthrough' })
   ).toBeNull();
+});
+
+it('waits for selected mission identity before enabling the guide launcher', () => {
+  missionState.pending = true;
+  mount('/operator?workspace=1&mission_id=loading-private-mission');
+  fireEvent.click(screen.getByRole('button', { name: 'Help' }));
+  const button = screen.getByRole('button', {
+    name: 'Guided mission walkthrough',
+  }) as HTMLButtonElement;
+  expect(button.disabled).toBe(true);
+  expect(
+    screen.getByText(
+      'Checking the selected mission and private training identity…'
+    )
+  ).toBeTruthy();
 });
