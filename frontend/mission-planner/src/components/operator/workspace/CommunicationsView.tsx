@@ -2,6 +2,7 @@ import type { ReadRecord, SavedRecord } from '@/types/operator';
 import { CallList } from '../CallList';
 import { ConferenceCard } from '../ConferenceCard';
 import { ParticipationRow } from '../ParticipationRow';
+import type { CallAction } from '../callCommands';
 import type { ConferenceAction } from '../conferenceCommands';
 
 export function CommunicationsView({
@@ -18,6 +19,7 @@ export function CommunicationsView({
   onTransition,
   onConferenceAction,
   onCustomerAction,
+  onCallAction,
 }: {
   items: ReadRecord[];
   disabled: boolean;
@@ -31,6 +33,7 @@ export function CommunicationsView({
   onHistory: (id: string) => void;
   onTransition: (record: SavedRecord) => void;
   onConferenceAction: (record: SavedRecord, action: ConferenceAction) => void;
+  onCallAction?: (record: SavedRecord, intent: CallAction) => void;
   onCustomerAction: (
     record: SavedRecord,
     action: 'left' | 'interrupted' | 'restore'
@@ -92,6 +95,9 @@ export function CommunicationsView({
         onEdit={onEdit}
         onHistory={onHistory}
         onTransition={onTransition}
+        onCallAction={onCallAction}
+        onConferenceAction={onConferenceAction}
+        onCustomerAction={onCustomerAction}
       />
       <h3>Conferences</h3>
       {!conferences.length && (
@@ -103,6 +109,7 @@ export function CommunicationsView({
       {conferences.map((record) => (
         <div key={record.record_id} className="space-y-2">
           <ConferenceCard
+            compactActions
             record={record}
             participations={customers}
             disabled={disabled}
@@ -112,15 +119,17 @@ export function CommunicationsView({
             onHistory={() => onHistory(record.record_id)}
             onRemove={() => onTransition(record)}
           />
-          {!record.deleted && (
-            <button
-              className="ws-button"
-              disabled={disabled}
-              onClick={() => onJoin(record)}
-            >
-              Reuse conference
-            </button>
-          )}
+          {!record.deleted &&
+            record.payload.entry_type === 'conference' &&
+            record.payload.status === 'established' && (
+              <button
+                className="ws-button"
+                disabled={disabled}
+                onClick={() => onJoin(record)}
+              >
+                Reuse conference
+              </button>
+            )}
         </div>
       ))}
       <h3>Customer intervals</h3>

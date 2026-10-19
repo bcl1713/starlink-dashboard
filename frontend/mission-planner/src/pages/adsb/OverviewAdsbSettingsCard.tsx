@@ -6,8 +6,10 @@ import { OverviewAdsbLists } from './OverviewAdsbLists';
 import { ConfigurationSection } from '../ConfigurationSection';
 export function OverviewAdsbSettingsCard({
   active = true,
+  controlsOnly = false,
 }: {
   active?: boolean;
+  controlsOnly?: boolean;
 }) {
   const {
     settings,
@@ -17,7 +19,7 @@ export function OverviewAdsbSettingsCard({
     trafficError,
     isLoading,
     sourceErrors,
-  } = useConfigurationAdsbLayer(active);
+  } = useConfigurationAdsbLayer(active && !controlsOnly);
   const { mutate, isPending, isSuccess, isError } =
     useUpdateOverviewAdsbSettings();
   const toggle = (field: 'include_hexes' | 'exclude_hexes', hex: string) => {
@@ -36,8 +38,19 @@ export function OverviewAdsbSettingsCard({
       description="Shared across this installation. Select worldwide aircraft independently of the camera or mission."
     >
       <div className="space-y-5">
-        <div className="grid items-center gap-4 md:grid-cols-2">
-          <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-medium md:pr-8">
+        <div
+          className={
+            controlsOnly
+              ? 'space-y-3'
+              : 'grid items-center gap-4 md:grid-cols-2'
+          }
+        >
+          <label
+            className={
+              'flex min-h-11 items-center justify-between gap-4 text-sm font-medium' +
+              (controlsOnly ? '' : ' md:pr-8')
+            }
+          >
             <span>ADS-B aircraft layer</span>
             <Switch
               aria-label="ADS-B aircraft layer"
@@ -46,26 +59,30 @@ export function OverviewAdsbSettingsCard({
               onChange={(e) => mutate({ enabled: e.target.checked })}
             />
           </label>
-          <label className="flex min-h-11 flex-wrap items-center justify-between gap-3 text-sm font-medium">
-            ADS-B mode
-            <select
-              className="min-h-11 max-w-full rounded-md border bg-background px-3 font-normal"
-              aria-label="ADS-B mode"
-              value={settings?.mode ?? 'military_and_included'}
-              disabled={!settings || isPending}
-              onChange={(e) =>
-                mutate({
-                  mode:
-                    e.target.value === 'included_only'
-                      ? 'included_only'
-                      : 'military_and_included',
-                })
-              }
-            >
-              <option value="military_and_included">Military + included</option>
-              <option value="included_only">Included only</option>
-            </select>
-          </label>
+          {!controlsOnly && (
+            <label className="flex min-h-11 flex-wrap items-center justify-between gap-3 text-sm font-medium">
+              ADS-B mode
+              <select
+                className="min-h-11 max-w-full rounded-md border bg-background px-3 font-normal"
+                aria-label="ADS-B mode"
+                value={settings?.mode ?? 'military_and_included'}
+                disabled={!settings || isPending}
+                onChange={(e) =>
+                  mutate({
+                    mode:
+                      e.target.value === 'included_only'
+                        ? 'included_only'
+                        : 'military_and_included',
+                  })
+                }
+              >
+                <option value="military_and_included">
+                  Military + included
+                </option>
+                <option value="included_only">Included only</option>
+              </select>
+            </label>
+          )}
         </div>
         <div className="text-sm empty:hidden" aria-live="polite">
           {!settings && !settingsError && (
@@ -109,7 +126,7 @@ export function OverviewAdsbSettingsCard({
               ` Next retry ${new Date(source.retry_at_ms).toLocaleTimeString()}.`}
           </p>
         ))}
-        {settings && (
+        {settings && !controlsOnly && (
           <>
             <OverviewAdsbContactTable
               contacts={contacts}

@@ -32,7 +32,19 @@ function mount(
   return submitted;
 }
 function field(name: string, value: string) {
-  fireEvent.change(screen.getByLabelText(name), { target: { value } });
+  const labels: Record<string, string> = {
+    'Planned start (UTC)': 'Planned start',
+    'Actual start (UTC, optional)': 'Actual start',
+    'Actual end (UTC, optional)': 'Actual end',
+  };
+  if (labels[name]) {
+    fireEvent.change(screen.getByLabelText(`${labels[name]} date (UTC)`), {
+      target: { value: value.slice(0, 10) },
+    });
+    fireEvent.change(screen.getByLabelText(`${labels[name]} time (UTC)`), {
+      target: { value: value.slice(11, 16) },
+    });
+  } else fireEvent.change(screen.getByLabelText(name), { target: { value } });
 }
 it.each(['tentative', 'delayed'] as const)(
   'retains %s status and optional named conference, type and coordinator fields',

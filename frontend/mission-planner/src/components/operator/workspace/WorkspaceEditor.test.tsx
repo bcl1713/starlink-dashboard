@@ -21,6 +21,8 @@ import { health, input, page, record } from '@/test/operator-fixtures';
 import * as api from '@/services/operator';
 import type { DraftTarget } from './types';
 import type { OperatorInput } from '@/types/operator';
+import { callDraft } from '../callDraft';
+import { routesApi } from '@/services/routes';
 import { participationDraft } from '../conferenceCommands';
 
 const clients: QueryClient[] = [];
@@ -39,7 +41,7 @@ const target: DraftTarget = {
   nextLegId: input.payload.next_leg_id,
   correctionVersion: null,
 };
-function mount(initial: OperatorInput = input) {
+function mount(initial: OperatorInput = input, timed = false) {
   const registry = new DraftRegistry(sessionStorage);
   const draft = registry.createDraft(
     { ...target, recordType: initial.record_type },
@@ -61,8 +63,16 @@ function mount(initial: OperatorInput = input) {
           id: 'mission-a',
           name: 'Fictional mission',
           legs: [
-            { id: 'leg-1', name: 'First flight' },
-            { id: 'leg-2', name: 'Second flight' },
+            {
+              id: 'leg-1',
+              name: 'First flight',
+              ...(timed ? { route_id: 'outbound' } : {}),
+            },
+            {
+              id: 'leg-2',
+              name: 'Second flight',
+              ...(timed ? { route_id: 'return' } : {}),
+            },
           ],
         }}
       />
@@ -269,4 +279,42 @@ it('keeps native form submission outside the scrolling editor body', async () =>
       .getByRole('button', { name: 'Discard draft' })
       .closest('.ws-editor-body')
   ).toBeNull();
+});
+
+it('associates a picked UTC call time and preserves an explicit override across later changes', async () => {
+  vi.spyOn(routesApi, 'get').mockImplementation(async (id) => ({
+    id,
+    name: id,
+    timing_profile: {
+      departure_time: `2026-10-20T${id === 'outbound' ? '10' : '14'}:00:00Z`,
+      arrival_time: `2026-10-20T${id === 'outbound' ? '12' : '16'}:00:00Z`,
+    },
+  }));
+  const initial = callDraft(undefined, 'planned', 'mission-a');
+  initial.time.planned_start_at = '2026-10-20T11:00:00Z';
+  const { registry, draft } = mount(initial, true);
+  await screen.findByText('Mission association: First flight');
+  fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
+    target: { value: '13:00' },
+  });
+  expect(registry.resumeDraft(draft.draftId)?.input).toMatchObject({
+    scope: 'between_legs',
+    leg_id: null,
+    payload: { previous_leg_id: 'leg-1', next_leg_id: 'leg-2' },
+  });
+  fireEvent.click(
+    screen.getByRole('checkbox', {
+      name: 'Use planned time to associate automatically',
+    })
+  );
+  fireEvent.change(screen.getByLabelText('Draft scope'), {
+    target: { value: 'preflight' },
+  });
+  fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
+    target: { value: '15:00' },
+  });
+  expect(registry.resumeDraft(draft.draftId)?.input.scope).toBe('preflight');
+  expect(registry.resumeDraft(draft.draftId)?.target.missionId).toBe(
+    'mission-a'
+  );
 });

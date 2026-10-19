@@ -24,15 +24,22 @@ import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
 import { joinCommand } from '../conferenceCommands';
 import { ParticipationEditor } from '../ParticipationEditor';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueries } from '@tanstack/react-query';
 import { readOperatorRecords } from '@/services/operator';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
+import { routesApi } from '@/services/routes';
+import { inferCallAssociation } from '../callAssociation';
 import { commandLane, targetIdentity } from './commandRegistry';
 
 export interface EditorMission {
   id: string;
   name: string;
-  legs: { id: string; name: string }[];
+  legs: {
+    id: string;
+    name: string;
+    route_id?: string;
+    adjusted_departure_time?: string | null;
+  }[];
 }
 
 export function WorkspaceEditor({
@@ -72,6 +79,19 @@ export function WorkspaceEditor({
     relationships.data?.pages.flatMap((page) =>
       page.items.map((item) => item.record)
     ) ?? [];
+  const routeQueries = useQueries({
+    queries: (mission?.legs ?? []).map((leg) => ({
+      queryKey: ['routes', leg.route_id],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        routesApi.get(leg.route_id!, signal),
+      enabled:
+        !!leg.route_id &&
+        draft?.input.record_type === 'call' &&
+        mission?.id === draft.target.missionId,
+      staleTime: 30_000,
+      retry: false,
+    })),
+  });
   const returnFocus = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (!draft) return null;
@@ -107,8 +127,54 @@ export function WorkspaceEditor({
     tray?.status === 'saving' ||
     workspace.busyLanes.includes(commandLane(draft.target));
   const legs = mission?.id === draft.target.missionId ? mission.legs : [];
+  const timedLegs = legs.map((leg, index) => {
+    const profile = routeQueries[index]?.data?.timing_profile;
+    const departure =
+      typeof profile?.departure_time === 'string'
+        ? profile.departure_time
+        : null;
+    const arrival =
+      typeof profile?.arrival_time === 'string' ? profile.arrival_time : null;
+    const start = leg.adjusted_departure_time ?? departure;
+    const duration = Date.parse(arrival ?? '') - Date.parse(departure ?? '');
+    const end =
+      start &&
+      Number.isFinite(Date.parse(start)) &&
+      Number.isFinite(duration) &&
+      duration > 0
+        ? new Date(Date.parse(start) + duration).toISOString()
+        : null;
+    return { id: leg.id, name: leg.name, start, end };
+  });
+  const automatic =
+    draft.input.record_type === 'call' &&
+    (draft.editorState?.associationMode === 'auto' ||
+      (!draft.target.recordId &&
+        draft.editorState?.associationMode !== 'manual'));
+  const inferred = inferCallAssociation(
+    timedLegs,
+    draft.input.time.planned_start_at
+  );
+  function associate(input: OperatorInput): OperatorInput {
+    if (!automatic) return input;
+    const inferred = inferCallAssociation(
+      timedLegs,
+      input.time.planned_start_at
+    );
+    return {
+      ...input,
+      scope: inferred?.scope ?? 'mission',
+      leg_id: inferred?.leg_id ?? null,
+      payload: {
+        ...input.payload,
+        previous_leg_id: inferred?.previous_leg_id ?? null,
+        next_leg_id: inferred?.next_leg_id ?? null,
+      },
+    } as OperatorInput;
+  }
   function update(input: OperatorInput) {
     if (!draft) return;
+    input = associate(input);
     const current = workspace.registry.resumeDraft(draft.draftId) ?? draft;
     workspace.registry.parkDraft({
       ...current,
@@ -264,46 +330,83 @@ export function WorkspaceEditor({
               reconcile before saving.
             </p>
           )}
-          {tray && (
-            <div role="status">
-              <p>
-                {tray.status.replaceAll('_', ' ')} · {tray.title}
+          {tray &&
+            (tray.pending ||
+              (draft.target.recordId
+                ? tray.target.recordId === draft.target.recordId
+                : tray.target.newDraftId === draft.target.newDraftId)) && (
+              <div role="status">
+                <p>
+                  {tray.status.replaceAll('_', ' ')} · {tray.title}
+                </p>
+                {tray.message && <p>{tray.message}</p>}
+                {(tray.status === 'needs_review' ||
+                  tray.status === 'quarantined' ||
+                  tray.status === 'accepted_unreadable') && (
+                  <button
+                    className="ws-button"
+                    onClick={() =>
+                      void workspace.rereadAndReconcile(tray.commandId)
+                    }
+                  >
+                    Reread and reconcile
+                  </button>
+                )}
+                {draft.target.recordId &&
+                  tray.current?.record_id === draft.target.recordId &&
+                  tray.current.version !== draft.baseVersion && (
+                    <button
+                      className="ws-button"
+                      onClick={() => {
+                        workspace.registry.parkDraft({
+                          ...draft,
+                          baseRecord: tray.current!,
+                          baseVersion: tray.current!.version,
+                          revision: draft.revision + 1,
+                        });
+                        workspace.refreshDrafts();
+                      }}
+                    >
+                      Keep my input using current version {tray.current.version}{' '}
+                      as base
+                    </button>
+                  )}
+              </div>
+            )}
+          {draft.input.record_type === 'call' && (
+            <div className="rounded border p-3 space-y-2">
+              <p className="font-medium">
+                Mission association:{' '}
+                {automatic
+                  ? (inferred?.label ??
+                    'Unresolved — choose an override or supply itinerary timing')
+                  : draft.input.scope === 'leg'
+                    ? (legs.find((leg) => leg.id === draft.input.leg_id)
+                        ?.name ?? 'Unresolved leg')
+                    : draft.input.scope.replaceAll('_', ' ')}
               </p>
-              {tray.message && <p>{tray.message}</p>}
-              {(tray.status === 'needs_review' ||
-                tray.status === 'quarantined' ||
-                tray.status === 'accepted_unreadable') && (
-                <button
-                  className="ws-button"
-                  onClick={() =>
-                    void workspace.rereadAndReconcile(tray.commandId)
-                  }
-                >
-                  Reread and reconcile
-                </button>
-              )}
-              {tray.current && tray.current.version !== draft.baseVersion && (
-                <button
-                  className="ws-button"
-                  onClick={() => {
-                    workspace.registry.parkDraft({
-                      ...draft,
-                      baseRecord: tray.current!,
-                      baseVersion: tray.current!.version,
-                      revision: draft.revision + 1,
+              <label className="ws-touch">
+                <input
+                  type="checkbox"
+                  checked={automatic}
+                  onChange={(event) => {
+                    if (automatic) update(draft.input);
+                    editorState({
+                      associationMode: event.target.checked ? 'auto' : 'manual',
                     });
-                    workspace.refreshDrafts();
                   }}
-                >
-                  Keep my input using current version {tray.current.version} as
-                  base
-                </button>
-              )}
+                />{' '}
+                Use planned time to associate automatically
+              </label>
+              <p className="ws-meta">
+                Turn off automatic association to override. Saved associations
+                stay unchanged until you choose otherwise.
+              </p>
             </div>
           )}
           <div
             className="ws-draft-context"
-            hidden={!!draft.target.correctionVersion}
+            hidden={!!draft.target.correctionVersion || automatic}
           >
             <label>
               Draft scope

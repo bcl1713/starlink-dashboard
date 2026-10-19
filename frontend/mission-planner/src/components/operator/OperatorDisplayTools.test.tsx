@@ -16,6 +16,7 @@ import {
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import apiClient from '@/services/api-client';
+import { adsbSettings } from '@/test/adsb-fixtures';
 import { OVERVIEW_VISIBILITY_DEFAULTS } from '@/services/overview-link-settings';
 import { OperatorDisplayTools } from './OperatorDisplayTools';
 vi.mock('@/services/api-client', () => ({
@@ -40,23 +41,25 @@ beforeEach(() => {
   });
   vi.mocked(apiClient.get).mockImplementation(async (url) => ({
     data:
-      url === '/api/overview-links/presets'
-        ? presets
-        : url === '/api/overview-history/settings'
-          ? { window_seconds: 1800 }
-          : url === '/api/overview-weather/settings'
-            ? { enabled: true, revision: 2 }
-            : url === '/api/aviation-weather/v1/settings'
-              ? {
-                  metar: false,
-                  taf: false,
-                  sigmet: true,
-                  sigmet_intersecting_only: true,
-                  winds: true,
-                  temperature: false,
-                  revision: 3,
-                }
-              : saved,
+      url === '/api/overview-adsb/settings'
+        ? adsbSettings({ enabled: false })
+        : url === '/api/overview-links/presets'
+          ? presets
+          : url === '/api/overview-history/settings'
+            ? { window_seconds: 1800 }
+            : url === '/api/overview-weather/settings'
+              ? { enabled: true, revision: 2 }
+              : url === '/api/aviation-weather/v1/settings'
+                ? {
+                    metar: false,
+                    taf: false,
+                    sigmet: true,
+                    sigmet_intersecting_only: true,
+                    winds: true,
+                    temperature: false,
+                    revision: 3,
+                  }
+                : saved,
   }));
   vi.mocked(apiClient.put).mockImplementation(async (url, value) => {
     const body = value as Record<string, unknown>;
@@ -105,18 +108,26 @@ function mount() {
   );
 }
 async function open() {
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Show display controls' })
-  );
   await waitFor(() =>
     expect(
       screen.getByRole('button', { name: 'Save current as Normal' })
     ).toBeEnabled()
   );
 }
-it('defers display queries until expanded and separates shared settings from browser commands', async () => {
+it('immediately shows shared settings and browser controls without a Configuration detour', async () => {
   mount();
-  expect(apiClient.get).not.toHaveBeenCalled();
+  expect(
+    screen.queryByRole('button', { name: 'Show display controls' })
+  ).toBeNull();
+  expect(screen.queryByRole('link', { name: 'Display settings' })).toBeNull();
+  expect(screen.queryByLabelText('Atmosphere level')).toBeNull();
+  expect(screen.queryByLabelText('ADS-B mode')).toBeNull();
+  expect(
+    screen.getByRole('switch', { name: 'Precipitation radar' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('switch', { name: 'ADS-B aircraft layer' })
+  ).toBeVisible();
   await open();
   expect(screen.getByText(/Shared across all Overview displays/)).toBeVisible();
   expect(
@@ -164,7 +175,7 @@ it('waits for the server and never claims an offline preset save succeeded', asy
   await screen.findByText(/Waiting for server acknowledgment/);
   expect(screen.queryByText('Weather preset saved')).toBeNull();
   await act(async () => reject(new Error('Network unavailable')));
-  expect(await screen.findByRole('alert')).toHaveTextContent(/not confirmed/);
+  expect(await screen.findByText(/not confirmed/)).toBeVisible();
   expect(screen.getByRole('button', { name: 'Apply Weather' })).toBeDisabled();
 });
 it('refreshes a conflicting preset without overwriting the counterpart bundle', async () => {
@@ -177,7 +188,7 @@ it('refreshes a conflicting preset without overwriting the counterpart bundle', 
   fireEvent.click(
     screen.getByRole('button', { name: 'Save current as Normal' })
   );
-  expect(await screen.findByRole('alert')).toHaveTextContent(/Preset changed/);
+  expect(await screen.findByText(/Preset changed/)).toBeVisible();
   expect(presets.normal).toEqual({
     version: 2,
     settings: { legend_enabled: false },
@@ -193,20 +204,28 @@ it('does not confirm a save when the server returns a malformed acknowledgment',
   fireEvent.click(
     screen.getByRole('button', { name: 'Save current as Normal' })
   );
-  expect(await screen.findByRole('alert')).toHaveTextContent(
-    /Invalid Overview preset acknowledgment/
-  );
+  expect(
+    await screen.findByText(/Invalid Overview preset acknowledgment/)
+  ).toBeVisible();
   expect(screen.queryByText('Normal preset saved')).toBeNull();
   expect(screen.getByRole('button', { name: 'Apply Normal' })).toBeDisabled();
 });
 
-it('keeps existing Configuration and selected mission planning destinations reachable before lazy controls mount', () => {
+it('keeps mission planning reachable without an ambiguous Configuration link', () => {
   mount();
-  expect(
-    screen.getByRole('link', { name: 'Display settings' }).getAttribute('href')
-  ).toBe('/configuration');
   expect(
     screen.getByRole('link', { name: 'Mission planning' }).getAttribute('href')
   ).toBe('/missions/synthetic-demo');
-  expect(apiClient.get).not.toHaveBeenCalled();
+  expect(
+    screen.queryByRole('button', { name: 'Show display controls' })
+  ).toBeNull();
+  expect(screen.queryByRole('link', { name: 'Display settings' })).toBeNull();
+  expect(screen.queryByLabelText('Atmosphere level')).toBeNull();
+  expect(screen.queryByLabelText('ADS-B mode')).toBeNull();
+  expect(
+    screen.getByRole('switch', { name: 'Precipitation radar' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('switch', { name: 'ADS-B aircraft layer' })
+  ).toBeVisible();
 });

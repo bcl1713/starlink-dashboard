@@ -1,0 +1,7 @@
+{
+  "steps": [
+    "Native incomplete date/time prevents save; partial date and party survive parking and page reload; explicit discard removes only that unsent draft.",
+    "Actual Overview page discovered through existing browser session; Recenter view received an accepted acknowledgment (no scientific/map-position accuracy claim)."
+  ],
+  "overviewPageErrors": []
+}

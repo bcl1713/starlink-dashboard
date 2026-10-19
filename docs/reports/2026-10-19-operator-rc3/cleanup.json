@@ -1,0 +1,10 @@
+{
+  "remainingOwnedProcessGroups": [],
+  "remainingListeners": [],
+  "composeProjects": [],
+  "containers": [],
+  "networks": [],
+  "disposableVolumes": [],
+  "browserContexts": "closed in finally handlers",
+  "runnerStopped": true
+}

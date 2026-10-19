@@ -1,0 +1,72 @@
+{
+  "baseCommit": "bbfb412d4952a722ea394bbf75c0d85a6db2d477",
+  "scope": "RC3 usability preview; human evaluation pending. No full training, curriculum, 323-item parity, or production Docker acceptance rerun.",
+  "focusedTests": {
+    "filesPassed": 25,
+    "testsPassed": 149,
+    "command": "vitest run src/components/operator/CallEditor.test.tsx src/components/operator/CallList.test.tsx src/components/operator/ConferenceCard.test.tsx src/components/operator/OperatorDisplayTools.test.tsx src/components/operator/OperatorCommunications.test.tsx src/components/operator/OperatorConferences.test.tsx src/components/operator/workspace src/components/operator/rc3-usability.test.tsx src/components/operator/callAssociation.test.ts src/components/operator/callCommands.test.ts src/components/operator/conferenceCommands.test.ts src/hooks/api/useOperatorJournal.test.tsx src/hooks/useOverviewDisplayController.test.tsx src/hooks/useOverviewDisplayHost.test.tsx src/pages/adsb/OverviewAdsbSettingsCard.test.tsx src/pages/aviation-weather/AviationSettingsCard.test.tsx",
+    "wallClockLimit": "3m, 10s forced termination grace"
+  },
+  "build": {
+    "command": "timeout --kill-after=10s 3m npm run build",
+    "result": "passed",
+    "advisories": [
+      "Existing browser-externalized satellite.js node modules",
+      "Existing large-chunk advisory"
+    ]
+  },
+  "staticChecks": {
+    "changedSourceESLint": "passed",
+    "changedSourcePrettier": "passed",
+    "previewReadmeMarkdownlint": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "sourceSha256": {
+    "frontend/mission-planner/src/components/operator/CallEditor.test.tsx": "9616c826c93127c44819961dc38cf4c5890a8acf82d3d16313df9fe8f4c42af2",
+    "frontend/mission-planner/src/components/operator/CallEditor.tsx": "6263f9a2dc2a34f08abe14fb2fe63dd3fe115347a93ce624b6184ba27d1688d6",
+    "frontend/mission-planner/src/components/operator/CallList.tsx": "90e296a7b6de3664c28181ca49cd7987071ba373e427616766b0d1df539d2ca8",
+    "frontend/mission-planner/src/components/operator/ConferenceCard.tsx": "82453c6aeda3f6dad85433511d0dcec9c0f7f3c4f915a9be47d7b0714e3abd9c",
+    "frontend/mission-planner/src/components/operator/OperatorDisplayTools.test.tsx": "a0c3977ad195f88eec275abbbab98a33cfba083bae84d7f5a61b957aea2780f1",
+    "frontend/mission-planner/src/components/operator/OperatorDisplayTools.tsx": "1c77b170e4f0220061ed30360bddacae980bfec53c6497b2def4ded93fadfeb8",
+    "frontend/mission-planner/src/components/operator/UtcDateTime.tsx": "ab3574575185632c8ec3348220e0887834b8fe70be28598523f68c104628f331",
+    "frontend/mission-planner/src/components/operator/callAssociation.test.ts": "47d4711186efbca8de0589389e44f8cd7ea6d0c645595e138060651ec3119361",
+    "frontend/mission-planner/src/components/operator/callAssociation.ts": "5f0eccb28948be539b086c54b1dbd10cd3704e84d425f84ea281255259bf7633",
+    "frontend/mission-planner/src/components/operator/callCommands.test.ts": "c018bc9a32df4de73b9581fc7bdfaf31bd82d79cc8d4200b73a804aa9a6222a6",
+    "frontend/mission-planner/src/components/operator/callCommands.ts": "26f2c68dfabd15dfc51f2f24f246343eeaec30d6bc4640b0aeaa935486e6ffd1",
+    "frontend/mission-planner/src/components/operator/rc3-usability.test.tsx": "98cffeeeaca5d44689cdf93f12ae6246e2f6c502f1e522c5b4d882d9c3573212",
+    "frontend/mission-planner/src/components/operator/workspace/CommunicationsView.test.tsx": "fd3becb56052189ca1e498c0e7a7f4ddc87fecd57e94859a4dd4ea73e97f2a4c",
+    "frontend/mission-planner/src/components/operator/workspace/CommunicationsView.tsx": "8c333f002a19b7ff5e1151d2d44729c37c73d945e00c36ca5079eda9bec67556",
+    "frontend/mission-planner/src/components/operator/workspace/OperatorWorkspace.tsx": "99889da0f5729f6a8924121b2d746a64167ac14b39686dc458089a5d375586b9",
+    "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx": "0f58fa82fd15c0114ba63c954be1a2c05add1a898edc706dfd4ea79783448152",
+    "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.tsx": "53ac13f2d16bf9c2ef4b53d3b738b2b902a2cc642c606c5b997cdabacba7c5ec",
+    "frontend/mission-planner/src/pages/adsb/OverviewAdsbSettingsCard.tsx": "77d0cd749774f675d1d885c5b260161ea08d81932332ca9ad8e417d12230354b",
+    "frontend/mission-planner/src/pages/aviation-weather/AviationSettingsCard.tsx": "2db592510026a8560f382ebdb092342413fd140f0ef5e5c2b0a172489ba22f3d"
+  },
+  "browserScope": {
+    "frontend": "Vite source",
+    "backend": "existing public routers and SQLite/settings stores with tiny synthetic fixture",
+    "viewports": ["1440x1000", "390x844"],
+    "locale": "en-GB",
+    "timezone": "America/Los_Angeles",
+    "interceptedWrites": false,
+    "scientificProviderAcquisition": false,
+    "actualOverviewRecenterAcknowledgment": true,
+    "physicalMobileOrUncoachedHumanAcceptance": false
+  },
+  "review": "Read-only targeted review plus final delta review found no material defects; subsequent legacy-shell regressions were checked and preserved.",
+  "harnessNotes": [
+    "First probe selector matched duplicate Create call controls; scoped to Communications and waited for readiness.",
+    "Probe timestamp assertion adapted to backend fractional precision; relative request URL fixed to absolute URL.",
+    "Partial-draft reload probe exposed generic retained draft names; production fix now names the draft immediately, with red/green regression."
+  ],
+  "cleanup": {
+    "remainingOwnedProcessGroups": [],
+    "remainingListeners": [],
+    "composeProjects": [],
+    "containers": [],
+    "networks": [],
+    "disposableVolumes": [],
+    "browserContexts": "closed in finally handlers",
+    "runnerStopped": true
+  }
+}

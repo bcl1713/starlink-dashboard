@@ -1,0 +1,56 @@
+"""Temporary tiny UI probe: actual public routers/stores; no scientific providers."""
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+import json, os, time
+from fastapi import FastAPI
+from app.api import operator, aviation_weather, overview_adsb, overview_link_settings, overview_weather, overview_history
+from app.api.routes import router as routes_router
+from app.mission import storage, routes_v2
+from app.mission.models import Mission
+from app.models.route import ParsedRoute, RoutePoint, RouteTimingProfile
+from app.operator.runtime import OperatorRuntime
+from app.operator.settings import OperatorSettings
+from app.services.route_manager import RouteManager
+from app.services.aviation_weather.settings import AviationSettingsStore
+from app.services.aviation_weather.runtime import AviationWeatherService
+from app.services.overview_link_settings import OverviewLinkSettingsStore
+from app.services.overview_adsb_settings import AdsbSettingsStore
+from app.services.overview_weather.settings import WeatherSettingsStore
+from app.services.overview_history_settings import OverviewHistorySettingsStore
+ROOT = Path('/tmp/rc3-preview-383')
+class Clock:
+    def now(self): return datetime.now(timezone.utc)
+    def monotonic(self): return time.monotonic()
+settings = OperatorSettings(enabled=True, root=ROOT/'operator', source_mode='simulation', simulation_run_id='rc3-small')
+storage.MISSIONS_DIR = ROOT/'missions'
+mission = Mission.model_validate({'id':'rc3-mission','name':'RC3 · Small synthetic mission','legs':[
+ {'id':'outbound','name':'Outbound · 10:00–12:00 UTC','route_id':'rc3-outbound','transports':{'initial_x_satellite_id':'X-1'}},
+ {'id':'return','name':'Return · 14:00–16:00 UTC','route_id':'rc3-return','transports':{'initial_x_satellite_id':'X-1'}}]})
+storage.save_mission_v2(mission)
+manager = RouteManager(ROOT/'routes')
+for suffix, start, end in [('outbound',10,12),('return',14,16)]:
+    manager.add_route(f'rc3-{suffix}', ParsedRoute(metadata={'name':suffix, 'point_count':2, 'file_path':str(ROOT/f'{suffix}.kml')}, route_id=f'rc3-{suffix}', points=[RoutePoint(latitude=0,longitude=0),RoutePoint(latitude=0,longitude=2,sequence=1)],timing_profile=RouteTimingProfile(departure_time=datetime(2026,10,20,start,tzinfo=timezone.utc),arrival_time=datetime(2026,10,20,end,tzinfo=timezone.utc),has_timing_data=True)))
+@asynccontextmanager
+async def lifespan(app):
+    runtime = OperatorRuntime.start(settings, clock=Clock())
+    runtime.provision(expected_mode='simulation', expected_run='rc3-small')
+    app.state.operator_runtime=runtime
+    yield
+    runtime.close()
+    await app.state.aviation_weather_service.aclose()
+app=FastAPI(lifespan=lifespan)
+app.state.route_manager=manager
+app.state.poi_manager=None
+app.state.aviation_weather_settings_store=AviationSettingsStore(ROOT/'aviation.json')
+app.state.aviation_weather_service=AviationWeatherService(app.state.aviation_weather_settings_store, None)
+app.state.overview_weather_settings_store=WeatherSettingsStore(ROOT/'weather.json')
+overview_adsb.set_overview_adsb_runtime(AdsbSettingsStore(ROOT/'adsb.json'),None)
+overview_link_settings.set_overview_link_settings_store(OverviewLinkSettingsStore(ROOT/'links.json'))
+overview_history.set_overview_history_settings_store(OverviewHistorySettingsStore(ROOT/'history.json',default_window_seconds=1800))
+for router in [operator.router,aviation_weather.router,routes_v2.router,routes_router,overview_adsb.router,overview_link_settings.router,overview_weather.router,overview_history.router]: app.include_router(router)
+# Navigation's optional installation configuration; not an Operator write path.
+@app.get('/api/config')
+def config(): return {'mode':'simulation','operator_enabled':True}
+@app.get('/api/status')
+def status(): return {'mode':'simulation'}

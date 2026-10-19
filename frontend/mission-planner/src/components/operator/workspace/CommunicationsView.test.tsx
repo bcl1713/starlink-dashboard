@@ -68,11 +68,31 @@ it('exposes conference reuse and independent customer interruption with the actu
     conference,
     'establish'
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Reuse conference' }));
-  expect(actions.onJoin).toHaveBeenCalledWith(conference);
+  expect(screen.queryByRole('button', { name: 'Reuse conference' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Interrupt customer' }));
   expect(actions.onCustomerAction).toHaveBeenCalledWith(
     customer,
     'interrupted'
   );
+});
+
+it('offers reuse once a bridge is established', () => {
+  const conference = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    record_id: 'bridge',
+  } as SavedRecord;
+  if (conference.payload.entry_type === 'conference')
+    conference.payload.status = 'established';
+  const actions = callbacks();
+  render(
+    <CommunicationsView
+      items={page([conference]).items}
+      disabled={false}
+      incomplete={false}
+      {...actions}
+    />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Reuse conference' }));
+  expect(actions.onJoin).toHaveBeenCalledWith(conference);
 });

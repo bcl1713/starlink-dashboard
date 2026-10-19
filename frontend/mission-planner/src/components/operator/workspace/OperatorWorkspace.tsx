@@ -44,6 +44,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { callCommand, type CallAction } from '../callCommands';
+import { joinCommand } from '../conferenceCommands';
 import { callDraft } from '../callDraft';
 import {
   conferenceDraft,
@@ -205,6 +207,44 @@ export function OperatorWorkspace() {
       const next = new URLSearchParams(previous);
       next.set('view', view.toLowerCase());
       return next;
+    });
+  }
+  function plannedCall() {
+    const input = callDraft(undefined, 'planned', missionId);
+    const clock = records.data?.pages[0]?.as_of;
+    if (clock)
+      input.time.planned_start_at = new Date(
+        Math.ceil((Date.parse(clock) + 60_000) / 900_000) * 900_000
+      ).toISOString();
+    openInput(input);
+  }
+  function callAction(record: SavedRecord, intent: CallAction) {
+    void action(record, (latest, now) => {
+      if (intent !== 'connect') return callCommand(latest, intent, now);
+      if (
+        latest.payload.entry_type !== 'call' ||
+        !latest.time.occurred_at ||
+        latest.deleted ||
+        ['completed', 'cancelled'].includes(latest.payload.status)
+      )
+        throw new Error(
+          'Start an active call before reporting a customer connection.'
+        );
+      const input = participationDraft(
+        latest.mission_id,
+        latest.payload.conference_id
+      );
+      input.scope = latest.scope;
+      input.leg_id = latest.leg_id;
+      input.payload = {
+        ...input.payload,
+        call_id: latest.record_id,
+        participant: latest.payload.party ?? latest.payload.title,
+        title: latest.payload.party ?? latest.payload.title,
+        previous_leg_id: latest.payload.previous_leg_id,
+        next_leg_id: latest.payload.next_leg_id,
+      };
+      return joinCommand(input, now);
     });
   }
   function openInput(
@@ -729,9 +769,7 @@ export function OperatorWorkspace() {
               <button
                 className="ws-button ws-primary"
                 disabled={disabled}
-                onClick={() =>
-                  openInput(callDraft(undefined, 'planned', missionId))
-                }
+                onClick={plannedCall}
               >
                 Create call
               </button>
@@ -778,9 +816,8 @@ export function OperatorWorkspace() {
                 }
                 incomplete={incomplete}
                 asOf={records.data?.pages[0]?.as_of}
-                onCreateCall={() =>
-                  openInput(callDraft(undefined, 'planned', missionId))
-                }
+                onCreateCall={plannedCall}
+                onCallAction={callAction}
                 onCreateActualCall={() =>
                   openInput(callDraft(undefined, 'retrospective', missionId))
                 }

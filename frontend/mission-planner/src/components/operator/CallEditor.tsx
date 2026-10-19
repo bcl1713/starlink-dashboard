@@ -6,6 +6,7 @@ import type {
   SavedRecord,
 } from '@/types/operator';
 import { shiftCallTime } from './callTiming';
+import { UtcDateTime, type UtcParts } from './UtcDateTime';
 const fieldClass =
   'min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2';
 const buttonClass = 'min-h-11 rounded-md border px-3 disabled:opacity-50';
@@ -24,7 +25,7 @@ function timestamp(value: string | null) {
     !Number.isFinite(Date.parse(value))
   )
     throw new Error(
-      'Enter UTC as YYYY-MM-DDTHH:MM:SSZ, or leave blank for unknown.'
+      'Choose a valid UTC date and time, or clear both fields for unknown.'
     );
   // Reject calendar normalization such as February 30 while retaining microseconds.
   if (new Date(value).toISOString().slice(0, 19) !== value.slice(0, 19))
@@ -38,6 +39,7 @@ export interface CallEditorState {
   unit: string;
   originalTime: CallInput['time'];
   originalDuration: string;
+  timeParts?: Record<string, UtcParts>;
 }
 export function CallEditor({
   formId,
@@ -90,6 +92,9 @@ export function CallEditor({
   );
   const [shift, setShift] = useState(editorState?.shift ?? '');
   const [unit, setUnit] = useState(editorState?.unit ?? 'minutes');
+  const [timeParts, setTimeParts] = useState<Record<string, UtcParts>>(
+    editorState?.timeParts ?? {}
+  );
   const [error, setError] = useState<string | null>(null);
   function retain(patch: Partial<CallEditorState>) {
     onEditorStateChange?.({
@@ -99,15 +104,32 @@ export function CallEditor({
       unit,
       originalTime,
       originalDuration,
+      timeParts,
       ...patch,
     });
   }
   const payload = (patch: Partial<CallPayload>) =>
     onChange({ ...draft, payload: { ...draft.payload, ...patch } });
-  const time = (
+  function dateTime(
     name: 'planned_start_at' | 'occurred_at' | 'ended_at',
-    value: string
-  ) => onChange({ ...draft, time: { ...draft.time, [name]: value || null } });
+    label: string
+  ) {
+    return (
+      <UtcDateTime
+        label={label}
+        value={draft.time[name]}
+        parts={timeParts[name]}
+        onPartsChange={(parts) => {
+          const next = { ...timeParts, [name]: parts };
+          setTimeParts(next);
+          retain({ timeParts: next });
+        }}
+        onChange={(value) =>
+          onChange({ ...draft, time: { ...draft.time, [name]: value } })
+        }
+      />
+    );
+  }
   function submit() {
     try {
       const start = timestamp(draft.time.planned_start_at);
@@ -188,7 +210,7 @@ export function CallEditor({
       <h3 className="text-lg font-semibold">
         {draft.payload.status === 'completed' && !draft.time.planned_start_at
           ? 'Completed / unscheduled call'
-          : 'Communication requirement'}
+          : 'Schedule a call'}
       </h3>
       <p className="text-sm text-muted-foreground">
         All dates and times are UTC. Blank optional fields remain unknown.
@@ -205,90 +227,130 @@ export function CallEditor({
             className={fieldClass}
             maxLength={200}
             value={draft.payload.party ?? ''}
-            onChange={(e) => payload({ party: e.target.value || null })}
-          />
-        </label>
-        <label className="block">
-          Planned start (UTC)
-          <input
-            className={fieldClass}
-            placeholder="2026-10-17T16:00:00Z"
-            value={draft.time.planned_start_at ?? ''}
-            onChange={(e) => time('planned_start_at', e.target.value)}
-          />
-        </label>
-        <label className="block">
-          Status
-          <select
-            aria-label="Status"
-            className={fieldClass}
-            value={draft.payload.status}
             onChange={(e) =>
-              payload({ status: e.target.value as CallPayload['status'] })
+              payload({
+                party: e.target.value || null,
+                title: e.target.value.trim() || draft.payload.title,
+              })
+            }
+          />
+        </label>
+        {dateTime('planned_start_at', 'Planned start')}
+        <label className="block">
+          Communications type
+          <select
+            aria-label="Communications type"
+            className={fieldClass}
+            value={draft.payload.communications_kind ?? ''}
+            onChange={(e) =>
+              payload({
+                communications_kind: (e.target.value ||
+                  null) as CallPayload['communications_kind'],
+              })
             }
           >
-            {[
-              'tentative',
-              'scheduled',
-              'delayed',
-              'cancelled',
-              'completed',
-            ].map((status) => (
-              <option key={status} value={status}>
-                {status === 'cancelled'
-                  ? 'Canceled'
-                  : status[0].toUpperCase() + status.slice(1)}
-              </option>
-            ))}
+            <option value="">Unknown</option>
+            <option value="voice">Voice</option>
+            <option value="vtc">VTC</option>
+            <option value="other">Other</option>
           </select>
+        </label>
+        <label className="block">
+          Duration minutes (blank = unknown)
+          <input
+            className={fieldClass}
+            inputMode="numeric"
+            value={duration}
+            onChange={(e) => {
+              setDuration(e.target.value);
+              retain({ duration: e.target.value });
+            }}
+          />
+        </label>
+        <label className="block">
+          Preparation lead minutes (blank = unknown)
+          <input
+            className={fieldClass}
+            inputMode="numeric"
+            value={lead}
+            onChange={(e) => {
+              setLead(e.target.value);
+              retain({ lead: e.target.value });
+            }}
+          />
+        </label>
+        <label className="block">
+          {records
+            ? 'Conference (optional)'
+            : 'Conference record ID (optional)'}
+          {records ? (
+            <select
+              className={fieldClass}
+              value={draft.payload.conference_id ?? ''}
+              onChange={(event) =>
+                payload({ conference_id: event.target.value || null })
+              }
+            >
+              <option value="">Unknown / unassigned</option>
+              {draft.payload.conference_id &&
+                !records.some(
+                  (record) => record.record_id === draft.payload.conference_id
+                ) && (
+                  <option value={draft.payload.conference_id}>
+                    Unresolved conference · {draft.payload.conference_id}
+                  </option>
+                )}
+              {records
+                .filter(
+                  (record) =>
+                    record.record_type === 'conference' && !record.deleted
+                )
+                .map((record) => (
+                  <option key={record.record_id} value={record.record_id}>
+                    {record.payload.title}
+                  </option>
+                ))}
+            </select>
+          ) : (
+            <input
+              className={fieldClass}
+              value={draft.payload.conference_id ?? ''}
+              onChange={(e) =>
+                payload({ conference_id: e.target.value || null })
+              }
+            />
+          )}
         </label>
         <details>
           <summary className="min-h-11 cursor-pointer py-2">
             Timing, association and optional details
           </summary>
           <div className="space-y-3">
+            {' '}
             <label className="block">
-              Communications type
+              Status
               <select
-                aria-label="Communications type"
+                aria-label="Status"
                 className={fieldClass}
-                value={draft.payload.communications_kind ?? ''}
+                value={draft.payload.status}
                 onChange={(e) =>
-                  payload({
-                    communications_kind: (e.target.value ||
-                      null) as CallPayload['communications_kind'],
-                  })
+                  payload({ status: e.target.value as CallPayload['status'] })
                 }
               >
-                <option value="">Unknown</option>
-                <option value="voice">Voice</option>
-                <option value="vtc">VTC</option>
-                <option value="other">Other</option>
+                {[
+                  'tentative',
+                  'scheduled',
+                  'delayed',
+                  'cancelled',
+                  'completed',
+                ].map((status) => (
+                  <option key={status} value={status}>
+                    {status === 'cancelled'
+                      ? 'Canceled'
+                      : status[0].toUpperCase() + status.slice(1)}
+                  </option>
+                ))}
               </select>
-            </label>
-            <label className="block">
-              Duration minutes (blank = unknown)
-              <input
-                className={fieldClass}
-                inputMode="numeric"
-                value={duration}
-                onChange={(e) => {
-                  setDuration(e.target.value);
-                  retain({ duration: e.target.value });
-                }}
-              />
-            </label>
-            <label className="block">
-              Preparation lead minutes (blank = unknown)
-              <input
-                className={fieldClass}
-                inputMode="numeric"
-                value={lead}
-                onChange={(e) => {
-                  setLead(e.target.value);
-                  retain({ lead: e.target.value });
-                }}
-              />
             </label>
             <div className="flex min-w-0 flex-wrap items-end gap-2">
               <label className="min-w-0 flex-1">
@@ -333,6 +395,8 @@ export function CallEditor({
                         Number(shift) * (unit === 'hours' ? 60 : 1)
                       ),
                     });
+                    setTimeParts({});
+                    retain({ timeParts: {} });
                     setError(null);
                   } catch (e) {
                     setError((e as Error).message);
@@ -342,24 +406,8 @@ export function CallEditor({
                 Apply shift
               </button>
             </div>
-            <label className="block">
-              Actual start (UTC, optional)
-              <input
-                className={fieldClass}
-                placeholder="2026-10-17T14:30:00Z"
-                value={draft.time.occurred_at ?? ''}
-                onChange={(e) => time('occurred_at', e.target.value)}
-              />
-            </label>
-            <label className="block">
-              Actual end (UTC, optional)
-              <input
-                className={fieldClass}
-                placeholder="2026-10-17T14:42:00Z"
-                value={draft.time.ended_at ?? ''}
-                onChange={(e) => time('ended_at', e.target.value)}
-              />
-            </label>
+            {dateTime('occurred_at', 'Actual start')}
+            {dateTime('ended_at', 'Actual end')}
             <label className="block">
               Actual time precision
               <select
@@ -393,49 +441,6 @@ export function CallEditor({
                 }
               />
             </label>
-            <label className="block">
-              {records
-                ? 'Conference (optional)'
-                : 'Conference record ID (optional)'}
-              {records ? (
-                <select
-                  className={fieldClass}
-                  value={draft.payload.conference_id ?? ''}
-                  onChange={(event) =>
-                    payload({ conference_id: event.target.value || null })
-                  }
-                >
-                  <option value="">Unknown / unassigned</option>
-                  {draft.payload.conference_id &&
-                    !records.some(
-                      (record) =>
-                        record.record_id === draft.payload.conference_id
-                    ) && (
-                      <option value={draft.payload.conference_id}>
-                        Unresolved conference · {draft.payload.conference_id}
-                      </option>
-                    )}
-                  {records
-                    .filter(
-                      (record) =>
-                        record.record_type === 'conference' && !record.deleted
-                    )
-                    .map((record) => (
-                      <option key={record.record_id} value={record.record_id}>
-                        {record.payload.title}
-                      </option>
-                    ))}
-                </select>
-              ) : (
-                <input
-                  className={fieldClass}
-                  value={draft.payload.conference_id ?? ''}
-                  onChange={(e) =>
-                    payload({ conference_id: e.target.value || null })
-                  }
-                />
-              )}
-            </label>
             <label className="block" hidden={contextual}>
               Scope
               <select
@@ -463,7 +468,7 @@ export function CallEditor({
                 ))}
               </select>
             </label>
-            {draft.scope === 'leg' && (
+            {!contextual && draft.scope === 'leg' && (
               <label className="block">
                 Leg ID
                 <input
@@ -475,7 +480,7 @@ export function CallEditor({
                 />
               </label>
             )}
-            {draft.scope === 'between_legs' && (
+            {!contextual && draft.scope === 'between_legs' && (
               <>
                 <label className="block">
                   Previous leg ID (optional)
