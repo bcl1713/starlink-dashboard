@@ -87,7 +87,7 @@ export function TransportServiceRow({
           value={value}
           onChange={(e) => change(e.target.value as TransportValue)}
         >
-          {transports.map((t) => (
+          {[...new Set([...transports, value])].map((t) => (
             <option key={t} value={t}>
               {t === 'X' ? 'X-band' : t === 'unknown' ? 'Unknown' : t}
             </option>
@@ -132,7 +132,11 @@ export function TransportServiceRow({
             <div className="space-y-2">
               {transport(`Applied transport ${n}`, row.applied.transport, (v) =>
                 onChange(
-                  replaceApplication(row, { ...row.applied!, transport: v })
+                  replaceApplication(row, {
+                    ...row.applied!,
+                    transport: v,
+                    transport_id: null,
+                  })
                 )
               )}
               <TransportReportTime
@@ -169,7 +173,11 @@ export function TransportServiceRow({
                 (v) =>
                   onChange({
                     ...row,
-                    requested: { ...row.requested!, transport: v },
+                    requested: {
+                      ...row.requested!,
+                      transport: v,
+                      transport_id: null,
+                    },
                   })
               )}
               <TransportReportTime

@@ -43,6 +43,7 @@ import { recoverLegacyDrafts } from './legacyRecovery';
 
 type JournalOwner = ReturnType<typeof useOperatorJournal>;
 type SubmitOptions = {
+  onAccepted?: () => void;
   command?: OperatorCommand;
   atCurrentTime?: (asOf: string) => OperatorCommand;
   captureCurrentTime?: boolean;
@@ -403,6 +404,7 @@ export function OperatorWorkspaceProvider({
             ? null
             : 'Save accepted. Current saved state could not be read.',
         });
+      if (result) options.onAccepted?.();
     } catch (error) {
       update(lane, {
         status: 'failed',

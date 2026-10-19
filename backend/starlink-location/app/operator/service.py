@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from . import commands, queries
+from .catalog import assignment_guard
 from .clock import Clock
 from .errors import OperatorError
 from .maintenance import capacity_status
@@ -76,6 +77,14 @@ class OperatorService:
             body.pop("replacement_check_row_ids", None)
         if not body.get("establish_session"):
             body.pop("establish_session", None)
+        # Optional catalog references leave legacy idempotency hashes unchanged.
+        if body.get("payload", {}).get("entry_type") == "transport_decision":
+            for row in body["payload"]["services"]:
+                if row.get("service_id") is None:
+                    row.pop("service_id", None)
+                for stage in ("intended", "requested", "applied"):
+                    if row.get(stage) and row[stage].get("transport_id") is None:
+                        row[stage].pop("transport_id", None)
         encoded = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
         if len(encoded) > 65536:
             raise OperatorError(
@@ -99,9 +108,9 @@ class OperatorService:
         mission_ids = [current.mission_id] if current else []
         if command.operation in ("create", "update"):
             mission_ids.append(command.mission_id)
-        with self.references.locked(mission_ids), self.store.connect(
-            write=True
-        ) as connection:
+        with self.references.locked(mission_ids), assignment_guard(
+            self.store.settings, command
+        ), self.store.connect(write=True) as connection:
             receipt = commands.receipt_for_key(connection, key, request_hash)
             if receipt is not None:
                 return ExecutionResult(receipt, replayed=True)

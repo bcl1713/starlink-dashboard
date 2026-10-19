@@ -13,6 +13,7 @@ from pydantic import Field, ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from app.operator.api_models import JournalTransition, PublicCreate, PublicUpdate
+from app.operator.catalog import Catalog, CatalogStore
 from app.operator.common import Identifier, RecordId, SchemaVersion, StrictModel
 from app.operator.errors import OperatorError
 from app.operator.models import (
@@ -380,3 +381,17 @@ def journal(
 from .operator_events import make_router
 
 router.include_router(make_router())
+
+
+@router.get("/transport-catalog")
+def read_transport_catalog(request: Request):
+    with runtime_for(request) as runtime:
+        return CatalogStore(runtime.settings.root / "transport-catalog.json").read()
+
+
+@router.put("/transport-catalog")
+def save_transport_catalog(request: Request, catalog: Catalog):
+    with runtime_for(request) as runtime:
+        return CatalogStore(runtime.settings.root / "transport-catalog.json").update(
+            catalog
+        )

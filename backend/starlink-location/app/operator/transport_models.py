@@ -1,14 +1,14 @@
 """Human reports of service transport intentions, application and checks."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from .common import RecordId, StrictModel
+from .common import Identifier, RecordId, StrictModel
 from .payload_base import PayloadBase
 from .time_models import UtcTimestamp
 
-TransportValue = Literal["Starshield", "Ka", "X", "unknown"]
+TransportValue = Annotated[str, Field(min_length=1, max_length=200)]
 
 
 class ReportTime(StrictModel):
@@ -23,6 +23,7 @@ class ReportTime(StrictModel):
 
 
 class TransportIntent(StrictModel):
+    transport_id: Identifier | None = None
     transport: TransportValue = "unknown"
 
 
@@ -38,6 +39,7 @@ class TransportCheck(StrictModel):
 
 class TransportServiceRow(StrictModel):
     row_id: RecordId
+    service_id: Identifier | None = None
     service: str = Field(min_length=1, max_length=200)
     intended: TransportIntent | None = None
     requested: TransportChangeReport | None = None

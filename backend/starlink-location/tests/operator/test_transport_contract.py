@@ -164,7 +164,9 @@ def test_pre_upgrade_update_key_replays_with_new_optional_marker(service, record
         service, saved, payload={"entry_type": "note", "title": "Legacy correction"}
     )
     key = str(uuid4())
-    legacy_body = command.model_dump(mode="json", exclude={"replacement_check_row_ids"})
+    legacy_body = command.model_dump(
+        mode="json", exclude={"replacement_check_row_ids", "establish_session"}
+    )
     legacy_hash = hashlib.sha256(
         json.dumps(legacy_body, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()

@@ -1,10 +1,11 @@
 import type { PayloadBase, RecordTime, SavedRecord, Scope } from './operator';
-export type TransportValue = 'Starshield' | 'Ka' | 'X' | 'unknown';
+export type TransportValue = string;
 export interface ReportTime {
   at: string | null;
   precision: 'exact' | 'approximate' | 'unknown';
 }
 export interface TransportChangeReport {
+  transport_id?: string | null;
   transport: TransportValue;
   time: ReportTime;
 }
@@ -15,6 +16,7 @@ export interface TransportCheck {
 }
 export interface TransportServiceRow {
   row_id: string;
+  service_id?: string | null;
   service: string;
   intended: { transport: TransportValue } | null;
   requested: TransportChangeReport | null;
@@ -59,6 +61,7 @@ export interface TransportAssessment {
   change_basis?: 'planned_change' | 'reported_application' | null;
   decision_id: string;
   row_id: string;
+  service_id?: string | null;
   service: string;
   subject: 'change_vs_activity' | 'communications_vs_restriction';
   report_stage: 'intended' | 'requested' | 'applied' | 'unknown';

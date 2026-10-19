@@ -32,7 +32,8 @@ def namespace_status(settings):
         entries = [
             p
             for p in directory.iterdir()
-            if not (
+            if p.name not in ("transport-catalog.json", "transport-catalog.json.lock")
+            and not (
                 settings.source_mode == "live"
                 and p.name in ("simulation", "simulation-missions")
                 and p.is_dir()

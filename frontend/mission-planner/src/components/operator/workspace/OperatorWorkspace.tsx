@@ -75,6 +75,7 @@ import { CommunicationsView } from './CommunicationsView';
 import { JournalHistory } from '../JournalHistory';
 import { HistoryView } from './HistoryView';
 import { TransportView } from './TransportView';
+import { assignmentInput } from './transportAssignments';
 import { newTransportDraft } from '../transportForms';
 import { capabilityInput } from '../capabilityInput';
 import { IssuesView } from './IssuesView';
@@ -1011,10 +1012,63 @@ export function OperatorWorkspace() {
               </>
             ) : view === 'Transport' ? (
               <TransportView
-                records={currentLoaded}
+                key={`${missionId}:${identity}`}
+                missionId={missionId}
+                identity={identity}
+                records={loaded}
+                legId={currentAssociation?.leg_id ?? null}
+                onApply={async (service, transport) => {
+                  if (!health.data || disabled)
+                    throw new Error('Operator store unavailable.');
+                  const clock = records.data?.pages[0]?.as_of;
+                  if (!clock)
+                    throw new Error('Refresh mission records before applying.');
+                  const input = assignmentInput(
+                    missionId,
+                    service,
+                    transport,
+                    clock,
+                    currentAssociation
+                  );
+                  const draft = createEditorDraft(
+                    workspace.registry,
+                    health.data,
+                    input
+                  );
+                  workspace.refreshDrafts();
+                  let accepted = false;
+                  await workspace.submitDraft(draft.draftId, {
+                    onAccepted: () => {
+                      accepted = true;
+                    },
+                    atCurrentTime: (now) => ({
+                      operation: 'create',
+                      body: assignmentInput(
+                        missionId,
+                        service,
+                        transport,
+                        now,
+                        currentAssociation
+                      ),
+                    }),
+                  });
+                  if (!accepted)
+                    throw new Error(
+                      'Assignment not confirmed. Review the save status below before retrying.'
+                    );
+                }}
                 events={events}
                 disabled={
-                  disabled || acting || records.isFetching || missionSaveBusy
+                  disabled ||
+                  acting ||
+                  records.isFetching ||
+                  missionSaveBusy ||
+                  workspace.tray.some(
+                    (row) =>
+                      row.target.missionId === missionId &&
+                      row.target.recordType === 'transport_decision' &&
+                      (!!row.pending || row.status === 'accepted_unreadable')
+                  )
                 }
                 onCreate={() => openInput(newTransportDraft(missionId).input)}
                 onEdit={openRecord}

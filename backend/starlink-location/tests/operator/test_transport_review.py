@@ -269,3 +269,26 @@ def test_retrospective_application_uses_ended_participation(
         a.activity_id == str(participant.record_id) and a.status == "overlap"
         for a in result.assessments
     )
+
+
+def test_catalog_display_name_matches_canonical_restriction(
+    service, record_data, clock
+):
+    from app.operator.catalog import CatalogStore
+
+    customer = call(service, record_data, clock)
+    store = CatalogStore(service.store.settings.root / "transport-catalog.json")
+    store.update(store.read())
+    data = decision(
+        record_data, row(applied={"transport": "X-band", "transport_id": "X"})
+    )
+    data["payload"]["call_id"] = str(customer.record_id)
+    saved = create(service, data)
+    source = SourceCapture(
+        source="model:leg-a", freshness="fresh", aligned=True, guardable=True
+    )
+    result = review([customer, saved], [restriction(clock)], clock, [source])
+    assert any(
+        a.subject == "communications_vs_restriction" and a.status == "overlap"
+        for a in result.assessments
+    )
