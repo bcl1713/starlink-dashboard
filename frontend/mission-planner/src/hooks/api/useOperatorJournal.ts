@@ -184,9 +184,10 @@ export function useOperatorJournal(
     await Promise.all([
       client.invalidateQueries({ queryKey: ['operator-records', missionId] }),
       client.invalidateQueries({ queryKey: ['operator-history'] }),
-      client.invalidateQueries({
-        queryKey: ['operator-events', missionId, session.current],
-      }),
+      client.invalidateQueries(
+        { queryKey: ['operator-events', missionId, session.current] },
+        { cancelRefetch: false }
+      ),
     ]);
     operatorTiming('refresh', started);
   }

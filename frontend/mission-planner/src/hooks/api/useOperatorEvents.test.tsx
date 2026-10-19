@@ -178,3 +178,98 @@ it('withholds a foreign epoch snapshot until the same mission source identity is
   expect(hook.result.current.failed).toBe(false);
   hook.unmount();
 });
+
+it('coalesces journal invalidations without canceling an in-flight event refresh', async () => {
+  const journalApi = await import('@/services/operator');
+  const { useOperatorJournal } = await import('./useOperatorJournal');
+  const { health, input, record, page } = await import(
+    '@/test/operator-fixtures'
+  );
+  vi.spyOn(journalApi, 'getOperatorHealth').mockResolvedValue(health);
+  vi.spyOn(journalApi, 'readOperatorRecords').mockResolvedValue(page());
+  vi.spyOn(journalApi, 'readOperatorRecord').mockResolvedValue(page().items[0]);
+  vi.spyOn(journalApi, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [record],
+  });
+  const release: (() => void)[] = [];
+  const get = vi
+    .spyOn(api, 'readEventSnapshot')
+    .mockResolvedValueOnce(eventSnapshot())
+    .mockImplementation(
+      () =>
+        new Promise((resolve) => release.push(() => resolve(eventSnapshot())))
+    );
+  const hook = renderHook(
+    () => ({
+      events: useOperatorEvents('mission-a', identity),
+      journal: useOperatorJournal('mission-a'),
+    }),
+    { wrapper: wrapper() }
+  );
+  await waitFor(() =>
+    expect(hook.result.current.events.snapshot).toBeDefined()
+  );
+  await waitFor(() =>
+    expect(hook.result.current.journal.health.data?.ready).toBe(true)
+  );
+  try {
+    await act(async () => {
+      await hook.result.current.journal.save({
+        operation: 'create',
+        body: input,
+      });
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(get.mock.calls[1][1]?.aborted).toBe(false);
+  } finally {
+    await act(async () => {
+      release.forEach((resolve) => resolve());
+    });
+  }
+});
+
+const snapshotChanged = () =>
+  Object.assign(new Error('Snapshot changed'), {
+    response: {
+      status: 409,
+      data: {
+        error: {
+          code: 'event_snapshot_changed',
+          message: 'Operator state requires reconciliation',
+          retryable: true,
+        },
+      },
+    },
+  });
+
+it('retries a transient snapshot GET conflict once without sending an acknowledgment', async () => {
+  const get = vi
+    .spyOn(api, 'readEventSnapshot')
+    .mockRejectedValueOnce(snapshotChanged())
+    .mockResolvedValue(eventSnapshot());
+  const post = vi.spyOn(api, 'acknowledgeOperatorEvent');
+  const hook = renderHook(() => useOperatorEvents('mission-a', identity), {
+    wrapper: wrapper(),
+  });
+  await waitFor(() => expect(hook.result.current.snapshot).toBeDefined());
+  expect(get).toHaveBeenCalledTimes(2);
+  expect(hook.result.current.failed).toBe(false);
+  expect(post).not.toHaveBeenCalled();
+});
+
+it('bounds snapshot conflict retries and retains the previous snapshot on persistent conflict', async () => {
+  const get = vi
+    .spyOn(api, 'readEventSnapshot')
+    .mockResolvedValueOnce(eventSnapshot())
+    .mockRejectedValue(snapshotChanged());
+  const hook = renderHook(() => useOperatorEvents('mission-a', identity), {
+    wrapper: wrapper(),
+  });
+  await waitFor(() => expect(hook.result.current.snapshot).toBeDefined());
+  act(() => hook.result.current.refresh());
+  await waitFor(() => expect(hook.result.current.failed).toBe(true));
+  expect(get).toHaveBeenCalledTimes(3);
+  expect(hook.result.current.snapshot).toBeDefined();
+});

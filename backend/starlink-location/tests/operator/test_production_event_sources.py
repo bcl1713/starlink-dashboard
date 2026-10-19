@@ -3,7 +3,6 @@
 import json
 
 import pytest
-
 from app.mission import storage
 from app.operator.errors import OperatorError
 from app.operator.event_eligibility import select_eligible
@@ -292,3 +291,29 @@ def test_missing_pop_catalog_does_not_hide_known_x_warning(production, clock):
     snapshot = build_snapshot(runtime, "demo-mission", adapter)
     assert snapshot.coverage == "partial"
     assert any(e.transport == "X" and e.notification.eligible for e in snapshot.events)
+
+
+def test_timing_guard_uses_one_coherent_input_capture(production, clock, monkeypatch):
+    from time import perf_counter
+
+    from app.operator import production_event_sources as module
+
+    adapter, *_ = production
+    inputs = module.capture_current(adapter, "demo-mission", as_of=clock.now())
+    capture = module.capture_current
+    calls = []
+
+    def measured(*args, **kwargs):
+        calls.append(1)
+        return capture(*args, **kwargs)
+
+    monkeypatch.setattr(module, "capture_current", measured)
+    started = perf_counter()
+    adapter._validate_timing("demo-mission", inputs.revision, inputs.sample_revision)
+    print(
+        {
+            "validation_captures": len(calls),
+            "validation_ms": round((perf_counter() - started) * 1000, 2),
+        }
+    )
+    assert len(calls) == 1

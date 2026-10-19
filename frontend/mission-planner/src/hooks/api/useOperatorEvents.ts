@@ -57,7 +57,16 @@ export function useOperatorEvents(missionId: string, identity: string | null) {
     refetchInterval: visible ? 15000 : 60000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
-    retry: false,
+    retry: (failures, error) => {
+      const failure = operatorFailure(error);
+      return (
+        failures === 0 &&
+        failure.status === 409 &&
+        failure.code === 'event_snapshot_changed' &&
+        failure.retryable
+      );
+    },
+    retryDelay: 100,
     networkMode: 'always',
   });
   const refresh = useCallback(() => {

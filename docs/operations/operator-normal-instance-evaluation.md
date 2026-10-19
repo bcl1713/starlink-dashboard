@@ -230,7 +230,7 @@ promise):
 
 | Measurement                                                                            |  Before |   After |
 | -------------------------------------------------------------------------------------- | ------: | ------: |
-| Local conference SQLite/API save, median of five                                                  | 4.35 ms | 4.20 ms |
+| Local conference SQLite/API save, median of five                                       | 4.35 ms | 4.20 ms |
 | Same API save plus authoritative current GET                                           | 6.67 ms | 6.46 ms |
 | Controlled frontend receipt (50 ms POST)                                               |   52 ms |   52 ms |
 | Controlled frontend current row returned (50 ms GET, 200 ms list/history refresh each) |  504 ms |  104 ms |
@@ -287,3 +287,20 @@ Simulate leg continues using its existing route and mission clock. If the
 one-way symptom persists, retain `/api/overview/upcoming-pois` fields `state`,
 `flight_phase`, `current_route_progress`, `position_state`, and the arrival POI;
 those identify the remaining source condition without sharing the entire route.
+
+### A 409 with `event_snapshot_changed`
+
+This code on the event GET means inputs changed while a consistent operational
+snapshot was being assembled. It is distinct from a journal write/version
+conflict. A successful call or conference receipt remains accepted even if its
+subsequent background event refresh conflicts.
+
+Post-save invalidations now share an in-flight event refresh instead of
+canceling it and starting duplicate backend work. A timing guard validates
+planning and telemetry against one coherent input capture instead of capturing
+the full input set twice. A read-only event refresh retries this specific
+retryable conflict once after 100 ms, starting a new complete snapshot. It never
+retries an acknowledgment or a journal mutation. Persistent conflicts keep the
+previous snapshot with the existing unavailable/current-state-unknown notice;
+source, version and acknowledgment guards remain enforced. An individual 409 can
+still appear in DevTools when the bounded GET retry subsequently succeeds.
