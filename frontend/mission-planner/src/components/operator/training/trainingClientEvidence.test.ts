@@ -4,6 +4,7 @@ import type { DraftEnvelope } from '../workspace/types';
 import {
   collectClientEvidence,
   decodeClientObservation,
+  retainClientObservation,
 } from './trainingClientEvidence';
 const identity = {
   origin: 'http://localhost',
@@ -109,4 +110,107 @@ it('rejects foreign, future, malformed and generic completion flags', () => {
   ])
     expect(() => decodeClientObservation(value, identity, namespace)).toThrow();
   expect(collect([observation(101, false), observation(102)])).toEqual([]);
+});
+
+it('matches a reported approximate UTC time after normal backend precision canonicalization', () => {
+  const short = {
+    ...draft,
+    input: {
+      ...input,
+      time: { ...input.time, occurred_at: '2026-10-17T10:11:12Z' },
+    },
+  };
+  const row = {
+    ...saved,
+    time: { ...saved.time, occurred_at: '2026-10-17T10:11:12.000000Z' },
+  };
+  expect(
+    collect(
+      [observation(1, false, [short]), observation(2, true, [short])],
+      [row]
+    )
+  ).toContain('offline-draft-retained');
+});
+
+it('keeps all three completed recovery observations through later draft work within the eight-read bound', () => {
+  const other = {
+    ...draft,
+    draftId: 'other',
+    target: {
+      ...draft.target,
+      newDraftId: 'other',
+      scope: 'leg' as const,
+      legId: 'leg-two',
+    },
+    input: { ...input, scope: 'leg' as const, leg_id: 'leg-two' },
+  };
+  const storage = {
+    ...draft,
+    draftId: 'storage',
+    target: { ...draft.target, newDraftId: 'storage' },
+    input: {
+      ...input,
+      payload: { ...input.payload, title: 'Storage retained' },
+    },
+  };
+  const memory = {
+    ...storage,
+    persistence: {
+      state: 'memory_only' as const,
+      message: 'Quota unavailable',
+    },
+  };
+  const second = {
+    ...saved,
+    record_id: 'saved-storage',
+    command_id: 'server-storage',
+    journal_seq: 2,
+    payload: storage.input.payload,
+  };
+  const backend = [saved, second];
+  let reads = [
+    observation(1),
+    observation(2, true, [draft, other]),
+    observation(3, false, [draft, other]),
+    observation(4, true, [draft, other]),
+    { ...observation(5, true, [other, memory]), journalH: 1 },
+    { ...observation(6, true, [other, storage]), journalH: 1 },
+    { ...observation(7, true, [other]), journalH: 2 },
+  ];
+  const expected = [
+    'draft-switch-retained',
+    'offline-draft-retained',
+    'storage-unavailable-recovery',
+  ];
+  expect(
+    collectClientEvidence(identity, namespace, 2, backend, reads, 100)
+  ).toEqual(expect.arrayContaining(expected));
+  for (let at = 8; at < 20; at++) {
+    reads = retainClientObservation(
+      identity,
+      namespace,
+      2,
+      true,
+      [
+        {
+          ...other,
+          revision: at,
+          input: {
+            ...other.input,
+            payload: {
+              ...other.input.payload,
+              note: `Later retained work ${at}`,
+            },
+          },
+        },
+      ],
+      reads,
+      at,
+      backend
+    );
+    expect(reads.length).toBeLessThanOrEqual(8);
+    expect(
+      collectClientEvidence(identity, namespace, 2, backend, reads, 100)
+    ).toEqual(expect.arrayContaining(expected));
+  }
 });

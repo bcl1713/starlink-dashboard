@@ -71,6 +71,7 @@ function Guide({
     setCheckError(null);
     try {
       const observations = await onCheckEvidence({
+        conflictObservations: progress.conflictObservations ?? [],
         clientObservations: progress.clientObservations ?? [],
         retryObservations: progress.retryObservations ?? [],
         replayObservations: progress.replayObservations ?? [],

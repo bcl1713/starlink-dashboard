@@ -2,6 +2,7 @@ import type { Pending } from '@/hooks/api/useOperatorJournal';
 import type {
   CommandReceipt,
   OperatorCommand,
+  OperatorFailure,
   SavedRecord,
 } from '@/types/operator';
 import { isDraftTarget, isOperatorInput } from './draftRegistry';
@@ -43,6 +44,7 @@ export interface TransactionTrayItem {
   title: string;
   status: TransactionStatus;
   message: string | null;
+  failure?: OperatorFailure;
   pending?: PendingEnvelope;
   retryReady?: boolean;
   receipt?: CommandReceipt;

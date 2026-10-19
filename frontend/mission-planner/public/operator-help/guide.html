@@ -1034,6 +1034,38 @@ delete window.restorePrivateTrainingStorage;</code></pre>
           its accepted receipt. A network failure before any commit is a
           different case.
         </p>
+        <h3>Private counterpart conflict exercise</h3>
+        <ol>
+          <li>
+            Save a fictional note. Open it for editing in your learner window,
+            change its text, and keep that edit unsaved.
+          </li>
+          <li>
+            In a second browser profile on the same private instance, open the
+            saved note and save a different text change through Operator.
+          </li>
+          <li>
+            Return to the learner window and attempt its old-version save. Read
+            the actual version conflict. Choose Keep draft and return, then
+            Check current evidence in T08 before reconciling.
+          </li>
+          <li>
+            Use Reread and reconcile in Save status. Check guide evidence again
+            so the actual current revision is retained.
+          </li>
+          <li>
+            Resume the original draft and compare both versions. If its input is
+            the intended replacement, choose Keep my input using current version
+            as base. Save normally and check evidence again.
+          </li>
+        </ol>
+        <p>
+          The conflict outcome requires the real rejected attempt, structured
+          conflict reply, concurrent saved revision, explicit reread and a new
+          accepted replacement command based on that reread. The original and
+          counterpart revisions remain immutable. A conflict label alone, a new
+          key without review, or a different store does not complete it.
+        </p>
         <p>
           Never use a new command key merely to escape an uncertain response. A
           successful exact retry returns the original result rather than adding

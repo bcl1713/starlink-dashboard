@@ -1,3 +1,4 @@
+import { sameInputValue } from './trainingRetryReceipt';
 import type { SavedRecord } from '@/types/operator';
 import type { DraftEnvelope } from '../workspace/types';
 import { draftPrefix, isDraftEnvelope } from '../workspace/draftRegistry';
@@ -69,7 +70,8 @@ export function retainClientObservation(
   online: boolean,
   drafts: readonly DraftEnvelope[],
   previous: readonly ClientObservation[],
-  now = Date.now()
+  now = Date.now(),
+  records: readonly SavedRecord[] = []
 ): ClientObservation[] {
   const reads: ClientObservation[] = [];
   for (const raw of previous.slice(-8)) {
@@ -103,7 +105,34 @@ export function retainClientObservation(
   } catch {
     /* Missing or oversized reads leave the exercise incomplete. */
   }
-  return reads.slice(-8);
+  // Keep the raw pair for each already-provable recovery, plus recent reads.
+  // Saved rows choose retention only; every outcome still needs a fresh backend
+  // comparison in collectClientEvidence, including after a reload.
+  const pinned = new Set<ClientObservation>();
+  const proven = new Set<string>();
+  const eligible = reads.filter(
+    (read) => read.observedAt <= now && read.journalH <= journalH
+  );
+  for (const before of eligible)
+    for (const after of eligible) {
+      for (const outcome of pairOutcomes(
+        identity,
+        journalH,
+        records,
+        before,
+        after
+      )) {
+        if (proven.has(outcome)) continue;
+        proven.add(outcome);
+        pinned.add(before);
+        pinned.add(after);
+      }
+    }
+  const recent = reads
+    .filter((read) => !pinned.has(read))
+    .slice(-(8 - pinned.size));
+  const selected = new Set([...pinned, ...recent]);
+  return reads.filter((read) => selected.has(read));
 }
 function retained(before: DraftEnvelope, after: DraftEnvelope) {
   return (
@@ -146,52 +175,58 @@ export function collectClientEvidence(
   }
   const outcomes = new Set<string>();
   for (const before of reads)
-    for (const after of reads) {
-      if (
-        after.observedAt <= before.observedAt ||
-        after.journalH < before.journalH
+    for (const after of reads)
+      for (const outcome of pairOutcomes(identity, H, records, before, after))
+        outcomes.add(outcome);
+  return [...outcomes];
+}
+function pairOutcomes(
+  identity: TrainingIdentity,
+  H: number,
+  records: readonly SavedRecord[],
+  before: ClientObservation,
+  after: ClientObservation
+): string[] {
+  if (after.observedAt <= before.observedAt || after.journalH < before.journalH)
+    return [];
+  const outcomes = new Set<string>();
+  for (const draft of before.drafts) {
+    const kept = after.drafts.find((candidate) => retained(draft, candidate));
+    if (!kept) continue;
+    if (
+      after.drafts.some(
+        (other) =>
+          other.draftId !== draft.draftId &&
+          !before.drafts.some((prior) => prior.draftId === other.draftId) &&
+          differentScope(draft, other)
       )
-        continue;
-      for (const draft of before.drafts) {
-        const kept = after.drafts.find((candidate) =>
-          retained(draft, candidate)
-        );
-        if (!kept) continue;
-        if (
-          after.drafts.some(
-            (other) =>
-              other.draftId !== draft.draftId &&
-              !before.drafts.some((prior) => prior.draftId === other.draftId) &&
-              differentScope(draft, other)
-          )
-        )
-          outcomes.add('draft-switch-retained');
-        const saved = records.some(
-          (row) =>
-            row.mission_id === identity.missionId &&
-            row.provenance.source_mode === 'simulation' &&
-            !row.deleted &&
-            row.journal_seq > before.journalH &&
-            row.journal_seq <= H &&
-            (draft.target.recordId
-              ? row.record_id === draft.target.recordId &&
-                row.version > (draft.baseVersion ?? 0)
-              : row.version === 1 && row.operation === 'create') &&
-            row.record_type === draft.input.record_type &&
-            row.scope === draft.input.scope &&
-            row.leg_id === draft.input.leg_id &&
-            sameJson(row.time, draft.input.time) &&
-            sameJson(row.payload, draft.input.payload)
-        );
-        if (saved && !before.online && after.online)
-          outcomes.add('offline-draft-retained');
-        if (
-          saved &&
-          draft.persistence.state === 'memory_only' &&
-          kept.persistence.state === 'durable'
-        )
-          outcomes.add('storage-unavailable-recovery');
-      }
-    }
+    )
+      outcomes.add('draft-switch-retained');
+    const saved = records.some(
+      (row) =>
+        row.mission_id === identity.missionId &&
+        row.provenance.source_mode === 'simulation' &&
+        !row.deleted &&
+        row.journal_seq > before.journalH &&
+        row.journal_seq <= H &&
+        (draft.target.recordId
+          ? row.record_id === draft.target.recordId &&
+            row.version > (draft.baseVersion ?? 0)
+          : row.version === 1 && row.operation === 'create') &&
+        row.record_type === draft.input.record_type &&
+        row.scope === draft.input.scope &&
+        row.leg_id === draft.input.leg_id &&
+        sameInputValue(draft.input.time, row.time) &&
+        sameInputValue(draft.input.payload, row.payload)
+    );
+    if (saved && !before.online && after.online)
+      outcomes.add('offline-draft-retained');
+    if (
+      saved &&
+      draft.persistence.state === 'memory_only' &&
+      kept.persistence.state === 'durable'
+    )
+      outcomes.add('storage-unavailable-recovery');
+  }
   return [...outcomes];
 }

@@ -1,4 +1,8 @@
 import {
+  collectConflictEvidence,
+  retainConflictObservations,
+} from '../training/trainingConflictEvidence';
+import {
   collectClientEvidence,
   retainClientObservation,
 } from '../training/trainingClientEvidence';
@@ -138,8 +142,9 @@ export function OperatorWorkspace() {
   const [tools, setTools] = useState(false);
   const [help, setHelp] = useState(false);
   const [guide, setGuide] = useState(false);
-  const [checkedTraining, setCheckedTraining] =
-    useState<CheckedTrainingEvidence | null>(null);
+  const [checkedTraining, setCheckedTraining] = useState<
+    (CheckedTrainingEvidence & { evidenceRecords: SavedRecord[] }) | null
+  >(null);
   const training = trainingContext(
     health.data,
     mission.data,
@@ -438,7 +443,11 @@ export function OperatorWorkspace() {
                 events.snapshot?.H ?? -1,
                 navigator.onLine,
                 workspace.registry.listDrafts(),
-                previous.clientObservations ?? []
+                previous.clientObservations ?? [],
+                Date.now(),
+                checkedTraining?.identity === trainingIdentity
+                  ? checkedTraining.evidenceRecords
+                  : []
               );
               if (!navigator.onLine)
                 return {
@@ -500,7 +509,9 @@ export function OperatorWorkspace() {
                 checked.H!,
                 true,
                 workspace.registry.listDrafts(),
-                previous.clientObservations ?? []
+                previous.clientObservations ?? [],
+                Date.now(),
+                checked.evidenceRecords
               );
               const observations = [...(previous.retryObservations ?? [])];
               for (const transaction of workspace.tray) {
@@ -574,6 +585,21 @@ export function OperatorWorkspace() {
                 training.prerequisiteIds,
                 journalObservations
               );
+              const conflictObservations = retainConflictObservations(
+                training.identity,
+                namespace,
+                previous.conflictObservations ?? [],
+                workspace.tray,
+                workspace.attempts,
+                checked.evidenceRecords
+              );
+              const conflictOutcomes = collectConflictEvidence(
+                training.identity,
+                namespace,
+                checked.H,
+                checked.evidenceRecords,
+                conflictObservations
+              );
               const clientOutcomes = collectClientEvidence(
                 training.identity,
                 namespace,
@@ -592,6 +618,7 @@ export function OperatorWorkspace() {
                 ...checked,
                 toolingOutcomes: archiveOutcomes,
                 historicalOutcomes: [
+                  ...conflictOutcomes,
                   ...clientOutcomes,
                   ...journalOutcomes,
                   ...historicalReplayOutcomes.filter(
@@ -602,6 +629,7 @@ export function OperatorWorkspace() {
                   ...new Set([
                     ...checked.outcomes,
                     ...displayOutcomes,
+                    ...conflictOutcomes,
                     ...clientOutcomes,
                     ...retryOutcomes,
                     ...journalOutcomes,
@@ -617,6 +645,7 @@ export function OperatorWorkspace() {
               });
               events.refresh();
               return {
+                conflictObservations,
                 clientObservations,
                 retryObservations: retainedObservations,
                 replayObservations,

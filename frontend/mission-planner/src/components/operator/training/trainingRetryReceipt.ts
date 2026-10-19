@@ -18,7 +18,11 @@ function canonicalUtc(value: string) {
     );
   return match ? `${match[1]}.${(match[2] ?? '').padEnd(6, '0')}Z` : value;
 }
-function sameInputValue(expected: unknown, actual: unknown, key = ''): boolean {
+export function sameInputValue(
+  expected: unknown,
+  actual: unknown,
+  key = ''
+): boolean {
   if (
     typeof expected === 'string' &&
     typeof actual === 'string' &&

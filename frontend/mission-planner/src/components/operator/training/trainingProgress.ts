@@ -1,4 +1,8 @@
 import {
+  decodeConflictObservation,
+  type ConflictObservation,
+} from './trainingConflictEvidence';
+import {
   decodeClientObservation,
   type ClientObservation,
 } from './trainingClientEvidence';
@@ -33,6 +37,7 @@ export interface ManualEvidence {
   note: string;
 }
 export interface TrainingObservations {
+  conflictObservations?: ConflictObservation[];
   clientObservations?: ClientObservation[];
   archiveObservations?: ArchiveObservation[];
   journalObservations?: JournalObservation[];
@@ -91,6 +96,16 @@ function validProgress(
   )
     return false;
   try {
+    if (value.conflictObservations !== undefined) {
+      if (
+        !Array.isArray(value.conflictObservations) ||
+        value.conflictObservations.length > 8
+      )
+        return false;
+      value.conflictObservations.forEach((item) =>
+        decodeConflictObservation(item, identity)
+      );
+    }
     if (value.clientObservations !== undefined) {
       if (
         !Array.isArray(value.clientObservations) ||

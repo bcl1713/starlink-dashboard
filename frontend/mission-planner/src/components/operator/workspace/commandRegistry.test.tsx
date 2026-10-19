@@ -211,6 +211,10 @@ it('409 and failed latest read retain draft for explicit reconciliation', async 
   await submit(draft.draftId);
   expect(workspace.tray[0].status).toBe('needs_review');
   expect(workspace.tray[0].message).toContain('could not be read');
+  expect(workspace.tray[0].failure).toMatchObject({
+    status: 409,
+    code: 'version_conflict',
+  });
   expect(registry.resumeDraft(draft.draftId)).not.toBeNull();
 });
 
@@ -575,13 +579,11 @@ it('keeps the command lane visibly busy until an accepted save finishes its curr
         finishRead = resolve;
       })
   );
-  const send = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockResolvedValue({
-      schema_version: 1,
-      command_id: 'receipt',
-      saved_records: [record],
-    });
+  const send = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [record],
+  });
   const { registry } = mount();
   const first = registry.createDraft(target, input);
   let saving!: Promise<void>;

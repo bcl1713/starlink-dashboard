@@ -234,6 +234,7 @@ export function OperatorWorkspaceProvider({
         status:
           api.error?.code === 'epoch_mismatch' ? 'quarantined' : 'needs_review',
         message,
+        failure: api.error ?? undefined,
         pending,
       });
     else if (api.storageError)
