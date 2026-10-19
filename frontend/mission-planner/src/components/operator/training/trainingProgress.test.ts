@@ -218,3 +218,21 @@ it('quarantines retained archive reports from another epoch without accepting fi
   expect(loadProgress(storage, fixture.identity).progress).toBeNull();
   expect(loadProgress(storage, fixture.identity).error).toBeTruthy();
 });
+
+it('round-trips valid raw archive reports using only the pinned identity fields', async () => {
+  const fixture = await import('@/test/training-archive-fixtures');
+  const storage = memory();
+  const { decodeArchiveObservation } = await import(
+    './trainingArchiveEvidence'
+  );
+  const progress = {
+    ...createProgress(fixture.identity),
+    archiveObservations: [
+      decodeArchiveObservation(fixture.observation('empty'), fixture.identity),
+    ],
+  };
+  expect(saveProgress(storage, progress).error).toBeNull();
+  expect(
+    loadProgress(storage, fixture.identity).progress?.archiveObservations
+  ).toEqual(progress.archiveObservations);
+});

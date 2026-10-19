@@ -212,7 +212,10 @@ export function saveProgress(
   progress: TrainingProgress
 ): { error: string | null } {
   try {
-    if (!validProgress(progress, progress))
+    const { fixtureVersion, origin, storeId, epoch, missionId } = progress;
+    if (
+      !validProgress(progress, { fixtureVersion, origin, storeId, epoch, missionId })
+    )
       throw new Error('Invalid guide progress.');
     storage.setItem(key(progress), JSON.stringify(progress));
     return { error: null };

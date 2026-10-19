@@ -227,3 +227,37 @@ def test_catalog_that_may_be_truncated_cannot_claim_complete_preservation():
 
     with pytest.raises(ValueError, match="complete course boundary"):
         evidence.read_snapshot(get)
+
+
+def test_ready_download_reads_original_bytes_through_existing_get_only(monkeypatch):
+    import http.client
+
+    calls = []
+
+    class Response:
+        status = 200
+
+        def read(self, limit):
+            calls.append(("bound", limit))
+            return b"PK-original-ready-artifact"
+
+    class Connection:
+        def __init__(self, host, port, timeout):
+            assert host == "127.0.0.1" and port == 56533 and timeout <= 15
+
+        def request(self, method, path):
+            calls.append((method, path))
+
+        def getresponse(self):
+            return Response()
+
+        def close(self):
+            calls.append(("closed", True))
+
+    monkeypatch.setattr(http.client, "HTTPConnection", Connection)
+    get = evidence.loopback_reader(56533)
+    path = "/api/v2/missions/m/export-preparations/" + "a" * 32 + "/download"
+    assert get(path, binary=True) == b"PK-original-ready-artifact"
+    assert calls == [("GET", path), ("bound", 64 * 1024 * 1024 + 1), ("closed", True)]
+    with pytest.raises(ValueError, match="ready artifact"):
+        get("/api/v2/missions/m/export-preparations", binary=True)

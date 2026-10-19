@@ -165,7 +165,15 @@ def loopback_reader(port, *, deadline=None):
     if type(port) is not int or not 1024 <= port <= 65535:
         raise ValueError("Recorded private loopback port required")
 
-    def get(path):
+    def get(path, *, binary=False):
+        if binary:
+            import re
+
+            if not re.fullmatch(
+                r"/api/v2/missions/[^/?]+/export-preparations/[0-9a-f]{32}/download",
+                path,
+            ):
+                raise ValueError("Existing ready artifact download path required")
         if not path.startswith("/api/v2/") or "\r" in path or "\n" in path:
             raise ValueError("Normal private API path required")
         remaining = deadline - time.monotonic()
@@ -179,10 +187,11 @@ def loopback_reader(port, *, deadline=None):
             response = connection.getresponse()
             if response.status != 200:
                 raise ValueError(f"Private API read unavailable ({response.status})")
-            body = response.read(16 * 1024 * 1024 + 1)
-            if len(body) > 16 * 1024 * 1024:
+            limit = (64 if binary else 16) * 1024 * 1024
+            body = response.read(limit + 1)
+            if len(body) > limit:
                 raise ValueError("Private evidence response exceeds its read bound")
-            return json.loads(body)
+            return body if binary else json.loads(body)
         finally:
             connection.close()
 
@@ -386,18 +395,20 @@ def main():
             cache = source_owner.root / "archive-artifacts"
             cache.mkdir(mode=0o700, exist_ok=True)
             args.zip = cache / (selected["artifact"]["sha256"] + ".zip")
-            container = reader.compose("ps", "-q", "starlink-location").strip()
             reader.ownership["temporaryPaths"] = [str(args.zip)]
             reader.persist()
-            reader.execute(
-                [
-                    "docker",
-                    "cp",
-                    container + ":" + selected["artifact"]["path"],
-                    str(args.zip),
-                ],
-                timeout=90,
+            # The ordinary download endpoint only opens this already-ready file.
+            # Avoid Docker cp's rootless read-only mount remapping; do not prepare
+            # another export. Hash/size equality below pins these original bytes.
+            payload = source_get(
+                "/api/v2/missions/"
+                + quote(mission["id"], safe="")
+                + "/export-preparations/"
+                + selected["job"]["id"]
+                + "/download",
+                binary=True,
             )
+            args.zip.write_bytes(payload)
             args.zip.chmod(0o600)
         if args.zip.stat().st_size > 64 * 1024 * 1024:
             raise ValueError("Private training ZIP read is limited to 64 MiB")
