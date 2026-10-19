@@ -63,7 +63,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -72,9 +72,17 @@
         {
           "set": "fresh",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx",
+          "test": "keeps %s scope explicit without moving the draft mission or inventing a leg",
+          "source_sha256": "79fb0b52ea000931f2b25d1f82577b560690dcad144dd66af3b55759ead1faee",
+          "assertion": "Each preflight/postflight choice preserves mission-a, sets target/input scope and leaves all leg identities null.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "mission.leg",
@@ -113,7 +121,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -122,9 +130,17 @@
         {
           "set": "fresh",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx",
+          "test": "uses explicit named scope selectors without changing the pinned mission",
+          "source_sha256": "79fb0b52ea000931f2b25d1f82577b560690dcad144dd66af3b55759ead1faee",
+          "assertion": "Named previous/next choices pin leg-1/leg-2 and between_legs while retaining mission-a; no raw Entry mission ID control.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "mission.postflight",
@@ -140,7 +156,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -149,9 +165,17 @@
         {
           "set": "fresh",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx",
+          "test": "keeps %s scope explicit without moving the draft mission or inventing a leg",
+          "source_sha256": "79fb0b52ea000931f2b25d1f82577b560690dcad144dd66af3b55759ead1faee",
+          "assertion": "Each preflight/postflight choice preserves mission-a, sets target/input scope and leaves all leg identities null.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "mission.previous_leg",
@@ -167,7 +191,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -176,9 +200,17 @@
         {
           "set": "fresh",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx",
+          "test": "uses explicit named scope selectors without changing the pinned mission",
+          "source_sha256": "79fb0b52ea000931f2b25d1f82577b560690dcad144dd66af3b55759ead1faee",
+          "assertion": "Named previous/next choices pin leg-1/leg-2 and between_legs while retaining mission-a; no raw Entry mission ID control.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "mission.next_leg",
@@ -194,7 +226,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -203,9 +235,17 @@
         {
           "set": "fresh",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx",
+          "test": "uses explicit named scope selectors without changing the pinned mission",
+          "source_sha256": "79fb0b52ea000931f2b25d1f82577b560690dcad144dd66af3b55759ead1faee",
+          "assertion": "Named previous/next choices pin leg-1/leg-2 and between_legs while retaining mission-a; no raw Entry mission ID control.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "mission.mission_switch",
@@ -336,14 +376,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "typed",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/OperatorBrief.test.tsx",
+          "test": "keeps modeled risks separate from reported issues and discloses unresolved and stale data",
+          "source_sha256": "9638f1bd6cbd77d001fa48813bcf926dd33462c2ed2f0528c0e3b9d201f36176",
+          "assertion": "Separate Next risk and Issues regions show modeled stale/missing-association advisory and reported open issue; resolved issue omitted.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Related production flow does not directly assert this exact entry; inspect existing regression assertions and retain a focused result before acceptance."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "brief.issues",
@@ -359,14 +407,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "typed",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/OperatorBrief.test.tsx",
+          "test": "keeps modeled risks separate from reported issues and discloses unresolved and stale data",
+          "source_sha256": "9638f1bd6cbd77d001fa48813bcf926dd33462c2ed2f0528c0e3b9d201f36176",
+          "assertion": "Separate Next risk and Issues regions show modeled stale/missing-association advisory and reported open issue; resolved issue omitted.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Related production flow does not directly assert this exact entry; inspect existing regression assertions and retain a focused result before acceptance."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "brief.unknown_time",
@@ -382,7 +438,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
@@ -391,9 +447,17 @@
         {
           "set": "typed",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/OperatorBrief.test.tsx",
+          "test": "shows the imminent future requirement separately from overdue attention and unknown timing",
+          "source_sha256": "9638f1bd6cbd77d001fa48813bcf926dd33462c2ed2f0528c0e3b9d201f36176",
+          "assertion": "Future call remains Next; overdue call is Attention needed; unknown timing count remains visible.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "brief.incomplete_pages",
@@ -409,7 +473,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
@@ -418,9 +482,17 @@
         {
           "set": "typed",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/OperatorBrief.test.tsx",
+          "test": "does not claim an empty summary when loading, unavailable, or incomplete",
+          "source_sha256": "9638f1bd6cbd77d001fa48813bcf926dd33462c2ed2f0528c0e3b9d201f36176",
+          "assertion": "Failed source shows Summary unavailable; incomplete source shows More records available; neither claims no open issues.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "brief.refresh_source_failure",
@@ -436,7 +508,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
@@ -445,9 +517,17 @@
         {
           "set": "typed",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/OperatorBrief.test.tsx",
+          "test": "does not claim an empty summary when loading, unavailable, or incomplete",
+          "source_sha256": "9638f1bd6cbd77d001fa48813bcf926dd33462c2ed2f0528c0e3b9d201f36176",
+          "assertion": "Failed source shows Summary unavailable; incomplete source shows More records available; neither claims no open issues.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.create",
@@ -532,14 +612,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "retains %s status and optional named conference, type and coordinator fields",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Both tentative/delayed submit selected VTC, named conference-a, explicit coordinator, default lead10 and no invented actual time.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.delayed",
@@ -555,14 +643,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "retains %s status and optional named conference, type and coordinator fields",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Both tentative/delayed submit selected VTC, named conference-a, explicit coordinator, default lead10 and no invented actual time.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.completed",
@@ -624,14 +720,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "logs actual timing independently and validates end-only input",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "End-only input cannot submit; explicit actual interval submits exact precision/known end, completed status and null planned start/preparation.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.reschedule_signed_minutes",
@@ -647,14 +751,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/callTiming.test.ts",
+          "test": "shifts %s minutes without inventing duration",
+          "source_sha256": "7e57b62585b1de64255fc2854c0a4789692e365d8b8db0be130aea49aa2b67d5",
+          "assertion": "Parameterized +120/-15 minute shifts produce exact next-day/backward UTC starts while preserving actual start and unknown end.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.reschedule_signed_hours",
@@ -670,14 +782,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "shifts across midnight without inventing an end",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Actual editor selects hours, shifts by2 across midnight and submits01:45 next-day UTC with null end.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.duration_preserved",
@@ -693,14 +813,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "preserves precise known planned duration on an unrelated edit",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Unrelated note edit preserves planned end with six fractional UTC digits.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.unknown_duration",
@@ -739,14 +867,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "creates from party/time alone with unknown duration",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Party and planned start submit a new call with lead10 and null end/actual start.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.prep_zero",
@@ -785,14 +921,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "unrelated edits retain lead %s",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Parameterized null,0,25 leads remain unchanged on unrelated retrospective note edits; no planned start invented.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.party",
@@ -831,14 +975,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "retains %s status and optional named conference, type and coordinator fields",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Both tentative/delayed submit selected VTC, named conference-a, explicit coordinator, default lead10 and no invented actual time.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.communications_kind",
@@ -854,14 +1006,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "retains %s status and optional named conference, type and coordinator fields",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Both tentative/delayed submit selected VTC, named conference-a, explicit coordinator, default lead10 and no invented actual time.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.conference_link",
@@ -877,14 +1037,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "retains %s status and optional named conference, type and coordinator fields",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Both tentative/delayed submit selected VTC, named conference-a, explicit coordinator, default lead10 and no invented actual time.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.planned_start",
@@ -923,14 +1091,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "preserves precise known planned duration on an unrelated edit",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Unrelated note edit preserves planned end with six fractional UTC digits.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.occurred_at",
@@ -992,14 +1168,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "logs actual timing independently and validates end-only input",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "End-only input cannot submit; explicit actual interval submits exact precision/known end, completed status and null planned start/preparation.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.end_state",
@@ -1015,14 +1199,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "logs actual timing independently and validates end-only input",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "End-only input cannot submit; explicit actual interval submits exact precision/known end, completed status and null planned start/preparation.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.scope",
@@ -1061,14 +1253,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_author_labels.py",
+          "test": "test_label_replay_and_replacement_preserve_immutable_backend_attribution",
+          "source_sha256": "4fc3413f58e314db7ef6cf8773a97fb190a8b647ba244074eb6b7dac0a5dbc6b",
+          "assertion": "Both actual call/journal APIs preserve exact idempotent receipt, labelsA/B in immutable old/new history, unchanged backend author; forged author and >200-character label reject422. Optional API attribution, not an editable baseline control.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call.validation",
@@ -1084,14 +1284,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/CallEditor.test.tsx",
+          "test": "keeps invalid numeric input visible without submitting",
+          "source_sha256": "d069444412311bffe36fc1a5fe556a8f9352a053c885be788accb5c852fe2fd1",
+          "assertion": "Fractional prep lead1.5 remains visible and does not submit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call-record.remove",
@@ -1222,14 +1430,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_conference_actions.py",
+          "test": "test_call_completion_does_not_mutate_conference",
+          "source_sha256": "1a26abf9895962d0b1d6dd5a5e2e34b086a5a3d643063791b01d5d5c3d03d530",
+          "assertion": "Actual call completion preserves the complete linked established conference record unchanged.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "call-record.participation_not_closed",
@@ -1521,14 +1737,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_conference_actions.py",
+          "test": "test_configuration_change_clears_verification",
+          "source_sha256": "1a26abf9895962d0b1d6dd5a5e2e34b086a5a3d643063791b01d5d5c3d03d530",
+          "assertion": "Changing verified Ka configuration to X rejects422 until verification is explicitly cleared; resulting verification null.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "conference.configuration_reported_at",
@@ -1590,14 +1814,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_conference_actions.py",
+          "test": "test_configuration_change_clears_verification",
+          "source_sha256": "1a26abf9895962d0b1d6dd5a5e2e34b086a5a3d643063791b01d5d5c3d03d530",
+          "assertion": "Changing verified Ka configuration to X rejects422 until verification is explicitly cleared; resulting verification null.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "conference.unknown_times",
@@ -1618,9 +1850,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_conference_api.py",
+          "test": "test_conference_unknown_defaults",
+          "source_sha256": "6cf1ed3a7f5a43c10e8d8d06ae0f9602e405d390c959a622df21932dde227404",
+          "assertion": "Description-only conference API create succeeds with unknown status. Additional conference timing branches remain subject to browser evidence.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "The cited API assertion establishes unknown status, not every unknown timing branch. Inspect exact configuration/verification timing assertions before promoting this entry."
     },
     {
       "id": "conference.customer_not_inferred",
@@ -1935,14 +2175,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_conference_api.py",
+          "test": "test_public_conference_and_participation_roundtrip",
+          "source_sha256": "6cf1ed3a7f5a43c10e8d8d06ae0f9602e405d390c959a622df21932dde227404",
+          "assertion": "Actual unknown-start connected customer can leave with null actual time; conference remains version1.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "participation.gap_preserved",
@@ -2004,7 +2252,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "typed",
@@ -2013,9 +2261,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/conferenceProtection.test.ts",
+          "test": "protects unknown-start customers and labels unknown transport relevance",
+          "source_sha256": "f73454757a0c015f89a1c57aa07c0ae664547083e2387547e357054b0dce16f9",
+          "assertion": "Unknown-start connected participation remains protected with modeled_offline and unknown transport relevance; omitted planned-change limitation explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "protection.call_window",
@@ -2085,7 +2341,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "typed",
@@ -2094,9 +2350,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/conferenceProtection.test.ts",
+          "test": "uses half-open boundaries and ignores ordinary telemetry",
+          "source_sha256": "f73454757a0c015f89a1c57aa07c0ae664547083e2387547e357054b0dce16f9",
+          "assertion": "Gap ending exactly now produces no protected overlap; left participation excluded.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "protection.optional_source_failure",
@@ -2112,7 +2376,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "typed",
@@ -2121,9 +2385,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/conferenceProtection.test.ts",
+          "test": "never turns missing, stale, mismatched or partial inputs into all-clear",
+          "source_sha256": "f73454757a0c015f89a1c57aa07c0ae664547083e2387547e357054b0dce16f9",
+          "assertion": "Null, foreign-leg, stale and incomplete sources never yield available coverage.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "protection.controls_remain_usable",
@@ -3542,14 +3814,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "guide",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/eventEmitter.test.ts",
+          "test": "never starts audio or vibration on load or before user interaction",
+          "source_sha256": "ef7c5e076e96ea5a726879a698aaea02e80bb37f2e200c63a1bc999701d39dbd",
+          "assertion": "In-app visual emits while vibration remains needs_interaction before enable gesture.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "alert.sound",
@@ -3657,14 +3937,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "guide",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/eventEmitter.test.ts",
+          "test": "does not claim delivery without coordination or emit already reserved occurrences",
+          "source_sha256": "ef7c5e076e96ea5a726879a698aaea02e80bb37f2e200c63a1bc999701d39dbd",
+          "assertion": "Already claimed occurrences emit no visual; failed coordination reports unavailable and no delivered visual.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "alert.cross_tab_dedup",
@@ -3680,14 +3968,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "guide",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/eventEmitter.test.ts",
+          "test": "does not claim delivery without coordination or emit already reserved occurrences",
+          "source_sha256": "ef7c5e076e96ea5a726879a698aaea02e80bb37f2e200c63a1bc999701d39dbd",
+          "assertion": "Already claimed occurrences emit no visual; failed coordination reports unavailable and no delivered visual.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "alert.preferences_persist",
@@ -4690,7 +4986,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -4699,9 +4995,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalEditor.test.tsx",
+          "test": "preserves untouched UTC microseconds and a dirty draft across refetch; no reason prompt",
+          "source_sha256": "882f1a3f6f1daaf5238f2e76746bd8684248a467148b8d4fdb390cbebfbb3d39",
+          "assertion": "Dirty correction retains v1 expected version despite v2 refetch, preserves original time, offers optional audit note and no acknowledgment gate.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "journal.remove",
@@ -4971,7 +5275,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -4980,9 +5284,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalEditor.test.tsx",
+          "test": "uses UTC strings even in a non-UTC environment and preserves other saved time fields",
+          "source_sha256": "882f1a3f6f1daaf5238f2e76746bd8684248a467148b8d4fdb390cbebfbb3d39",
+          "assertion": "Unrelated title edit preserves actual start, precise actual end and precise planned start UTC strings.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "journal.precision",
@@ -5048,7 +5360,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -5057,9 +5369,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalEditor.test.tsx",
+          "test": "uses UTC strings even in a non-UTC environment and preserves other saved time fields",
+          "source_sha256": "882f1a3f6f1daaf5238f2e76746bd8684248a467148b8d4fdb390cbebfbb3d39",
+          "assertion": "Unrelated title edit preserves actual start, precise actual end and precise planned start UTC strings.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "journal.planned_end",
@@ -5102,7 +5422,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -5111,9 +5431,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalEditor.test.tsx",
+          "test": "preserves untouched UTC microseconds and a dirty draft across refetch; no reason prompt",
+          "source_sha256": "882f1a3f6f1daaf5238f2e76746bd8684248a467148b8d4fdb390cbebfbb3d39",
+          "assertion": "Dirty correction retains v1 expected version despite v2 refetch, preserves original time, offers optional audit note and no acknowledgment gate.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "journal.operator_label",
@@ -5129,7 +5457,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -5138,9 +5466,17 @@
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "backend/starlink-location/tests/operator/test_author_labels.py",
+          "test": "test_label_replay_and_replacement_preserve_immutable_backend_attribution",
+          "source_sha256": "4fc3413f58e314db7ef6cf8773a97fb190a8b647ba244074eb6b7dac0a5dbc6b",
+          "assertion": "Both actual call/journal APIs preserve exact idempotent receipt, labelsA/B in immutable old/new history, unchanged backend author; forged author and >200-character label reject422. Optional API attribution, not an editable baseline control.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "journal.validation",
@@ -5252,14 +5588,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/HistoryView.test.tsx",
+          "test": "searches only loaded records and keeps removed records available for restoration and audit",
+          "source_sha256": "22875367cff8392ed651ab751e0bcc612c578a27557bee9f73a8d18e8c70b1e4",
+          "assertion": "Loaded search filters unrelated record, retains removed-record Restore action and states search covers loaded records only.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.restored",
@@ -5298,14 +5642,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalHistory.test.tsx",
+          "test": "exposes corrected intervals, retained planning times, scope, legs and attribution for each revision",
+          "source_sha256": "5c3d1434bbae9e18fc3a7811ee5f49a49da92175a78bdae3f68a271e441d782e",
+          "assertion": "Displayed original/corrected intervals retain planned times, precision/end state, author/backend, mission, operator_reported/live; missing between-leg association explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.planned_time",
@@ -5321,14 +5673,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalHistory.test.tsx",
+          "test": "exposes corrected intervals, retained planning times, scope, legs and attribution for each revision",
+          "source_sha256": "5c3d1434bbae9e18fc3a7811ee5f49a49da92175a78bdae3f68a271e441d782e",
+          "assertion": "Displayed original/corrected intervals retain planned times, precision/end state, author/backend, mission, operator_reported/live; missing between-leg association explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.recorded_time",
@@ -5367,14 +5727,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalHistory.test.tsx",
+          "test": "exposes corrected intervals, retained planning times, scope, legs and attribution for each revision",
+          "source_sha256": "5c3d1434bbae9e18fc3a7811ee5f49a49da92175a78bdae3f68a271e441d782e",
+          "assertion": "Displayed original/corrected intervals retain planned times, precision/end state, author/backend, mission, operator_reported/live; missing between-leg association explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.source",
@@ -5390,14 +5758,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalHistory.test.tsx",
+          "test": "exposes corrected intervals, retained planning times, scope, legs and attribution for each revision",
+          "source_sha256": "5c3d1434bbae9e18fc3a7811ee5f49a49da92175a78bdae3f68a271e441d782e",
+          "assertion": "Displayed original/corrected intervals retain planned times, precision/end state, author/backend, mission, operator_reported/live; missing between-leg association explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.version",
@@ -5436,14 +5812,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalHistory.test.tsx",
+          "test": "exposes corrected intervals, retained planning times, scope, legs and attribution for each revision",
+          "source_sha256": "5c3d1434bbae9e18fc3a7811ee5f49a49da92175a78bdae3f68a271e441d782e",
+          "assertion": "Displayed original/corrected intervals retain planned times, precision/end state, author/backend, mission, operator_reported/live; missing between-leg association explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.association",
@@ -5459,14 +5843,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/JournalHistory.test.tsx",
+          "test": "exposes corrected intervals, retained planning times, scope, legs and attribution for each revision",
+          "source_sha256": "5c3d1434bbae9e18fc3a7811ee5f49a49da92175a78bdae3f68a271e441d782e",
+          "assertion": "Displayed original/corrected intervals retain planned times, precision/end state, author/backend, mission, operator_reported/live; missing between-leg association explicit.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.loaded_filter",
@@ -5482,14 +5874,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/HistoryView.test.tsx",
+          "test": "searches only loaded records and keeps removed records available for restoration and audit",
+          "source_sha256": "22875367cff8392ed651ab751e0bcc612c578a27557bee9f73a8d18e8c70b1e4",
+          "assertion": "Loaded search filters unrelated record, retains removed-record Restore action and states search covers loaded records only.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.incomplete_coverage",
@@ -5505,14 +5905,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "course",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/HistoryView.test.tsx",
+          "test": "searches only loaded records and keeps removed records available for restoration and audit",
+          "source_sha256": "22875367cff8392ed651ab751e0bcc612c578a27557bee9f73a8d18e8c70b1e4",
+          "assertion": "Loaded search filters unrelated record, retains removed-record Restore action and states search covers loaded records only.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "history.pagination_error",
@@ -5919,14 +6327,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "no displays offers a separate Overview window and waits for discovery despite a null noopener handle",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Open Overview uses separate noopener window; discovery settles waiting and enables recenter even with null popup handle.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.discover",
@@ -5942,14 +6358,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/services/overview-display-session.test.ts",
+          "test": "discovers an existing display and uses its matching human-visible label",
+          "source_sha256": "27408e5c015a5f4cb8dd5b1002b5ea5079447f489e3f6cd512ff02a303d14bd1",
+          "assertion": "Existing peer discovery retains the matching visible display label.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.select_peer",
@@ -5965,14 +6389,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "multiple displays require selection, even if a single peer arrived first",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Two peers disable recenter until explicit selection; exactly one command targets selected other peer.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.recenter",
@@ -5988,14 +6420,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "single peer is selected and acknowledged recenter does not claim a settled animation",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Matching selected peer receives recenter; status transitions waiting to Recenter accepted without claiming settled animation.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.no_peer",
@@ -6011,14 +6451,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "no displays offers a separate Overview window and waits for discovery despite a null noopener handle",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Open Overview uses separate noopener window; discovery settles waiting and enables recenter even with null popup handle.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.multiple_peers",
@@ -6034,14 +6482,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "multiple displays require selection, even if a single peer arrived first",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Two peers disable recenter until explicit selection; exactly one command targets selected other peer.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.lost_peer",
@@ -6057,14 +6513,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "closing the selected display never selects another silently",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Closed selected peer clears choice, visibly disconnects and emits no command to remaining peer until explicit choice.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.acknowledged",
@@ -6080,14 +6544,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "single peer is selected and acknowledged recenter does not claim a settled animation",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Matching selected peer receives recenter; status transitions waiting to Recenter accepted without claiming settled animation.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.unsupported",
@@ -6103,14 +6575,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "does not send recenter to a display without that capability",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "A peer lacking recenter capability leaves the action disabled.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.timeout",
@@ -6126,14 +6606,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx",
+          "test": "pending commands time out with honest feedback and restore controls",
+          "source_sha256": "a3fc3dc851a66f672e0eb8ccc9e2a82c9e3193d95a7c89e264f3fa7bce8b99e9",
+          "assertion": "Unresolved command disables recenter, times out after3s and restores action with honest status.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.expired",
@@ -6149,14 +6637,22 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "display",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/services/overview-display-session.test.ts",
+          "test": "missing heartbeat expires peer after fifteen seconds",
+          "source_sha256": "27408e5c015a5f4cb8dd5b1002b5ea5079447f489e3f6cd512ff02a303d14bd1",
+          "assertion": "Missing heartbeat expires the peer after the protocol15s deadline.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "display-window.failure",
@@ -6655,7 +7151,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -6668,9 +7164,17 @@
         {
           "set": "relationships",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/commandRegistry.test.tsx",
+          "test": "accepted receipt with failed current read is distinct from an uncertain write",
+          "source_sha256": "5624763ddd2f70b4e3b9f0eeeb5b7a40735bddd8714f66a9f7b608534d42de8c",
+          "assertion": "Accepted receipt/current-read failure becomes accepted_unreadable with retained receipt and retired unsent draft.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "save-recovery.conflict_reconcile",
@@ -6809,7 +7313,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -6822,9 +7326,17 @@
         {
           "set": "relationships",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/commandRegistry.test.tsx",
+          "test": "lost receipt retry preserves exact body key time and does not auto-send on remount",
+          "source_sha256": "5624763ddd2f70b4e3b9f0eeeb5b7a40735bddd8714f66a9f7b608534d42de8c",
+          "assertion": "Unmount/remount retains pending request without automatic send; explicit retry has identical full original arguments.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "save-recovery.retry_after_mission_switch",
@@ -6894,7 +7406,7 @@
         "candidate": "real UI outcome plus authoritative receipt/read/history or source response where applicable",
         "viewports": ["1920x1080", "390x844", "844x390"]
       },
-      "status": "partial",
+      "status": "regression-covered",
       "evidence": [
         {
           "set": "clients",
@@ -6907,9 +7419,17 @@
         {
           "set": "relationships",
           "coverage": "related-only"
+        },
+        {
+          "set": "regressions",
+          "path": "frontend/mission-planner/src/components/operator/workspace/commandRegistry.test.tsx",
+          "test": "late receipt on another mission updates its named tray and retains the other draft",
+          "source_sha256": "5624763ddd2f70b4e3b9f0eeeb5b7a40735bddd8714f66a9f7b608534d42de8c",
+          "assertion": "Late receipt remains associated with submitted mission while the other mission draft remains retained.",
+          "coverage": "exact-regression-assertion"
         }
       ],
-      "remaining": "Inspect the exact field/failure assertion in the existing unit/integration suites; related production journeys alone do not prove this entry. Add a focused check only if uncovered."
+      "remaining": "Exact cited controlled component or real API assertion passed. Production browser coverage, baseline comparison and human first use remain separate release gates; this does not grant learner completion."
     },
     {
       "id": "save-recovery.edited_draft_not_cleared",
@@ -7600,7 +8120,8 @@
   "status_semantics": {
     "candidate-covered": "Explicit retained candidate production assertion; still subject to final regression and baseline comparison.",
     "partial": "Related production evidence exists but the precise field or failure assertion is not yet reconciled.",
-    "pending": "No usable evidence reference."
+    "pending": "No usable evidence reference.",
+    "regression-covered": "Exact inspected component or real backend API assertion passed in retained suites; not a production browser or human acceptance claim."
   },
   "evidence_sets": {
     "course": {
@@ -7647,6 +8168,11 @@
       "sha": "92612aa206d1d546e1c8b515e55499a9108d0449",
       "report": "docs/reports/2026-10-18-operator-workspace/training-lifecycle/README.md",
       "scope": "Real private reset preserves old source volumes, removes owned child, starts new marked sibling and reopens exact original records/epoch."
+    },
+    "regressions": {
+      "sha": "7bece5bf28f3a210ed900f0df7e402939b29f78f",
+      "report": "docs/reports/2026-10-18-operator-workspace/parity-regressions/README.md",
+      "scope": "413 frontend tests/64files and183 backend tests; exact source hashes/test assertions identified per entry. No human or production browser credit."
     }
   }
 }

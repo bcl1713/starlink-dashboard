@@ -1,0 +1,125 @@
+{
+  "visibilityBefore": "visible",
+  "visibilityAfter": "visible",
+  "expectedWind": true,
+  "settings": {
+    "radar": {
+      "enabled": true,
+      "revision": 3
+    },
+    "aviation": {
+      "metar": false,
+      "taf": false,
+      "sigmet": true,
+      "sigmet_intersecting_only": false,
+      "winds": true,
+      "temperature": false,
+      "gfs_selection": {
+        "vertical": {
+          "kind": "pressure",
+          "pressure_pa": 50000
+        },
+        "horizon_hours": 0
+      },
+      "revision": 5
+    }
+  },
+  "native": {
+    "present": false,
+    "calls": 19,
+    "ownedBytes": {
+      "decoded": 0,
+      "gpu": 0
+    }
+  },
+  "weather": {
+    "work": {
+      "active": 0,
+      "detailActive": 0,
+      "pending": 0,
+      "decodedBytes": 67108864,
+      "peakDecodedBytes": 67108864
+    },
+    "canvas": "18182e3b-d414-413d-be24-7a342497bd76",
+    "textures": 9,
+    "geometries": 85,
+    "calls": 21,
+    "radar": "941a3af3-a211-4fe0-8c0b-bf5f9fe80c6e",
+    "width": 2048,
+    "detailSlots": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "detailFades": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "detailBounds": [
+      [
+        0,
+        0.375,
+        0.125,
+        0.5
+      ],
+      [
+        0,
+        0.5,
+        0.125,
+        0.625
+      ],
+      [
+        0.125,
+        0.25,
+        0.25,
+        0.375
+      ],
+      [
+        0.125,
+        0.375,
+        0.25,
+        0.5
+      ],
+      [
+        0.125,
+        0.5,
+        0.25,
+        0.625
+      ],
+      [
+        0.25,
+        0.375,
+        0.375,
+        0.5
+      ],
+      [
+        0.25,
+        0.5,
+        0.375,
+        0.625
+      ],
+      [
+        0.25,
+        0.625,
+        0.375,
+        0.75
+      ]
+    ],
+    "opacity": 0.4,
+    "weatherGPUBytes": 50331648,
+    "depthTest": true,
+    "depthWrite": false,
+    "renderOrder": -100
+  }
+}

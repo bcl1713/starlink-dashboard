@@ -124,7 +124,8 @@ export async function boundedWeatherBytes(
   budget: WeatherBudget,
   fetcher: WeatherFetcher = fetch,
   factor = 4,
-  assertCurrent = () => signal.throwIfAborted()
+  assertCurrent = () => signal.throwIfAborted(),
+  retryUnavailable = false
 ) {
   assertCurrent();
   const reservation = budget.reserve(weatherKey('transfer'), {
@@ -135,16 +136,38 @@ export async function boundedWeatherBytes(
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   const parts: Uint8Array[] = [];
   try {
-    const response = await abortable(
-      fetcher(path, {
-        signal,
-        credentials: 'same-origin',
-        cache: 'no-cache',
-        redirect: 'error',
-      }),
-      signal
-    );
+    const request = () =>
+      abortable(
+        fetcher(path, {
+          signal,
+          credentials: 'same-origin',
+          cache: 'no-cache',
+          redirect: 'error',
+        }),
+        signal
+      );
+    let response = await request();
     assertCurrent();
+    // Publication or a contended admission lock can briefly reject an otherwise
+    // immutable URL. Retry once under the same owner, allowance and deadline;
+    // disabled/obsolete products must still pass the server's current checks.
+    if (retryUnavailable && response.status === 404) {
+      void response.body?.cancel().catch(() => {});
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await abortable(
+          new Promise<void>((resolve) => {
+            timer = setTimeout(resolve, 250);
+          }),
+          signal
+        );
+      } finally {
+        clearTimeout(timer);
+      }
+      assertCurrent();
+      response = await request();
+      assertCurrent();
+    }
     const length = response.headers.get('Content-Length');
     if (
       !response.ok ||
@@ -271,7 +294,8 @@ async function component(
           budget,
           fetch,
           2,
-          checkOwners
+          checkOwners,
+          true
         );
         checkOwners();
         if (weatherDigest(transfer.bytes) !== buffer.sha256)
@@ -375,7 +399,8 @@ export async function fetchGrid(
       budget,
       fetch,
       4,
-      assertCurrent
+      assertCurrent,
+      true
     );
     assertCurrent();
     if (weatherDigest(transfer.bytes) !== p.sha256)

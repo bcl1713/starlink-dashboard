@@ -1,0 +1,8 @@
+{
+  "ownedSurvivors": [],
+  "portsFree": {
+    "56540": true,
+    "56541": true
+  },
+  "scope": "Host PID/start-time verification after runner cleanup"
+}

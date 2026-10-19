@@ -45,7 +45,10 @@ test('display presets restore actual weather rendering and report real conflicts
         await request.get('/api/aviation-weather/v1/settings')
       ).json(),
     });
+    const sceneChecks: Record<string, unknown>[] = [];
+    proof.sceneChecks = sceneChecks;
     const scene = async (page: Page, on: boolean) => {
+      const started = performance.now();
       const visibilityBefore = await page.evaluate(
         () => document.visibilityState
       );
@@ -79,6 +82,11 @@ test('display presets restore actual weather rendering and report real conflicts
           join(output, 'operator-display-scene-failure.json'),
           JSON.stringify(
             {
+              url: page.url(),
+              elapsedMs: performance.now() - started,
+              legend: await page
+                .getByRole('region', { name: 'Atmosphere legend' })
+                .allTextContents(),
               visibilityBefore,
               visibilityAfter: await page.evaluate(
                 () => document.visibilityState
@@ -97,6 +105,16 @@ test('display presets restore actual weather rendering and report real conflicts
       await expect
         .poll(async () => !!(await weatherSnapshot(page)).radar)
         .toBe(on);
+      sceneChecks.push({
+        expectedWind: on,
+        elapsedMs: performance.now() - started,
+        visibilityBefore,
+        native: await windSnapshot(page),
+      });
+      await writeFile(
+        join(output, 'operator-display-last-observation.json'),
+        JSON.stringify(proof, null, 2)
+      );
     };
     await toggle('Precipitation radar', true);
     await toggle('International SIGMET advisories', true);
