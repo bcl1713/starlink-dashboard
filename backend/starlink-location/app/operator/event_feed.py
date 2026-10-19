@@ -14,7 +14,22 @@ from .transport_review import derive_transport_review
 def build_snapshot(runtime, mission_id, adapter):
     service, now = runtime.service, runtime.clock.now()
     inputs = adapter.capture(mission_id, as_of=now)
-    events = derive_events(inputs, as_of=now, policy=runtime.event_policy)
+    from dataclasses import replace
+
+    from .replay_context import current_records
+
+    operational = replace(
+        inputs, records=current_records(inputs.records, runtime.health())
+    )
+    events = derive_events(operational, as_of=now, policy=runtime.event_policy)
+    if runtime.health().mission_journal:
+        for event in events:
+            event.replay_run_id = runtime.health().replay_run_id
+            event.event_id = identity(event.event_id, inputs.simulation_run_id)
+            event.family_key = identity(
+                event.family_key or event.event_id, inputs.simulation_run_id
+            )
+            event.schedule_key = identity(event.schedule_key, inputs.simulation_run_id)
     sources = [
         SourceCapture(
             source="operator",
@@ -64,7 +79,15 @@ def build_snapshot(runtime, mission_id, adapter):
         for previous in old:
             if previous.event_id in present:
                 continue
-            if previous.source_ref and previous.source_ref.startswith("model:"):
+            same_replay = (
+                not runtime.health().mission_journal
+                or previous.replay_run_id == runtime.health().replay_run_id
+            )
+            if (
+                same_replay
+                and previous.source_ref
+                and previous.source_ref.startswith("model:")
+            ):
                 source = next(
                     (s for s in sources if s.source == previous.source_ref), None
                 )
@@ -131,7 +154,7 @@ def build_snapshot(runtime, mission_id, adapter):
                 historical.notification.acknowledgment_available = False
                 events.append(historical)
         transport_review = derive_transport_review(
-            inputs.records, events, sources, as_of=now, H=inputs.H
+            operational.records, events, sources, as_of=now, H=inputs.H
         )
     events = [
         e

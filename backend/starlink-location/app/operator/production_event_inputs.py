@@ -24,6 +24,7 @@ from app.services.position_freshness import position_observation, speed_is_fresh
 
 from .errors import OperatorError
 from .event_ledger import identity
+from .replay_context import source_run
 
 
 @dataclass(frozen=True)
@@ -62,7 +63,7 @@ def capture_current(adapter, mission_id, *, as_of):
     health = adapter.service.store.health()
     if (context.get("source_mode"), context.get("simulation_run_id")) != (
         health.source_mode,
-        health.simulation_run_id,
+        source_run(health),
     ) or config.mode != health.source_mode:
         raise OperatorError("event_source_unavailable", retryable=True)
     telemetry = adapter.telemetry_provider()

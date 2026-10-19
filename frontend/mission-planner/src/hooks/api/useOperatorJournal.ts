@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   operatorIdentity,
   operatorRecordsOptions,
+  sameJournalIdentity,
   useOperatorHealth,
 } from './operatorReadSession';
 export { useOperatorHealth } from './operatorReadSession';
@@ -200,11 +201,18 @@ export function useOperatorJournal(
           // Read-only observers must not change the outcome of a journal write.
         }
       }
-      const receipt = await saveOperatorCommand(
-        request.command,
-        request.key,
-        request.epoch
-      );
+      const receipt = health.data?.mission_journal
+        ? await saveOperatorCommand(
+            request.command,
+            request.key,
+            request.epoch,
+            JSON.parse(request.identity)[3]
+          )
+        : await saveOperatorCommand(
+            request.command,
+            request.key,
+            request.epoch
+          );
       setSaved(true);
       // The owner may be on a different route/mission by the time this arrives.
       options.onReceipt?.(request, receipt);
@@ -336,11 +344,21 @@ export function useOperatorJournal(
   }
   async function retry() {
     const request = pendingRef.current;
-    if (!request || blocked || identityChanged || inFlight.current) return;
+    if (!request || inFlight.current) return;
+    const replayRecovery =
+      health.data?.mission_journal &&
+      sameJournalIdentity(request.identity, identity);
+    if ((blocked || identityChanged) && !replayRecovery) return;
     // Always reread health; an uncertain command cannot cross a store epoch.
     const fresh = await health.refetch();
     if (!fresh.data?.ready || fresh.isError) return;
-    if (operatorIdentity(fresh.data) !== request.identity) {
+    if (
+      operatorIdentity(fresh.data) !== request.identity &&
+      !(
+        fresh.data.mission_journal &&
+        sameJournalIdentity(request.identity, operatorIdentity(fresh.data))
+      )
+    ) {
       setBlocked(true);
       setError({
         code: 'epoch_mismatch',
@@ -375,6 +393,18 @@ export function useOperatorJournal(
   }
   async function reconcile() {
     if (inFlight.current) return false;
+    const retained = pendingRef.current;
+    if (
+      retained &&
+      retained.identity !== identity &&
+      health.data?.mission_journal &&
+      sameJournalIdentity(retained.identity, identity)
+    ) {
+      setReconcileError(
+        'Use Exact retry to resolve the retained receipt before rereading across replay changes. An unaccepted old-replay command cannot create a new report.'
+      );
+      return false;
+    }
     inFlight.current = true;
     setSaving(true);
     setMissingInNewStore(false);
@@ -460,6 +490,15 @@ export function useOperatorJournal(
     recoverMissing,
     save,
     retry,
+    retryReady:
+      !!pending &&
+      !saving &&
+      !storageError &&
+      !health.isError &&
+      health.data?.ready === true &&
+      ((pending.identity === identity && !blocked && !identityChanged) ||
+        (!!health.data.mission_journal &&
+          sameJournalIdentity(pending.identity, identity))),
     reconcile,
   };
 }

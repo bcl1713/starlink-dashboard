@@ -204,6 +204,7 @@ export interface SavedRecord
   recorded_at: string;
   author: { backend: string; operator_label: string | null };
   provenance: {
+    replay_run_id?: string | null;
     kind: 'operator_reported' | 'observed' | 'modeled';
     source_mode: 'live' | 'simulation';
     observed_at: string | null;
@@ -218,6 +219,7 @@ export interface SavedRecord
   };
 }
 export interface ReadRecord {
+  operational_current?: boolean;
   follow_up?: IssueFollowup;
   schema_version: 1;
   record: SavedRecord;
@@ -253,6 +255,8 @@ export interface CommandReceipt {
   saved_records: SavedRecord[];
 }
 export interface OperatorHealth {
+  replay_run_id?: string | null;
+  mission_journal?: boolean;
   schema_version: 1;
   enabled: boolean;
   ready: boolean;

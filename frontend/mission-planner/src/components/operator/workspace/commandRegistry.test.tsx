@@ -666,3 +666,50 @@ it.each([
     expect(workspace.tray[0].pending).toEqual(original);
   }
 );
+
+it('recovers a frozen receipt across replay changes in the same journal without submitting it as a new-run report', async () => {
+  const source = {
+    ...health,
+    source_mode: 'simulation' as const,
+    simulation_run_id: 'default',
+    mission_journal: true,
+    replay_run_id: 'run-a',
+  };
+  vi.mocked(api.getOperatorHealth).mockResolvedValue(source);
+  const send = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(new Error('Receipt lost'))
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'recovered',
+      saved_records: [record],
+    });
+  const { registry, client } = mount(undefined, false);
+  await act(async () => {
+    client.setQueryData(['operator-health'], source);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  const draft = registry.createDraft(
+    { ...target, sourceMode: 'simulation', simulationRunId: 'run-a' },
+    input
+  );
+  await submit(draft.draftId);
+  await waitFor(() => expect(workspace.tray[0].pending).toBeTruthy());
+  const frozenKey = workspace.tray[0].commandId;
+  const nextSource = { ...source, replay_run_id: 'run-b' };
+  vi.mocked(api.getOperatorHealth).mockResolvedValue(nextSource);
+  await act(async () => {
+    client.setQueryData(['operator-health'], nextSource);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  await waitFor(() => expect(workspace.tray[0].retryReady).toBe(true));
+  await act(async () => {
+    await workspace.retryExact(frozenKey);
+  });
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(send.mock.calls[0][1]).toBe(send.mock.calls[1][1]);
+  expect(send.mock.calls[1][3]).toBe('run-a');
+  await waitFor(() =>
+    expect(workspace.tray[0].receipt?.command_id).toBe('recovered')
+  );
+});

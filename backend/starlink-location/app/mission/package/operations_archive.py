@@ -68,6 +68,8 @@ def journal_files(bundle):
             "high_water": bundle.high_water,
             "source_mode": bundle.source_mode,
             "simulation_run_id": bundle.simulation_run_id,
+            "replay_run_id": bundle.manifest.replay_run_id,
+            "mission_journal": bundle.manifest.mission_journal,
             "import_policy": "archive_only; ordinary_plan_import_does_not_restore_operator_records",
             "ordering": {
                 "activity_and_audit": "acceptance_sequence",
@@ -89,8 +91,14 @@ def journal_files(bundle):
     ]
     for record in current:
         payload = record["payload"]
+        historical = bundle.manifest.mission_journal and (
+            bundle.manifest.replay_run_id is None
+            or record["provenance"].get("replay_run_id")
+            != bundle.manifest.replay_run_id
+        )
         summary.append(
-            f"{record['record_type']}: {payload['title']} | {payload.get('status', payload.get('state', 'recorded'))} | scope={record['scope']} leg={record['leg_id'] or 'mission'}"
+            ("Historical replay report; not current readiness | " if historical else "")
+            + f"{record['record_type']}: {payload['title']} | {payload.get('status', payload.get('state', 'recorded'))} | scope={record['scope']} leg={record['leg_id'] or 'mission'}"
         )
     files["operations/handover.txt"] = ("\n".join(summary) + "\n").encode("utf-8")
     manifest = bundle.manifest.model_dump(mode="json")
@@ -134,6 +142,8 @@ def capture_archive(request, mission_id):
                 "high_water": bundle.high_water,
                 "source_mode": bundle.source_mode,
                 "simulation_run_id": bundle.simulation_run_id,
+                "replay_run_id": bundle.manifest.replay_run_id,
+                "mission_journal": bundle.manifest.mission_journal,
                 "capture_started_at": started,
                 "capture_finished_at": runtime.clock.now().isoformat(),
                 "revision_recorded_at": (

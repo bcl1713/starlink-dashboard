@@ -8,6 +8,7 @@ import {
 import {
   useOperatorHealth,
   operatorIdentity,
+  sameJournalIdentity,
 } from '@/hooks/api/operatorReadSession';
 import type {
   CallInput,
@@ -25,12 +26,14 @@ import { ConferenceEditor } from '../ConferenceEditor';
 import { joinCommand } from '../conferenceCommands';
 import { ParticipationEditor } from '../ParticipationEditor';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { readOperatorRecords } from '@/services/operator';
+import { readOperatorRecord, readOperatorRecords } from '@/services/operator';
+import { createEditorDraft } from './editorDraft';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import {
   useMissionAssociation,
   type AssociationMission,
 } from '../useMissionAssociation';
+import { replayCurrent } from './operatingContext';
 import { commandLane, targetIdentity } from './commandRegistry';
 
 export type EditorMission = AssociationMission;
@@ -71,7 +74,9 @@ export function WorkspaceEditor({
   });
   const relatedRecords =
     relationships.data?.pages.flatMap((page) =>
-      page.items.map((item) => item.record)
+      page.items
+        .map((item) => item.record)
+        .filter((record) => replayCurrent(record, health.data))
     ) ?? [];
   const timing = useMissionAssociation(
     mission?.id === draft?.target.missionId ? mission : undefined,
@@ -299,6 +304,59 @@ export function WorkspaceEditor({
               reconcile before saving.
             </p>
           )}
+          {wrongStore &&
+            health.data?.ready &&
+            health.data.mission_journal &&
+            sameJournalIdentity(
+              targetIdentity(draft.target),
+              operatorIdentity(health.data)
+            ) &&
+            !tray?.pending && (
+              <div>
+                <p>
+                  The original draft stays pinned. Copy its input to the current
+                  replay, keeping its mission and leg association.
+                </p>
+                <button
+                  className="ws-button"
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const saved = draft.target.recordId
+                        ? (await readOperatorRecord(draft.target.recordId))
+                            .record
+                        : undefined;
+                      if (saved && saved.version !== draft.baseVersion)
+                        throw new Error(
+                          'The saved record changed. Review its latest version before copying this input.'
+                        );
+                      const copy = createEditorDraft(
+                        workspace.registry,
+                        health.data!,
+                        draft.input,
+                        saved
+                      );
+                      workspace.registry.parkDraft({
+                        ...copy,
+                        editorState: {
+                          ...draft.editorState,
+                          associationMode: 'manual',
+                        },
+                      });
+                      workspace.openDraft(copy.draftId);
+                    } catch (error) {
+                      setError(
+                        error instanceof Error
+                          ? error.message
+                          : 'Could not copy the retained input.'
+                      );
+                    }
+                  }}
+                >
+                  Copy input to current replay
+                </button>
+              </div>
+            )}
           {tray &&
             (tray.pending ||
               (draft.target.recordId

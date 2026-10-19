@@ -18,11 +18,21 @@ def main(argv=None):
         description="Offline Operator administration; restore replaces the whole store."
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("initialize", "check", "backup", "restore", "upgrade"):
+    for name in ("initialize", "check", "backup", "restore", "upgrade", "export"):
         command = commands.add_parser(name)
         command.add_argument("--root", type=Path, required=True)
         command.add_argument("--mode", choices=("live", "simulation"), required=True)
-        command.add_argument("--run", help="Required simulation run ID")
+        command.add_argument(
+            "--run", help="Simulation run ID, or evaluation name with --mission-journal"
+        )
+        command.add_argument(
+            "--mission-journal",
+            action="store_true",
+            help="Use normal simulation mission journals, never a legacy run store",
+        )
+        if name == "export":
+            command.add_argument("--mission", required=True)
+            command.add_argument("--output", type=Path, required=True)
         if name == "backup":
             command.add_argument("--directory", type=Path)
         if name == "restore":
@@ -35,6 +45,7 @@ def main(argv=None):
             root=args.root,
             source_mode=args.mode,
             simulation_run_id=args.run,
+            mission_journal=args.mission_journal,
         )
         clock = SystemClock()
         if args.command == "upgrade":
@@ -56,7 +67,32 @@ def main(argv=None):
             store = OperatorStore.open(
                 settings, initialize=status == "new", clock=clock
             )
-            if args.command == "backup":
+            if args.command == "export":
+                from zipfile import ZIP_DEFLATED, ZipFile
+
+                from app.mission.package.operations_archive import journal_files
+
+                from .projections import capture_projection
+
+                bundle = capture_projection(
+                    store,
+                    mission_id=args.mission,
+                    include_audit=True,
+                    include_events=True,
+                    max_input_bytes=128 * 1024 * 1024,
+                )
+                # Exclusive output creation never replaces an existing archive.
+                with ZipFile(
+                    args.output, mode="x", compression=ZIP_DEFLATED
+                ) as archive:
+                    for name, content in journal_files(bundle).items():
+                        archive.writestr(name, content)
+                result = {
+                    "archive": str(args.output),
+                    "mission_id": args.mission,
+                    "H": bundle.high_water,
+                }
+            elif args.command == "backup":
                 result = {
                     "manifest": str(
                         backup_store(

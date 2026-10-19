@@ -105,6 +105,7 @@ function Owner({
       api.reconcileError,
       api.latest,
       api.identity,
+      api.retryReady,
       api.health.data?.ready,
       api.health.isError,
     ]
@@ -219,14 +220,7 @@ export function OperatorWorkspaceProvider({
       api.reconcileError ??
       api.error?.message ??
       row.message;
-    const retryReady =
-      !!pending &&
-      pending.identity === api.identity &&
-      api.health.data?.ready === true &&
-      !api.health.isError &&
-      !api.blocked &&
-      !api.saving &&
-      !api.storageError;
+    const retryReady = api.retryReady;
     const publishRow = (patch: Partial<TransactionTrayItem>) =>
       update(lane, { ...patch, retryReady });
     if (api.blocked)

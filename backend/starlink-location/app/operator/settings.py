@@ -13,11 +13,15 @@ class OperatorSettings:
     root: Path = Path("data/operator")
     source_mode: Literal["live", "simulation"] = "live"
     simulation_run_id: str | None = None
+    mission_journal: bool = False
+    replay_run_id: str | None = None
     capacity_bytes: int = 1024**3
     backup_count: int = 3
 
     def __post_init__(self):
         object.__setattr__(self, "root", Path(self.root))
+        if self.mission_journal and self.source_mode != "simulation":
+            raise ValueError("Mission journal namespaces are simulation-only")
         if self.source_mode not in ("live", "simulation"):
             raise ValueError("Unknown Operator source mode")
         if self.source_mode == "simulation":
@@ -39,7 +43,11 @@ class OperatorSettings:
         if self.source_mode == "simulation":
             if self.simulation_run_id is None:
                 raise ValueError("Simulation requires an explicit run ID")
-            directory = directory / "simulation" / self.simulation_run_id
+            directory = (
+                directory
+                / ("simulation-missions" if self.mission_journal else "simulation")
+                / self.simulation_run_id
+            )
         return directory / "operations.sqlite3"
 
     @property

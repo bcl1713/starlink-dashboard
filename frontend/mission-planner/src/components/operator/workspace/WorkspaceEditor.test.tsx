@@ -45,7 +45,9 @@ function mount(
   initial: OperatorInput = input,
   timed = false,
   active = false,
-  saved?: typeof record
+  saved?: typeof record,
+  pinned: Partial<DraftTarget> = {},
+  source = health
 ) {
   const registry = new DraftRegistry(sessionStorage);
   const draft = registry.createDraft(
@@ -55,6 +57,7 @@ function mount(
       recordId: saved?.record_id ?? null,
       scope: initial.scope,
       legId: initial.leg_id,
+      ...pinned,
     },
     initial,
     saved
@@ -63,7 +66,7 @@ function mount(
     defaultOptions: { queries: { retry: false } },
   });
   clients.push(client);
-  client.setQueryData(['operator-health'], health);
+  client.setQueryData(['operator-health'], source);
   function Editor() {
     const workspace = useOperatorWorkspace();
     useLayoutEffect(() => {
@@ -354,4 +357,35 @@ it('keeps an explicitly saved conference association until the operator changes 
     target: { value: 'Saved definition' },
   });
   expect(registry.resumeDraft(draft.draftId)?.input.scope).toBe('preflight');
+});
+
+it('explicitly copies an old replay draft without retargeting or discarding its original input', async () => {
+  const source = {
+    ...health,
+    source_mode: 'simulation' as const,
+    mission_journal: true,
+    simulation_run_id: 'default',
+    replay_run_id: 'new-run',
+  };
+  vi.mocked(api.getOperatorHealth).mockResolvedValue(source);
+  const { registry, draft } = mount(
+    input,
+    false,
+    false,
+    undefined,
+    { sourceMode: 'simulation', simulationRunId: 'old-run' },
+    source
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Copy input to current replay' })
+  );
+  await waitFor(() => expect(registry.listDrafts()).toHaveLength(2));
+  const retained = registry.resumeDraft(draft.draftId)!;
+  expect(retained.target.simulationRunId).toBe('old-run');
+  expect(retained.input).toEqual(input);
+  const copy = registry
+    .listDrafts()
+    .find((item) => item.draftId !== draft.draftId)!;
+  expect(copy.target.simulationRunId).toBe('new-run');
+  expect(copy.input).toEqual(input);
 });

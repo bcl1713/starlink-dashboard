@@ -142,6 +142,11 @@ def mutate(request, command, key, epoch):
             command,
             key=key,
             epoch=epoch,
+            expected_replay=(
+                (request.headers.get("X-Operator-Replay-Id") or "missing")
+                if runtime.settings.mission_journal
+                else None
+            ),
             writable_types={
                 "journal_entry",
                 "call",
@@ -168,6 +173,58 @@ def health(request: Request):
             dict(state.model_dump(mode="json"), enabled=True),
             status_code=200 if state.ready else 503,
         )
+
+
+@router.get("/context")
+def operating_context(request: Request):
+    """Project the existing mission/flight authorities; owns no mission state."""
+    from app.mission.active_context import resolve_active_mission_leg_context
+    from app.services.flight_state import get_flight_state_manager
+
+    manager = getattr(request.app.state, "route_manager", None)
+    resolution = resolve_active_mission_leg_context(manager) if manager else None
+    context = resolution.context if resolution else None
+    with runtime_for(request) as runtime:
+        state = runtime.health()
+        flight = get_flight_state_manager().get_status()
+        run_service = getattr(request.app.state, "simulation_run_service", None)
+        run = run_service.status().run if run_service else None
+        if (
+            context
+            and state.source_mode == "simulation"
+            and run
+            and (
+                run.mission_id != context.parent_mission_id
+                or run.leg_id != context.leg.id
+            )
+        ):
+            context = None
+        return {
+            "state": (
+                "available"
+                if context
+                else (
+                    resolution.state
+                    if resolution and resolution.context is None
+                    else "unavailable"
+                )
+            ),
+            "mission_id": context.parent_mission_id if context else None,
+            "mission_name": context.parent_mission.name if context else None,
+            "leg_id": context.leg.id if context else None,
+            "leg_name": context.leg.name if context else None,
+            "phase": (
+                (
+                    run.phase
+                    if run and state.source_mode == "simulation"
+                    else flight.phase.value
+                )
+                if context
+                else None
+            ),
+            "source_mode": state.source_mode,
+            "replay_run_id": state.replay_run_id,
+        }
 
 
 class ProvisionRequest(StrictModel):

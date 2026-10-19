@@ -9,13 +9,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -102,6 +95,12 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -578,7 +577,7 @@ async def startup_event():
         app.state.operator_live_source = _operator_live_source
         app.state.operator_event_source_factory = _operator_event_sources
         app.state.operator_binding = OperatorRuntimeBinding(
-            clock=SystemClock(), context=_operator_context
+            clock=SystemClock(), context=_operator_context, mission_journals=True
         )
         # This optional runtime reports its own failures; it never initializes
         # or replaces a store as a side effect of application startup.

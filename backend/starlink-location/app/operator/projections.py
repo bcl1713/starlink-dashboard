@@ -267,6 +267,8 @@ def capture_projection(
         mission_id=mission_id,
         source_mode=identity.source_mode,
         simulation_run_id=identity.simulation_run_id,
+        replay_run_id=identity.replay_run_id,
+        mission_journal=identity.mission_journal,
         high_water=high_water,
         audit_included=include_audit,
         projections=labels,

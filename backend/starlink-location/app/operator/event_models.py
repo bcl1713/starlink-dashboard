@@ -38,6 +38,7 @@ class EventNotification(StrictModel):
 
 class OperationalEvent(StrictModel):
     schema_version: SchemaVersion = 1
+    replay_run_id: str | None = None
     event_id: str
     mission_id: Identifier
     leg_id: str | None = None

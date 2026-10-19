@@ -83,10 +83,15 @@ export async function readOperatorHistory(
 export async function saveOperatorCommand(
   command: OperatorCommand,
   key: string,
-  epoch: string
+  epoch: string,
+  replayId?: string | null
 ): Promise<CommandReceipt> {
   const config = {
-    headers: { 'Idempotency-Key': key, 'X-Operator-Store-Epoch': epoch },
+    headers: {
+      'Idempotency-Key': key,
+      'X-Operator-Store-Epoch': epoch,
+      ...(replayId ? { 'X-Operator-Replay-Id': replayId } : {}),
+    },
   };
   if (command.operation === 'create')
     return (
@@ -106,5 +111,13 @@ export async function saveOperatorCommand(
       command.body,
       config
     )
+  ).data;
+}
+
+export async function readOperatingContext() {
+  return (
+    await apiClient.get<
+      import('@/components/operator/workspace/operatingContext').OperatingContext
+    >(`${base}/context`)
   ).data;
 }

@@ -51,3 +51,37 @@ def test_cli_initialize_refuses_prior_store_artifacts(tmp_path, capsys):
     )
     assert not (root / "operations.sqlite3").exists()
     assert (root / "operations.lock").read_bytes() == b"preserved artifact"
+
+
+def test_export_existing_journal_without_overwriting_a_destination(
+    service, record_data, tmp_path
+):
+    import json
+    import zipfile
+
+    from app.operator.__main__ import main
+    from tests.operator.service_helpers import create
+
+    create(service, record_data)
+    output = tmp_path / "retained-journal.zip"
+    args = [
+        "export",
+        "--root",
+        str(service.store.settings.root),
+        "--mode",
+        "live",
+        "--mission",
+        "demo-mission",
+        "--output",
+        str(output),
+    ]
+    assert main(args) == 0
+    with zipfile.ZipFile(output) as archive:
+        assert (
+            len(json.loads(archive.read("operations/journal.json"))["current_records"])
+            == 1
+        )
+        assert "operations/audit.jsonl" in archive.namelist()
+    before = output.read_bytes()
+    assert main(args) == 1
+    assert output.read_bytes() == before

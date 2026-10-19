@@ -23,12 +23,15 @@ export function JournalList({
     <section className="min-w-0 space-y-3" aria-label="Current journal entries">
       <h2 className="text-lg font-semibold">Current entries</h2>
       {items.length === 0 && <p>No journal entries.</p>}
-      {items.map(({ record, association }) => (
+      {items.map(({ record, association, operational_current }) => (
         <article
           key={record.record_id}
           className="min-w-0 space-y-2 break-words rounded-lg border bg-card p-4 [overflow-wrap:anywhere]"
         >
           <h3 className="font-semibold">{record.payload.title}</h3>
+          {operational_current === false && (
+            <p>Previous replay report · historical, not current readiness</p>
+          )}
           <p className="whitespace-pre-wrap">{record.payload.note}</p>
           <p className="text-sm text-muted-foreground">
             {record.scope} ·{' '}

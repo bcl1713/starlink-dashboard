@@ -5,12 +5,11 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from scenario import ScenarioClock
-from seed import seed_demo
-
 from app.mission import storage
 from app.services import ground_entry_point
 from app.services.position_freshness import OBSERVATION_FRESHNESS_SECONDS
+from scenario import ScenarioClock
+from seed import seed_demo
 
 if os.getenv("OPERATOR_ACCEPTANCE_FIXTURE") != "synthetic-local-only":
     raise RuntimeError("Explicit synthetic acceptance configuration required")
@@ -60,7 +59,7 @@ main = importlib.import_module("main")
 original_binding = main.OperatorRuntimeBinding
 
 
-def fixture_binding(*, clock, context):
+def fixture_binding(*, clock, context, mission_journals=False):
     binding = original_binding(clock=scenario_clock, context=context)
     with binding.access() as runtime:
         runtime.freshness_policies["accepted_position"] = OBSERVATION_FRESHNESS_SECONDS
@@ -118,10 +117,10 @@ if models_enabled:
 
 
 if os.getenv("OPERATOR_ARCHIVE_ACCEPTANCE") == "true":
-    from archive_fixture import initialize
-
-    from contextlib import asynccontextmanager
     import asyncio
+    from contextlib import asynccontextmanager
+
+    from archive_fixture import initialize
 
     original_lifespan = app.router.lifespan_context
 

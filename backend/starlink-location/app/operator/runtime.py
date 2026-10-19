@@ -33,7 +33,9 @@ def namespace_status(settings):
             p
             for p in directory.iterdir()
             if not (
-                settings.source_mode == "live" and p.name == "simulation" and p.is_dir()
+                settings.source_mode == "live"
+                and p.name in ("simulation", "simulation-missions")
+                and p.is_dir()
             )
         ]
         if entries:
@@ -129,6 +131,8 @@ class OperatorRuntime:
             source_mode=self.settings.source_mode,
             simulation_run_id=self.settings.simulation_run_id,
             error_code=self.error_code,
+            replay_run_id=self.settings.replay_run_id,
+            mission_journal=self.settings.mission_journal,
         )
 
     def close(self):
@@ -143,8 +147,9 @@ class OperatorRuntime:
 class OperatorRuntimeBinding:
     """Serialize whole requests with rebind/close so namespaces never overlap."""
 
-    def __init__(self, *, clock, context):
+    def __init__(self, *, clock, context, mission_journals=False):
         self.clock, self.context = clock, context
+        self.mission_journals = mission_journals
         self.lock = RLock()
         self.runtime = None
         self.identity = None
@@ -158,7 +163,12 @@ class OperatorRuntimeBinding:
         )
         # Resolve mode/run from the actual coordinator, never source-mode env.
         enabled = os.getenv("OPERATOR_ENABLED", "false").lower() == "true"
-        identity = (mode, run, enabled)
+        mission_journal = self.mission_journals and mode == "simulation"
+        session = os.getenv("OPERATOR_EVALUATION_SESSION", "default")
+        if mission_journal:
+            # New path family: never adopt, merge or modify legacy per-run stores.
+            run = session
+        identity = (mode, run, enabled, actual_run if mission_journal else None)
         if identity != self.identity or (
             enabled and self.runtime is not None and self.runtime.service is None
         ):
@@ -168,6 +178,8 @@ class OperatorRuntimeBinding:
                 "enabled": enabled,
                 "source_mode": mode,
                 "simulation_run_id": run,
+                "mission_journal": mission_journal,
+                "replay_run_id": actual_run if mission_journal else None,
                 "root": os.getenv("OPERATOR_ROOT", "data/operator"),
             }
             try:
@@ -183,6 +195,7 @@ class OperatorRuntimeBinding:
                 # Missing run/config is unavailable without touching a store.
                 options["enabled"] = False
                 options["simulation_run_id"] = None
+                options["replay_run_id"] = None
                 settings = OperatorSettings(**options)
                 runtime = OperatorRuntime(
                     settings,

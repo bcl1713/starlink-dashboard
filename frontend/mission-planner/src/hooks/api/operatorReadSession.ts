@@ -19,7 +19,9 @@ export function operatorIdentity(health?: OperatorHealth) {
         health.store_id,
         health.api_epoch,
         health.source_mode,
-        health.simulation_run_id,
+        health.mission_journal
+          ? (health.replay_run_id ?? `idle:${health.simulation_run_id}`)
+          : health.simulation_run_id,
       ])
     : null;
 }
@@ -51,4 +53,25 @@ export function operatorRecordsOptions(
     retry: false,
     networkMode: 'always',
   });
+}
+
+/** Only a replay change, never an epoch/store/mode change, permits receipt recovery. */
+export function sameJournalIdentity(
+  before: string | null,
+  after: string | null
+) {
+  try {
+    const a = JSON.parse(before ?? 'null'),
+      b = JSON.parse(after ?? 'null');
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === 4 &&
+      b.length === 4 &&
+      a[2] === 'simulation' &&
+      a.slice(0, 3).every((value, index) => value === b[index])
+    );
+  } catch {
+    return false;
+  }
 }

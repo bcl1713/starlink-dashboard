@@ -56,7 +56,7 @@ export function OperatorStoreSetup({
         <p className="break-words text-sm">
           Source: {health.source_mode}
           {health.simulation_run_id
-            ? ` · simulation run ${health.simulation_run_id}`
+            ? ` · ${health.mission_journal ? 'evaluation' : 'simulation run'} ${health.simulation_run_id}`
             : ''}
         </p>
       )}

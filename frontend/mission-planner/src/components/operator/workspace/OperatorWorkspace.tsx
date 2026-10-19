@@ -22,9 +22,13 @@ import {
   collectRetryEvidence,
   retainRetryReceipts,
 } from '../training/trainingRetryEvidence';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useMission } from '@/hooks/api/useMissions';
 import {
   operatorIdentity,
@@ -65,7 +69,6 @@ import { WorkspaceAwareness } from './WorkspaceAwareness';
 import { nextRequirement } from './awarenessModel';
 import { WorkspaceEditor } from './WorkspaceEditor';
 import { MissionContextChooser } from './MissionContextChooser';
-import { useMissionAssociation } from '../useMissionAssociation';
 import { createEditorDraft } from './editorDraft';
 import { CommunicationsView } from './CommunicationsView';
 import { JournalHistory } from '../JournalHistory';
@@ -94,6 +97,14 @@ import {
   isCurrentTrainingEvidence,
   type CheckedTrainingEvidence,
 } from '../training/trainingEvidence';
+import { readOperatingContext } from '@/services/operator';
+import {
+  activeAssociation,
+  defaultAssociation,
+  operatingMission,
+  operationalRelevant,
+  replayCurrent,
+} from './operatingContext';
 import './workspace.css';
 
 const views = [
@@ -109,12 +120,35 @@ type View = (typeof views)[number];
 export function OperatorWorkspace() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const missionId = params.get('mission_id') ?? '';
+  const queryClient = useQueryClient();
+  const active = useQuery({
+    queryKey: ['operator-operating-context'],
+    queryFn: readOperatingContext,
+    refetchInterval: 2000,
+    retry: false,
+    networkMode: 'always',
+  });
+  const missionId = operatingMission(
+    params.get('mission_id'),
+    active.isError ? undefined : active.data
+  );
   const requested = params.get('view');
   const view = views.find((view) => view.toLowerCase() === requested) ?? 'Now';
   const workspace = useOperatorWorkspace();
   const health = useOperatorHealth(false);
   const identity = operatorIdentity(health.data);
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: ['operator-health'] });
+  }, [queryClient, active.data?.source_mode, active.data?.replay_run_id]);
+  const contextMismatch =
+    !active.isError &&
+    !!health.data?.mission_journal &&
+    !!active.data &&
+    (active.data.source_mode !== health.data.source_mode ||
+      active.data.replay_run_id !== health.data.replay_run_id);
+  const currentSource = contextMismatch
+    ? { ...health.data!, replay_run_id: active.data!.replay_run_id }
+    : health.data;
   const events = useOperatorEvents(
     missionId,
     !health.isError ? identity : null
@@ -138,17 +172,24 @@ export function OperatorWorkspace() {
     retry: false,
     networkMode: 'always',
   });
-  const missionTiming = useMissionAssociation(
-    mission.data,
-    view === 'Communications'
-  );
-  const currentAssociation = missionTiming.current(
-    records.data?.pages[0]?.as_of ?? null
+  const currentAssociation = activeAssociation(
+    active.isError || active.data?.mission_id !== missionId
+      ? undefined
+      : active.data,
+    mission.data
   );
   const items = records.data?.pages.flatMap((page) => page.items) ?? [];
   const loaded = items.map((item) => item.record);
+  const currentItems = items.filter((item) =>
+    operationalRelevant(item.record, currentSource)
+  );
+  const currentLoaded = currentItems.map((item) => item.record);
+  const retained = items.filter(
+    (item) => !replayCurrent(item.record, currentSource)
+  );
   const incomplete = !records.data || records.isError || !!records.hasNextPage;
-  const disabled = !missionId || !health.data?.ready || health.isError;
+  const disabled =
+    !missionId || !health.data?.ready || health.isError || contextMismatch;
   const missionSaveBusy = workspace.tray.some(
     (row) =>
       row.target.missionId === missionId &&
@@ -262,7 +303,13 @@ export function OperatorWorkspace() {
   ) {
     const source = health.data;
     if (!source?.store_id || !source.api_epoch || !source.ready) return;
+    input = defaultAssociation(input, currentAssociation, !!record);
     const draft = createEditorDraft(workspace.registry, source, input, record);
+    if (!record && currentAssociation)
+      workspace.registry.parkDraft({
+        ...draft,
+        editorState: { associationMode: 'manual' },
+      });
     if (joinNow)
       workspace.registry.parkDraft({
         ...draft,
@@ -397,6 +444,36 @@ export function OperatorWorkspace() {
             })
           }
         />
+        <div className="ws-meta" aria-label="Operating context">
+          <p>
+            {active.isError
+              ? 'Active context unavailable'
+              : active.data?.mission_name
+                ? `Active: ${active.data.mission_name} · ${active.data.leg_name ?? 'Leg unavailable'} · ${active.data.phase?.replaceAll('_', ' ') ?? 'Phase unavailable'}`
+                : 'No active mission or leg'}
+          </p>
+          {params.has('mission_id') && (
+            <button
+              className="ws-button"
+              onClick={() =>
+                setParams((previous) => {
+                  const next = new URLSearchParams(previous);
+                  next.delete('mission_id');
+                  return next;
+                })
+              }
+            >
+              Return to active mission
+            </button>
+          )}
+          {health.data?.mission_journal && (
+            <p>
+              Mission journal retained across replays · Evaluation{' '}
+              {health.data.simulation_run_id}. Prior replay reports remain in
+              History; they do not establish current connections or readiness.
+            </p>
+          )}
+        </div>
         <div
           className="ws-header-actions"
           onKeyDown={(event) => {
@@ -457,7 +534,7 @@ export function OperatorWorkspace() {
       <WorkspaceAwareness
         snapshot={events.snapshot}
         next={nextRequirement(events.snapshot)}
-        records={loaded}
+        records={currentLoaded}
         recordsIncomplete={incomplete}
         failed={events.failed || health.isError}
         onOpenRecord={openRecord}
@@ -818,7 +895,7 @@ export function OperatorWorkspace() {
             {actionError && <p role="alert">{actionError}</p>}
             {view === 'Communications' ? (
               <CommunicationsView
-                items={items}
+                items={currentItems}
                 currentAssociation={currentAssociation}
                 mission={mission.data}
                 disabled={
@@ -844,12 +921,7 @@ export function OperatorWorkspace() {
                 onTransition={transition}
                 onConferenceAction={(record, intent) =>
                   void action(record, (latest, now) =>
-                    conferenceCommand(
-                      latest,
-                      intent,
-                      now,
-                      missionTiming.current(now)
-                    )
+                    conferenceCommand(latest, intent, now, currentAssociation)
                   )
                 }
                 onCustomerAction={(record, intent) =>
@@ -862,7 +934,7 @@ export function OperatorWorkspace() {
               />
             ) : view === 'Transport' ? (
               <TransportView
-                records={loaded}
+                records={currentLoaded}
                 events={events}
                 disabled={
                   disabled || acting || records.isFetching || missionSaveBusy
@@ -874,7 +946,12 @@ export function OperatorWorkspace() {
               />
             ) : view === 'Issues' ? (
               <IssuesView
-                pages={records.data?.pages ?? []}
+                pages={(records.data?.pages ?? []).map((page) => ({
+                  ...page,
+                  items: page.items.filter((item) =>
+                    operationalRelevant(item.record, currentSource)
+                  ),
+                }))}
                 incomplete={incomplete}
                 unavailable={records.isError}
                 disabled={
@@ -939,6 +1016,48 @@ export function OperatorWorkspace() {
                 notesOnly={view === 'Notes'}
               />
             )}
+            {!!retained.length &&
+              ['Communications', 'Transport', 'Issues'].includes(view) && (
+                <section aria-label="Previous replay records">
+                  <h3>Previous replay records · {retained.length} loaded</h3>
+                  <p>Historical reports, not current operational evidence.</p>
+                  <button
+                    className="ws-button"
+                    onClick={() => navigateView('History')}
+                  >
+                    Browse retained records and history
+                  </button>
+                  {view === 'Communications' &&
+                    retained
+                      .filter(
+                        (item) =>
+                          !item.record.deleted &&
+                          item.record.record_type === 'conference'
+                      )
+                      .map(({ record }) => (
+                        <button
+                          key={record.record_id}
+                          className="ws-button"
+                          disabled={disabled}
+                          onClick={() => {
+                            const input = conferenceDraft(missionId);
+                            if (record.payload.entry_type !== 'conference')
+                              return;
+                            input.payload = {
+                              ...input.payload,
+                              title: record.payload.title,
+                              coordinator: record.payload.coordinator,
+                              intended_transport:
+                                record.payload.intended_transport,
+                            };
+                            openInput(input);
+                          }}
+                        >
+                          Reuse definition: {record.payload.title}
+                        </button>
+                      ))}
+                </section>
+              )}
             {incomplete && (
               <p role="status">
                 Loaded records only. Summary and filters do not cover unread

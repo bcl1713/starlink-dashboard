@@ -36,6 +36,16 @@ ground_entry_point._resolver = ground_entry_point.GroundEntryPointResolver(
 main = importlib.import_module("main")
 original_context = main._operator_context
 main._operator_context = scenario.stable_context(root, original_context)
+original_binding = main.OperatorRuntimeBinding
+
+
+def training_binding(*, clock, context, mission_journals=False):
+    # Preserve the existing explicitly marked training namespace, independently
+    # from the normal dashboard's mission-journal storage family.
+    return original_binding(clock=clock, context=context)
+
+
+main.OperatorRuntimeBinding = training_binding
 main.SystemClock = lambda: clock
 original_replay_runtime = main.SimulationRunRuntime
 main.SimulationRunRuntime = lambda _monotonic, _utc, mode: original_replay_runtime(

@@ -48,7 +48,7 @@ function AppNavigation() {
   const health = useOperatorHealth(!workspace.ownsHealth);
   const items =
     health.data?.enabled && !health.isError
-      ? [...navigationItems, { to: '/operator', label: 'Operator' }]
+      ? [...navigationItems, { to: '/operator?workspace=1', label: 'Operator' }]
       : navigationItems;
 
   return (

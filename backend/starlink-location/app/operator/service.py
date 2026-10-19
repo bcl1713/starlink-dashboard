@@ -57,6 +57,7 @@ class OperatorService:
         key: str,
         epoch: str,
         writable_types: set[str] | None = None,
+        expected_replay: str | None = None,
     ) -> ExecutionResult:
         identity = self.store.health()
         if not epoch:
@@ -83,6 +84,11 @@ class OperatorService:
             receipt = commands.receipt_for_key(connection, key, request_hash)
             if receipt is not None:
                 return ExecutionResult(receipt, replayed=True)
+            if self.store.settings.mission_journal and expected_replay is not None:
+                from .replay_context import operating_run
+
+                if expected_replay != operating_run(identity):
+                    raise OperatorError("store_context_changed")
             current = (
                 None
                 if isinstance(command, CreateRecord)
@@ -136,6 +142,7 @@ class OperatorService:
                 request_hash=request_hash,
                 clock=self.clock,
                 actor=self.actor,
+                replay_run_id=self.store.settings.replay_run_id,
             )
             return ExecutionResult(receipt, replayed=False)
 
