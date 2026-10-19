@@ -293,9 +293,8 @@ this acknowledgment before showing a saved/applied state.
 Presets are additive `operator_presets` metadata in the existing Overview link
 settings JSON file, with no database schema migration, new volume or new
 infrastructure. Existing settings writes preserve that metadata and unfamiliar
-future fields. Back up the installation settings file with the deployment's
-normal configuration backup. Old binaries ignore and retain the metadata;
+future fields. Back up settings with the deployment's normal configuration
+backup. Old binaries ignore and retain the metadata;
 rolling back the frontend/backend leaves saved visibility and preset data in
-place. Disable Operator to hide its controls while Configuration remains
-available. Do not delete shared configuration or Operator journal volumes for
-rollback.
+place. Disable Operator to hide controls; Configuration remains available.
+Do not delete shared configuration or Operator journal volumes for rollback.

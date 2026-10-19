@@ -2,8 +2,8 @@
 
 The fixture runs one private nonproduction dashboard with fictional mission
 prerequisites. It uses the production journal, mission planner, replay engine,
-ETA/PoP adapters and prediction code. It does not control communications hardware
-or contact an aircraft.
+ETA/PoP adapters and prediction code. It does not control communications
+hardware or contact an aircraft.
 
 The guided mission and full operator guide are still being implemented. This
 page documents the fixture and its ownership/recovery contract.
@@ -37,10 +37,11 @@ Existing unmarked data is preserved rather than adopted or initialized.
 
 ## Aircraft progression
 
-Preview and start each leg through **Missions → Simulate leg…**, using multiplier
-**1** for this stepped fixture. The normal replay engine owns activation and
-flight-phase changes. The launcher advances predefined raw source inputs and the
-existing scenario clock; it does not restore a flight phase or seed predictions.
+Preview and start each leg through **Missions → Simulate leg…**, using
+multiplier **1** for this stepped fixture. The normal replay engine owns
+activation and flight-phase changes. The launcher advances predefined raw source
+inputs and the existing scenario clock; it does not restore a flight phase or
+seed predictions.
 
 ```sh
 scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage leg-one
@@ -51,16 +52,17 @@ scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage leg
 scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage postflight
 ```
 
-The initial preflight clock is 2026-10-17 16:00 UTC. The first route starts then;
-the second starts at 16:45 UTC. Checkpoints move forward only. Back in the guide
-must not rewind time or undo journal writes.
+The initial preflight clock is 2026-10-17 16:00 UTC. The first route starts
+then; the second starts at 16:45 UTC. Checkpoints move forward only. Back in the
+guide must not rewind time or undo journal writes.
 
-The fixture seeds two routes and eight **planned** requirements, including one past planned requirement. Additional calls,
-conferences, customer intervals, transport reports, issue updates, observations,
-acknowledgments and completion evidence must come from actual learner actions.
-Each private root supplies a stable fixture journal namespace across actual
-replay segment IDs. This adaptation exists only in the explicit fixture
-entrypoint; normal live and simulation-run isolation remain unchanged.
+The fixture seeds two routes and eight **planned** requirements, including one
+past planned requirement. Additional calls, conferences, customer intervals,
+transport reports, issue updates, observations, acknowledgments and completion
+evidence must come from actual learner actions. Each private root supplies a
+stable fixture journal namespace across actual replay segment IDs. This
+adaptation exists only in the explicit fixture entrypoint; normal live and
+simulation-run isolation remain unchanged.
 
 ## Restart and reset
 
@@ -69,8 +71,8 @@ scripts/operator-training.sh restart --root /tmp/operator-learner
 scripts/operator-training.sh reset --root /tmp/operator-learner
 ```
 
-A backend restart retains persisted input time and journal identity. It stops the
-in-memory paced replay. Preview/start the current segment again when needed;
+A backend restart retains persisted input time and journal identity. It stops
+the in-memory paced replay. Preview/start the current segment again when needed;
 this is not exact-frame replay reconstruction.
 
 Reset stops the old instance and creates a fresh sibling root/project. It prints
@@ -95,8 +97,9 @@ to use the existing single ZIP workflow in Missions.
 
 `--disposable` is reserved for automated checks: stopping that instance removes
 its private journal volumes. The exact-source proof runner accepts only an
-explicit task-owned disposable root, records browser process ownership separately
-from checkpoint commands and always stops the stack on exit or failure.
+explicit task-owned disposable root, records browser process ownership
+separately from checkpoint commands and always stops the stack on exit or
+failure.
 
 ```sh
 scripts/operator-training.sh start --root /tmp/issue-376-training-proof-local --disposable --relay
