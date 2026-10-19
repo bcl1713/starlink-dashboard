@@ -34,3 +34,29 @@ does not erase an earlier trace. Retain these synthetic artifacts with the
 source/image identities; this does not keep any runtime resource alive.
 
 Archive evidence retains distinct destination records/history/H before and after each import, actual ready-preparation responses and the downloaded response fingerprint/briefing status/ZIP hash. The inspector retains expected and computed member checksums. These raw facts support the pending guide handoff; a single post-import snapshot or a generic success flag is not that evidence.
+
+The private archive handoff uses `archive_evidence.py baseline|check --root ROOT
+--label empty|nonempty --browser-origin ORIGIN`. Run it in the existing backend
+Python requirements environment. Baseline runs before each normal Missions UI
+import; check runs afterward. The empty destination starts with no missions or
+journal rows. Before the nonempty exercise, create a fictional note through
+Operator, take another baseline, and import the unchanged ZIP again.
+
+Check reads the existing ready preparation SQLite database in read-only mode,
+hashes its existing artifact and copies those original bytes for inspection; it
+starts no worker and performs no export or journal command. An optional `--zip`
+checks the original local browser download instead. Both modes require a matching
+ready artifact digest. The existing inspector verifies the PDF, source history
+at archive H, telemetry and checksums. Distinct destination before/after health,
+records, immutable history and H are retained. Four-minute read/command bounds,
+per-request limits and separate per-invocation ownership ledgers apply.
+
+Select the two generated report files and original download in the source T10
+guide. It computes the browser file digest and revalidates actual backend source
+history before labeling imported tooling evidence. Wrong files and foreign
+origin/store/epoch reports remain unavailable. PDF review and a client-visible
+failure are explicit human observations; cancellation/ready state cannot prove
+that a browser experienced a network failure. Stop the child with `import-stop`
+after checking. See the canonical packaged guide's archive procedure for exact
+commands and the managed-cloud relay option. This handoff still requires its
+new exact-source CLI/browser gate before acceptance is claimed.

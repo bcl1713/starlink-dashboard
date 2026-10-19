@@ -1,3 +1,5 @@
+import { TrainingArchiveFiles } from './TrainingArchiveFiles';
+import type { ArchiveObservation } from './trainingArchiveEvidence';
 import { useState } from 'react';
 import {
   createProgress,
@@ -63,7 +65,7 @@ function Guide({
     setProgress(next);
     setError(saveProgress(storage, next).error);
   }
-  async function check() {
+  async function check(archiveObservations?: ArchiveObservation[]) {
     if (!onCheckEvidence) return;
     setChecking(true);
     setCheckError(null);
@@ -72,6 +74,8 @@ function Guide({
         retryObservations: progress.retryObservations ?? [],
         replayObservations: progress.replayObservations ?? [],
         journalObservations: progress.journalObservations ?? [],
+        archiveObservations:
+          archiveObservations ?? progress.archiveObservations ?? [],
       });
       if (observations) keep({ ...progress, ...observations });
     } catch (reason) {
@@ -133,6 +137,14 @@ function Guide({
             </select>
           </label>
           <TrainingStep stageId={step.id} evaluation={evaluation} />
+          {step.id === 'T10' && onCheckEvidence && (
+            <TrainingArchiveFiles
+              identity={identity}
+              checking={checking}
+              retained={progress.archiveObservations ?? []}
+              onCheck={(values) => check(values)}
+            />
+          )}
           <button
             className="ws-button"
             onClick={() => {

@@ -65,6 +65,37 @@ test('original training mission ZIP transfers through Missions without restoring
     await page.request.get(`/api/v2/missions/${missions[0].id}`)
   ).json();
   const id = mission.id;
+  function archiveEvidence(
+    command: 'baseline' | 'check',
+    label: 'empty' | 'nonempty',
+    zipPath?: string
+  ) {
+    const python = process.env.OPERATOR_TRAINING_PYTHON;
+    if (!python)
+      throw new Error(
+        'The owned runner must provide its existing backend Python environment'
+      );
+    return JSON.parse(
+      execFileSync(
+        python,
+        [
+          join(
+            process.env.OPERATOR_TRAINING_TEST_SOURCE!,
+            'tools/training/operator-mission/archive_evidence.py'
+          ),
+          command,
+          '--root',
+          root,
+          '--label',
+          label,
+          '--browser-origin',
+          new URL(page.url()).origin,
+          ...(zipPath ? ['--zip', zipPath] : []),
+        ],
+        { encoding: 'utf8', timeout: 260_000 }
+      )
+    );
+  }
   const current = await allPages(
     page.request,
     `/api/v2/operator/records?mission_id=${id}`
@@ -243,7 +274,10 @@ test('original training mission ZIP transfers through Missions without restoring
       });
       await expect(importing).not.toBeVisible();
     }
+    archiveEvidence('baseline', 'empty');
     await importOriginal();
+    const emptyReport = archiveEvidence('check', 'empty');
+    expect(emptyReport.originalZipSha256).toBe(downloadRead.sha256);
     const emptyAfter = await allPages(target.request, journalPath);
     expect(emptyAfter).toEqual(empty);
     const importedMission = await (
@@ -280,7 +314,10 @@ test('original training mission ZIP transfers through Missions without restoring
     const sentinelHistory = frozenJournal(
       await allPages(target.request, historyPath)
     );
+    archiveEvidence('baseline', 'nonempty');
     await importOriginal();
+    const nonemptyReport = archiveEvidence('check', 'nonempty');
+    expect(nonemptyReport.originalZipSha256).toBe(downloadRead.sha256);
     const afterImport = frozenJournal(
       await allPages(target.request, journalPath)
     );
@@ -293,6 +330,105 @@ test('original training mission ZIP transfers through Missions without restoring
       await target.request.get('/api/v2/operator/health')
     ).json();
     expect(destinationHealthAfter).toEqual(destinationHealth);
+    expect(
+      await allPages(page.request, `/api/v2/operator/records?mission_id=${id}`)
+    ).toEqual(current);
+    const wrongZip = join(root, 'wrong-original.zip');
+    writeFileSync(wrongZip, Buffer.concat([originalBytes, Buffer.from([0])]));
+    expect(() => archiveEvidence('check', 'nonempty', wrongZip)).toThrow(
+      /does not match an existing ready server artifact/
+    );
+    const foreign = JSON.parse(readFileSync(emptyReport.evidence, 'utf8'));
+    foreign.identity.epoch = 'foreign-epoch';
+    const foreignReport = join(root, 'foreign-archive-evidence.json');
+    writeFileSync(foreignReport, JSON.stringify(foreign));
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto(`/operator?workspace=1&mission_id=${id}`);
+      await page.getByRole('button', { name: 'Help', exact: true }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', {
+          name: 'Guided mission walkthrough',
+          exact: true,
+        })
+        .click();
+      const guide = page.getByRole('complementary', {
+        name: 'Guided mission walkthrough',
+        exact: true,
+      });
+      await guide
+        .getByRole('combobox', { name: 'Lesson', exact: true })
+        .selectOption('T10');
+      if (viewport.width === 1920) {
+        await guide
+          .getByLabel('Private archive evidence JSON')
+          .setInputFiles(foreignReport);
+        await expect(guide.getByRole('alert')).toContainText(
+          'another private source'
+        );
+        await guide.getByLabel('Original Missions ZIP').setInputFiles(wrongZip);
+        await expect(guide.getByText(/Selected ZIP:/)).toContainText(
+          'wrong-original.zip'
+        );
+        await guide
+          .getByLabel('Private archive evidence JSON')
+          .setInputFiles([emptyReport.evidence, nonemptyReport.evidence]);
+        await guide
+          .getByRole('button', {
+            name: 'Check selected archive evidence',
+            exact: true,
+          })
+          .click();
+        await expect(guide.getByRole('alert')).toContainText(
+          'Select the unchanged original ZIP'
+        );
+      }
+      if (viewport.width === 1920) {
+        await guide
+          .getByLabel('Original Missions ZIP')
+          .setInputFiles(join(root, 'original-mission.zip'));
+        await expect(guide.getByText(/Selected ZIP:/)).toContainText(
+          'original-mission.zip'
+        );
+        await guide
+          .getByRole('button', {
+            name: 'Check selected archive evidence',
+            exact: true,
+          })
+          .click();
+      } else {
+        await guide
+          .getByRole('button', { name: 'Check current evidence', exact: true })
+          .click();
+      }
+      await expect(
+        guide
+          .getByRole('listitem')
+          .filter({ hasText: 'Verified from imported tooling evidence' })
+      ).toHaveCount(4);
+      await expect(
+        guide.getByRole('listitem').filter({ hasText: 'Human observation' })
+      ).toHaveCount(0);
+      await expect(
+        guide.getByRole('status').filter({ hasText: /^Incomplete$/ })
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth + 1
+        )
+      ).toBe(true);
+      await page.screenshot({
+        path: join(
+          root,
+          `guided-archive-evidence-${viewport.width}x${viewport.height}.png`
+        ),
+      });
+    }
     expect(
       await allPages(page.request, `/api/v2/operator/records?mission_id=${id}`)
     ).toEqual(current);
@@ -319,6 +455,10 @@ test('original training mission ZIP transfers through Missions without restoring
           actualMissionsControls: true,
           networkFailureRetry: true,
           preparationCancel: cancellation,
+          guideToolingEvidenceAtThreeSizes: true,
+          foreignReportAndWrongOriginalRejected: true,
+          humanPdfReviewAndNetworkFailureObservation: 'not claimed',
+          toolingReports: [emptyReport.evidence, nonemptyReport.evidence],
         },
         null,
         2

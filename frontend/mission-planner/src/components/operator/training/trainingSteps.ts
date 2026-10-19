@@ -141,9 +141,9 @@ export const trainingSteps = [
       'export-downloaded',
       'archive-contents-validated',
       'archive-imported-isolated',
-      'export-failure-cancel-recovery',
+      'export-cancel-recovery',
     ],
-    manual: ['pdf-extracted-reviewed'],
+    manual: ['pdf-extracted-reviewed', 'export-failure-observed'],
   },
   {
     id: 'T11',
@@ -168,12 +168,14 @@ export interface TrainingEvidence {
   /** Produced by adapters over existing service responses; never persisted progress. */
   outcomes: readonly string[];
   historicalOutcomes?: readonly string[];
+  toolingOutcomes?: readonly string[];
 }
 export interface StepEvaluation {
   status: 'passed' | 'skipped' | 'incomplete' | 'unavailable';
   missing: string[];
   manualOutcomes: string[];
   historicalOutcomes?: readonly string[];
+  toolingOutcomes?: readonly string[];
 }
 export function evaluateStep(
   id: TrainingStageId,
@@ -209,6 +211,9 @@ export function evaluateStep(
             : 'passed',
     missing,
     manualOutcomes,
+    toolingOutcomes: evidence.toolingOutcomes?.filter(
+      (outcome) => !missing.includes(outcome)
+    ),
     historicalOutcomes: evidence.historicalOutcomes?.filter(
       (outcome) => !missing.includes(outcome)
     ),

@@ -1,20 +1,20 @@
 {
   "job": {
-    "id": "236a0b49c1fa43b7af7241d7293adf24",
+    "id": "0123302f4cac449d8fdd0d5c6fef9d5e",
     "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
     "state": "queued",
-    "fingerprint": "beb0060b82854a8422c73bdef525e0dca142c488322481eb96bec2fc7e503f01",
+    "fingerprint": "090b10fa4fa543dfe5c8c736a053b6dc380543231d0962688a2c8a3c1873ee3e",
     "revision": null,
     "stage": "queued",
     "stage_started_at": null,
     "stage_timings": {
-      "capture": 0.060794209130108356
+      "capture": 0.06072277412749827
     },
     "leg_states": {},
-    "queued_at": 1792376688.6446707,
+    "queued_at": 1792378390.2542324,
     "started_at": null,
     "finished_at": null,
-    "deadline": 1792377288.6446707,
+    "deadline": 1792378990.2542324,
     "expires_at": null,
     "error_code": null,
     "warning_code": null,
@@ -22,25 +22,25 @@
     "download_url": null
   },
   "cancellation": {
-    "id": "236a0b49c1fa43b7af7241d7293adf24",
+    "id": "0123302f4cac449d8fdd0d5c6fef9d5e",
     "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
     "state": "cancelled",
-    "fingerprint": "beb0060b82854a8422c73bdef525e0dca142c488322481eb96bec2fc7e503f01",
+    "fingerprint": "090b10fa4fa543dfe5c8c736a053b6dc380543231d0962688a2c8a3c1873ee3e",
     "revision": null,
     "stage": "cancelled",
-    "stage_started_at": 1792376688.736155,
+    "stage_started_at": 1792378390.3380241,
     "stage_timings": {
-      "capture": 0.060794209130108356,
-      "queue": 0.03069558274000883
+      "capture": 0.06072277412749827,
+      "queue": 0.02307062759064138
     },
     "leg_states": {
       "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
       "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
     },
-    "queued_at": 1792376688.6446707,
-    "started_at": 1792376688.7361548,
-    "finished_at": 1792376688.796141,
-    "deadline": 1792377288.6446707,
+    "queued_at": 1792378390.2542324,
+    "started_at": 1792378390.338024,
+    "finished_at": 1792378390.3966963,
+    "deadline": 1792378990.2542324,
     "expires_at": null,
     "error_code": null,
     "warning_code": null,

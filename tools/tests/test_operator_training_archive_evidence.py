@@ -1,0 +1,160 @@
+"""Private archive proof derives facts from separate normal backend reads."""
+
+import importlib.util
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location(
+    "operator_training_archive_evidence",
+    ROOT / "tools/training/operator-mission/archive_evidence.py",
+)
+evidence = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(evidence)
+
+
+def snapshot():
+    one = {
+        "record_id": "a",
+        "version": 1,
+        "journal_seq": 1,
+        "mission_id": "m",
+        "command_id": "one",
+    }
+    two = dict(one, version=2, journal_seq=2, command_id="two")
+    return {
+        "health": {
+            "ready": True,
+            "store_id": "store",
+            "api_epoch": "epoch",
+            "source_mode": "simulation",
+            "simulation_run_id": "private",
+        },
+        "H": 2,
+        "records": [two],
+        "history": [one, two],
+        "missions": [{"id": "m"}],
+    }
+
+
+def test_archive_boundary_uses_actual_history_at_capture_h_not_later_current_state():
+    source = snapshot()
+    journal = {
+        "store_id": "store",
+        "source_mode": "simulation",
+        "simulation_run_id": "private",
+        "mission_id": "m",
+        "high_water": 1,
+        "current_records": source["history"][:1],
+    }
+    boundary = evidence.archive_boundary(source, journal)
+    assert boundary["records"] == source["history"][:1]
+    assert boundary["history"] == source["history"][:1]
+    assert boundary["H"] == 1
+    for changed in [
+        dict(journal, store_id="foreign"),
+        dict(journal, high_water=3),
+        dict(
+            journal, current_records=[dict(source["history"][0], command_id="invented")]
+        ),
+    ]:
+        with pytest.raises(ValueError):
+            evidence.archive_boundary(source, changed)
+
+
+def test_import_preservation_compares_distinct_full_snapshots_and_store_identity():
+    before = snapshot()
+    after = snapshot()
+    assert evidence.unchanged_destination(before, after) == {
+        "before": before,
+        "after": after,
+    }
+    for changed in [
+        dict(after, H=3),
+        dict(after, history=[]),
+        dict(after, records=[]),
+        dict(after, health=dict(after["health"], api_epoch="rotated")),
+    ]:
+        with pytest.raises(ValueError):
+            evidence.unchanged_destination(before, changed)
+
+
+def test_snapshot_pages_and_final_health_must_share_one_boundary():
+    base = snapshot()
+    calls = []
+
+    def get(path):
+        calls.append(path)
+        if path == "/api/v2/operator/health":
+            return base["health"]
+        if path == "/api/v2/missions":
+            return base["missions"]
+        if path.startswith("/api/v2/operator/records?"):
+            return {"H": 2, "cursor": None, "items": [{"record": base["records"][0]}]}
+        if path == "/api/v2/operator/records/a/history":
+            return {
+                "H": 2,
+                "cursor": None,
+                "items": [{"record": r} for r in base["history"]],
+            }
+        raise AssertionError(path)
+
+    assert evidence.read_snapshot(get) == base
+    assert "include_removed=true" in calls[2]
+
+    def stale(path):
+        result = get(path)
+        return dict(result, H=3) if path.endswith("/history") else result
+
+    with pytest.raises(ValueError, match="boundary"):
+        evidence.read_snapshot(stale)
+
+
+def test_private_browser_origin_is_identity_only_and_never_adopts_paths_or_credentials():
+    assert (
+        evidence.browser_origin("http://127.0.0.1:56533/") == "http://127.0.0.1:56533"
+    )
+    for value in [
+        "file:///tmp",
+        "https://user:secret@example.invalid",
+        "https://example.invalid/path",
+        "https://example.invalid?x=1",
+        "//example.invalid",
+    ]:
+        with pytest.raises(ValueError):
+            evidence.browser_origin(value)
+    for port in [0, 65536, "56533", True]:
+        with pytest.raises(ValueError):
+            evidence.loopback_reader(port)
+
+
+def test_snapshot_rejects_cursor_loops_and_rotated_epoch():
+    base = snapshot()
+
+    def looping(path):
+        if path.endswith("/health"):
+            return base["health"]
+        if path.endswith("/missions"):
+            return base["missions"]
+        return {"H": 2, "cursor": "same-cursor", "items": []}
+
+    with pytest.raises(ValueError, match="pagination"):
+        evidence.read_snapshot(looping)
+    health_reads = 0
+
+    def rotating(path):
+        nonlocal health_reads
+        if path.endswith("/health"):
+            health_reads += 1
+            return (
+                dict(base["health"], api_epoch="rotated")
+                if health_reads > 1
+                else base["health"]
+            )
+        if path.endswith("/missions"):
+            return base["missions"]
+        return {"H": 0, "cursor": None, "items": []}
+
+    with pytest.raises(ValueError, match="identity"):
+        evidence.read_snapshot(rotating)

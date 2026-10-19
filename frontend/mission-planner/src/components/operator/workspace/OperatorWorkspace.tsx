@@ -1,3 +1,4 @@
+import { collectArchiveEvidence } from '../training/trainingArchiveEvidence';
 import {
   retainJournalObservation,
   collectJournalContinuityEvidence,
@@ -161,6 +162,9 @@ export function OperatorWorkspace() {
   const trainingEvidence: TrainingEvidence = {
     available: (trainingEvents?.available ?? false) && !records.isError,
     fresh: !events.failed && (trainingEvents?.fresh ?? false),
+    toolingOutcomes: trainingRecordsCurrent
+      ? checkedTraining.toolingOutcomes
+      : [],
     historicalOutcomes: trainingRecordsCurrent
       ? checkedTraining.historicalOutcomes
       : [],
@@ -538,8 +542,16 @@ export function OperatorWorkspace() {
                 training.prerequisiteIds,
                 journalObservations
               );
+              const archiveOutcomes = collectArchiveEvidence(
+                training.identity,
+                namespace,
+                checked.H,
+                checked.evidenceRecords,
+                previous.archiveObservations
+              );
               setCheckedTraining({
                 ...checked,
+                toolingOutcomes: archiveOutcomes,
                 historicalOutcomes: [
                   ...journalOutcomes,
                   ...historicalReplayOutcomes.filter(
@@ -551,6 +563,7 @@ export function OperatorWorkspace() {
                     ...checked.outcomes,
                     ...retryOutcomes,
                     ...journalOutcomes,
+                    ...archiveOutcomes,
                     ...observed.outcomes,
                     ...currentReplayOutcomes,
                     ...historicalReplayOutcomes,
@@ -565,6 +578,7 @@ export function OperatorWorkspace() {
                 retryObservations: retainedObservations,
                 replayObservations,
                 journalObservations,
+                archiveObservations: previous.archiveObservations ?? [],
               };
             }}
             onOpenTarget={(stage) => {

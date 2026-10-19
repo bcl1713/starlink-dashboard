@@ -11,7 +11,7 @@ const instructions: Record<TrainingStageId, string> = {
   T07: 'Create an issue, add mitigation and follow-up, monitor it, resolve it and reopen it. Clear follow-up and inspect the activity. Correct an earlier issue message without repeating its lifecycle transition. Record a separate capability assessment; it does not replace the issue or prove actual routing.',
   T08: 'Create an observation and notes with their original scope and unknown or approximate times. Park a draft, change mission/leg and resume it. Use the private exercise instructions for offline saving, a lost receipt, an actual second-client conflict and backup/restore. For a lost receipt, keep the draft and check guide evidence while the save is uncertain, before retrying. Then retry the original command and check evidence again. The guide requires the committed backend version observed before that retry.',
   T09: 'Record a ground-gap note with the previous and next named legs. Preview and start the return leg normally in Missions. Verify the new actual replay run and current-leg model sources while the same journal retains first-leg records. Use Check current evidence during the second leg, then restart the private instance and check again to revalidate records against the changed backend runtime. Restarting an expired replay segment does not restore an exact frame.',
-  T10: 'Finish the mission and use its existing Export workflow to download the single mission ZIP. Inspect its original briefing PDF, journal/history, telemetry and checksums. Use the separate temporary import destination and verify its existing Operator records are unchanged. Exercise export preparation, cancellation and failure recovery; only confirm PDF review after opening the actual extracted file.',
+  T10: 'Finish the mission and use its existing Export workflow to download the single mission ZIP. Inspect its original briefing PDF, journal/history, telemetry and checksums. Use the separate temporary import destination and verify its existing Operator records are unchanged. Exercise export preparation, cancellation and failure recovery. Load the original ZIP and the private archive check reports to compare their raw facts with backend history. PDF review and a client-visible failure are separate human observations; record each only after performing it.',
   T11: 'Finish the field and recovery checklist in the guide: original scopes, immutable revisions, removed records, full history pagination, optional providers, unavailable storage, changed store epoch and retained commands. Use the quick reference. Incomplete or skipped branches remain visible; they are required before release acceptance.',
 };
 export function TrainingStep({
@@ -54,9 +54,11 @@ export function TrainingStep({
               ? 'Needs evidence'
               : evaluation.manualOutcomes.includes(outcome)
                 ? 'Human observation'
-                : evaluation.historicalOutcomes?.includes(outcome)
-                  ? 'Verified from retained source observation'
-                  : 'Verified from current data'}
+                : evaluation.toolingOutcomes?.includes(outcome)
+                  ? 'Verified from imported tooling evidence'
+                  : evaluation.historicalOutcomes?.includes(outcome)
+                    ? 'Verified from retained source observation'
+                    : 'Verified from current data'}
           </li>
         ))}
       </ul>

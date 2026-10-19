@@ -121,3 +121,25 @@ it('reports a failed evidence check separately from progress storage and permits
   );
   expect(await screen.findByText('Incomplete')).toBeTruthy();
 });
+
+it('distinguishes imported archive tooling evidence from current reads and human observations', async () => {
+  const props = {
+    identity,
+    evidence: {
+      available: true,
+      fresh: true,
+      outcomes: ['export-downloaded'],
+      toolingOutcomes: ['export-downloaded'],
+    },
+    onOpenTarget: () => {},
+    onDismiss: () => {},
+  };
+  render(<GuidedMission {...props} />);
+  fireEvent.change(screen.getByRole('combobox', { name: 'Lesson' }), {
+    target: { value: 'T10' },
+  });
+  expect(
+    screen.getByRole('list', { name: 'Lesson outcome evidence' }).textContent
+  ).toContain('export downloaded · Verified from imported tooling evidence');
+  expect(screen.getByText('Incomplete')).toBeTruthy();
+});

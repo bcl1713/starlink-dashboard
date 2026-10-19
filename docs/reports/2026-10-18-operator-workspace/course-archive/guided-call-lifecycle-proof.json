@@ -34,11 +34,11 @@
           "prep_lead_minutes": 0,
           "conference_id": null
         },
-        "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+        "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
         "version": 8,
         "previous_version": 7,
         "journal_seq": 35,
-        "command_id": "1c76ea5a-daf8-4fcb-9d1f-74d3a3683f3c",
+        "command_id": "32f69a1a-31ed-4e88-839e-56d1e7ab3ede",
         "operation": "update",
         "reason": "Operator correction",
         "reason_origin": "automatic",
@@ -56,7 +56,8 @@
           "source_ref": null,
           "mutation_origin": "interactive"
         }
-      }
+      },
+      "completeImmutableHistoryVerified": true
     },
     {
       "viewport": {
@@ -91,11 +92,11 @@
           "prep_lead_minutes": 0,
           "conference_id": null
         },
-        "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+        "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
         "version": 8,
         "previous_version": 7,
         "journal_seq": 43,
-        "command_id": "08a742a0-43ba-4287-a1cf-fe5b4493e9fa",
+        "command_id": "5bcfef5f-db71-4e03-8145-513ffb5cae66",
         "operation": "update",
         "reason": "Operator correction",
         "reason_origin": "automatic",
@@ -113,7 +114,8 @@
           "source_ref": null,
           "mutation_origin": "interactive"
         }
-      }
+      },
+      "completeImmutableHistoryVerified": true
     },
     {
       "viewport": {
@@ -148,11 +150,11 @@
           "prep_lead_minutes": 0,
           "conference_id": null
         },
-        "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+        "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
         "version": 8,
         "previous_version": 7,
         "journal_seq": 51,
-        "command_id": "8882b943-242f-45ed-9ee4-e37ffe9d0df5",
+        "command_id": "f5ecfcfa-0a37-403d-86df-3c9cbfa8f033",
         "operation": "update",
         "reason": "Operator correction",
         "reason_origin": "automatic",
@@ -170,13 +172,14 @@
           "source_ref": null,
           "mutation_origin": "interactive"
         }
-      }
+      },
+      "completeImmutableHistoryVerified": true
     }
   ],
   "receipts": [
     {
       "schema_version": 1,
-      "command_id": "700db75f-0b2b-4afd-9e9b-1cab35c76974",
+      "command_id": "96c97ec7-fc86-4142-9d74-e4a8015b753e",
       "saved_records": [
         {
           "schema_version": 1,
@@ -206,11 +209,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 1,
           "previous_version": null,
           "journal_seq": 28,
-          "command_id": "700db75f-0b2b-4afd-9e9b-1cab35c76974",
+          "command_id": "96c97ec7-fc86-4142-9d74-e4a8015b753e",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -233,7 +236,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8289e619-0049-4e60-898a-1d784d0fcd33",
+      "command_id": "35e102bf-2e0d-458b-967f-7bf84f323996",
       "saved_records": [
         {
           "schema_version": 1,
@@ -263,11 +266,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 29,
-          "command_id": "8289e619-0049-4e60-898a-1d784d0fcd33",
+          "command_id": "35e102bf-2e0d-458b-967f-7bf84f323996",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -290,7 +293,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "04045ba9-ec0c-4068-95bd-626cca0ce012",
+      "command_id": "a4908225-12ce-4ef1-9c10-9e740efae2e0",
       "saved_records": [
         {
           "schema_version": 1,
@@ -320,11 +323,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 30,
-          "command_id": "04045ba9-ec0c-4068-95bd-626cca0ce012",
+          "command_id": "a4908225-12ce-4ef1-9c10-9e740efae2e0",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -347,7 +350,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8b5145fe-a263-440f-90d8-8b2f652e7242",
+      "command_id": "1abdfb64-acc6-4776-820c-3f2ff5c24e71",
       "saved_records": [
         {
           "schema_version": 1,
@@ -377,11 +380,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 31,
-          "command_id": "8b5145fe-a263-440f-90d8-8b2f652e7242",
+          "command_id": "1abdfb64-acc6-4776-820c-3f2ff5c24e71",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -404,7 +407,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "1ef7c696-959c-43a6-8063-47c6cc32390f",
+      "command_id": "68f4edec-412a-4fe1-93de-df105bfd81bb",
       "saved_records": [
         {
           "schema_version": 1,
@@ -434,11 +437,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 32,
-          "command_id": "1ef7c696-959c-43a6-8063-47c6cc32390f",
+          "command_id": "68f4edec-412a-4fe1-93de-df105bfd81bb",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -461,7 +464,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "175a7670-1f73-4737-b568-689c9713246f",
+      "command_id": "a35a1301-50b2-4cfc-bacd-9d76c5dd920c",
       "saved_records": [
         {
           "schema_version": 1,
@@ -491,11 +494,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 33,
-          "command_id": "175a7670-1f73-4737-b568-689c9713246f",
+          "command_id": "a35a1301-50b2-4cfc-bacd-9d76c5dd920c",
           "operation": "remove",
           "reason": "Operator removal",
           "reason_origin": "automatic",
@@ -518,7 +521,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "7e0f87e1-8f07-4ecb-aa9b-ade113b3bb4b",
+      "command_id": "c1571a20-e982-45d2-8533-49c93b6dc0ac",
       "saved_records": [
         {
           "schema_version": 1,
@@ -548,11 +551,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 7,
           "previous_version": 6,
           "journal_seq": 34,
-          "command_id": "7e0f87e1-8f07-4ecb-aa9b-ade113b3bb4b",
+          "command_id": "c1571a20-e982-45d2-8533-49c93b6dc0ac",
           "operation": "restore",
           "reason": "Operator restoration",
           "reason_origin": "automatic",
@@ -575,7 +578,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "1c76ea5a-daf8-4fcb-9d1f-74d3a3683f3c",
+      "command_id": "32f69a1a-31ed-4e88-839e-56d1e7ab3ede",
       "saved_records": [
         {
           "schema_version": 1,
@@ -605,11 +608,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "3d042aef-a53b-44d2-8a28-a034f937f140",
+          "record_id": "1a99216d-50db-41d9-a434-bd941248cee7",
           "version": 8,
           "previous_version": 7,
           "journal_seq": 35,
-          "command_id": "1c76ea5a-daf8-4fcb-9d1f-74d3a3683f3c",
+          "command_id": "32f69a1a-31ed-4e88-839e-56d1e7ab3ede",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -632,7 +635,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "b70e565a-3f99-4ead-a2e9-486c7cbdfc55",
+      "command_id": "e6eec8a9-8f7b-47ef-865e-8609ff9c6e51",
       "saved_records": [
         {
           "schema_version": 1,
@@ -662,11 +665,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 1,
           "previous_version": null,
           "journal_seq": 36,
-          "command_id": "b70e565a-3f99-4ead-a2e9-486c7cbdfc55",
+          "command_id": "e6eec8a9-8f7b-47ef-865e-8609ff9c6e51",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -689,7 +692,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "9d5818ee-f76d-4085-bfe0-d2f5eba0bd4a",
+      "command_id": "19cf8d3d-9800-45cd-9379-65fcc7f04869",
       "saved_records": [
         {
           "schema_version": 1,
@@ -719,11 +722,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 37,
-          "command_id": "9d5818ee-f76d-4085-bfe0-d2f5eba0bd4a",
+          "command_id": "19cf8d3d-9800-45cd-9379-65fcc7f04869",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -746,7 +749,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "f2bc9086-4cdb-407f-885d-b5185e353e91",
+      "command_id": "465bdf57-1e0d-4105-bc34-038b5d3cdbcc",
       "saved_records": [
         {
           "schema_version": 1,
@@ -776,11 +779,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 38,
-          "command_id": "f2bc9086-4cdb-407f-885d-b5185e353e91",
+          "command_id": "465bdf57-1e0d-4105-bc34-038b5d3cdbcc",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -803,7 +806,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8cd7c6c1-b9f6-4da8-881b-dab72f76acf8",
+      "command_id": "ad0751ae-61db-4e86-94c3-b14f9c83847d",
       "saved_records": [
         {
           "schema_version": 1,
@@ -833,11 +836,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 39,
-          "command_id": "8cd7c6c1-b9f6-4da8-881b-dab72f76acf8",
+          "command_id": "ad0751ae-61db-4e86-94c3-b14f9c83847d",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -860,7 +863,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "fc79900c-7157-499e-a844-669ebcc0b432",
+      "command_id": "37f300c8-1729-4ec7-b358-9b72b6d194fd",
       "saved_records": [
         {
           "schema_version": 1,
@@ -890,11 +893,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 40,
-          "command_id": "fc79900c-7157-499e-a844-669ebcc0b432",
+          "command_id": "37f300c8-1729-4ec7-b358-9b72b6d194fd",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -917,7 +920,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "310bf350-845f-45a0-85cb-75f4244b68fc",
+      "command_id": "6a38e160-b8bb-421a-bb38-9bafd1400615",
       "saved_records": [
         {
           "schema_version": 1,
@@ -947,11 +950,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 41,
-          "command_id": "310bf350-845f-45a0-85cb-75f4244b68fc",
+          "command_id": "6a38e160-b8bb-421a-bb38-9bafd1400615",
           "operation": "remove",
           "reason": "Operator removal",
           "reason_origin": "automatic",
@@ -974,7 +977,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "e88c6e8a-bed2-4210-b8a8-6ef5e6b77436",
+      "command_id": "b313d148-4194-4dfb-8f17-eadc06906b5f",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1004,11 +1007,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 7,
           "previous_version": 6,
           "journal_seq": 42,
-          "command_id": "e88c6e8a-bed2-4210-b8a8-6ef5e6b77436",
+          "command_id": "b313d148-4194-4dfb-8f17-eadc06906b5f",
           "operation": "restore",
           "reason": "Operator restoration",
           "reason_origin": "automatic",
@@ -1031,7 +1034,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "08a742a0-43ba-4287-a1cf-fe5b4493e9fa",
+      "command_id": "5bcfef5f-db71-4e03-8145-513ffb5cae66",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1061,11 +1064,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "37d6389b-50f0-44b7-a075-e15a2c63c0b7",
+          "record_id": "5afd61ce-275f-452c-8ecb-d419aa81c8ed",
           "version": 8,
           "previous_version": 7,
           "journal_seq": 43,
-          "command_id": "08a742a0-43ba-4287-a1cf-fe5b4493e9fa",
+          "command_id": "5bcfef5f-db71-4e03-8145-513ffb5cae66",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -1088,7 +1091,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "a4f62814-3c9c-4d01-8c57-f7fa0482d175",
+      "command_id": "4ad23ec6-5a2a-4a33-9476-41a3173741a7",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1118,11 +1121,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 1,
           "previous_version": null,
           "journal_seq": 44,
-          "command_id": "a4f62814-3c9c-4d01-8c57-f7fa0482d175",
+          "command_id": "4ad23ec6-5a2a-4a33-9476-41a3173741a7",
           "operation": "create",
           "reason": null,
           "reason_origin": null,
@@ -1145,7 +1148,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "f0e1c8a6-8053-406f-9f18-9a53609b593c",
+      "command_id": "206c6812-1203-4a9d-8202-cfeb61099fda",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1175,11 +1178,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 2,
           "previous_version": 1,
           "journal_seq": 45,
-          "command_id": "f0e1c8a6-8053-406f-9f18-9a53609b593c",
+          "command_id": "206c6812-1203-4a9d-8202-cfeb61099fda",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -1202,7 +1205,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "bd503061-dc3a-4fb5-be87-a9ddb72fce75",
+      "command_id": "02e3fc5d-8316-47a1-b1d2-691d946b7a58",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1232,11 +1235,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 3,
           "previous_version": 2,
           "journal_seq": 46,
-          "command_id": "bd503061-dc3a-4fb5-be87-a9ddb72fce75",
+          "command_id": "02e3fc5d-8316-47a1-b1d2-691d946b7a58",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -1259,7 +1262,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "fc21430b-5b9e-4882-b0ac-6c3bc8e15a66",
+      "command_id": "bebeb987-2946-4103-a5e1-cc42e03fe19a",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1289,11 +1292,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 4,
           "previous_version": 3,
           "journal_seq": 47,
-          "command_id": "fc21430b-5b9e-4882-b0ac-6c3bc8e15a66",
+          "command_id": "bebeb987-2946-4103-a5e1-cc42e03fe19a",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -1316,7 +1319,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "c9aa5882-162e-4cdb-ba4a-3d17a11c5abd",
+      "command_id": "a33964d2-72c8-4727-bd1c-fd0e65d70034",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1346,11 +1349,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 5,
           "previous_version": 4,
           "journal_seq": 48,
-          "command_id": "c9aa5882-162e-4cdb-ba4a-3d17a11c5abd",
+          "command_id": "a33964d2-72c8-4727-bd1c-fd0e65d70034",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",
@@ -1373,7 +1376,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "1b48699e-8a3d-4d1e-b409-75eeec20f2bb",
+      "command_id": "790f054e-e11d-42cb-b581-30e484876f37",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1403,11 +1406,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 6,
           "previous_version": 5,
           "journal_seq": 49,
-          "command_id": "1b48699e-8a3d-4d1e-b409-75eeec20f2bb",
+          "command_id": "790f054e-e11d-42cb-b581-30e484876f37",
           "operation": "remove",
           "reason": "Operator removal",
           "reason_origin": "automatic",
@@ -1430,7 +1433,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "dead646c-b9d4-4b78-a1db-e20a723a0b93",
+      "command_id": "1d6c6d1d-e5a7-437e-bdad-4b8720619272",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1460,11 +1463,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 7,
           "previous_version": 6,
           "journal_seq": 50,
-          "command_id": "dead646c-b9d4-4b78-a1db-e20a723a0b93",
+          "command_id": "1d6c6d1d-e5a7-437e-bdad-4b8720619272",
           "operation": "restore",
           "reason": "Operator restoration",
           "reason_origin": "automatic",
@@ -1487,7 +1490,7 @@
     },
     {
       "schema_version": 1,
-      "command_id": "8882b943-242f-45ed-9ee4-e37ffe9d0df5",
+      "command_id": "f5ecfcfa-0a37-403d-86df-3c9cbfa8f033",
       "saved_records": [
         {
           "schema_version": 1,
@@ -1517,11 +1520,11 @@
             "prep_lead_minutes": 0,
             "conference_id": null
           },
-          "record_id": "4ce072e7-3d83-4ab1-b1c8-59469cc5dab7",
+          "record_id": "9e842677-b4ea-4190-8089-e99e2fd64466",
           "version": 8,
           "previous_version": 7,
           "journal_seq": 51,
-          "command_id": "8882b943-242f-45ed-9ee4-e37ffe9d0df5",
+          "command_id": "f5ecfcfa-0a37-403d-86df-3c9cbfa8f033",
           "operation": "update",
           "reason": "Operator correction",
           "reason_origin": "automatic",

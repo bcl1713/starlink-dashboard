@@ -202,3 +202,19 @@ it('rejects corrupt command observations without accepting them as progress', ()
   expect(loadProgress(storage, identity).error).toContain('invalid');
   expect(storage.getItem(entryKey)).toContain('not-a-request');
 });
+
+it('quarantines retained archive reports from another epoch without accepting file success flags', async () => {
+  const fixture = await import('@/test/training-archive-fixtures');
+  const storage = memory();
+  const progress = createProgress(fixture.identity);
+  const raw = structuredClone(fixture.observation('empty'));
+  raw.report.identity.epoch = 'foreign';
+  saveProgress(storage, progress);
+  const key = [...storage.values.keys()][0];
+  storage.setItem(
+    key,
+    JSON.stringify({ ...progress, archiveObservations: [raw] })
+  );
+  expect(loadProgress(storage, fixture.identity).progress).toBeNull();
+  expect(loadProgress(storage, fixture.identity).error).toBeTruthy();
+});

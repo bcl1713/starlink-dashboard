@@ -1,9 +1,9 @@
 {
-  "candidateSha": "85d516448f1a3ec289a0f541d7586f80aae8ed04",
+  "candidateSha": "4ea5876a98078550298ccf1fce3a35196d204125",
   "checksPassed": true,
   "archiveInspection": {
     "synthetic": true,
-    "zipSha256": "d41e0564cd67a8d79553c058bde4836f78ac6e5221c993ea74b7c45aae5e64f4",
+    "zipSha256": "bc2c964bb64a07470b57b7437299e01b2c5066a774379dde1b2a42b9b860f88a",
     "pdfPath": "exports/mission/Training mission \u00b7 Fictional Meridian 21-brief.pdf",
     "pdfSha256": "1808010c28756b2ef3c8c417ff441b767a0f393f2ffb074d43c284663fe50658",
     "pdfPages": 2,
@@ -38,6 +38,128 @@
       "telemetry/legs/002/manifest.json",
       "telemetry/legs/002/observations.csv",
       "telemetry/manifest.json"
+    ],
+    "checksumReads": [
+      {
+        "path": "operations/activity.jsonl",
+        "expected": "436500cd1e362882b6e575f9d7a35f5dbb15e7f3047ddd4e99ae1ae6202a5217",
+        "actual": "436500cd1e362882b6e575f9d7a35f5dbb15e7f3047ddd4e99ae1ae6202a5217"
+      },
+      {
+        "path": "operations/audit.jsonl",
+        "expected": "1759e77f09dc664673e120d671a8a654628fa547041d95dc53cb94060c19929f",
+        "actual": "1759e77f09dc664673e120d671a8a654628fa547041d95dc53cb94060c19929f"
+      },
+      {
+        "path": "operations/current.json",
+        "expected": "8ea103fec3d1bf17795885bc9951a7b22c403ec5f65acaab3677112e7c9b79dc",
+        "actual": "8ea103fec3d1bf17795885bc9951a7b22c403ec5f65acaab3677112e7c9b79dc"
+      },
+      {
+        "path": "operations/events.json",
+        "expected": "a6ba4aeb0cbf46ee7adfe4620013a85ebbe90c9ebee8fa9611028ec22b6c1f33",
+        "actual": "a6ba4aeb0cbf46ee7adfe4620013a85ebbe90c9ebee8fa9611028ec22b6c1f33"
+      },
+      {
+        "path": "operations/handover.txt",
+        "expected": "c31870a9fd0a8c4be46908ee55f41a965901420f6bf6bc05a0c650622c06fba5",
+        "actual": "c31870a9fd0a8c4be46908ee55f41a965901420f6bf6bc05a0c650622c06fba5"
+      },
+      {
+        "path": "operations/journal.json",
+        "expected": "bf78a218529d52f739a0c119c05dc7483272f4962d4047b4f18be62804636957",
+        "actual": "bf78a218529d52f739a0c119c05dc7483272f4962d4047b4f18be62804636957"
+      },
+      {
+        "path": "operations/manifest.json",
+        "expected": "9eddda163b0ddf8646cc7cd05213a5261dbf8d0babb38b5b750dcff4ef535479",
+        "actual": "9eddda163b0ddf8646cc7cd05213a5261dbf8d0babb38b5b750dcff4ef535479"
+      },
+      {
+        "path": "telemetry/legs/001/events.csv",
+        "expected": "2883df050fd26d69cb0f05b46824d1ab52da044663312e2169177bc7a90d2200",
+        "actual": "2883df050fd26d69cb0f05b46824d1ab52da044663312e2169177bc7a90d2200"
+      },
+      {
+        "path": "telemetry/legs/001/manifest.json",
+        "expected": "773c4c53a38ac9d96521d0ca8789bebcd298c4e20cd4082b6091860e2129669b",
+        "actual": "773c4c53a38ac9d96521d0ca8789bebcd298c4e20cd4082b6091860e2129669b"
+      },
+      {
+        "path": "telemetry/legs/001/observations.csv",
+        "expected": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b",
+        "actual": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b"
+      },
+      {
+        "path": "telemetry/legs/002/events.csv",
+        "expected": "8f31eec7a6fc68d7b21adbd1f02aa9795f7cf9d86ed613ed999c76bdc14abf67",
+        "actual": "8f31eec7a6fc68d7b21adbd1f02aa9795f7cf9d86ed613ed999c76bdc14abf67"
+      },
+      {
+        "path": "telemetry/legs/002/manifest.json",
+        "expected": "1c58ff58856143e2df5659753f41af6a4a999e199aeee9c80ae8ccbfcc07865b",
+        "actual": "1c58ff58856143e2df5659753f41af6a4a999e199aeee9c80ae8ccbfcc07865b"
+      },
+      {
+        "path": "telemetry/legs/002/observations.csv",
+        "expected": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87",
+        "actual": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87"
+      },
+      {
+        "path": "telemetry/manifest.json",
+        "expected": "f07808dbffd78b46b858a49ed9a83b3826148c06d4e1b91c5f983ad7b4e49af2",
+        "actual": "f07808dbffd78b46b858a49ed9a83b3826148c06d4e1b91c5f983ad7b4e49af2"
+      },
+      {
+        "path": "operations/activity.jsonl",
+        "expected": "436500cd1e362882b6e575f9d7a35f5dbb15e7f3047ddd4e99ae1ae6202a5217",
+        "actual": "436500cd1e362882b6e575f9d7a35f5dbb15e7f3047ddd4e99ae1ae6202a5217"
+      },
+      {
+        "path": "operations/audit.jsonl",
+        "expected": "1759e77f09dc664673e120d671a8a654628fa547041d95dc53cb94060c19929f",
+        "actual": "1759e77f09dc664673e120d671a8a654628fa547041d95dc53cb94060c19929f"
+      },
+      {
+        "path": "operations/current.json",
+        "expected": "8ea103fec3d1bf17795885bc9951a7b22c403ec5f65acaab3677112e7c9b79dc",
+        "actual": "8ea103fec3d1bf17795885bc9951a7b22c403ec5f65acaab3677112e7c9b79dc"
+      },
+      {
+        "path": "operations/events.json",
+        "expected": "a6ba4aeb0cbf46ee7adfe4620013a85ebbe90c9ebee8fa9611028ec22b6c1f33",
+        "actual": "a6ba4aeb0cbf46ee7adfe4620013a85ebbe90c9ebee8fa9611028ec22b6c1f33"
+      },
+      {
+        "path": "operations/handover.txt",
+        "expected": "c31870a9fd0a8c4be46908ee55f41a965901420f6bf6bc05a0c650622c06fba5",
+        "actual": "c31870a9fd0a8c4be46908ee55f41a965901420f6bf6bc05a0c650622c06fba5"
+      },
+      {
+        "path": "operations/journal.json",
+        "expected": "bf78a218529d52f739a0c119c05dc7483272f4962d4047b4f18be62804636957",
+        "actual": "bf78a218529d52f739a0c119c05dc7483272f4962d4047b4f18be62804636957"
+      },
+      {
+        "path": "telemetry/legs/001/events.csv",
+        "expected": "2883df050fd26d69cb0f05b46824d1ab52da044663312e2169177bc7a90d2200",
+        "actual": "2883df050fd26d69cb0f05b46824d1ab52da044663312e2169177bc7a90d2200"
+      },
+      {
+        "path": "telemetry/legs/001/observations.csv",
+        "expected": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b",
+        "actual": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b"
+      },
+      {
+        "path": "telemetry/legs/002/events.csv",
+        "expected": "8f31eec7a6fc68d7b21adbd1f02aa9795f7cf9d86ed613ed999c76bdc14abf67",
+        "actual": "8f31eec7a6fc68d7b21adbd1f02aa9795f7cf9d86ed613ed999c76bdc14abf67"
+      },
+      {
+        "path": "telemetry/legs/002/observations.csv",
+        "expected": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87",
+        "actual": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87"
+      }
     ],
     "telemetry": [
       {

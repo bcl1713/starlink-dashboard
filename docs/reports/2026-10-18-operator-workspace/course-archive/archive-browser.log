@@ -1,8 +1,8 @@
 
 Running 1 test using 1 worker
 
-(node:1242364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:1436302) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  1 tests/e2e/operator-training-archive.spec.ts:39:1 › original training mission ZIP transfers through Missions without restoring Operator records (38.9s)
+  ✓  1 tests/e2e/operator-training-archive.spec.ts:40:1 › original training mission ZIP transfers through Missions without restoring Operator records (38.5s)
 
-  1 passed (39.6s)
+  1 passed (39.3s)

@@ -1053,6 +1053,100 @@ scripts/operator-training.sh archive-inputs --root /tmp/operator-learner</pre
           replace an existing journal. Report an import validation failure or
           missing dependency honestly and use the normal retry/cancel path.
         </p>
+        <h3>Verify the private archive exercise</h3>
+        <p>
+          Cancel a preparation before its first completed download, then retry
+          through Missions and keep the original ZIP. In a managed cloud
+          environment, use the launcher's <code>--relay</code> option and
+          preserve the configured Docker daemon/context. The main training
+          instance and import destination must be the marked private instances.
+        </p>
+        <p>
+          Use your existing private root below. Replace
+          <code>SOURCE_PORT</code> with the printed source port, or replace the
+          whole origin with the source browser's actual scheme, host and port.
+          The checker uses the existing backend Python requirements, including
+          the PDF reader.
+        </p>
+        <pre>
+operator_training_root=/tmp/operator-learner
+operator_training_origin=http://127.0.0.1:SOURCE_PORT
+scripts/operator-training.sh import-start --root "$operator_training_root"</pre
+        >
+        <ol>
+          <li>
+            Open the printed import-destination address. Before importing
+            anything, capture its empty journal baseline:
+          </li>
+        </ol>
+        <pre>
+timeout --kill-after=10s 5m uv run --python 3.11 \
+  --with-requirements backend/starlink-location/requirements-dev.txt \
+  python tools/training/operator-mission/archive_evidence.py baseline \
+  --root "$operator_training_root" --label empty \
+  --browser-origin "$operator_training_origin"</pre
+        >
+        <ol start="2">
+          <li>
+            Use the destination's normal Missions → Import Mission controls to
+            import the unchanged original ZIP. Then compare it with the
+            baseline:
+          </li>
+        </ol>
+        <pre>
+timeout --kill-after=10s 5m uv run --python 3.11 \
+  --with-requirements backend/starlink-location/requirements-dev.txt \
+  python tools/training/operator-mission/archive_evidence.py check \
+  --root "$operator_training_root" --label empty \
+  --browser-origin "$operator_training_origin"</pre
+        >
+        <ol start="3">
+          <li>
+            In the destination's Operator workspace, save a clearly fictional
+            note. Capture a new baseline with <code>--label nonempty</code>,
+            re-import the same ZIP through Missions, then run
+            <code>check</code> with <code>--label nonempty</code>. Each check
+            prints its JSON report and original extracted PDF paths.
+          </li>
+          <li>
+            Back in the source's T10 guide, select the original browser download
+            and both generated <code>archive-evidence-empty.json</code> and
+            <code>archive-evidence-nonempty.json</code> files. Choose
+            <strong>Check selected archive evidence</strong>. If the browser is
+            on another computer, transfer the two JSON reports using your normal
+            file manager.
+          </li>
+          <li>
+            Review the four automatic outcomes labeled
+            <strong>Verified from imported tooling evidence</strong>. The guide
+            independently hashes the actual selected ZIP and compares the
+            archived source revisions with fresh backend history. Reload and use
+            Check current evidence to revalidate retained facts.
+          </li>
+          <li>
+            Open the actual extracted original PDF before recording its
+            human-review observation. Record a client-visible export failure
+            only after observing that failure and its recovery. Cancellation
+            alone does not establish a network failure. These two human
+            observations remain separate from automatic file/journal checks.
+          </li>
+          <li>
+            Stop the disposable destination as soon as its exercise finishes:
+          </li>
+        </ol>
+        <pre>
+scripts/operator-training.sh import-stop --root "$operator_training_root"</pre
+        >
+        <p>
+          The checker reads the existing ready server archive and does not
+          export again, replace a journal or generate a new PDF. The
+          browser-selected ZIP must have identical bytes. If checking on the
+          same computer, an optional
+          <code>--zip /path/to/original.zip</code> selects the original download
+          directly. Private checker limits are 64 MiB per ZIP and 4 MiB per
+          report; these do not change the normal Missions export/import
+          workflow.
+        </p>
       </section>
       <section id="training">
         <h2>14. Private guided mission</h2>
@@ -1172,7 +1266,10 @@ scripts/operator-training.sh start --root /tmp/operator-learner</pre
           evidence reads authoritative records, complete histories, events and
           replay state. Missing, stale or unavailable evidence is not all-clear.
           Human observations are explicitly recorded as such and are separate
-          from machine-verified outcomes.
+          from machine-verified outcomes. Imported archive reports use a
+          separate “Verified from imported tooling evidence” label after a fresh
+          source-history check; they do not establish human PDF review or an
+          observed client failure.
         </p>
         <p>
           A flight exercise can retain its original replay and source-read facts

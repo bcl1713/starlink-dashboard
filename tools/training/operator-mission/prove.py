@@ -39,6 +39,7 @@ def main():
         OPERATOR_TRAINING_ORIGIN=f'http://127.0.0.1:{training.ownership["port"]}',
         OPERATOR_TRAINING_PROOF_ROOT=str(root),
         OPERATOR_TRAINING_TEST_SOURCE=str(launcher.SOURCE),
+        OPERATOR_TRAINING_PYTHON=sys.executable,
         PLAYWRIGHT_BROWSERS_PATH=os.environ.get(
             "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
         ),
