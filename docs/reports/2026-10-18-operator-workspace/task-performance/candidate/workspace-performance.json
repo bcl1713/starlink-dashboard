@@ -1,0 +1,1453 @@
+{
+  "synthetic": true,
+  "mode": "candidate",
+  "measurements": [
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Create planned call",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 435.33396500000003,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391973135.978,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.164,
+            "responseStart": 8.547,
+            "responseEnd": 9.566
+          },
+          "commandId": "74110564-6553-4d15-a88b-41cecf9d7813"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Reschedule same call",
+      "activations": 5,
+      "textEdits": 1,
+      "selectors": 1,
+      "keypresses": 0,
+      "elapsedMs": 628.3940449999998,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391973819.237,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.14,
+            "responseStart": 9.188,
+            "responseEnd": 10.144
+          },
+          "commandId": "6e7457fb-f23f-43bc-a596-2671df85f5da"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Inspect original and replacement history",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 307.1326519999998,
+      "writes": [],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Log mission note",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 607.1145000000001,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391974764.3372,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.166,
+            "responseStart": 7.996,
+            "responseEnd": 8.972
+          },
+          "commandId": "701c7f03-b060-48fe-8c93-0a6954b76208"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Log issue",
+      "activations": 3,
+      "textEdits": 1,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 463.19417599999997,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391975193.312,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.177,
+            "responseStart": 8.445,
+            "responseEnd": 9.36
+          },
+          "commandId": "b4b23268-c8ec-4b2a-80b3-80f92c08d8cb"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Resolve issue",
+      "activations": 1,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 91.16190499999993,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391975300.895,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.092,
+            "responseStart": 7.588,
+            "responseEnd": 8.365
+          },
+          "commandId": "59a58734-59d7-438c-9c6b-bb2b49a729f4"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Change shared display history window",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 1,
+      "keypresses": 1,
+      "elapsedMs": 560.0524060000002,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391975689.198,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.176,
+            "responseStart": 3.048,
+            "responseEnd": 3.972
+          },
+          "windowSeconds": 900
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Recover response loss with exact retry",
+      "activations": 4,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 631.6048379999993,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391976494.572,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.2,
+            "responseStart": 3.284,
+            "responseEnd": 7.763
+          },
+          "commandId": "d211a4c9-4336-45e2-86c3-3c0727e899b8"
+        }
+      ],
+      "recoveryActions": 1,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Create planned call",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 286.98595100000057,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391981001.7122,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.121,
+            "responseStart": 8.784,
+            "responseEnd": 9.685
+          },
+          "commandId": "e5639098-fcbb-45d3-822f-3d1535dd4614"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Reschedule same call",
+      "activations": 5,
+      "textEdits": 1,
+      "selectors": 1,
+      "keypresses": 0,
+      "elapsedMs": 506.8443499999994,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391981511.572,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.109,
+            "responseStart": 9.177,
+            "responseEnd": 9.985
+          },
+          "commandId": "b6fa2dcd-bea8-4b11-8941-7ac133df4356"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Inspect original and replacement history",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 317.63330199999837,
+      "writes": [],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Log mission note",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 502.4542279999987,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391982363.43,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.111,
+            "responseStart": 7.59,
+            "responseEnd": 8.361
+          },
+          "commandId": "86b79b80-4468-423a-958d-4bf86d1bce34"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Log issue",
+      "activations": 3,
+      "textEdits": 1,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 445.45334100000036,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391982776.324,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.171,
+            "responseStart": 7.639,
+            "responseEnd": 8.615
+          },
+          "commandId": "f32ff249-4b6d-4717-8ff6-03b300cdace9"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Resolve issue",
+      "activations": 1,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 89.27410000000054,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391982880.413,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.104,
+            "responseStart": 7.911,
+            "responseEnd": 8.835
+          },
+          "commandId": "bf0a7e94-641b-4617-82fc-cca20809eff9"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Change shared display history window",
+      "activations": 3,
+      "textEdits": 0,
+      "selectors": 1,
+      "keypresses": 1,
+      "elapsedMs": 602.6271930000003,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391983305.2502,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.142,
+            "responseStart": 2.059,
+            "responseEnd": 2.835
+          },
+          "windowSeconds": 1800
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Recover response loss with exact retry",
+      "activations": 4,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 507.2764650000008,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391983992.943,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.155,
+            "responseStart": 2.861,
+            "responseEnd": 6.009
+          },
+          "commandId": "e30ceeb5-682b-4471-b477-6a60e755d3f0"
+        }
+      ],
+      "recoveryActions": 1,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Create planned call",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 406.8842339999992,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391988417.421,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.107,
+            "responseStart": 8.49,
+            "responseEnd": 9.34
+          },
+          "commandId": "15ffa7f3-97f1-474c-b5ed-ea3d3bbb749f"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Reschedule same call",
+      "activations": 5,
+      "textEdits": 1,
+      "selectors": 1,
+      "keypresses": 0,
+      "elapsedMs": 509.1806550000001,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391988929.166,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.124,
+            "responseStart": 8.457,
+            "responseEnd": 9.316
+          },
+          "commandId": "90d82bb1-1f34-4481-959f-bea4bb817388"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Inspect original and replacement history",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 316.7933489999996,
+      "writes": [],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Log mission note",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 502.59695999999894,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391989779.433,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.109,
+            "responseStart": 8.82,
+            "responseEnd": 9.691
+          },
+          "commandId": "b0cb5e68-da94-4b62-a4cf-ea634acd6436"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Log issue",
+      "activations": 3,
+      "textEdits": 1,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 421.3300240000026,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391990192.7222,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.185,
+            "responseStart": 7.992,
+            "responseEnd": 8.913
+          },
+          "commandId": "23b9bb3b-ee78-4146-bf31-3f1bf3047cac"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Resolve issue",
+      "activations": 1,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 96.19914000000063,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391990280.5012,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.1,
+            "responseStart": 7.456,
+            "responseEnd": 8.239
+          },
+          "commandId": "79408fa8-af5c-4a5f-9572-26c85150f098"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Change shared display history window",
+      "activations": 3,
+      "textEdits": 0,
+      "selectors": 1,
+      "keypresses": 1,
+      "elapsedMs": 588.7375950000023,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391990697.6619,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.145,
+            "responseStart": 1.918,
+            "responseEnd": 2.68
+          },
+          "windowSeconds": 900
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Recover response loss with exact retry",
+      "activations": 4,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 507.05883899999753,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391991376.2068,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.157,
+            "responseStart": 2.714,
+            "responseEnd": 5.902
+          },
+          "commandId": "f529e5cc-6c1f-40ff-b536-033a679d763f"
+        }
+      ],
+      "recoveryActions": 1,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Create planned call",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 416.1457159999991,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391995733.284,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.128,
+            "responseStart": 8.13,
+            "responseEnd": 9.269
+          },
+          "commandId": "e3542c5a-b63a-4fc6-8d80-d504ad01e37c"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Reschedule same call",
+      "activations": 5,
+      "textEdits": 1,
+      "selectors": 1,
+      "keypresses": 0,
+      "elapsedMs": 690.7116449999994,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391996413.74,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.138,
+            "responseStart": 8.815,
+            "responseEnd": 9.769
+          },
+          "commandId": "fdea6aa5-8abb-4f80-a1ba-3308c0a19340"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Inspect original and replacement history",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 338.3963619999995,
+      "writes": [],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Log mission note",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 533.4294699999991,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391997330.436,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.119,
+            "responseStart": 8.356,
+            "responseEnd": 9.175
+          },
+          "commandId": "a635e900-2c8c-4ec0-968b-1953d3e48c00"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Log issue",
+      "activations": 3,
+      "textEdits": 1,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 466.7237630000018,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391997794.881,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.134,
+            "responseStart": 8.426,
+            "responseEnd": 9.455
+          },
+          "commandId": "1af8ace0-9ba1-4b8f-8e58-00a3df634423"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Resolve issue",
+      "activations": 1,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 132.74705499999982,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391997913.3599,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.104,
+            "responseStart": 7.49,
+            "responseEnd": 8.263
+          },
+          "commandId": "4b9b7a13-0043-4ee9-a80b-e3569d5e2a4d"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Change shared display history window",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 1,
+      "keypresses": 1,
+      "elapsedMs": 664.9647899999982,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792391998309.9712,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.145,
+            "responseStart": 2.463,
+            "responseEnd": 3.231
+          },
+          "windowSeconds": 1800
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "task": "Recover response loss with exact retry",
+      "activations": 4,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 680.4518500000013,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792391999259.405,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.187,
+            "responseStart": 3.022,
+            "responseEnd": 6.511
+          },
+          "commandId": "c3d38157-e93a-4ed6-a253-2a3bb0672bb1"
+        }
+      ],
+      "recoveryActions": 1,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Create planned call",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 331.19034199999805,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392000175.5212,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.157,
+            "responseStart": 8.245,
+            "responseEnd": 9.247
+          },
+          "commandId": "ba58ae19-1ef9-4ff2-be0f-aaeda1d8f0bd"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Reschedule same call",
+      "activations": 5,
+      "textEdits": 1,
+      "selectors": 1,
+      "keypresses": 0,
+      "elapsedMs": 523.8679049999992,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792392000710.9111,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.129,
+            "responseStart": 9.13,
+            "responseEnd": 10.118
+          },
+          "commandId": "219def4b-0b7f-4a39-b002-377a98f22e19"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Inspect original and replacement history",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 310.41359100000045,
+      "writes": [],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Log mission note",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 507.0346189999982,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392001564.072,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.112,
+            "responseStart": 9.253,
+            "responseEnd": 10.181
+          },
+          "commandId": "ef68fc45-bfbf-4bf6-90a7-035c194d4f11"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Log issue",
+      "activations": 3,
+      "textEdits": 1,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 440.24867900000027,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392001976.3481,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.164,
+            "responseStart": 7.849,
+            "responseEnd": 8.732
+          },
+          "commandId": "c3787e27-96b5-4d9b-90a2-e5d0bcc2a101"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Resolve issue",
+      "activations": 1,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 91.45518499999889,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792392002079.547,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.143,
+            "responseStart": 7.697,
+            "responseEnd": 8.56
+          },
+          "commandId": "7b25e0ce-4435-4798-b749-f372d80ae685"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Change shared display history window",
+      "activations": 3,
+      "textEdits": 0,
+      "selectors": 1,
+      "keypresses": 1,
+      "elapsedMs": 594.9028749999998,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792392002497.022,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.167,
+            "responseStart": 2.138,
+            "responseEnd": 3.004
+          },
+          "windowSeconds": 900
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "task": "Recover response loss with exact retry",
+      "activations": 4,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 522.2271820000024,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392003192.8481,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.172,
+            "responseStart": 3.335,
+            "responseEnd": 7.038
+          },
+          "commandId": "28e1f7da-56c8-4215-aec5-de5025ea653c"
+        }
+      ],
+      "recoveryActions": 1,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Create planned call",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 451.93453699999736,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392004203.355,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.199,
+            "responseStart": 10.465,
+            "responseEnd": 11.721
+          },
+          "commandId": "1dbafc85-f9ca-4a82-ae50-309a419e8a5d"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Reschedule same call",
+      "activations": 5,
+      "textEdits": 1,
+      "selectors": 1,
+      "keypresses": 0,
+      "elapsedMs": 517.8460520000044,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792392004778.059,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.167,
+            "responseStart": 8.185,
+            "responseEnd": 9.031
+          },
+          "commandId": "7d37a5d7-6b21-4424-a1a4-fabb2cb1c2ef"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Inspect original and replacement history",
+      "activations": 2,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 312.78990099999646,
+      "writes": [],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Log mission note",
+      "activations": 2,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 503.7164069999999,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392005629.168,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.141,
+            "responseStart": 8.838,
+            "responseEnd": 9.843
+          },
+          "commandId": "f76985c9-3445-454f-8b37-dcdb21e66acf"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Log issue",
+      "activations": 3,
+      "textEdits": 1,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 450.55197000000044,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392006043.427,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.133,
+            "responseStart": 7.758,
+            "responseEnd": 8.782
+          },
+          "commandId": "5ecc40bc-ceb2-4e75-b7db-13f1bf78a20b"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Resolve issue",
+      "activations": 1,
+      "textEdits": 0,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 104.5080369999996,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792392006163.9739,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.127,
+            "responseStart": 7.733,
+            "responseEnd": 8.82
+          },
+          "commandId": "cdc5ff16-320c-4db9-a3d3-770ad7a2e597"
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Change shared display history window",
+      "activations": 3,
+      "textEdits": 0,
+      "selectors": 1,
+      "keypresses": 1,
+      "elapsedMs": 573.9961540000004,
+      "writes": [
+        {
+          "status": 200,
+          "timing": {
+            "startTime": 1792392006572.963,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.178,
+            "responseStart": 2.275,
+            "responseEnd": 3.134
+          },
+          "windowSeconds": 1800
+        }
+      ],
+      "recoveryActions": 0,
+      "outcome": "authoritative receipt and visible UI asserted"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "task": "Recover response loss with exact retry",
+      "activations": 4,
+      "textEdits": 2,
+      "selectors": 0,
+      "keypresses": 0,
+      "elapsedMs": 559.9500439999974,
+      "writes": [
+        {
+          "status": 201,
+          "timing": {
+            "startTime": 1792392007309.479,
+            "domainLookupStart": -1,
+            "domainLookupEnd": -1,
+            "connectStart": -1,
+            "secureConnectionStart": -1,
+            "connectEnd": -1,
+            "requestStart": 0.164,
+            "responseStart": 3.028,
+            "responseEnd": 6.295
+          },
+          "commandId": "3603669c-2caf-414f-b123-79bfb72ba710"
+        }
+      ],
+      "recoveryActions": 1,
+      "outcome": "authoritative receipt and visible UI asserted"
+    }
+  ],
+  "scope": "Scripted matching task outcomes; automatic scrolling and instantaneous text fills are included. Not human timing, mis-selection or physical-device evidence.",
+  "budgets": {
+    "ordinaryTaskMs": 5000,
+    "injectedRecoveryTaskMs": 10000
+  },
+  "humanMisSelections": null,
+  "physicalKeyboard": "pending human observation"
+}

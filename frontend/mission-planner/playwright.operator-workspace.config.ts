@@ -5,7 +5,10 @@ if (!process.env.OPERATOR_ACCEPTANCE_ORIGIN)
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'operator-workspace.spec.ts',
+  testMatch: [
+    'operator-workspace.spec.ts',
+    'operator-workspace-release.spec.ts',
+  ],
   workers: 1,
   retries: 0,
   timeout: 240_000,

@@ -47,7 +47,7 @@ finally:
 """
 
 
-def qualify(owner, *, workspace=False, fresh=False, performance=None):
+def qualify(owner, *, workspace=False, fresh=False, performance=None, release=None):
     fixtures = (
         [] if fresh else [build_workspace_fixture(seed) for seed in ("normal", "busy")]
     )
@@ -76,8 +76,9 @@ def qualify(owner, *, workspace=False, fresh=False, performance=None):
         "npm_config_offline": "true",
         "npm_config_update_notifier": "false",
         "OPERATOR_BENCHMARK_MODE": performance or "",
+        "OPERATOR_RELEASE_MODE": release or "",
     }
-    if performance:
+    if performance or release:
         browser_source = (
             ROOT / "frontend/mission-planner/tests/e2e/operator-workspace.spec.ts"
         )
@@ -86,6 +87,14 @@ def qualify(owner, *, workspace=False, fresh=False, performance=None):
                 ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30
             ).strip(),
             "testSha256": hashlib.sha256(browser_source.read_bytes()).hexdigest(),
+            "releaseTestSha256": hashlib.sha256(
+                (
+                    ROOT
+                    / "frontend/mission-planner/tests/e2e/operator-workspace-release.spec.ts"
+                ).read_bytes()
+            ).hexdigest()
+            if release
+            else None,
             "scope": "External scripted qualification source; runtime images retain their own exact candidate SHA",
         }
         owner.persist()
@@ -101,7 +110,9 @@ def qualify(owner, *, workspace=False, fresh=False, performance=None):
             "--config",
             "playwright.operator-workspace.config.ts",
             "--grep",
-            "performance:"
+            "release gate:"
+            if release
+            else "performance:"
             if performance
             else "fresh install"
             if fresh
@@ -113,6 +124,8 @@ def qualify(owner, *, workspace=False, fresh=False, performance=None):
         cwd=ROOT / "frontend/mission-planner",
         env=env,
     )
+    if release:
+        return json.loads((owner.root / "workspace-release.json").read_text())
     if performance:
         return json.loads((owner.root / "workspace-performance.json").read_text())
     if fresh:
@@ -177,15 +190,21 @@ if __name__ == "__main__":
         type=Path,
         help="Clean isolated baseline checkout; only valid for baseline measurements",
     )
+    parser.add_argument(
+        "--release",
+        choices=["baseline", "candidate"],
+        help="Profile sixty-second idle windows and rehearse candidate backout",
+    )
     args = parser.parse_args()
-    if args.performance:
-        if args.fresh or args.workspace:
+    measurement_mode = args.performance or args.release
+    if measurement_mode:
+        if args.fresh or args.workspace or (args.performance and args.release):
             parser.error("Use one qualification mode")
         harness_sha = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30
         ).strip()
         journal.validate_candidate(ROOT, harness_sha)
-        if args.performance == "baseline":
+        if measurement_mode == "baseline":
             baseline = json.loads((Path(__file__).parent / "parity.json").read_text())[
                 "baseline_sha"
             ]
@@ -194,7 +213,7 @@ if __name__ == "__main__":
                     "Original baseline measurements require the frozen baseline SHA and its isolated clean checkout"
                 )
     if args.runtime_repository:
-        if args.performance != "baseline":
+        if measurement_mode != "baseline":
             parser.error(
                 "A separate runtime repository is only valid for the original baseline"
             )
@@ -213,6 +232,7 @@ if __name__ == "__main__":
                     workspace=args.workspace,
                     fresh=args.fresh,
                     performance=args.performance,
+                    release=args.release,
                 ),
             ),
             indent=2,
