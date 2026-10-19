@@ -1,4 +1,8 @@
 import {
+  decodeRecoveryObservation,
+  type RecoveryObservation,
+} from './trainingRecoveryEvidence';
+import {
   decodeConflictObservation,
   type ConflictObservation,
 } from './trainingConflictEvidence';
@@ -37,6 +41,7 @@ export interface ManualEvidence {
   note: string;
 }
 export interface TrainingObservations {
+  recoveryObservation?: RecoveryObservation;
   conflictObservations?: ConflictObservation[];
   clientObservations?: ClientObservation[];
   archiveObservations?: ArchiveObservation[];
@@ -96,6 +101,8 @@ function validProgress(
   )
     return false;
   try {
+    if (value.recoveryObservation !== undefined)
+      decodeRecoveryObservation(value.recoveryObservation, identity);
     if (value.conflictObservations !== undefined) {
       if (
         !Array.isArray(value.conflictObservations) ||

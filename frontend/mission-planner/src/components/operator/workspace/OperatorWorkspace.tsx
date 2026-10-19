@@ -1,4 +1,8 @@
 import {
+  collectRecoveryEvidence,
+  retainRecoveryObservation,
+} from '../training/trainingRecoveryEvidence';
+import {
   collectConflictEvidence,
   retainConflictObservations,
 } from '../training/trainingConflictEvidence';
@@ -600,6 +604,19 @@ export function OperatorWorkspace() {
                 checked.evidenceRecords,
                 conflictObservations
               );
+              const recoveryObservation = retainRecoveryObservation(
+                training.identity,
+                namespace,
+                previous.recoveryObservation,
+                workspace.tray
+              );
+              const recoveryOutcomes = collectRecoveryEvidence(
+                training.identity,
+                namespace,
+                checked.H,
+                checked.evidenceRecords,
+                recoveryObservation
+              );
               const clientOutcomes = collectClientEvidence(
                 training.identity,
                 namespace,
@@ -616,7 +633,7 @@ export function OperatorWorkspace() {
               );
               setCheckedTraining({
                 ...checked,
-                toolingOutcomes: archiveOutcomes,
+                toolingOutcomes: [...archiveOutcomes, ...recoveryOutcomes],
                 historicalOutcomes: [
                   ...conflictOutcomes,
                   ...clientOutcomes,
@@ -634,6 +651,7 @@ export function OperatorWorkspace() {
                     ...retryOutcomes,
                     ...journalOutcomes,
                     ...archiveOutcomes,
+                    ...recoveryOutcomes,
                     ...observed.outcomes,
                     ...currentReplayOutcomes,
                     ...historicalReplayOutcomes,
@@ -645,6 +663,7 @@ export function OperatorWorkspace() {
               });
               events.refresh();
               return {
+                recoveryObservation,
                 conflictObservations,
                 clientObservations,
                 retryObservations: retainedObservations,

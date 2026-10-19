@@ -19,8 +19,11 @@ def main():
     root = Path(sys.argv[1]).absolute()
     archive = sys.argv[2:] == ["--archive"]
     clients_only = sys.argv[2:] == ["--clients-only"]
-    if sys.argv[2:] and not (archive or clients_only):
-        raise ValueError("Use --archive, --clients-only, or the default guide proof")
+    recovery_only = sys.argv[2:] == ["--recovery-only"]
+    if sys.argv[2:] and not (archive or clients_only or recovery_only):
+        raise ValueError(
+            "Use --archive, --clients-only, --recovery-only, or the default guide proof"
+        )
     if not str(root).startswith("/tmp/issue-376-training-proof-"):
         raise ValueError("Explicit task-owned disposable proof root required")
     training = launcher.open_owner(root)
@@ -56,9 +59,13 @@ def main():
         "candidateSha": training.ownership["candidateSha"],
         "checksPassed": False,
         "scope": (
-            "clients-only"
-            if clients_only
-            else "course-archive" if archive else "guide-clients"
+            "recovery-only"
+            if recovery_only
+            else (
+                "clients-only"
+                if clients_only
+                else "course-archive" if archive else "guide-clients"
+            )
         ),
     }
     try:
@@ -97,7 +104,7 @@ def main():
                 indent=2,
             )
         )
-        if not clients_only:
+        if not (clients_only or recovery_only):
             runner.execute(
                 [
                     "timeout",
@@ -113,7 +120,12 @@ def main():
                 cwd=launcher.SOURCE / "frontend/mission-planner",
                 timeout=620,
             )
-        runner.env["OPERATOR_TRAINING_CLIENTS_ONLY"] = "true"
+        targeted = (
+            "OPERATOR_TRAINING_RECOVERY_ONLY"
+            if recovery_only
+            else "OPERATOR_TRAINING_CLIENTS_ONLY"
+        )
+        runner.env[targeted] = "true"
         runner.execute(
             [
                 "timeout",
@@ -129,7 +141,7 @@ def main():
             cwd=launcher.SOURCE / "frontend/mission-planner",
             timeout=380,
         )
-        runner.env.pop("OPERATOR_TRAINING_CLIENTS_ONLY")
+        runner.env.pop(targeted)
         if archive:
             runner.env["OPERATOR_TRAINING_RECORDS_ONLY"] = "true"
             runner.execute(

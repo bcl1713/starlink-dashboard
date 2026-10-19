@@ -76,3 +76,61 @@ def test_inspection_requires_private_fixture_and_owned_manifest(tmp_path, monkey
     load("scenario").mark_root(root)
     with pytest.raises(ValueError, match="private Operator root"):
         maintenance.inspect_backup(root, tmp_path / "elsewhere.json")
+
+
+@pytest.mark.parametrize("owned", [True, False])
+def test_offline_command_failure_reaps_only_verified_owned_survivor(owned):
+    import json
+
+    class Owner:
+        project = "starlink-operator-training-test"
+
+        def __init__(self):
+            self.ownership = {"trainingRootId": "private-root"}
+            self.calls = []
+            self.present = True
+
+        def persist(self):
+            self.calls.append("recorded")
+
+        def compose(self, *args):
+            assert self.calls == ["recorded"]
+            self.name = args[args.index("--name") + 1]
+            raise TimeoutError("native command timed out")
+
+        def execute(self, args, **kwargs):
+            self.calls.append(args)
+            if args[1:3] == ["container", "ls"]:
+                return "exact-container" if self.present else ""
+            if args[1] == "inspect":
+                return json.dumps(
+                    [
+                        {
+                            "Name": "/" + self.name,
+                            "Config": {
+                                "Labels": {
+                                    "com.docker.compose.project": self.project,
+                                    "operator.training.root": (
+                                        "private-root" if owned else "foreign"
+                                    ),
+                                }
+                            },
+                            "State": {"Running": True},
+                        }
+                    ]
+                )
+            if args[1] == "rm":
+                self.present = False
+            return ""
+
+    owner = Owner()
+    control = load("recovery_control")
+    with pytest.raises(TimeoutError if owned else ValueError):
+        control.native(owner, "restore", "/app/data/operator/backup.json", offline=True)
+    mutations = [
+        call[1]
+        for call in owner.calls
+        if isinstance(call, list) and call[1] in {"stop", "rm"}
+    ]
+    assert mutations == (["stop", "rm"] if owned else [])
+    assert owner.present is not owned

@@ -1,4 +1,6 @@
 import { TrainingArchiveFiles } from './TrainingArchiveFiles';
+import { TrainingRecoveryFile } from './TrainingRecoveryFile';
+import type { RecoveryObservation } from './trainingRecoveryEvidence';
 import type { ArchiveObservation } from './trainingArchiveEvidence';
 import { useState } from 'react';
 import {
@@ -65,12 +67,17 @@ function Guide({
     setProgress(next);
     setError(saveProgress(storage, next).error);
   }
-  async function check(archiveObservations?: ArchiveObservation[]) {
+  async function check(
+    archiveObservations?: ArchiveObservation[],
+    recoveryObservation?: RecoveryObservation
+  ) {
     if (!onCheckEvidence) return;
     setChecking(true);
     setCheckError(null);
     try {
       const observations = await onCheckEvidence({
+        recoveryObservation:
+          recoveryObservation ?? progress.recoveryObservation,
         conflictObservations: progress.conflictObservations ?? [],
         clientObservations: progress.clientObservations ?? [],
         retryObservations: progress.retryObservations ?? [],
@@ -143,6 +150,14 @@ function Guide({
             </select>
           </label>
           <TrainingStep stageId={step.id} evaluation={evaluation} />
+          {['T08', 'T11'].includes(step.id) && onCheckEvidence && (
+            <TrainingRecoveryFile
+              identity={identity}
+              checking={checking}
+              retained={progress.recoveryObservation}
+              onCheck={(value) => check(undefined, value)}
+            />
+          )}
           {step.id === 'T10' && onCheckEvidence && (
             <TrainingArchiveFiles
               identity={identity}

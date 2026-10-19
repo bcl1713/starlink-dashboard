@@ -26,8 +26,9 @@ not need it.
 
 This is an implementation candidate, not a fully accepted release. T01–T11
 remain honest about missing machine evidence and manual observations. At this
-checkpoint, the real conflict and backup/epoch adapters and remaining T11
-provider/field coverage are unfinished; full parity crosswalk, final performance/accessibility,
+checkpoint, real conflict recovery has three-size browser acceptance; the native
+backup/epoch adapters are implemented with their production browser run pending.
+Remaining T11 provider/field coverage is unfinished; full parity crosswalk, final performance/accessibility,
 mobile-keyboard checks and an actual uncoached person's walkthrough remain open.
 The original shell is still the default; `?workspace=1` selects the candidate.
 Do not interpret a green lesson or a passing browser test as human usability

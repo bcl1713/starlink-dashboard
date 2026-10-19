@@ -315,6 +315,9 @@ def main():
             "import-start",
             "import-stop",
             "archive-inputs",
+            "journal-check",
+            "journal-backup",
+            "journal-restore",
         ],
     )
     parser.add_argument("--root", required=True, type=Path)
@@ -331,6 +334,8 @@ def main():
         help="Use the existing owned relay for an isolated managed Docker namespace",
     )
     parser.add_argument("--stage", choices=list(scenario.CHECKPOINTS))
+    parser.add_argument("--manifest")
+    parser.add_argument("--browser-origin")
     args = parser.parse_args()
     root = args.root.absolute()
     destination = args.command.startswith("import-")
@@ -367,6 +372,23 @@ def main():
             validate(owner)
             owner.compose("restart", "starlink-location", timeout=120)
             print(json.dumps({"restarted": owner.project}))
+        elif args.command.startswith("journal-"):
+            spec = importlib.util.spec_from_file_location(
+                "operator_training_recovery_control",
+                Path(__file__).with_name("recovery_control.py"),
+            )
+            recovery = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(recovery)
+            print(
+                json.dumps(
+                    recovery.run(
+                        owner,
+                        args.command.removeprefix("journal-"),
+                        manifest=args.manifest,
+                        origin=args.browser_origin,
+                    )
+                )
+            )
         elif args.command == "archive-inputs":
             validate(owner)
             print(
