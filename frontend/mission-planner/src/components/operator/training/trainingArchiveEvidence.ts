@@ -52,12 +52,21 @@ const missionSchema = z
       .length(2),
   })
   .passthrough();
+const planFileSchema = z.object({
+  mission_id: text,
+  device: z.string().regex(/^\d+$/),
+  inode: z.string().regex(/^\d+$/),
+  modifiedNs: z.string().regex(/^\d+$/),
+  sha256: hash,
+  size: integer,
+});
 const destinationSchema = z.object({
   health: healthSchema,
   H: integer,
   records: rows,
   history: rows,
-  missions: z.array(z.object({ id: text }).passthrough()).max(1000),
+  missions: z.array(z.object({ id: text }).passthrough()).max(9),
+  planFiles: z.array(planFileSchema).max(9),
 });
 const jobSchema = z
   .object({
@@ -309,6 +318,29 @@ export function collectArchiveEvidence(
         'Original archive checksum/PDF/telemetry facts are incomplete or inconsistent'
       );
     const { before, after } = r.transfer;
+    const installed = after.planFiles.find(
+      (file) => file.mission_id === r.importedMission.id
+    );
+    const prior = before.planFiles.find(
+      (file) => file.mission_id === r.importedMission.id
+    );
+    const newGeneration =
+      !!installed &&
+      (!prior ||
+        (prior.device === installed.device &&
+          prior.sha256 === installed.sha256 &&
+          prior.size === installed.size &&
+          (prior.inode !== installed.inode ||
+            prior.modifiedNs !== installed.modifiedNs)));
+    const completeFiles = [before, after].every(
+      (read) =>
+        read.planFiles.length === read.missions.length &&
+        new Set(read.planFiles.map((file) => file.mission_id)).size ===
+          read.planFiles.length &&
+        read.missions.every((mission) =>
+          read.planFiles.some((file) => file.mission_id === mission.id)
+        )
+    );
     if (
       before.health.store_id === identity.storeId ||
       !sameJson(before.health, after.health) ||
@@ -321,7 +353,10 @@ export function collectArchiveEvidence(
           before.history.length !== 0 ||
           before.missions.length !== 0
         : before.records.length === 0) ||
-      before.missions.some((m) => m.id === r.importedMission.id) ||
+      !newGeneration ||
+      !completeFiles ||
+      (r.label === 'empty' &&
+        before.missions.some((m) => m.id === r.importedMission.id)) ||
       !after.missions.some((m) => m.id === r.importedMission.id) ||
       !before.missions.every((m) =>
         after.missions.some((saved) => saved.id === m.id)

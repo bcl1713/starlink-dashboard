@@ -67,3 +67,13 @@ it('keeps human PDF review and client network failure separate from cancellation
   one.report.preparations[0].job.finished_at = 10;
   expect(read([one])).not.toContain('export-cancel-recovery');
 });
+
+it('requires a new installed file generation for a same-ID re-import and rejects an unchanged check', () => {
+  const replacement = observation('nonempty');
+  expect(read([observation('empty'), replacement])).toContain(
+    'archive-imported-isolated'
+  );
+  replacement.report.transfer.after.planFiles =
+    replacement.report.transfer.before.planFiles;
+  expect(() => read([replacement])).toThrow();
+});

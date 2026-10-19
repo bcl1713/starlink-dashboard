@@ -107,3 +107,12 @@ that a browser experienced a network failure. Stop the child with `import-stop`
 after checking. See the canonical packaged guide's archive procedure for exact
 commands and the managed-cloud relay option. This handoff still requires its
 new exact-source CLI/browser gate before acceptance is claimed.
+
+Normal re-import can replace a mission under the same ID. The private checker
+records actual destination plan-file hashes and device/inode/modification facts
+before and after the UI import. A new installed generation with the same content
+establishes replacement; an unchanged check does not. The complete installed
+mission must still match the original legs/transports, and every destination
+Operator record, immutable revision and H must remain unchanged. Read-time leg
+stub timestamps are excluded from catalog consistency checks; saved mission
+metadata and identities remain checked.

@@ -55,16 +55,26 @@ const checks = [
 ].map((path) => ({ path, expected: 'b'.repeat(64), actual: 'b'.repeat(64) }));
 export function observation(label: 'empty' | 'nonempty') {
   const sentinel = { ...first, record_id: 'destination-note' };
+  const planFile = {
+    mission_id: `import-${label}`,
+    device: '1',
+    inode: '10',
+    modifiedNs: '100',
+    sha256: 'd'.repeat(64),
+    size: 100,
+  };
   const before = {
     health: destination,
     H: label === 'empty' ? 0 : 1,
     records: label === 'empty' ? [] : [sentinel],
     history: label === 'empty' ? [] : [sentinel],
-    missions: label === 'empty' ? [] : [{ id: 'prior-import' }],
+    missions: label === 'empty' ? [] : [{ id: `import-${label}` }],
+    planFiles: label === 'empty' ? [] : [planFile],
   };
   const after = {
     ...before,
-    missions: [...before.missions, { id: `import-${label}` }],
+    missions: label === 'empty' ? [{ id: `import-${label}` }] : before.missions,
+    planFiles: [{ ...planFile, inode: '11', modifiedNs: '101' }],
   };
   return {
     zip,

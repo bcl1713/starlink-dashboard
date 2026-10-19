@@ -261,3 +261,23 @@ def test_ready_download_reads_original_bytes_through_existing_get_only(monkeypat
     assert calls == [("GET", path), ("bound", 64 * 1024 * 1024 + 1), ("closed", True)]
     with pytest.raises(ValueError, match="ready artifact"):
         get("/api/v2/missions/m/export-preparations", binary=True)
+
+
+def test_import_replacement_uses_actual_file_generation_not_mission_count():
+    file = {
+        "mission_id": "m",
+        "device": "1",
+        "inode": "10",
+        "modifiedNs": "100",
+        "sha256": "a" * 64,
+        "size": 100,
+    }
+    before = {"planFiles": [file]}
+    after = {"planFiles": [dict(file, inode="11", modifiedNs="101")]}
+    assert evidence.installed_generation(before, after, "m")
+    assert evidence.installed_generation({"planFiles": []}, after, "m")
+    assert not evidence.installed_generation(before, before, "m")
+    assert not evidence.installed_generation(
+        before, {"planFiles": [dict(file, inode="11", sha256="b" * 64)]}, "m"
+    )
+    assert not evidence.installed_generation(before, {"planFiles": []}, "m")

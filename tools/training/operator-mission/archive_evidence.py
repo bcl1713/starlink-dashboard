@@ -156,6 +156,28 @@ def unchanged_destination(before, after):
     return {"before": before, "after": after}
 
 
+def installed_generation(before, after, mission_id):
+    prior = next(
+        (row for row in before["planFiles"] if row["mission_id"] == mission_id), None
+    )
+    current = next(
+        (row for row in after["planFiles"] if row["mission_id"] == mission_id), None
+    )
+    if current is None:
+        return False
+    if prior is None:
+        return True
+    return (
+        prior["device"] == current["device"]
+        and prior["sha256"] == current["sha256"]
+        and prior["size"] == current["size"]
+        and (
+            prior["inode"] != current["inode"]
+            or prior["modifiedNs"] != current["modifiedNs"]
+        )
+    )
+
+
 def loopback_reader(port, *, deadline=None):
     import http.client
     import json
@@ -217,6 +239,35 @@ def browser_origin(value):
 
 # This opens the existing preparation database read-only and hashes its existing
 # ready artifact. It starts no service, creates no schema and generates no ZIP.
+PLAN_FILES_READ = """
+import hashlib, importlib.util, json, sys
+from pathlib import Path
+from app.mission import storage
+spec = importlib.util.spec_from_file_location("training_plan_guard", "/source/tools/training/operator-mission/scenario.py")
+scenario = importlib.util.module_from_spec(spec); spec.loader.exec_module(scenario)
+if scenario.training_namespace(Path("/app/data"), mode="simulation") != sys.argv[1]:
+    raise ValueError("Private destination namespace changed")
+ids = json.loads(sys.argv[2])
+if len(ids) >= 10 or len(set(ids)) != len(ids):
+    raise ValueError("Complete bounded private catalog required")
+facts = []
+for mission_id in ids:
+    path = storage.get_mission_file_path(mission_id)
+    if path.is_symlink() or not path.resolve().is_relative_to(storage.MISSIONS_DIR.resolve()):
+        raise ValueError("Owned private plan file required")
+    before = path.stat()
+    if before.st_size > 16 * 1024 * 1024:
+        raise ValueError("Private plan file exceeds read boundary")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    after = path.stat()
+    if (before.st_dev, before.st_ino, before.st_mtime_ns, before.st_size) != (after.st_dev, after.st_ino, after.st_mtime_ns, after.st_size):
+        raise ValueError("Installed plan changed during generation read")
+    facts.append({"mission_id": mission_id, "device": str(after.st_dev), "inode": str(after.st_ino),
+                  "modifiedNs": str(after.st_mtime_ns), "sha256": digest, "size": after.st_size})
+print(json.dumps(facts))
+"""
+
+
 PREPARATION_READ = """
 import hashlib, importlib.util, json, re, sqlite3, sys
 from pathlib import Path
@@ -328,6 +379,30 @@ def main():
             raise ValueError("Supported private course version required")
         identity["missionId"] = mission["id"]
         target = read_snapshot(target_get)
+        target["planFiles"] = json.loads(
+            reader.execute(
+                [
+                    "docker",
+                    "compose",
+                    "-p",
+                    target_owner.project,
+                    "-f",
+                    str(target_owner.compose_file),
+                    "exec",
+                    "-T",
+                    "--user",
+                    "appuser",
+                    "starlink-location",
+                    "python",
+                    "-c",
+                    PLAN_FILES_READ,
+                    target_owner.ownership["fixture"],
+                    json.dumps([item["id"] for item in target["missions"]]),
+                ],
+                timeout=90,
+                env=target_owner.env,
+            )
+        )
         if target["health"]["store_id"] == identity["storeId"]:
             raise ValueError("Use the separately owned import destination")
         baseline_path = source_owner.root / f"archive-baseline-{args.label}.json"
@@ -364,8 +439,6 @@ def main():
         if baseline["identity"] != identity:
             raise ValueError("The baseline belongs to another source identity")
         transfer = unchanged_destination(baseline["destination"], target)
-        if len(target["missions"]) <= len(baseline["destination"]["missions"]):
-            raise ValueError("No newly imported destination mission was observed")
         preparations = json.loads(
             reader.compose(
                 "exec",
@@ -447,11 +520,10 @@ def main():
             ) from error
         inspection = inspector.inspect(stage)
         write(stage / "archive-inspection.json", inspection)
-        previous_ids = {item["id"] for item in baseline["destination"]["missions"]}
         imported = None
         expected_legs = [(leg["name"], leg["transports"]) for leg in mission["legs"]]
         for item in target["missions"]:
-            if item["id"] in previous_ids:
+            if not installed_generation(baseline["destination"], target, item["id"]):
                 continue
             candidate = target_get("/api/v2/missions/" + quote(item["id"], safe=""))
             if [
