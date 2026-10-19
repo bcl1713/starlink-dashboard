@@ -3,10 +3,10 @@
   "sourceHealth": {
     "schema_version": 1,
     "ready": true,
-    "store_id": "9632016c-80cb-4825-a38e-0b394c392aeb",
-    "api_epoch": "f0e919e1-cc9b-4838-b132-4a0bab650441",
+    "store_id": "fe065838-4aad-4e65-a0e8-88ae91ac4c1e",
+    "api_epoch": "f64be3e8-b44c-4a8f-bc61-b7423468c980",
     "source_mode": "simulation",
-    "simulation_run_id": "operator-training-v1-948e167e-c384-4f0a-8f39-04745c5ce226",
+    "simulation_run_id": "operator-training-v1-4e57603f-9840-44ca-8479-25d8646720f3",
     "clock_regression": false,
     "error_code": null,
     "enabled": true
@@ -14,8 +14,8 @@
   "destinationHealth": {
     "schema_version": 1,
     "ready": true,
-    "store_id": "5e5548b5-df9f-41ee-a0db-6d844cc5ebdd",
-    "api_epoch": "315ecf0f-ebcc-4888-9722-92861977eff4",
+    "store_id": "aadbcad0-b407-410d-9fe0-a1589af01c5a",
+    "api_epoch": "ace31dfc-e4f2-4b7d-904c-3724b9a4697a",
     "source_mode": "simulation",
     "simulation_run_id": "synthetic-operator-demo-v1",
     "clock_regression": false,
@@ -51,16 +51,16 @@
           "next_leg_id": null,
           "entry_type": "note"
         },
-        "record_id": "5df68e8f-e4ae-45d8-aadd-e99a80b69df6",
+        "record_id": "996aaeff-bd3d-4de2-912b-2d9d150c5aa1",
         "version": 1,
         "previous_version": null,
         "journal_seq": 1,
-        "command_id": "115cc89e-eccf-4119-a4e4-d04d787e6c9d",
+        "command_id": "39e937c9-fc9a-4a2e-b94d-9d263e172105",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
         "deleted": false,
-        "recorded_at": "2026-10-19T01:59:44.911158Z",
+        "recorded_at": "2026-10-19T02:12:05.317731Z",
         "author": {
           "backend": "restricted-access operator",
           "operator_label": null
@@ -101,16 +101,16 @@
           "next_leg_id": null,
           "entry_type": "note"
         },
-        "record_id": "5df68e8f-e4ae-45d8-aadd-e99a80b69df6",
+        "record_id": "996aaeff-bd3d-4de2-912b-2d9d150c5aa1",
         "version": 1,
         "previous_version": null,
         "journal_seq": 1,
-        "command_id": "115cc89e-eccf-4119-a4e4-d04d787e6c9d",
+        "command_id": "39e937c9-fc9a-4a2e-b94d-9d263e172105",
         "operation": "create",
         "reason": null,
         "reason_origin": null,
         "deleted": false,
-        "recorded_at": "2026-10-19T01:59:44.911158Z",
+        "recorded_at": "2026-10-19T02:12:05.317731Z",
         "author": {
           "backend": "restricted-access operator",
           "operator_label": null
@@ -130,25 +130,25 @@
   "actualMissionsControls": true,
   "networkFailureRetry": true,
   "preparationCancel": {
-    "id": "463e427e505248b2804e8de6cb8ccc7c",
+    "id": "de6356b8c8b747b19d7d7d4afdf11d0f",
     "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
     "state": "cancelled",
-    "fingerprint": "f2de04fc45a0c91c61a4fca50a13bd0a3a6165d4ae51eb07460abf0052eba350",
+    "fingerprint": "e0f3cd289cd1585c3a9540e4367fa3f4436fd2aa4fc11dc4d9c4feeb3a63be33",
     "revision": null,
     "stage": "cancelled",
-    "stage_started_at": 1792375158.9482641,
+    "stage_started_at": 1792375899.0847034,
     "stage_timings": {
-      "capture": 0.056577662006020546,
-      "queue": 0.019368907436728477
+      "capture": 0.07602885202504694,
+      "queue": 0.023954124888405204
     },
     "leg_states": {
       "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
       "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
     },
-    "queued_at": 1792375158.8723192,
-    "started_at": 1792375158.948264,
-    "finished_at": 1792375159.0042994,
-    "deadline": 1792375758.8723192,
+    "queued_at": 1792375898.9847238,
+    "started_at": 1792375899.0847032,
+    "finished_at": 1792375899.1474955,
+    "deadline": 1792376498.9847238,
     "expires_at": null,
     "error_code": null,
     "warning_code": null,

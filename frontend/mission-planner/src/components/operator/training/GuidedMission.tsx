@@ -71,6 +71,7 @@ function Guide({
       const observations = await onCheckEvidence({
         retryObservations: progress.retryObservations ?? [],
         replayObservations: progress.replayObservations ?? [],
+        journalObservations: progress.journalObservations ?? [],
       });
       if (observations) keep({ ...progress, ...observations });
     } catch (reason) {

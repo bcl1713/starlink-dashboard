@@ -1,4 +1,8 @@
 import {
+  retainJournalObservation,
+  collectJournalContinuityEvidence,
+} from '../training/trainingJournalEvidence';
+import {
   captureRetryObservation,
   collectRetryEvidence,
   retainRetryReceipts,
@@ -511,15 +515,37 @@ export function OperatorWorkspace() {
                 snapshot.H,
                 replayObservations
               );
+              const journalObservations = retainJournalObservation(
+                training.identity,
+                namespace,
+                snapshot,
+                replay,
+                checked.evidenceRecords,
+                previous.journalObservations ?? []
+              );
+              const journalOutcomes = collectJournalContinuityEvidence(
+                training.identity,
+                namespace,
+                currentMission.data.legs,
+                snapshot.as_of,
+                snapshot.H,
+                checked.evidenceRecords,
+                training.prerequisiteIds,
+                journalObservations
+              );
               setCheckedTraining({
                 ...checked,
-                historicalOutcomes: historicalReplayOutcomes.filter(
-                  (outcome) => !currentReplayOutcomes.includes(outcome)
-                ),
+                historicalOutcomes: [
+                  ...journalOutcomes,
+                  ...historicalReplayOutcomes.filter(
+                    (outcome) => !currentReplayOutcomes.includes(outcome)
+                  ),
+                ],
                 outcomes: [
                   ...new Set([
                     ...checked.outcomes,
                     ...retryOutcomes,
+                    ...journalOutcomes,
                     ...observed.outcomes,
                     ...currentReplayOutcomes,
                     ...historicalReplayOutcomes,
@@ -533,6 +559,7 @@ export function OperatorWorkspace() {
               return {
                 retryObservations: retainedObservations,
                 replayObservations,
+                journalObservations,
               };
             }}
             onOpenTarget={(stage) => {

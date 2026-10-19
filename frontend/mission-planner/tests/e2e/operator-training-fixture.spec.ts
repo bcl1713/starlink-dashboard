@@ -444,7 +444,12 @@ test('training fixture: normal replay across two legs preserves journal, receipt
   );
   await inspectFlightLesson(
     'T09',
-    ['second leg replay', 'second leg model sources'],
+    [
+      'second leg replay',
+      'second leg model sources',
+      'stable journal across legs',
+      'restart preserved records',
+    ],
     true
   );
   await display.reload();
@@ -481,6 +486,7 @@ test('training fixture: normal replay across two legs preserves journal, receipt
         restartPreservedJournalAndAcknowledgment: true,
         stoppedReplayNotReconstructed: true,
         earlierReplayAndSourceObservationsRetainedAfterReloadAndRestart: true,
+        guideVerifiedStableJournalAndChangedRuntimeAfterRestart: true,
         configuredNetworkVisibilityPreservedAcrossRunningCompletedAndRestart: true,
         syntheticNetworkReadoutsSuppressed: true,
       },

@@ -1,4 +1,8 @@
 import {
+  decodeJournalObservation,
+  type JournalObservation,
+} from './trainingJournalEvidence';
+import {
   decodeRetryObservation,
   type RetryObservation,
 } from './trainingRetryEvidence';
@@ -21,6 +25,7 @@ export interface ManualEvidence {
   note: string;
 }
 export interface TrainingObservations {
+  journalObservations?: JournalObservation[];
   retryObservations?: RetryObservation[];
   replayObservations?: ReplayObservation[];
 }
@@ -76,6 +81,16 @@ function validProgress(
   )
     return false;
   try {
+    if (value.journalObservations !== undefined) {
+      if (
+        !Array.isArray(value.journalObservations) ||
+        value.journalObservations.length > 4
+      )
+        return false;
+      value.journalObservations.forEach((item) =>
+        decodeJournalObservation(item, identity)
+      );
+    }
     if (value.replayObservations !== undefined) {
       if (
         !Array.isArray(value.replayObservations) ||

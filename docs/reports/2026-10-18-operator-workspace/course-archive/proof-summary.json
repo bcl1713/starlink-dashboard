@@ -1,9 +1,9 @@
 {
-  "candidateSha": "277e2b4079b5d3119f02e26c992f5ed11d1f2c68",
+  "candidateSha": "27dab3f463cf3fc509b8abb96ff0963da90299ac",
   "checksPassed": true,
   "archiveInspection": {
     "synthetic": true,
-    "zipSha256": "c656937a41f5a4fee832a863153019e33cce0b35d6db8dd2af41d19b962997f6",
+    "zipSha256": "e486ff8a09988236624206e8577037155492458ae280523d210a9dfaa22179bc",
     "pdfPath": "exports/mission/Training mission \u00b7 Fictional Meridian 21-brief.pdf",
     "pdfSha256": "1808010c28756b2ef3c8c417ff441b767a0f393f2ffb074d43c284663fe50658",
     "pdfPages": 2,
@@ -21,8 +21,8 @@
         "pdfEasternHeader": "DEP 12:45 ET | ARR 13:15 ET"
       }
     ],
-    "records": 23,
-    "revisions": 51,
+    "records": 32,
+    "revisions": 84,
     "checkedMembers": [
       "operations/activity.jsonl",
       "operations/audit.jsonl",

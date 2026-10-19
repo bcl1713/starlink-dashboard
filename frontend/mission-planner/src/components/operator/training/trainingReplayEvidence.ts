@@ -10,7 +10,7 @@ import { collectReplayEvidence } from './trainingEventEvidence';
 const timestamp = z
   .string()
   .refine((value) => Number.isFinite(Date.parse(value)));
-const sourceSchema = z.object({
+export const trainingSourceSchema = z.object({
   schema_version: z.literal(1),
   store_id: z.string().min(1),
   api_epoch: z.string().min(1),
@@ -43,7 +43,7 @@ const sourceSchema = z.object({
 export interface ReplayObservation {
   origin: string;
   fixtureVersion: number;
-  source: z.infer<typeof sourceSchema>;
+  source: z.infer<typeof trainingSourceSchema>;
   status: SimulationRunStatus;
 }
 type Leg = { id: string; route_id: string };
@@ -57,7 +57,7 @@ export function decodeReplayObservation(
   if (!value || typeof value !== 'object')
     throw new Error('Invalid retained replay observation');
   const raw = value as ReplayObservation;
-  const source = sourceSchema.parse(raw.source);
+  const source = trainingSourceSchema.parse(raw.source);
   const status = parseSimulationRun(raw.status);
   if (
     raw.origin !== identity.origin ||

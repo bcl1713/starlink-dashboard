@@ -1,16 +1,16 @@
 {
-  "candidateSha": "277e2b4079b5d3119f02e26c992f5ed11d1f2c68",
-  "sourceArchiveSha256": "88c075dcb3ab320bfa59d558beeab572db66f8a5b1396fc33abafb2016f922bb",
+  "candidateSha": "27dab3f463cf3fc509b8abb96ff0963da90299ac",
+  "sourceArchiveSha256": "0b13ce60bb9e55193f8c6cf938d63f3b0e6eca67bfe1ab58314e9a938e6b5cc5",
   "images": {
     "backend": {
-      "tag": "starlink-operator-training-948e167ec384-backend:277e2b4079b5d3119f02e26c992f5ed11d1f2c68",
-      "id": "sha256:3421010e4d670cfb75a1c3826376f89892cb0948ad28da70cf563a1b9421194c",
-      "revision": "277e2b4079b5d3119f02e26c992f5ed11d1f2c68"
+      "tag": "starlink-operator-training-4e57603f9840-backend:27dab3f463cf3fc509b8abb96ff0963da90299ac",
+      "id": "sha256:1b87dce6ff0b8d4268b603eff688f49127d729786cf911cad8cc955efc63b15c",
+      "revision": "27dab3f463cf3fc509b8abb96ff0963da90299ac"
     },
     "frontend": {
-      "tag": "starlink-operator-training-948e167ec384-frontend:277e2b4079b5d3119f02e26c992f5ed11d1f2c68",
-      "id": "sha256:b3ec728f47e35ef5c3f67fe74bf14d9f181dff7d9811ed3c26441944a7607c55",
-      "revision": "277e2b4079b5d3119f02e26c992f5ed11d1f2c68"
+      "tag": "starlink-operator-training-4e57603f9840-frontend:27dab3f463cf3fc509b8abb96ff0963da90299ac",
+      "id": "sha256:96253fd00582be87b804d266b95e05af57ad42b57d24f392b5013283d94e1b6f",
+      "revision": "27dab3f463cf3fc509b8abb96ff0963da90299ac"
     }
   },
   "capturedAfterOwnedTeardown": false
