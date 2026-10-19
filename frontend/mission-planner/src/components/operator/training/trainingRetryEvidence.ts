@@ -1,3 +1,4 @@
+import { decodeRetryReplay, type RetryReplay } from './trainingRetryReceipt';
 import type { CommandReceipt, SavedRecord } from '@/types/operator';
 import {
   decodePendingEnvelope,
@@ -13,6 +14,7 @@ export interface RetryObservation {
   request: PendingEnvelope;
   attemptIds: string[];
   committedVersions: Version[];
+  replay?: RetryReplay;
 }
 type Transaction = {
   commandId: string;
@@ -66,6 +68,8 @@ export function decodeRetryObservation(
     )
   )
     throw new Error('Retry observation does not match this private mission');
+  if (candidate.replay !== undefined)
+    decodeRetryReplay(candidate.replay, request, candidate.attemptIds);
   return candidate;
 }
 export function captureRetryObservation(
@@ -106,6 +110,71 @@ export function captureRetryObservation(
     return null;
   }
 }
+function currentReplay(
+  observation: RetryObservation,
+  attempts: readonly CommandAttempt[],
+  transactions: readonly Transaction[]
+): RetryReplay | undefined {
+  if (observation.replay) return observation.replay;
+  const attempt = attempts.find(
+    (item) =>
+      !observation.attemptIds.includes(item.id) &&
+      sameJson(item.request, observation.request)
+  );
+  const receipt = transactions.find(
+    (item) =>
+      item.commandId === observation.request.key &&
+      ['accepted', 'accepted_unreadable'].includes(item.status)
+  )?.receipt;
+  return attempt && receipt
+    ? decodeRetryReplay(
+        { attempt, receipt },
+        observation.request,
+        observation.attemptIds
+      )
+    : undefined;
+}
+function matchesBackend(
+  observation: RetryObservation,
+  replay: RetryReplay,
+  records: readonly SavedRecord[]
+) {
+  return (
+    observation.attemptIds.length > 0 &&
+    replay.receipt.saved_records.every(
+      (saved) =>
+        saved.mission_id === observation.request.workspace.target.missionId &&
+        observation.committedVersions.some(
+          (version) =>
+            version.record_id === saved.record_id &&
+            version.version === saved.version &&
+            version.command_id === saved.command_id
+        ) &&
+        records.some((row) => sameRecord(row, saved))
+    )
+  );
+}
+/** Preserve raw reply/attempt facts, never a completion boolean or a send queue. */
+export function retainRetryReceipts(
+  identity: TrainingIdentity,
+  namespace: string,
+  observations: readonly RetryObservation[],
+  attempts: readonly CommandAttempt[],
+  transactions: readonly Transaction[],
+  records: readonly SavedRecord[]
+): RetryObservation[] {
+  return observations.map((raw) => {
+    try {
+      const observation = decodeRetryObservation(raw, identity, namespace);
+      const replay = currentReplay(observation, attempts, transactions);
+      return replay && matchesBackend(observation, replay, records)
+        ? structuredClone({ ...observation, replay })
+        : raw;
+    } catch {
+      return raw;
+    }
+  });
+}
 /** Exact retry is credited only when the first committed version predates it. */
 export function collectRetryEvidence(
   identity: TrainingIdentity,
@@ -118,37 +187,11 @@ export function collectRetryEvidence(
   for (const raw of observations) {
     try {
       const observation = decodeRetryObservation(raw, identity, namespace);
-      const { request } = observation;
-      const retried = attempts.some(
-        (item) =>
-          !observation.attemptIds.includes(item.id) &&
-          sameJson(item.request, request)
-      );
-      if (!retried || !observation.attemptIds.length) continue;
-      const receipt = transactions.find(
-        (item) =>
-          item.commandId === request.key &&
-          ['accepted', 'accepted_unreadable'].includes(item.status)
-      )?.receipt;
-      if (!receipt?.saved_records.length) continue;
-      if (
-        receipt.saved_records.every(
-          (saved) =>
-            saved.command_id === receipt.command_id &&
-            saved.mission_id === identity.missionId &&
-            saved.provenance.source_mode === 'simulation' &&
-            observation.committedVersions.some(
-              (version) =>
-                version.record_id === saved.record_id &&
-                version.version === saved.version &&
-                version.command_id === saved.command_id
-            ) &&
-            records.some((row) => sameRecord(row, saved))
-        )
-      )
+      const replay = currentReplay(observation, attempts, transactions);
+      if (replay && matchesBackend(observation, replay, records))
         return ['lost-receipt-same-key'];
     } catch {
-      /* Invalid, stale or foreign observations cannot establish an outcome. */
+      /* Corrupt, retired-context or unrelated facts cannot prove an outcome. */
     }
   }
   return [];

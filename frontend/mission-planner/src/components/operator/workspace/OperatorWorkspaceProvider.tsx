@@ -103,6 +103,9 @@ function Owner({
       api.storageError,
       api.reconcileError,
       api.latest,
+      api.identity,
+      api.health.data?.ready,
+      api.health.isError,
     ]
   );
   return null;
@@ -145,6 +148,7 @@ export function OperatorWorkspaceProvider({
       status: 'uncertain',
       message: 'Receipt uncertain. Review before retrying the same save.',
       pending: p,
+      retryReady: false,
     }))
   );
   const [attempts, setAttempts] = useState<CommandAttempt[]>([]);
@@ -213,31 +217,42 @@ export function OperatorWorkspaceProvider({
       api.reconcileError ??
       api.error?.message ??
       row.message;
+    const retryReady =
+      !!pending &&
+      pending.identity === api.identity &&
+      api.health.data?.ready === true &&
+      !api.health.isError &&
+      !api.blocked &&
+      !api.saving &&
+      !api.storageError;
+    const publishRow = (patch: Partial<TransactionTrayItem>) =>
+      update(lane, { ...patch, retryReady });
     if (api.blocked)
-      update(lane, {
+      publishRow({
         status:
           api.error?.code === 'epoch_mismatch' ? 'quarantined' : 'needs_review',
         message,
         pending,
       });
     else if (api.storageError)
-      update(lane, { status: 'storage_error', message, pending });
+      publishRow({ status: 'storage_error', message, pending });
     else if (api.saving)
-      update(lane, {
+      publishRow({
         status: 'saving',
         message: null,
         pending,
         ...(pending ? { commandId: pending.key } : {}),
       });
     else if (pending)
-      update(lane, {
+      publishRow({
         status: 'uncertain',
         commandId: pending.key,
         message,
         pending,
       });
     else if (api.error)
-      update(lane, { status: 'failed', message, pending: undefined });
+      publishRow({ status: 'failed', message, pending: undefined });
+    else if (row.retryReady !== retryReady) publishRow({});
   }
   function observeAttempt(request: Pending) {
     const observed = {
@@ -363,7 +378,7 @@ export function OperatorWorkspaceProvider({
   }
   async function retryExact(commandId: string) {
     const row = trayRef.current.find((row) => row.commandId === commandId);
-    if (!row || busy.current.has(row.lane)) return;
+    if (!row || busy.current.has(row.lane) || !row.retryReady) return;
     busy.current.add(row.lane);
     try {
       const api = await ensureOwner(row.target);

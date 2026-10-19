@@ -59,7 +59,14 @@ test('display presets restore actual weather rendering and report real conflicts
           },
           { timeout: 180000 }
         )
-        .toBe(true);
+        .toBe(
+          JSON.stringify({
+            present: true,
+            wind: on,
+            temperature: !on,
+            sigmet: on,
+          })
+        );
       await expect
         .poll(async () => !!(await weatherSnapshot(page)).radar)
         .toBe(on);
@@ -228,6 +235,10 @@ test('display presets restore actual weather rendering and report real conflicts
       JSON.stringify(proof, null, 2)
     );
   } finally {
+    await writeFile(
+      join(output, 'operator-display-last-observation.json'),
+      JSON.stringify(proof, null, 2)
+    );
     await secondary.close();
   }
 });

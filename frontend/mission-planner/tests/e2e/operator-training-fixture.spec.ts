@@ -532,6 +532,31 @@ test('training guide verifies a committed lost receipt before an exact retry', a
   ).json();
   expect(history.items).toHaveLength(1);
   expect(history.cursor).toBeNull();
+  await guide
+    .getByRole('button', { name: 'Dismiss guide', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Note', exact: true }).click();
+  await editor
+    .getByLabel('Title', { exact: true })
+    .fill('Fictional later note retires original accepted tray row');
+  const laterResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/v2/operator/records')
+  );
+  await editor.getByRole('button', { name: 'Save entry', exact: true }).click();
+  expect((await laterResponse).ok()).toBe(true);
+  await expect(editor).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Guided mission walkthrough', exact: true })
+    .click();
+  await guide
+    .getByRole('button', { name: 'Check current evidence', exact: true })
+    .click();
+  await expect(outcome).toContainText('Verified from current data');
+  await expect(guide.getByText('Incomplete', { exact: true })).toBeVisible();
   writeFileSync(
     join(root, 'guided-retry-proof.json'),
     JSON.stringify(
@@ -542,6 +567,7 @@ test('training guide verifies a committed lost receipt before an exact retry', a
         history,
         observedBeforeRetry: true,
         resumedProgressAfterReload: true,
+        retainedAfterReceiptRetirementAndLaterReload: true,
         wholeLessonStillIncomplete: true,
       },
       null,
@@ -776,6 +802,19 @@ test('packaged guide and print reference work without external services and reta
     blocked.push(url.origin);
     return route.abort('connectionrefused');
   });
+  const guideHeaders = (
+    await page.request.get('/operator-help/guide.html')
+  ).headers();
+  expect(guideHeaders['content-security-policy']).toContain(
+    "frame-ancestors 'self'"
+  );
+  expect(guideHeaders['content-security-policy']).toContain(
+    "default-src 'none'"
+  );
+  const appHeaders = (await page.request.get('/operator')).headers();
+  expect(appHeaders['content-security-policy']).toContain(
+    "frame-ancestors 'none'"
+  );
   const missions = await (await page.request.get('/api/v2/missions')).json();
   const missionId = missions[0].id;
   const location = `/operator?workspace=1&mission_id=${missionId}&view=notes`;

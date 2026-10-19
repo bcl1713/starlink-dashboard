@@ -1,6 +1,7 @@
 import {
   captureRetryObservation,
   collectRetryEvidence,
+  retainRetryReceipts,
 } from '../training/trainingRetryEvidence';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -449,7 +450,14 @@ export function OperatorWorkspace() {
                 );
                 if (captured) observations.push(captured);
               }
-              const retainedObservations = observations.slice(-20);
+              const retainedObservations = retainRetryReceipts(
+                training.identity,
+                namespace,
+                observations.slice(-20),
+                workspace.attempts,
+                workspace.tray,
+                checked.evidenceRecords
+              );
               const retryOutcomes = collectRetryEvidence(
                 training.identity,
                 namespace,
@@ -721,11 +729,18 @@ export function OperatorWorkspace() {
                 {row.title} · {row.status.replaceAll('_', ' ')}
               </p>
               <p>{row.message}</p>
+              {row.pending && row.status === 'uncertain' && !row.retryReady && (
+                <p role="status">
+                  Waiting for the retained request and current store…
+                </p>
+              )}
               {row.pending && (
                 <button
                   className="ws-button"
                   disabled={
-                    row.status === 'saving' || row.status === 'quarantined'
+                    !row.retryReady ||
+                    row.status === 'saving' ||
+                    row.status === 'quarantined'
                   }
                   onClick={() => void workspace.retryExact(row.commandId)}
                 >

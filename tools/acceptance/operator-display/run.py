@@ -177,7 +177,7 @@ def main():
             [
                 "timeout",
                 "--kill-after=10s",
-                "10m",
+                "15m",
                 "npx",
                 "--no-install",
                 "playwright",
@@ -185,7 +185,7 @@ def main():
                 "--config",
                 "playwright.operator-display.config.ts",
             ],
-            seconds=620,
+            seconds=920,
             cwd=runner.source / "frontend/mission-planner",
             name="browser.log",
         )

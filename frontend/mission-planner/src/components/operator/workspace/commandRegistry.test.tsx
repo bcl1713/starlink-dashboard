@@ -54,11 +54,14 @@ function Probe() {
   });
   return <p>Operator page</p>;
 }
-function mount(registry = new DraftRegistry(sessionStorage)) {
+function mount(
+  registry = new DraftRegistry(sessionStorage),
+  seedHealth = true
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
-  client.setQueryData(['operator-health'], health);
+  if (seedHealth) client.setQueryData(['operator-health'], health);
   clients.push(client);
   const result = render(
     <QueryClientProvider client={client}>
@@ -465,13 +468,11 @@ it('marks the submitted mission event snapshot stale after a receipt without sta
   expect(read).not.toHaveBeenCalled();
 });
 it('exposes independent snapshots of actual command attempts with their pinned targets', async () => {
-  const save = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockResolvedValue({
-      schema_version: 1,
-      command_id: 'receipt',
-      saved_records: [record],
-    });
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [record],
+  });
   const { registry } = mount();
   const draft = registry.createDraft(target, input);
   await submit(draft.draftId);
@@ -535,4 +536,33 @@ it('reuses the complete pending-envelope validator for read-only command evidenc
   expect(() =>
     decodePendingEnvelope({ ...request, epoch: 'wrong-epoch' })
   ).toThrow();
+});
+
+it('keeps recovered retry unavailable until its actual owner has restored the request and store identity', async () => {
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(new Error('Lost receipt'))
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [record],
+    });
+  const first = mount();
+  const draft = first.registry.createDraft(target, input);
+  await submit(draft.draftId);
+  const original = structuredClone(save.mock.calls[0]);
+  first.unmount();
+  let resolve!: (value: typeof health) => void;
+  const pendingHealth = new Promise<typeof health>((done) => {
+    resolve = done;
+  });
+  vi.mocked(api.getOperatorHealth).mockReturnValue(pendingHealth);
+  mount(new DraftRegistry(sessionStorage), false);
+  expect(workspace.tray[0].retryReady).toBe(false);
+  await act(async () => workspace.retryExact(workspace.tray[0].commandId));
+  expect(save).toHaveBeenCalledTimes(1);
+  await act(async () => resolve(health));
+  await waitFor(() => expect(workspace.tray[0].retryReady).toBe(true));
+  await act(async () => workspace.retryExact(workspace.tray[0].commandId));
+  expect(save.mock.calls[1]).toEqual(original);
 });

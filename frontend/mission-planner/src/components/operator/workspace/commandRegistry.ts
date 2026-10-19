@@ -44,6 +44,7 @@ export interface TransactionTrayItem {
   status: TransactionStatus;
   message: string | null;
   pending?: PendingEnvelope;
+  retryReady?: boolean;
   receipt?: CommandReceipt;
   current?: SavedRecord;
 }

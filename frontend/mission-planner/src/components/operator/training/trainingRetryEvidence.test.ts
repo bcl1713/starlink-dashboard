@@ -240,3 +240,143 @@ it('rejects corrupt persisted requests and never mutates the captured request', 
     )
   ).toEqual([]);
 });
+
+it('retains raw accepted retry facts after the tray/attempt log retires, validated against full backend history', async () => {
+  const { retainRetryReceipts } = await import('./trainingRetryEvidence');
+  const observation = captureRetryObservation(
+    identity,
+    namespace,
+    uncertain,
+    attempts.slice(0, 1),
+    [saved]
+  )!;
+  const retained = retainRetryReceipts(
+    identity,
+    namespace,
+    [observation],
+    attempts,
+    [accepted],
+    [saved]
+  );
+  expect(retained[0].replay!.receipt).toEqual(receipt);
+  const resumed = JSON.parse(JSON.stringify(retained));
+  expect(
+    collectRetryEvidence(identity, namespace, resumed, [], [], [saved])
+  ).toEqual(['lost-receipt-same-key']);
+  expect(
+    collectRetryEvidence(identity, namespace, resumed, [], [], [])
+  ).toEqual([]);
+  expect(
+    collectRetryEvidence(
+      identity,
+      namespace,
+      resumed,
+      [],
+      [],
+      [
+        {
+          ...saved,
+          payload: {
+            ...saved.payload,
+            note: 'Contradictory immutable version',
+          },
+        },
+      ]
+    )
+  ).toEqual([]);
+  expect(
+    collectRetryEvidence(
+      { ...identity, epoch: 'restored' },
+      namespace,
+      resumed,
+      [],
+      [],
+      [saved]
+    )
+  ).toEqual([]);
+});
+it('cannot turn an unrelated accepted write or corrupted persisted retry into proof', async () => {
+  const { retainRetryReceipts } = await import('./trainingRetryEvidence');
+  const unrelated = {
+    ...saved,
+    payload: { ...saved.payload, title: 'Different command body' },
+  };
+  const observation = captureRetryObservation(
+    identity,
+    namespace,
+    uncertain,
+    attempts.slice(0, 1),
+    [unrelated]
+  )!;
+  const transaction = {
+    ...accepted,
+    receipt: { ...receipt, saved_records: [unrelated] },
+  };
+  expect(
+    collectRetryEvidence(
+      identity,
+      namespace,
+      [observation],
+      attempts,
+      [transaction],
+      [unrelated]
+    )
+  ).toEqual([]);
+  const original = captureRetryObservation(
+    identity,
+    namespace,
+    uncertain,
+    attempts.slice(0, 1),
+    [saved]
+  )!;
+  const retained = retainRetryReceipts(
+    identity,
+    namespace,
+    [original],
+    attempts,
+    [accepted],
+    [saved]
+  );
+  retained[0].replay!.attempt.request.key = 'changed-on-disk';
+  expect(
+    collectRetryEvidence(identity, namespace, retained, [], [], [saved])
+  ).toEqual([]);
+});
+
+it('matches canonical UTC representations without changing exact retry bytes or microseconds', () => {
+  const observation = captureRetryObservation(
+    identity,
+    namespace,
+    uncertain,
+    attempts.slice(0, 1),
+    [saved]
+  )!;
+  const normalized = {
+    ...saved,
+    time: { ...saved.time, occurred_at: '2026-10-17T10:11:12.123456+00:00' },
+  };
+  expect(
+    collectRetryEvidence(
+      identity,
+      namespace,
+      [observation],
+      attempts,
+      [{ ...accepted, receipt: { ...receipt, saved_records: [normalized] } }],
+      [normalized]
+    )
+  ).toEqual(['lost-receipt-same-key']);
+  const different = {
+    ...normalized,
+    time: { ...normalized.time, occurred_at: '2026-10-17T10:11:12.123457Z' },
+  };
+  expect(
+    collectRetryEvidence(
+      identity,
+      namespace,
+      [observation],
+      attempts,
+      [{ ...accepted, receipt: { ...receipt, saved_records: [different] } }],
+      [different]
+    )
+  ).toEqual([]);
+});

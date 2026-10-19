@@ -124,6 +124,42 @@
           margin: 0.4rem 0;
         }
       }
+      @media print {
+        :root {
+          line-height: 1.18;
+        }
+        h1 {
+          margin: 0 0 0.4em;
+        }
+        h2 {
+          margin: 0.6em 0 0.3em;
+          padding-bottom: 0.15em;
+        }
+        section {
+          margin-bottom: 0.5rem;
+        }
+        ul,
+        ol {
+          padding-left: 1.2em;
+          margin: 0.3em 0;
+        }
+        li {
+          margin: 0.1rem 0;
+        }
+        p {
+          margin: 0.3em 0;
+        }
+        td,
+        th {
+          padding: 1.5mm;
+        }
+        .columns {
+          gap: 6mm;
+        }
+        .important {
+          padding: 0.3em 0.7em;
+        }
+      }
     </style>
   </head>
   <body>
@@ -270,24 +306,23 @@
         <section>
           <h2>Overview and alerts</h2>
           <p>
-            Shared visibility affects all displays. Recenter targets a selected
+            Shared switches affect all displays; recenter targets a selected
             local window. Verify actual rendering.
           </p>
           <p>
             Presets include panel/map and weather visibility. Wind and
-            temperature are exclusive. Providers, forecast level/horizon, ACKs,
-            history window and camera are outside the preset.
+            temperature are exclusive. Provider settings, forecast
+            level/horizon, ACKs, history window and camera stay separate.
           </p>
           <p>
-            Read <strong>Confirmed / Unconfirmed</strong> after partial apply;
-            review refreshed settings and apply again. Legacy presets say
-            weather was not included.
+            Partial apply: review Confirmed / Unconfirmed, refresh and apply
+            again. Legacy presets report weather excluded.
           </p>
           <p>
-            Simulation keeps chosen network panels visible with measured
-            values/history Unavailable. Browser cues are foreground
-            capabilities; verify permission and actual delivery. Acknowledge the
-            current event occurrence.
+            Simulation retains chosen panels with Unavailable
+            measurements/history. Browser cues need supported foreground
+            permission and actual delivery checks. Acknowledge the current
+            occurrence.
           </p>
         </section>
       </div>

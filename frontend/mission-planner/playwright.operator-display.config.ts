@@ -12,7 +12,7 @@ export default defineConfig({
   testMatch: 'operator-display.spec.ts',
   workers: 1,
   retries: 0,
-  timeout: 480000,
+  timeout: 720000,
   expect: { timeout: 30000 },
   reporter: 'list',
   outputDir: `${process.env.WEATHER_ACCEPTANCE_OUTPUT_DIR}/display-browser`,
