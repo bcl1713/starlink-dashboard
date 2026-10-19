@@ -88,10 +88,10 @@ test('guide revalidates scoped parked drafts, actual browser offline recovery an
       await editor.getByLabel('Title', { exact: true }).fill(title);
       if (viewport.width === 390) {
         await editor
-          .getByLabel('Time precision', { exact: true })
+          .getByRole('combobox', { name: 'Time precision', exact: true })
           .selectOption('approximate');
         await editor
-          .getByLabel('Occurred at (UTC)', { exact: true })
+          .getByRole('textbox', { name: 'Occurred at (UTC)', exact: true })
           .fill('2026-10-17T15:55:00Z');
       }
       await park();
