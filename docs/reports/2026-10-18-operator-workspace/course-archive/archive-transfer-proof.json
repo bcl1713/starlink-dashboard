@@ -1,0 +1,158 @@
+{
+  "synthetic": true,
+  "sourceHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "9632016c-80cb-4825-a38e-0b394c392aeb",
+    "api_epoch": "f0e919e1-cc9b-4838-b132-4a0bab650441",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-948e167e-c384-4f0a-8f39-04745c5ce226",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "destinationHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "5e5548b5-df9f-41ee-a0db-6d844cc5ebdd",
+    "api_epoch": "315ecf0f-ebcc-4888-9722-92861977eff4",
+    "source_mode": "simulation",
+    "simulation_run_id": "synthetic-operator-demo-v1",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "emptyBeforeAndAfter": {
+    "rows": [],
+    "H": 0
+  },
+  "nonemptyBeforeAndAfter": {
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "5df68e8f-e4ae-45d8-aadd-e99a80b69df6",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "115cc89e-eccf-4119-a4e4-d04d787e6c9d",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T01:59:44.911158Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "nonemptyHistoryBeforeAndAfter": {
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "5df68e8f-e4ae-45d8-aadd-e99a80b69df6",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "115cc89e-eccf-4119-a4e4-d04d787e6c9d",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T01:59:44.911158Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "unchangedOriginalZipImportedTwice": true,
+  "actualMissionsControls": true,
+  "networkFailureRetry": true,
+  "preparationCancel": {
+    "id": "463e427e505248b2804e8de6cb8ccc7c",
+    "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+    "state": "cancelled",
+    "fingerprint": "f2de04fc45a0c91c61a4fca50a13bd0a3a6165d4ae51eb07460abf0052eba350",
+    "revision": null,
+    "stage": "cancelled",
+    "stage_started_at": 1792375158.9482641,
+    "stage_timings": {
+      "capture": 0.056577662006020546,
+      "queue": 0.019368907436728477
+    },
+    "leg_states": {
+      "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+      "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+    },
+    "queued_at": 1792375158.8723192,
+    "started_at": 1792375158.948264,
+    "finished_at": 1792375159.0042994,
+    "deadline": 1792375758.8723192,
+    "expires_at": null,
+    "error_code": null,
+    "warning_code": null,
+    "briefing_status": null,
+    "download_url": null
+  }
+}

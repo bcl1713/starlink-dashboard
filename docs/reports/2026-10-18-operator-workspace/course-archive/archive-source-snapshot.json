@@ -1,0 +1,3799 @@
+{
+  "health": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "9632016c-80cb-4825-a38e-0b394c392aeb",
+    "api_epoch": "f0e919e1-cc9b-4838-b132-4a0bab650441",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-948e167e-c384-4f0a-8f39-04745c5ce226",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "mission": {
+    "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+    "name": "Training mission · Fictional Meridian 21",
+    "description": null,
+    "legs": [
+      {
+        "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "name": "First flight · Meridian to Harbor",
+        "description": null,
+        "route_id": "operator-training-leg-1",
+        "transports": {
+          "starshield_enabled": null,
+          "planning_policy": null,
+          "evaluation_context": null,
+          "planning_inputs": null,
+          "initial_x_satellite_id": "X-1",
+          "initial_ka_satellite_ids": [
+            "AOR"
+          ],
+          "x_transitions": [],
+          "ka_outages": [],
+          "aar_windows": [],
+          "manual_aar_tracks": [],
+          "manual_route_splice": null,
+          "ku_overrides": []
+        },
+        "adjusted_departure_time": null,
+        "created_at": "2026-10-19T01:57:10.016141Z",
+        "updated_at": "2026-10-19T01:57:10.016145Z",
+        "is_active": false,
+        "import_provenance": null,
+        "notes": null
+      },
+      {
+        "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+        "name": "Second flight · Harbor to Meridian",
+        "description": null,
+        "route_id": "operator-training-leg-2",
+        "transports": {
+          "starshield_enabled": null,
+          "planning_policy": null,
+          "evaluation_context": null,
+          "planning_inputs": null,
+          "initial_x_satellite_id": "X-1",
+          "initial_ka_satellite_ids": [
+            "AOR"
+          ],
+          "x_transitions": [],
+          "ka_outages": [],
+          "aar_windows": [],
+          "manual_aar_tracks": [],
+          "manual_route_splice": null,
+          "ku_overrides": []
+        },
+        "adjusted_departure_time": null,
+        "created_at": "2026-10-19T01:57:10.016152Z",
+        "updated_at": "2026-10-19T01:57:10.016153Z",
+        "is_active": false,
+        "import_provenance": null,
+        "notes": null
+      }
+    ],
+    "created_at": "2026-10-19T01:57:10.016154Z",
+    "updated_at": "2026-10-19T01:57:10.016155Z",
+    "metadata": {
+      "operator_training_fixture": {
+        "version": 1,
+        "namespace": "operator-training-v1-948e167e-c384-4f0a-8f39-04745c5ce226",
+        "prerequisite_record_ids": [
+          "8e1a4fd7-b4c2-44a8-a334-2cd1f8635db3",
+          "cb7de4fd-c6f8-41bd-8ae2-b4f4ecc791b7",
+          "bb952449-c1ad-4db2-8b6f-0343254596e2",
+          "124657d5-a784-48c0-ae46-53d97de73463",
+          "313d6c1f-40d4-456f-bbac-5840b9201b0e",
+          "f1109af5-12b4-416e-bd72-3ac1e0ce2fa4",
+          "2713e30e-03bb-4e88-91c2-041f28b50ad6",
+          "29fd77a1-1034-40c3-b1a2-b3b8d2117445"
+        ]
+      },
+      "operator_training_archive_inputs": {
+        "synthetic": true,
+        "source_format": "synthetic-operational-format",
+        "relation_to_replay": "independent archive exercise; not replay measurements or aircraft data",
+        "existing_fixture": "tools/acceptance/operator-journal/scenario.py:flight_observations/SyntheticRawReader"
+      }
+    }
+  },
+  "H": 51,
+  "records": [
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:25:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional guided bridge call 2",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional guided bridge call 2",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 10,
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "01b876d9-064e-40c7-b066-dc57a7ba5f09",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 21,
+      "command_id": "574140ae-b777-4c28-93af-cf6e59f22f43",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner first leg",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "0732125c-ed02-4f2e-8796-6ccc9ad03f4c",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 10,
+      "command_id": "58c80bf8-0712-46a5-814f-93b74f33cc40",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:23:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "instant",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "closed",
+        "coordinator": null,
+        "verified_at": null,
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 6,
+      "previous_version": 5,
+      "journal_seq": 27,
+      "command_id": "f7a1e176-2dcf-4b13-853d-f67e1520a947",
+      "operation": "update",
+      "reason": "Conference closed",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:29:00.000000Z",
+        "planned_end_at": "2026-10-17T16:44:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 4 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 4",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "124657d5-a784-48c0-ae46-53d97de73463",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 4,
+      "command_id": "8ec6ac67-b766-4411-a6d4-948b8646a0f7",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:10:00.000000Z",
+        "planned_end_at": "2026-10-17T17:25:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic return briefing 2",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 2",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "2713e30e-03bb-4e88-91c2-041f28b50ad6",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 7,
+      "command_id": "b132f5d1-1d8b-4e82-84e8-a4aa23601520",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T15:45:00.000000Z",
+        "planned_end_at": "2026-10-17T15:55:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic overdue coordination",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic overdue customer",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "29fd77a1-1034-40c3-b1a2-b3b8d2117445",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 8,
+      "command_id": "f801c6f6-58d2-452e-81be-81708bb74c66",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner second leg",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "2a822d9d-6e79-4ec1-b6d1-534fa5918f01",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 12,
+      "command_id": "a8f6f0c0-ff04-4ea3-8399-7c5e633e2312",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:32:00.000000Z",
+        "planned_end_at": "2026-10-17T16:47:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 5 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 5",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "313d6c1f-40d4-456f-bbac-5840b9201b0e",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 5,
+      "command_id": "1562acd9-8356-43a6-97b9-b4a725b99fb6",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:15:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional guided bridge call 1",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional guided bridge call 1",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 10,
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 20,
+      "command_id": "5b378bf4-d1f4-40fd-aeb1-18d1f7cf1244",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional later note retires original accepted tray row",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "3dba6367-306a-4710-907d-7c286e709799",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 14,
+      "command_id": "2cd75ac3-da2a-4b70-89f6-a2b1b74f9418",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional guide lost-receipt exercise",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "59d14630-5d3e-483a-9399-67fcaf851402",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 13,
+      "command_id": "43f0a0f6-33e4-4d54-b8e7-327ba55477b5",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:20:00.000000Z",
+        "planned_end_at": "2026-10-17T16:35:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 1 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 1",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "8e1a4fd7-b4c2-44a8-a334-2cd1f8635db3",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 1,
+      "command_id": "4657f1cb-e1aa-4841-a022-9949571dbc84",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:26:00.000000Z",
+        "planned_end_at": "2026-10-17T16:41:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 3 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 3",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "bb952449-c1ad-4db2-8b6f-0343254596e2",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 3,
+      "command_id": "2dd2e7d3-ee1f-4818-9e85-96a0297a8f7e",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390 corrected later",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 390 corrected later",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 8,
+      "previous_version": 7,
+      "journal_seq": 43,
+      "command_id": "04037066-35b2-4d62-9fe0-d8125bfbf065",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:23:00.000000Z",
+        "planned_end_at": "2026-10-17T16:38:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 2 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 2",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "cb7de4fd-c6f8-41bd-8ae2-b4f4ecc791b7",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 2,
+      "command_id": "fe1eb6a2-76a8-4582-852b-490b52307a5c",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844 corrected later",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 844 corrected later",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 8,
+      "previous_version": 7,
+      "journal_seq": 51,
+      "command_id": "a5c50336-9a4c-4eef-b61f-8133ef585a90",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": "2026-10-17T17:05:00.000000Z",
+        "precision": "exact",
+        "end_state": "known",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional second guided customer",
+        "state": "left",
+        "resumes_participation_id": null,
+        "call_id": "01b876d9-064e-40c7-b066-dc57a7ba5f09",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "da83feb0-8d23-4209-a04a-f7dc897b5d13",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 26,
+      "command_id": "2baddb7c-c515-4f25-a796-2e3ce1003054",
+      "operation": "update",
+      "reason": "Customer left",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": "2026-10-17T17:05:00.000000Z",
+        "precision": "exact",
+        "end_state": "known",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional first guided customer",
+        "state": "interrupted",
+        "resumes_participation_id": null,
+        "call_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "de483660-6f14-4ae7-8406-8434a128fc35",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 23,
+      "command_id": "428738c7-6c0d-4c51-9062-9750002892c6",
+      "operation": "update",
+      "reason": "Customer connection interrupted",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "between_legs",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner gap",
+        "note": "",
+        "previous_leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "next_leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+        "entry_type": "note"
+      },
+      "record_id": "ebd151d4-ce56-4022-a65e-dc83b03d7884",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 11,
+      "command_id": "16807dae-af7c-4868-a8f7-3addbf01ef62",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:45:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "ongoing",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional first guided customer",
+        "state": "connected",
+        "resumes_participation_id": "de483660-6f14-4ae7-8406-8434a128fc35",
+        "call_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "eca81efa-c106-4492-abca-8b718972c1d3",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 24,
+      "command_id": "89e2544d-92eb-47e2-b866-bd157b944b90",
+      "operation": "create",
+      "reason": "Customer connection restored",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:05:00.000000Z",
+        "planned_end_at": "2026-10-17T17:20:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic return briefing 1",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 1",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "f1109af5-12b4-416e-bd72-3ac1e0ce2fa4",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 6,
+      "command_id": "b4de762c-e7f0-402e-b466-5b27d798bc08",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920 corrected later",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 1920 corrected later",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 8,
+      "previous_version": 7,
+      "journal_seq": 35,
+      "command_id": "95172823-db6f-4c72-aaff-6d6e560f5dd5",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "preflight",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner preflight",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "fc5968c5-b108-4357-82e4-c91da1a02384",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 9,
+      "command_id": "8749a428-a75a-49db-8f1f-4337852401e8",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    }
+  ],
+  "history": [
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:25:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional guided bridge call 2",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional guided bridge call 2",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 10,
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "01b876d9-064e-40c7-b066-dc57a7ba5f09",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 21,
+      "command_id": "574140ae-b777-4c28-93af-cf6e59f22f43",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner first leg",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "0732125c-ed02-4f2e-8796-6ccc9ad03f4c",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 10,
+      "command_id": "58c80bf8-0712-46a5-814f-93b74f33cc40",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:23:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "preparing",
+        "coordinator": null,
+        "verified_at": null,
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 15,
+      "command_id": "6f9524be-432a-4b61-a0a4-cab61bf92d10",
+      "operation": "create",
+      "reason": "Conference preparation",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "instant",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "established",
+        "coordinator": null,
+        "verified_at": null,
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 16,
+      "command_id": "01ad26d0-fa20-41a9-995d-cd2ef4c81fe7",
+      "operation": "update",
+      "reason": "Conference established",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "instant",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "established",
+        "coordinator": null,
+        "verified_at": "2026-10-17T17:05:00.000000Z",
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 3,
+      "previous_version": 2,
+      "journal_seq": 17,
+      "command_id": "0fbf332b-9d45-459f-85ad-f69aba5ae922",
+      "operation": "update",
+      "reason": "Conference verification updated",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "instant",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "interrupted",
+        "coordinator": null,
+        "verified_at": null,
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 4,
+      "previous_version": 3,
+      "journal_seq": 18,
+      "command_id": "402e0210-eebd-4f67-9179-e3a2b490aaa7",
+      "operation": "update",
+      "reason": "Conference interrupted",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "instant",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "established",
+        "coordinator": null,
+        "verified_at": null,
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 5,
+      "previous_version": 4,
+      "journal_seq": 19,
+      "command_id": "5dad0167-87d4-46a9-9aae-e9636c533fb2",
+      "operation": "update",
+      "reason": "Conference connection restored",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "conference",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "instant",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional Meridian guided reusable bridge",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "conference",
+        "status": "closed",
+        "coordinator": null,
+        "verified_at": null,
+        "intended_transport": null,
+        "configured_transport": null,
+        "configuration_reported_at": null
+      },
+      "record_id": "0b826384-8da6-43eb-96d0-5725f3347591",
+      "version": 6,
+      "previous_version": 5,
+      "journal_seq": 27,
+      "command_id": "f7a1e176-2dcf-4b13-853d-f67e1520a947",
+      "operation": "update",
+      "reason": "Conference closed",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:29:00.000000Z",
+        "planned_end_at": "2026-10-17T16:44:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 4 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 4",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "124657d5-a784-48c0-ae46-53d97de73463",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 4,
+      "command_id": "8ec6ac67-b766-4411-a6d4-948b8646a0f7",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:10:00.000000Z",
+        "planned_end_at": "2026-10-17T17:25:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic return briefing 2",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 2",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "2713e30e-03bb-4e88-91c2-041f28b50ad6",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 7,
+      "command_id": "b132f5d1-1d8b-4e82-84e8-a4aa23601520",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T15:45:00.000000Z",
+        "planned_end_at": "2026-10-17T15:55:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic overdue coordination",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic overdue customer",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "29fd77a1-1034-40c3-b1a2-b3b8d2117445",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 8,
+      "command_id": "f801c6f6-58d2-452e-81be-81708bb74c66",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner second leg",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "2a822d9d-6e79-4ec1-b6d1-534fa5918f01",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 12,
+      "command_id": "a8f6f0c0-ff04-4ea3-8399-7c5e633e2312",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:32:00.000000Z",
+        "planned_end_at": "2026-10-17T16:47:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 5 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 5",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "313d6c1f-40d4-456f-bbac-5840b9201b0e",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 5,
+      "command_id": "1562acd9-8356-43a6-97b9-b4a725b99fb6",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:15:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional guided bridge call 1",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional guided bridge call 1",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 10,
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 20,
+      "command_id": "5b378bf4-d1f4-40fd-aeb1-18d1f7cf1244",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional later note retires original accepted tray row",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "3dba6367-306a-4710-907d-7c286e709799",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 14,
+      "command_id": "2cd75ac3-da2a-4b70-89f6-a2b1b74f9418",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional guide lost-receipt exercise",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "59d14630-5d3e-483a-9399-67fcaf851402",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 13,
+      "command_id": "43f0a0f6-33e4-4d54-b8e7-327ba55477b5",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:20:00.000000Z",
+        "planned_end_at": "2026-10-17T16:35:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 1 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 1",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "8e1a4fd7-b4c2-44a8-a334-2cd1f8635db3",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 1,
+      "command_id": "4657f1cb-e1aa-4841-a022-9949571dbc84",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:26:00.000000Z",
+        "planned_end_at": "2026-10-17T16:41:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 3 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 3",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "bb952449-c1ad-4db2-8b6f-0343254596e2",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 3,
+      "command_id": "2dd2e7d3-ee1f-4818-9e85-96a0297a8f7e",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T18:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 36,
+      "command_id": "efb259ef-73a1-43b3-8093-544cc886d188",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 37,
+      "command_id": "1bd214d3-09be-4133-8dd0-53bc383ee7c4",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "cancelled",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 3,
+      "previous_version": 2,
+      "journal_seq": 38,
+      "command_id": "66d96676-ccf6-461c-a1d1-ed33b7cb4389",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 4,
+      "previous_version": 3,
+      "journal_seq": 39,
+      "command_id": "d1e0e650-0b66-49ff-8ed4-c0b8b8e3480f",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 5,
+      "previous_version": 4,
+      "journal_seq": 40,
+      "command_id": "0d1657d2-11bc-407f-a146-2c8530f56675",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 6,
+      "previous_version": 5,
+      "journal_seq": 41,
+      "command_id": "57427725-6ded-47f5-aeb1-28c032d0805c",
+      "operation": "remove",
+      "reason": "Operator removal",
+      "reason_origin": "automatic",
+      "deleted": true,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 390",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 7,
+      "previous_version": 6,
+      "journal_seq": 42,
+      "command_id": "97db01a0-6c59-4e1a-a860-b9c024c3bb68",
+      "operation": "restore",
+      "reason": "Operator restoration",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 390 corrected later",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 390 corrected later",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "c6c4da2a-3457-4573-b109-48817d26c23b",
+      "version": 8,
+      "previous_version": 7,
+      "journal_seq": 43,
+      "command_id": "04037066-35b2-4d62-9fe0-d8125bfbf065",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T16:23:00.000000Z",
+        "planned_end_at": "2026-10-17T16:38:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic customer 2 briefing",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 2",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "cb7de4fd-c6f8-41bd-8ae2-b4f4ecc791b7",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 2,
+      "command_id": "fe1eb6a2-76a8-4582-852b-490b52307a5c",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T18:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 44,
+      "command_id": "beb89011-c565-427d-8bce-0eb9ddd95738",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 45,
+      "command_id": "eb17ec06-f8ef-454f-8f69-9577aa02a677",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "cancelled",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 3,
+      "previous_version": 2,
+      "journal_seq": 46,
+      "command_id": "59d967d7-efe8-4595-9cf7-3a3809496f17",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 4,
+      "previous_version": 3,
+      "journal_seq": 47,
+      "command_id": "1ae3e061-e1bc-4e94-adcd-7efd6de5efd9",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 5,
+      "previous_version": 4,
+      "journal_seq": 48,
+      "command_id": "ec291dee-2cd0-4cec-993c-b9623b3d2d84",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 6,
+      "previous_version": 5,
+      "journal_seq": 49,
+      "command_id": "be3828ae-c57e-45fd-80f3-d91f4a97de47",
+      "operation": "remove",
+      "reason": "Operator removal",
+      "reason_origin": "automatic",
+      "deleted": true,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 844",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 7,
+      "previous_version": 6,
+      "journal_seq": 50,
+      "command_id": "b74b5cfb-2976-4277-b544-c0efdb2f2560",
+      "operation": "restore",
+      "reason": "Operator restoration",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 844 corrected later",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 844 corrected later",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "d2ef3514-6fcb-4c60-b53c-711fd078d421",
+      "version": 8,
+      "previous_version": 7,
+      "journal_seq": 51,
+      "command_id": "a5c50336-9a4c-4eef-b61f-8133ef585a90",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "ongoing",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional second guided customer",
+        "state": "connected",
+        "resumes_participation_id": null,
+        "call_id": "01b876d9-064e-40c7-b066-dc57a7ba5f09",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "da83feb0-8d23-4209-a04a-f7dc897b5d13",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 25,
+      "command_id": "0eaf5ef1-fe68-411d-935f-e70fbc6d5326",
+      "operation": "create",
+      "reason": "Customer joined",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": "2026-10-17T17:05:00.000000Z",
+        "precision": "exact",
+        "end_state": "known",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional second guided customer",
+        "state": "left",
+        "resumes_participation_id": null,
+        "call_id": "01b876d9-064e-40c7-b066-dc57a7ba5f09",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "da83feb0-8d23-4209-a04a-f7dc897b5d13",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 26,
+      "command_id": "2baddb7c-c515-4f25-a796-2e3ce1003054",
+      "operation": "update",
+      "reason": "Customer left",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "ongoing",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional first guided customer",
+        "state": "connected",
+        "resumes_participation_id": null,
+        "call_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "de483660-6f14-4ae7-8406-8434a128fc35",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 22,
+      "command_id": "cc5a0283-d1fc-4cb0-962b-cb0c3db77f30",
+      "operation": "create",
+      "reason": "Customer joined",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": "2026-10-17T17:05:00.000000Z",
+        "precision": "exact",
+        "end_state": "known",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional first guided customer",
+        "state": "interrupted",
+        "resumes_participation_id": null,
+        "call_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "de483660-6f14-4ae7-8406-8434a128fc35",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 23,
+      "command_id": "428738c7-6c0d-4c51-9062-9750002892c6",
+      "operation": "update",
+      "reason": "Customer connection interrupted",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "between_legs",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner gap",
+        "note": "",
+        "previous_leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "next_leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+        "entry_type": "note"
+      },
+      "record_id": "ebd151d4-ce56-4022-a65e-dc83b03d7884",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 11,
+      "command_id": "16807dae-af7c-4868-a8f7-3addbf01ef62",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:45:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "participation",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": "2026-10-17T17:05:00.000000Z",
+        "ended_at": null,
+        "precision": "exact",
+        "end_state": "ongoing",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Unknown customer",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "participation",
+        "participant": "Fictional first guided customer",
+        "state": "connected",
+        "resumes_participation_id": "de483660-6f14-4ae7-8406-8434a128fc35",
+        "call_id": "384345ad-f4fb-4d85-8b85-37d9d40e53a4",
+        "conference_id": "0b826384-8da6-43eb-96d0-5725f3347591"
+      },
+      "record_id": "eca81efa-c106-4492-abca-8b718972c1d3",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 24,
+      "command_id": "89e2544d-92eb-47e2-b866-bd157b944b90",
+      "operation": "create",
+      "reason": "Customer connection restored",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+      "scope": "leg",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T17:05:00.000000Z",
+        "planned_end_at": "2026-10-17T17:20:00.000000Z"
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic return briefing 1",
+        "note": "Fictional planned prerequisite; no connection reported.",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Synthetic customer 1",
+        "coordinator": "Synthetic coordinator",
+        "communications_kind": "voice",
+        "prep_lead_minutes": 10,
+        "conference_id": null
+      },
+      "record_id": "f1109af5-12b4-416e-bd72-3ac1e0ce2fa4",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 6,
+      "command_id": "b4de762c-e7f0-402e-b466-5b27d798bc08",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "synthetic training prerequisites",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T18:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 28,
+      "command_id": "ea0ec0fa-f53d-4ce9-9185-d00e74590498",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 2,
+      "previous_version": 1,
+      "journal_seq": 29,
+      "command_id": "7712da84-a517-4f37-8ac0-0a0080c68774",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "cancelled",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 3,
+      "previous_version": 2,
+      "journal_seq": 30,
+      "command_id": "46e31c38-f662-4990-865f-3233bd4149d0",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "scheduled",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 4,
+      "previous_version": 3,
+      "journal_seq": 31,
+      "command_id": "b79367f6-fe4b-4c52-8f50-e9b5f7dede06",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 5,
+      "previous_version": 4,
+      "journal_seq": 32,
+      "command_id": "cd9a8dce-bbef-4d0c-81b1-ff1b0be9f64d",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 6,
+      "previous_version": 5,
+      "journal_seq": 33,
+      "command_id": "e41c76ed-f041-4c44-9649-a606cc6fdad3",
+      "operation": "remove",
+      "reason": "Operator removal",
+      "reason_origin": "automatic",
+      "deleted": true,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 1920",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 7,
+      "previous_version": 6,
+      "journal_seq": 34,
+      "command_id": "1c1c5eb8-d36e-4f09-8d1a-4d982959a8c2",
+      "operation": "restore",
+      "reason": "Operator restoration",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "call",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "mission",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": "2026-10-17T19:00:00.000000Z",
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Fictional complete call exercise 1920 corrected later",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "call",
+        "status": "completed",
+        "party": "Fictional complete call exercise 1920 corrected later",
+        "coordinator": null,
+        "communications_kind": null,
+        "prep_lead_minutes": 0,
+        "conference_id": null
+      },
+      "record_id": "f2086ace-114e-4a95-9b0b-45c10d6477a0",
+      "version": 8,
+      "previous_version": 7,
+      "journal_seq": 35,
+      "command_id": "95172823-db6f-4c72-aaff-6d6e560f5dd5",
+      "operation": "update",
+      "reason": "Operator correction",
+      "reason_origin": "automatic",
+      "deleted": false,
+      "recorded_at": "2026-10-17T17:05:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    },
+    {
+      "schema_version": 1,
+      "record_type": "journal_entry",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "leg_id": null,
+      "scope": "preflight",
+      "time": {
+        "occurred_at": null,
+        "ended_at": null,
+        "precision": "unknown",
+        "end_state": "unknown",
+        "planned_start_at": null,
+        "planned_end_at": null
+      },
+      "payload": {
+        "schema_version": 1,
+        "title": "Synthetic learner preflight",
+        "note": "",
+        "previous_leg_id": null,
+        "next_leg_id": null,
+        "entry_type": "note"
+      },
+      "record_id": "fc5968c5-b108-4357-82e4-c91da1a02384",
+      "version": 1,
+      "previous_version": null,
+      "journal_seq": 9,
+      "command_id": "8749a428-a75a-49db-8f1f-4337852401e8",
+      "operation": "create",
+      "reason": null,
+      "reason_origin": null,
+      "deleted": false,
+      "recorded_at": "2026-10-17T16:00:00.000000Z",
+      "author": {
+        "backend": "restricted-access operator",
+        "operator_label": null
+      },
+      "provenance": {
+        "kind": "operator_reported",
+        "source_mode": "simulation",
+        "observed_at": null,
+        "predicted_at": null,
+        "source_ref": null,
+        "mutation_origin": "interactive"
+      }
+    }
+  ]
+}

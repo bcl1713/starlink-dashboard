@@ -1,0 +1,83 @@
+{
+  "candidateSha": "277e2b4079b5d3119f02e26c992f5ed11d1f2c68",
+  "checksPassed": true,
+  "archiveInspection": {
+    "synthetic": true,
+    "zipSha256": "c656937a41f5a4fee832a863153019e33cce0b35d6db8dd2af41d19b962997f6",
+    "pdfPath": "exports/mission/Training mission \u00b7 Fictional Meridian 21-brief.pdf",
+    "pdfSha256": "1808010c28756b2ef3c8c417ff441b767a0f393f2ffb074d43c284663fe50658",
+    "pdfPages": 2,
+    "pdfClocksFromOriginalRouteInputs": [
+      {
+        "legId": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "departureUtc": "2026-10-17T16:00:00+00:00",
+        "arrivalUtc": "2026-10-17T16:30:00+00:00",
+        "pdfEasternHeader": "DEP 12:00 ET | ARR 12:30 ET"
+      },
+      {
+        "legId": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+        "departureUtc": "2026-10-17T16:45:00+00:00",
+        "arrivalUtc": "2026-10-17T17:15:00+00:00",
+        "pdfEasternHeader": "DEP 12:45 ET | ARR 13:15 ET"
+      }
+    ],
+    "records": 23,
+    "revisions": 51,
+    "checkedMembers": [
+      "operations/activity.jsonl",
+      "operations/audit.jsonl",
+      "operations/current.json",
+      "operations/events.json",
+      "operations/handover.txt",
+      "operations/journal.json",
+      "operations/manifest.json",
+      "telemetry/legs/001/events.csv",
+      "telemetry/legs/001/manifest.json",
+      "telemetry/legs/001/observations.csv",
+      "telemetry/legs/002/events.csv",
+      "telemetry/legs/002/manifest.json",
+      "telemetry/legs/002/observations.csv",
+      "telemetry/manifest.json"
+    ],
+    "telemetry": [
+      {
+        "path": "legs/001",
+        "state": "sealed",
+        "events": [
+          "off_blocks",
+          "takeoff",
+          "landed",
+          "on_blocks"
+        ]
+      },
+      {
+        "path": "legs/002",
+        "state": "sealed",
+        "events": [
+          "off_blocks",
+          "takeoff",
+          "landed",
+          "on_blocks"
+        ]
+      }
+    ],
+    "telemetryInputProvenance": {
+      "existing_fixture": "tools/acceptance/operator-journal/scenario.py:flight_observations/SyntheticRawReader",
+      "relation_to_replay": "independent archive exercise; not replay measurements or aircraft data",
+      "source_format": "synthetic-operational-format",
+      "synthetic": true
+    },
+    "originalZipUnchanged": true,
+    "humanPdfReview": "pending"
+  },
+  "cleanup": {
+    "container": [],
+    "network": [],
+    "volume": []
+  },
+  "destinationCleanup": {
+    "container": [],
+    "network": [],
+    "volume": []
+  }
+}
