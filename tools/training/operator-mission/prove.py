@@ -272,6 +272,14 @@ def main():
         report["checksPassed"] = True
     except BaseException as error:
         report["error"] = str(error)
+        try:
+            failure_owner = launcher.open_owner(root)
+            logs = failure_owner.compose(
+                "logs", "--no-color", "--tail", "200", "starlink-location", timeout=15
+            )
+            (root / "backend-failure.log").write_text(logs)
+        except BaseException as log_error:
+            report["failureLogError"] = str(log_error)
         raise
     finally:
         runner.stop_child()

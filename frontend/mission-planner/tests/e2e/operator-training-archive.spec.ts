@@ -342,14 +342,42 @@ test('original training mission ZIP transfers through Missions without restoring
     foreign.identity.epoch = 'foreign-epoch';
     const foreignReport = join(root, 'foreign-archive-evidence.json');
     writeFileSync(foreignReport, JSON.stringify(foreign));
+    let missionReadRetries = 0;
     for (const viewport of [
       { width: 1920, height: 1080 },
       { width: 390, height: 844 },
       { width: 844, height: 390 },
     ]) {
       await page.setViewportSize(viewport);
+      let releaseMission: (() => void) | undefined;
+      const missionPath = `**/api/v2/missions/${id}`;
+      if (viewport.width === 1920) {
+        const held = new Promise<void>((resolve) => {
+          releaseMission = resolve;
+        });
+        await page.route(missionPath, async (route) => {
+          await held;
+          await route.abort('timedout').catch(() => {});
+        });
+      }
       await page.goto(`/operator?workspace=1&mission_id=${id}`);
       await page.getByRole('button', { name: 'Help', exact: true }).click();
+      if (viewport.width === 1920) {
+        try {
+          await expect(page.getByRole('dialog')).toContainText(
+            'Mission details could not be loaded',
+            { timeout: 20_000 }
+          );
+        } finally {
+          releaseMission?.();
+          await page.unroute(missionPath);
+        }
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: 'Retry mission details', exact: true })
+          .click();
+        missionReadRetries++;
+      }
       await page
         .getByRole('dialog')
         .getByRole('button', {
@@ -450,6 +478,7 @@ test('original training mission ZIP transfers through Missions without restoring
           nonemptyHistoryBefore: sentinelHistory,
           nonemptyHistoryAfter: historyAfter,
           downloadRead,
+          missionReadRetries,
           readyPreparations,
           unchangedOriginalZipImportedTwice: true,
           actualMissionsControls: true,

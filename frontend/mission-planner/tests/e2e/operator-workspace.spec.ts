@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 import { control, mutation, snapshot } from './operator-journal-helpers';
 import { randomUUID } from 'node:crypto';
 import type { SavedRecord } from '@/types/operator';
+import { auditControlNames } from './operator-workspace-audit';
 
 const evidence = process.env.OPERATOR_ACCEPTANCE_EVIDENCE!;
 const fixtures = JSON.parse(
@@ -38,6 +39,7 @@ test('baseline: normal and busy production journeys at three sizes', async ({
             exact: true,
           })
         ).toBeVisible();
+        await auditControlNames(page, `baseline ${fixture.seed} Operator`);
         await page.screenshot({
           path: join(
             evidence,
@@ -64,8 +66,10 @@ test('baseline: normal and busy production journeys at three sizes', async ({
           measurement:
             'scripted browser interaction; not human usability timing',
         });
+        await auditControlNames(page, `baseline ${fixture.seed} call editor`);
         for (const [name, path] of [
           ['overview', '/overview'],
+          ['missions', '/missions'],
           ['configuration', '/configuration'],
         ] as const) {
           await page.goto(path);
@@ -73,7 +77,10 @@ test('baseline: normal and busy production journeys at three sizes', async ({
             await expect(page.locator('main')).toBeVisible();
           else
             await expect(
-              page.getByRole('heading', { name: 'Configuration', exact: true })
+              page.getByRole('heading', {
+                name: name === 'missions' ? 'Missions' : 'Configuration',
+                exact: true,
+              })
             ).toBeVisible();
           await page.screenshot({
             path: join(
@@ -82,6 +89,7 @@ test('baseline: normal and busy production journeys at three sizes', async ({
             ),
             fullPage: true,
           });
+          await auditControlNames(page, `baseline ${fixture.seed} ${name}`);
         }
       } finally {
         await context.close();
@@ -175,6 +183,7 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         );
         expect(layout.bodyHeight).toBeGreaterThanOrEqual(120);
         const capture = `${fixture.seed}-${viewport.width}x${viewport.height}-workspace.png`;
+        await auditControlNames(page, `candidate ${fixture.seed} awareness`);
         await page.screenshot({ path: join(evidence, capture) });
         captures.push(capture);
         await page
@@ -196,6 +205,16 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         await party.focus();
         await page.evaluate(() => window.dispatchEvent(new Event('focus')));
         await expect(party).toBeFocused();
+        await auditControlNames(page, `candidate ${fixture.seed} call editor`);
+        for (let step = 0; step < 12; step++) {
+          await page.keyboard.press('Tab');
+          expect(
+            await dialog.evaluate((element) =>
+              element.contains(document.activeElement)
+            )
+          ).toBe(true);
+        }
+        await party.focus();
         if (viewport.width === 844) {
           await page.setViewportSize({ width: 844, height: 250 });
           await expect(party).toHaveValue(name);
@@ -223,9 +242,11 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         await page
           .getByLabel('Title', { exact: true })
           .fill(`Parked ${fixture.seed} ${viewport.width}`);
-        await page
-          .getByRole('button', { name: 'Keep draft and return' })
-          .click();
+        await page.keyboard.press('Escape');
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(
+          page.getByRole('button', { name: 'Note', exact: true })
+        ).toBeFocused();
         await expect(
           page
             .getByRole('region', { name: 'Retained drafts' })
@@ -261,6 +282,10 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         inlineValidation: true,
         viewportResize: true,
         targets44: true,
+        nativeAccessibleNames: true,
+        keyboardFocusTrapAndReturn: true,
+        physicalDeviceKeyboard:
+          'pending human device check; viewport resize is emulation',
       },
       null,
       2

@@ -46,27 +46,54 @@ test('display presets restore actual weather rendering and report real conflicts
       ).json(),
     });
     const scene = async (page: Page, on: boolean) => {
-      await expect
-        .poll(
-          async () => {
-            const current = await windSnapshot(page);
-            return JSON.stringify({
-              present: !!current?.present,
-              wind: current?.wind,
-              temperature: current?.temperature,
-              sigmet: current?.bulletins?.[2],
-            });
-          },
-          { timeout: 180000 }
-        )
-        .toBe(
-          JSON.stringify({
-            present: true,
-            wind: on,
-            temperature: !on,
-            sigmet: on,
-          })
+      const visibilityBefore = await page.evaluate(
+        () => document.visibilityState
+      );
+      // Hidden displays deliberately release native model resources. Activate
+      // the real window before inspecting the foreground rendering contract.
+      await page.bringToFront();
+      try {
+        await expect
+          .poll(
+            async () => {
+              const current = await windSnapshot(page);
+              return JSON.stringify({
+                present: !!current?.present,
+                wind: current?.wind,
+                temperature: current?.temperature,
+                sigmet: current?.bulletins?.[2],
+              });
+            },
+            { timeout: 180000 }
+          )
+          .toBe(
+            JSON.stringify({
+              present: true,
+              wind: on,
+              temperature: !on,
+              sigmet: on,
+            })
+          );
+      } catch (error) {
+        await writeFile(
+          join(output, 'operator-display-scene-failure.json'),
+          JSON.stringify(
+            {
+              visibilityBefore,
+              visibilityAfter: await page.evaluate(
+                () => document.visibilityState
+              ),
+              expectedWind: on,
+              settings: await settings(),
+              native: await windSnapshot(page),
+              weather: await weatherSnapshot(page),
+            },
+            null,
+            2
+          )
         );
+        throw error;
+      }
       await expect
         .poll(async () => !!(await weatherSnapshot(page)).radar)
         .toBe(on);

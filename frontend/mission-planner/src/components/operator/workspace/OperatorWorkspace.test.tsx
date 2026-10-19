@@ -8,14 +8,25 @@ import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
 import * as api from '@/services/operator';
 import { health } from '@/test/operator-fixtures';
-const missionState = vi.hoisted(() => ({ pending: false }));
+const missionState = vi.hoisted(() => ({
+  pending: false,
+  error: false,
+  retry: vi.fn(),
+}));
 vi.mock('@/hooks/api/useMissions', () => ({
-  useMission: () => ({ data: undefined, isPending: missionState.pending }),
+  useMission: () => ({
+    data: undefined,
+    isPending: missionState.pending,
+    isError: missionState.error,
+    refetch: missionState.retry,
+  }),
   useMissionsPage: () => ({ data: { missions: [] } }),
 }));
 const clients: QueryClient[] = [];
 afterEach(() => {
   missionState.pending = false;
+  missionState.error = false;
+  missionState.retry.mockReset();
   cleanup();
   clients.splice(0).forEach((client) => client.clear());
   sessionStorage.clear();
@@ -77,4 +88,24 @@ it('waits for selected mission identity before enabling the guide launcher', () 
       'Checking the selected mission and private training identity…'
     )
   ).toBeTruthy();
+});
+it('offers an explicit failed mission read retry without treating it as an unmarked training instance', () => {
+  missionState.error = true;
+  mount('/operator?workspace=1&mission_id=unavailable-private-mission');
+  fireEvent.click(screen.getByRole('button', { name: 'Help' }));
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Guided mission walkthrough',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  expect(screen.getByText(/Mission details could not be loaded/)).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Retry mission details' })
+  );
+  expect(missionState.retry).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByText(/Training requires a separate private instance/)
+  ).toBeNull();
 });

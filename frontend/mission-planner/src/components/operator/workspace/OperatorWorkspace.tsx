@@ -1095,7 +1095,7 @@ export function OperatorWorkspace() {
           </div>
           <button
             className="ws-button"
-            disabled={trainingLoading}
+            disabled={trainingLoading || mission.isError}
             onClick={() => {
               if (training) {
                 setHelp(false);
@@ -1109,6 +1109,21 @@ export function OperatorWorkspace() {
             <p role="status">
               Checking the selected mission and private training identity…
             </p>
+          )}
+          {mission.isError && (
+            <div className="space-y-2">
+              <p role="alert">
+                Mission details could not be loaded. Retry the read before
+                opening private training; retained drafts and saves keep their
+                original targets.
+              </p>
+              <button
+                className="ws-button"
+                onClick={() => void mission.refetch()}
+              >
+                Retry mission details
+              </button>
+            </div>
           )}
           {guide && !training && (
             <p role="status">
