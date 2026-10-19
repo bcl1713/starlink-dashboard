@@ -40,6 +40,7 @@ export interface CallEditorState {
   originalDuration: string;
 }
 export function CallEditor({
+  formId,
   draft,
   disabled,
   creating = true,
@@ -52,6 +53,7 @@ export function CallEditor({
   records,
   contextual = false,
 }: {
+  formId?: string;
   draft: CallInput;
   disabled: boolean;
   creating?: boolean;
@@ -175,6 +177,7 @@ export function CallEditor({
   }
   return (
     <form
+      id={formId}
       aria-label="Call editor"
       className="min-w-0 space-y-3 rounded-xl border bg-card p-4"
       onSubmit={(e) => {
@@ -510,6 +513,7 @@ export function CallEditor({
         <button
           className="min-h-11 rounded-md bg-primary px-4 text-primary-foreground disabled:opacity-50"
           type="submit"
+          hidden={!!formId}
           disabled={saveDisabled}
         >
           Save call

@@ -1,12 +1,14 @@
 import type { ParticipationInput, SavedRecord } from '@/types/operator';
 const field = 'min-h-11 w-full rounded border bg-background p-2';
 export function ParticipationEditor({
+  formId,
   draft,
   records,
   disabled,
   onChange,
   onSubmit,
 }: {
+  formId?: string;
   draft: ParticipationInput;
   records: SavedRecord[];
   disabled: boolean;
@@ -18,6 +20,7 @@ export function ParticipationEditor({
   }
   return (
     <form
+      id={formId}
       aria-label="Customer interval editor"
       className="space-y-3 rounded border p-3"
       onSubmit={(e) => {
@@ -148,6 +151,7 @@ export function ParticipationEditor({
       <button
         className="min-h-11 rounded border px-3"
         type="submit"
+        hidden={!!formId}
         disabled={disabled}
       >
         Save customer interval

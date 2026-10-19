@@ -254,3 +254,19 @@ it('loads later relationship pages without dropping the pinned draft', async () 
     'mission-a'
   );
 });
+
+it('keeps native form submission outside the scrolling editor body', async () => {
+  mount();
+  const save = (await screen.findByRole('button', {
+    name: 'Save entry',
+  })) as HTMLButtonElement;
+  expect(save.closest('.ws-editor-body')).toBeNull();
+  expect(save.closest('.ws-editor-footer')).not.toBeNull();
+  expect(save.form).toBeInstanceOf(HTMLFormElement);
+  expect(save.form?.closest('.ws-editor-body')).not.toBeNull();
+  expect(
+    screen
+      .getByRole('button', { name: 'Discard draft' })
+      .closest('.ws-editor-body')
+  ).toBeNull();
+});

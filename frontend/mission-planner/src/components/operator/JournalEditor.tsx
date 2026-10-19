@@ -6,6 +6,7 @@ import type {
   Scope,
 } from '@/types/operator';
 interface Props {
+  formId?: string;
   missionId: string;
   record?: SavedRecord;
   disabled: boolean;
@@ -22,6 +23,7 @@ interface Props {
 const control =
   'min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2';
 export function JournalEditor({
+  formId,
   missionId,
   record,
   disabled,
@@ -87,6 +89,7 @@ export function JournalEditor({
   }
   return (
     <form
+      id={formId}
       className="min-w-0 space-y-4 rounded-lg border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
@@ -313,6 +316,7 @@ export function JournalEditor({
       <button
         className="min-h-11 rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
         type="submit"
+        hidden={!!formId}
         disabled={disabled || saveDisabled}
       >
         Save entry

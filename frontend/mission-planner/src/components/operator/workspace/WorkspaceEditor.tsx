@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,7 @@ export function WorkspaceEditor({
   mission?: EditorMission;
   onReturnFocus?: () => void;
 }) {
+  const formId = useId();
   const workspace = useOperatorWorkspace();
   const draft = workspace.selectedDraftId
     ? workspace.registry.resumeDraft(workspace.selectedDraftId)
@@ -74,6 +75,25 @@ export function WorkspaceEditor({
   const returnFocus = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (!draft) return null;
+  const saveLabel =
+    draft.input.record_type === 'journal_entry'
+      ? draft.input.payload.entry_type === 'capability_assessment'
+        ? 'Save assessment'
+        : ['note', 'call_observation'].includes(draft.input.payload.entry_type)
+          ? 'Save entry'
+          : null
+      : draft.input.record_type === 'issue' && draft.target.correctionVersion
+        ? 'Save correction'
+        : (
+            {
+              call: 'Save call',
+              conference: 'Save conference',
+              participation: 'Save customer interval',
+              transport_decision: 'Save transport decision',
+              issue: 'Save issue',
+            } as Partial<Record<string, string>>
+          )[draft.input.record_type];
+
   const tray = workspace.tray.find(
     (row) => row.lane === commandLane(draft.target)
   );
@@ -332,6 +352,7 @@ export function WorkspaceEditor({
           </div>
           {draft.input.record_type === 'call' ? (
             <CallEditor
+              formId={formId}
               key={draft.draftId}
               draft={draft.input as CallInput}
               creating={!draft.target.recordId}
@@ -348,6 +369,7 @@ export function WorkspaceEditor({
             />
           ) : draft.input.record_type === 'conference' ? (
             <ConferenceEditor
+              formId={formId}
               draft={draft.input as ConferenceInput}
               disabled={saveDisabled}
               onChange={update}
@@ -390,6 +412,7 @@ export function WorkspaceEditor({
                 </p>
               )}
               <ParticipationEditor
+                formId={formId}
                 draft={draft.input}
                 records={relatedRecords}
                 disabled={saveDisabled}
@@ -402,6 +425,7 @@ export function WorkspaceEditor({
             </>
           ) : draft.input.record_type === 'transport_decision' ? (
             <TransportForm
+              formId={formId}
               records={relatedRecords}
               draft={{
                 input: draft.input,
@@ -430,6 +454,7 @@ export function WorkspaceEditor({
           ) : draft.input.record_type === 'issue' &&
             draft.target.correctionVersion ? (
             <form
+              id={formId}
               aria-label="Correct historical update"
               onSubmit={(event) => {
                 event.preventDefault();
@@ -478,12 +503,13 @@ export function WorkspaceEditor({
                   }}
                 />
               </label>
-              <button className="ws-button" disabled={saveDisabled}>
+              <button hidden className="ws-button" disabled={saveDisabled}>
                 Save correction
               </button>
             </form>
           ) : draft.input.record_type === 'issue' ? (
             <IssueForm
+              formId={formId}
               draft={{
                 input: draft.input,
                 baseVersion: draft.baseVersion,
@@ -518,6 +544,7 @@ export function WorkspaceEditor({
           ) : draft.input.record_type === 'journal_entry' &&
             draft.input.payload.entry_type === 'capability_assessment' ? (
             <CapabilityForm
+              formId={formId}
               draft={{
                 input:
                   draft.input as import('@/types/operator').CapabilityInput,
@@ -562,6 +589,7 @@ export function WorkspaceEditor({
               draft.input.payload.entry_type
             ) ? (
             <JournalEditor
+              formId={formId}
               key={`${draft.draftId}:${draft.baseVersion}`}
               missionId={draft.target.missionId}
               record={draft.baseRecord ?? undefined}
@@ -582,6 +610,18 @@ export function WorkspaceEditor({
               This retained draft uses its operational editor. Keep it parked
               while opening the matching view.
             </p>
+          )}
+        </div>
+        <div className="ws-editor-footer">
+          {saveLabel && (
+            <button
+              className="ws-button"
+              type="submit"
+              form={formId}
+              disabled={saveDisabled}
+            >
+              {saveLabel}
+            </button>
           )}
           <button
             className="ws-button ws-destructive"

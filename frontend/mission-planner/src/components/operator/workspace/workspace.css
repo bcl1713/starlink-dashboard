@@ -246,7 +246,19 @@
   gap: 0.75rem;
   justify-content: space-between;
 }
+.ws-editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  border-top: 1px solid var(--ws-border);
+  padding-top: 0.75rem;
+}
+.ws-editor-heading {
+  flex-shrink: 0;
+}
 .ws-editor-body {
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;

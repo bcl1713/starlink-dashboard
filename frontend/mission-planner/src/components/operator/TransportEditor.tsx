@@ -47,6 +47,7 @@ export function TransportEditor({
   );
 }
 export function TransportForm({
+  formId,
   draft,
   onDraftChange: setDraft,
   onSaved,
@@ -59,6 +60,7 @@ export function TransportForm({
   contextual = false,
   records,
 }: {
+  formId?: string;
   draft: TransportDraft;
   onDraftChange: (draft: TransportDraft) => void;
   onSaved?: () => void;
@@ -82,6 +84,7 @@ export function TransportForm({
   }
   return (
     <form
+      id={formId}
       aria-label="Transport decision editor"
       className="min-w-0 space-y-3"
       onSubmit={async (e) => {
@@ -360,6 +363,7 @@ export function TransportForm({
         <button
           className={`${issueButton} bg-primary text-primary-foreground`}
           type="submit"
+          hidden={!!formId}
           disabled={saveDisabled}
         >
           Save transport decision

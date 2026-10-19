@@ -191,6 +191,39 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
           .click();
         const dialog = page.getByRole('dialog');
         const party = dialog.getByLabel('Party / participant (optional)');
+        const checkFooter = async () => {
+          const geometry = await dialog.evaluate((element) => {
+            const body = element.querySelector('.ws-editor-body')!;
+            const footer = element.querySelector('.ws-editor-footer')!;
+            const save = footer.querySelector(
+              'button[type="submit"]'
+            ) as HTMLButtonElement;
+            const rect = save.getBoundingClientRect();
+            return {
+              bodyBottom: body.getBoundingClientRect().bottom,
+              footerTop: footer.getBoundingClientRect().top,
+              saveTop: rect.top,
+              saveBottom: rect.bottom,
+              formBound: !!save.form && body.contains(save.form),
+              outsideScroll: !body.contains(save),
+            };
+          });
+          expect(geometry.formBound).toBe(true);
+          expect(geometry.outsideScroll).toBe(true);
+          expect(geometry.footerTop).toBeGreaterThanOrEqual(
+            geometry.bodyBottom - 1
+          );
+          expect(geometry.saveTop).toBeGreaterThanOrEqual(0);
+          expect(geometry.saveBottom).toBeLessThanOrEqual(
+            page.viewportSize()!.height
+          );
+        };
+        await checkFooter();
+        await dialog.locator('.ws-editor-body').evaluate((element) => {
+          element.scrollTop = element.scrollHeight;
+        });
+        await checkFooter();
+
         const name = `Synthetic ${fixture.seed} ${viewport.width} customer with a long descriptive label`;
         await party.fill(name);
         await dialog
@@ -217,6 +250,7 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         await party.focus();
         if (viewport.width === 844) {
           await page.setViewportSize({ width: 844, height: 250 });
+          await checkFooter();
           await expect(party).toHaveValue(name);
           expect(
             await dialog.evaluate(

@@ -62,6 +62,7 @@ export function CapabilityEditor({
   );
 }
 export function CapabilityForm({
+  formId,
   draft,
   onDraftChange: setDraft,
   onSaved,
@@ -72,6 +73,7 @@ export function CapabilityForm({
   asOf,
   onSave,
 }: {
+  formId?: string;
   draft: CapabilityEditorDraft;
   onDraftChange: (draft: CapabilityEditorDraft) => void;
   onSaved?: () => void;
@@ -104,6 +106,7 @@ export function CapabilityForm({
     });
   return (
     <form
+      id={formId}
       aria-label="Capability assessment"
       className="min-w-0 space-y-3 rounded-lg border p-4"
       onSubmit={(e) => {
@@ -249,7 +252,11 @@ export function CapabilityForm({
           />
         </label>
         <div className="flex flex-wrap gap-2">
-          <button className={issueButton} disabled={saveDisabled}>
+          <button
+            hidden={!!formId}
+            className={issueButton}
+            disabled={saveDisabled}
+          >
             Save assessment
           </button>
           <button

@@ -66,6 +66,7 @@ export function IssueEditor({
 }
 
 export function IssueForm({
+  formId,
   draft,
   onDraftChange: setDraft,
   onSaved,
@@ -78,6 +79,7 @@ export function IssueForm({
   related,
   contextual = false,
 }: {
+  formId?: string;
   draft: IssueEditorDraft;
   onDraftChange: (draft: IssueEditorDraft) => void;
   onSaved?: () => void;
@@ -115,6 +117,7 @@ export function IssueForm({
   }
   return (
     <form
+      id={formId}
       aria-label="Issue editor"
       onSubmit={(event) => void submit(event)}
       className="min-w-0 space-y-3 rounded-lg border p-4"
@@ -410,7 +413,11 @@ export function IssueForm({
           </div>
         </details>
         <div className="flex flex-wrap gap-2">
-          <button className={issueButton} disabled={disabled || saveDisabled}>
+          <button
+            hidden={!!formId}
+            className={issueButton}
+            disabled={disabled || saveDisabled}
+          >
             Save issue
           </button>
           <button
