@@ -2,13 +2,16 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import type { CallInput } from '@/types/operator';
+import type { CallInput, SavedRecord } from '@/types/operator';
+import { record } from '@/test/operator-fixtures';
+import { conferenceDraft } from './conferenceCommands';
 import { CallEditor } from './CallEditor';
 import { callDraft } from './callDraft';
 afterEach(cleanup);
 function mount(
   mode: 'planned' | 'retrospective' = 'planned',
-  lead?: number | null
+  lead?: number | null,
+  records?: SavedRecord[]
 ) {
   const submitted = vi.fn();
   const initial = callDraft(undefined, mode, 'demo');
@@ -21,6 +24,7 @@ function mount(
         disabled={false}
         onChange={setDraft}
         onSubmit={submitted}
+        records={records}
       />
     );
   }
@@ -30,6 +34,37 @@ function mount(
 function field(name: string, value: string) {
   fireEvent.change(screen.getByLabelText(name), { target: { value } });
 }
+it.each(['tentative', 'delayed'] as const)(
+  'retains %s status and optional named conference, type and coordinator fields',
+  (status) => {
+    const conference = {
+      ...record,
+      ...conferenceDraft('demo'),
+      record_id: 'conference-a',
+    };
+    const submit = mount('planned', undefined, [conference]);
+    field('Planned start (UTC)', '2026-10-17T17:00:00Z');
+    field('Status', status);
+    field('Communications type', 'vtc');
+    field('Ground coordinator (optional)', 'Fictional ground coordinator');
+    field('Conference (optional)', conference.record_id);
+    fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+    expect(submit.mock.calls[0][0]).toMatchObject({
+      payload: {
+        status,
+        communications_kind: 'vtc',
+        coordinator: 'Fictional ground coordinator',
+        conference_id: 'conference-a',
+        prep_lead_minutes: 10,
+      },
+      time: {
+        planned_start_at: '2026-10-17T17:00:00Z',
+        occurred_at: null,
+        ended_at: null,
+      },
+    });
+  }
+);
 it('creates from party/time alone with unknown duration', () => {
   const submit = mount();
   field('Party / participant (optional)', 'Synthetic party');

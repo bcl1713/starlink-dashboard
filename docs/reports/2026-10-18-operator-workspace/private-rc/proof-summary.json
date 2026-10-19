@@ -1,0 +1,206 @@
+{
+  "candidateSha": "c3ff657f2bfc91f2351956088ca5e15dc5efb227",
+  "checksPassed": true,
+  "scope": "course-archive",
+  "archiveInspection": {
+    "synthetic": true,
+    "zipSha256": "997ac4aa44617ea9c2d2a5029c6aa7d0256b317056c52c29a6fd5d7e57a2bfa1",
+    "pdfPath": "exports/mission/Training mission \u00b7 Fictional Meridian 21-brief.pdf",
+    "pdfSha256": "1808010c28756b2ef3c8c417ff441b767a0f393f2ffb074d43c284663fe50658",
+    "pdfPages": 2,
+    "pdfClocksFromOriginalRouteInputs": [
+      {
+        "legId": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "departureUtc": "2026-10-17T16:00:00+00:00",
+        "arrivalUtc": "2026-10-17T16:30:00+00:00",
+        "pdfEasternHeader": "DEP 12:00 ET | ARR 12:30 ET"
+      },
+      {
+        "legId": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+        "departureUtc": "2026-10-17T16:45:00+00:00",
+        "arrivalUtc": "2026-10-17T17:15:00+00:00",
+        "pdfEasternHeader": "DEP 12:45 ET | ARR 13:15 ET"
+      }
+    ],
+    "records": 41,
+    "revisions": 99,
+    "checkedMembers": [
+      "operations/activity.jsonl",
+      "operations/audit.jsonl",
+      "operations/current.json",
+      "operations/events.json",
+      "operations/handover.txt",
+      "operations/journal.json",
+      "operations/manifest.json",
+      "telemetry/legs/001/events.csv",
+      "telemetry/legs/001/manifest.json",
+      "telemetry/legs/001/observations.csv",
+      "telemetry/legs/002/events.csv",
+      "telemetry/legs/002/manifest.json",
+      "telemetry/legs/002/observations.csv",
+      "telemetry/manifest.json"
+    ],
+    "checksumReads": [
+      {
+        "path": "operations/activity.jsonl",
+        "expected": "911e8074bd9cbee66b9f05e6f8a0cecbbac726f827e71e57498273d1584404d6",
+        "actual": "911e8074bd9cbee66b9f05e6f8a0cecbbac726f827e71e57498273d1584404d6"
+      },
+      {
+        "path": "operations/audit.jsonl",
+        "expected": "4b72d960bbda032f68d821addbe452e3cd76d9486d6f4b2c86bafbf35cb2aa14",
+        "actual": "4b72d960bbda032f68d821addbe452e3cd76d9486d6f4b2c86bafbf35cb2aa14"
+      },
+      {
+        "path": "operations/current.json",
+        "expected": "82ec725fe2f8916aa558cd8c24df2726286e2cdb4650ce0ae9ad842436e0d205",
+        "actual": "82ec725fe2f8916aa558cd8c24df2726286e2cdb4650ce0ae9ad842436e0d205"
+      },
+      {
+        "path": "operations/events.json",
+        "expected": "ab9071ceb56f27dc8865a0f230255a8101683d2a146515bf51b811a1d636cc8f",
+        "actual": "ab9071ceb56f27dc8865a0f230255a8101683d2a146515bf51b811a1d636cc8f"
+      },
+      {
+        "path": "operations/handover.txt",
+        "expected": "b0463ed77c75d60e0a934b7a4000e5c7c542f24786acdec158b4726b672dcfc0",
+        "actual": "b0463ed77c75d60e0a934b7a4000e5c7c542f24786acdec158b4726b672dcfc0"
+      },
+      {
+        "path": "operations/journal.json",
+        "expected": "3e24f0a81892ea425fcc7058d59490b50e0297106b042e2aa0b4b51ce88ea3d5",
+        "actual": "3e24f0a81892ea425fcc7058d59490b50e0297106b042e2aa0b4b51ce88ea3d5"
+      },
+      {
+        "path": "operations/manifest.json",
+        "expected": "055558a0c0381ea3adb559d0f597f265064ea7d97872aad870f59e27ed6dc6a9",
+        "actual": "055558a0c0381ea3adb559d0f597f265064ea7d97872aad870f59e27ed6dc6a9"
+      },
+      {
+        "path": "telemetry/legs/001/events.csv",
+        "expected": "fff749985fa468d72d67058dd6293512c5b8a6d64448cc253e6661fd43e03903",
+        "actual": "fff749985fa468d72d67058dd6293512c5b8a6d64448cc253e6661fd43e03903"
+      },
+      {
+        "path": "telemetry/legs/001/manifest.json",
+        "expected": "cf468b710a84e3482d50d9c7bd1f16a6dd800c50b54985feb4a65362f57682c0",
+        "actual": "cf468b710a84e3482d50d9c7bd1f16a6dd800c50b54985feb4a65362f57682c0"
+      },
+      {
+        "path": "telemetry/legs/001/observations.csv",
+        "expected": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b",
+        "actual": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b"
+      },
+      {
+        "path": "telemetry/legs/002/events.csv",
+        "expected": "1eec2c79877f9af2193c9a6d2df9befb1b85bfa2c99147b12fc4b2915a7b733c",
+        "actual": "1eec2c79877f9af2193c9a6d2df9befb1b85bfa2c99147b12fc4b2915a7b733c"
+      },
+      {
+        "path": "telemetry/legs/002/manifest.json",
+        "expected": "65274c4d02542df6d8098ca9f74db6b2ba6b239b6fb8357c02ae0592a6136880",
+        "actual": "65274c4d02542df6d8098ca9f74db6b2ba6b239b6fb8357c02ae0592a6136880"
+      },
+      {
+        "path": "telemetry/legs/002/observations.csv",
+        "expected": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87",
+        "actual": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87"
+      },
+      {
+        "path": "telemetry/manifest.json",
+        "expected": "47ca4c84530c66c39d38c32b50b5f0612b50776774068a4f20ac6e65df559b60",
+        "actual": "47ca4c84530c66c39d38c32b50b5f0612b50776774068a4f20ac6e65df559b60"
+      },
+      {
+        "path": "operations/activity.jsonl",
+        "expected": "911e8074bd9cbee66b9f05e6f8a0cecbbac726f827e71e57498273d1584404d6",
+        "actual": "911e8074bd9cbee66b9f05e6f8a0cecbbac726f827e71e57498273d1584404d6"
+      },
+      {
+        "path": "operations/audit.jsonl",
+        "expected": "4b72d960bbda032f68d821addbe452e3cd76d9486d6f4b2c86bafbf35cb2aa14",
+        "actual": "4b72d960bbda032f68d821addbe452e3cd76d9486d6f4b2c86bafbf35cb2aa14"
+      },
+      {
+        "path": "operations/current.json",
+        "expected": "82ec725fe2f8916aa558cd8c24df2726286e2cdb4650ce0ae9ad842436e0d205",
+        "actual": "82ec725fe2f8916aa558cd8c24df2726286e2cdb4650ce0ae9ad842436e0d205"
+      },
+      {
+        "path": "operations/events.json",
+        "expected": "ab9071ceb56f27dc8865a0f230255a8101683d2a146515bf51b811a1d636cc8f",
+        "actual": "ab9071ceb56f27dc8865a0f230255a8101683d2a146515bf51b811a1d636cc8f"
+      },
+      {
+        "path": "operations/handover.txt",
+        "expected": "b0463ed77c75d60e0a934b7a4000e5c7c542f24786acdec158b4726b672dcfc0",
+        "actual": "b0463ed77c75d60e0a934b7a4000e5c7c542f24786acdec158b4726b672dcfc0"
+      },
+      {
+        "path": "operations/journal.json",
+        "expected": "3e24f0a81892ea425fcc7058d59490b50e0297106b042e2aa0b4b51ce88ea3d5",
+        "actual": "3e24f0a81892ea425fcc7058d59490b50e0297106b042e2aa0b4b51ce88ea3d5"
+      },
+      {
+        "path": "telemetry/legs/001/events.csv",
+        "expected": "fff749985fa468d72d67058dd6293512c5b8a6d64448cc253e6661fd43e03903",
+        "actual": "fff749985fa468d72d67058dd6293512c5b8a6d64448cc253e6661fd43e03903"
+      },
+      {
+        "path": "telemetry/legs/001/observations.csv",
+        "expected": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b",
+        "actual": "e7c6cfaed467adae526e73d9eb55b7be8f43da0e1cef8c73d66eae7c13c9bc2b"
+      },
+      {
+        "path": "telemetry/legs/002/events.csv",
+        "expected": "1eec2c79877f9af2193c9a6d2df9befb1b85bfa2c99147b12fc4b2915a7b733c",
+        "actual": "1eec2c79877f9af2193c9a6d2df9befb1b85bfa2c99147b12fc4b2915a7b733c"
+      },
+      {
+        "path": "telemetry/legs/002/observations.csv",
+        "expected": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87",
+        "actual": "4822abef56e190ffcea0d30ad15ed0adac16e00e37ddc74882623b8c221bdc87"
+      }
+    ],
+    "telemetry": [
+      {
+        "path": "legs/001",
+        "state": "sealed",
+        "events": [
+          "off_blocks",
+          "takeoff",
+          "landed",
+          "on_blocks"
+        ]
+      },
+      {
+        "path": "legs/002",
+        "state": "sealed",
+        "events": [
+          "off_blocks",
+          "takeoff",
+          "landed",
+          "on_blocks"
+        ]
+      }
+    ],
+    "telemetryInputProvenance": {
+      "existing_fixture": "tools/acceptance/operator-journal/scenario.py:flight_observations/SyntheticRawReader",
+      "relation_to_replay": "independent archive exercise; not replay measurements or aircraft data",
+      "source_format": "synthetic-operational-format",
+      "synthetic": true
+    },
+    "originalZipUnchanged": true,
+    "humanPdfReview": "pending"
+  },
+  "cleanup": {
+    "container": [],
+    "network": [],
+    "volume": []
+  },
+  "destinationCleanup": {
+    "container": [],
+    "network": [],
+    "volume": []
+  }
+}

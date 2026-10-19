@@ -1,41 +1,67 @@
 # Private Operator candidate
 
-Use a nonproduction Linux computer with Git, Python 3, Docker Engine and the
-Docker Compose plugin. The launcher builds the committed application source;
-initial builds need access to the image and dependency registries. Keep the
-computer's configured Docker context and `DOCKER_HOST` unchanged.
+Tested private RC1 runtime source: `c3ff657f2bfc91f2351956088ca5e15dc5efb227`.
+Use a nonproduction Linux computer with Git, an updated Python 3.11 or newer,
+Docker Engine and the Compose plugin. The launcher builds committed application
+source; initial builds need registry access. Preserve the computer's configured
+Docker context and `DOCKER_HOST`.
 
-From the implementation checkout at the candidate SHA reported on PR #383:
+From an existing repository clone, keep the test checkout isolated:
 
 ```sh
-git rev-parse HEAD
+git fetch origin feat/issue-376-operator-workspace
+git worktree add --detach .worktrees/operator-rc-c3ff657f c3ff657f2bfc91f2351956088ca5e15dc5efb227
+cd .worktrees/operator-rc-c3ff657f
 docker info
 export operator_training_root="$(mktemp -d /tmp/operator-training-XXXXXX)"
 timeout --kill-after=10s 20m scripts/operator-training.sh start \
   --root "$operator_training_root" --disposable
 ```
 
-Open the printed `origin`, including `/operator?workspace=1`. In Operator, select
-**Fictional Meridian 21**, open **Help**, then **Guided mission walkthrough**.
-Use the normal Operator/Missions controls for each lesson; **Read this procedure**
-opens the packaged offline guide. The root contains the command/resource ownership
-and launch logs. Keep its path for the checkpoint, restart and archive commands.
-Managed-cloud sessions whose daemon cannot expose its loopback port need the
-launcher's existing `--relay` option. A local Docker installation normally does
-not need it.
+Open the printed `origin`, including `/operator?workspace=1`. Select
+**Fictional Meridian 21**, then **Help → Guided mission walkthrough**. The packaged
+procedure supplies the native backup warmup, checkpoints, restart and archive
+commands using this private root. Managed-cloud sessions whose Docker daemon
+cannot expose loopback need the existing `--relay` option; local Docker normally
+does not. The source root contains the command/resource ownership and launch logs.
 
-This is an implementation candidate, not a fully accepted release. T01–T11
-remain honest about missing machine evidence and human observations. Real
-conflict recovery and native backup/epoch recovery have separate three-size
-browser acceptance. Current T11 provider reads, the 323-entry optional-branch
-reference and the private receipt-loss control await the fresh linked run.
-The release parity evidence crosswalk, final performance/accessibility,
-mobile-keyboard checks and an actual uncoached person's walkthrough remain open.
-The original shell is still the default; `?workspace=1` selects the candidate.
-Do not interpret a green lesson or a passing browser test as human usability
-acceptance. For the first-use check, note where finding the next action, deciding
-what a status means, or recovering a mistake needed outside help. Record screen
-size and the lesson; never include operational data.
+The linked production run at this SHA passes all ten browser cases, including
+original ZIP/PDF/checksums, both isolated imports, actual conflicts, source/restart
+continuity, storage recovery, a timed-out mission read with explicit retry, and
+native backup/changed-epoch recovery using the private one-response receipt-loss
+control. See the retained private-rc report. Guide navigation and human
+observations remain separate from these automated facts.
+
+For the required uncoached first use, use the application and its packaged Help
+without outside verbal coaching:
+
+1. Before reading a procedure, identify what Operator represents and find how to
+   schedule a call and create/establish/verify a conference. Record the first point
+   of uncertainty instead of having someone point out the control.
+2. Conduct the complete T01–T11 synthetic mission. Perform the backup/epoch warmup
+   before the first flight, then return to T01 in the restored epoch. Use real
+   controls and the guide's explicit evidence checks; keep missing, skipped and
+   unavailable outcomes honest.
+3. For each lesson record completion, Help retrieval, wrong selections, recovery
+   and elapsed time. Record pauses separately. Review the original extracted PDF
+   yourself and supply only human observations you actually made.
+4. Repeat the mission on mobile portrait/landscape. On a real device, inspect the
+   soft keyboard, scrolling, retained focus and recovery while editing. Desktop
+   viewport emulation is a separate automated check and does not certify this.
+5. Return the exact SHA, device/browser, lesson, expected next action, what you
+   actually found, Help used, errors/recovery and approximate elapsed time. Use
+   fictional data only. Uncoached use and physical-device accessibility remain
+   pending until a real person supplies these observations.
+
+Known release gates: the 147 candidate production assertions and 176 partial parity
+crosswalk entries still need final exact assertion reconciliation; final
+performance/accessibility/device checks remain open. The latest connected native
+Overview test failed wind restoration after preset reversal; its foreground-window
+diagnostic correction still needs a sequential rerun. This private checkpoint is
+for testing, with no merge/cutover or human-usability acceptance claimed. The old
+shell remains the default; `?workspace=1` selects the candidate. The launcher binds
+loopback; real-phone access requires a separately chosen private connection to
+the nonproduction computer.
 
 Stop the private exercise as soon as its checks finish:
 

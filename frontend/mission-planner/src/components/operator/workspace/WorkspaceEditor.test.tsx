@@ -130,6 +130,25 @@ it('uses explicit named scope selectors without changing the pinned mission', as
   expect(screen.getByText(/Draft mission: Fictional mission/)).toBeTruthy();
   expect(screen.queryByLabelText('Entry mission ID')).toBeNull();
 });
+it.each(['preflight', 'postflight'] as const)(
+  'keeps %s scope explicit without moving the draft mission or inventing a leg',
+  async (scope) => {
+    const { registry, draft } = mount();
+    fireEvent.change(await screen.findByLabelText('Draft scope'), {
+      target: { value: scope },
+    });
+    const retained = registry.resumeDraft(draft.draftId)!;
+    expect(retained.target).toMatchObject({
+      missionId: 'mission-a',
+      scope,
+      legId: null,
+      previousLegId: null,
+      nextLegId: null,
+    });
+    expect(retained.input.scope).toBe(scope);
+    expect(retained.input.leg_id).toBeNull();
+  }
+);
 
 it('keeps input editable while the store is unavailable and disables saving', async () => {
   const { client, registry, draft } = mount();
