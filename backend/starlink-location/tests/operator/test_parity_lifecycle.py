@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 import pytest
+
 from tests.operator.api_helpers import BASE, create, headers
 from tests.operator.test_capability_api import assessment
 from tests.operator.test_conference_api import conference_data
