@@ -16,6 +16,9 @@ explicit wall-clock termination and an owned, reaped process group.
   checker reports repository-defined nonblocking availability warnings
   (including remote rate limits).
 
+Final published documentation at `63cae2a1` also passes the complete static tier;
+its exact log and independent cleanup record are in `static-publication`.
+
 The ten-, thirty- and twenty-minute limits for static/backend/frontend were
 unchanged. No test selectors, skip rules or verification commands were relaxed.
 Early static failures are retained: Python import spacing, four frontend test
