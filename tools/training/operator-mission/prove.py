@@ -248,6 +248,27 @@ def main():
             report["archiveInspection"] = json.loads(
                 (root / "archive-inspection.json").read_text()
             )
+            # This independent recovery branch runs after the captured archive
+            # facts. Its restore retains the complete backup and rotates epoch;
+            # it does not translate prior guide observations to the new epoch.
+            runner.env.pop("OPERATOR_TRAINING_ARCHIVE_ONLY")
+            runner.env["OPERATOR_TRAINING_RECOVERY_ONLY"] = "true"
+            runner.execute(
+                [
+                    "timeout",
+                    "--kill-after=10s",
+                    "6m",
+                    "npx",
+                    "--no-install",
+                    "playwright",
+                    "test",
+                    "--config",
+                    "playwright.operator-training.config.ts",
+                ],
+                cwd=launcher.SOURCE / "frontend/mission-planner",
+                timeout=380,
+            )
+            runner.env.pop("OPERATOR_TRAINING_RECOVERY_ONLY")
         report["checksPassed"] = True
     except BaseException as error:
         report["error"] = str(error)

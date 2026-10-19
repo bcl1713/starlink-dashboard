@@ -1,3 +1,4 @@
+import { readTrainingProviderEvidence } from '../training/trainingProviderEvidence';
 import {
   collectRecoveryEvidence,
   retainRecoveryObservation,
@@ -176,6 +177,9 @@ export function OperatorWorkspace() {
     events.snapshot?.generation
   );
   const trainingEvidence: TrainingEvidence = {
+    providerStates: trainingRecordsCurrent
+      ? checkedTraining.providerStates
+      : [],
     available: (trainingEvents?.available ?? false) && !records.isError,
     fresh: !events.failed && (trainingEvents?.fresh ?? false),
     toolingOutcomes: trainingRecordsCurrent
@@ -465,13 +469,19 @@ export function OperatorWorkspace() {
                 health.data!.simulation_run_id!,
                 training.prerequisiteIds
               );
-              const [replay, snapshot, currentMission, displayOutcomes] =
-                await Promise.all([
-                  simulationRunApi.get(),
-                  readEventSnapshot(missionId),
-                  mission.refetch(),
-                  readTrainingDisplayEvidence(),
-                ]);
+              const [
+                replay,
+                snapshot,
+                currentMission,
+                displayOutcomes,
+                providers,
+              ] = await Promise.all([
+                simulationRunApi.get(),
+                readEventSnapshot(missionId),
+                mission.refetch(),
+                readTrainingDisplayEvidence(),
+                readTrainingProviderEvidence(),
+              ]);
               const currentContext = trainingContext(
                 health.data,
                 currentMission.data,
@@ -633,6 +643,7 @@ export function OperatorWorkspace() {
               );
               setCheckedTraining({
                 ...checked,
+                providerStates: providers.providerStates,
                 toolingOutcomes: [...archiveOutcomes, ...recoveryOutcomes],
                 historicalOutcomes: [
                   ...conflictOutcomes,
@@ -646,6 +657,7 @@ export function OperatorWorkspace() {
                   ...new Set([
                     ...checked.outcomes,
                     ...displayOutcomes,
+                    ...providers.outcomes,
                     ...conflictOutcomes,
                     ...clientOutcomes,
                     ...retryOutcomes,

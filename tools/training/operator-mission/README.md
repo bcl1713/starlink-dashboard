@@ -27,7 +27,8 @@ not need it.
 This is an implementation candidate, not a fully accepted release. T01–T11
 remain honest about missing machine evidence and manual observations. At this
 checkpoint, real conflict recovery has three-size browser acceptance; the native
-backup/epoch adapters are implemented with their production browser run pending.
+backup/epoch adapters have passed their separate three-size native restore browser
+exercise at `dc44e086`.
 Remaining T11 provider/field coverage is unfinished; full parity crosswalk, final performance/accessibility,
 mobile-keyboard checks and an actual uncoached person's walkthrough remain open.
 The original shell is still the default; `?workspace=1` selects the candidate.

@@ -1,4 +1,5 @@
 import type { TrainingProgress } from './trainingProgress';
+import type { TrainingProviderState } from './trainingProviderEvidence';
 
 export const trainingSteps = [
   {
@@ -156,13 +157,17 @@ export const trainingSteps = [
       'storage-unavailable-recovery',
       'epoch-change-quarantine',
       'optional-provider-branches',
-      'all-parity-branches',
     ],
-    manual: ['quick-reference-used'],
+    manual: [
+      'provider-states-understood',
+      'field-checklist-reviewed',
+      'quick-reference-used',
+    ],
   },
 ] as const;
 export type TrainingStageId = (typeof trainingSteps)[number]['id'];
 export interface TrainingEvidence {
+  providerStates?: readonly TrainingProviderState[];
   available: boolean;
   fresh: boolean;
   /** Produced by adapters over existing service responses; never persisted progress. */

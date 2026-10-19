@@ -132,6 +132,17 @@ test('native backup restore changes epoch and quarantines an actual lost-receipt
       .getByRole('combobox', { name: 'Lesson', exact: true })
       .selectOption('T11');
     await expect(
+      guide.getByRole('region', {
+        name: 'Optional provider reads',
+        exact: true,
+      })
+    ).toContainText(/Radar: (off|ready|unavailable)/);
+    await expect(
+      guide
+        .getByRole('listitem')
+        .filter({ hasText: 'optional provider branches' })
+    ).toContainText('Verified from current data');
+    await expect(
       guide.getByRole('listitem').filter({ hasText: 'epoch change quarantine' })
     ).toContainText('Verified from imported tooling evidence');
     await expect(guide.getByRole('status', { exact: true })).toContainText(
@@ -148,6 +159,11 @@ test('native backup restore changes epoch and quarantines an actual lost-receipt
     await page.reload();
   }
   expect(attempts).toHaveLength(1);
+  const fields = await page.request.get('/operator-help/field-branches.html');
+  expect(fields.ok()).toBe(true);
+  const branchReference = await fields.text();
+  expect(branchReference.match(/<code>/g)).toHaveLength(323);
+  expect(branchReference).toContain('journal.note_text');
   const rows = await (
     await page.request.get(
       `/api/v2/operator/records?mission_id=${missionId}&include_removed=true`

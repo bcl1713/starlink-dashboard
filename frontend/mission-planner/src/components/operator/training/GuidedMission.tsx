@@ -150,6 +150,43 @@ function Guide({
             </select>
           </label>
           <TrainingStep stageId={step.id} evaluation={evaluation} />
+          {step.id === 'T11' && (
+            <section aria-label="Optional provider reads" className="space-y-2">
+              <h3>Optional provider reads</h3>
+              <p>
+                Check current evidence reads each provider’s current configured
+                branch. Off, unavailable and stale are distinct from ready.
+                These statuses do not measure aircraft connectivity or certify
+                coverage; record your interpretation separately under Human
+                observations.
+              </p>
+              {evidence.providerStates?.length ? (
+                <ul>
+                  {evidence.providerStates.map((provider, index) => (
+                    <li key={`${provider.name}-${index}`}>
+                      <strong>
+                        {provider.name}: {provider.state}
+                      </strong>{' '}
+                      · {provider.detail}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>
+                  No current provider read. Check evidence to inspect the
+                  existing catalogs.
+                </p>
+              )}
+              <a
+                className="ws-link"
+                href="/operator-help/field-branches.html"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Field and optional branch reference
+              </a>
+            </section>
+          )}
           {['T08', 'T11'].includes(step.id) && onCheckEvidence && (
             <TrainingRecoveryFile
               identity={identity}

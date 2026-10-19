@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Operator field and optional branch reference</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font:
+          18px/1.6 system-ui,
+          sans-serif;
+        color: #172638;
+        background: #fff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      a {
+        color: #075799;
+        text-underline-offset: 0.2em;
+      }
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #b45b00;
+        outline-offset: 4px;
+      }
+      header,
+      main,
+      footer {
+        max-width: 78rem;
+        margin: auto;
+        padding: 1.5rem;
+      }
+      header {
+        border-bottom: 2px solid #dae2ea;
+      }
+      h1 {
+        font-size: 2.4rem;
+        line-height: 1.15;
+      }
+      h2 {
+        font-size: 1.65rem;
+        margin-top: 0;
+      }
+      h3 {
+        font-size: 1.15rem;
+      }
+      section {
+        scroll-margin-top: 1rem;
+        border-bottom: 1px solid #dbe3ec;
+        padding: 1rem 0 2rem;
+        margin-bottom: 2rem;
+      }
+      nav ul {
+        columns: 2;
+        list-style: none;
+        padding: 0;
+      }
+      nav li {
+        padding: 0.35rem 0;
+      }
+      li {
+        margin: 0.5rem 0;
+      }
+      p,
+      li {
+        max-width: 74ch;
+      }
+      table {
+        border-collapse: collapse;
+        max-width: 100%;
+        font-size: 0.95rem;
+      }
+      th,
+      td {
+        border: 1px solid #b5c3d0;
+        padding: 0.65rem;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: #edf3f8;
+      }
+      code,
+      pre {
+        font-size: 0.9em;
+        background: #eef3f7;
+      }
+      pre {
+        padding: 1rem;
+        overflow: auto;
+      }
+      aside {
+        border-left: 4px solid #126798;
+        padding: 0.5rem 1rem;
+        background: #eef7fc;
+        margin: 1rem 0;
+      }
+      .table-scroll {
+        overflow: auto;
+      }
+      figure {
+        margin: 1.5rem 0;
+      }
+      .annotated {
+        position: relative;
+        max-width: 100%;
+        width: fit-content;
+      }
+      .annotated.mobile {
+        max-width: 390px;
+      }
+      .marker {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid white;
+        border-radius: 50%;
+        color: white;
+        background: #a84c00;
+        font-weight: 800;
+        box-shadow: 0 0 0 1px #172638;
+      }
+      .callouts {
+        max-width: 74ch;
+      }
+      .callouts li::marker {
+        font-weight: 800;
+        color: #a84c00;
+      }
+      figure img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #9aa9b8;
+      }
+      figcaption {
+        font-size: 0.9rem;
+        color: #42576b;
+      }
+      kbd {
+        border: 1px solid #8a9dae;
+        border-radius: 0.2rem;
+        padding: 0.05rem 0.3rem;
+      }
+      .skip {
+        display: block;
+        padding: 0.75rem 1.5rem;
+      }
+      footer {
+        font-size: 0.85rem;
+        color: #42576b;
+      }
+      @media (max-width: 600px) {
+        :root {
+          font-size: 17px;
+        }
+        header,
+        main,
+        footer {
+          padding: 1rem;
+        }
+        h1 {
+          font-size: 2rem;
+        }
+        nav ul {
+          columns: 1;
+        }
+        table {
+          font-size: 0.85rem;
+        }
+      }
+      @media print {
+        nav,
+        .skip,
+        .no-print {
+          display: none;
+        }
+        body {
+          font-size: 11pt;
+        }
+        header,
+        main,
+        footer {
+          max-width: none;
+          padding: 0;
+        }
+        section {
+          break-inside: auto;
+        }
+        h2,
+        h3 {
+          break-after: avoid;
+        }
+        tr,
+        figure,
+        aside {
+          break-inside: avoid;
+        }
+        a {
+          color: inherit;
+        }
+        pre {
+          white-space: pre-wrap;
+        }
+        h1 {
+          font-size: 24pt;
+        }
+        h2 {
+          font-size: 18pt;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Field and optional branch reference</h1>
+      <p><a href="guide.html#parity-recovery">Return to the guide</a></p>
+      <p>
+        Use the relevant short branch after the main lesson. This reference
+        lists all 323 audited controls and fields. It is not a completion
+        record. Review your saved values and immutable History where applicable;
+        distinguish skipped, unavailable and actually exercised branches in your
+        human observation. The release evidence crosswalk is separate.
+      </p>
+    </header>
+    <main>
+      <section id="mission">
+        <h2>Mission</h2>
+        <p>
+          Open a draft; choose each applicable scope and named leg/gap. Park it,
+          switch context and resume it. Confirm the original pinned target. An
+          invalid or missing mission must not move a pending command.
+        </p>
+        <p><a href="guide.html#context">Read the procedure</a> · T01</p>
+        <ul>
+          <li><code>mission.mission</code> — mission</li>
+          <li><code>mission.scope</code> — scope</li>
+          <li><code>mission.preflight</code> — preflight</li>
+          <li><code>mission.leg</code> — leg</li>
+          <li><code>mission.between_legs</code> — between legs</li>
+          <li><code>mission.postflight</code> — postflight</li>
+          <li><code>mission.previous_leg</code> — previous leg</li>
+          <li><code>mission.next_leg</code> — next leg</li>
+          <li><code>mission.mission_switch</code> — mission switch</li>
+          <li><code>mission.dirty_draft_switch</code> — dirty draft switch</li>
+          <li><code>mission.missing_mission</code> — missing mission</li>
+        </ul>
+      </section>
+      <section id="brief">
+        <h2>Brief</h2>
+        <p>
+          Inspect Now and Next before and during a replay. Keep overdue activity
+          separate from the future requirement. Inspect incomplete or
+          unavailable sources without treating them as all-clear.
+        </p>
+        <p><a href="guide.html#context">Read the procedure</a> · T01</p>
+        <ul>
+          <li><code>brief.next_requirement</code> — next requirement</li>
+          <li><code>brief.overdue_separate</code> — overdue separate</li>
+          <li><code>brief.risks</code> — risks</li>
+          <li><code>brief.issues</code> — issues</li>
+          <li><code>brief.unknown_time</code> — unknown time</li>
+          <li><code>brief.incomplete_pages</code> — incomplete pages</li>
+          <li>
+            <code>brief.refresh_source_failure</code> — refresh source failure
+          </li>
+        </ul>
+      </section>
+      <section id="call">
+        <h2>Call</h2>
+        <p>
+          Create and edit a fictional call. Compare planned and actual UTCs,
+          unknown timing, zero/default/unknown lead, duration and signed
+          rescheduling. Save one intended variation at a time and inspect
+          History.
+        </p>
+        <p><a href="guide.html#calls">Read the procedure</a> · T02</p>
+        <ul>
+          <li><code>call.create</code> — create</li>
+          <li><code>call.edit</code> — edit</li>
+          <li><code>call.schedule</code> — schedule</li>
+          <li><code>call.tentative</code> — tentative</li>
+          <li><code>call.delayed</code> — delayed</li>
+          <li><code>call.completed</code> — completed</li>
+          <li><code>call.cancelled</code> — cancelled</li>
+          <li><code>call.retrospective</code> — retrospective</li>
+          <li>
+            <code>call.reschedule_signed_minutes</code> — reschedule signed
+            minutes
+          </li>
+          <li>
+            <code>call.reschedule_signed_hours</code> — reschedule signed hours
+          </li>
+          <li><code>call.duration_preserved</code> — duration preserved</li>
+          <li><code>call.unknown_duration</code> — unknown duration</li>
+          <li><code>call.prep_default_10</code> — prep default 10</li>
+          <li><code>call.prep_zero</code> — prep zero</li>
+          <li><code>call.prep_unknown</code> — prep unknown</li>
+          <li><code>call.party</code> — party</li>
+          <li><code>call.coordinator</code> — coordinator</li>
+          <li><code>call.communications_kind</code> — communications kind</li>
+          <li><code>call.conference_link</code> — conference link</li>
+          <li><code>call.planned_start</code> — planned start</li>
+          <li><code>call.planned_end</code> — planned end</li>
+          <li><code>call.occurred_at</code> — occurred at</li>
+          <li><code>call.ended_at</code> — ended at</li>
+          <li><code>call.precision</code> — precision</li>
+          <li><code>call.end_state</code> — end state</li>
+          <li><code>call.scope</code> — scope</li>
+          <li><code>call.operator_label</code> — operator label</li>
+          <li><code>call.validation</code> — validation</li>
+        </ul>
+      </section>
+      <section id="call-record">
+        <h2>Call Record</h2>
+        <p>
+          Remove and restore a call, then inspect all versions. Confirm
+          cancellation does not close its conference or independent
+          participation. Try an invalid reference and keep the validation
+          separate from source confidence.
+        </p>
+        <p><a href="guide.html#calls">Read the procedure</a> · T08</p>
+        <ul>
+          <li><code>call-record.remove</code> — remove</li>
+          <li><code>call-record.restore</code> — restore</li>
+          <li><code>call-record.history</code> — history</li>
+          <li>
+            <code>call-record.invalid_reference</code> — invalid reference
+          </li>
+          <li>
+            <code>call-record.cancellation_independent</code> — cancellation
+            independent
+          </li>
+          <li>
+            <code>call-record.conference_not_closed</code> — conference not
+            closed
+          </li>
+          <li>
+            <code>call-record.participation_not_closed</code> — participation
+            not closed
+          </li>
+        </ul>
+      </section>
+      <section id="conference">
+        <h2>Conference</h2>
+        <p>
+          Create a conference, report its establishment, verify, interrupt,
+          restore and close it. Inspect transport configuration fields and
+          unknown times. Compare removal/restoration with operational closure.
+        </p>
+        <p><a href="guide.html#conferences">Read the procedure</a> · T03</p>
+        <ul>
+          <li><code>conference.create</code> — create</li>
+          <li><code>conference.edit</code> — edit</li>
+          <li><code>conference.establish</code> — establish</li>
+          <li><code>conference.verify</code> — verify</li>
+          <li><code>conference.interrupt</code> — interrupt</li>
+          <li>
+            <code>conference.restore_connection</code> — restore connection
+          </li>
+          <li><code>conference.close</code> — close</li>
+          <li><code>conference.remove</code> — remove</li>
+          <li><code>conference.restore_record</code> — restore record</li>
+          <li><code>conference.history</code> — history</li>
+          <li>
+            <code>conference.intended_transport</code> — intended transport
+          </li>
+          <li>
+            <code>conference.configured_transport</code> — configured transport
+          </li>
+          <li>
+            <code>conference.configuration_reported_at</code> — configuration
+            reported at
+          </li>
+          <li><code>conference.coordinator</code> — coordinator</li>
+          <li><code>conference.verified_at</code> — verified at</li>
+          <li><code>conference.unknown_times</code> — unknown times</li>
+          <li>
+            <code>conference.customer_not_inferred</code> — customer not
+            inferred
+          </li>
+        </ul>
+      </section>
+      <section id="participation">
+        <h2>Participation</h2>
+        <p>
+          Join independent participants, leave or interrupt one, then resume as
+          a new interval. Inspect links and the preserved gap. Remove/restore
+          one record without closing the conference.
+        </p>
+        <p><a href="guide.html#customers">Read the procedure</a> · T03</p>
+        <ul>
+          <li><code>participation.join</code> — join</li>
+          <li><code>participation.leave</code> — leave</li>
+          <li><code>participation.interrupt</code> — interrupt</li>
+          <li>
+            <code>participation.resume_new_interval</code> — resume new interval
+          </li>
+          <li><code>participation.edit</code> — edit</li>
+          <li><code>participation.remove</code> — remove</li>
+          <li><code>participation.restore_record</code> — restore record</li>
+          <li><code>participation.history</code> — history</li>
+          <li><code>participation.participant</code> — participant</li>
+          <li><code>participation.call_link</code> — call link</li>
+          <li><code>participation.conference_link</code> — conference link</li>
+          <li><code>participation.resumes_link</code> — resumes link</li>
+          <li><code>participation.unknown_times</code> — unknown times</li>
+          <li><code>participation.gap_preserved</code> — gap preserved</li>
+          <li>
+            <code>participation.conference_not_closed</code> — conference not
+            closed
+          </li>
+        </ul>
+      </section>
+      <section id="protection">
+        <h2>Protection</h2>
+        <p>
+          Record customer activity and inspect its advisory protection context,
+          including unknown time and overlap. An unavailable optional source
+          must remain explicit; an estimate warning must not gate a valid save.
+        </p>
+        <p>
+          <a href="guide.html#flight-predictions">Read the procedure</a> · T05
+        </p>
+        <ul>
+          <li>
+            <code>protection.unknown_time_connected</code> — unknown time
+            connected
+          </li>
+          <li><code>protection.call_window</code> — call window</li>
+          <li><code>protection.conference_window</code> — conference window</li>
+          <li><code>protection.overlap</code> — overlap</li>
+          <li>
+            <code>protection.optional_source_failure</code> — optional source
+            failure
+          </li>
+          <li>
+            <code>protection.controls_remain_usable</code> — controls remain
+            usable
+          </li>
+          <li>
+            <code>protection.no_acknowledgment_gate</code> — no acknowledgment
+            gate
+          </li>
+        </ul>
+      </section>
+      <section id="issue">
+        <h2>Issue</h2>
+        <p>
+          Create and edit an issue; set/change/clear follow-up, monitor, resolve
+          and reopen it. Review each optional association and independent
+          mitigation/update text in immutable History.
+        </p>
+        <p>
+          <a href="guide.html#issues-capability">Read the procedure</a> · T07
+        </p>
+        <ul>
+          <li><code>issue.create</code> — create</li>
+          <li><code>issue.edit</code> — edit</li>
+          <li><code>issue.open</code> — open</li>
+          <li><code>issue.monitoring</code> — monitoring</li>
+          <li><code>issue.resolve</code> — resolve</li>
+          <li><code>issue.reopen</code> — reopen</li>
+          <li><code>issue.remove</code> — remove</li>
+          <li><code>issue.restore</code> — restore</li>
+          <li><code>issue.history</code> — history</li>
+          <li><code>issue.priority</code> — priority</li>
+          <li><code>issue.mitigation</code> — mitigation</li>
+          <li><code>issue.functional_area</code> — functional area</li>
+          <li><code>issue.responsible_party</code> — responsible party</li>
+          <li><code>issue.follow_up_set</code> — follow up set</li>
+          <li>
+            <code>issue.follow_up_reschedule</code> — follow up reschedule
+          </li>
+          <li><code>issue.follow_up_clear</code> — follow up clear</li>
+          <li>
+            <code>issue.resolution_clears_follow_up</code> — resolution clears
+            follow up
+          </li>
+          <li>
+            <code>issue.reopen_no_old_follow_up</code> — reopen no old follow up
+          </li>
+          <li><code>issue.capability_link</code> — capability link</li>
+          <li><code>issue.call_link</code> — call link</li>
+          <li><code>issue.conference_link</code> — conference link</li>
+          <li><code>issue.transport_link</code> — transport link</li>
+          <li><code>issue.update_text</code> — update text</li>
+        </ul>
+      </section>
+      <section id="issue-correction">
+        <h2>Issue Correction</h2>
+        <p>
+          Select an earlier issue update and correct its text or effective time.
+          Compare recorded time and original version. The correction must not
+          repeat the old lifecycle transition.
+        </p>
+        <p>
+          <a href="guide.html#issues-capability">Read the procedure</a> · T07
+        </p>
+        <ul>
+          <li><code>issue-correction.select_update</code> — select update</li>
+          <li><code>issue-correction.correct_text</code> — correct text</li>
+          <li>
+            <code>issue-correction.correct_effective_time</code> — correct
+            effective time
+          </li>
+          <li><code>issue-correction.recorded_time</code> — recorded time</li>
+          <li>
+            <code>issue-correction.original_preserved</code> — original
+            preserved
+          </li>
+          <li>
+            <code>issue-correction.no_lifecycle_replay</code> — no lifecycle
+            replay
+          </li>
+        </ul>
+      </section>
+      <section id="capability">
+        <h2>Capability</h2>
+        <p>
+          Create a separate capability assessment; edit its independent
+          functional/redundancy status, observation times and precision.
+          Remove/restore and inspect history, including legacy values if
+          present.
+        </p>
+        <p>
+          <a href="guide.html#issues-capability">Read the procedure</a> · T07
+        </p>
+        <ul>
+          <li><code>capability.create</code> — create</li>
+          <li><code>capability.edit</code> — edit</li>
+          <li><code>capability.remove</code> — remove</li>
+          <li><code>capability.restore</code> — restore</li>
+          <li><code>capability.history</code> — history</li>
+          <li><code>capability.functional_status</code> — functional status</li>
+          <li><code>capability.redundancy_status</code> — redundancy status</li>
+          <li>
+            <code>capability.functional_observed_at</code> — functional observed
+            at
+          </li>
+          <li>
+            <code>capability.redundancy_observed_at</code> — redundancy observed
+            at
+          </li>
+          <li>
+            <code>capability.functional_time_precision</code> — functional time
+            precision
+          </li>
+          <li>
+            <code>capability.redundancy_time_precision</code> — redundancy time
+            precision
+          </li>
+          <li><code>capability.legacy_preserved</code> — legacy preserved</li>
+        </ul>
+      </section>
+      <section id="event">
+        <h2>Event</h2>
+        <p>
+          Inspect activity and source details before/during replay, including
+          future, overdue, unknown and historical occurrences. Acknowledge only
+          a supported occurrence. Inspect identity/source failure honestly.
+        </p>
+        <p><a href="guide.html#display-alerts">Read the procedure</a> · T05</p>
+        <ul>
+          <li><code>event.call_prep</code> — call prep</li>
+          <li><code>event.call_start</code> — call start</li>
+          <li><code>event.follow_up</code> — follow up</li>
+          <li><code>event.restriction</code> — restriction</li>
+          <li><code>event.pop</code> — pop</li>
+          <li><code>event.active</code> — active</li>
+          <li><code>event.upcoming</code> — upcoming</li>
+          <li><code>event.overdue</code> — overdue</li>
+          <li><code>event.unknown</code> — unknown</li>
+          <li><code>event.history</code> — history</li>
+          <li>
+            <code>event.acknowledge_supported_occurrence</code> — acknowledge
+            supported occurrence
+          </li>
+          <li>
+            <code>event.future_visible_with_overdue</code> — future visible with
+            overdue
+          </li>
+          <li><code>event.incomplete_snapshot</code> — incomplete snapshot</li>
+          <li><code>event.identity_rotation</code> — identity rotation</li>
+          <li>
+            <code>event.optional_source_failure</code> — optional source failure
+          </li>
+        </ul>
+      </section>
+      <section id="alert">
+        <h2>Alert</h2>
+        <p>
+          Inspect the foreground cue controls. Enable/mute/test supported cues
+          and preferences. Record unsupported permissions or delivery errors as
+          observed; a click alone does not prove sound or notification delivery.
+        </p>
+        <p><a href="guide.html#display-alerts">Read the procedure</a> · T04</p>
+        <ul>
+          <li><code>alert.enable</code> — enable</li>
+          <li><code>alert.mute</code> — mute</li>
+          <li><code>alert.test</code> — test</li>
+          <li><code>alert.in_app</code> — in app</li>
+          <li><code>alert.sound</code> — sound</li>
+          <li><code>alert.vibration</code> — vibration</li>
+          <li><code>alert.unsupported</code> — unsupported</li>
+          <li><code>alert.permission_failure</code> — permission failure</li>
+          <li><code>alert.delivery_failure</code> — delivery failure</li>
+          <li><code>alert.cross_tab_dedup</code> — cross tab dedup</li>
+          <li><code>alert.preferences_persist</code> — preferences persist</li>
+          <li>
+            <code>alert.foreground_lifecycle</code> — foreground lifecycle
+          </li>
+        </ul>
+      </section>
+      <section id="live-timing">
+        <h2>Live Timing</h2>
+        <p>
+          Compare preflight planned times with airborne current-position ETA and
+          raw source provenance. Inspect missing/stale position, speed and PoP.
+          Do not substitute schedule or infer an outage from missing prediction
+          data.
+        </p>
+        <p><a href="guide.html#calls">Read the procedure</a> · T05</p>
+        <ul>
+          <li>
+            <code>live-timing.preflight_planned</code> — preflight planned
+          </li>
+          <li>
+            <code>live-timing.airborne_live_eta</code> — airborne live eta
+          </li>
+          <li>
+            <code>live-timing.live_unavailable_no_schedule_fallback</code> —
+            live unavailable no schedule fallback
+          </li>
+          <li>
+            <code>live-timing.pop_publication_identity</code> — pop publication
+            identity
+          </li>
+          <li><code>live-timing.stale_position</code> — stale position</li>
+          <li><code>live-timing.stale_speed</code> — stale speed</li>
+          <li><code>live-timing.missing_pop</code> — missing pop</li>
+          <li><code>live-timing.raw_provenance</code> — raw provenance</li>
+          <li>
+            <code>live-timing.no_frontend_prediction</code> — no frontend
+            prediction
+          </li>
+        </ul>
+      </section>
+      <section id="transport">
+        <h2>Transport</h2>
+        <p>
+          Report intended/requested/applied/check stages independently,
+          including applied-only. Add multiple service rows and relevant links.
+          Compare unknown, approximate and exact times before saving.
+        </p>
+        <p><a href="guide.html#transport">Read the procedure</a> · T06</p>
+        <ul>
+          <li><code>transport.create</code> — create</li>
+          <li><code>transport.edit</code> — edit</li>
+          <li><code>transport.intended</code> — intended</li>
+          <li><code>transport.requested</code> — requested</li>
+          <li><code>transport.applied</code> — applied</li>
+          <li><code>transport.checked</code> — checked</li>
+          <li><code>transport.applied_only</code> — applied only</li>
+          <li><code>transport.service</code> — service</li>
+          <li><code>transport.transport</code> — transport</li>
+          <li><code>transport.reason</code> — reason</li>
+          <li><code>transport.add_service</code> — add service</li>
+          <li><code>transport.rows_32_limit</code> — rows 32 limit</li>
+          <li><code>transport.exact</code> — exact</li>
+          <li><code>transport.approximate</code> — approximate</li>
+          <li><code>transport.unknown</code> — unknown</li>
+          <li><code>transport.scope</code> — scope</li>
+          <li><code>transport.call_link</code> — call link</li>
+          <li><code>transport.conference_link</code> — conference link</li>
+          <li>
+            <code>transport.participation_link</code> — participation link
+          </li>
+        </ul>
+      </section>
+      <section id="transport-correction">
+        <h2>Transport Correction</h2>
+        <p>
+          Correct an earlier reported application and inspect the old check
+          becoming noncurrent. Add a deliberate replacement check; compare
+          removal/restoration/history. Records do not prove actual routing.
+        </p>
+        <p><a href="guide.html#transport">Read the procedure</a> · T06</p>
+        <ul>
+          <li>
+            <code>transport-correction.correct_application</code> — correct
+            application
+          </li>
+          <li>
+            <code>transport-correction.clears_old_check</code> — clears old
+            check
+          </li>
+          <li>
+            <code>transport-correction.explicit_replacement_check</code> —
+            explicit replacement check
+          </li>
+          <li><code>transport-correction.remove</code> — remove</li>
+          <li><code>transport-correction.restore</code> — restore</li>
+          <li><code>transport-correction.history</code> — history</li>
+          <li>
+            <code>transport-correction.reference_constraints</code> — reference
+            constraints
+          </li>
+          <li>
+            <code>transport-correction.no_routing_claim</code> — no routing
+            claim
+          </li>
+        </ul>
+      </section>
+      <section id="journal">
+        <h2>Journal</h2>
+        <p>
+          Create a note and call observation. Inspect each applicable scope, UTC
+          precision/end state, leg/gap links and attribution.
+          Edit/remove/restore, then compare original and replacement History.
+        </p>
+        <p><a href="guide.html#notes-history">Read the procedure</a> · T08</p>
+        <ul>
+          <li><code>journal.create</code> — create</li>
+          <li><code>journal.note</code> — note</li>
+          <li><code>journal.call_observation</code> — call observation</li>
+          <li><code>journal.edit</code> — edit</li>
+          <li><code>journal.remove</code> — remove</li>
+          <li><code>journal.restore</code> — restore</li>
+          <li><code>journal.history</code> — history</li>
+          <li><code>journal.title</code> — title</li>
+          <li><code>journal.note_text</code> — note</li>
+          <li><code>journal.scope</code> — scope</li>
+          <li><code>journal.leg</code> — leg</li>
+          <li><code>journal.previous_leg</code> — previous leg</li>
+          <li><code>journal.next_leg</code> — next leg</li>
+          <li><code>journal.occurred_at</code> — occurred at</li>
+          <li><code>journal.ended_at</code> — ended at</li>
+          <li><code>journal.precision</code> — precision</li>
+          <li><code>journal.end_state</code> — end state</li>
+          <li><code>journal.planned_start</code> — planned start</li>
+          <li><code>journal.planned_end</code> — planned end</li>
+          <li><code>journal.audit_note</code> — audit note</li>
+          <li><code>journal.operator_label</code> — operator label</li>
+          <li><code>journal.validation</code> — validation</li>
+        </ul>
+      </section>
+      <section id="history">
+        <h2>History</h2>
+        <p>
+          Open complete paged History; inspect current, replaced, removed and
+          restored versions, planned/actual/recorded UTCs, author/source and
+          associations. Do not call a failed or partial page complete.
+        </p>
+        <p><a href="guide.html#notes-history">Read the procedure</a> · T08</p>
+        <ul>
+          <li><code>history.paged</code> — paged</li>
+          <li><code>history.original</code> — original</li>
+          <li><code>history.replacement</code> — replacement</li>
+          <li><code>history.removed</code> — removed</li>
+          <li><code>history.restored</code> — restored</li>
+          <li><code>history.actual_time</code> — actual time</li>
+          <li><code>history.planned_time</code> — planned time</li>
+          <li><code>history.recorded_time</code> — recorded time</li>
+          <li><code>history.author</code> — author</li>
+          <li><code>history.source</code> — source</li>
+          <li><code>history.version</code> — version</li>
+          <li><code>history.provenance</code> — provenance</li>
+          <li><code>history.association</code> — association</li>
+          <li><code>history.loaded_filter</code> — loaded filter</li>
+          <li>
+            <code>history.incomplete_coverage</code> — incomplete coverage
+          </li>
+          <li><code>history.pagination_error</code> — pagination error</li>
+        </ul>
+      </section>
+      <section id="display-settings">
+        <h2>Display Settings</h2>
+        <p>
+          Use Display tools and the existing Overview. Apply/save presets and
+          individual visibility groups; inspect confirmed and failed sections
+          independently. On a conflict, reread before deliberately retrying.
+        </p>
+        <p><a href="guide.html#display-alerts">Read the procedure</a> · T04</p>
+        <ul>
+          <li><code>display-settings.link</code> — link</li>
+          <li><code>display-settings.metrics</code> — metrics</li>
+          <li><code>display-settings.map</code> — map</li>
+          <li><code>display-settings.panels</code> — panels</li>
+          <li><code>display-settings.aircraft</code> — aircraft</li>
+          <li><code>display-settings.boundaries</code> — boundaries</li>
+          <li><code>display-settings.history_window</code> — history window</li>
+          <li><code>display-settings.preset_normal</code> — preset normal</li>
+          <li>
+            <code>display-settings.preset_communications</code> — preset
+            communications
+          </li>
+          <li><code>display-settings.preset_weather</code> — preset weather</li>
+          <li><code>display-settings.preset_save</code> — preset save</li>
+          <li><code>display-settings.preset_apply</code> — preset apply</li>
+          <li>
+            <code>display-settings.version_conflict</code> — version conflict
+          </li>
+          <li><code>display-settings.shared_scope</code> — shared scope</li>
+          <li>
+            <code>display-settings.configuration_link</code> — configuration
+            link
+          </li>
+          <li><code>display-settings.lazy_mount</code> — lazy mount</li>
+        </ul>
+      </section>
+      <section id="display-window">
+        <h2>Display Window</h2>
+        <p>
+          Open the training Overview, discover/select its peer and recenter it.
+          Observe the acknowledged result. Check absent, multiple, lost or
+          unsupported peers without claiming movement from a click.
+        </p>
+        <p><a href="guide.html#display-alerts">Read the procedure</a> · T04</p>
+        <ul>
+          <li><code>display-window.open_overview</code> — open overview</li>
+          <li><code>display-window.discover</code> — discover</li>
+          <li><code>display-window.select_peer</code> — select peer</li>
+          <li><code>display-window.recenter</code> — recenter</li>
+          <li><code>display-window.no_peer</code> — no peer</li>
+          <li><code>display-window.multiple_peers</code> — multiple peers</li>
+          <li><code>display-window.lost_peer</code> — lost peer</li>
+          <li><code>display-window.acknowledged</code> — acknowledged</li>
+          <li><code>display-window.unsupported</code> — unsupported</li>
+          <li><code>display-window.timeout</code> — timeout</li>
+          <li><code>display-window.expired</code> — expired</li>
+          <li><code>display-window.failure</code> — failure</li>
+          <li><code>display-window.local_scope</code> — local scope</li>
+        </ul>
+      </section>
+      <section id="archive">
+        <h2>Archive</h2>
+        <p>
+          Use ordinary Missions export preparation, cancel/retry and download
+          the original ZIP. Extract and inspect its PDF, plan, each-leg
+          telemetry, current/history and checksums. Import into the private
+          destination and preserve its Operator journal.
+        </p>
+        <p>
+          <a href="guide.html#archive-transfer">Read the procedure</a> · T10
+        </p>
+        <ul>
+          <li>
+            <code>archive.mission_records_link</code> — mission records link
+          </li>
+          <li><code>archive.prepare</code> — prepare</li>
+          <li><code>archive.export_pdf</code> — export pdf</li>
+          <li><code>archive.export_plan</code> — export plan</li>
+          <li>
+            <code>archive.export_telemetry_each_leg</code> — export telemetry
+            each leg
+          </li>
+          <li><code>archive.export_current</code> — export current</li>
+          <li><code>archive.export_history</code> — export history</li>
+          <li><code>archive.export_checksums</code> — export checksums</li>
+          <li><code>archive.export_timing</code> — export timing</li>
+          <li><code>archive.cancel</code> — cancel</li>
+          <li>
+            <code>archive.preparation_failure</code> — preparation failure
+          </li>
+          <li><code>archive.download</code> — download</li>
+          <li><code>archive.import_plan</code> — import plan</li>
+          <li>
+            <code>archive.import_no_operator_restore</code> — import no operator
+            restore
+          </li>
+        </ul>
+      </section>
+      <section id="save-recovery">
+        <h2>Save Recovery</h2>
+        <p>
+          Park/reopen a draft and inspect its pinned request. Use the documented
+          uncertain/conflict/epoch/storage exercises. Exact retry retains
+          body/key/epoch; a reviewed replacement uses a new command. Never
+          silently retarget.
+        </p>
+        <p><a href="guide.html#drafts-recovery">Read the procedure</a> · T08</p>
+        <ul>
+          <li><code>save-recovery.frozen_key</code> — frozen key</li>
+          <li><code>save-recovery.frozen_body</code> — frozen body</li>
+          <li><code>save-recovery.frozen_time</code> — frozen time</li>
+          <li>
+            <code>save-recovery.expected_version</code> — expected version
+          </li>
+          <li>
+            <code>save-recovery.receipt_then_reread</code> — receipt then reread
+          </li>
+          <li><code>save-recovery.reread_failure</code> — reread failure</li>
+          <li>
+            <code>save-recovery.conflict_reconcile</code> — conflict reconcile
+          </li>
+          <li><code>save-recovery.invalid_store</code> — invalid store</li>
+          <li>
+            <code>save-recovery.unavailable_store</code> — unavailable store
+          </li>
+          <li><code>save-recovery.epoch_rotation</code> — epoch rotation</li>
+          <li><code>save-recovery.source_rotation</code> — source rotation</li>
+          <li>
+            <code>save-recovery.retry_after_navigation</code> — retry after
+            navigation
+          </li>
+          <li>
+            <code>save-recovery.retry_after_mission_switch</code> — retry after
+            mission switch
+          </li>
+          <li>
+            <code>save-recovery.retry_after_reload</code> — retry after reload
+          </li>
+          <li><code>save-recovery.late_receipt</code> — late receipt</li>
+          <li>
+            <code>save-recovery.edited_draft_not_cleared</code> — edited draft
+            not cleared
+          </li>
+          <li><code>save-recovery.storage_failure</code> — storage failure</li>
+        </ul>
+      </section>
+      <section id="help">
+        <h2>Help</h2>
+        <p>
+          Open/close/resume Help and the guided mission; use the packaged
+          offline guide and print reference. Compare guide-progress reset with
+          the explicitly separate private-mission reset.
+        </p>
+        <p><a href="guide.html#first-use">Read the procedure</a> · T01</p>
+        <ul>
+          <li><code>help.open</code> — open</li>
+          <li><code>help.close</code> — close</li>
+          <li><code>help.offline</code> — offline</li>
+          <li><code>help.desktop_guide</code> — desktop guide</li>
+          <li><code>help.mobile_guide</code> — mobile guide</li>
+          <li><code>help.quick_reference</code> — quick reference</li>
+          <li><code>help.print</code> — print</li>
+          <li>
+            <code>help.guide_progress_resume</code> — guide progress resume
+          </li>
+          <li><code>help.guide_progress_reset</code> — guide progress reset</li>
+          <li>
+            <code>help.mission_reset_command_distinct</code> — mission reset
+            command distinct
+          </li>
+        </ul>
+      </section>
+      <section id="training">
+        <h2>Training</h2>
+        <p>
+          Use the marked private launcher, preflight warmup, real replay legs
+          and checkpoints. Inspect stable journal namespace versus changed
+          runtime, source freshness and restart. Navigation and skipped
+          instructions are not write evidence.
+        </p>
+        <p><a href="guide.html#training">Read the procedure</a> · T11</p>
+        <ul>
+          <li><code>training.start</code> — start</li>
+          <li><code>training.next</code> — next</li>
+          <li><code>training.back</code> — back</li>
+          <li><code>training.skip</code> — skip</li>
+          <li><code>training.resume</code> — resume</li>
+          <li>
+            <code>training.evidence_not_click_flag</code> — evidence not click
+            flag
+          </li>
+          <li>
+            <code>training.clear_simulation_label</code> — clear simulation
+            label
+          </li>
+          <li><code>training.stop_reset_start</code> — stop reset start</li>
+          <li><code>training.private_root</code> — private root</li>
+          <li><code>training.preflight</code> — preflight</li>
+          <li><code>training.leg1</code> — leg1</li>
+          <li><code>training.ground_gap</code> — ground gap</li>
+          <li><code>training.leg2</code> — leg2</li>
+          <li><code>training.postflight</code> — postflight</li>
+          <li><code>training.stable_namespace</code> — stable namespace</li>
+          <li><code>training.real_clock</code> — real clock</li>
+          <li><code>training.source_freshness</code> — source freshness</li>
+          <li><code>training.restart</code> — restart</li>
+          <li>
+            <code>training.two_client_failure_recovery</code> — two client
+            failure recovery
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

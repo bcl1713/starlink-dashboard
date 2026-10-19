@@ -3472,7 +3472,7 @@
       "evidence": []
     },
     {
-      "id": "journal.note",
+      "id": "journal.note_text",
       "audit_capability": "Manual journal observation and correction: Journal",
       "source": "`C/JournalEditor.tsx`, `JournalList.tsx`; `pages/OperatorJournalPage.tsx`; journal/editor tests",
       "action_or_field": "note",

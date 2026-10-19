@@ -1,0 +1,10 @@
+{
+  "capturedAfterTeardown": true,
+  "ownedCommandGroupsChecked": 55,
+  "ownedSurvivors": [],
+  "ownedRelaySurvivors": [],
+  "ports": {
+    "56533": "free",
+    "56534": "free"
+  }
+}
