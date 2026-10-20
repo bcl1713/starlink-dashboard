@@ -3,6 +3,7 @@
 import json
 
 import pytest
+
 from app.mission import storage
 from app.operator.errors import OperatorError
 from app.operator.event_eligibility import select_eligible

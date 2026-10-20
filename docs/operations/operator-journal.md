@@ -1,11 +1,15 @@
 # Operator journal maintenance
 
-Operator is disabled by default. Its database, immutable revisions and command
-receipts live separately from mission/planning storage. Disabling Operator
-preserves its files. Unsupported binaries refuse the stored schema; disable
-Operator for rollback.
+`/operator` opens the new workspace; the old page is retired. The application
+landing page remains Missions. Operator is enabled by default; explicitly set
+`OPERATOR_ENABLED=false` to disable it. Older uncertain saves retain their exact
+retry/reconciliation controls in workspace recovery. No save is sent
+automatically. Its database, immutable revisions and command receipts live
+separately from mission/planning storage. Disabling Operator preserves its
+files. Unsupported binaries refuse the stored schema; disable Operator for
+rollback.
 
-Compose forwards `OPERATOR_ENABLED` with a default of `false` and retains the
+Compose forwards `OPERATOR_ENABLED` with a default of `true` and retains the
 store in the independent `operator_data` volume mounted at `/app/data/operator`.
 Container recreation preserves that volume; removing it removes its retained
 history and receipts. The image and entrypoint give only the mount root to
@@ -206,7 +210,7 @@ includes their complete archival snapshot through issue #370.
 
 ## Operator workspace shell
 
-The gated `/operator` workspace keeps the existing journal and adds read-only
+The default `/operator` workspace keeps the existing journal and adds read-only
 mission summaries: the earliest future active call, next recorded risk and open
 issues. Active calls include tentative, scheduled and delayed requirements.
 Overdue active calls stay separately visible under Attention needed, so an

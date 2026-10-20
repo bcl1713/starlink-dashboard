@@ -3,15 +3,15 @@
 import json
 from datetime import datetime, timedelta
 
-import main
 import pytest
+from prometheus_client import generate_latest
+
+import main
 from app.api import status as status_api
 from app.core.metrics import REGISTRY
 from app.mission.pop_status import PopStatusService
 from app.services import ground_entry_point as gep
 from app.simulation.pop import SimulationPopObservationProvider
-from prometheus_client import generate_latest
-
 from tests.integration.test_simulation_run_api import LEG, api
 
 __all__ = ["api"]

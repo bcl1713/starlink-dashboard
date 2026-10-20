@@ -154,6 +154,7 @@ def test_replay_guard_rejects_new_old_run_writes_but_returns_existing_receipts(
     service, clock, record_data, monkeypatch
 ):
     import pytest
+
     from app.operator.errors import OperatorError
 
     monkeypatch.setenv("OPERATOR_ENABLED", "true")

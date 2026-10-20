@@ -10,7 +10,7 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
-import { OperatorWorkspace } from './OperatorWorkspace';
+import { OperatorJournalPage } from '@/pages/OperatorJournalPage';
 import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
 import { conferenceDraft } from '../conferenceCommands';
@@ -46,11 +46,7 @@ afterEach(() => {
   localStorage.clear();
   vi.restoreAllMocks();
 });
-function mount(
-  route = '/operator?workspace=1',
-  ready = false,
-  source = health
-) {
+function mount(route = '/operator', ready = false, source = health) {
   if (!vi.isMockFunction(api.readOperatingContext))
     vi.spyOn(api, 'readOperatingContext').mockResolvedValue({
       state: 'no_active_mission',
@@ -78,7 +74,7 @@ function mount(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[route]}>
         <OperatorWorkspaceProvider registry={registry}>
-          <OperatorWorkspace />
+          <OperatorJournalPage />
         </OperatorWorkspaceProvider>
       </MemoryRouter>
     </QueryClientProvider>

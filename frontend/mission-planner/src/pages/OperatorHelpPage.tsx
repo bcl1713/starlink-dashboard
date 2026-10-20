@@ -10,7 +10,7 @@ export function OperatorHelpPage() {
   const requestedReturn = params.get('returnTo') ?? '';
   const returnTo = /^\/operator(?:\?[^#]*)?$/.test(requestedReturn)
     ? requestedReturn
-    : '/operator?workspace=1';
+    : '/operator';
   const title = reference ? 'Operator quick reference' : 'Operator user guide';
   const resource = `/operator-help/${reference ? 'quick-reference' : 'guide'}.html`;
   const context = `returnTo=${encodeURIComponent(returnTo)}`;

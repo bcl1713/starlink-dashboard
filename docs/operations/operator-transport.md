@@ -41,13 +41,13 @@ apply after restart and recovery.
 
 ## Deployment and backout
 
-Keep the existing Operator feature gate disabled by default. Version 003 adds
-transport decisions to its existing SQLite store. Normal startup never silently
-upgrades an existing database. Stop the relevant Operator writer and use the
-existing maintenance CLI's `upgrade` command, which obtains exclusive admission
-and creates a validated backup before the transactional rebuild. Follow the
-[Operator journal guide](operator-journal.md) for deployment paths and existing
-backup/restore commands.
+Operator is enabled by default; set `OPERATOR_ENABLED=false` to disable it.
+Version 003 adds transport decisions to its existing SQLite store. Normal
+startup never silently upgrades an existing database. Stop the relevant Operator
+writer and use the existing maintenance CLI's `upgrade` command, which obtains
+exclusive admission and creates a validated backup before the transactional
+rebuild. Follow the [Operator journal guide](operator-journal.md) for deployment
+paths and existing backup/restore commands.
 
 The migration preserves revision/receipt data, links, sequence state, indexes,
 foreign keys and immutability triggers. A failed migration rolls back. Older

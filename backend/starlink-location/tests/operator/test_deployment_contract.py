@@ -1,4 +1,4 @@
-"""Compose opt-in/persistence contract and executable private-directory setup."""
+"""Compose default enablement/persistence contract and executable private-directory setup."""
 
 import json
 import os
@@ -10,11 +10,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[4]
 
 
-def test_compose_opt_in_and_independent_durable_mount():
+def test_compose_default_enabled_and_independent_durable_mount():
     compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text())
     service = compose["services"]["starlink-location"]
-    # Compose's default expansion must keep the feature off in ordinary deploys.
-    assert service["environment"]["OPERATOR_ENABLED"] == "${OPERATOR_ENABLED:-false}"
+    # Compose's default expansion must enable the feature in ordinary deploys.
+    assert service["environment"]["OPERATOR_ENABLED"] == "${OPERATOR_ENABLED:-true}"
     mounts = [entry.split(":") for entry in service["volumes"]]
     operator = [entry for entry in mounts if entry[1] == "/app/data/operator"]
     assert len(operator) == 1

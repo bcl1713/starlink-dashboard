@@ -1,3 +1,4 @@
+import { LegacySaveRecovery } from './LegacySaveRecovery';
 import { operatorTiming } from '@/lib/operatorTiming';
 import { readTrainingProviderEvidence } from '../training/trainingProviderEvidence';
 import {
@@ -1196,6 +1197,7 @@ export function OperatorWorkspace() {
               </button>
             ))}
           </section>
+          <LegacySaveRecovery />
           <section aria-label="Save status">
             <h2>Save status</h2>
             {workspace.tray.map((row) => (
@@ -1247,12 +1249,6 @@ export function OperatorWorkspace() {
               {message}
             </p>
           ))}
-          <Link
-            className="ws-button"
-            to={`/operator?mission_id=${encodeURIComponent(missionId)}`}
-          >
-            Previous workspace
-          </Link>
         </div>
         <WorkspaceEditor
           mission={editorMission.data}

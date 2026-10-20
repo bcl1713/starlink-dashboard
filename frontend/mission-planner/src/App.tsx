@@ -7,7 +7,6 @@ import {
   Navigate,
   NavLink,
   useMatch,
-  useSearchParams,
 } from 'react-router-dom';
 import { Menu, Radio } from 'lucide-react';
 import { MissionsPage } from './pages/MissionsPage';
@@ -48,7 +47,7 @@ function AppNavigation() {
   const health = useOperatorHealth(!workspace.ownsHealth);
   const items =
     health.data?.enabled && !health.isError
-      ? [...navigationItems, { to: '/operator?workspace=1', label: 'Operator' }]
+      ? [...navigationItems, { to: '/operator', label: 'Operator' }]
       : navigationItems;
 
   return (
@@ -120,32 +119,6 @@ function AppNavigation() {
   );
 }
 
-function WorkspaceBackoutNotice() {
-  const workspace = useOperatorWorkspace();
-  const operator = useMatch('/operator');
-  const [params] = useSearchParams();
-  if (
-    !operator ||
-    params.get('workspace') === '1' ||
-    (!workspace.registry.listDrafts().length &&
-      !workspace.tray.some((row) => row.pending))
-  )
-    return null;
-  return (
-    <aside
-      className="border-b border-amber-400/50 bg-card px-4 py-2"
-      aria-label="Retained workspace work"
-    >
-      Candidate workspace drafts or saves are retained in this tab.{' '}
-      <NavLink
-        className="inline-flex min-h-11 items-center underline"
-        to={`/operator?workspace=1&mission_id=${encodeURIComponent(params.get('mission_id') ?? '')}`}
-      >
-        Open retained drafts and save status
-      </NavLink>
-    </aside>
-  );
-}
 function AppShell() {
   const isFullscreen = useDocumentFullscreen();
   const isOverview = useMatch('/overview') !== null;
@@ -157,7 +130,6 @@ function AppShell() {
         <div
           className={`app-route-content ${isOverview ? '' : 'management-page dark bg-background text-foreground'}`}
         >
-          <WorkspaceBackoutNotice />
           <Routes>
             <Route path="/operator" element={<OperatorJournalPage />} />
             <Route path="/operator/help" element={<OperatorHelpPage />} />

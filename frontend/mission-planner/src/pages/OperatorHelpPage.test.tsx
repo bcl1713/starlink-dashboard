@@ -33,7 +33,7 @@ it('offers the print quick reference and refuses external return paths or docume
     screen
       .getByRole('link', { name: 'Return to Operator' })
       .getAttribute('href')
-  ).toBe('/operator?workspace=1');
+  ).toBe('/operator');
   cleanup();
   open('doc=https%3A%2F%2Fexample.com&section=javascript%3Aalert(1)');
   expect(screen.getByTitle('Operator user guide').getAttribute('src')).toBe(

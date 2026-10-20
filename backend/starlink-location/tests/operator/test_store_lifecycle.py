@@ -216,7 +216,9 @@ def test_migrations_are_checksummed_and_idempotent(clock):
             apply_migrations(db, clock=clock)
 
 
-def test_settings_default_disabled_and_isolate_runs(monkeypatch, tmp_path, clock):
+def test_settings_default_enabled_with_explicit_opt_out_and_isolate_runs(
+    monkeypatch, tmp_path, clock
+):
     for name in (
         "OPERATOR_ENABLED",
         "OPERATOR_ROOT",
@@ -226,10 +228,14 @@ def test_settings_default_disabled_and_isolate_runs(monkeypatch, tmp_path, clock
     ):
         monkeypatch.delenv(name, raising=False)
     settings = OperatorSettings.from_env()
-    assert not settings.enabled
+    assert settings.enabled
+    assert OperatorSettings().enabled
     assert str(settings.database_path) == "data/operator/operations.sqlite3"
     assert settings.capacity_bytes == 1024**3
     assert settings.backup_count == 3
+    monkeypatch.setenv("OPERATOR_ENABLED", "false")
+    settings = OperatorSettings.from_env()
+    assert not settings.enabled
     store = OperatorStore.open(
         replace(settings, root=tmp_path / "disabled"), initialize=True, clock=clock
     )

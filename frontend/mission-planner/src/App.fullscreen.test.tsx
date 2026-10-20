@@ -109,5 +109,5 @@ it('hides Operator navigation on 404 and shows it for an enabled unavailable sto
   render(<App />);
   expect(
     (await screen.findByRole('link', { name: 'Operator' })).getAttribute('href')
-  ).toBe('/operator?workspace=1');
+  ).toBe('/operator');
 });

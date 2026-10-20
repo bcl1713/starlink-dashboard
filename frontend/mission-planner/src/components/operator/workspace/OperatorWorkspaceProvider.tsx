@@ -178,9 +178,7 @@ export function OperatorWorkspaceProvider({
   const scannedIdentities = useRef(new Set<string>());
   const [, refreshDrafts] = useState(0);
   const location = useLocation();
-  const active =
-    location.pathname === '/operator' &&
-    new URLSearchParams(location.search).get('workspace') === '1';
+  const active = location.pathname === '/operator';
   const ownsHealth =
     active ||
     tray.some(
@@ -199,7 +197,7 @@ export function OperatorWorkspaceProvider({
         ...result.errors.map((error) => error.message),
         ...(result.quarantinedKeys.length
           ? [
-              'Older or ambiguous drafts/saves remain in recovery. Open the previous workspace to review them; they have not been sent.',
+              'Older or ambiguous drafts/saves remain in recovery. Their original browser storage is preserved. Older save recovery can retry or reconcile retained requests.',
             ]
           : []),
       ]);

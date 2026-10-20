@@ -90,7 +90,7 @@ does not re-arm it. Acknowledgment never removes an event from the timeline.
 
 ## Storage upgrade and backout
 
-Operator remains disabled by default. Schema migration 002 adds notification
+Operator is enabled by default. Schema migration 002 adds notification
 history/acknowledgment tables to its existing private SQLite store. It does not
 change public contract version 1 or mission exports. Startup requires an
 explicit upgrade for an existing schema-001 store; it does not silently migrate

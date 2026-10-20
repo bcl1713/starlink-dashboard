@@ -9,7 +9,7 @@ from typing import Literal
 
 @dataclass(frozen=True)
 class OperatorSettings:
-    enabled: bool = False
+    enabled: bool = True
     root: Path = Path("data/operator")
     source_mode: Literal["live", "simulation"] = "live"
     simulation_run_id: str | None = None
@@ -57,7 +57,7 @@ class OperatorSettings:
 
     @classmethod
     def from_env(cls) -> "OperatorSettings":
-        enabled = os.getenv("OPERATOR_ENABLED", "false").lower()
+        enabled = os.getenv("OPERATOR_ENABLED", "true").lower()
         if enabled not in ("true", "false"):
             raise ValueError("OPERATOR_ENABLED must be true or false")
         return cls(

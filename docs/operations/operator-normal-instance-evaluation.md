@@ -14,18 +14,18 @@ volumes, mission directories and Operator volume. Do not use the aircraft
 production installation. If you use custom Compose files, use the same `-f` and
 `-p` options for every command below.
 
-1. Confirm a clean checkout of `feat/issue-376-operator-workspace` before
-   updating. Preserve any local changes before continuing. Fetch and advance
-   this branch; PR #383 remains open against `dev`.
+1. Confirm a clean checkout of `dev` before updating. Preserve any local changes
+   before continuing. Fetch and advance the reviewed development branch.
 
    ```sh
    git status --short --branch
-   git fetch origin feat/issue-376-operator-workspace
-   git merge --ff-only origin/feat/issue-376-operator-workspace
+   git fetch origin dev
+   git merge --ff-only origin/dev
    git rev-parse HEAD
    ```
 
-2. Set `OPERATOR_ENABLED=true` in the existing `.env`. Keep the existing mode
+2. Operator is enabled by default. Remove an old `OPERATOR_ENABLED=false`
+   override or set it to `true` in the existing `.env`. Keep the existing mode
    configuration; use the installation's normal simulation control for the
    fictional mission. Leave `OPERATOR_EVALUATION_SESSION` unset for the durable
    `default` evaluation, or keep its existing name. It is passed through the
@@ -51,10 +51,10 @@ production installation. If you use custom Compose files, use the same `-f` and
    fails. Existing weather/telemetry services do not need rebuilding.
 
 4. Reload the browser. Choose **Operator** in normal navigation (the workspace
-   entry is `/operator?workspace=1`). If setup is required, use **Initialize
-   simulation journal** once for the displayed evaluation. Initialization does
-   not reset or adopt any previous journal. A corrupt/recovery-required store
-   requires its existing recovery procedure, not reinitialization.
+   entry is `/operator`). If setup is required, use **Initialize simulation
+   journal** once for the displayed evaluation. Initialization does not reset or
+   adopt any previous journal. A corrupt/recovery-required store requires its
+   existing recovery procedure, not reinitialization.
 
 ## Storage and replay behavior
 
@@ -259,14 +259,10 @@ visible covers the confirmed-row-to-render interval. In browser DevTools
 Console:
 
 ```js
-performance
+const saves = performance
   .getEntriesByType("measure")
-  .filter((entry) => entry.name.startsWith("operator.save."))
-  .slice(-30)
-  .map((entry) => ({
-    stage: entry.name,
-    milliseconds: Math.round(entry.duration),
-  }));
+  .filter((entry) => entry.name.startsWith("operator.save."));
+console.table(saves.slice(-30));
 ```
 
 ## Arrival after ordinary Activate

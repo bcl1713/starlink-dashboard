@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from app.operator.clock import SystemClock
 from app.operator.runtime import OperatorRuntimeBinding
-
 from tests.integration.test_simulation_run_api import PACING, api, start
 
 __all__ = ["api"]

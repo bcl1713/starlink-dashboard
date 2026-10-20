@@ -144,9 +144,7 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
       });
       try {
         const page = await context.newPage();
-        await page.goto(
-          `/operator?workspace=1&mission_id=${fixture.mission.id}`
-        );
+        await page.goto(`/operator?mission_id=${fixture.mission.id}`);
         await expect(
           page.getByRole('navigation', { name: 'Operator workspace' })
         ).toBeVisible();
@@ -434,9 +432,7 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
       return ids;
     }
     async function editCreated(prefix: string) {
-      await page.goto(
-        `/operator?workspace=1&mission_id=${missionId}&view=communications`
-      );
+      await page.goto(`/operator?mission_id=${missionId}&view=communications`);
       const communications = page.getByRole('region', {
         name: 'Communications',
         exact: true,
@@ -623,7 +619,7 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
     try {
       const page = await context.newPage();
       await page.goto(
-        `/operator?workspace=1&mission_id=${fixtures[0].mission.id}&view=communications`
+        `/operator?mission_id=${fixtures[0].mission.id}&view=communications`
       );
       const communications = page.getByRole('region', {
         name: 'Communications',
@@ -767,7 +763,7 @@ test('hidden workspace: missing mission and unavailable store remain actionable 
     const context = await browser.newContext({ viewport });
     try {
       const page = await context.newPage();
-      await page.goto('/operator?workspace=1');
+      await page.goto('/operator');
       await expect(
         page.getByRole('heading', { name: 'Choose a mission', exact: true })
       ).toBeVisible();
@@ -777,9 +773,7 @@ test('hidden workspace: missing mission and unavailable store remain actionable 
       await page.route('**/api/v2/operator/health', (route) =>
         route.abort('connectionrefused')
       );
-      await page.goto(
-        `/operator?workspace=1&mission_id=${fixtures[0].mission.id}`
-      );
+      await page.goto(`/operator?mission_id=${fixtures[0].mission.id}`);
       await expect(
         page.getByRole('button', { name: 'Create call', exact: true })
       ).toBeDisabled();
@@ -811,9 +805,7 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
       const page = await context.newPage();
       page.setDefaultTimeout(15_000);
       const missionId = fixtures[0].mission.id;
-      await page.goto(
-        `/operator?workspace=1&mission_id=${missionId}&view=issues`
-      );
+      await page.goto(`/operator?mission_id=${missionId}&view=issues`);
       const navigation = page.getByRole('navigation', {
         name: 'Operator workspace',
       });
@@ -1088,9 +1080,7 @@ test('hidden workspace: paged named transport relationships retain exact targets
     const context = await browser.newContext({ viewport });
     try {
       const page = await context.newPage();
-      await page.goto(
-        `/operator?workspace=1&mission_id=${missionId}&view=transport`
-      );
+      await page.goto(`/operator?mission_id=${missionId}&view=transport`);
       await page
         .getByRole('button', { name: 'Record another move', exact: true })
         .click();
@@ -1220,9 +1210,7 @@ test('hidden workspace: real lost receipt exact retry and offline draft recovery
     try {
       const page = await context.newPage();
       const missionId = fixtures[0].mission.id;
-      await page.goto(
-        `/operator?workspace=1&mission_id=${missionId}&view=notes`
-      );
+      await page.goto(`/operator?mission_id=${missionId}&view=notes`);
       await page.getByRole('button', { name: 'Note', exact: true }).click();
       const editor = page.getByRole('dialog');
       const title = `Fictional lost receipt ${viewport.width}`;

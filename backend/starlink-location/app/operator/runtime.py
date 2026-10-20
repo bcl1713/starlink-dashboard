@@ -167,7 +167,7 @@ class OperatorRuntimeBinding:
             else None
         )
         # Resolve mode/run from the actual coordinator, never source-mode env.
-        enabled = os.getenv("OPERATOR_ENABLED", "false").lower() == "true"
+        enabled = os.getenv("OPERATOR_ENABLED", "true").lower() == "true"
         mission_journal = self.mission_journals and mode == "simulation"
         session = os.getenv("OPERATOR_EVALUATION_SESSION", "default")
         if mission_journal:
