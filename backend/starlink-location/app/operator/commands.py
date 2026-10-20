@@ -32,7 +32,15 @@ def receipt_for_key(connection, key, request_hash):
 
 
 def execute_in_transaction(
-    connection, command, *, key, request_hash, clock, actor
+    connection,
+    command,
+    *,
+    key,
+    request_hash,
+    clock,
+    actor,
+    replay_run_id=None,
+    operating_context_id=None
 ) -> CommandReceipt:
     receipt = receipt_for_key(connection, key, request_hash)
     if receipt is not None:
@@ -83,8 +91,48 @@ def execute_in_transaction(
     seq = connection.execute(
         "SELECT coalesce(max(journal_seq), 0)+1 FROM revisions"
     ).fetchone()[0]
+    report_run = current.provenance.replay_run_id if current else replay_run_id
+    if (
+        current
+        and current.record_type == "call"
+        and command.operation == "update"
+        and current.time.occurred_at is None
+        and content["time"].occurred_at is not None
+    ):
+        # Starting a carried requirement is an explicit new operational report;
+        # correcting an already started historical call never refreshes it.
+        report_run = replay_run_id
+    report_context = (
+        current.provenance.operating_context_id if current else operating_context_id
+    )
+    if (
+        current
+        and command.operation == "update"
+        and getattr(command, "establish_session", False)
+    ):
+        if (
+            current.record_type != "conference"
+            or content["payload"].status != "established"
+            or content["payload"].verified_at is not None
+        ):
+            raise OperatorError(
+                "validation_error",
+                fields={
+                    "establish_session": "Establishment requires a conference report with cleared verification"
+                },
+            )
+        report_run, report_context = replay_run_id, operating_context_id
+    if (
+        current
+        and current.record_type == "call"
+        and current.time.occurred_at is None
+        and content["time"].occurred_at is not None
+    ):
+        report_context = operating_context_id
     provenance = SourceProvenance(
         kind="operator_reported",
+        replay_run_id=report_run,
+        operating_context_id=report_context,
         source_mode=source_mode,
         source_ref=current.provenance.source_ref if current else None,
         mutation_origin=(

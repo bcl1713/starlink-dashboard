@@ -6,25 +6,39 @@ import type {
   Scope,
 } from '@/types/operator';
 interface Props {
+  formId?: string;
   missionId: string;
   record?: SavedRecord;
   disabled: boolean;
   onSave: (command: OperatorCommand) => void;
   onDirty?: (dirty: boolean) => void;
   asNewEntry?: boolean;
+  draft?: JournalInput;
+  onChange?: (draft: JournalInput) => void;
+  auditNote?: string;
+  onAuditNoteChange?: (value: string) => void;
+  contextual?: boolean;
+  saveDisabled?: boolean;
 }
 const control =
   'min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2';
 export function JournalEditor({
+  formId,
   missionId,
   record,
   disabled,
   onSave,
   onDirty,
   asNewEntry,
+  draft: controlledDraft,
+  onChange,
+  auditNote,
+  onAuditNoteChange,
+  contextual = false,
+  saveDisabled = false,
 }: Props) {
   const [base] = useState(record);
-  const [draft, setDraft] = useState<JournalInput>(() => ({
+  const [localDraft, setDraft] = useState<JournalInput>(() => ({
     schema_version: 1,
     record_type: 'journal_entry',
     mission_id: record?.mission_id ?? missionId,
@@ -57,10 +71,14 @@ export function JournalEditor({
           next_leg_id: null,
         },
   }));
-  const [audit, setAudit] = useState('');
+  const draft = controlledDraft ?? localDraft;
+  const [localAudit, setAudit] = useState('');
+  const audit = auditNote ?? localAudit;
   const target = asNewEntry ? undefined : base;
   function change(update: Partial<JournalInput>) {
-    setDraft((d) => ({ ...d, ...update }));
+    const next = { ...draft, ...update };
+    setDraft(next);
+    onChange?.(next);
     onDirty?.(true);
   }
   function payload(update: Partial<JournalInput['payload']>) {
@@ -71,10 +89,11 @@ export function JournalEditor({
   }
   return (
     <form
+      id={formId}
       className="min-w-0 space-y-4 rounded-lg border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (disabled || !draft.payload.title.trim()) return;
+        if (disabled || saveDisabled || !draft.payload.title.trim()) return;
         onSave(
           target
             ? {
@@ -99,71 +118,75 @@ export function JournalEditor({
         disabled={disabled}
         className="min-w-0 space-y-4 disabled:opacity-70"
       >
-        <label className="block">
-          Entry mission ID
-          <input
-            className={control}
-            required
-            value={draft.mission_id}
-            onChange={(e) => change({ mission_id: e.target.value })}
-          />
-        </label>
-        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-          <label>
-            Scope
-            <select
-              className={control}
-              value={draft.scope}
-              onChange={(e) =>
-                change({
-                  scope: e.target.value as Scope,
-                  leg_id: e.target.value === 'leg' ? '' : null,
-                })
-              }
-            >
-              <option value="mission">Mission</option>
-              <option value="preflight">Preflight</option>
-              <option value="leg">Leg</option>
-              <option value="between_legs">Between legs</option>
-              <option value="postflight">Postflight</option>
-            </select>
-          </label>
-          {draft.scope === 'leg' && (
-            <label>
-              Leg ID
+        {!contextual && (
+          <>
+            <label className="block">
+              Entry mission ID
               <input
                 className={control}
                 required
-                value={draft.leg_id ?? ''}
-                onChange={(e) => change({ leg_id: e.target.value })}
+                value={draft.mission_id}
+                onChange={(e) => change({ mission_id: e.target.value })}
               />
             </label>
-          )}
-          {draft.scope === 'between_legs' && (
-            <>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <label>
-                Previous leg ID (optional)
-                <input
+                Scope
+                <select
                   className={control}
-                  value={draft.payload.previous_leg_id ?? ''}
+                  value={draft.scope}
                   onChange={(e) =>
-                    payload({ previous_leg_id: e.target.value || null })
+                    change({
+                      scope: e.target.value as Scope,
+                      leg_id: e.target.value === 'leg' ? '' : null,
+                    })
                   }
-                />
+                >
+                  <option value="mission">Mission</option>
+                  <option value="preflight">Preflight</option>
+                  <option value="leg">Leg</option>
+                  <option value="between_legs">Between legs</option>
+                  <option value="postflight">Postflight</option>
+                </select>
               </label>
-              <label>
-                Next leg ID (optional)
-                <input
-                  className={control}
-                  value={draft.payload.next_leg_id ?? ''}
-                  onChange={(e) =>
-                    payload({ next_leg_id: e.target.value || null })
-                  }
-                />
-              </label>
-            </>
-          )}
-        </div>
+              {draft.scope === 'leg' && (
+                <label>
+                  Leg ID
+                  <input
+                    className={control}
+                    required
+                    value={draft.leg_id ?? ''}
+                    onChange={(e) => change({ leg_id: e.target.value })}
+                  />
+                </label>
+              )}
+              {draft.scope === 'between_legs' && (
+                <>
+                  <label>
+                    Previous leg ID (optional)
+                    <input
+                      className={control}
+                      value={draft.payload.previous_leg_id ?? ''}
+                      onChange={(e) =>
+                        payload({ previous_leg_id: e.target.value || null })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Next leg ID (optional)
+                    <input
+                      className={control}
+                      value={draft.payload.next_leg_id ?? ''}
+                      onChange={(e) =>
+                        payload({ next_leg_id: e.target.value || null })
+                      }
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+          </>
+        )}
         <label className="block">
           Entry type
           <select
@@ -283,6 +306,7 @@ export function JournalEditor({
               value={audit}
               onChange={(e) => {
                 setAudit(e.target.value);
+                onAuditNoteChange?.(e.target.value);
                 onDirty?.(true);
               }}
             />
@@ -292,7 +316,8 @@ export function JournalEditor({
       <button
         className="min-h-11 rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
         type="submit"
-        disabled={disabled}
+        hidden={!!formId}
+        disabled={disabled || saveDisabled}
       >
         Save entry
       </button>

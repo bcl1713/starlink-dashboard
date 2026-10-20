@@ -1,11 +1,13 @@
 import type { ConferenceInput, Transport } from '@/types/operator';
 const field = 'min-h-11 w-full rounded border bg-background p-2';
 export function ConferenceEditor({
+  formId,
   draft,
   disabled,
   onChange,
   onSubmit,
 }: {
+  formId?: string;
   draft: ConferenceInput;
   disabled: boolean;
   onChange: (draft: ConferenceInput) => void;
@@ -16,6 +18,7 @@ export function ConferenceEditor({
   }
   return (
     <form
+      id={formId}
       aria-label="Conference editor"
       className="space-y-3 rounded border p-3"
       onSubmit={(e) => {
@@ -135,6 +138,7 @@ export function ConferenceEditor({
         className="min-h-11 rounded border px-3"
         disabled={disabled}
         type="submit"
+        hidden={!!formId}
       >
         Save conference
       </button>

@@ -1,0 +1,71 @@
+{
+  "candidateSha": "c3ff657f2bfc91f2351956088ca5e15dc5efb227",
+  "scope": "Original additional raw proof wrappers and all ten traces remain in the stopped private run root. The native report is copied unchanged once; no human observation inferred.",
+  "files": [
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/archive-cancel-proof.json",
+      "size": 1517,
+      "sha256": "ad673da74c8a6388437bf59efb17bcf3e56ec234a20d79a7945d87410103148c"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/archive-transfer-proof.json",
+      "size": 46590,
+      "sha256": "dc0007ae3cf493e398ae477aae768a612f7936bbb97927ee28b4d5bfbe2f4dcf"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/first-airborne-source-proof.json",
+      "size": 49476,
+      "sha256": "322e80f412bb5a72b9f132c9554fa539ec05f311bc6fffb0e423181907e593c6"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-call-lifecycle-proof.json",
+      "size": 51322,
+      "sha256": "b5a46a3b14b5b1660ef0b581c971fedc3e74b545ba45a49b77e32eb33a4ad0f2"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-client-recovery-proof.json",
+      "size": 10960,
+      "sha256": "26ae2ab15d83564e7ec9b0cb0c2da4cedaa20b8c6f3d3e298a376c70e0811017"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-closed-conference-proof.json",
+      "size": 38290,
+      "sha256": "1f46eae87ee4b07d784a19973781374cb10556ff8197d9f0af4f911d21d4f7b8"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-conflict-recovery-proof.json",
+      "size": 71113,
+      "sha256": "09af5c281318b48f2fd0156065fa81300f8aec7536292d3016f122f46324500b"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-decisions-issues-proof.json",
+      "size": 99280,
+      "sha256": "dce7c686b658a2fb1fb037b7659962f0f5945c363e3a220f6fc8bc3ec33efe30"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-native-recovery-proof.json",
+      "size": 1354468,
+      "sha256": "54394dbcf23074d1c32ed001e5450c97626ce41eeb2b1f571b7cf6e20477a3a5"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/guided-retry-proof.json",
+      "size": 6111,
+      "sha256": "aadbc44593544537430fefefeb9d379d904b7b8f52ccb6036d5b9aa373ea2df2"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/overdue-source-proof.json",
+      "size": 44109,
+      "sha256": "81af8e7ecca19a41849f9a0c9b266f51f19418fb5384ee45d5944d00abf2def9"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/packaged-help-proof.json",
+      "size": 319,
+      "sha256": "0d5036f6e49a61f0abf44a69eee3a4cf2e4616b774d93d5dca41fa8665f33cec"
+    },
+    {
+      "path": "/tmp/issue-376-training-proof-20261019-r39/training-fixture-proof.json",
+      "size": 144540,
+      "sha256": "5d47b85b1fdc821bb35bb8550cb964464a25c293072841054ac6512790dad437"
+    }
+  ]
+}

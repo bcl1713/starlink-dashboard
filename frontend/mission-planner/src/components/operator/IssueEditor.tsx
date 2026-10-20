@@ -14,6 +14,12 @@ import {
   parseUtc,
   utcValue,
 } from './issueForms';
+export interface IssueEditorDraft {
+  input: IssueInput;
+  baseVersion: number | null;
+  occurredAt: string | null;
+  useCurrentTime: boolean;
+}
 export function IssueEditor({
   missionId,
   record,
@@ -44,6 +50,51 @@ export function IssueEditor({
     identity,
     initial
   );
+  return (
+    <IssueForm
+      draft={draft}
+      onDraftChange={setDraft}
+      onSaved={clear}
+      storageError={storageError}
+      record={record}
+      disabled={disabled}
+      asOf={asOf}
+      onSave={onSave}
+      related={related}
+    />
+  );
+}
+
+export function IssueForm({
+  formId,
+  draft,
+  onDraftChange: setDraft,
+  onSaved,
+  storageError,
+  record,
+  disabled,
+  saveDisabled = false,
+  asOf,
+  onSave,
+  related,
+  contextual = false,
+}: {
+  formId?: string;
+  draft: IssueEditorDraft;
+  onDraftChange: (draft: IssueEditorDraft) => void;
+  onSaved?: () => void;
+  storageError?: string | null;
+  record?: SavedRecord;
+  disabled: boolean;
+  saveDisabled?: boolean;
+  asOf: string | null;
+  onSave: (
+    command: OperatorCommand,
+    useCurrentTime: boolean
+  ) => Promise<boolean>;
+  related: SavedRecord[];
+  contextual?: boolean;
+}) {
   const input = draft.input;
   const patch = (fields: Partial<IssueInput['payload']>) =>
     setDraft({
@@ -52,6 +103,7 @@ export function IssueEditor({
     });
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (disabled || saveDisabled) return;
     const body = { ...input, time: instant(draft.occurredAt) };
     const command: OperatorCommand =
       draft.baseVersion && record
@@ -61,10 +113,11 @@ export function IssueEditor({
             body: { ...body, expected_version: draft.baseVersion },
           }
         : { operation: 'create', body };
-    if (await onSave(command, draft.useCurrentTime ?? true)) clear();
+    if (await onSave(command, draft.useCurrentTime ?? true)) onSaved?.();
   }
   return (
     <form
+      id={formId}
       aria-label="Issue editor"
       onSubmit={(event) => void submit(event)}
       className="min-w-0 space-y-3 rounded-lg border p-4"
@@ -234,7 +287,7 @@ export function IssueEditor({
                 }
               />
             </label>
-            <label>
+            <label hidden={contextual}>
               Scope
               <select
                 aria-label="Scope"
@@ -263,7 +316,7 @@ export function IssueEditor({
               </select>
             </label>
             {input.scope === 'leg' && (
-              <label>
+              <label hidden={contextual}>
                 Leg ID
                 <input
                   className={issueField}
@@ -360,14 +413,19 @@ export function IssueEditor({
           </div>
         </details>
         <div className="flex flex-wrap gap-2">
-          <button className={issueButton} disabled={disabled}>
+          <button
+            hidden={!!formId}
+            className={issueButton}
+            disabled={disabled || saveDisabled}
+          >
             Save issue
           </button>
           <button
             type="button"
             className={issueButton}
             disabled={disabled}
-            onClick={clear}
+            onClick={onSaved}
+            hidden={!onSaved}
           >
             Discard issue draft
           </button>

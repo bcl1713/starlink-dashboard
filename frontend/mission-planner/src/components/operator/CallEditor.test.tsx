@@ -2,13 +2,16 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import type { CallInput } from '@/types/operator';
+import type { CallInput, SavedRecord } from '@/types/operator';
+import { record } from '@/test/operator-fixtures';
+import { conferenceDraft } from './conferenceCommands';
 import { CallEditor } from './CallEditor';
 import { callDraft } from './callDraft';
 afterEach(cleanup);
 function mount(
   mode: 'planned' | 'retrospective' = 'planned',
-  lead?: number | null
+  lead?: number | null,
+  records?: SavedRecord[]
 ) {
   const submitted = vi.fn();
   const initial = callDraft(undefined, mode, 'demo');
@@ -21,6 +24,7 @@ function mount(
         disabled={false}
         onChange={setDraft}
         onSubmit={submitted}
+        records={records}
       />
     );
   }
@@ -28,8 +32,51 @@ function mount(
   return submitted;
 }
 function field(name: string, value: string) {
-  fireEvent.change(screen.getByLabelText(name), { target: { value } });
+  const labels: Record<string, string> = {
+    'Planned start (UTC)': 'Planned start',
+    'Actual start (UTC, optional)': 'Actual start',
+    'Actual end (UTC, optional)': 'Actual end',
+  };
+  if (labels[name]) {
+    fireEvent.change(screen.getByLabelText(`${labels[name]} date (UTC)`), {
+      target: { value: value.slice(0, 10) },
+    });
+    fireEvent.change(screen.getByLabelText(`${labels[name]} time (UTC)`), {
+      target: { value: value.slice(11, 16) },
+    });
+  } else fireEvent.change(screen.getByLabelText(name), { target: { value } });
 }
+it.each(['tentative', 'delayed'] as const)(
+  'retains %s status and optional named conference, type and coordinator fields',
+  (status) => {
+    const conference = {
+      ...record,
+      ...conferenceDraft('demo'),
+      record_id: 'conference-a',
+    };
+    const submit = mount('planned', undefined, [conference]);
+    field('Planned start (UTC)', '2026-10-17T17:00:00Z');
+    field('Status', status);
+    field('Communications type', 'vtc');
+    field('Ground coordinator (optional)', 'Fictional ground coordinator');
+    field('Conference (optional)', conference.record_id);
+    fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+    expect(submit.mock.calls[0][0]).toMatchObject({
+      payload: {
+        status,
+        communications_kind: 'vtc',
+        coordinator: 'Fictional ground coordinator',
+        conference_id: 'conference-a',
+        prep_lead_minutes: 10,
+      },
+      time: {
+        planned_start_at: '2026-10-17T17:00:00Z',
+        occurred_at: null,
+        ended_at: null,
+      },
+    });
+  }
+);
 it('creates from party/time alone with unknown duration', () => {
   const submit = mount();
   field('Party / participant (optional)', 'Synthetic party');
@@ -145,4 +192,37 @@ it('corrects legacy scheduled unknown timing without requiring an invented start
   fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
   expect(submit.mock.calls[0][0].time.planned_start_at).toBeNull();
   expect(submit.mock.calls[0][0].payload.prep_lead_minutes).toBeNull();
+});
+it('restores unsent duration, prep and shift controls after the editor is parked', () => {
+  const initial = callDraft(undefined, 'planned', 'demo');
+  const changed = vi.fn();
+  const first = render(
+    <CallEditor
+      draft={initial}
+      disabled={false}
+      onChange={vi.fn()}
+      onSubmit={vi.fn()}
+      onEditorStateChange={changed}
+    />
+  );
+  field('Preparation lead minutes (blank = unknown)', '0');
+  expect(changed).toHaveBeenCalled();
+  const saved = changed.mock.calls.at(-1)![0];
+  first.unmount();
+  render(
+    <CallEditor
+      draft={initial}
+      disabled={false}
+      onChange={vi.fn()}
+      onSubmit={vi.fn()}
+      editorState={saved}
+    />
+  );
+  expect(
+    (
+      screen.getByLabelText(
+        'Preparation lead minutes (blank = unknown)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('0');
 });

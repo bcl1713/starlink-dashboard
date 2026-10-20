@@ -82,7 +82,15 @@ class OperatorStore:
             os.chmod(settings.root, 0o700)
             os.chmod(directory, 0o700)
             if settings.source_mode == "simulation":
-                os.chmod(settings.root / "simulation", 0o700)
+                os.chmod(
+                    settings.root
+                    / (
+                        "simulation-missions"
+                        if settings.mission_journal
+                        else "simulation"
+                    ),
+                    0o700,
+                )
             lock_fd = os.open(
                 directory / "operations.lock", os.O_RDWR | os.O_CREAT, 0o600
             )
@@ -311,6 +319,9 @@ class OperatorStore:
             api_epoch=self._identity.get("api_epoch"),
             source_mode=self.settings.source_mode,
             simulation_run_id=self.settings.simulation_run_id,
+            replay_run_id=self.settings.replay_run_id,
+            operating_context_id=self.settings.operating_context_id,
+            mission_journal=self.settings.mission_journal,
             clock_regression=regression,
             error_code=(None if self._ready and not self._closed else self._error_code),
         )

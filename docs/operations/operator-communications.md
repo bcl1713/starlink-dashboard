@@ -1,6 +1,6 @@
 # Operator communications (#365)
 
-Operator is disabled by default. Enable and maintain its existing independent
+Operator is enabled by default. Enable and maintain its existing independent
 store as described in [Operator journal maintenance](operator-journal.md).
 Overview remains a passive display and Missions continues to own mission plans.
 

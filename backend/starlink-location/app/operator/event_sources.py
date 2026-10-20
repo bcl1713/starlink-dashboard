@@ -9,6 +9,7 @@ from app.services.pop.geometry import route_geometry_fingerprint
 from .event_ledger import identity
 from .event_models import SourceCapture
 from .queries import select_records
+from .replay_context import operating_run, source_run
 from .time_models import utc_timestamp
 
 
@@ -114,7 +115,7 @@ class EventSourceAdapter:
                             publication.get("mission_id") == mission_id
                             and publication.get("leg_id") == leg_id
                             and publication.get("simulation_run_id")
-                            == health.simulation_run_id
+                            == source_run(health)
                             and publication.get("inputs_aligned") is True
                         )
                         source = SourceCapture(
@@ -140,7 +141,7 @@ class EventSourceAdapter:
             store_id=str(health.store_id),
             api_epoch=str(health.api_epoch),
             source_mode=health.source_mode,
-            simulation_run_id=health.simulation_run_id,
+            simulation_run_id=operating_run(health),
             H=high_water,
             records=records,
             sources=sources,

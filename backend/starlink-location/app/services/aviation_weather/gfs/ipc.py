@@ -3,6 +3,7 @@
 import fcntl
 import re
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from .store import atomic_json, control_lock, read_json
@@ -42,10 +43,20 @@ class GfsMailbox:
             self._save(data)
         return data
 
-    def renew(self, owner: str, settings, now_ms: int) -> None:
+    def renew(
+        self,
+        owner: str,
+        settings,
+        now_ms: int,
+        *,
+        clock: Callable[[], int] | None = None
+    ) -> None:
         if not re.fullmatch(r"[a-f0-9]{32}", owner):
             raise ValueError("Invalid API startup identity")
         with control_lock(self.root, timeout=1):
+            # Capture admission time after serialization, not before lock wait.
+            if clock is not None:
+                now_ms = clock()
             current = self.settings.get()
             data = self.observe_clock_locked(now_ms)
             if settings != current:
@@ -84,9 +95,9 @@ class GfsMailbox:
         with control_lock(self.root, timeout=1):
             self.invalidate_locked(revision)
 
-    def current(self, now_ms: int):
+    def current(self, now_ms: int, *, clock: Callable[[], int] | None = None):
         with control_lock(self.root, timeout=1):
-            return self.current_locked(now_ms)
+            return self.current_locked(clock() if clock is not None else now_ms)
 
     def current_locked(self, now_ms: int):
         settings, data = self.settings.get(), self._demand()

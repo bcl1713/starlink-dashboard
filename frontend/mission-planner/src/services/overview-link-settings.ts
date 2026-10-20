@@ -1,3 +1,7 @@
+import {
+  presetWeatherSchema,
+  type PresetWeatherVisibility,
+} from './overview-preset-weather';
 import apiClient from './api-client';
 
 // Additive preferences preserve the existing layout on older installations.
@@ -111,6 +115,7 @@ export const overviewLinkSettingsApi = {
 export const PRESET_NAMES = ['normal', 'communications', 'weather'] as const;
 export type OverviewPresetName = (typeof PRESET_NAMES)[number];
 export interface OverviewPreset {
+  weather_visibility?: PresetWeatherVisibility;
   version: number;
   settings: OverviewLinkSettingsUpdate;
 }
@@ -141,6 +146,8 @@ function confirmedPreset(data: unknown): OverviewPreset {
   ) {
     throw new Error('Invalid Overview preset acknowledgment');
   }
+  if ('weather_visibility' in data)
+    presetWeatherSchema.parse(data.weather_visibility);
   return data as OverviewPreset;
 }
 export const overviewPresetsApi = {
@@ -164,11 +171,16 @@ export const overviewPresetsApi = {
   async save(
     name: OverviewPresetName,
     settings: OverviewLinkSettingsUpdate,
-    expectedVersion: number
+    expectedVersion: number,
+    weatherVisibility?: PresetWeatherVisibility
   ): Promise<OverviewPreset> {
     const { data } = await apiClient.put(
       `/api/overview-links/presets/${name}`,
-      { settings, expected_version: expectedVersion }
+      {
+        settings,
+        expected_version: expectedVersion,
+        ...(weatherVisibility ? { weather_visibility: weatherVisibility } : {}),
+      }
     );
     return confirmedPreset(data);
   },

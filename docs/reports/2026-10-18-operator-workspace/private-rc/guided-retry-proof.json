@@ -1,0 +1,207 @@
+{
+  "synthetic": true,
+  "receipt": {
+    "schema_version": 1,
+    "command_id": "97f5d19e-8d6e-4e83-980d-0e8d73e75cde",
+    "saved_records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional guide lost-receipt exercise",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "8a97f967-924d-4676-a0ba-0dcfad46d270",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 13,
+        "command_id": "97f5d19e-8d6e-4e83-980d-0e8d73e75cde",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "attempts": [
+    {
+      "body": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "note",
+          "title": "Fictional guide lost-receipt exercise",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null
+        }
+      },
+      "key": "1fa397a1-7065-44d0-9627-7df14b40911a",
+      "epoch": "06f5138e-eaf3-441b-867c-b3e73ad3897f"
+    },
+    {
+      "body": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "note",
+          "title": "Fictional guide lost-receipt exercise",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null
+        }
+      },
+      "key": "1fa397a1-7065-44d0-9627-7df14b40911a",
+      "epoch": "06f5138e-eaf3-441b-867c-b3e73ad3897f"
+    },
+    {
+      "body": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "note",
+          "title": "Fictional later note retires original accepted tray row",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null
+        }
+      },
+      "key": "ef09b92a-91c3-46ae-84c6-b1b46c20a6cf",
+      "epoch": "06f5138e-eaf3-441b-867c-b3e73ad3897f"
+    }
+  ],
+  "history": {
+    "schema_version": 1,
+    "items": [
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional guide lost-receipt exercise",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "8a97f967-924d-4676-a0ba-0dcfad46d270",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 13,
+          "command_id": "97f5d19e-8d6e-4e83-980d-0e8d73e75cde",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      }
+    ],
+    "cursor": null,
+    "H": 13,
+    "as_of": "2026-10-17T17:05:00.000000Z"
+  },
+  "observedBeforeRetry": true,
+  "resumedProgressAfterReload": true,
+  "retainedAfterReceiptRetirementAndLaterReload": true,
+  "wholeLessonStillIncomplete": true
+}

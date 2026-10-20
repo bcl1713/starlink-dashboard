@@ -80,6 +80,9 @@ class TelemetryData(BaseModel):
     position: PositionData = Field(..., description="Position information")
     network: NetworkData = Field(..., description="Network metrics")
     obstruction: ObstructionData = Field(..., description="Obstruction information")
+    metric_source: Literal["observed", "simulated", "unavailable", "unknown"] = (
+        "unknown"
+    )
     metric_availability: MetricAvailability = Field(
         default_factory=MetricAvailability,
         description="Whether each metric has a usable source observation",

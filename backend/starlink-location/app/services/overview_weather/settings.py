@@ -8,6 +8,7 @@ from pathlib import Path
 from filelock import FileLock
 
 from app.models.overview_weather import WeatherSettings, WeatherSettingsUpdate
+from app.services.settings_conflict import SettingsConflict
 
 
 class WeatherSettingsStore:
@@ -32,6 +33,13 @@ class WeatherSettingsStore:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
             old = self._read()
+            if (
+                validated.expected_revision is not None
+                and validated.expected_revision != old.revision
+            ):
+                raise SettingsConflict(
+                    "Radar visibility changed; refresh before retrying"
+                )
             if old.enabled == validated.enabled:
                 return old
             settings = WeatherSettings(

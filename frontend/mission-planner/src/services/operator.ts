@@ -43,6 +43,17 @@ export async function getOperatorHealth(): Promise<OperatorHealth> {
     throw error;
   }
 }
+export async function provisionOperatorStore(
+  health: Pick<OperatorHealth, 'source_mode' | 'simulation_run_id'>
+): Promise<OperatorHealth> {
+  return (
+    await apiClient.post<OperatorHealth>(`${base}/provision`, {
+      schema_version: 1,
+      expected_source_mode: health.source_mode,
+      expected_simulation_run_id: health.simulation_run_id,
+    })
+  ).data;
+}
 export async function readOperatorRecords(
   filters: RecordFilters,
   cursor?: string
@@ -72,10 +83,15 @@ export async function readOperatorHistory(
 export async function saveOperatorCommand(
   command: OperatorCommand,
   key: string,
-  epoch: string
+  epoch: string,
+  replayId?: string | null
 ): Promise<CommandReceipt> {
   const config = {
-    headers: { 'Idempotency-Key': key, 'X-Operator-Store-Epoch': epoch },
+    headers: {
+      'Idempotency-Key': key,
+      'X-Operator-Store-Epoch': epoch,
+      ...(replayId ? { 'X-Operator-Replay-Id': replayId } : {}),
+    },
   };
   if (command.operation === 'create')
     return (
@@ -95,5 +111,13 @@ export async function saveOperatorCommand(
       command.body,
       config
     )
+  ).data;
+}
+
+export async function readOperatingContext() {
+  return (
+    await apiClient.get<
+      import('@/components/operator/workspace/operatingContext').OperatingContext
+    >(`${base}/context`)
   ).data;
 }

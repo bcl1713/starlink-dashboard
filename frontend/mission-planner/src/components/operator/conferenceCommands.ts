@@ -1,3 +1,4 @@
+import type { CallAssociation } from './callAssociation';
 import type {
   ConferenceInput,
   ParticipationInput,
@@ -96,22 +97,41 @@ export function recordInput(
 export function conferenceCommand(
   record: SavedRecord,
   action: ConferenceAction,
-  now: string
+  now: string,
+  association?: CallAssociation | null,
+  sessionCurrent = true
 ): OperatorCommand {
   const input = recordInput(record);
   if (input.record_type !== 'conference' || record.deleted)
     throw new Error('Select an active conference');
   const status = input.payload.status;
+  const previousSession =
+    !sessionCurrent || sessionOutsideContext(record, association);
+  if (action !== 'close' && action !== 'establish' && previousSession)
+    throw new Error(
+      'Establish this conference here before reporting current activity.'
+    );
   if (
     (action === 'verify' && status !== 'established') ||
     (action === 'restore_connection' && status !== 'interrupted') ||
     (action === 'establish' &&
+      !previousSession &&
       (status === 'established' || status === 'interrupted')) ||
     (action === 'close' && status === 'closed') ||
     (action === 'interrupt' &&
       (status === 'closed' || status === 'interrupted'))
   )
     throw new Error('Conference state changed; refresh before this action');
+  if (
+    action === 'establish' &&
+    association &&
+    (status !== 'preparing' || !sessionCurrent)
+  ) {
+    input.scope = association?.scope ?? 'mission';
+    input.leg_id = association?.leg_id ?? null;
+    input.payload.previous_leg_id = association?.previous_leg_id ?? null;
+    input.payload.next_leg_id = association?.next_leg_id ?? null;
+  }
   input.time = {
     ...unknownTime,
     occurred_at: now,
@@ -131,7 +151,11 @@ export function conferenceCommand(
   return {
     operation: 'update',
     record_id: record.record_id,
-    body: { ...input, expected_version: record.version },
+    body: {
+      ...input,
+      expected_version: record.version,
+      ...(action === 'establish' ? { establish_session: true } : {}),
+    },
   };
 }
 export function joinCommand(
@@ -187,4 +211,19 @@ export function resumeCommand(
     throw new Error('Select an interrupted customer connection');
   input.payload.resumes_participation_id = record.record_id;
   return joinCommand(input, now);
+}
+
+/** A report on another leg is historical activity, never current bridge availability. */
+export function sessionOutsideContext(
+  record: SavedRecord,
+  current?: CallAssociation | null
+) {
+  if (!current) return false;
+  if (record.scope === 'mission' || record.scope !== current.scope) return true;
+  if (record.scope === 'leg') return current.leg_id !== record.leg_id;
+  return (
+    record.scope === 'between_legs' &&
+    (record.payload.previous_leg_id !== current.previous_leg_id ||
+      record.payload.next_leg_id !== current.next_leg_id)
+  );
 }

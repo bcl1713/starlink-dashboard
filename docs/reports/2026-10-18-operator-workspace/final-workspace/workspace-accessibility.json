@@ -1,0 +1,114 @@
+{
+  "synthetic": true,
+  "scope": "Native accessible names; keyboard focus/resize asserted in journey. Does not certify contrast, screen-reader use or real-device keyboards.",
+  "audits": [
+    {
+      "stage": "candidate normal awareness",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 34
+    },
+    {
+      "stage": "candidate normal call editor",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 8
+    },
+    {
+      "stage": "candidate normal awareness",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 26
+    },
+    {
+      "stage": "candidate normal call editor",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 8
+    },
+    {
+      "stage": "candidate normal awareness",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 30
+    },
+    {
+      "stage": "candidate normal call editor",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 8
+    },
+    {
+      "stage": "candidate busy awareness",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 50
+    },
+    {
+      "stage": "candidate busy call editor",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 8
+    },
+    {
+      "stage": "candidate busy awareness",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 42
+    },
+    {
+      "stage": "candidate busy call editor",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 8
+    },
+    {
+      "stage": "candidate busy awareness",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 46
+    },
+    {
+      "stage": "candidate busy call editor",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 8
+    }
+  ]
+}

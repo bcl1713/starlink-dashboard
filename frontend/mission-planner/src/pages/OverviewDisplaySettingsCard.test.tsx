@@ -234,3 +234,30 @@ it('discovers and recenters a legacy Overview window without exposing fullscreen
   await act(Channel.flush);
   expect(screen.getByRole('status')).toHaveTextContent(/Recenter accepted/);
 });
+it('sends Follow aircraft only to the chosen capable window and reports its acknowledgment', async () => {
+  const first = vi.fn(async () => 'accepted' as const),
+    second = vi.fn(async () => 'accepted' as const);
+  display(first, ['recenter', 'follow_aircraft']);
+  const chosen = display(second, ['recenter', 'follow_aircraft']);
+  render(<OverviewDisplaySettingsCard />);
+  await act(Channel.flush);
+  fireEvent.change(screen.getByRole('combobox', { name: 'Overview display' }), {
+    target: { value: chosen.id },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Follow aircraft' }));
+  await act(Channel.flush);
+  expect(first).not.toHaveBeenCalled();
+  expect(second).toHaveBeenCalledWith('follow_aircraft', expect.any(Number));
+  expect(screen.getByRole('status')).toHaveTextContent(
+    /Follow aircraft accepted/
+  );
+});
+it('keeps Follow aircraft disabled for older recenter-only windows', async () => {
+  display();
+  render(<OverviewDisplaySettingsCard />);
+  await act(Channel.flush);
+  expect(
+    screen.getByRole('button', { name: 'Follow aircraft' })
+  ).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Recenter view' })).toBeEnabled();
+});

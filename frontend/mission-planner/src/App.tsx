@@ -22,7 +22,12 @@ import { createQueryClient } from './lib/query-client';
 import { PageThemeContext } from './lib/page-theme';
 import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 import { useOperatorHealth } from './hooks/api/useOperatorJournal';
+import { OperatorHelpPage } from './pages/OperatorHelpPage';
 import { OperatorJournalPage } from './pages/OperatorJournalPage';
+import {
+  OperatorWorkspaceProvider,
+  useOperatorWorkspace,
+} from './components/operator/workspace/OperatorWorkspaceProvider';
 
 const queryClient = createQueryClient();
 
@@ -38,7 +43,8 @@ const navigationItems = [
 
 function AppNavigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const health = useOperatorHealth();
+  const workspace = useOperatorWorkspace();
+  const health = useOperatorHealth(!workspace.ownsHealth);
   const items =
     health.data?.enabled && !health.isError
       ? [...navigationItems, { to: '/operator', label: 'Operator' }]
@@ -126,6 +132,7 @@ function AppShell() {
         >
           <Routes>
             <Route path="/operator" element={<OperatorJournalPage />} />
+            <Route path="/operator/help" element={<OperatorHelpPage />} />
             <Route path="/overview" element={<OverviewPage />} />
             <Route path="/missions" element={<MissionsPage />} />
             <Route
@@ -153,7 +160,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AppShell />
+        <OperatorWorkspaceProvider>
+          <AppShell />
+        </OperatorWorkspaceProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

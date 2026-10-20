@@ -1,0 +1,333 @@
+{
+  "synthetic": true,
+  "proofs": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "offlineReceipt": {
+        "schema_version": 1,
+        "command_id": "36371967-634e-40ed-a22a-14d411637ca8",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional parked recovery 1920 offline",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "99d6b5a6-e690-4dc9-8ed9-fa6714277a0a",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 28,
+            "command_id": "36371967-634e-40ed-a22a-14d411637ca8",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T17:05:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "storageReceipt": {
+        "schema_version": 1,
+        "command_id": "af387766-39e7-452e-b92b-bd1bb4d70044",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional storage recovery 1920",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "02316d00-8791-45f3-a36a-1fcf6d20eac7",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 29,
+            "command_id": "af387766-39e7-452e-b92b-bd1bb4d70044",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T17:05:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "parkedOtherDraftIsNotASavedRecord": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "offlineReceipt": {
+        "schema_version": 1,
+        "command_id": "799a44c1-5d09-4e9f-9d33-da8c377b55ce",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": "2026-10-17T15:55:00.000000Z",
+              "ended_at": null,
+              "precision": "approximate",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional parked recovery 390 offline",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "1410eafb-2834-443c-bd8f-fd24321dc38a",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 30,
+            "command_id": "799a44c1-5d09-4e9f-9d33-da8c377b55ce",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T17:05:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "retrospective"
+            }
+          }
+        ]
+      },
+      "storageReceipt": {
+        "schema_version": 1,
+        "command_id": "4d67f42d-78a1-4094-9f06-61a200988230",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional storage recovery 390",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "6939b459-41e3-4374-b5a5-735bf9da21bb",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 31,
+            "command_id": "4d67f42d-78a1-4094-9f06-61a200988230",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T17:05:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "parkedOtherDraftIsNotASavedRecord": true
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "offlineReceipt": {
+        "schema_version": 1,
+        "command_id": "34ef056e-8003-4d0c-8155-17dccd8cca78",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional parked recovery 844 offline",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "6b6d76ac-09ad-4e22-ad92-92ddbe3c8a51",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 32,
+            "command_id": "34ef056e-8003-4d0c-8155-17dccd8cca78",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T17:05:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "storageReceipt": {
+        "schema_version": 1,
+        "command_id": "7eaa82d6-bcb6-4374-a70a-84e23aef36a5",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional storage recovery 844",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "c2af910b-c50d-4814-83f5-7041e2cb0d5a",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 33,
+            "command_id": "7eaa82d6-bcb6-4374-a70a-84e23aef36a5",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T17:05:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "parkedOtherDraftIsNotASavedRecord": true
+    }
+  ],
+  "manualObservations": "not claimed"
+}

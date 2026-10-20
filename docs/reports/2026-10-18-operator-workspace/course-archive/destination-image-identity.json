@@ -1,0 +1,17 @@
+{
+  "candidateSha": "3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724",
+  "sourceArchiveSha256": "683353a6074d52081e4f1b2bc08518ed47872aa48e0cbed06eb1cb283090abbf",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-training-feac396136f0-backend:3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724",
+      "id": "sha256:7215b4b491014d732a8ac159bb4a6f3f1257a4016a03920751d2ebeba1128e5b",
+      "revision": "3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724"
+    },
+    "frontend": {
+      "tag": "starlink-operator-training-feac396136f0-frontend:3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724",
+      "id": "sha256:af3abf7a39a548a3462c10ea676476ed505db2bbda399f523e26ee0706d3b4e4",
+      "revision": "3fa1c2d8ea3a9206f867b8a23d397dbaf13b1724"
+    }
+  },
+  "capturedBeforeArchiveBrowser": true
+}

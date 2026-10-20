@@ -1,0 +1,15 @@
+All done! ✨ 🍰 ✨
+773 files would be left unchanged.
+All checks passed!
+Checking filename conventions in docs...
+All markdown files follow the naming convention.
+Checking formatting...
+[warn] frontend/mission-planner/src/components/operator/training/trainingProviderEvidence.test.ts
+[warn] frontend/mission-planner/src/components/operator/workspace/WorkspaceAwareness.test.tsx
+[warn] frontend/mission-planner/src/hooks/api/useOperatorJournal.test.tsx
+[warn] frontend/mission-planner/src/services/overview-preset-actions.test.ts
+[warn] Code style issues found in 4 files. Run Prettier with --write to fix.
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ uv run --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/backend/starlink-location) $ uv run --with-requirements requirements-dev.txt ruff check app tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ python tools/check_filename_convention.py
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner exec -- prettier --check frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}

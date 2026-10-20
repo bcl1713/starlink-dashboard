@@ -83,6 +83,7 @@ it('uses UTC strings even in a non-UTC environment and preserves other saved tim
           ended_at: '2026-10-17T10:12:13.987654Z',
           end_state: 'known',
           planned_start_at: '2026-10-17T09:00:00.123456Z',
+          planned_end_at: '2026-10-17T09:30:00.123456Z',
         },
       }}
       onSave={save}
@@ -97,5 +98,37 @@ it('uses UTC strings even in a non-UTC environment and preserves other saved tim
     occurred_at: input.time.occurred_at,
     ended_at: '2026-10-17T10:12:13.987654Z',
     planned_start_at: '2026-10-17T09:00:00.123456Z',
+    planned_end_at: '2026-10-17T09:30:00.123456Z',
+  });
+});
+
+it('submits a call observation with an explicit leg and known actual end without inventing planning times', () => {
+  const save = vi.fn();
+  render(
+    <JournalEditor missionId="mission-a" onSave={save} disabled={false} />
+  );
+  const change = (name: string, value: string) =>
+    fireEvent.change(screen.getByLabelText(name), { target: { value } });
+  change('Entry type', 'call_observation');
+  change('Title', 'Fictional retrospective observation');
+  change('Scope', 'leg');
+  change('Leg ID', 'leg-a');
+  change('Time precision', 'exact');
+  change('Occurred at (UTC)', '2026-10-17T14:00:00Z');
+  change('End state', 'known');
+  change('Ended at (UTC)', '2026-10-17T14:10:00Z');
+  fireEvent.click(screen.getByRole('button', { name: 'Save entry' }));
+  expect(save.mock.calls[0][0].body).toMatchObject({
+    scope: 'leg',
+    leg_id: 'leg-a',
+    payload: { entry_type: 'call_observation' },
+    time: {
+      occurred_at: '2026-10-17T14:00:00Z',
+      ended_at: '2026-10-17T14:10:00Z',
+      precision: 'exact',
+      end_state: 'known',
+      planned_start_at: null,
+      planned_end_at: null,
+    },
   });
 });

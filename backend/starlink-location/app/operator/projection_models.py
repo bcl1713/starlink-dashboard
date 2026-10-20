@@ -76,6 +76,8 @@ class ActivityItem(StrictModel):
 
 
 class ProjectionManifest(StrictModel):
+    replay_run_id: str | None = None
+    mission_journal: bool = False
     schema_version: SchemaVersion = 1
     store_id: RecordId
     api_epoch: RecordId

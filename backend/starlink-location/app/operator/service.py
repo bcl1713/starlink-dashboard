@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from . import commands, queries
+from .catalog import assignment_guard
 from .clock import Clock
 from .errors import OperatorError
 from .maintenance import capacity_status
@@ -57,6 +58,7 @@ class OperatorService:
         key: str,
         epoch: str,
         writable_types: set[str] | None = None,
+        expected_replay: str | None = None,
     ) -> ExecutionResult:
         identity = self.store.health()
         if not epoch:
@@ -73,6 +75,16 @@ class OperatorService:
         # This additive optional marker must not change pre-upgrade retry hashes.
         if not body.get("replacement_check_row_ids"):
             body.pop("replacement_check_row_ids", None)
+        if not body.get("establish_session"):
+            body.pop("establish_session", None)
+        # Optional catalog references leave legacy idempotency hashes unchanged.
+        if body.get("payload", {}).get("entry_type") == "transport_decision":
+            for row in body["payload"]["services"]:
+                if row.get("service_id") is None:
+                    row.pop("service_id", None)
+                for stage in ("intended", "requested", "applied"):
+                    if row.get(stage) and row[stage].get("transport_id") is None:
+                        row[stage].pop("transport_id", None)
         encoded = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
         if len(encoded) > 65536:
             raise OperatorError(
@@ -83,6 +95,11 @@ class OperatorService:
             receipt = commands.receipt_for_key(connection, key, request_hash)
             if receipt is not None:
                 return ExecutionResult(receipt, replayed=True)
+            if self.store.settings.mission_journal and expected_replay is not None:
+                from .replay_context import operating_run
+
+                if expected_replay != operating_run(identity):
+                    raise OperatorError("store_context_changed")
             current = (
                 None
                 if isinstance(command, CreateRecord)
@@ -91,9 +108,9 @@ class OperatorService:
         mission_ids = [current.mission_id] if current else []
         if command.operation in ("create", "update"):
             mission_ids.append(command.mission_id)
-        with self.references.locked(mission_ids), self.store.connect(
-            write=True
-        ) as connection:
+        with self.references.locked(mission_ids), assignment_guard(
+            self.store.settings, command
+        ), self.store.connect(write=True) as connection:
             receipt = commands.receipt_for_key(connection, key, request_hash)
             if receipt is not None:
                 return ExecutionResult(receipt, replayed=True)
@@ -136,6 +153,8 @@ class OperatorService:
                 request_hash=request_hash,
                 clock=self.clock,
                 actor=self.actor,
+                replay_run_id=self.store.settings.replay_run_id,
+                operating_context_id=self.store.settings.operating_context_id,
             )
             return ExecutionResult(receipt, replayed=False)
 

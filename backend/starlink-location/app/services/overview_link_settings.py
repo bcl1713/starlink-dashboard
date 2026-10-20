@@ -6,6 +6,8 @@ from pathlib import Path
 
 from filelock import FileLock
 
+from app.models.overview_presets import PresetWeatherVisibility
+
 
 @dataclass(frozen=True)
 class OverviewLinkSettings:
@@ -142,14 +144,24 @@ class OverviewLinkSettingsStore:
                 or not _validate_fields(preset.get("settings"))
             ):
                 raise ValueError("Invalid saved preset")
+            if preset is not None and "weather_visibility" in preset:
+                PresetWeatherVisibility.model_validate(preset["weather_visibility"])
             result[name] = preset
         return result
 
     def save_preset(
-        self, name: str, settings: dict[str, bool], expected_version: int
+        self,
+        name: str,
+        settings: dict[str, bool],
+        expected_version: int,
+        weather_visibility: dict[str, bool] | None = None,
     ) -> dict:
         if name not in PRESET_NAMES or not _validate_fields(settings):
             raise ValueError("Invalid preset")
+        if weather_visibility is not None:
+            weather_visibility = PresetWeatherVisibility.model_validate(
+                weather_visibility
+            ).model_dump()
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
             payload = self._read_payload()
@@ -161,6 +173,8 @@ class OverviewLinkSettingsStore:
                     "Preset changed; refresh before retrying"
                 )
             preset = {"version": version + 1, "settings": settings}
+            if weather_visibility is not None:
+                preset["weather_visibility"] = weather_visibility
             payload.setdefault("operator_presets", {})[name] = preset
             self._write(payload)
             return preset

@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { TransportDraft } from '@/types/operatorTransport';
 
+export const transportDraftPrefix = 'operator-369-draft:';
+export const transportDraftKey = (
+  identity: string,
+  missionId: string,
+  recordId = 'new'
+) => `${transportDraftPrefix}${identity}:${missionId}:${recordId}`;
+
 export function useOperatorTransportDraft(
   key: string,
   initial: TransportDraft

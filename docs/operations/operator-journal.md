@@ -1,30 +1,39 @@
 # Operator journal maintenance
 
-Operator is disabled by default. Its database, immutable revisions and command
-receipts live separately from mission/planning storage. Disabling Operator
-preserves its files. A binary that does not support the stored schema refuses to
-open it; disabling the feature is the safe binary rollback path.
+`/operator` opens the new workspace; the old page is retired. The application
+landing page remains Missions. Operator is enabled by default; explicitly set
+`OPERATOR_ENABLED=false` to disable it. Older uncertain saves retain their exact
+retry/reconciliation controls in workspace recovery. No save is sent
+automatically. Its database, immutable revisions and command receipts live
+separately from mission/planning storage. Disabling Operator preserves its
+files. Unsupported binaries refuse the stored schema; disable Operator for
+rollback.
 
-Compose forwards `OPERATOR_ENABLED` with a default of `false` and retains the
+Compose forwards `OPERATOR_ENABLED` with a default of `true` and retains the
 store in the independent `operator_data` volume mounted at `/app/data/operator`.
 Container recreation preserves that volume; removing it removes its retained
 history and receipts. The image and entrypoint give only the mount root to
 `appuser` with mode `0700`, without recursively changing retained history.
-Initialize the chosen namespace explicitly before enabling the API. Startup only
-opens existing initialized stores; failure leaves status, configuration,
-Overview and Missions available.
+Enable the API, open Operator and use its explicit **Initialize live journal**
+or **Initialize simulation journal** action for a pristine namespace. The action
+is bound to the displayed source/run and never resets an existing journal.
+Startup only opens existing initialized stores; failure leaves status,
+configuration, Overview and Missions available. Operator distinguishes first-use
+initialization from recovery artifacts, corruption, source mismatch and missing
+simulation context. The packaged `/operator-help/setup.html` page is available
+offline from the setup panel.
 
-Runtime uses the actual coordinator mode, regardless of `OPERATOR_SOURCE_MODE`.
-Simulation uses the actual managed run ID when present; otherwise an explicitly
-configured `OPERATOR_SIMULATION_RUN_ID` selects an offline/demo namespace. With
-neither, enabled simulation reports unavailable and touches no Operator files.
-Disabled simulation needs no run ID and opens no Operator files. A run/mode
-change closes the previous handle and checks the new namespace under a request
-gate; old epochs fail rather than writing into the replacement namespace.
-
-Run these commands from `backend/starlink-location` with the application's
-Python environment. Every command requires an explicit root and mode. Simulation
-also requires `--run RUN_ID` and uses `ROOT/simulation/RUN_ID/`.
+Runtime uses the coordinator's mode. Normal simulation keeps mission journals in
+`ROOT/simulation-missions/default/`, independently of replay identity.
+`OPERATOR_EVALUATION_SESSION` selects a fresh evaluation; live storage is
+unchanged. Old `ROOT/simulation/RUN_ID/` journals are preserved separately,
+never merged.
+[Normal-instance evaluation](operator-normal-instance-evaluation.md) documents
+updates, readiness/history, preserved-journal export and the acceptance
+checklist. Use the application's Python environment in
+`backend/starlink-location`. For new simulation journals add
+`--mode simulation --mission-journal --run default`; without
+`--mission-journal`, `--run RUN_ID` selects a legacy per-run store.
 
 ```sh
 python -m app.operator initialize --root data/operator --mode live
@@ -33,16 +42,18 @@ python -m app.operator backup --root data/operator --mode live
 python -m app.operator restore --root data/operator --mode live --manifest PATH
 ```
 
-`initialize` is explicit first enablement. `check`, `backup`, and runtime
-startup never create a missing replacement database. An interrupted
-initialization marker requires administrator recovery. `check` returns JSON
-health and a nonzero exit status when unavailable. It takes exclusive
-maintenance admission for WAL, integrity, schema, complete typed
-revision/receipt and derived-link checks. Concurrent access produces a bounded,
-retryable `store_busy`; it is not evidence of corruption. Internal maintenance
-scans and the SQLite online-backup loop have two-second deadlines. Large stores
-may therefore require maintenance tuning in a future release; a timeout never
-silently skips validation.
+`initialize` is also available for explicit offline first enablement. Both UI
+and CLI initialization refuse ambiguous prior-store artifacts, including a lock
+or backups without the database/identity pair; preserve those files for
+recovery. `check`, `backup`, and runtime startup never create a missing
+replacement database. An interrupted initialization marker requires
+administrator recovery. `check` returns JSON health and a nonzero exit status
+when unavailable. It takes exclusive maintenance admission for WAL, integrity,
+schema, complete typed revision/receipt and derived-link checks. Concurrent
+access produces a bounded, retryable `store_busy`; it is not evidence of
+corruption. Internal maintenance scans and the SQLite online-backup loop have
+two-second deadlines. Large stores may therefore require maintenance tuning in a
+future release; a timeout never silently skips validation.
 
 Backups use SQLite's online backup API, including committed WAL changes. Use
 `backup --directory PATH` to choose a destination; the default is the store's
@@ -199,7 +210,7 @@ includes their complete archival snapshot through issue #370.
 
 ## Operator workspace shell
 
-The gated `/operator` workspace keeps the existing journal and adds read-only
+The default `/operator` workspace keeps the existing journal and adds read-only
 mission summaries: the earliest future active call, next recorded risk and open
 issues. Active calls include tentative, scheduled and delayed requirements.
 Overdue active calls stay separately visible under Attention needed, so an
@@ -282,12 +293,7 @@ the same file lock and returns the incremented version; conflicts return 409.
 Storage failures return 503 and preserve the previous file. The UI waits for
 this acknowledgment before showing a saved/applied state.
 
-Presets are additive `operator_presets` metadata in the existing Overview link
-settings JSON file, with no database schema migration, new volume or new
-infrastructure. Existing settings writes preserve that metadata and unfamiliar
-future fields. Back up the installation settings file with the deployment's
-normal configuration backup. Old binaries ignore and retain the metadata;
-rolling back the frontend/backend leaves saved visibility and preset data in
-place. Disable Operator to hide its controls while Configuration remains
-available. Do not delete shared configuration or Operator journal volumes for
-rollback.
+Presets add `operator_presets` metadata to existing Overview link settings JSON,
+without database migration or new infrastructure. Writes preserve that metadata
+and unfamiliar future fields. Include settings in normal configuration backups.
+Rollback preserves visibility and presets. Preserve configuration and journals.

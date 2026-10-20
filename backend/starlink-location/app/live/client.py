@@ -439,6 +439,7 @@ class StarlinkClient:
                 position=position,
                 network=network,
                 obstruction=obstruction_pct,
+                metric_source="observed",
                 metric_availability=MetricAvailability(
                     latency_ms=latency_available,
                     throughput_down_mbps=downlink_available,

@@ -25,6 +25,8 @@ class SourceReference(StrictModel):
 class SourceProvenance(StrictModel):
     kind: Literal["operator_reported", "observed", "modeled"]
     source_mode: Literal["live", "simulation"]
+    replay_run_id: str | None = None
+    operating_context_id: str | None = None
     observed_at: UtcTimestamp | None = None
     predicted_at: UtcTimestamp | None = None
     source_ref: SourceReference | None = None
@@ -40,5 +42,8 @@ class StoreHealth(StrictModel):
     api_epoch: RecordId | None = None
     source_mode: Literal["live", "simulation"]
     simulation_run_id: str | None = None
+    replay_run_id: str | None = None
+    operating_context_id: str | None = None
+    mission_journal: bool = False
     clock_regression: bool = False
     error_code: str | None = None

@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Workspace measurements using the existing owned production-image runner."""
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from fixtures import build_workspace_fixture
+
+ROOT = Path(__file__).resolve().parents[3]
+HARNESS = ROOT / "tools/acceptance/operator-journal"
+sys.path.insert(0, str(HARNESS))
+spec = importlib.util.spec_from_file_location("journal_acceptance", HARNESS / "run.py")
+journal = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(journal)
+
+SEED = """
+import json,sys
+from pathlib import Path
+from uuid import NAMESPACE_URL,uuid5
+from app.mission import storage
+from app.mission.models import Mission
+from app.operator.models import Actor,CreateRecord
+from app.operator.references import MissionReferences
+from app.operator.service import OperatorService
+from app.operator.settings import OperatorSettings
+from app.operator.store import OperatorStore
+from scenario import ScenarioClock,RUN_ID
+storage.MISSIONS_DIR=Path('/app/data/missions')
+settings=OperatorSettings(enabled=True,root=Path('/app/data/operator'),source_mode='simulation',simulation_run_id=RUN_ID)
+clock=ScenarioClock()
+store=OperatorStore.open(settings,initialize=False,clock=clock)
+try:
+ service=OperatorService(store,clock=clock,actor=Actor(backend='synthetic workspace prerequisite'),references=MissionReferences())
+ epoch=str(store.health().api_epoch)
+ for fixture in json.loads(sys.argv[1]):
+  storage.save_mission_v2(Mission.model_validate(fixture['mission']))
+  for i,body in enumerate(fixture['planned_commands']):
+   service.execute(CreateRecord.model_validate(body),key=str(uuid5(NAMESPACE_URL,fixture['namespace']+'/call/'+str(i))),epoch=epoch)
+finally:
+ store.close()
+"""
+
+
+def qualify(owner, *, workspace=False, fresh=False, performance=None, release=None):
+    fixtures = (
+        [] if fresh else [build_workspace_fixture(seed) for seed in ("normal", "busy")]
+    )
+    (owner.root / "workspace-inputs.json").write_text(json.dumps(fixtures, indent=2))
+    if not fresh:
+        owner.compose(
+            "exec",
+            "-T",
+            "--user",
+            "appuser",
+            "starlink-location",
+            "python",
+            "-c",
+            SEED,
+            json.dumps(fixtures),
+            timeout=60,
+        )
+    env = owner.env | {
+        "OPERATOR_ACCEPTANCE_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
+        "OPERATOR_ACCEPTANCE_EVIDENCE": str(owner.root),
+        "OPERATOR_ACCEPTANCE_PROJECT": owner.project,
+        "OPERATOR_WORKSPACE_INPUTS": str(owner.root / "workspace-inputs.json"),
+        "PLAYWRIGHT_BROWSERS_PATH": os.environ.get(
+            "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
+        ),
+        "npm_config_offline": "true",
+        "npm_config_update_notifier": "false",
+        "OPERATOR_BENCHMARK_MODE": performance or "",
+        "OPERATOR_RELEASE_MODE": release or "",
+    }
+    if performance or release:
+        browser_source = (
+            ROOT / "frontend/mission-planner/tests/e2e/operator-workspace.spec.ts"
+        )
+        owner.ownership["browserHarness"] = {
+            "sha": subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30
+            ).strip(),
+            "testSha256": hashlib.sha256(browser_source.read_bytes()).hexdigest(),
+            "releaseTestSha256": hashlib.sha256(
+                (
+                    ROOT
+                    / "frontend/mission-planner/tests/e2e/operator-workspace-release.spec.ts"
+                ).read_bytes()
+            ).hexdigest()
+            if release
+            else None,
+            "scope": "External scripted qualification source; runtime images retain their own exact candidate SHA",
+        }
+        owner.persist()
+    owner.execute(
+        [
+            "timeout",
+            "--kill-after=10s",
+            "10m",
+            "npx",
+            "--no-install",
+            "playwright",
+            "test",
+            "--config",
+            "playwright.operator-workspace.config.ts",
+            "--grep",
+            "release gate:"
+            if release
+            else "performance:"
+            if performance
+            else "fresh install"
+            if fresh
+            else "hidden workspace"
+            if workspace
+            else "baseline",
+        ],
+        timeout=620,
+        cwd=ROOT / "frontend/mission-planner",
+        env=env,
+    )
+    if release:
+        return json.loads((owner.root / "workspace-release.json").read_text())
+    if performance:
+        return json.loads((owner.root / "workspace-performance.json").read_text())
+    if fresh:
+        return json.loads((owner.root / "workspace-fresh-install.json").read_text())
+    if workspace:
+        return json.loads((owner.root / "workspace-candidate.json").read_text())
+    result = json.loads((owner.root / "workspace-baseline.json").read_text())
+    try:
+        owner.execute(
+            [
+                "timeout",
+                "--kill-after=10s",
+                "3m",
+                "npx",
+                "--no-install",
+                "playwright",
+                "test",
+                "--config",
+                "playwright.operator-workspace.config.ts",
+                "--grep",
+                "approved workspace",
+            ],
+            timeout=200,
+            cwd=ROOT / "frontend/mission-planner",
+            env=env,
+        )
+    except RuntimeError:
+        log = Path(owner.ownership["commands"][-1]["log"]).read_text()
+        if "Operator workspace" not in log or "element(s) not found" not in log:
+            raise
+        result["approvedDestinationRed"] = {
+            "reason": "Operator workspace navigation absent after healthy legacy page loaded",
+            "log": owner.ownership["commands"][-1]["log"],
+        }
+    else:
+        raise AssertionError("Baseline unexpectedly contains the approved workspace")
+    return result
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--candidate", required=True)
+    parser.add_argument("--project", required=True)
+    parser.add_argument("--evidence", required=True, type=Path)
+    parser.add_argument(
+        "--workspace",
+        action="store_true",
+        help="Exercise the hidden implementation shell",
+    )
+    parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help="Exercise explicit provisioning without seeding an Operator store",
+    )
+    parser.add_argument(
+        "--performance",
+        choices=["baseline", "candidate"],
+        help="Measure the same bounded task outcomes with recorded scripted interactions",
+    )
+    parser.add_argument(
+        "--runtime-repository",
+        type=Path,
+        help="Clean isolated baseline checkout; only valid for baseline measurements",
+    )
+    parser.add_argument(
+        "--release",
+        choices=["baseline", "candidate"],
+        help="Profile sixty-second idle windows and rehearse candidate backout",
+    )
+    args = parser.parse_args()
+    measurement_mode = args.performance or args.release
+    if measurement_mode:
+        if args.fresh or args.workspace or (args.performance and args.release):
+            parser.error("Use one qualification mode")
+        harness_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30
+        ).strip()
+        journal.validate_candidate(ROOT, harness_sha)
+        if measurement_mode == "baseline":
+            baseline = json.loads((Path(__file__).parent / "parity.json").read_text())[
+                "baseline_sha"
+            ]
+            if not args.runtime_repository or args.candidate != baseline:
+                parser.error(
+                    "Original baseline measurements require the frozen baseline SHA and its isolated clean checkout"
+                )
+    if args.runtime_repository:
+        if measurement_mode != "baseline":
+            parser.error(
+                "A separate runtime repository is only valid for the original baseline"
+            )
+        # Exact clean-HEAD admission still runs against this real isolated checkout;
+        # the external browser qualification source remains this candidate harness.
+        journal.ROOT = args.runtime_repository.resolve()
+    print(
+        json.dumps(
+            journal.run(
+                args.candidate,
+                args.project,
+                args.evidence,
+                entrypoint="fresh_operator_fixture" if args.fresh else None,
+                qualification=lambda owner: qualify(
+                    owner,
+                    workspace=args.workspace,
+                    fresh=args.fresh,
+                    performance=args.performance,
+                    release=args.release,
+                ),
+            ),
+            indent=2,
+        )
+    )

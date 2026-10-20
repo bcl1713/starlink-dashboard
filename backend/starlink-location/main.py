@@ -9,13 +9,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -102,6 +95,12 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -578,7 +577,10 @@ async def startup_event():
         app.state.operator_live_source = _operator_live_source
         app.state.operator_event_source_factory = _operator_event_sources
         app.state.operator_binding = OperatorRuntimeBinding(
-            clock=SystemClock(), context=_operator_context
+            clock=SystemClock(),
+            context=_operator_context,
+            mission_journals=True,
+            operating_context=_operator_operating_context,
         )
         # This optional runtime reports its own failures; it never initializes
         # or replaces a store as a side effect of application startup.
@@ -749,8 +751,26 @@ def _current_runtime_config():
 def _operator_context():
     config = _current_runtime_config()
     run_service = getattr(app.state, "simulation_run_service", None)
-    run = run_service.status().run if run_service is not None else None
+    status = run_service.status() if run_service is not None else None
+    run = status.run if status and status.state in ("running", "completed") else None
     return config.mode, run.run_id if run is not None else None
+
+
+def _operator_operating_context():
+    """Identify ordinary activation using the existing replay runtime revision.
+
+    This is a source boundary, not a new mode or persisted session service.
+    Paced activity continues to use its actual replay ID. A backend restart
+    conservatively requires reporting readiness again; definitions remain usable.
+    """
+    service = getattr(app.state, "simulation_run_service", None)
+    if _current_runtime_config().mode != "simulation" or service is None:
+        return None
+    status = service.status()
+    route_id = _route_manager.get_active_route_id() if _route_manager else None
+    if status.state != "idle" or not route_id:
+        return None
+    return f"ordinary:{status.runtime_id}:{status.revision}:{route_id}"
 
 
 def _operator_model_context():

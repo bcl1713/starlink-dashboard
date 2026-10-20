@@ -7,6 +7,7 @@ import type {
 } from '@/types/pop';
 
 export interface StatusResponse {
+  metric_source?: 'observed' | 'simulated' | 'unavailable' | 'unknown';
   pop_forecast?: PopForecast | null;
   call_continuity?: CallContinuityProjection | null;
   pop_observation?: PopObservation | null;

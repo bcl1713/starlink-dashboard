@@ -1,6 +1,6 @@
 # Operator conferences and customer participation
 
-Operator remains disabled by default. When enabled, open Communications and
+Operator is enabled by default. When enabled, open Communications and
 expand **Conferences and customers**. Create a conference, then use Establish,
 Verify, Customer Joined, Interrupt, Restore connection and Close conference.
 Notes, customer identity, coordinator, schedule and duration are optional.

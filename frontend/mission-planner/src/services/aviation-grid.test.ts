@@ -8,6 +8,74 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('immutable normalized grid admission', () => {
+  it.each(['grid.json', 'u.bin'])(
+    'recovers one transient %s admission rejection within the original load budget',
+    async (filename) => {
+      vi.useFakeTimers();
+      const fixture = gridFixture(),
+        budget = new WeatherBudget();
+      let rejected = false;
+      const fetcher = vi.fn((path: string) => {
+        if (path.endsWith(filename) && !rejected) {
+          rejected = true;
+          return Promise.resolve(new Response('{}', { status: 404 }));
+        }
+        return Promise.resolve(fixture.response(path));
+      });
+      vi.stubGlobal('fetch', fetcher);
+      const pending = fetchGrid(
+        fixture.product,
+        new AbortController().signal,
+        budget
+      );
+      void pending.catch(() => {});
+      await vi.advanceTimersByTimeAsync(250);
+      const lease = await pending;
+      expect(
+        fetcher.mock.calls.filter(([path]) => path.endsWith(filename))
+      ).toHaveLength(2);
+      expect(lease.u[0]).toBe(-1234);
+      lease.release();
+      expect(budget.snapshot()).toMatchObject({
+        encoded: 0,
+        decoded: 0,
+        gpu: 0,
+        slots: 0,
+      });
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  );
+  it('bounds repeated immutable admission rejection and cancels the retry delay', async () => {
+    vi.useFakeTimers();
+    const fixture = gridFixture(),
+      budget = new WeatherBudget();
+    const fetcher = vi.fn(async () => new Response('{}', { status: 404 }));
+    vi.stubGlobal('fetch', fetcher);
+    const rejected = fetchGrid(
+      fixture.product,
+      new AbortController().signal,
+      budget
+    );
+    const rejection = expect(rejected).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(250);
+    await rejection;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const controller = new AbortController();
+    const canceled = fetchGrid(fixture.product, controller.signal, budget);
+    const cancellation = expect(canceled).rejects.toThrow();
+    for (let i = 0; i < 30; i++) await Promise.resolve();
+    controller.abort();
+    await cancellation;
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(budget.snapshot()).toMatchObject({
+      encoded: 0,
+      decoded: 0,
+      gpu: 0,
+      slots: 0,
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('rejects an overdue shared owner while a younger sibling retains the physical allocation', async () => {
     vi.useFakeTimers();
     let mono = 0;

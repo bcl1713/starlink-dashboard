@@ -91,6 +91,7 @@ class ConferenceCreate(RecordInput):
 
 
 class ConferenceUpdate(ConferenceCreate):
+    establish_session: bool = False
     expected_version: PositiveVersion
     audit_note: AuditNote | None = None
 

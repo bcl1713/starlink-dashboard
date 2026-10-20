@@ -1075,3 +1075,74 @@ def test_api_landing_countdown_remains_available_through_final_segment(
     assert (arrival_time - NOW).total_seconds() == pytest.approx(
         expected_eta, abs=0.00001
     )
+
+
+@pytest.mark.parametrize("reactivate_existing", [False, True])
+def test_one_way_landing_projection_roundoff_does_not_remove_arrival(
+    client, monkeypatch, tmp_path, reactivate_existing
+):
+    import app.api.overview_upcoming_pois as api
+    from app.models.poi import POICreate
+    from app.services.poi_manager import POIManager
+
+    origin = (44.58660656422633, 68.11848675184643)
+    destination = (48.45581370524963, 66.30481293014783)
+    active_route = route([origin, destination])
+    arrange_active_v2_context(client, active_route=active_route)
+    manager = POIManager(tmp_path / "arrival-pois.json")
+    manager.create_poi(
+        POICreate(
+            name="Landing",
+            kind="arrival",
+            latitude=destination[0],
+            longitude=destination[1],
+            mission_id="mission-1",
+            route_id="test-route",
+        ),
+        active_route=active_route,
+        generated_source="mission-timeline",
+        route_segment_index=0,
+    )
+    if reactivate_existing:
+        import json
+
+        from app.mission.storage import load_mission_v2
+
+        # Preserve the customer's old derived projection in the existing store.
+        persisted = json.loads(manager.pois_file.read_text())
+        for poi in persisted["pois"].values():
+            poi["projected_route_progress"] = 100.00000000000003
+        manager.pois_file.write_text(json.dumps(persisted))
+        manager = POIManager(manager.pois_file)
+        before_mission = load_mission_v2("mission-1").model_dump(mode="json")
+    client.app.dependency_overrides[get_poi_manager] = lambda: manager
+    if reactivate_existing:
+        activation = client.post("/api/v2/missions/mission-1/legs/leg-1/activate")
+        assert activation.status_code == 200, activation.text
+        assert load_mission_v2("mission-1").model_dump(mode="json") == before_mission
+    client.app.state.coordinator = SimpleNamespace(
+        get_current_telemetry=lambda: SimpleNamespace(
+            position=SimpleNamespace(
+                observed_at=NOW,
+                speed_observed_at=NOW,
+                latitude=origin[0],
+                longitude=origin[1],
+                speed=300,
+            )
+        )
+    )
+    monkeypatch.setattr(
+        api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
+    )
+    result = client.get("/api/overview/upcoming-pois")
+    assert result.status_code == 200, result.text
+    payload = result.json()
+    assert payload["current_route_progress"] == 0
+    arrival = next(poi for poi in payload["pois"] if poi["kind"] == "arrival")
+    assert arrival["upcoming"] is True
+    assert arrival["projected_route_progress"] == 100
+    assert arrival["eta_seconds"] > 0

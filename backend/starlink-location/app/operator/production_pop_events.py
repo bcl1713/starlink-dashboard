@@ -7,6 +7,7 @@ from app.mission import storage
 from .errors import OperatorError
 from .event_ledger import identity
 from .event_models import SourceCapture
+from .replay_context import source_run
 
 
 def sample_identity(adapter):
@@ -45,7 +46,7 @@ def live_pop_events(adapter, inputs, leg, *, as_of):
             published.get("leg_id"),
             published.get("mode"),
             published.get("simulation_run_id"),
-        ) == (inputs.mission.id, leg.id, health.source_mode, health.simulation_run_id)
+        ) == (inputs.mission.id, leg.id, health.source_mode, source_run(health))
         status = result["pop_forecast"]["status"]
         source_ref = "model:" + leg.id + ":live-pop"
         source = SourceCapture(

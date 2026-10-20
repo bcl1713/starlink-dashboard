@@ -118,6 +118,7 @@ def _status_payload():
         return {
             **pop_payload,
             "timestamp": telemetry.timestamp.isoformat(),
+            "metric_source": telemetry.metric_source,
             "position": {
                 "latitude": telemetry.position.latitude,
                 "longitude": telemetry.position.longitude,

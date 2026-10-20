@@ -3,6 +3,7 @@ import { revisionUtc } from './revisionUtc';
 export function ParticipationRow({
   record,
   conference,
+  call,
   disabled,
   onAction,
   onEdit,
@@ -11,6 +12,7 @@ export function ParticipationRow({
 }: {
   record: SavedRecord;
   conference?: SavedRecord;
+  call?: SavedRecord;
   disabled: boolean;
   onAction: (action: 'left' | 'interrupted' | 'restore') => void;
   onEdit: () => void;
@@ -35,7 +37,7 @@ export function ParticipationRow({
         {record.deleted ? ' · Removed' : ''}
       </h4>
       <p>
-        Call: {p.call_id ?? 'Unassigned'} · Conference:{' '}
+        Call: {call?.payload.title ?? p.call_id ?? 'Unassigned'} · Conference:{' '}
         {conference?.payload.title ?? p.conference_id ?? 'Unassigned'}
       </p>
       <p>

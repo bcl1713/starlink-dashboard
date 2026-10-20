@@ -210,12 +210,18 @@ class GfsBridge:
 
     def _products(self, settings, now_ms):
         try:
-            if self._closed or not self._valid_clock(now_ms):
+            if self._closed:
                 self.mailbox.withdraw(self.owner)
                 return unavailable_products(settings, now_ms)
-            self.mailbox.renew(self.owner, settings, now_ms)
+            # Keep the catalog as-of for its coherent envelope, but sample
+            # admission time under the lock so reordered requests are not UTC rollback.
+            self.mailbox.renew(self.owner, settings, now_ms, clock=self.now_ms)
             with control_lock(self.mailbox.root, timeout=1):
-                current = self._current(settings, now_ms)
+                admitted_at = self.now_ms()
+                if not self._valid_clock(admitted_at):
+                    self.mailbox.invalidate_locked(self.settings.get().revision)
+                    return unavailable_products(settings, now_ms)
+                current = self._current(settings, admitted_at)
                 if len(current) != 2:
                     return unavailable_products(settings, now_ms)
                 return [
@@ -260,7 +266,7 @@ class GfsBridge:
                 instance, blocking=False
             ) as descriptor:
                 if settings != self.settings.get() or not self._admitted(
-                    instance, filename, now_ms
+                    instance, filename, self.now_ms()
                 ):
                     return None
                 path = self.store.root / "products" / instance / filename

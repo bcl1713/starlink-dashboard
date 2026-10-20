@@ -1,5 +1,12 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it, vi } from 'vitest';
 import * as api from '@/services/operator';
@@ -110,5 +117,75 @@ it('withholds cached history when the same record ID is opened in another store 
   mounted.rerender(view('new-store'));
   expect(screen.queryByRole('heading', { name: 'Original' })).toBeNull();
   expect(screen.getByText('Loading history…')).toBeTruthy();
+  client.clear();
+});
+
+it('retains original revisions after a next-page failure and exposes explicit retry and remaining history', async () => {
+  const original = { ...record, recorded_at: '2026-10-17T10:00:00Z' };
+  const replacement = {
+    ...original,
+    version: 2,
+    previous_version: 1,
+    operation: 'update' as const,
+    recorded_at: '2026-10-17T10:01:00Z',
+    payload: { ...original.payload, title: 'Replacement' },
+  };
+  const removed = {
+    ...replacement,
+    version: 3,
+    previous_version: 2,
+    operation: 'remove' as const,
+    deleted: true,
+  };
+  const restored = {
+    ...replacement,
+    version: 4,
+    previous_version: 3,
+    operation: 'restore' as const,
+    deleted: false,
+    payload: { ...replacement.payload, title: 'Restored' },
+  };
+  let failed = false;
+  const read = vi
+    .spyOn(api, 'readOperatorHistory')
+    .mockImplementation(async (_id, cursor) => {
+      if (cursor && !failed) {
+        failed = true;
+        throw new Error('next page unavailable');
+      }
+      return cursor
+        ? { ...page([removed, restored]), cursor: null, H: 4 }
+        : { ...page([original, replacement]), cursor: 'history-next', H: 4 };
+    });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <JournalHistory
+        id={record.record_id}
+        identity="store-a"
+        onClose={() => {}}
+      />
+    </QueryClientProvider>
+  );
+  await screen.findByRole('heading', { name: 'Original' });
+  fireEvent.click(screen.getByRole('button', { name: 'More history' }));
+  await screen.findByRole('alert');
+  expect(screen.getByRole('heading', { name: 'Original' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Replacement' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Retry history' }));
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  fireEvent.click(screen.getByRole('button', { name: 'More history' }));
+  await screen.findByRole('heading', { name: 'Restored' });
+  expect(screen.getAllByRole('listitem')).toHaveLength(4);
+  expect(
+    screen.getByText(/Version 1 · create · 2026-10-17 10:00:00 UTC/)
+  ).toBeTruthy();
+  expect(screen.getByText(/Version 4 · restore/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'More history' })).toBeNull();
+  expect(
+    read.mock.calls.filter(([, cursor]) => cursor === 'history-next')
+  ).toHaveLength(2);
   client.clear();
 });

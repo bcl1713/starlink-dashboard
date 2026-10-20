@@ -72,5 +72,6 @@ def test_first_status_after_replay_crossing_reconciles_captured_occurrence(
     )
     assert payload["call_continuity"] is not None
     assert artifacts.timeline.model_dump() == saved
-    assert payload["network"]["packet_loss_percent"] == 0
+    assert payload["network"]["packet_loss_percent"] is None
+    assert payload["metric_availability"]["packet_loss_percent"] is False
     assert service.status().run.transport_states["Ku"] == "available"

@@ -240,7 +240,9 @@ export function deriveArrivalPanel(
             routeProgress(poi) !== null &&
             response.current_route_progress >= routeProgress(poi)!
           ? 'Destination passed; awaiting landed state'
-          : 'Arrival eligibility unavailable'
+          : routeProgress(poi) === null
+            ? 'Destination route position unavailable'
+            : 'Route position unavailable — ETA unavailable'
       : label === 'LANDING'
         ? 'Destination unavailable'
         : 'Next POI unavailable',

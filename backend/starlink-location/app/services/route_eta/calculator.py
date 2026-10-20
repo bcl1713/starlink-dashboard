@@ -203,7 +203,9 @@ class RouteETACalculator:
         # Calculate progress percentage
         total_distance = self.route.get_total_distance()
         projected_route_progress = (
-            (best_distance_along_route / total_distance * 100)
+            # Projection is confined to route segments; floating-point longitude
+            # normalization can otherwise place the terminal fraction above 100.
+            min(100.0, max(0.0, best_distance_along_route / total_distance * 100))
             if total_distance > 0
             else 0.0
         )

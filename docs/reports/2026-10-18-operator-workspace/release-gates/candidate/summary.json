@@ -1,0 +1,682 @@
+{
+  "candidateSha": "2837ddc0b174cb32e3e6e797c75117ba733f9a04",
+  "project": "starlink-operator-release-candidate-376",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-release-candidate-376-backend:2837ddc0b174cb32e3e6e797c75117ba733f9a04",
+      "id": "sha256:568a80d7f408ce571592be5cf834b0d96ead828f8c9567265011bde1bccd38c8",
+      "revision": "2837ddc0b174cb32e3e6e797c75117ba733f9a04"
+    },
+    "frontend": {
+      "tag": "starlink-operator-release-candidate-376-frontend:2837ddc0b174cb32e3e6e797c75117ba733f9a04",
+      "id": "sha256:d3027dbf74196956d1708bac0ef9a77f464e2478f3b8d1f98e56da693348716e",
+      "revision": "2837ddc0b174cb32e3e6e797c75117ba733f9a04"
+    }
+  },
+  "sourceArchiveSha256": "dc448424d51ad19fca6db3ae92eb06d3ed60dfe1ef6ff5fd54cc3676ec2140b9",
+  "qualification": {
+    "synthetic": true,
+    "mode": "candidate",
+    "backout": [
+      {
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "beforeH": 25,
+        "afterH": 25,
+        "attempts": [
+          {
+            "key": "eb4d81bb-da07-4237-bb00-0e4e4dfa826e",
+            "epoch": "254de145-92a0-4baa-a1c8-2ef130726892",
+            "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Backout uncertain 1920\",\"note\":\"Fictional retained input before backout\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+            "method": "POST",
+            "url": "http://127.0.0.1:57409/api/v2/operator/records"
+          },
+          {
+            "key": "eb4d81bb-da07-4237-bb00-0e4e4dfa826e",
+            "epoch": "254de145-92a0-4baa-a1c8-2ef130726892",
+            "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Backout uncertain 1920\",\"note\":\"Fictional retained input before backout\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+            "method": "POST",
+            "url": "http://127.0.0.1:57409/api/v2/operator/records"
+          }
+        ],
+        "receipt": {
+          "schema_version": 1,
+          "command_id": "2897b6c2-4e2f-48f1-a0cb-e0613f2a9999",
+          "saved_records": [
+            {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Backout uncertain 1920",
+                "note": "Fictional retained input before backout",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "f44896ce-327f-4f93-b4fb-4563aa5f23f1",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 25,
+              "command_id": "2897b6c2-4e2f-48f1-a0cb-e0613f2a9999",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            }
+          ]
+        },
+        "history": {
+          "schema_version": 1,
+          "items": [
+            {
+              "schema_version": 1,
+              "record": {
+                "schema_version": 1,
+                "record_type": "journal_entry",
+                "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+                "leg_id": null,
+                "scope": "mission",
+                "time": {
+                  "occurred_at": null,
+                  "ended_at": null,
+                  "precision": "unknown",
+                  "end_state": "unknown",
+                  "planned_start_at": null,
+                  "planned_end_at": null
+                },
+                "payload": {
+                  "schema_version": 1,
+                  "title": "Backout uncertain 1920",
+                  "note": "Fictional retained input before backout",
+                  "previous_leg_id": null,
+                  "next_leg_id": null,
+                  "entry_type": "note"
+                },
+                "record_id": "f44896ce-327f-4f93-b4fb-4563aa5f23f1",
+                "version": 1,
+                "previous_version": null,
+                "journal_seq": 25,
+                "command_id": "2897b6c2-4e2f-48f1-a0cb-e0613f2a9999",
+                "operation": "create",
+                "reason": null,
+                "reason_origin": null,
+                "deleted": false,
+                "recorded_at": "2026-10-17T16:00:00.000000Z",
+                "author": {
+                  "backend": "restricted-access operator",
+                  "operator_label": null
+                },
+                "provenance": {
+                  "kind": "operator_reported",
+                  "source_mode": "simulation",
+                  "observed_at": null,
+                  "predicted_at": null,
+                  "source_ref": null,
+                  "mutation_origin": "interactive"
+                }
+              },
+              "association": {
+                "status": "resolved",
+                "unresolved_fields": [],
+                "error_code": null
+              },
+              "freshness": {
+                "status": "unknown",
+                "threshold_seconds": null,
+                "as_of": "2026-10-17T16:00:00.000000Z"
+              }
+            }
+          ],
+          "cursor": null,
+          "H": 25,
+          "as_of": "2026-10-17T16:00:00.000000Z"
+        },
+        "pendingSurvivedOriginalShellReload": true,
+        "parkedInputRetained": true,
+        "noStoreRewrite": true
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "beforeH": 26,
+        "afterH": 26,
+        "attempts": [
+          {
+            "key": "9ab9656d-3052-4189-864b-8ca34fb7742b",
+            "epoch": "254de145-92a0-4baa-a1c8-2ef130726892",
+            "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Backout uncertain 390\",\"note\":\"Fictional retained input before backout\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+            "method": "POST",
+            "url": "http://127.0.0.1:57409/api/v2/operator/records"
+          },
+          {
+            "key": "9ab9656d-3052-4189-864b-8ca34fb7742b",
+            "epoch": "254de145-92a0-4baa-a1c8-2ef130726892",
+            "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Backout uncertain 390\",\"note\":\"Fictional retained input before backout\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+            "method": "POST",
+            "url": "http://127.0.0.1:57409/api/v2/operator/records"
+          }
+        ],
+        "receipt": {
+          "schema_version": 1,
+          "command_id": "ef4780ed-29ba-420c-b96b-3ed00c74791e",
+          "saved_records": [
+            {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Backout uncertain 390",
+                "note": "Fictional retained input before backout",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "f1f50e74-5a89-49ad-8839-d5fd24a71290",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 26,
+              "command_id": "ef4780ed-29ba-420c-b96b-3ed00c74791e",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            }
+          ]
+        },
+        "history": {
+          "schema_version": 1,
+          "items": [
+            {
+              "schema_version": 1,
+              "record": {
+                "schema_version": 1,
+                "record_type": "journal_entry",
+                "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+                "leg_id": null,
+                "scope": "mission",
+                "time": {
+                  "occurred_at": null,
+                  "ended_at": null,
+                  "precision": "unknown",
+                  "end_state": "unknown",
+                  "planned_start_at": null,
+                  "planned_end_at": null
+                },
+                "payload": {
+                  "schema_version": 1,
+                  "title": "Backout uncertain 390",
+                  "note": "Fictional retained input before backout",
+                  "previous_leg_id": null,
+                  "next_leg_id": null,
+                  "entry_type": "note"
+                },
+                "record_id": "f1f50e74-5a89-49ad-8839-d5fd24a71290",
+                "version": 1,
+                "previous_version": null,
+                "journal_seq": 26,
+                "command_id": "ef4780ed-29ba-420c-b96b-3ed00c74791e",
+                "operation": "create",
+                "reason": null,
+                "reason_origin": null,
+                "deleted": false,
+                "recorded_at": "2026-10-17T16:00:00.000000Z",
+                "author": {
+                  "backend": "restricted-access operator",
+                  "operator_label": null
+                },
+                "provenance": {
+                  "kind": "operator_reported",
+                  "source_mode": "simulation",
+                  "observed_at": null,
+                  "predicted_at": null,
+                  "source_ref": null,
+                  "mutation_origin": "interactive"
+                }
+              },
+              "association": {
+                "status": "resolved",
+                "unresolved_fields": [],
+                "error_code": null
+              },
+              "freshness": {
+                "status": "unknown",
+                "threshold_seconds": null,
+                "as_of": "2026-10-17T16:00:00.000000Z"
+              }
+            }
+          ],
+          "cursor": null,
+          "H": 26,
+          "as_of": "2026-10-17T16:00:00.000000Z"
+        },
+        "pendingSurvivedOriginalShellReload": true,
+        "parkedInputRetained": true,
+        "noStoreRewrite": true
+      },
+      {
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "beforeH": 27,
+        "afterH": 27,
+        "attempts": [
+          {
+            "key": "504f9c35-8698-4dfe-98d1-4616bf5dad75",
+            "epoch": "254de145-92a0-4baa-a1c8-2ef130726892",
+            "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Backout uncertain 844\",\"note\":\"Fictional retained input before backout\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+            "method": "POST",
+            "url": "http://127.0.0.1:57409/api/v2/operator/records"
+          },
+          {
+            "key": "504f9c35-8698-4dfe-98d1-4616bf5dad75",
+            "epoch": "254de145-92a0-4baa-a1c8-2ef130726892",
+            "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"e83b5788-e9cb-5f6a-8654-4499956322b8\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Backout uncertain 844\",\"note\":\"Fictional retained input before backout\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+            "method": "POST",
+            "url": "http://127.0.0.1:57409/api/v2/operator/records"
+          }
+        ],
+        "receipt": {
+          "schema_version": 1,
+          "command_id": "319fe625-4c8f-4f14-9703-fa1ab449349b",
+          "saved_records": [
+            {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Backout uncertain 844",
+                "note": "Fictional retained input before backout",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "46c85c87-3506-42bc-94a3-bacc8700efa3",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 27,
+              "command_id": "319fe625-4c8f-4f14-9703-fa1ab449349b",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            }
+          ]
+        },
+        "history": {
+          "schema_version": 1,
+          "items": [
+            {
+              "schema_version": 1,
+              "record": {
+                "schema_version": 1,
+                "record_type": "journal_entry",
+                "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+                "leg_id": null,
+                "scope": "mission",
+                "time": {
+                  "occurred_at": null,
+                  "ended_at": null,
+                  "precision": "unknown",
+                  "end_state": "unknown",
+                  "planned_start_at": null,
+                  "planned_end_at": null
+                },
+                "payload": {
+                  "schema_version": 1,
+                  "title": "Backout uncertain 844",
+                  "note": "Fictional retained input before backout",
+                  "previous_leg_id": null,
+                  "next_leg_id": null,
+                  "entry_type": "note"
+                },
+                "record_id": "46c85c87-3506-42bc-94a3-bacc8700efa3",
+                "version": 1,
+                "previous_version": null,
+                "journal_seq": 27,
+                "command_id": "319fe625-4c8f-4f14-9703-fa1ab449349b",
+                "operation": "create",
+                "reason": null,
+                "reason_origin": null,
+                "deleted": false,
+                "recorded_at": "2026-10-17T16:00:00.000000Z",
+                "author": {
+                  "backend": "restricted-access operator",
+                  "operator_label": null
+                },
+                "provenance": {
+                  "kind": "operator_reported",
+                  "source_mode": "simulation",
+                  "observed_at": null,
+                  "predicted_at": null,
+                  "source_ref": null,
+                  "mutation_origin": "interactive"
+                }
+              },
+              "association": {
+                "status": "resolved",
+                "unresolved_fields": [],
+                "error_code": null
+              },
+              "freshness": {
+                "status": "unknown",
+                "threshold_seconds": null,
+                "as_of": "2026-10-17T16:00:00.000000Z"
+              }
+            }
+          ],
+          "cursor": null,
+          "H": 27,
+          "as_of": "2026-10-17T16:00:00.000000Z"
+        },
+        "pendingSurvivedOriginalShellReload": true,
+        "parkedInputRetained": true,
+        "noStoreRewrite": true
+      }
+    ],
+    "idleProfiles": [
+      {
+        "page": "operator",
+        "elapsedMs": 60006.106452,
+        "profileFile": "candidate-operator-cpu-profile.json",
+        "samplingIntervalUs": 10000,
+        "metricBefore": {
+          "Timestamp": 1794579.974296,
+          "AudioHandlers": 0,
+          "AudioWorkletProcessors": 0,
+          "Documents": 4,
+          "Frames": 4,
+          "JSEventListeners": 418,
+          "LayoutObjects": 623,
+          "MediaKeySessions": 0,
+          "MediaKeys": 0,
+          "Nodes": 1065,
+          "Resources": 7,
+          "ContextLifecycleStateObservers": 35,
+          "V8PerContextDatas": 4,
+          "WorkerGlobalScopes": 0,
+          "UACSSResources": 0,
+          "RTCPeerConnections": 0,
+          "ResourceFetchers": 4,
+          "AdSubframes": 0,
+          "DetachedScriptStates": 2,
+          "ArrayBufferContents": 9,
+          "LayoutCount": 0,
+          "RecalcStyleCount": 0,
+          "LayoutDuration": 0,
+          "RecalcStyleDuration": 0,
+          "DevToolsCommandDuration": 3.7e-05,
+          "ScriptDuration": 0,
+          "V8CompileDuration": 0,
+          "TaskDuration": 5e-05,
+          "TaskOtherDuration": 1.3e-05,
+          "ThreadTime": 9.5e-05,
+          "ProcessTime": 0.45,
+          "JSHeapUsedSize": 13280860,
+          "JSHeapTotalSize": 21204992,
+          "FirstMeaningfulPaint": 1794578.026149,
+          "DomContentLoaded": 1794577.823937,
+          "NavigationStart": 1794577.604248
+        },
+        "metricAfter": {
+          "Timestamp": 1794640.051909,
+          "AudioHandlers": 0,
+          "AudioWorkletProcessors": 0,
+          "Documents": 1,
+          "Frames": 1,
+          "JSEventListeners": 406,
+          "LayoutObjects": 578,
+          "MediaKeySessions": 0,
+          "MediaKeys": 0,
+          "Nodes": 980,
+          "Resources": 6,
+          "ContextLifecycleStateObservers": 30,
+          "V8PerContextDatas": 2,
+          "WorkerGlobalScopes": 0,
+          "UACSSResources": 0,
+          "RTCPeerConnections": 0,
+          "ResourceFetchers": 1,
+          "AdSubframes": 0,
+          "DetachedScriptStates": 0,
+          "ArrayBufferContents": 9,
+          "LayoutCount": 0,
+          "RecalcStyleCount": 8,
+          "LayoutDuration": 0,
+          "RecalcStyleDuration": 0.000469,
+          "DevToolsCommandDuration": 0.066429,
+          "ScriptDuration": 0.020352,
+          "V8CompileDuration": 0,
+          "TaskDuration": 0.112987,
+          "TaskOtherDuration": 0.025737,
+          "ThreadTime": 0.187711,
+          "ProcessTime": 0.85,
+          "JSHeapUsedSize": 11219556,
+          "JSHeapTotalSize": 12029952,
+          "FirstMeaningfulPaint": 1794578.026149,
+          "DomContentLoaded": 1794577.823937,
+          "NavigationStart": 1794577.604248
+        },
+        "taskDurationSeconds": 0.11293700000000001,
+        "scriptDurationSeconds": 0.020352,
+        "renderBefore": {
+          "commits": 0,
+          "frame": null,
+          "visible": "visible"
+        },
+        "renderAfter": {
+          "commits": 8,
+          "frame": null,
+          "visible": "visible"
+        },
+        "requestCounts": {
+          "/api/v2/operator/health": 4,
+          "/api/v2/operator/events": 4
+        },
+        "scope": "Same machine; real production browser. CPU profiles and React commits are observation only; no physical GPU or human inference."
+      },
+      {
+        "page": "overview",
+        "elapsedMs": 60024.39387900001,
+        "profileFile": "candidate-overview-cpu-profile.json",
+        "samplingIntervalUs": 10000,
+        "metricBefore": {
+          "Timestamp": 1794642.776176,
+          "AudioHandlers": 0,
+          "AudioWorkletProcessors": 0,
+          "Documents": 2,
+          "Frames": 2,
+          "JSEventListeners": 464,
+          "LayoutObjects": 295,
+          "MediaKeySessions": 0,
+          "MediaKeys": 0,
+          "Nodes": 2066,
+          "Resources": 7,
+          "ContextLifecycleStateObservers": 38,
+          "V8PerContextDatas": 2,
+          "WorkerGlobalScopes": 1,
+          "UACSSResources": 0,
+          "RTCPeerConnections": 0,
+          "ResourceFetchers": 3,
+          "AdSubframes": 0,
+          "DetachedScriptStates": 2,
+          "ArrayBufferContents": 40,
+          "LayoutCount": 0,
+          "RecalcStyleCount": 1,
+          "LayoutDuration": 0,
+          "RecalcStyleDuration": 0.000135,
+          "DevToolsCommandDuration": 0.000106,
+          "ScriptDuration": 0.002334,
+          "V8CompileDuration": 0,
+          "TaskDuration": 0.023042,
+          "TaskOtherDuration": 0.020467,
+          "ThreadTime": 0.006834,
+          "ProcessTime": 1.96,
+          "JSHeapUsedSize": 25247336,
+          "JSHeapTotalSize": 38305792,
+          "FirstMeaningfulPaint": 0,
+          "DomContentLoaded": 1794640.098286,
+          "NavigationStart": 1794640.064448
+        },
+        "metricAfter": {
+          "Timestamp": 1794702.955931,
+          "AudioHandlers": 0,
+          "AudioWorkletProcessors": 0,
+          "Documents": 1,
+          "Frames": 1,
+          "JSEventListeners": 1144,
+          "LayoutObjects": 299,
+          "MediaKeySessions": 0,
+          "MediaKeys": 0,
+          "Nodes": 687,
+          "Resources": 35,
+          "ContextLifecycleStateObservers": 10,
+          "V8PerContextDatas": 2,
+          "WorkerGlobalScopes": 1,
+          "UACSSResources": 0,
+          "RTCPeerConnections": 0,
+          "ResourceFetchers": 2,
+          "AdSubframes": 0,
+          "DetachedScriptStates": 0,
+          "ArrayBufferContents": 31,
+          "LayoutCount": 84,
+          "RecalcStyleCount": 368,
+          "LayoutDuration": 0.015877,
+          "RecalcStyleDuration": 0.032915,
+          "DevToolsCommandDuration": 0.098447,
+          "ScriptDuration": 1.938557,
+          "V8CompileDuration": 0,
+          "TaskDuration": 43.975423,
+          "TaskOtherDuration": 41.889627,
+          "ThreadTime": 6.274773,
+          "ProcessTime": 10.52,
+          "JSHeapUsedSize": 20514356,
+          "JSHeapTotalSize": 32014336,
+          "FirstMeaningfulPaint": 1794640.281124,
+          "DomContentLoaded": 1794640.098286,
+          "NavigationStart": 1794640.064448
+        },
+        "taskDurationSeconds": 43.952381,
+        "scriptDurationSeconds": 1.936223,
+        "renderBefore": {
+          "commits": 5,
+          "frame": 7,
+          "visible": "visible"
+        },
+        "renderAfter": {
+          "commits": 2200,
+          "frame": 1397,
+          "visible": "visible"
+        },
+        "requestCounts": {
+          "/api/simulation/run": 59,
+          "/api/active-x-link": 58,
+          "/api/status": 58,
+          "/api/overview-adsb/settings": 12,
+          "/api/overview-weather/settings": 12,
+          "/api/overview-clocks/settings": 12,
+          "/api/aviation-weather/v1/settings": 12,
+          "/api/overview-history/settings": 12,
+          "/api/satellites": 12,
+          "/api/overview-history": 12,
+          "/api/routes": 12,
+          "/api/routes/": 12,
+          "/api/overview/upcoming-pois": 12,
+          "/api/overview-links/settings": 12,
+          "/api/v2/operator/health": 4
+        },
+        "scope": "Same machine; real production browser. CPU profiles and React commits are observation only; no physical GPU or human inference."
+      }
+    ]
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

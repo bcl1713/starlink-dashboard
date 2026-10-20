@@ -4,11 +4,12 @@ import json
 from datetime import timedelta
 from pathlib import Path
 
+from events_fixture import EventsClock, seed_events
+from scenario import START
+
 from app.mission import storage
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
 from app.operator.time_models import utc_timestamp
-from events_fixture import EventsClock, seed_events
-from scenario import START
 
 MISSION, LEG = "synthetic-mission-a", "synthetic-leg-1"
 
@@ -24,8 +25,22 @@ class ModelClock(EventsClock):
 
 
 class ModelInputsFixture:
-    def __init__(self, main, runtime, root, clock):
+    def __init__(
+        self,
+        main,
+        runtime,
+        root,
+        clock,
+        *,
+        seed=True,
+        manage_route=True,
+        restore_phase=True,
+        initial_inputs=None,
+        ka_east_longitude=20
+    ):
         self.main, self.runtime, self.clock = main, runtime, clock
+        self.manage_route, self.restore_phase = manage_route, restore_phase
+        self.ka_east_longitude = ka_east_longitude
         self.path = Path(root) / "operator" / "synthetic-model-inputs.json"
         self.state = (
             json.loads(self.path.read_text())
@@ -35,6 +50,7 @@ class ModelInputsFixture:
                 "longitude": -9.5,
                 "latitude": 0,
                 "speed": 600,
+                "heading": 90,
                 "route_latitude": 0,
                 "phase": "in_flight",
                 "route_shift": 14,
@@ -45,7 +61,11 @@ class ModelInputsFixture:
                 "active": True,
             }
         )
-        self.ids = seed_events(runtime.service, clock)
+        if initial_inputs:
+            if set(initial_inputs) - set(self.state):
+                raise ValueError("Unknown initial raw input")
+            self.state.update(initial_inputs)
+        self.ids = seed_events(runtime.service, clock) if seed else {}
         self.update({})
 
     def update(self, changes):
@@ -70,8 +90,8 @@ class ModelInputsFixture:
                                     "coordinates": [
                                         [
                                             [-20, -10],
-                                            [20, -10],
-                                            [20, 10],
+                                            [self.ka_east_longitude, -10],
+                                            [self.ka_east_longitude, 10],
                                             [-20, 10],
                                             [-20, -10],
                                         ]
@@ -118,70 +138,74 @@ class ModelInputsFixture:
             if config.pop.catalog_path != pop_path:
                 config.pop.catalog_path = pop_path
                 coordinator.update_config(config)
-            mission = storage.load_mission_v2(MISSION)
-            for leg in mission.legs:
-                leg.is_active = leg.id == LEG and state["active"]
-                leg.transports.starshield_enabled = True
-            storage.save_mission_v2(mission)
-            route_id = mission.legs[0].route_id
-            start = START + timedelta(minutes=state["route_shift"])
-            route = ParsedRoute(
-                route_id=route_id,
-                metadata=RouteMetadata(
-                    name="Synthetic current route",
-                    file_path="synthetic.kml",
-                    point_count=3,
-                ),
-                points=[
-                    RoutePoint(
-                        latitude=state["route_latitude"] if i == 1 else 0,
-                        longitude=lon,
-                        sequence=i,
-                        expected_arrival_time=start + timedelta(minutes=minute),
-                        expected_segment_speed_knots=600,
-                    )
-                    for i, (lon, minute) in enumerate([(-10, 0), (0, 10), (10, 40)])
-                ],
-                timing_profile=RouteTimingProfile(
-                    departure_time=start,
-                    arrival_time=start + timedelta(minutes=40),
-                    has_timing_data=True,
-                ),
-            )
-            manager = self.main.app.state.route_manager
-            manager.add_route(route_id, route)
-            manager.activate_route(route_id)
+            if self.manage_route:
+                mission = storage.load_mission_v2(MISSION)
+                for leg in mission.legs:
+                    leg.is_active = leg.id == LEG and state["active"]
+                    leg.transports.starshield_enabled = True
+                storage.save_mission_v2(mission)
+                route_id = mission.legs[0].route_id
+                start = START + timedelta(minutes=state["route_shift"])
+                route = ParsedRoute(
+                    route_id=route_id,
+                    metadata=RouteMetadata(
+                        name="Synthetic current route",
+                        file_path="synthetic.kml",
+                        point_count=3,
+                    ),
+                    points=[
+                        RoutePoint(
+                            latitude=state["route_latitude"] if i == 1 else 0,
+                            longitude=lon,
+                            sequence=i,
+                            expected_arrival_time=start + timedelta(minutes=minute),
+                            expected_segment_speed_knots=600,
+                        )
+                        for i, (lon, minute) in enumerate([(-10, 0), (0, 10), (10, 40)])
+                    ],
+                    timing_profile=RouteTimingProfile(
+                        departure_time=start,
+                        arrival_time=start + timedelta(minutes=40),
+                        has_timing_data=True,
+                    ),
+                )
+                manager = self.main.app.state.route_manager
+                manager.add_route(route_id, route)
+                manager.activate_route(route_id)
             sample = coordinator.get_current_telemetry().model_copy(deep=True)
             sample.position.latitude, sample.position.longitude = (
                 state["latitude"],
                 state["longitude"],
             )
-            sample.position.speed, sample.position.heading = state["speed"], 90
+            sample.position.speed, sample.position.heading = state["speed"], state.get(
+                "heading", 90
+            )
             observed = self.clock.now() - timedelta(seconds=60 if state["stale"] else 0)
             sample.position.observed_at = observed
             sample.position.speed_observed_at = observed
             coordinator.restore_telemetry(sample)
-            from dataclasses import replace
+            if self.restore_phase:
+                from dataclasses import replace
 
-            from app.models.flight_status import ETAMode, FlightPhase
-            from app.services.flight_state import get_flight_state_manager
+                from app.models.flight_status import ETAMode, FlightPhase
+                from app.services.flight_state import get_flight_state_manager
 
-            flight = get_flight_state_manager()
-            checkpoint = flight.checkpoint()
-            status = checkpoint.status.model_copy(
-                update={
-                    "phase": FlightPhase(state["phase"]),
-                    "eta_mode": (
-                        ETAMode.ESTIMATED
-                        if state["phase"] == "in_flight"
-                        else ETAMode.ANTICIPATED
-                    ),
-                    "departure_time": (
-                        self.clock.now() if state["phase"] == "in_flight" else None
-                    ),
-                }
-            )
-            flight.restore_checkpoint(replace(checkpoint, status=status))
+                flight = get_flight_state_manager()
+                checkpoint = flight.checkpoint()
+                status = checkpoint.status.model_copy(
+                    update={
+                        "phase": FlightPhase(state["phase"]),
+                        "eta_mode": (
+                            ETAMode.ESTIMATED
+                            if state["phase"] == "in_flight"
+                            else ETAMode.ANTICIPATED
+                        ),
+                        "departure_time": (
+                            self.clock.now() if state["phase"] == "in_flight" else None
+                        ),
+                    }
+                )
+                flight.restore_checkpoint(replace(checkpoint, status=status))
             self.state = state
             self.path.write_text(json.dumps(state))
             return {"synthetic": True, "rawInputsOnly": True, "ids": self.ids, **state}

@@ -189,8 +189,9 @@ def derive_transport_review(records, events, sources, *, as_of, H):
                                 and str(p.conference_id) == activity.conference_id
                             )
                         )
-                        relevant = (
-                            event.transport is None or event.transport == transport
+                        relevant = event.transport is None or event.transport == (
+                            getattr(getattr(row, stage, None), "transport_id", None)
+                            or transport
                         )
                         known_transport = transport != "unknown"
                         hit = overlap(

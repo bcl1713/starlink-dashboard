@@ -1,0 +1,220 @@
+{
+  "identity": {
+    "origin": "http://127.0.0.1:56533",
+    "fixtureVersion": 1,
+    "storeId": "e5b922c3-4492-4d1d-a693-72373ad816a3",
+    "epoch": "06f5138e-eaf3-441b-867c-b3e73ad3897f",
+    "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b"
+  },
+  "destination": {
+    "health": {
+      "schema_version": 1,
+      "ready": true,
+      "store_id": "eb77334e-7082-4cdc-92e9-5171019dc4e1",
+      "api_epoch": "c3fce189-2b73-4d9d-ab0a-125654ff1c5e",
+      "source_mode": "simulation",
+      "simulation_run_id": "synthetic-operator-demo-v1",
+      "clock_regression": false,
+      "error_code": null,
+      "enabled": true
+    },
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "d73f1a3b-18ce-4113-b970-a5941e978772",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "ad1ec3f8-50d8-4616-91d9-379cd0688e20",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T05:30:45.825332Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ],
+    "history": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "d73f1a3b-18ce-4113-b970-a5941e978772",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "ad1ec3f8-50d8-4616-91d9-379cd0688e20",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T05:30:45.825332Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ],
+    "missions": [
+      {
+        "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "name": "Training mission \u00b7 Fictional Meridian 21",
+        "description": null,
+        "legs": [
+          {
+            "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+            "name": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+            "description": null,
+            "route_id": "",
+            "transports": {
+              "starshield_enabled": null,
+              "planning_policy": null,
+              "evaluation_context": null,
+              "planning_inputs": null,
+              "initial_x_satellite_id": "",
+              "initial_ka_satellite_ids": [
+                "AOR",
+                "POR",
+                "IOR"
+              ],
+              "x_transitions": [],
+              "ka_outages": [],
+              "aar_windows": [],
+              "manual_aar_tracks": [],
+              "manual_route_splice": null,
+              "ku_overrides": []
+            },
+            "adjusted_departure_time": null,
+            "created_at": "2026-10-19T05:30:48.500239Z",
+            "updated_at": "2026-10-19T05:30:48.500241Z",
+            "is_active": false,
+            "import_provenance": null,
+            "notes": null
+          },
+          {
+            "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+            "name": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+            "description": null,
+            "route_id": "",
+            "transports": {
+              "starshield_enabled": null,
+              "planning_policy": null,
+              "evaluation_context": null,
+              "planning_inputs": null,
+              "initial_x_satellite_id": "",
+              "initial_ka_satellite_ids": [
+                "AOR",
+                "POR",
+                "IOR"
+              ],
+              "x_transitions": [],
+              "ka_outages": [],
+              "aar_windows": [],
+              "manual_aar_tracks": [],
+              "manual_route_splice": null,
+              "ku_overrides": []
+            },
+            "adjusted_departure_time": null,
+            "created_at": "2026-10-19T05:30:48.500250Z",
+            "updated_at": "2026-10-19T05:30:48.500251Z",
+            "is_active": false,
+            "import_provenance": null,
+            "notes": null
+          }
+        ],
+        "created_at": "2026-10-19T05:26:29.778689Z",
+        "updated_at": "2026-10-19T05:26:29.778690Z",
+        "metadata": {
+          "operator_training_archive_inputs": {
+            "existing_fixture": "tools/acceptance/operator-journal/scenario.py:flight_observations/SyntheticRawReader",
+            "relation_to_replay": "independent archive exercise; not replay measurements or aircraft data",
+            "source_format": "synthetic-operational-format",
+            "synthetic": true
+          },
+          "operator_training_fixture": {
+            "namespace": "operator-training-v1-2e04ca30-1b22-457b-9f3a-fcfdcca8d2aa",
+            "prerequisite_record_ids": [
+              "a927598c-31ed-4267-8649-b22ff0c6d01d",
+              "d124e5c9-4bd7-4491-a351-28d01fabaf3e",
+              "159787e4-1ee9-4d70-aa13-ec760011eb9c",
+              "ad25c793-d886-48de-b48d-e8dcf3c97398",
+              "6cc9bfc4-4d40-44b7-a8d6-4d657613c742",
+              "488f88da-3b59-4cac-ab8d-ef072657df72",
+              "49afffcd-a59c-4a26-b0f8-07ac31a4719f",
+              "58286083-d0a3-4eec-8a14-1a4da663bafb"
+            ],
+            "version": 1
+          }
+        }
+      }
+    ],
+    "planFiles": [
+      {
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "device": "66305",
+        "inode": "8036590",
+        "modifiedNs": "1792387837991514529",
+        "sha256": "b6eb53e677bc57d2e7d04e76eac0a904df06c705d723332e1d4e2be1eeff2989",
+        "size": 983
+      }
+    ]
+  }
+}

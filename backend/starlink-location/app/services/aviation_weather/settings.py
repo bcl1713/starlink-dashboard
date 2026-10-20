@@ -10,6 +10,7 @@ from pydantic import Field
 
 from app.models.aviation_grid import GfsSelection
 from app.models.aviation_weather import Contract
+from app.services.settings_conflict import SettingsConflict
 
 
 class AviationSettings(Contract):
@@ -24,6 +25,7 @@ class AviationSettings(Contract):
 
 
 class AviationSettingsUpdate(Contract):
+    expected_revision: int | None = Field(default=None, ge=0, strict=True)
     metar: bool | None = None
     taf: bool | None = None
     sigmet: bool | None = None
@@ -34,7 +36,9 @@ class AviationSettingsUpdate(Contract):
 
     def changes(self):
         values = self.model_dump(exclude_unset=True)
-        if not values or any(value is None for value in values.values()):
+        if not (values.keys() - {"expected_revision"}) or any(
+            value is None for value in values.values()
+        ):
             raise ValueError("At least one weather preference required")
         if values.get("winds") and values.get("temperature"):
             raise ValueError("Only one GFS layer may be enabled")
@@ -89,9 +93,14 @@ class AviationSettingsStore:
         if self.readonly:
             raise RuntimeError("Scientific worker settings are read-only")
         changes = AviationSettingsUpdate.model_validate(changes).changes()
+        expected_revision = changes.pop("expected_revision", None)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.lock:
             old = self._read()
+            if expected_revision is not None and expected_revision != old.revision:
+                raise SettingsConflict(
+                    "Aviation visibility changed; refresh before retrying"
+                )
             values = {**effective_settings(old).model_dump(), **changes}
             if changes.get("winds"):
                 values["temperature"] = False

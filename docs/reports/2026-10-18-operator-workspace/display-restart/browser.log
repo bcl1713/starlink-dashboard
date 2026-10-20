@@ -1,0 +1,10 @@
+
+Running 1 test using 1 worker
+
+(node:2810407) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/e2e/operator-display.spec.ts:10:1 › display presets restore actual weather rendering and report real conflicts and unavailable settings (10.6m)
+
+  Slow test file: tests/e2e/operator-display.spec.ts (10.6m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 passed (10.6m)

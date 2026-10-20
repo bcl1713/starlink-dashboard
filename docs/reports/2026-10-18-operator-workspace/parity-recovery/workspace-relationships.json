@@ -1,0 +1,279 @@
+{
+  "synthetic": true,
+  "setupRecordIds": [
+    "fe587b45-6274-43b3-b91d-12f02bc6f972",
+    "2ba563f3-e733-43e3-a97f-637f1f621079",
+    "e7a96d1f-6874-4b2a-abfa-9dd294a2dc0a",
+    "1e2d7d54-5e03-4542-b209-c3a57c3a44e4",
+    "b8a7bb39-a345-4071-88a3-e30703b88db9",
+    "852dd198-fb86-4482-ad4e-1305c99b1601",
+    "2679c601-6140-47de-974c-e0e05e464751",
+    "4ae73084-00fe-43c2-ad99-9b641f41eaf2",
+    "87e66be3-dec7-443c-89e8-9104bb82a7c8",
+    "8fa48118-eb0d-412d-8578-baf11fc458f7",
+    "e86be889-6f83-4594-97bf-097d7f2ab16b",
+    "5650d2b2-76ac-492d-a88d-7ff0f8c0ed1f",
+    "4a6046c2-4567-4fb1-835f-904376540d41",
+    "e80dcf75-3824-4a62-afea-fb9eb734c490",
+    "9202fd1e-f8ff-4a09-8b1b-ac9fe9cdebc4",
+    "3c0d2c1c-3259-4b5c-8859-1ae819f070a5",
+    "64ae2682-8fc9-4445-a641-d6f7273c6fa6",
+    "cb439ecb-defd-409e-9ee3-2255c6749a9c",
+    "8f7a6c16-16b3-4a7d-8bb6-db879c8faaf0",
+    "c949feed-931b-4086-a43d-06d3f43df6ab",
+    "31597f0f-1d55-4045-9d39-9afd907c09a3",
+    "b6e54a40-9766-45e1-84a3-d5f44eb0c831",
+    "ed6b4fb4-7ea8-4884-bf2f-4ae97d6ace40",
+    "b9927c15-63ea-4a67-aa12-3afbca44e66a",
+    "14e78344-db6a-44b8-8433-f2a69150c75b",
+    "cb1abe2e-6f7e-4fbb-9f60-fff62343faf8",
+    "d3b71235-fd4c-48f9-b980-9407c023d9b7",
+    "1f9324ad-7dcd-4d31-b86e-3a6e64a79022",
+    "583578db-accb-49fa-89b2-6cc382db490a",
+    "f83871ea-e118-43cf-a92e-5cff345f99ad",
+    "b8cc24d2-4613-40d9-9df8-eb7fde4050db",
+    "2fcbec6f-6112-4305-8cb3-a6a2a4d7598d",
+    "4788028a-a48c-4b66-9e05-6aee8313f67b",
+    "daa28824-8676-488e-9946-afecbc57667d",
+    "a1e0b141-28b0-49eb-92f2-52839b315676",
+    "b2dfae29-6091-453d-b085-a38239f53d66",
+    "0582019e-a868-421d-bc23-466d725d4bb5",
+    "ce87eb58-a528-44e3-9b37-b4e556234473",
+    "548f5e2c-e368-48ba-b05f-9f92ebceeeb8",
+    "7c09d2ca-8bdc-4686-b256-c7539eac79dc",
+    "78912c9b-67bc-414e-a186-3c6523f3f865",
+    "fa97336e-ab03-4173-a247-89a0528a7707",
+    "839f83c5-673a-4f9a-b7c1-6c2ef12a57fc",
+    "8154232b-0497-48bf-8cbd-a11f4f9f8797",
+    "95f7fe62-976f-43c1-afdc-f007086710be",
+    "cc4c65e7-2a2f-4714-b51c-f504633ea415",
+    "c6814a63-81c7-4b3c-88f5-26d893d99d7c",
+    "4056b6ac-3ca6-4d5d-af95-c3be9fc3696e",
+    "1fdb544a-4131-406f-8394-dbe4a02d4467",
+    "c1fb94df-197e-45aa-ab46-129176708f87",
+    "03ec62e3-f049-422a-8661-b0da20236359",
+    "465da3c0-07b4-41c0-afbe-77108a02bfb1",
+    "eb6451af-ca39-4ac0-beb9-50f566d52a07",
+    "72d53e9b-a7f2-4fca-ba10-adaa23b82c86",
+    "036cb297-0080-4706-a50d-d3f58bcf8a35",
+    "28509c53-60ae-4669-be0e-249655e935a0",
+    "cb039966-d8fb-41a8-b4a3-27e34bddaa69",
+    "22e5a7a6-1698-45d3-95c0-c11efbf9c1f1",
+    "95bf668b-46e7-4205-be8c-3d50acf7f885"
+  ],
+  "setupIsNotLearnerCompletion": true,
+  "callId": "fe587b45-6274-43b3-b91d-12f02bc6f972",
+  "conferenceId": "e7a96d1f-6874-4b2a-abfa-9dd294a2dc0a",
+  "receipts": [
+    {
+      "schema_version": 1,
+      "command_id": "b570826f-8faa-41ba-9343-ca5ce8c30701",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional named-link voice 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "2b85960c-d5a7-47bf-bb57-f6c82b18be9b",
+                "service": "Fictional named-link voice 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": "fe587b45-6274-43b3-b91d-12f02bc6f972",
+            "conference_id": "e7a96d1f-6874-4b2a-abfa-9dd294a2dc0a"
+          },
+          "record_id": "dc7b0c0c-3c2f-4a86-8362-2e4ad27a8913",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 141,
+          "command_id": "b570826f-8faa-41ba-9343-ca5ce8c30701",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "511ef39b-e3e7-4281-a2fb-b2761f54b269",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional named-link voice 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "852726f1-e386-4e5f-9218-122e23e774a7",
+                "service": "Fictional named-link voice 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": "fe587b45-6274-43b3-b91d-12f02bc6f972",
+            "conference_id": "e7a96d1f-6874-4b2a-abfa-9dd294a2dc0a"
+          },
+          "record_id": "263d0c8f-57f5-44b1-accf-0d6dc2265915",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 142,
+          "command_id": "511ef39b-e3e7-4281-a2fb-b2761f54b269",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "6b399978-c280-4076-ad64-24c41287cd46",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional named-link voice 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "9dde4946-a9c4-492f-b69c-9bd944c4bec3",
+                "service": "Fictional named-link voice 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": "fe587b45-6274-43b3-b91d-12f02bc6f972",
+            "conference_id": "e7a96d1f-6874-4b2a-abfa-9dd294a2dc0a"
+          },
+          "record_id": "98431edd-2294-46ec-9a29-b7ce1d21bcbb",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 143,
+          "command_id": "6b399978-c280-4076-ad64-24c41287cd46",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    }
+  ]
+}

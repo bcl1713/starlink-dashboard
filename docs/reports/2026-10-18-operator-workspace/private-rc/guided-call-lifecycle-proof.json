@@ -1,0 +1,1551 @@
+{
+  "synthetic": true,
+  "captures": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "record": {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T19:00:00.000000Z",
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional complete call exercise 1920 corrected later",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "call",
+          "status": "completed",
+          "party": "Fictional complete call exercise 1920 corrected later",
+          "coordinator": null,
+          "communications_kind": null,
+          "prep_lead_minutes": 0,
+          "conference_id": null
+        },
+        "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+        "version": 8,
+        "previous_version": 7,
+        "journal_seq": 50,
+        "command_id": "96e61255-1d0e-46be-b9d8-09b1c98db324",
+        "operation": "update",
+        "reason": "Operator correction",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "completeImmutableHistoryVerified": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "record": {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T19:00:00.000000Z",
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional complete call exercise 390 corrected later",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "call",
+          "status": "completed",
+          "party": "Fictional complete call exercise 390 corrected later",
+          "coordinator": null,
+          "communications_kind": null,
+          "prep_lead_minutes": 0,
+          "conference_id": null
+        },
+        "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+        "version": 8,
+        "previous_version": 7,
+        "journal_seq": 58,
+        "command_id": "f023a8f8-2f13-477d-91d9-694294ee7945",
+        "operation": "update",
+        "reason": "Operator correction",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "completeImmutableHistoryVerified": true
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "record": {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T19:00:00.000000Z",
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional complete call exercise 844 corrected later",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "call",
+          "status": "completed",
+          "party": "Fictional complete call exercise 844 corrected later",
+          "coordinator": null,
+          "communications_kind": null,
+          "prep_lead_minutes": 0,
+          "conference_id": null
+        },
+        "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+        "version": 8,
+        "previous_version": 7,
+        "journal_seq": 66,
+        "command_id": "03576718-eab1-4587-a830-c0394c8fb7f8",
+        "operation": "update",
+        "reason": "Operator correction",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "completeImmutableHistoryVerified": true
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": 1,
+      "command_id": "7e3f8466-72d7-4730-baed-632b1b4a933c",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T18:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 43,
+          "command_id": "7e3f8466-72d7-4730-baed-632b1b4a933c",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "61d921ec-d61a-4453-9786-9c4359cdea7d",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 44,
+          "command_id": "61d921ec-d61a-4453-9786-9c4359cdea7d",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "c7f17c1b-fce6-41f2-b94c-e65d841e27d4",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "cancelled",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 45,
+          "command_id": "c7f17c1b-fce6-41f2-b94c-e65d841e27d4",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "988c29bc-1665-44ed-9119-b6a647bf8a44",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 46,
+          "command_id": "988c29bc-1665-44ed-9119-b6a647bf8a44",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "01b14258-38ee-47ec-8ee0-86e04c62b4fa",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 47,
+          "command_id": "01b14258-38ee-47ec-8ee0-86e04c62b4fa",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "e718938c-6367-4c6f-b5a3-fd86fe050896",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 48,
+          "command_id": "e718938c-6367-4c6f-b5a3-fd86fe050896",
+          "operation": "remove",
+          "reason": "Operator removal",
+          "reason_origin": "automatic",
+          "deleted": true,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2c575590-3607-441b-a748-cd324a29a900",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 1920",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 7,
+          "previous_version": 6,
+          "journal_seq": 49,
+          "command_id": "2c575590-3607-441b-a748-cd324a29a900",
+          "operation": "restore",
+          "reason": "Operator restoration",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "96e61255-1d0e-46be-b9d8-09b1c98db324",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 1920 corrected later",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 1920 corrected later",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "60f61198-b177-4d14-ae3a-df0e1cca14b1",
+          "version": 8,
+          "previous_version": 7,
+          "journal_seq": 50,
+          "command_id": "96e61255-1d0e-46be-b9d8-09b1c98db324",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "7a365f73-68b8-432b-934b-40c6e8899eab",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T18:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 51,
+          "command_id": "7a365f73-68b8-432b-934b-40c6e8899eab",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "cc1b387a-6c26-4ab2-88b7-3e0cbb85c958",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 52,
+          "command_id": "cc1b387a-6c26-4ab2-88b7-3e0cbb85c958",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "44160e1c-b5f9-48c2-9fbf-8cc41459db5c",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "cancelled",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 53,
+          "command_id": "44160e1c-b5f9-48c2-9fbf-8cc41459db5c",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "354a8734-cecf-4ef7-aa44-96647597a071",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 54,
+          "command_id": "354a8734-cecf-4ef7-aa44-96647597a071",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "310e14ee-7f64-4689-a8dd-3551a22b44b2",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 55,
+          "command_id": "310e14ee-7f64-4689-a8dd-3551a22b44b2",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3ee70cc7-5dd3-4e8d-a8a3-5851154fc0a0",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 56,
+          "command_id": "3ee70cc7-5dd3-4e8d-a8a3-5851154fc0a0",
+          "operation": "remove",
+          "reason": "Operator removal",
+          "reason_origin": "automatic",
+          "deleted": true,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ca5cedd2-b08b-47ab-a9a1-9bcfd478cf30",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 390",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 7,
+          "previous_version": 6,
+          "journal_seq": 57,
+          "command_id": "ca5cedd2-b08b-47ab-a9a1-9bcfd478cf30",
+          "operation": "restore",
+          "reason": "Operator restoration",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "f023a8f8-2f13-477d-91d9-694294ee7945",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 390 corrected later",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 390 corrected later",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "0bd9db2a-fa3c-4c35-9054-6b553e18300c",
+          "version": 8,
+          "previous_version": 7,
+          "journal_seq": 58,
+          "command_id": "f023a8f8-2f13-477d-91d9-694294ee7945",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "4994debe-49d2-4a68-ac1f-cb8e94b33abd",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T18:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 59,
+          "command_id": "4994debe-49d2-4a68-ac1f-cb8e94b33abd",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "fef44a8f-908b-47e5-b1f4-d1691f2e3853",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 60,
+          "command_id": "fef44a8f-908b-47e5-b1f4-d1691f2e3853",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "8e1b7d13-bb19-4e4c-9665-891cd526fe1b",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "cancelled",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 61,
+          "command_id": "8e1b7d13-bb19-4e4c-9665-891cd526fe1b",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ea52e6b9-69d6-4c89-aa2b-c59db34f1aad",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 62,
+          "command_id": "ea52e6b9-69d6-4c89-aa2b-c59db34f1aad",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "8b3a220a-056c-4d12-a163-bb9fcd4a990a",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 63,
+          "command_id": "8b3a220a-056c-4d12-a163-bb9fcd4a990a",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "470d8896-bb23-49b8-b41a-075642a8f4fc",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 64,
+          "command_id": "470d8896-bb23-49b8-b41a-075642a8f4fc",
+          "operation": "remove",
+          "reason": "Operator removal",
+          "reason_origin": "automatic",
+          "deleted": true,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "bceba3fb-3833-4a00-98f3-1523a9a85fb0",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 844",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 7,
+          "previous_version": 6,
+          "journal_seq": 65,
+          "command_id": "bceba3fb-3833-4a00-98f3-1523a9a85fb0",
+          "operation": "restore",
+          "reason": "Operator restoration",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "03576718-eab1-4587-a830-c0394c8fb7f8",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T19:00:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional complete call exercise 844 corrected later",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "completed",
+            "party": "Fictional complete call exercise 844 corrected later",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 0,
+            "conference_id": null
+          },
+          "record_id": "d85d56f7-c16b-4c9a-9fa2-ef43c76792ef",
+          "version": 8,
+          "previous_version": 7,
+          "journal_seq": 66,
+          "command_id": "03576718-eab1-4587-a830-c0394c8fb7f8",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    }
+  ],
+  "actualWrites": 24,
+  "manualHumanFirstUse": "not claimed"
+}

@@ -557,3 +557,35 @@ it('hides individual graphs and removes the group when all graphs are disabled',
     5
   );
 });
+
+it('keeps the configured cards but clears retained measurements and history for simulation', () => {
+  const props = {
+    status: statusFixture(),
+    history: bundle(),
+    error: false,
+    statusError: false,
+    selectedWindowSeconds: 30,
+    nowMs: 105000,
+  };
+  const view = render(<OverviewMetricHistoryPanels {...props} />);
+  expect(screen.getByLabelText('Overview metric history')).toBeTruthy();
+  view.rerender(
+    <OverviewMetricHistoryPanels
+      {...props}
+      unavailableReason="Simulation · network measurements unavailable"
+    />
+  );
+  expect(
+    screen.getByText('Simulation · network measurements unavailable')
+  ).toBeTruthy();
+  expect(
+    screen.getByLabelText('Network history context').textContent
+  ).toContain('unavailable');
+  expect(view.container.querySelectorAll('[data-metric-panel]')).toHaveLength(
+    5
+  );
+  expect(
+    screen.queryAllByText('Waiting for history', { exact: true })
+  ).toHaveLength(0);
+  expect(screen.getAllByText('Unavailable', { exact: true })).toHaveLength(5);
+});

@@ -1,0 +1,39 @@
+{
+  "synthetic": true,
+  "candidateSha": "445dbf3cd8e15357ebb56a6a336e2f3eb0d5d39c",
+  "sourceArchiveSha256": "b3bccf1488544ecf26c91206bcbf907c76e9f4dd97d153324955a5dbb776ad82",
+  "fixture": "private Fictional Meridian21",
+  "files": [
+    {
+      "file": "workspace-mobile-f7e7c0540e64.png",
+      "capture": "airborne-next-390x844.png",
+      "sha256": "f7e7c0540e644eb4318d3ef183fe1887738b3dc591a27e217f38464c3eaa6eb1"
+    },
+    {
+      "file": "training-evidence-32d8acfce238.png",
+      "capture": "guided-closed-conference-history.png",
+      "sha256": "32d8acfce2388c729777016b61dea948b88ac899308f0606f5b4c533038abf5b"
+    },
+    {
+      "file": "simulation-network-0cd98752d979.png",
+      "capture": "configured-network-running.png",
+      "sha256": "0cd98752d979a5618260a30f2cc4f8f93517d19646ea46b98b1761bfeab44fed"
+    },
+    {
+      "file": "transport-check-c4a20ed4a8a4.png",
+      "capture": "training-independent-checks-1920x1080.png",
+      "sha256": "c4a20ed4a8a4ade982d10916fdc4c033a4476cb4e699a0612a9a7f00187bca94",
+      "candidateSha": "85d516448f1a3ec289a0f541d7586f80aae8ed04",
+      "sourceArchiveSha256": "abc6100899fe55063bdf77c9a8e6e847a418c00206b94b5376949d8487d49a04",
+      "synthetic": true
+    },
+    {
+      "file": "issue-followup-b31b5113d832.png",
+      "capture": "training-issue-editor-1920x1080.png",
+      "sha256": "b31b5113d83274a3796df4de15081f928d2c8e44cb5452b87277b79e6c7e1008",
+      "candidateSha": "85d516448f1a3ec289a0f541d7586f80aae8ed04",
+      "sourceArchiveSha256": "abc6100899fe55063bdf77c9a8e6e847a418c00206b94b5376949d8487d49a04",
+      "synthetic": true
+    }
+  ]
+}

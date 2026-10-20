@@ -77,3 +77,29 @@ it('starts the five-second coalescing window when a new candidate arrives after 
   hook.unmount();
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it('persists independent mute and output preferences across remount', () => {
+  const hook = renderHook(() => useEventAlerts(state()));
+  const choice = { enabled: false, sound: false, vibration: true };
+  act(() => hook.result.current.updatePreferences(choice));
+  expect(
+    JSON.parse(localStorage.getItem('operator-alert-preferences')!)
+  ).toEqual(choice);
+  hook.unmount();
+  const restored = renderHook(() => useEventAlerts(state()));
+  expect(restored.result.current.preferences).toEqual(choice);
+  restored.unmount();
+});
+it('keeps explicit alert preferences usable in memory when persistence fails', () => {
+  const hook = renderHook(() => useEventAlerts(state()));
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('quota');
+  });
+  const choice = { enabled: true, sound: false, vibration: false };
+  act(() => hook.result.current.updatePreferences(choice));
+  expect(hook.result.current.preferences).toEqual(choice);
+  expect(hook.result.current.warning).toBe(
+    'Alert preferences are session-only.'
+  );
+  hook.unmount();
+});

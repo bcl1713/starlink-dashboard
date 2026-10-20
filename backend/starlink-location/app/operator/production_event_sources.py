@@ -49,10 +49,12 @@ class ProductionEventSources(EventSourceAdapter):
             raise OperatorError("event_source_unavailable", retryable=True) from exc
         if current.revision != revision:
             raise OperatorError("event_snapshot_changed", retryable=True)
+        return current
 
     def _validate_timing(self, mission_id, revision, sample):
-        self._validate(mission_id, revision)
-        current = capture_current(self, mission_id, as_of=self.clock.now())
+        # Planning and telemetry must be checked against the same capture. A
+        # second full recapture repeats I/O and widens the telemetry race.
+        current = self._validate(mission_id, revision)
         if current.sample_revision != sample:
             raise OperatorError("event_snapshot_changed", retryable=True)
 

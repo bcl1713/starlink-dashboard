@@ -9,7 +9,8 @@ services:
       dockerfile: backend/starlink-location/Dockerfile
       args:
         ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
-    command: [uvicorn, backend_fixture:app, --host, 0.0.0.0, --port, "8000"]
+    command:
+      [uvicorn, "${OPERATOR_ACCEPTANCE_ENTRYPOINT:-backend_fixture}:app", --host, 0.0.0.0, --port, "8000"]
     labels:
       acceptance.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
       acceptance.synthetic: "true"
@@ -33,7 +34,7 @@ services:
       - operator-data:/app/data/operator
       - route-data:/data
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8000/api/v2/operator/health]
+      test: [CMD, curl, -f, "http://localhost:8000${OPERATOR_ACCEPTANCE_HEALTH_PATH:-/api/v2/operator/health}"]
       interval: 2s
       timeout: 5s
       retries: 45

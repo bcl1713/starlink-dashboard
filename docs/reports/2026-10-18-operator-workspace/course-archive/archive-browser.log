@@ -1,0 +1,14 @@
+
+Running 1 test using 1 worker
+
+(node:1887579) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/tools/training/operator-mission/archive_evidence.py", line 569, in <module>
+    main()
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/tools/training/operator-mission/archive_evidence.py", line 495, in main
+    raise ValueError(
+ValueError: Selected ZIP does not match an existing ready server artifact
+  ✓  1 tests/e2e/operator-training-archive.spec.ts:40:1 › original training mission ZIP transfers through Missions without restoring Operator records (1.1m)
+
+  1 passed (1.1m)

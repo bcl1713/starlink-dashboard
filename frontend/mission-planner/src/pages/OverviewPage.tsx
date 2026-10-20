@@ -886,7 +886,6 @@ export function OverviewPage() {
     setResetRevision((value) => value + 1);
     setExploration({ mode: layout.mode, active: false });
   }, [layout.mode]);
-  const displayHost = useOverviewDisplayHost(onReset);
   const followUnavailable = statusError
     ? 'Status refresh unavailable'
     : !aircraftPosition || !status
@@ -894,6 +893,13 @@ export function OverviewPage() {
       : isStatusStale(status.timestamp, currentTime)
         ? 'Aircraft position stale'
         : null;
+  const onFollowAircraft = useCallback(() => {
+    if (followUnavailable) return false;
+    setCameraIntent('follow');
+    setExploration({ mode: layout.mode, active: false });
+    return true;
+  }, [followUnavailable, layout.mode]);
+  const displayHost = useOverviewDisplayHost(onReset, onFollowAircraft);
   useEffect(() => {
     const page = pageRef.current;
     const rail =
@@ -935,7 +941,7 @@ export function OverviewPage() {
       data-paced-running={pacedRunning}
       data-route-context-key={localContextKey ?? undefined}
       data-clocks-visible={showClocks}
-      data-metrics-visible={showMetricPanels && !pacedRunning}
+      data-metrics-visible={showMetricPanels}
     >
       <div
         ref={captureStage}
@@ -1343,7 +1349,7 @@ export function OverviewPage() {
                 )}
               </div>
             </div>
-            {((!pacedRunning && showMetricPanels) ||
+            {(showMetricPanels ||
               (aviationSettings?.sigmet &&
                 sigmetPresentation.pendingCount > 0 &&
                 layout.mode !== 'desktop')) && (
@@ -1355,8 +1361,23 @@ export function OverviewPage() {
                     onPageChange={changeSigmetPage}
                   />
                 )}
-                {!pacedRunning && showMetricPanels && (
+                {showMetricPanels && (
                   <OverviewMetricHistoryPanels
+                    key={`${simulationRun?.runtime_id ?? 'unknown'}:${simulationRun?.service_mode ?? 'unknown'}:${simulationRun?.run?.run_id ?? 'ordinary'}:${status?.metric_source ?? 'unknown'}`}
+                    simulated={status?.metric_source === 'simulated'}
+                    unavailableReason={
+                      ((simulationRun?.state === 'running' ||
+                        simulationRun?.state === 'completed') &&
+                        simulationRun?.run &&
+                        status?.metric_source !== 'observed') ||
+                      status?.metric_source === 'unavailable'
+                        ? 'Paced simulation · network measurements unavailable'
+                        : status?.metric_source === 'unknown' ||
+                            (!status?.metric_source &&
+                              simulationRun?.service_mode !== 'live')
+                          ? 'Network source unavailable'
+                          : undefined
+                    }
                     settings={overviewLinkSettings}
                     status={status}
                     statusError={Boolean(statusError)}

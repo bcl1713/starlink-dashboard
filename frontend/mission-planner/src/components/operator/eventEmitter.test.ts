@@ -76,3 +76,79 @@ it('constructs and emits on aircraft HTTP without the secure randomUUID API', as
   expect((await emitter.emit(batch)).visual).toBe(true);
   emitter.dispose();
 });
+
+it('reports rejected audio permission and unavailable vibration without claiming delivery', async () => {
+  class BlockedAudio {
+    state = 'suspended';
+    resume = vi.fn(async () => {
+      throw new Error('gesture denied');
+    });
+    close = vi.fn(async () => {});
+  }
+  vi.stubGlobal('AudioContext', BlockedAudio);
+  vi.stubGlobal('navigator', { vibrate: () => false });
+  const emitter = createEventEmitter({
+    preferences: () => ({ enabled: true, sound: true, vibration: true }),
+    onVisual: vi.fn(),
+    claim: async (keys) => keys,
+  });
+  expect((await emitter.enable()).sound).toBe('needs_interaction');
+  const result = await emitter.emit(batch);
+  expect(result).toMatchObject({
+    visual: true,
+    sound: 'needs_interaction',
+    vibration: 'unavailable',
+  });
+  emitter.dispose();
+});
+
+it('requests one sound and vibration only after explicit enable and honors subsequent mute', async () => {
+  const oscillator = {
+    frequency: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+    onended: null as (() => void) | null,
+  };
+  const gain = { gain: { value: 0 }, connect: vi.fn(), disconnect: vi.fn() };
+  const close = vi.fn(async () => {});
+  class Audio {
+    state = 'running';
+    currentTime = 0;
+    destination = {};
+    resume = vi.fn(async () => {});
+    createOscillator = () => oscillator;
+    createGain = () => gain;
+    close = close;
+  }
+  const vibrate = vi.fn(() => true);
+  vi.stubGlobal('AudioContext', Audio);
+  vi.stubGlobal('navigator', { vibrate });
+  const preferences = { enabled: true, sound: true, vibration: true };
+  const visual = vi.fn();
+  const emitter = createEventEmitter({
+    preferences: () => preferences,
+    onVisual: visual,
+    claim: async (keys) => keys,
+  });
+  expect(oscillator.start).not.toHaveBeenCalled();
+  expect(vibrate).not.toHaveBeenCalled();
+  await emitter.enable();
+  expect(await emitter.emit(batch)).toMatchObject({
+    visual: true,
+    sound: 'enabled',
+    vibration: 'enabled',
+  });
+  expect(oscillator.start).toHaveBeenCalledOnce();
+  expect(oscillator.stop).toHaveBeenCalledExactlyOnceWith(0.12);
+  expect(vibrate).toHaveBeenCalledExactlyOnceWith(200);
+  preferences.enabled = false;
+  await emitter.emit(batch);
+  expect(visual).toHaveBeenCalledOnce();
+  expect(oscillator.start).toHaveBeenCalledOnce();
+  expect(vibrate).toHaveBeenCalledOnce();
+  oscillator.onended?.();
+  emitter.dispose();
+  expect(close).toHaveBeenCalledOnce();
+});

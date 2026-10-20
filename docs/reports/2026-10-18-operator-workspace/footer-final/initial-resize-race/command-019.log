@@ -1,0 +1,57 @@
+
+Running 6 tests using 1 worker
+
+(node:3115039) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/e2e/operator-workspace.spec.ts:135:1 › hidden workspace: normal and busy layouts, real call save and parked notes (4.6s)
+(node:3116082) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 tests/e2e/operator-workspace.spec.ts:608:1 › hidden workspace: conference reuse and independent customer lifecycle at three sizes (8.6s)
+  ✓  3 tests/e2e/operator-workspace.spec.ts:754:1 › hidden workspace: missing mission and unavailable store remain actionable at three sizes (2.2s)
+  ✓  4 tests/e2e/operator-workspace.spec.ts:795:1 › hidden workspace: issue follow-up, correction and applied-only transport at three sizes (11.0s)
+  ✓  5 tests/e2e/operator-workspace.spec.ts:987:1 › hidden workspace: paged named transport relationships retain exact targets at three sizes (4.9s)
+  ✓  6 tests/e2e/operator-workspace.spec.ts:1205:1 › hidden workspace: real lost receipt exact retry and offline draft recovery at three sizes (50.5s)
+
+
+  1) tests/e2e/operator-workspace.spec.ts:135:1 › hidden workspace: normal and busy layouts, real call save and parked notes 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 250
+    Received:    377
+
+      215 |           );
+      216 |           expect(geometry.saveTop).toBeGreaterThanOrEqual(0);
+    > 217 |           expect(geometry.saveBottom).toBeLessThanOrEqual(
+          |                                       ^
+      218 |             page.viewportSize()!.height
+      219 |           );
+      220 |         };
+        at checkFooter (/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/tests/e2e/operator-workspace.spec.ts:217:39)
+        at /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/tests/e2e/operator-workspace.spec.ts:253:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../../../../../tmp/issue-376-footer-browser-r1/workspace-playwright/operator-workspace-hidden--86c73--call-save-and-parked-notes/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../../../../../tmp/issue-376-footer-browser-r1/workspace-playwright/operator-workspace-hidden--86c73--call-save-and-parked-notes/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../../../../../tmp/issue-376-footer-browser-r1/workspace-playwright/operator-workspace-hidden--86c73--call-save-and-parked-notes/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../../../../../tmp/issue-376-footer-browser-r1/workspace-playwright/operator-workspace-hidden--86c73--call-save-and-parked-notes/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../../../../../tmp/issue-376-footer-browser-r1/workspace-playwright/operator-workspace-hidden--86c73--call-save-and-parked-notes/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../../../../../../../tmp/issue-376-footer-browser-r1/workspace-playwright/operator-workspace-hidden--86c73--call-save-and-parked-notes/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/e2e/operator-workspace.spec.ts:135:1 › hidden workspace: normal and busy layouts, real call save and parked notes 
+  5 passed (1.4m)

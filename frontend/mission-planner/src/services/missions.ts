@@ -52,8 +52,11 @@ export const missionsApi = {
     };
   },
 
-  get: async (id: string) => {
-    const response = await apiClient.get<Mission>(`/api/v2/missions/${id}`);
+  get: async (id: string, signal?: AbortSignal) => {
+    const response = await apiClient.get<Mission>(`/api/v2/missions/${id}`, {
+      signal,
+      timeout: 10_000,
+    });
     return response.data;
   },
 

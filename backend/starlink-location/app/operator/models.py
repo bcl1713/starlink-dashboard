@@ -109,6 +109,7 @@ class CreateRecord(RecordInput):
 
 
 class UpdateRecord(RecordInput):
+    establish_session: bool = False
     replacement_check_row_ids: list[RecordId] = Field(default_factory=list)
     operation: Literal["update"] = "update"
     record_id: RecordId

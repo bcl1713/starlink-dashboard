@@ -1,0 +1,402 @@
+{
+  "synthetic": true,
+  "realWorker": true,
+  "softwareRendering": true,
+  "restored": {
+    "settings": {
+      "radar": {
+        "enabled": true,
+        "revision": 3
+      },
+      "aviation": {
+        "metar": false,
+        "taf": false,
+        "sigmet": true,
+        "sigmet_intersecting_only": false,
+        "winds": true,
+        "temperature": false,
+        "gfs_selection": {
+          "vertical": {
+            "kind": "pressure",
+            "pressure_pa": 50000
+          },
+          "horizon_hours": 0
+        },
+        "revision": 5
+      }
+    },
+    "scene": {
+      "present": true,
+      "mode": "winds",
+      "instance": "8cbc328c659d5b5bc18581ea9edfe5b1f2c4cc615947945004e3183d0c857476",
+      "temperature": false,
+      "wind": true,
+      "particleCount": 2000,
+      "vertices": 42442,
+      "positions": [
+        -1.172046422958374,
+        0.5273469686508179,
+        -1.5506155490875244,
+        -1.1718465089797974,
+        0.5285672545433044,
+        -1.5503510236740112,
+        -1.1718465089797974,
+        0.5285672545433044,
+        -1.5503510236740112,
+        -1.1716461181640625,
+        0.5297873020172119,
+        -1.5500860214233398,
+        -1.1716461181640625,
+        0.5297873020172119,
+        -1.5500860214233398,
+        -1.171445369720459,
+        0.5310071110725403,
+        -1.5498204231262207,
+        -1.171445369720459,
+        0.5310071110725403,
+        -1.5498204231262207,
+        -1.1712441444396973,
+        0.5322267413139343,
+        -1.5495541095733643,
+        -1.1712441444396973,
+        0.5322267413139343,
+        -1.5495541095733643,
+        -1.1710424423217773,
+        0.533446192741394,
+        -1.54928719997406,
+        -1.1710424423217773,
+        0.533446192741394,
+        -1.54928719997406,
+        -1.1708401441574097,
+        0.5346654057502747,
+        -1.549019694328308,
+        -1.1708401441574097,
+        0.5346654057502747,
+        -1.549019694328308,
+        -1.170637607574463,
+        0.5358843803405762,
+        -1.5487515926361084,
+        -1.170637607574463,
+        0.5358843803405762,
+        -1.5487515926361084,
+        -1.1704344749450684,
+        0.5371031761169434,
+        -1.548482894897461,
+        -1.1704344749450684,
+        0.5371031761169434,
+        -1.548482894897461,
+        -1.1702308654785156,
+        0.5383217930793762,
+        -1.5482136011123657,
+        -1.1702308654785156,
+        0.5383217930793762,
+        -1.5482136011123657,
+        -1.1700268983840942,
+        0.5395401120185852,
+        -1.5479437112808228,
+        -1.1700268983840942,
+        0.5395401120185852,
+        -1.5479437112808228,
+        -1.169822335243225,
+        0.5407583117485046,
+        -1.5476731061935425,
+        -0.8438771963119507,
+        0.852283239364624,
+        -1.6179248094558716,
+        -0.8436295390129089,
+        0.8534287810325623,
+        -1.6174499988555908
+      ],
+      "points": [
+        -0.5807648877972672,
+        0.2689774004704999,
+        -0.7683510285917237,
+        -0.4175454421094255,
+        0.42987453278995413,
+        -0.8005396241487756,
+        -0.3008932055924276,
+        -0.5551350705031812,
+        0.7754278382452754,
+        -0.7766817176163424,
+        0.33443617744100734,
+        0.533777062769819
+      ],
+      "finite": true,
+      "depthTest": true,
+      "depthWrite": false,
+      "bulletins": [
+        false,
+        false,
+        true
+      ],
+      "calls": 21,
+      "geometryCount": 70,
+      "textureCount": 9,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "vertical": {
+        "kind": "pressure",
+        "pressure_pa": 50000
+      },
+      "lead": 21600,
+      "valid": 1791266400000,
+      "budget": {
+        "encoded": 1821275,
+        "decoded": 17527188,
+        "gpu": 5348352,
+        "slots": 0,
+        "waiting": 0,
+        "peaks": {
+          "encoded": 1952347,
+          "decoded": 17666240,
+          "gpu": 5348352,
+          "slots": 3
+        }
+      },
+      "bytes": {
+        "decoded": 4808328,
+        "gpu": 4146304
+      }
+    },
+    "radar": {
+      "work": {
+        "active": 0,
+        "detailActive": 0,
+        "pending": 0,
+        "decodedBytes": 67108864,
+        "peakDecodedBytes": 67108864
+      },
+      "canvas": "2c0cd467-06a0-481b-aec4-ff26f7ebc6e0",
+      "textures": 9,
+      "geometries": 71,
+      "calls": 21,
+      "radar": "f768a5ce-5ea0-47f3-a255-3aa1341d1f3c",
+      "width": 2048,
+      "detailSlots": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "detailFades": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "detailBounds": [
+        [
+          0,
+          0.375,
+          0.125,
+          0.5
+        ],
+        [
+          0,
+          0.5,
+          0.125,
+          0.625
+        ],
+        [
+          0.125,
+          0.25,
+          0.25,
+          0.375
+        ],
+        [
+          0.125,
+          0.375,
+          0.25,
+          0.5
+        ],
+        [
+          0.25,
+          0.375,
+          0.375,
+          0.5
+        ],
+        [
+          0.125,
+          0.5,
+          0.25,
+          0.625
+        ],
+        [
+          0.25,
+          0.5,
+          0.375,
+          0.625
+        ],
+        [
+          0.25,
+          0.625,
+          0.375,
+          0.75
+        ]
+      ],
+      "opacity": 0.4,
+      "weatherGPUBytes": 50331648,
+      "depthTest": true,
+      "depthWrite": false,
+      "renderOrder": -100
+    }
+  },
+  "conflictPartial": {
+    "settings": {
+      "radar": {
+        "enabled": false,
+        "revision": 4
+      },
+      "aviation": {
+        "metar": true,
+        "taf": false,
+        "sigmet": true,
+        "sigmet_intersecting_only": false,
+        "winds": true,
+        "temperature": false,
+        "gfs_selection": {
+          "vertical": {
+            "kind": "pressure",
+            "pressure_pa": 50000
+          },
+          "horizon_hours": 0
+        },
+        "revision": 6
+      }
+    },
+    "message": "Preset change not confirmed. Preset application incomplete. Confirmed: Panels and map, Radar. Unconfirmed: Aviation weather (Aviation visibility changed; refresh before retrying). Refresh settings and apply again to retry. Review refreshed settings before retrying."
+  },
+  "reverse": {
+    "radar": {
+      "enabled": false,
+      "revision": 4
+    },
+    "aviation": {
+      "metar": false,
+      "taf": false,
+      "sigmet": false,
+      "sigmet_intersecting_only": false,
+      "winds": false,
+      "temperature": true,
+      "gfs_selection": {
+        "vertical": {
+          "kind": "pressure",
+          "pressure_pa": 50000
+        },
+        "horizon_hours": 0
+      },
+      "revision": 7
+    }
+  },
+  "unavailablePreflightMadeNoChanges": true,
+  "retry": {
+    "radar": {
+      "enabled": true,
+      "revision": 5
+    },
+    "aviation": {
+      "metar": false,
+      "taf": false,
+      "sigmet": true,
+      "sigmet_intersecting_only": false,
+      "winds": true,
+      "temperature": false,
+      "gfs_selection": {
+        "vertical": {
+          "kind": "pressure",
+          "pressure_pa": 50000
+        },
+        "horizon_hours": 0
+      },
+      "revision": 8
+    }
+  },
+  "presets": {
+    "normal": {
+      "version": 1,
+      "settings": {
+        "operational_clocks_enabled": true,
+        "arrival_panel_enabled": true,
+        "planned_satellite_panel_enabled": true,
+        "map_status_enabled": true,
+        "legend_enabled": true,
+        "latency_panel_enabled": true,
+        "downlink_panel_enabled": true,
+        "uplink_panel_enabled": true,
+        "packet_loss_panel_enabled": true,
+        "obstruction_panel_enabled": true,
+        "aircraft_marker_enabled": true,
+        "planned_route_enabled": true,
+        "poi_markers_enabled": true,
+        "flight_events_enabled": true,
+        "x_band_events_enabled": true,
+        "ka_events_enabled": true,
+        "starshield_events_enabled": true,
+        "ground_entry_point_enabled": true,
+        "configured_satellites_enabled": true,
+        "starshield_link_enabled": true,
+        "x_band_link_enabled": true,
+        "orbital_traffic_enabled": false,
+        "aircraft_history_enabled": true,
+        "country_borders_enabled": false,
+        "state_borders_enabled": false
+      },
+      "weather_visibility": {
+        "radar": false,
+        "metar": false,
+        "taf": false,
+        "sigmet": false,
+        "sigmet_intersecting_only": false,
+        "winds": false,
+        "temperature": true
+      }
+    },
+    "communications": null,
+    "weather": {
+      "version": 1,
+      "settings": {
+        "operational_clocks_enabled": true,
+        "arrival_panel_enabled": true,
+        "planned_satellite_panel_enabled": true,
+        "map_status_enabled": true,
+        "legend_enabled": true,
+        "latency_panel_enabled": true,
+        "downlink_panel_enabled": true,
+        "uplink_panel_enabled": true,
+        "packet_loss_panel_enabled": true,
+        "obstruction_panel_enabled": true,
+        "aircraft_marker_enabled": true,
+        "planned_route_enabled": true,
+        "poi_markers_enabled": true,
+        "flight_events_enabled": true,
+        "x_band_events_enabled": true,
+        "ka_events_enabled": true,
+        "starshield_events_enabled": true,
+        "ground_entry_point_enabled": true,
+        "configured_satellites_enabled": true,
+        "starshield_link_enabled": true,
+        "x_band_link_enabled": true,
+        "orbital_traffic_enabled": false,
+        "aircraft_history_enabled": true,
+        "country_borders_enabled": false,
+        "state_borders_enabled": false
+      },
+      "weather_visibility": {
+        "radar": true,
+        "metar": false,
+        "taf": false,
+        "sigmet": true,
+        "sigmet_intersecting_only": false,
+        "winds": true,
+        "temperature": false
+      }
+    }
+  }
+}

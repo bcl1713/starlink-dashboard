@@ -1,8 +1,10 @@
+import { operatorTiming } from '@/lib/operatorTiming';
 import { createClientId } from '@/lib/clientId';
 import { useEffect, useRef, useState } from 'react';
 import {
   operatorIdentity,
   operatorRecordsOptions,
+  sameJournalIdentity,
   useOperatorHealth,
 } from './operatorReadSession';
 export { useOperatorHealth } from './operatorReadSession';
@@ -21,12 +23,20 @@ import type {
   ReadRecord,
   SavedRecord,
 } from '@/types/operator';
-interface Pending {
+import type { DraftTarget } from '@/components/operator/workspace/types';
+export interface Pending {
   command: OperatorCommand;
   key: string;
   epoch: string;
   identity: string;
   draftKey?: string;
+  workspace?: {
+    schemaVersion: 1;
+    draftId: string;
+    revision: number;
+    baseVersion: number | null;
+    target: DraftTarget;
+  };
 }
 export function useOperatorJournal(
   missionId: string,
@@ -37,21 +47,36 @@ export function useOperatorJournal(
     | 'participation'
     | 'issue'
     | 'transport_decision' = 'journal_entry',
-  options: { durable?: boolean } = {}
+  options: {
+    durable?: boolean;
+    pendingStorageKey?: string;
+    requirePersistence?: boolean;
+    readRecords?: boolean;
+    healthPolling?: boolean;
+    onReceipt?: (request: Pending, receipt: CommandReceipt) => void;
+    onAttempt?: (request: Pending) => void;
+    onCurrent?: (request: Pending, current: ReadRecord) => void;
+  } = {}
 ) {
   const client = useQueryClient();
-  const health = useOperatorHealth();
+  const health = useOperatorHealth(options.healthPolling !== false);
   const identity = operatorIdentity(health.data);
   const session = useRef<string | null>(null);
   if (session.current === null && identity) session.current = identity;
   const identityChanged = !!identity && session.current !== identity;
   const records = useInfiniteQuery({
     ...operatorRecordsOptions(missionId, identity, recordType),
-    enabled: !!missionId && !!identity && !health.isError,
+    enabled:
+      options.readRecords !== false &&
+      !!missionId &&
+      !!identity &&
+      !health.isError,
   });
-  const pendingKey = options.durable
-    ? `operator-367-pending:${missionId}:${recordType}`
-    : null;
+  const pendingKey =
+    options.pendingStorageKey ??
+    (options.durable
+      ? `operator-367-pending:${missionId}:${recordType}`
+      : null);
   const loadedKey = useRef<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -100,8 +125,10 @@ export function useOperatorJournal(
         setStorageError(
           'Pending save could not be retained across reload. Keep this page open.'
         );
+        return !options.requirePersistence;
       }
     }
+    return true;
   }
   useEffect(() => {
     if (!pendingKey || !identity || loadedKey.current === pendingKey) return;
@@ -151,12 +178,18 @@ export function useOperatorJournal(
     );
   }
   async function refresh() {
+    const started = performance.now();
     // Summary reads must never delay journal receipt acknowledgment or recovery.
     void client.invalidateQueries({ queryKey: ['operator-brief', missionId] });
-    await client.invalidateQueries({
-      queryKey: ['operator-records', missionId],
-    });
-    await client.invalidateQueries({ queryKey: ['operator-history'] });
+    await Promise.all([
+      client.invalidateQueries({ queryKey: ['operator-records', missionId] }),
+      client.invalidateQueries({ queryKey: ['operator-history'] }),
+      client.invalidateQueries(
+        { queryKey: ['operator-events', missionId, session.current] },
+        { cancelRefetch: false }
+      ),
+    ]);
+    operatorTiming('refresh', started);
   }
   async function execute(
     request: Pending
@@ -167,13 +200,33 @@ export function useOperatorJournal(
     setSaved(false);
     setError(null);
     try {
-      const receipt = await saveOperatorCommand(
-        request.command,
-        request.key,
-        request.epoch
-      );
+      if (options.onAttempt) {
+        try {
+          void Promise.resolve(
+            options.onAttempt(structuredClone(request))
+          ).catch(() => undefined);
+        } catch {
+          // Read-only observers must not change the outcome of a journal write.
+        }
+      }
+      const httpStarted = performance.now();
+      const receipt = health.data?.mission_journal
+        ? await saveOperatorCommand(
+            request.command,
+            request.key,
+            request.epoch,
+            JSON.parse(request.identity)[3]
+          )
+        : await saveOperatorCommand(
+            request.command,
+            request.key,
+            request.epoch
+          );
+      operatorTiming('http', httpStarted);
       setSaved(true);
-      keep(null);
+      // The owner may be on a different route/mission by the time this arrives.
+      options.onReceipt?.(request, receipt);
+      if (!keep(null) && options.requirePersistence) setBlocked(true);
       if (request.draftKey) {
         try {
           sessionStorage.removeItem(request.draftKey);
@@ -184,16 +237,25 @@ export function useOperatorJournal(
         }
       }
       if (!stillSameStore(request)) return;
-      await refresh();
+      // Read the authoritative row before broad list/history refreshes. These
+      // projections must not keep an accepted save or its current row waiting.
       // A replay receipt can predate later corrections. Reopen the current row.
       let current: SavedRecord | undefined;
+      const readStarted = performance.now();
       try {
-        current = (await readOperatorRecord(receipt.saved_records[0].record_id))
-          .record;
+        const read = await readOperatorRecord(
+          receipt.saved_records[0].record_id
+        );
+        if (stillSameStore(request)) {
+          current = read.record;
+          options.onCurrent?.(request, read);
+        }
       } catch {
         /* Saved receipt is still valid; current reads remain separately unavailable. */
       }
+      operatorTiming('current', readStarted);
       if (!stillSameStore(request)) return;
+      void refresh().catch(() => undefined);
       setLatest(null);
       reconciliationTarget.current = {
         recordId: current?.record_id ?? receipt.saved_records[0].record_id,
@@ -230,6 +292,7 @@ export function useOperatorJournal(
       draftKey?: string;
       captureCurrentTime?: boolean;
       captureDimensions?: ('functional' | 'redundancy')[];
+      workspace?: Pending['workspace'];
     } = {}
   ) {
     if (
@@ -249,10 +312,12 @@ export function useOperatorJournal(
       setSaving(true);
       setSaved(false);
       setError(null);
+      const clockStarted = performance.now();
       try {
         const current = await readOperatorRecords({
           mission_id: missionId,
           record_type: recordType,
+          limit: 1,
         });
         if (frozen.operation === 'create' || frozen.operation === 'update') {
           if (context.captureCurrentTime)
@@ -277,6 +342,7 @@ export function useOperatorJournal(
         setError(operatorFailure(caught));
         return undefined;
       } finally {
+        operatorTiming('clock', clockStarted);
         inFlight.current = false;
         setSaving(false);
       }
@@ -287,6 +353,7 @@ export function useOperatorJournal(
       key: createClientId(),
       epoch: health.data.api_epoch,
       identity: session.current,
+      ...(context.workspace ? { workspace: context.workspace } : {}),
     };
     reconciliationTarget.current = {
       recordId: 'record_id' in command ? command.record_id : undefined,
@@ -294,16 +361,26 @@ export function useOperatorJournal(
     };
     setReconcileError(null);
     setMissingInNewStore(false);
-    keep(request);
+    if (!keep(request)) return;
     return execute(request);
   }
   async function retry() {
     const request = pendingRef.current;
-    if (!request || blocked || identityChanged || inFlight.current) return;
+    if (!request || inFlight.current) return;
+    const replayRecovery =
+      health.data?.mission_journal &&
+      sameJournalIdentity(request.identity, identity);
+    if ((blocked || identityChanged) && !replayRecovery) return;
     // Always reread health; an uncertain command cannot cross a store epoch.
     const fresh = await health.refetch();
     if (!fresh.data?.ready || fresh.isError) return;
-    if (operatorIdentity(fresh.data) !== request.identity) {
+    if (
+      operatorIdentity(fresh.data) !== request.identity &&
+      !(
+        fresh.data.mission_journal &&
+        sameJournalIdentity(request.identity, operatorIdentity(fresh.data))
+      )
+    ) {
       setBlocked(true);
       setError({
         code: 'epoch_mismatch',
@@ -312,17 +389,19 @@ export function useOperatorJournal(
       });
       return;
     }
+    if (options.requirePersistence && !keep(request)) return;
     return execute(request);
   }
   function releaseReconciliation() {
+    if (!keep(null)) return false;
     session.current = identity;
-    keep(null);
     setBlocked(false);
     setError(null);
     setLatest(null);
     setReconcileError(null);
     setMissingInNewStore(false);
     reconciliationTarget.current = null;
+    return true;
   }
   function recoverMissing() {
     if (
@@ -332,11 +411,22 @@ export function useOperatorJournal(
       inFlight.current
     )
       return false;
-    releaseReconciliation();
-    return true;
+    return releaseReconciliation();
   }
   async function reconcile() {
     if (inFlight.current) return false;
+    const retained = pendingRef.current;
+    if (
+      retained &&
+      retained.identity !== identity &&
+      health.data?.mission_journal &&
+      sameJournalIdentity(retained.identity, identity)
+    ) {
+      setReconcileError(
+        'Use Exact retry to resolve the retained receipt before rereading across replay changes. An unaccepted old-replay command cannot create a new report.'
+      );
+      return false;
+    }
     inFlight.current = true;
     setSaving(true);
     setMissingInNewStore(false);
@@ -393,7 +483,7 @@ export function useOperatorJournal(
         );
         return false;
       }
-      releaseReconciliation();
+      if (!releaseReconciliation()) return false;
       session.current = freshIdentity;
       reconciliationTarget.current =
         current && freshIdentity
@@ -422,6 +512,15 @@ export function useOperatorJournal(
     recoverMissing,
     save,
     retry,
+    retryReady:
+      !!pending &&
+      !saving &&
+      !storageError &&
+      !health.isError &&
+      health.data?.ready === true &&
+      ((pending.identity === identity && !blocked && !identityChanged) ||
+        (!!health.data.mission_journal &&
+          sameJournalIdentity(pending.identity, identity))),
     reconcile,
   };
 }

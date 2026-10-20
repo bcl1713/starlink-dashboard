@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner
+
+
+ Test Files  11 passed (11)
+      Tests  70 passed (70)
+   Start at  06:11:15
+   Duration  2.91s (transform 1.41s, setup 0ms, import 4.10s, tests 4.45s, environment 9.81s)
+

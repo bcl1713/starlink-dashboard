@@ -1,0 +1,1367 @@
+{
+  "synthetic": true,
+  "sourceHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "5c7d6f6a-40b3-46cc-bb55-fab90211f0b6",
+    "api_epoch": "cfa8e1ad-0f27-469e-99ec-e8892f130ea0",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-8fb2f58f-9013-4bdb-9e78-d9686e793c62",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "destinationHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "1e387dd3-fe43-4f81-b4af-fc41c91bf852",
+    "api_epoch": "22bda13c-3ffb-4d05-8023-f1d61a376d2a",
+    "source_mode": "simulation",
+    "simulation_run_id": "synthetic-operator-demo-v1",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "sourceOrigin": "http://127.0.0.1:56533",
+  "destinationOrigin": "http://127.0.0.1:56534",
+  "destinationHealthAfter": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "1e387dd3-fe43-4f81-b4af-fc41c91bf852",
+    "api_epoch": "22bda13c-3ffb-4d05-8023-f1d61a376d2a",
+    "source_mode": "simulation",
+    "simulation_run_id": "synthetic-operator-demo-v1",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "emptyBefore": {
+    "H": 0,
+    "records": []
+  },
+  "emptyAfter": {
+    "H": 0,
+    "records": []
+  },
+  "importedMission": {
+    "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+    "name": "Training mission · Fictional Meridian 21",
+    "description": null,
+    "legs": [
+      {
+        "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "name": "First flight · Meridian to Harbor",
+        "description": null,
+        "route_id": "operator-training-leg-1",
+        "transports": {
+          "starshield_enabled": null,
+          "planning_policy": null,
+          "evaluation_context": null,
+          "planning_inputs": null,
+          "initial_x_satellite_id": "X-1",
+          "initial_ka_satellite_ids": [
+            "AOR"
+          ],
+          "x_transitions": [],
+          "ka_outages": [],
+          "aar_windows": [],
+          "manual_aar_tracks": [],
+          "manual_route_splice": null,
+          "ku_overrides": []
+        },
+        "adjusted_departure_time": null,
+        "created_at": "2026-10-19T03:55:55.468456Z",
+        "updated_at": "2026-10-19T03:55:55.468461Z",
+        "is_active": false,
+        "import_provenance": null,
+        "notes": null
+      },
+      {
+        "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+        "name": "Second flight · Harbor to Meridian",
+        "description": null,
+        "route_id": "operator-training-leg-2",
+        "transports": {
+          "starshield_enabled": null,
+          "planning_policy": null,
+          "evaluation_context": null,
+          "planning_inputs": null,
+          "initial_x_satellite_id": "X-1",
+          "initial_ka_satellite_ids": [
+            "AOR"
+          ],
+          "x_transitions": [],
+          "ka_outages": [],
+          "aar_windows": [],
+          "manual_aar_tracks": [],
+          "manual_route_splice": null,
+          "ku_overrides": []
+        },
+        "adjusted_departure_time": null,
+        "created_at": "2026-10-19T03:55:55.468468Z",
+        "updated_at": "2026-10-19T03:55:55.468469Z",
+        "is_active": false,
+        "import_provenance": null,
+        "notes": null
+      }
+    ],
+    "created_at": "2026-10-19T03:55:55.468470Z",
+    "updated_at": "2026-10-19T03:55:55.468471Z",
+    "metadata": {
+      "operator_training_archive_inputs": {
+        "existing_fixture": "tools/acceptance/operator-journal/scenario.py:flight_observations/SyntheticRawReader",
+        "relation_to_replay": "independent archive exercise; not replay measurements or aircraft data",
+        "source_format": "synthetic-operational-format",
+        "synthetic": true
+      },
+      "operator_training_fixture": {
+        "namespace": "operator-training-v1-8fb2f58f-9013-4bdb-9e78-d9686e793c62",
+        "prerequisite_record_ids": [
+          "2cd7eb31-c486-4428-9fbe-71ff31ce58d9",
+          "9990382d-6bd5-4145-8dea-9abf47f9642f",
+          "cca0ecd6-6085-4874-a77e-bda425d13e38",
+          "7670cf2c-7cd7-4341-9476-b7a9d8bb48f4",
+          "b5fdc7a0-8f53-4dbb-aae0-b41815189008",
+          "d80a8602-ebd4-4ac0-9232-37394789e095",
+          "86350966-6bb1-4f31-b7ad-077728c40d21",
+          "7c970c0c-d941-40ab-8fba-5c92fe6f8733"
+        ],
+        "version": 1
+      }
+    }
+  },
+  "nonemptyBefore": {
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "693f1e8a-55e1-4acc-8b32-7b9a39784b97",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "d0fd9d0d-e82d-4374-b60e-cd87df6dfacd",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T04:00:00.810236Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "nonemptyAfter": {
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "693f1e8a-55e1-4acc-8b32-7b9a39784b97",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "d0fd9d0d-e82d-4374-b60e-cd87df6dfacd",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T04:00:00.810236Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "nonemptyHistoryBefore": {
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "693f1e8a-55e1-4acc-8b32-7b9a39784b97",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "d0fd9d0d-e82d-4374-b60e-cd87df6dfacd",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T04:00:00.810236Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "nonemptyHistoryAfter": {
+    "H": 1,
+    "records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Separate destination journal sentinel",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "693f1e8a-55e1-4acc-8b32-7b9a39784b97",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "d0fd9d0d-e82d-4374-b60e-cd87df6dfacd",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-19T04:00:00.810236Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "downloadRead": {
+    "url": "http://127.0.0.1:56533/api/v2/missions/4063022a-14a6-5c70-94b0-1d790a01311b/export-preparations/f1890036125c4c4cb270620646f7bb6c/download",
+    "status": 200,
+    "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+    "briefingStatus": "included",
+    "sha256": "c40d35a1a5bc3ebf83bcd25cb0daba89fa7447f7a81fafbbbf9c0da5d7126988",
+    "size": 1871003
+  },
+  "readyPreparations": [
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "queued",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "queued",
+      "stage_started_at": null,
+      "stage_timings": {
+        "capture": 0.06618642597459257
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": null,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "preparing-slides",
+      "stage_started_at": 1792382367.5534644,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "running"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "assembling",
+      "stage_started_at": 1792382384.9990237,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363,
+        "preparing-slides": 17.44555926322937
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "ready"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "preparing",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "assembling",
+      "stage_started_at": 1792382384.9990237,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363,
+        "preparing-slides": 17.44555926322937
+      },
+      "leg_states": {
+        "257b7da5-6013-5532-bf2b-cc613e75e2e2": "ready",
+        "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "ready"
+      },
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": null,
+      "deadline": 1792382967.458979,
+      "expires_at": null,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": null,
+      "download_url": null
+    },
+    {
+      "id": "f1890036125c4c4cb270620646f7bb6c",
+      "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "state": "ready",
+      "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+      "revision": null,
+      "stage": "ready",
+      "stage_started_at": 1792382384.9990237,
+      "stage_timings": {
+        "capture": 0.06618642597459257,
+        "queue": 0.028300525853410363,
+        "preparing-slides": 17.44555926322937,
+        "assembling": 1.2150399684906006
+      },
+      "leg_states": {},
+      "queued_at": 1792382367.458979,
+      "started_at": 1792382367.5534637,
+      "finished_at": 1792382386.2140636,
+      "deadline": 1792382967.458979,
+      "expires_at": 1792384186.2140636,
+      "error_code": null,
+      "warning_code": null,
+      "briefing_status": "included",
+      "download_url": "/api/v2/missions/4063022a-14a6-5c70-94b0-1d790a01311b/export-preparations/f1890036125c4c4cb270620646f7bb6c/download"
+    }
+  ],
+  "unchangedOriginalZipImportedTwice": true,
+  "actualMissionsControls": true,
+  "networkFailureRetry": true,
+  "preparationCancel": {
+    "id": "faf1f3d547ff4d28a1117b9780610af0",
+    "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+    "state": "cancelled",
+    "fingerprint": "e3684afddf6ae3c6baee7f3eceb085667c414573c095b8a062b8df6a0de45689",
+    "revision": null,
+    "stage": "cancelled",
+    "stage_started_at": 1792382367.109039,
+    "stage_timings": {
+      "capture": 0.06757623003795743,
+      "queue": 0.06235283566638827
+    },
+    "leg_states": {
+      "257b7da5-6013-5532-bf2b-cc613e75e2e2": "running",
+      "4a05e4ce-36b7-5e95-88ac-121236fe2eac": "queued"
+    },
+    "queued_at": 1792382366.9791198,
+    "started_at": 1792382367.1090388,
+    "finished_at": 1792382367.1685307,
+    "deadline": 1792382966.9791198,
+    "expires_at": null,
+    "error_code": null,
+    "warning_code": null,
+    "briefing_status": null,
+    "download_url": null
+  },
+  "guideToolingEvidenceAtThreeSizes": true,
+  "foreignReportAndWrongOriginalRejected": true,
+  "humanPdfReviewAndNetworkFailureObservation": "not claimed",
+  "toolingReports": [
+    "/tmp/issue-376-training-proof-20261019-r31/archive-evidence-empty.json",
+    "/tmp/issue-376-training-proof-20261019-r31/archive-evidence-nonempty.json"
+  ]
+}

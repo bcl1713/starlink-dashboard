@@ -1,6 +1,10 @@
 import { useState } from 'react';
+import type { TransportDraft } from '@/types/operatorTransport';
 import type { OperatorCommand, SavedRecord, Scope } from '@/types/operator';
-import { useOperatorTransportDraft } from '@/hooks/api/useOperatorTransportDraft';
+import {
+  transportDraftKey,
+  useOperatorTransportDraft,
+} from '@/hooks/api/useOperatorTransportDraft';
 import {
   newServiceRow,
   newTransportDraft,
@@ -24,11 +28,51 @@ export function TransportEditor({
   createFromDraft?: boolean;
   onSave: (command: OperatorCommand, draftKey: string) => Promise<boolean>;
 }) {
-  const key = `operator-369-draft:${identity}:${missionId}:${record?.record_id ?? 'new'}`;
+  const key = transportDraftKey(identity, missionId, record?.record_id);
   const { draft, setDraft, clear, storageError } = useOperatorTransportDraft(
     key,
     newTransportDraft(missionId, record)
   );
+  return (
+    <TransportForm
+      draft={draft}
+      onDraftChange={setDraft}
+      onSaved={clear}
+      storageError={storageError}
+      record={record}
+      disabled={disabled}
+      createFromDraft={createFromDraft}
+      onSave={(command) => onSave(command, key)}
+    />
+  );
+}
+export function TransportForm({
+  formId,
+  draft,
+  onDraftChange: setDraft,
+  onSaved,
+  storageError,
+  record,
+  disabled,
+  saveDisabled = false,
+  createFromDraft = false,
+  onSave,
+  contextual = false,
+  records,
+}: {
+  formId?: string;
+  draft: TransportDraft;
+  onDraftChange: (draft: TransportDraft) => void;
+  onSaved?: () => void;
+  storageError?: string | null;
+  record?: SavedRecord;
+  disabled: boolean;
+  saveDisabled?: boolean;
+  createFromDraft?: boolean;
+  onSave: (command: OperatorCommand) => Promise<boolean>;
+  contextual?: boolean;
+  records?: readonly SavedRecord[];
+}) {
   const [error, setError] = useState<string>();
   const input = draft.input;
   const rows = input.payload.services;
@@ -40,19 +84,20 @@ export function TransportEditor({
   }
   return (
     <form
+      id={formId}
       aria-label="Transport decision editor"
       className="min-w-0 space-y-3"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (disabled || saveDisabled) return;
         setError(undefined);
         try {
           if (
             await onSave(
-              toTransportCommand(draft, createFromDraft ? undefined : record),
-              key
+              toTransportCommand(draft, createFromDraft ? undefined : record)
             )
           )
-            clear();
+            onSaved?.();
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Unable to save decision.');
         }
@@ -172,7 +217,7 @@ export function TransportEditor({
                 }
               />
             </label>
-            <label>
+            <label hidden={contextual}>
               Decision scope
               <select
                 className={issueField}
@@ -202,7 +247,7 @@ export function TransportEditor({
               </select>
             </label>
             {input.scope === 'leg' && (
-              <label>
+              <label hidden={contextual}>
                 Decision leg ID
                 <input
                   className={issueField}
@@ -241,24 +286,74 @@ export function TransportEditor({
                 </label>
               )
             )}
-            <label>
-              Related call ID
-              <input
-                className={issueField}
-                value={input.payload.call_id ?? ''}
-                onChange={(e) => field({ call_id: e.target.value || null })}
-              />
-            </label>
-            <label>
-              Related conference ID
-              <input
-                className={issueField}
-                value={input.payload.conference_id ?? ''}
-                onChange={(e) =>
-                  field({ conference_id: e.target.value || null })
-                }
-              />
-            </label>
+            {records !== undefined ? (
+              <>
+                <p className="text-sm">
+                  Choices cover loaded records only. Saved associations remain
+                  retained when their targets are not loaded.
+                </p>
+                {(['call', 'conference'] as const).map((type) => {
+                  const key = type === 'call' ? 'call_id' : 'conference_id';
+                  const choices = records.filter(
+                    (item) =>
+                      item.mission_id === input.mission_id &&
+                      item.record_type === type &&
+                      !item.deleted
+                  );
+                  const value = input.payload[key] ?? '';
+                  return (
+                    <label key={type}>
+                      Related {type}
+                      <select
+                        className={issueField}
+                        value={value}
+                        onChange={(event) =>
+                          field({ [key]: event.target.value || null })
+                        }
+                      >
+                        <option value="">None / unknown</option>
+                        {value &&
+                          !choices.some((item) => item.record_id === value) && (
+                            <option value={value}>
+                              Saved {type} (not loaded)
+                            </option>
+                          )}
+                        {choices.map((item) => (
+                          <option key={item.record_id} value={item.record_id}>
+                            {item.payload.title ||
+                              (item.payload.entry_type === 'call'
+                                ? item.payload.party
+                                : '') ||
+                              `Untitled ${type}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                <label>
+                  Related call ID
+                  <input
+                    className={issueField}
+                    value={input.payload.call_id ?? ''}
+                    onChange={(e) => field({ call_id: e.target.value || null })}
+                  />
+                </label>
+                <label>
+                  Related conference ID
+                  <input
+                    className={issueField}
+                    value={input.payload.conference_id ?? ''}
+                    onChange={(e) =>
+                      field({ conference_id: e.target.value || null })
+                    }
+                  />
+                </label>
+              </>
+            )}
             <p className="text-sm">
               Clear relationships explicitly before moving to another mission or
               removing a linked target. Historical references remain.
@@ -268,6 +363,8 @@ export function TransportEditor({
         <button
           className={`${issueButton} bg-primary text-primary-foreground`}
           type="submit"
+          hidden={!!formId}
+          disabled={saveDisabled}
         >
           Save transport decision
         </button>

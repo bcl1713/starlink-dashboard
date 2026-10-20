@@ -1,0 +1,276 @@
+[
+  {
+    "synthetic": true,
+    "seed": "normal",
+    "namespace": "synthetic-operator-workspace-v1/normal",
+    "started_at": "2026-10-17T16:00:00+00:00",
+    "mission": {
+      "id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+      "name": "Synthetic workspace normal",
+      "legs": [
+        {
+          "id": "705349bd-7687-5ee5-83c2-b037187bd02d",
+          "name": "Synthetic leg 1",
+          "route_id": "synthetic-route",
+          "transports": {
+            "initial_x_satellite_id": "X-1"
+          }
+        },
+        {
+          "id": "5c9a462d-6117-597f-9356-612f3f427f92",
+          "name": "Synthetic leg 2",
+          "route_id": "synthetic-route",
+          "transports": {
+            "initial_x_satellite_id": "X-1"
+          }
+        }
+      ]
+    },
+    "planned_commands": [
+      {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+        "leg_id": "705349bd-7687-5ee5-83c2-b037187bd02d",
+        "scope": "leg",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T16:20:00+00:00",
+          "planned_end_at": "2026-10-17T16:35:00+00:00"
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "call",
+          "title": "Synthetic customer 1 briefing",
+          "party": "Synthetic customer 1",
+          "note": "Fictional planned prerequisite; no connection reported.",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "status": "scheduled",
+          "conference_id": null,
+          "coordinator": "Synthetic coordinator",
+          "communications_kind": "voice",
+          "prep_lead_minutes": 10
+        }
+      }
+    ],
+    "raw_samples": [
+      {
+        "offset_seconds": 0,
+        "latitude": 0,
+        "longitude": -10,
+        "speed_knots": 600
+      },
+      {
+        "offset_seconds": 600,
+        "latitude": 0,
+        "longitude": 0,
+        "speed_knots": 600
+      },
+      {
+        "offset_seconds": 2400,
+        "latitude": 0,
+        "longitude": 10,
+        "speed_knots": 600
+      }
+    ]
+  },
+  {
+    "synthetic": true,
+    "seed": "busy",
+    "namespace": "synthetic-operator-workspace-v1/busy",
+    "started_at": "2026-10-17T16:00:00+00:00",
+    "mission": {
+      "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+      "name": "Synthetic workspace busy",
+      "legs": [
+        {
+          "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "name": "Synthetic leg 1",
+          "route_id": "synthetic-route",
+          "transports": {
+            "initial_x_satellite_id": "X-1"
+          }
+        },
+        {
+          "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "name": "Synthetic leg 2",
+          "route_id": "synthetic-route",
+          "transports": {
+            "initial_x_satellite_id": "X-1"
+          }
+        }
+      ]
+    },
+    "planned_commands": [
+      {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "scope": "leg",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T16:20:00+00:00",
+          "planned_end_at": "2026-10-17T16:35:00+00:00"
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "call",
+          "title": "Synthetic customer 1 briefing",
+          "party": "Synthetic customer 1",
+          "note": "Fictional planned prerequisite; no connection reported.",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "status": "scheduled",
+          "conference_id": null,
+          "coordinator": "Synthetic coordinator",
+          "communications_kind": "voice",
+          "prep_lead_minutes": 10
+        }
+      },
+      {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "scope": "leg",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T16:23:00+00:00",
+          "planned_end_at": "2026-10-17T16:38:00+00:00"
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "call",
+          "title": "Synthetic customer 2 briefing",
+          "party": "Synthetic customer 2",
+          "note": "Fictional planned prerequisite; no connection reported.",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "status": "scheduled",
+          "conference_id": null,
+          "coordinator": "Synthetic coordinator",
+          "communications_kind": "voice",
+          "prep_lead_minutes": 10
+        }
+      },
+      {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "scope": "leg",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T16:26:00+00:00",
+          "planned_end_at": "2026-10-17T16:41:00+00:00"
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "call",
+          "title": "Synthetic customer 3 briefing",
+          "party": "Synthetic customer 3",
+          "note": "Fictional planned prerequisite; no connection reported.",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "status": "scheduled",
+          "conference_id": null,
+          "coordinator": "Synthetic coordinator",
+          "communications_kind": "voice",
+          "prep_lead_minutes": 10
+        }
+      },
+      {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "scope": "leg",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T16:29:00+00:00",
+          "planned_end_at": "2026-10-17T16:44:00+00:00"
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "call",
+          "title": "Synthetic customer 4 briefing",
+          "party": "Synthetic customer 4",
+          "note": "Fictional planned prerequisite; no connection reported.",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "status": "scheduled",
+          "conference_id": null,
+          "coordinator": "Synthetic coordinator",
+          "communications_kind": "voice",
+          "prep_lead_minutes": 10
+        }
+      },
+      {
+        "schema_version": 1,
+        "record_type": "call",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+        "scope": "leg",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": "2026-10-17T16:32:00+00:00",
+          "planned_end_at": "2026-10-17T16:47:00+00:00"
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "call",
+          "title": "Synthetic customer 5 briefing",
+          "party": "Synthetic customer 5",
+          "note": "Fictional planned prerequisite; no connection reported.",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "status": "scheduled",
+          "conference_id": null,
+          "coordinator": "Synthetic coordinator",
+          "communications_kind": "voice",
+          "prep_lead_minutes": 10
+        }
+      }
+    ],
+    "raw_samples": [
+      {
+        "offset_seconds": 0,
+        "latitude": 0,
+        "longitude": -10,
+        "speed_knots": 600
+      },
+      {
+        "offset_seconds": 600,
+        "latitude": 0,
+        "longitude": 0,
+        "speed_knots": 600
+      },
+      {
+        "offset_seconds": 2400,
+        "latitude": 0,
+        "longitude": 10,
+        "speed_knots": 600
+      }
+    ]
+  }
+]

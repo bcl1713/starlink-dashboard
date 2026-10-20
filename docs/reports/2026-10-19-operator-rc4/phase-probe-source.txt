@@ -1,0 +1,44 @@
+import { chromium, expect } from '/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/@playwright/test/index.mjs';
+import {readFileSync,writeFileSync} from 'node:fs';
+const report='/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/docs/reports/2026-10-19-operator-rc4';
+const origin='http://127.0.0.1:5179';
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'en-GB'});
+const result={scope:'Reused RC3 native fixture and existing routers/stores; no provider instances, no training changes.',steps:[],errors:[]};
+const page=await context.newPage();page.on('pageerror',e=>result.errors.push(e.message));
+const step=(s)=>{console.log(s);result.steps.push(s)};
+const card=(name)=>page.getByRole('heading',{name,exact:true}).locator('..');
+const records=async()=>{const r=await page.request.get(origin+'/api/v2/operator/records?mission_id=rc3-mission');expect(r.ok()).toBe(true);return (await r.json()).items.map(i=>i.record)};
+try {
+ await page.goto(origin+'/operator?workspace=1&mission_id=rc3-mission&view=communications');
+ const bridge=page.getByRole('article',{name:'Conference Saved mission bridge',exact:true});
+ await expect(bridge).toBeVisible();
+ const saved=(await records()).find(r=>r.record_type==='conference');
+ for(const id of ['outbound','return']) { const path=`/tmp/rc4-preview-383/missions/rc3-mission/legs/${id}.json`;const leg=JSON.parse(readFileSync(path,'utf8'));leg.is_active=id==='return';writeFileSync(path,JSON.stringify(leg)); }
+ await page.reload();await expect(bridge.getByRole('button',{name:'Close previous session',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Use this session for another customer',exact:true})).toHaveCount(0);
+ await page.screenshot({path:report+'/previous-session.png'});
+ await bridge.getByRole('button',{name:'Close previous session',exact:true}).click();
+ await expect(bridge.getByRole('button',{name:'Reestablish · Return · 14:00–16:00 UTC',exact:true})).toBeEnabled();
+ await bridge.getByRole('button',{name:'Reestablish · Return · 14:00–16:00 UTC',exact:true}).click();
+ await expect(bridge.getByRole('button',{name:'Verify',exact:true})).toBeEnabled();
+ const reestablished=(await records()).find(r=>r.record_id===saved.record_id);
+ expect(reestablished.leg_id).toBe('return');expect(reestablished.payload.verified_at).toBeNull();expect(reestablished.payload.coordinator).toBe('Saved coordinator');
+ await bridge.getByRole('button',{name:'Verify',exact:true}).click();await expect(bridge).toContainText('Bridge verification reported for this session');
+ const historyResponse=await page.request.get(origin+`/api/v2/operator/records/${saved.record_id}/history`);expect(historyResponse.ok()).toBe(true);const history=await historyResponse.json();
+ expect(history.items.find(item=>item.record.version===saved.version).record).toEqual(saved);
+ result.historyVersions=history.items.map(item=>({version:item.record.version,leg:item.record.leg_id,status:item.record.payload.status}));
+ const remaining=await records();expect(remaining.filter(r=>r.record_type==='conference')).toHaveLength(1);expect(remaining.filter(r=>r.record_type==='participation').every(r=>r.payload.state==='left')).toBe(true);
+ await bridge.scrollIntoViewIfNeeded();await page.screenshot({path:report+'/reestablished.png'});
+ step('Previous-leg session is not offered for reuse; explicit close/reestablish uses the same ID/configuration on Return and resets verification; customer records stay unchanged.');
+ const overview=await context.newPage();await overview.goto(origin+'/overview');await page.bringToFront();
+ await page.getByRole('button',{name:'Display tools',exact:true}).click();
+ const tools=page.getByRole('dialog',{name:'Display tools',exact:true});
+ await expect(tools.getByRole('button',{name:'Follow aircraft',exact:true})).toBeEnabled({timeout:15000});
+ await tools.getByRole('button',{name:'Follow aircraft',exact:true}).click();await expect(tools.getByText(/Follow aircraft is unavailable on this display/)).toBeVisible();
+ await tools.getByRole('button',{name:'Recenter view',exact:true}).click();await expect(tools.getByText(/Recenter accepted/)).toBeVisible();
+ await page.screenshot({path:report+'/display-controls.png'});
+ await tools.getByRole('button',{name:'Weather and ADS-B',exact:true}).click();await expect(tools.getByRole('switch',{name:'Precipitation radar',exact:true})).toBeInViewport();
+ step('Actual Overview supports selected-window camera commands: Follow reports unavailable without aircraft data; Recenter acknowledges. Group navigation reaches existing weather/ADS-B controls.');
+} catch(e){console.log(e.stack);result.failure=e.stack;writeFileSync('/tmp/rc4-preview-383/failure.txt',await page.locator('body').innerText());await page.screenshot({path:'/tmp/rc4-preview-383/failure.png'});process.exitCode=1;}
+finally{writeFileSync(report+'/phase-camera-check.json',JSON.stringify(result,null,2));await context.close();await browser.close();}

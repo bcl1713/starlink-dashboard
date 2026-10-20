@@ -175,7 +175,7 @@ describe('arrival derivation', () => {
       now
     );
     expect(view.sections.at(-1)?.unavailable).toBe(
-      'Arrival eligibility unavailable'
+      'Route position unavailable — ETA unavailable'
     );
   });
   it('reports absent or ambiguous destinations and missing route context', () => {
@@ -248,4 +248,22 @@ it('shows taxi out and arrival ground phases independently of legacy phase', () 
     expect(state.sections[0].label).toBe(label);
     expect(state.sections[0].timing).toBeNull();
   }
+});
+
+it('explains missing destination route projection without claiming it was passed', () => {
+  const view = deriveArrivalPanel(
+    response({
+      pois: [
+        poi('landing', 100, {
+          kind: 'arrival',
+          upcoming: false,
+          projected_route_progress: null,
+        }),
+      ],
+    }),
+    now
+  );
+  expect(view.sections.at(-1)?.unavailable).toBe(
+    'Destination route position unavailable'
+  );
 });

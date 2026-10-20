@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:2478992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/e2e/operator-training-decisions.spec.ts:10:1 › guided T06/T07 preserve transport checks and independent issue/capability history at three sizes (26.2s)
+
+  1 passed (27.4s)

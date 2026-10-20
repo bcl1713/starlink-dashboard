@@ -1,0 +1,95 @@
+{
+  "synthetic": true,
+  "measurements": [
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "journey": "Open scheduled call editor",
+      "activations": 1,
+      "typingOperations": 0,
+      "selectorOperations": 0,
+      "elapsedMs": 46.96652299999994,
+      "misSelections": 0,
+      "recoveryActions": 0,
+      "measurement": "scripted browser interaction; not human usability timing"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "journey": "Open scheduled call editor",
+      "activations": 1,
+      "typingOperations": 0,
+      "selectorOperations": 0,
+      "elapsedMs": 46.247163,
+      "misSelections": 0,
+      "recoveryActions": 0,
+      "measurement": "scripted browser interaction; not human usability timing"
+    },
+    {
+      "scenario": "normal",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "journey": "Open scheduled call editor",
+      "activations": 1,
+      "typingOperations": 0,
+      "selectorOperations": 0,
+      "elapsedMs": 46.79113499999994,
+      "misSelections": 0,
+      "recoveryActions": 0,
+      "measurement": "scripted browser interaction; not human usability timing"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "journey": "Open scheduled call editor",
+      "activations": 1,
+      "typingOperations": 0,
+      "selectorOperations": 0,
+      "elapsedMs": 41.28153599999996,
+      "misSelections": 0,
+      "recoveryActions": 0,
+      "measurement": "scripted browser interaction; not human usability timing"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "journey": "Open scheduled call editor",
+      "activations": 1,
+      "typingOperations": 0,
+      "selectorOperations": 0,
+      "elapsedMs": 40.53605399999924,
+      "misSelections": 0,
+      "recoveryActions": 0,
+      "measurement": "scripted browser interaction; not human usability timing"
+    },
+    {
+      "scenario": "busy",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "journey": "Open scheduled call editor",
+      "activations": 1,
+      "typingOperations": 0,
+      "selectorOperations": 0,
+      "elapsedMs": 47.82313299999987,
+      "misSelections": 0,
+      "recoveryActions": 0,
+      "measurement": "scripted browser interaction; not human usability timing"
+    }
+  ]
+}

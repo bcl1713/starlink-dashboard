@@ -128,7 +128,9 @@ export function SimulateLegDialog({
         <DialogTitle>Simulate leg</DialogTitle>
         <DialogDescription>
           Preview the planned flight, then start it on a shared simulated clock.
-          Speeds remain the planned flight speeds.
+          Speeds remain the planned flight speeds. For routine Operator work
+          with real elapsed time and normal simulation telemetry, use Activate
+          instead. Paced replay does not model network performance.
         </DialogDescription>
         {!enabled && (
           <p role="status">

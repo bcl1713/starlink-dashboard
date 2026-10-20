@@ -1,0 +1,12 @@
+{
+  "remainingOwnedProcessGroups": [],
+  "remainingAPITestProcesses": [],
+  "remainingListeners": [],
+  "runnerStopped": true,
+  "providerInstances": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "browserContexts": "closed in finally",
+  "temporaryFilesRemoved": true
+}

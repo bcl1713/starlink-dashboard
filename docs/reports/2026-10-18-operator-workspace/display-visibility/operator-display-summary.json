@@ -1,0 +1,14 @@
+{
+  "candidateSha": "cbcf23ba191762d05986250b930543bff9f61488",
+  "scope": "Issue376 display visibility only; synthetic upstream sources; real GRIB decoder, worker, APIs and rendering; software SwiftShader",
+  "checksPassed": true,
+  "relayRemaining": false,
+  "cleanup": {
+    "containers": [],
+    "networks": [],
+    "volumes": [],
+    "processes": [],
+    "ports_free": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,37 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.16, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/backend/starlink-location
+configfile: pytest.ini
+plugins: platformdirs-4.13.4, anyio-4.15.1, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 183 items
+
+backend/starlink-location/tests/operator/test_call_api.py .............. [  7%]
+.................                                                        [ 16%]
+backend/starlink-location/tests/operator/test_conference_api.py ...      [ 18%]
+backend/starlink-location/tests/operator/test_conference_actions.py .... [ 20%]
+.                                                                        [ 21%]
+backend/starlink-location/tests/operator/test_issue_api.py ............. [ 28%]
+....                                                                     [ 30%]
+backend/starlink-location/tests/operator/test_issue_activity.py ...      [ 32%]
+backend/starlink-location/tests/operator/test_capability_api.py ........ [ 36%]
+                                                                         [ 36%]
+backend/starlink-location/tests/operator/test_transport_api.py .         [ 37%]
+backend/starlink-location/tests/operator/test_transport_contract.py .... [ 39%]
+..........                                                               [ 44%]
+backend/starlink-location/tests/operator/test_references.py ....         [ 46%]
+backend/starlink-location/tests/operator/test_queries.py ............... [ 55%]
+.........                                                                [ 60%]
+backend/starlink-location/tests/operator/test_read_metadata.py ......... [ 65%]
+.                                                                        [ 65%]
+backend/starlink-location/tests/operator/test_models.py ............     [ 72%]
+backend/starlink-location/tests/operator/test_event_projection.py ...... [ 75%]
+................                                                         [ 84%]
+backend/starlink-location/tests/operator/test_production_event_sources.py . [ 84%]
+................                                                         [ 93%]
+backend/starlink-location/tests/operator/test_event_ack.py .....         [ 96%]
+backend/starlink-location/tests/operator/test_event_ack_races.py ...     [ 97%]
+backend/starlink-location/tests/operator/test_mode_isolation.py ..       [ 98%]
+backend/starlink-location/tests/operator/test_author_labels.py ..        [100%]
+
+============================= 183 passed in 16.32s =============================
