@@ -67,12 +67,16 @@ const memory = (data) => ({
   memory_bytes: data.memory_stats.usage,
   anonymous_bytes:
     data.memory_stats.stats?.anon ?? data.memory_stats.stats?.rss ?? null,
-  read_bytes: (data.blkio_stats.io_service_bytes_recursive || [])
-    .filter((r) => r.op.toLowerCase() === "read")
-    .reduce((sum, r) => sum + r.value, 0),
-  written_bytes: (data.blkio_stats.io_service_bytes_recursive || [])
-    .filter((r) => r.op.toLowerCase() === "write")
-    .reduce((sum, r) => sum + r.value, 0),
+  read_bytes: data.blkio_stats.io_service_bytes_recursive?.length
+    ? data.blkio_stats.io_service_bytes_recursive
+        .filter((r) => r.op.toLowerCase() === "read")
+        .reduce((sum, r) => sum + r.value, 0)
+    : null,
+  written_bytes: data.blkio_stats.io_service_bytes_recursive?.length
+    ? data.blkio_stats.io_service_bytes_recursive
+        .filter((r) => r.op.toLowerCase() === "write")
+        .reduce((sum, r) => sum + r.value, 0)
+    : null,
 });
 const diskProbe = `
 import json,os,urllib.request
@@ -102,6 +106,8 @@ const contexts = [],
   latencies = {},
   failures = [],
   requests = new WeakMap();
+const cpuByPid = new Map(),
+  subscriptions = [];
 const started = performance.now();
 const seconds = () => (performance.now() - started) / 1000;
 let measuring = false,
@@ -109,6 +115,7 @@ let measuring = false,
   maxInflight = 0;
 const handler = () => {
   stopped = true;
+  void browser?.close();
 };
 process.on("SIGTERM", handler);
 process.on("SIGINT", handler);
@@ -188,8 +195,28 @@ try {
       });
       const page = await context.newPage();
       pages.push(page);
+      const subscription = {
+        page: i,
+        overview: i < options.viewers,
+        starts: 0,
+        first: null,
+        last: null,
+        max_gap_seconds: 0,
+      };
+      subscriptions.push(subscription);
       page.on("request", (req) => {
         if (measuring && new URL(req.url()).pathname.startsWith("/api/")) {
+          if (new URL(req.url()).pathname === "/api/overview-history") {
+            const now = seconds();
+            subscription.starts++;
+            subscription.first ??= now;
+            if (subscription.last !== null)
+              subscription.max_gap_seconds = Math.max(
+                subscription.max_gap_seconds,
+                now - subscription.last,
+              );
+            subscription.last = now;
+          }
           requests.set(req, performance.now());
           inflight++;
           maxInflight = Math.max(maxInflight, inflight);
@@ -282,13 +309,19 @@ try {
     if (browser) {
       const processes = (await rootSession.send("SystemInfo.getProcessInfo"))
         .processInfo;
-      row.browser.cpu_seconds = processes.reduce((s, p) => s + p.cpuTime, 0);
+      for (const p of processes)
+        cpuByPid.set(p.id, Math.max(cpuByPid.get(p.id) || 0, p.cpuTime));
+      row.browser.cpu_seconds = [...cpuByPid.values()].reduce(
+        (s, v) => s + v,
+        0,
+      );
       const memoryRows = processes.map((p) => {
         try {
           const text = readFileSync(`/proc/${p.id}/smaps_rollup`, "utf8");
           return {
             pid: p.id,
             type: p.type,
+            cpu_seconds: p.cpuTime,
             rss: Number(text.match(/^Rss:\s+(\d+)/m)[1]) * 1024,
             pss: Number(text.match(/^Pss:\s+(\d+)/m)[1]) * 1024,
           };
@@ -399,6 +432,7 @@ try {
       delete latencies[path];
     }
     row.instrumentation = { sample_wall_ms: performance.now() - sampleStart };
+    row.subscriptions = subscriptions.map((s) => ({ ...s }));
     append("samples.jsonl", row);
     if (
       options.operations &&
@@ -457,6 +491,30 @@ try {
     if (seconds() > nextSample + 5) nextSample = seconds() + 5;
   }
   if (stopped) throw new Error("Measurement interrupted");
+  out("polling.json", subscriptions);
+  const final = await api("/api/overview-history");
+  out("final-history.json", {
+    end: final.end_timestamp_seconds,
+    step: final.step_seconds,
+    series: Object.fromEntries(
+      Object.entries(final.series).map(([k, v]) => [
+        k,
+        {
+          points: v.length,
+          qualified: v.filter((p) => p[1] !== null).length,
+          last: v.at(-1),
+        },
+      ]),
+    ),
+  });
+  if (
+    subscriptions.some(
+      (s) =>
+        s.overview &&
+        (s.starts < options.duration * 0.7 || s.max_gap_seconds > 5),
+    )
+  )
+    throw new Error("Overview polling coverage failed; inspect polling.json");
   for (let i = 0; i < pages.length; i++)
     await pages[i].screenshot({
       path: resolve(options.output, `page-${i}.png`),

@@ -3,6 +3,7 @@
 import argparse
 import json
 import math
+from itertools import pairwise
 from pathlib import Path
 
 
@@ -43,7 +44,7 @@ def summarize(metadata, rows):
     for name, points in resources.items():
         times, values = zip(*points)
         if name.endswith("cpu_seconds") and any(
-            b < a for a, b in zip(values, values[1:])
+            b < a for a, b in pairwise(values)
         ):
             raise ValueError(f"CPU counter reset: {name}; split the run")
         span = times[-1] - times[0]
