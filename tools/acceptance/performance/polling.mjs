@@ -3,6 +3,10 @@ export function validateHistory(history, window) {
   const step = history.step_seconds;
   if (history.window_seconds !== window || !Number.isInteger(step) || step < 1)
     throw new Error("History window/resolution is invalid");
+  const start = history.start_timestamp_seconds;
+  const end = history.end_timestamp_seconds;
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end - start !== window)
+    throw new Error("History bounds are invalid");
   const series = Object.values(history.series);
   const points = Math.floor(window / step) + 1;
   if (
@@ -11,7 +15,9 @@ export function validateHistory(history, window) {
       (values) =>
         values.length !== points ||
         values.some(
-          (point) => !Number.isFinite(point[0]) || !Number.isFinite(point[1]),
+          (point, index) =>
+            point[0] !== start + index * step ||
+            !Number.isFinite(point[1]),
         ),
     )
   )

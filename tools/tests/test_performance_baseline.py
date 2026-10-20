@@ -106,10 +106,6 @@ class BaselineReportTests(unittest.TestCase):
             compare(baseline, candidate)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class BrowserCleanupTests(unittest.TestCase):
     def test_history_validation_records_adaptive_grid_and_rejects_gaps(self):
         module = (
@@ -123,9 +119,14 @@ class BrowserCleanupTests(unittest.TestCase):
                 f"""
 import {{validateHistory}} from {json.dumps(module)};
 const series=Object.fromEntries(Array.from({{length:11}},(_,i)=>['metric'+i,Array.from({{length:1801}},(_,n)=>[n*2,1])]));
-const values=[validateHistory({{window_seconds:3600,step_seconds:2,series}},3600)];
+const history={{window_seconds:3600,step_seconds:2,start_timestamp_seconds:0,end_timestamp_seconds:3600,series}};
+const values=[validateHistory(history,3600)];
 series.metric0[20][1]=null;
-try {{validateHistory({{window_seconds:3600,step_seconds:2,series}},3600);values.push('accepted');}}
+try {{validateHistory(history,3600);values.push('accepted');}}
+catch {{values.push('rejected');}}
+series.metric0[20][1]=1;
+series.metric0[20][0]=series.metric0[19][0];
+try {{validateHistory(history,3600);values.push('accepted');}}
 catch {{values.push('rejected');}}
 console.log(JSON.stringify(values));
 """,
@@ -135,7 +136,7 @@ console.log(JSON.stringify(values));
             text=True,
             timeout=10,
         )
-        self.assertEqual(json.loads(result.stdout), [2, "rejected"])
+        self.assertEqual(json.loads(result.stdout), [2, "rejected", "rejected"])
 
     def test_network_latency_uses_browser_offset_and_rejects_missing_timing(self):
         module = (
@@ -211,3 +212,7 @@ console.log(JSON.stringify([
                 if child.poll() is None:
                     child.terminate()
                 child.wait(timeout=2)
+
+
+if __name__ == "__main__":
+    unittest.main()
