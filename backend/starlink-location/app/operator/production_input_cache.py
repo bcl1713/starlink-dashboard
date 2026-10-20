@@ -45,3 +45,45 @@ def capture_static(adapter, mission_id):
     result = metadata, sources
     adapter._static_capture = key, result
     return result
+
+
+def validation_key(adapter, metadata, sources, config, context, catalog):
+    """Prove the prior full validation still applies without reparsing missions.
+
+    The normal capture always creates detached models. Only read-only validation
+    calls reuse them, and still collect fresh telemetry on every call.
+    """
+    from app.mission import storage
+
+    paths = set(storage.MISSIONS_DIR.glob("*/mission.json"))
+    for path in tuple(paths):
+        paths.update(storage._iter_mission_leg_files(path.parent / "legs"))
+    tokens = []
+    for path in sorted(paths):
+        stat = path.stat()
+        tokens.append(
+            (
+                str(path),
+                stat.st_dev,
+                stat.st_ino,
+                stat.st_size,
+                stat.st_mtime_ns,
+                stat.st_ctime_ns,
+            )
+        )
+    active = adapter.route_manager.get_active_route()
+    return (
+        metadata,
+        sources,
+        tuple(tokens),
+        config.model_dump(mode="json"),
+        context,
+        catalog,
+        adapter.route_manager.get_active_route_id(),
+        canonical_json(active.model_dump(mode="json") if active else None),
+        tuple(
+            (s.name, adapter.route_manager.source_file_revision(s.name[4:]))
+            for s in sources
+            if s.name.startswith("kml/")
+        ),
+    )

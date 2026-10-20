@@ -86,8 +86,18 @@ def project_call_continuity(
     intervals = []
     total = pop = longest = run = 0.0
     ordered = sorted(boundaries)
+    # Both sweeps advance in time. Rescanning every capability for every
+    # boundary makes minute-sampled missions quadratic on each status poll.
+    remaining = iter(sorted(capabilities, key=lambda c: c.start_utc))
+    candidate = next(remaining, None)
     for lower, upper in itertools.pairwise(ordered):
-        span = next((c for c in capabilities if c.start_utc <= lower < c.end_utc), None)
+        while candidate is not None and candidate.end_utc <= lower:
+            candidate = next(remaining, None)
+        span = (
+            candidate
+            if candidate is not None and candidate.start_utc <= lower
+            else None
+        )
         active = tuple(
             t.crossing.id
             for t in windows

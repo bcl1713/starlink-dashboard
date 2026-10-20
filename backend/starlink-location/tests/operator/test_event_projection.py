@@ -308,3 +308,20 @@ def test_finished_model_windows_are_history_only_with_current_evidence(
     assert events
     assert all(e.active is active for e in events)
     assert all(e.state == ("unknown" if active else "inactive") for e in events)
+
+
+@pytest.mark.parametrize("fallback", [None, "Ka", "X"])
+def test_compact_projection_preserves_event_identity_timing_and_protection(
+    service, clock, fallback
+):
+    from app.mission.pop_continuity import attach_call_continuity
+    from app.operator.restriction_windows import compact_event_model
+    from tests.operator.fixtures import pop_inputs
+
+    timeline = pop_inputs(clock, fallback=fallback)["timeline"]
+    attach_call_continuity(timeline)
+    full = timeline.model_dump(mode="json")
+    expected = derive(service, clock, models={"leg-a": full})
+    compact = compact_event_model(full)
+    assert derive(service, clock, models={"leg-a": compact}) == expected
+    assert "samples" not in compact and "segments" not in compact

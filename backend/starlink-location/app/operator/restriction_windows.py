@@ -9,6 +9,9 @@ def _time(value):
 
 def restriction_windows(model):
     """Yield the exact transport/cause windows emitted by the event feed."""
+    if "_restriction_windows" in model:
+        yield from model["_restriction_windows"]
+        return
     spans = []
     for interval in (model.get("call_continuity") or {}).get("intervals", []):
         classification = interval["classification"]
@@ -81,3 +84,26 @@ def restriction_windows(model):
                 merged.append((start, end, severity))
         for index, (start, end, severity) in enumerate(merged):
             yield transport, causes, index, start, end, severity
+
+
+def compact_event_model(model):
+    """Keep boundary events, not the thousands of samples that produced them."""
+    result = {
+        key: model[key]
+        for key in (
+            "_leg_id",
+            "_event_source_ref",
+            "route_geometry_identity",
+            "pop_forecast",
+            "pop_advisories",
+            "call_continuity",
+            "restriction_route",
+            "restriction_boundaries",
+            "unavailable_inputs",
+            "time_basis",
+            "boundary_times",
+        )
+        if key in model
+    }
+    result["_restriction_windows"] = tuple(restriction_windows(model))
+    return result

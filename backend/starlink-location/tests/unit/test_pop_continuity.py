@@ -201,3 +201,45 @@ def test_unknown_all_service_evidence_cannot_claim_ordinary_connectivity(
     )
     result = project_call_continuity(**sole_starshield)
     assert {i.classification for i in result.intervals} == {"unknown"}
+
+
+def test_capability_lookup_work_is_linear_in_boundary_count():
+    from types import SimpleNamespace
+
+    from app.services.pop.continuity import project_call_continuity
+
+    count = 1200
+    reads = []
+
+    class CountedSpan:
+        def __init__(self, start, end):
+            self.span = SimpleNamespace(
+                start_utc=start,
+                end_utc=end,
+                ka="available",
+                x="unavailable",
+                starshield="available",
+                x_concurrency_only=False,
+                existing_call_outage=False,
+                source_ids=(),
+            )
+
+        def __getattr__(self, name):
+            if name in ("start_utc", "end_utc"):
+                reads.append(1)
+            return getattr(self.span, name)
+
+    start = datetime(2026, 10, 25, tzinfo=timezone.utc)
+    spans = [
+        CountedSpan(start + timedelta(minutes=i), start + timedelta(minutes=i + 1))
+        for i in range(count)
+    ]
+    forecast = PopForecast(
+        revision="linear-test", catalog_fingerprint="", status="disabled"
+    )
+    result = project_call_continuity(
+        forecast, spans, start_utc=start, end_utc=start + timedelta(minutes=count)
+    )
+    assert len(result.intervals) == count
+    assert all(interval.classification == "ordinary" for interval in result.intervals)
+    assert len(reads) < 12 * count

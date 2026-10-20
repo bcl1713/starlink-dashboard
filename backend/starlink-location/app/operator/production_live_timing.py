@@ -1,7 +1,6 @@
 """Locate planned restriction boundaries, then reuse the application's live ETA."""
 
 from bisect import bisect_right
-from copy import deepcopy
 from datetime import timedelta
 from math import isfinite
 
@@ -45,7 +44,8 @@ def attach_boundary_geometry(model, artifacts):
 
 def refresh_boundary_times(model, inputs, *, as_of):
     """No delay offsets, new transport model, or planned-time airborne fallback."""
-    model = deepcopy(model)
+    # Only top-level timing fields change; cached evidence remains read-only.
+    model = dict(model)
     phase = inputs.context.get("phase")
     model["time_basis"] = "planned_utc"
     if phase == "pre_departure":

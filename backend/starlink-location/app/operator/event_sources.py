@@ -31,6 +31,16 @@ class EventSourceAdapter:
     def __init__(self, service, *, live_provider=None):
         self.service, self.live_provider = service, live_provider
 
+    def _saved_model(self, leg, mission_id):
+        timeline = storage.load_mission_timeline(leg.id, mission_id)
+        if timeline is None:
+            return None
+        payload = timeline.model_dump(mode="json")
+        payload["route_geometry_identity"] = identity(
+            leg.route_id, route_geometry_fingerprint(timeline.samples or [])
+        )
+        return payload, identity(payload), timeline.created_at
+
     def capture(self, mission_id: str, *, as_of: datetime) -> CapturedEventInputs:
         health = self.service.store.health()
         sources, models = [], {}
@@ -46,20 +56,17 @@ class EventSourceAdapter:
         try:
             mission = storage.load_mission_v2(mission_id)
             for leg in mission.legs if mission else []:
-                timeline = storage.load_mission_timeline(leg.id, mission_id)
-                if timeline:
-                    payload = timeline.model_dump(mode="json")
-                    payload["route_geometry_identity"] = identity(
-                        leg.route_id, route_geometry_fingerprint(timeline.samples or [])
-                    )
+                saved = self._saved_model(leg, mission_id)
+                if saved is not None:
+                    payload, revision, created_at = saved
                     models[leg.id] = payload
                     sources.append(
                         SourceCapture(
                             source="model:" + leg.id,
-                            revision=identity(payload),
-                            generation=identity(payload),
+                            revision=revision,
+                            generation=revision,
                             input_identity=identity(leg.model_dump(mode="json")),
-                            captured_at=timeline.created_at,
+                            captured_at=created_at,
                             reason="Saved plan current-input alignment is unknown",
                         )
                     )
