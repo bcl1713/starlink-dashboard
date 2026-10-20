@@ -577,676 +577,688 @@ export function OperatorWorkspace() {
           </button>
         </div>
       </header>
-      <WorkspaceAwareness
-        snapshot={events.snapshot}
-        next={nextRequirement(events.snapshot)}
-        records={currentLoaded}
-        recordsIncomplete={incomplete}
-        failed={events.failed || health.isError}
-        onOpenRecord={openRecord}
-        onOpenEvents={() => navigateView('Now')}
-        onOpenNext={() => {
-          const next = nextRequirement(events.snapshot);
-          const record = loaded.find(
-            (record) =>
-              record.record_type === 'call' &&
-              next?.dependent_versions[record.record_id] !== undefined
-          );
-          if (record) openRecord(record);
-          else navigateView('Communications');
-        }}
-      />
-      <nav className="ws-navigation" aria-label="Operator workspace">
-        {views.map((name) => (
-          <button
-            className="ws-button"
-            key={name}
-            aria-current={view === name ? 'page' : undefined}
-            onClick={() => navigateView(name)}
-          >
-            {name}
-          </button>
-        ))}
-      </nav>
-      <div className="ws-body">
-        {guide && training && (
-          <GuidedMission
-            identity={training.identity}
-            evidence={trainingEvidence}
-            onDismiss={() => setGuide(false)}
-            onCheckEvidence={async (previous, stage) => {
-              setCheckedTraining(null);
-              let clientObservations = retainClientObservation(
-                training.identity,
-                health.data!.simulation_run_id!,
-                events.snapshot?.H ?? -1,
-                navigator.onLine,
-                workspace.registry.listDrafts(),
-                previous.clientObservations ?? [],
-                Date.now(),
-                checkedTraining?.identity === trainingIdentity
-                  ? checkedTraining.evidenceRecords
-                  : []
-              );
-              if (!navigator.onLine)
-                return {
-                  ...previous,
-                  clientObservations,
-                  unavailableReason:
-                    'Offline: retain the draft and reconnect before checking backend evidence.',
-                };
-              const checked = await readTrainingRecords(
-                training.identity,
-                health.data!.simulation_run_id!,
-                training.prerequisiteIds
-              );
-              const [
-                replay,
-                snapshot,
-                currentMission,
-                displayOutcomes,
-                providers,
-              ] = await Promise.all([
-                simulationRunApi.get(),
-                readEventSnapshot(missionId),
-                mission.refetch(),
-                readTrainingDisplayEvidence(),
-                stage === 'T11'
-                  ? readTrainingProviderEvidence()
-                  : Promise.resolve({ providerStates: [], outcomes: [] }),
-              ]);
-              const currentContext = trainingContext(
-                health.data,
-                currentMission.data,
-                window.location.origin
-              );
-              if (
-                currentMission.isError ||
-                !currentMission.data ||
-                !currentContext ||
-                JSON.stringify(currentContext.identity) !== trainingIdentity ||
-                JSON.stringify(currentContext.prerequisiteIds) !==
-                  JSON.stringify(training.prerequisiteIds)
-              )
-                throw new Error(
-                  'Private mission changed or is unavailable; reopen it before checking evidence.'
+      <div className="ws-content">
+        <WorkspaceAwareness
+          snapshot={events.snapshot}
+          next={nextRequirement(events.snapshot)}
+          records={currentLoaded}
+          recordsIncomplete={incomplete}
+          failed={events.failed || health.isError}
+          onOpenRecord={openRecord}
+          onOpenEvents={() => navigateView('Now')}
+          onOpenNext={() => {
+            const next = nextRequirement(events.snapshot);
+            const record = loaded.find(
+              (record) =>
+                record.record_type === 'call' &&
+                next?.dependent_versions[record.record_id] !== undefined
+            );
+            if (record) openRecord(record);
+            else navigateView('Communications');
+          }}
+        />
+        <nav className="ws-navigation" aria-label="Operator workspace">
+          {views.map((name) => (
+            <button
+              className="ws-button"
+              key={name}
+              aria-current={view === name ? 'page' : undefined}
+              onClick={() => navigateView(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </nav>
+        <div className="ws-body">
+          {guide && training && (
+            <GuidedMission
+              identity={training.identity}
+              evidence={trainingEvidence}
+              onDismiss={() => setGuide(false)}
+              onCheckEvidence={async (previous, stage) => {
+                setCheckedTraining(null);
+                let clientObservations = retainClientObservation(
+                  training.identity,
+                  health.data!.simulation_run_id!,
+                  events.snapshot?.H ?? -1,
+                  navigator.onLine,
+                  workspace.registry.listDrafts(),
+                  previous.clientObservations ?? [],
+                  Date.now(),
+                  checkedTraining?.identity === trainingIdentity
+                    ? checkedTraining.evidenceRecords
+                    : []
                 );
-              const observed = collectEventEvidence({
-                identity: training.identity,
-                namespace: health.data!.simulation_run_id!,
-                snapshot,
-                receivedAt: performance.now(),
-                browserNow: performance.now(),
-                activeLegId: null,
-                activeModelIdentity: null,
-              });
-              if (
-                !checked.available ||
-                !checked.fresh ||
-                !observed.available ||
-                checked.H !== snapshot.H
-              )
-                throw new Error(
-                  'Training evidence changed while checking; check again.'
+                if (!navigator.onLine)
+                  return {
+                    ...previous,
+                    clientObservations,
+                    unavailableReason:
+                      'Offline: retain the draft and reconnect before checking backend evidence.',
+                  };
+                const checked = await readTrainingRecords(
+                  training.identity,
+                  health.data!.simulation_run_id!,
+                  training.prerequisiteIds
                 );
-              const namespace = health.data!.simulation_run_id!;
-              clientObservations = retainClientObservation(
-                training.identity,
-                namespace,
-                checked.H!,
-                true,
-                workspace.registry.listDrafts(),
-                previous.clientObservations ?? [],
-                Date.now(),
-                checked.evidenceRecords
-              );
-              const observations = [...(previous.retryObservations ?? [])];
-              for (const transaction of workspace.tray) {
+                const [
+                  replay,
+                  snapshot,
+                  currentMission,
+                  displayOutcomes,
+                  providers,
+                ] = await Promise.all([
+                  simulationRunApi.get(),
+                  readEventSnapshot(missionId),
+                  mission.refetch(),
+                  readTrainingDisplayEvidence(),
+                  stage === 'T11'
+                    ? readTrainingProviderEvidence()
+                    : Promise.resolve({ providerStates: [], outcomes: [] }),
+                ]);
+                const currentContext = trainingContext(
+                  health.data,
+                  currentMission.data,
+                  window.location.origin
+                );
                 if (
-                  observations.some(
-                    (item) => item.request.key === transaction.commandId
-                  )
+                  currentMission.isError ||
+                  !currentMission.data ||
+                  !currentContext ||
+                  JSON.stringify(currentContext.identity) !==
+                    trainingIdentity ||
+                  JSON.stringify(currentContext.prerequisiteIds) !==
+                    JSON.stringify(training.prerequisiteIds)
                 )
-                  continue;
-                const captured = captureRetryObservation(
+                  throw new Error(
+                    'Private mission changed or is unavailable; reopen it before checking evidence.'
+                  );
+                const observed = collectEventEvidence({
+                  identity: training.identity,
+                  namespace: health.data!.simulation_run_id!,
+                  snapshot,
+                  receivedAt: performance.now(),
+                  browserNow: performance.now(),
+                  activeLegId: null,
+                  activeModelIdentity: null,
+                });
+                if (
+                  !checked.available ||
+                  !checked.fresh ||
+                  !observed.available ||
+                  checked.H !== snapshot.H
+                )
+                  throw new Error(
+                    'Training evidence changed while checking; check again.'
+                  );
+                const namespace = health.data!.simulation_run_id!;
+                clientObservations = retainClientObservation(
                   training.identity,
                   namespace,
-                  transaction,
+                  checked.H!,
+                  true,
+                  workspace.registry.listDrafts(),
+                  previous.clientObservations ?? [],
+                  Date.now(),
+                  checked.evidenceRecords
+                );
+                const observations = [...(previous.retryObservations ?? [])];
+                for (const transaction of workspace.tray) {
+                  if (
+                    observations.some(
+                      (item) => item.request.key === transaction.commandId
+                    )
+                  )
+                    continue;
+                  const captured = captureRetryObservation(
+                    training.identity,
+                    namespace,
+                    transaction,
+                    workspace.attempts,
+                    checked.evidenceRecords
+                  );
+                  if (captured) observations.push(captured);
+                }
+                const retainedObservations = retainRetryReceipts(
+                  training.identity,
+                  namespace,
+                  observations.slice(-20),
+                  workspace.attempts,
+                  workspace.tray,
+                  checked.evidenceRecords
+                );
+                const retryOutcomes = collectRetryEvidence(
+                  training.identity,
+                  namespace,
+                  retainedObservations,
+                  workspace.attempts,
+                  workspace.tray,
+                  checked.evidenceRecords
+                );
+                const replayObservations = retainReplayObservation(
+                  training.identity,
+                  namespace,
+                  currentMission.data.legs,
+                  snapshot,
+                  replay,
+                  previous.replayObservations ?? []
+                );
+                const currentReplayOutcomes = collectReplayEvidence(
+                  snapshot,
+                  replay,
+                  currentMission.data.legs
+                );
+                const historicalReplayOutcomes =
+                  collectHistoricalReplayEvidence(
+                    training.identity,
+                    namespace,
+                    currentMission.data.legs,
+                    snapshot.as_of,
+                    snapshot.H,
+                    replayObservations
+                  );
+                const journalObservations = retainJournalObservation(
+                  training.identity,
+                  namespace,
+                  snapshot,
+                  replay,
+                  checked.evidenceRecords,
+                  previous.journalObservations ?? []
+                );
+                const journalOutcomes = collectJournalContinuityEvidence(
+                  training.identity,
+                  namespace,
+                  currentMission.data.legs,
+                  snapshot.as_of,
+                  snapshot.H,
+                  checked.evidenceRecords,
+                  training.prerequisiteIds,
+                  journalObservations
+                );
+                const conflictObservations = retainConflictObservations(
+                  training.identity,
+                  namespace,
+                  previous.conflictObservations ?? [],
+                  workspace.tray,
                   workspace.attempts,
                   checked.evidenceRecords
                 );
-                if (captured) observations.push(captured);
-              }
-              const retainedObservations = retainRetryReceipts(
-                training.identity,
-                namespace,
-                observations.slice(-20),
-                workspace.attempts,
-                workspace.tray,
-                checked.evidenceRecords
-              );
-              const retryOutcomes = collectRetryEvidence(
-                training.identity,
-                namespace,
-                retainedObservations,
-                workspace.attempts,
-                workspace.tray,
-                checked.evidenceRecords
-              );
-              const replayObservations = retainReplayObservation(
-                training.identity,
-                namespace,
-                currentMission.data.legs,
-                snapshot,
-                replay,
-                previous.replayObservations ?? []
-              );
-              const currentReplayOutcomes = collectReplayEvidence(
-                snapshot,
-                replay,
-                currentMission.data.legs
-              );
-              const historicalReplayOutcomes = collectHistoricalReplayEvidence(
-                training.identity,
-                namespace,
-                currentMission.data.legs,
-                snapshot.as_of,
-                snapshot.H,
-                replayObservations
-              );
-              const journalObservations = retainJournalObservation(
-                training.identity,
-                namespace,
-                snapshot,
-                replay,
-                checked.evidenceRecords,
-                previous.journalObservations ?? []
-              );
-              const journalOutcomes = collectJournalContinuityEvidence(
-                training.identity,
-                namespace,
-                currentMission.data.legs,
-                snapshot.as_of,
-                snapshot.H,
-                checked.evidenceRecords,
-                training.prerequisiteIds,
-                journalObservations
-              );
-              const conflictObservations = retainConflictObservations(
-                training.identity,
-                namespace,
-                previous.conflictObservations ?? [],
-                workspace.tray,
-                workspace.attempts,
-                checked.evidenceRecords
-              );
-              const conflictOutcomes = collectConflictEvidence(
-                training.identity,
-                namespace,
-                checked.H,
-                checked.evidenceRecords,
-                conflictObservations
-              );
-              const recoveryObservation = retainRecoveryObservation(
-                training.identity,
-                namespace,
-                previous.recoveryObservation,
-                workspace.tray
-              );
-              const recoveryOutcomes = collectRecoveryEvidence(
-                training.identity,
-                namespace,
-                checked.H,
-                checked.evidenceRecords,
-                recoveryObservation
-              );
-              const clientOutcomes = collectClientEvidence(
-                training.identity,
-                namespace,
-                checked.H,
-                checked.evidenceRecords,
-                clientObservations
-              );
-              const archiveOutcomes = collectArchiveEvidence(
-                training.identity,
-                namespace,
-                checked.H,
-                checked.evidenceRecords,
-                previous.archiveObservations
-              );
-              setCheckedTraining({
-                ...checked,
-                providerStates: providers.providerStates,
-                toolingOutcomes: [...archiveOutcomes, ...recoveryOutcomes],
-                historicalOutcomes: [
-                  ...conflictOutcomes,
-                  ...clientOutcomes,
-                  ...journalOutcomes,
-                  ...historicalReplayOutcomes.filter(
-                    (outcome) => !currentReplayOutcomes.includes(outcome)
-                  ),
-                ],
-                outcomes: [
-                  ...new Set([
-                    ...checked.outcomes,
-                    ...displayOutcomes,
-                    ...providers.outcomes,
+                const conflictOutcomes = collectConflictEvidence(
+                  training.identity,
+                  namespace,
+                  checked.H,
+                  checked.evidenceRecords,
+                  conflictObservations
+                );
+                const recoveryObservation = retainRecoveryObservation(
+                  training.identity,
+                  namespace,
+                  previous.recoveryObservation,
+                  workspace.tray
+                );
+                const recoveryOutcomes = collectRecoveryEvidence(
+                  training.identity,
+                  namespace,
+                  checked.H,
+                  checked.evidenceRecords,
+                  recoveryObservation
+                );
+                const clientOutcomes = collectClientEvidence(
+                  training.identity,
+                  namespace,
+                  checked.H,
+                  checked.evidenceRecords,
+                  clientObservations
+                );
+                const archiveOutcomes = collectArchiveEvidence(
+                  training.identity,
+                  namespace,
+                  checked.H,
+                  checked.evidenceRecords,
+                  previous.archiveObservations
+                );
+                setCheckedTraining({
+                  ...checked,
+                  providerStates: providers.providerStates,
+                  toolingOutcomes: [...archiveOutcomes, ...recoveryOutcomes],
+                  historicalOutcomes: [
                     ...conflictOutcomes,
                     ...clientOutcomes,
-                    ...retryOutcomes,
                     ...journalOutcomes,
-                    ...archiveOutcomes,
-                    ...recoveryOutcomes,
-                    ...observed.outcomes,
-                    ...currentReplayOutcomes,
-                    ...historicalReplayOutcomes,
-                  ]),
-                ],
-                identity: trainingIdentity,
-                eventGeneration: snapshot.generation,
-                checkedAt: performance.now(),
-              });
-              events.refresh();
-              return {
-                recoveryObservation,
-                conflictObservations,
-                clientObservations,
-                retryObservations: retainedObservations,
-                replayObservations,
-                journalObservations,
-                archiveObservations: previous.archiveObservations ?? [],
-              };
-            }}
-            onOpenTarget={(stage) => {
-              if (stage === 'T10') navigate('/missions');
-              else if (['T05', 'T09'].includes(stage))
-                navigate(`/missions/${encodeURIComponent(missionId)}`);
-              else
-                navigateView(
-                  stage === 'T02' || stage === 'T03'
-                    ? 'Communications'
-                    : stage === 'T06'
-                      ? 'Transport'
-                      : stage === 'T07'
-                        ? 'Issues'
-                        : stage === 'T08'
-                          ? 'Notes'
-                          : stage === 'T11'
-                            ? 'History'
-                            : 'Now'
-                );
-            }}
+                    ...historicalReplayOutcomes.filter(
+                      (outcome) => !currentReplayOutcomes.includes(outcome)
+                    ),
+                  ],
+                  outcomes: [
+                    ...new Set([
+                      ...checked.outcomes,
+                      ...displayOutcomes,
+                      ...providers.outcomes,
+                      ...conflictOutcomes,
+                      ...clientOutcomes,
+                      ...retryOutcomes,
+                      ...journalOutcomes,
+                      ...archiveOutcomes,
+                      ...recoveryOutcomes,
+                      ...observed.outcomes,
+                      ...currentReplayOutcomes,
+                      ...historicalReplayOutcomes,
+                    ]),
+                  ],
+                  identity: trainingIdentity,
+                  eventGeneration: snapshot.generation,
+                  checkedAt: performance.now(),
+                });
+                events.refresh();
+                return {
+                  recoveryObservation,
+                  conflictObservations,
+                  clientObservations,
+                  retryObservations: retainedObservations,
+                  replayObservations,
+                  journalObservations,
+                  archiveObservations: previous.archiveObservations ?? [],
+                };
+              }}
+              onOpenTarget={(stage) => {
+                if (stage === 'T10') navigate('/missions');
+                else if (['T05', 'T09'].includes(stage))
+                  navigate(`/missions/${encodeURIComponent(missionId)}`);
+                else
+                  navigateView(
+                    stage === 'T02' || stage === 'T03'
+                      ? 'Communications'
+                      : stage === 'T06'
+                        ? 'Transport'
+                        : stage === 'T07'
+                          ? 'Issues'
+                          : stage === 'T08'
+                            ? 'Notes'
+                            : stage === 'T11'
+                              ? 'History'
+                              : 'Now'
+                  );
+              }}
+            />
+          )}
+          <OperatorStoreSetup
+            health={health.data}
+            error={health.error}
+            refresh={() => health.refetch()}
           />
-        )}
-        <OperatorStoreSetup
-          health={health.data}
-          error={health.error}
-          refresh={() => health.refetch()}
-        />
-        {!missionId ? (
-          <section>
-            <h2>Choose a mission</h2>
-            <p>
-              Select a mission above. Missions owns the itinerary and leg
-              activation.
-            </p>
-            <Link className="ws-button" to="/missions">
-              Browse missions
-            </Link>
-          </section>
-        ) : (
-          <>
-            <div className="ws-quick-actions" hidden={view === 'Transport'}>
-              <button
-                className="ws-button ws-primary"
-                disabled={disabled}
-                onClick={plannedCall}
-              >
-                Create call
-              </button>
-              <button
-                className="ws-button"
-                disabled={disabled}
-                onClick={() => openInput(conferenceDraft(missionId))}
-              >
-                Create conference
-              </button>
-              <button
-                className="ws-button"
-                ref={noteButton}
-                disabled={disabled}
-                onClick={note}
-              >
-                Note
-              </button>
-            </div>
-            {disabled && (
-              <p role="status">
-                {health.data?.enabled === false
-                  ? 'Operator store is disabled.'
-                  : 'Operator store unavailable. Retained drafts remain available below.'}
+          {!missionId ? (
+            <section>
+              <h2>Choose a mission</h2>
+              <p>
+                Select a mission above. Missions owns the itinerary and leg
+                activation.
               </p>
-            )}
-            {cue?.length ? (
-              <p role="status">
-                Local cue: {cue.map((event) => event.title).join(' · ')}
-              </p>
-            ) : null}
-            {records.isFetching && records.data && (
-              <p role="status">Refreshing saved records…</p>
-            )}
-            {actionError && <p role="alert">{actionError}</p>}
-            {view === 'Communications' || view === 'Now' ? (
-              <>
-                <CommunicationsView
-                  activeOnly={view === 'Now'}
-                  items={currentItems}
-                  currentAssociation={currentAssociation}
-                  isSessionCurrent={(record) =>
-                    replayCurrent(record, currentSource)
-                  }
-                  mission={mission.data}
+              <Link className="ws-button" to="/missions">
+                Browse missions
+              </Link>
+            </section>
+          ) : (
+            <>
+              <div className="ws-quick-actions" hidden={view === 'Transport'}>
+                <button
+                  className="ws-button ws-primary"
+                  disabled={disabled}
+                  onClick={plannedCall}
+                >
+                  Create call
+                </button>
+                <button
+                  className="ws-button"
+                  disabled={disabled}
+                  onClick={() => openInput(conferenceDraft(missionId))}
+                >
+                  Create conference
+                </button>
+                <button
+                  className="ws-button"
+                  ref={noteButton}
+                  disabled={disabled}
+                  onClick={note}
+                >
+                  Note
+                </button>
+              </div>
+              {disabled && (
+                <p role="status">
+                  {health.data?.enabled === false
+                    ? 'Operator store is disabled.'
+                    : 'Operator store unavailable. Retained drafts remain available below.'}
+                </p>
+              )}
+              {cue?.length ? (
+                <p role="status">
+                  Local cue: {cue.map((event) => event.title).join(' · ')}
+                </p>
+              ) : null}
+              {records.isFetching && records.data && (
+                <p role="status">Refreshing saved records…</p>
+              )}
+              {actionError && <p role="alert">{actionError}</p>}
+              {view === 'Communications' || view === 'Now' ? (
+                <>
+                  <CommunicationsView
+                    activeOnly={view === 'Now'}
+                    items={currentItems}
+                    currentAssociation={currentAssociation}
+                    isSessionCurrent={(record) =>
+                      replayCurrent(record, currentSource)
+                    }
+                    mission={mission.data}
+                    disabled={
+                      disabled ||
+                      acting ||
+                      missionSaveBusy ||
+                      (!records.data && !confirmed.length)
+                    }
+                    incomplete={incomplete}
+                    asOf={records.data?.pages[0]?.as_of}
+                    onCreateCall={plannedCall}
+                    onCallAction={callAction}
+                    onCreateActualCall={() =>
+                      openInput(
+                        callDraft(undefined, 'retrospective', missionId)
+                      )
+                    }
+                    onCreateConference={() =>
+                      openInput(conferenceDraft(missionId))
+                    }
+                    onJoin={(conference) =>
+                      openInput(
+                        participationDraft(missionId, conference?.record_id),
+                        undefined,
+                        true
+                      )
+                    }
+                    onEdit={openRecord}
+                    onHistory={setHistoryId}
+                    onTransition={transition}
+                    onConferenceAction={(record, intent) =>
+                      void action(record, (latest, now) =>
+                        conferenceCommand(
+                          latest,
+                          intent,
+                          now,
+                          currentAssociation,
+                          replayCurrent(latest, currentSource)
+                        )
+                      )
+                    }
+                    onCustomerAction={(record, intent) =>
+                      void action(record, (latest, now) =>
+                        intent === 'restore'
+                          ? resumeCommand(latest, now)
+                          : leaveCommand(latest, intent, now)
+                      )
+                    }
+                  />
+                  {view === 'Now' && (
+                    <section aria-label="Mission activity">
+                      <h2>Mission activity</h2>
+                      <OperatorEventFeed
+                        events={events}
+                        onClose={() => undefined}
+                        onOpenSource={(event) =>
+                          navigateView(
+                            event.kind === 'issue_followup'
+                              ? 'Issues'
+                              : event.kind.startsWith('call_')
+                                ? 'Communications'
+                                : 'Transport'
+                          )
+                        }
+                      />
+                    </section>
+                  )}
+                </>
+              ) : view === 'Transport' ? (
+                <TransportView
+                  key={`${missionId}:${identity}`}
+                  missionId={missionId}
+                  identity={identity}
+                  records={loaded}
+                  legId={currentAssociation?.leg_id ?? null}
+                  onApply={async (service, transport) => {
+                    if (!health.data || disabled)
+                      throw new Error('Operator store unavailable.');
+                    const clock = records.data?.pages[0]?.as_of;
+                    if (!clock)
+                      throw new Error(
+                        'Refresh mission records before applying.'
+                      );
+                    const input = assignmentInput(
+                      missionId,
+                      service,
+                      transport,
+                      clock,
+                      currentAssociation
+                    );
+                    const draft = createEditorDraft(
+                      workspace.registry,
+                      health.data,
+                      input
+                    );
+                    workspace.refreshDrafts();
+                    let accepted = false;
+                    await workspace.submitDraft(draft.draftId, {
+                      onAccepted: () => {
+                        accepted = true;
+                      },
+                      atCurrentTime: (now) => ({
+                        operation: 'create',
+                        body: assignmentInput(
+                          missionId,
+                          service,
+                          transport,
+                          now,
+                          currentAssociation
+                        ),
+                      }),
+                    });
+                    if (!accepted)
+                      throw new Error(
+                        'Assignment not confirmed. Review the save status below before retrying.'
+                      );
+                  }}
+                  events={events}
                   disabled={
                     disabled ||
                     acting ||
+                    records.isFetching ||
                     missionSaveBusy ||
-                    (!records.data && !confirmed.length)
-                  }
-                  incomplete={incomplete}
-                  asOf={records.data?.pages[0]?.as_of}
-                  onCreateCall={plannedCall}
-                  onCallAction={callAction}
-                  onCreateActualCall={() =>
-                    openInput(callDraft(undefined, 'retrospective', missionId))
-                  }
-                  onCreateConference={() =>
-                    openInput(conferenceDraft(missionId))
-                  }
-                  onJoin={(conference) =>
-                    openInput(
-                      participationDraft(missionId, conference?.record_id),
-                      undefined,
-                      true
+                    workspace.tray.some(
+                      (row) =>
+                        row.target.missionId === missionId &&
+                        row.target.recordType === 'transport_decision' &&
+                        (!!row.pending || row.status === 'accepted_unreadable')
                     )
+                  }
+                  onCreate={() => openInput(newTransportDraft(missionId).input)}
+                  onEdit={openRecord}
+                  onHistory={setHistoryId}
+                  onTransition={transition}
+                />
+              ) : view === 'Issues' ? (
+                <IssuesView
+                  pages={(records.data?.pages ?? []).map((page) => ({
+                    ...page,
+                    items: page.items.filter((item) =>
+                      operationalRelevant(item.record, currentSource)
+                    ),
+                  }))}
+                  incomplete={incomplete}
+                  unavailable={records.isError}
+                  disabled={
+                    disabled || acting || records.isFetching || missionSaveBusy
+                  }
+                  onCreate={() => openInput(issueInput(missionId))}
+                  onCreateCapability={() =>
+                    openInput(capabilityInput(missionId))
+                  }
+                  onEdit={openRecord}
+                  onHistory={setHistoryId}
+                  onActivity={setActivityId}
+                  onTransition={transition}
+                  onAction={(record, status) =>
+                    void action(record, (latest, now) => {
+                      const input = issueInput(missionId, latest);
+                      return {
+                        operation: 'update',
+                        record_id: latest.record_id,
+                        body: {
+                          ...input,
+                          expected_version: latest.version,
+                          time: instant(now),
+                          payload: {
+                            ...input.payload,
+                            status,
+                            ...(status === 'resolved'
+                              ? { follow_up_at: null }
+                              : {}),
+                          },
+                        },
+                      };
+                    })
+                  }
+                />
+              ) : (
+                <HistoryView
+                  items={items}
+                  incomplete={incomplete}
+                  disabled={
+                    disabled || acting || records.isFetching || missionSaveBusy
                   }
                   onEdit={openRecord}
                   onHistory={setHistoryId}
                   onTransition={transition}
-                  onConferenceAction={(record, intent) =>
-                    void action(record, (latest, now) =>
-                      conferenceCommand(
-                        latest,
-                        intent,
-                        now,
-                        currentAssociation,
-                        replayCurrent(latest, currentSource)
-                      )
-                    )
-                  }
-                  onCustomerAction={(record, intent) =>
-                    void action(record, (latest, now) =>
-                      intent === 'restore'
-                        ? resumeCommand(latest, now)
-                        : leaveCommand(latest, intent, now)
-                    )
-                  }
+                  mission={mission.data}
+                  notesOnly={view === 'Notes'}
                 />
-                {view === 'Now' && (
-                  <section aria-label="Mission activity">
-                    <h2>Mission activity</h2>
-                    <OperatorEventFeed
-                      events={events}
-                      onClose={() => undefined}
-                      onOpenSource={(event) =>
-                        navigateView(
-                          event.kind === 'issue_followup'
-                            ? 'Issues'
-                            : event.kind.startsWith('call_')
-                              ? 'Communications'
-                              : 'Transport'
-                        )
-                      }
-                    />
+              )}
+              {!!retained.length &&
+                ['Communications', 'Transport', 'Issues'].includes(view) && (
+                  <section aria-label="Previous operational records">
+                    <h3>
+                      Previous operational records · {retained.length} loaded
+                    </h3>
+                    <p>Historical reports, not current operational evidence.</p>
+                    <button
+                      className="ws-button"
+                      onClick={() => navigateView('History')}
+                    >
+                      Browse retained records and history
+                    </button>
                   </section>
                 )}
-              </>
-            ) : view === 'Transport' ? (
-              <TransportView
-                key={`${missionId}:${identity}`}
-                missionId={missionId}
-                identity={identity}
-                records={loaded}
-                legId={currentAssociation?.leg_id ?? null}
-                onApply={async (service, transport) => {
-                  if (!health.data || disabled)
-                    throw new Error('Operator store unavailable.');
-                  const clock = records.data?.pages[0]?.as_of;
-                  if (!clock)
-                    throw new Error('Refresh mission records before applying.');
-                  const input = assignmentInput(
-                    missionId,
-                    service,
-                    transport,
-                    clock,
-                    currentAssociation
-                  );
-                  const draft = createEditorDraft(
-                    workspace.registry,
-                    health.data,
-                    input
-                  );
-                  workspace.refreshDrafts();
-                  let accepted = false;
-                  await workspace.submitDraft(draft.draftId, {
-                    onAccepted: () => {
-                      accepted = true;
-                    },
-                    atCurrentTime: (now) => ({
-                      operation: 'create',
-                      body: assignmentInput(
-                        missionId,
-                        service,
-                        transport,
-                        now,
-                        currentAssociation
-                      ),
-                    }),
-                  });
-                  if (!accepted)
-                    throw new Error(
-                      'Assignment not confirmed. Review the save status below before retrying.'
-                    );
-                }}
-                events={events}
-                disabled={
-                  disabled ||
-                  acting ||
-                  records.isFetching ||
-                  missionSaveBusy ||
-                  workspace.tray.some(
-                    (row) =>
-                      row.target.missionId === missionId &&
-                      row.target.recordType === 'transport_decision' &&
-                      (!!row.pending || row.status === 'accepted_unreadable')
-                  )
-                }
-                onCreate={() => openInput(newTransportDraft(missionId).input)}
-                onEdit={openRecord}
-                onHistory={setHistoryId}
-                onTransition={transition}
-              />
-            ) : view === 'Issues' ? (
-              <IssuesView
-                pages={(records.data?.pages ?? []).map((page) => ({
-                  ...page,
-                  items: page.items.filter((item) =>
-                    operationalRelevant(item.record, currentSource)
-                  ),
-                }))}
-                incomplete={incomplete}
-                unavailable={records.isError}
-                disabled={
-                  disabled || acting || records.isFetching || missionSaveBusy
-                }
-                onCreate={() => openInput(issueInput(missionId))}
-                onCreateCapability={() => openInput(capabilityInput(missionId))}
-                onEdit={openRecord}
-                onHistory={setHistoryId}
-                onActivity={setActivityId}
-                onTransition={transition}
-                onAction={(record, status) =>
-                  void action(record, (latest, now) => {
-                    const input = issueInput(missionId, latest);
-                    return {
-                      operation: 'update',
-                      record_id: latest.record_id,
-                      body: {
-                        ...input,
-                        expected_version: latest.version,
-                        time: instant(now),
-                        payload: {
-                          ...input.payload,
-                          status,
-                          ...(status === 'resolved'
-                            ? { follow_up_at: null }
-                            : {}),
-                        },
-                      },
-                    };
-                  })
-                }
-              />
-            ) : (
-              <HistoryView
-                items={items}
-                incomplete={incomplete}
-                disabled={
-                  disabled || acting || records.isFetching || missionSaveBusy
-                }
-                onEdit={openRecord}
-                onHistory={setHistoryId}
-                onTransition={transition}
-                mission={mission.data}
-                notesOnly={view === 'Notes'}
-              />
-            )}
-            {!!retained.length &&
-              ['Communications', 'Transport', 'Issues'].includes(view) && (
-                <section aria-label="Previous operational records">
-                  <h3>
-                    Previous operational records · {retained.length} loaded
-                  </h3>
-                  <p>Historical reports, not current operational evidence.</p>
-                  <button
-                    className="ws-button"
-                    onClick={() => navigateView('History')}
-                  >
-                    Browse retained records and history
-                  </button>
-                </section>
-              )}
-            {incomplete && (
-              <p role="status">
-                Loaded records only. Summary and filters do not cover unread
-                pages.
-              </p>
-            )}
-            {records.hasNextPage && (
-              <button
-                className="ws-button"
-                disabled={records.isFetchingNextPage}
-                onClick={() => void records.fetchNextPage()}
-              >
-                Load more records
-              </button>
-            )}
-            {records.isError && (
-              <button
-                className="ws-button"
-                onClick={() => void records.refetch()}
-              >
-                Retry records
-              </button>
-            )}
-          </>
-        )}
-        <section aria-label="Retained drafts">
-          <h2>Drafts</h2>
-          {workspace.registry.listDrafts().map((draft) => (
-            <button
-              className="ws-button"
-              key={draft.draftId}
-              onClick={() => workspace.openDraft(draft.draftId)}
-            >
-              {draft.input.payload.title ||
-                `New ${draft.input.payload.entry_type}`}{' '}
-              ·{' '}
-              {draft.target.missionId === missionId
-                ? (mission.data?.name ?? missionId)
-                : draft.target.missionId}
-            </button>
-          ))}
-        </section>
-        <section aria-label="Save status">
-          <h2>Save status</h2>
-          {workspace.tray.map((row) => (
-            <div className="ws-record" key={row.lane}>
-              <p>
-                {row.title} · {row.status.replaceAll('_', ' ')}
-              </p>
-              <p>{row.message}</p>
-              {row.pending && row.status === 'uncertain' && !row.retryReady && (
+              {incomplete && (
                 <p role="status">
-                  Waiting for the retained request and current store…
+                  Loaded records only. Summary and filters do not cover unread
+                  pages.
                 </p>
               )}
-              {row.pending && (
+              {records.hasNextPage && (
                 <button
                   className="ws-button"
-                  disabled={
-                    !row.retryReady ||
-                    row.status === 'saving' ||
-                    row.status === 'quarantined'
-                  }
-                  onClick={() => void workspace.retryExact(row.commandId)}
+                  disabled={records.isFetchingNextPage}
+                  onClick={() => void records.fetchNextPage()}
                 >
-                  Retry same save
+                  Load more records
                 </button>
               )}
-              {[
-                'quarantined',
-                'needs_review',
-                'accepted_unreadable',
-                'storage_error',
-              ].includes(row.status) && (
+              {records.isError && (
                 <button
                   className="ws-button"
-                  onClick={() =>
-                    void workspace.rereadAndReconcile(row.commandId)
-                  }
+                  onClick={() => void records.refetch()}
                 >
-                  Reread and reconcile
+                  Retry records
                 </button>
               )}
-            </div>
+            </>
+          )}
+          <section aria-label="Retained drafts">
+            <h2>Drafts</h2>
+            {workspace.registry.listDrafts().map((draft) => (
+              <button
+                className="ws-button"
+                key={draft.draftId}
+                onClick={() => workspace.openDraft(draft.draftId)}
+              >
+                {draft.input.payload.title ||
+                  `New ${draft.input.payload.entry_type}`}{' '}
+                ·{' '}
+                {draft.target.missionId === missionId
+                  ? (mission.data?.name ?? missionId)
+                  : draft.target.missionId}
+              </button>
+            ))}
+          </section>
+          <section aria-label="Save status">
+            <h2>Save status</h2>
+            {workspace.tray.map((row) => (
+              <div className="ws-record" key={row.lane}>
+                <p>
+                  {row.title} · {row.status.replaceAll('_', ' ')}
+                </p>
+                <p>{row.message}</p>
+                {row.pending &&
+                  row.status === 'uncertain' &&
+                  !row.retryReady && (
+                    <p role="status">
+                      Waiting for the retained request and current store…
+                    </p>
+                  )}
+                {row.pending && (
+                  <button
+                    className="ws-button"
+                    disabled={
+                      !row.retryReady ||
+                      row.status === 'saving' ||
+                      row.status === 'quarantined'
+                    }
+                    onClick={() => void workspace.retryExact(row.commandId)}
+                  >
+                    Retry same save
+                  </button>
+                )}
+                {[
+                  'quarantined',
+                  'needs_review',
+                  'accepted_unreadable',
+                  'storage_error',
+                ].includes(row.status) && (
+                  <button
+                    className="ws-button"
+                    onClick={() =>
+                      void workspace.rereadAndReconcile(row.commandId)
+                    }
+                  >
+                    Reread and reconcile
+                  </button>
+                )}
+              </div>
+            ))}
+          </section>
+          {workspace.recoveryErrors.map((message, i) => (
+            <p role="alert" key={i}>
+              {message}
+            </p>
           ))}
-        </section>
-        {workspace.recoveryErrors.map((message, i) => (
-          <p role="alert" key={i}>
-            {message}
-          </p>
-        ))}
-        <Link
-          className="ws-button"
-          to={`/operator?mission_id=${encodeURIComponent(missionId)}`}
-        >
-          Previous workspace
-        </Link>
+          <Link
+            className="ws-button"
+            to={`/operator?mission_id=${encodeURIComponent(missionId)}`}
+          >
+            Previous workspace
+          </Link>
+        </div>
+        <WorkspaceEditor
+          mission={editorMission.data}
+          onReturnFocus={() => noteButton.current?.focus()}
+        />
       </div>
-      <WorkspaceEditor
-        mission={editorMission.data}
-        onReturnFocus={() => noteButton.current?.focus()}
-      />
       <Dialog
         open={!!activityId}
         onOpenChange={(open) => {

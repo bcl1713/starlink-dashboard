@@ -7,6 +7,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   testMatch: [
     'operator-workspace.spec.ts',
+    'operator-layout.spec.ts',
     'operator-workspace-release.spec.ts',
   ],
   workers: 1,

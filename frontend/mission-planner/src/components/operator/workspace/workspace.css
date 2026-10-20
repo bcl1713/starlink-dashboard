@@ -1,19 +1,26 @@
 .operator-workspace {
   --ws-border: color-mix(in srgb, currentColor 18%, transparent);
   display: grid;
-  grid-template:
-    'header header' auto 'awareness navigation' auto 'awareness body' minmax(
-      0,
-      1fr
-    )
-    / 20rem minmax(0, 1fr);
-  gap: 0 1.25rem;
+  grid-template: 'header' auto 'content' minmax(0, 1fr) / minmax(0, 1fr);
   height: 100%;
   min-width: 0;
   padding: 1rem 1.25rem 0;
   overflow: hidden;
 }
+.ws-content {
+  grid-area: content;
+  display: grid;
+  grid-template:
+    'awareness navigation' auto 'awareness body' minmax(0, 1fr)
+    / 20rem minmax(0, 1fr);
+  column-gap: 1.25rem;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
 .ws-header {
+  position: relative;
+  z-index: 30;
   grid-area: header;
   display: flex;
   flex-wrap: wrap;
@@ -53,9 +60,7 @@
   display: none;
 }
 .ws-quick-actions {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: relative;
   background: var(--background);
   padding-block: 0.25rem;
 }
@@ -102,6 +107,10 @@
   padding: 0.5rem;
 }
 .ws-navigation {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--background);
   grid-area: navigation;
   display: flex;
   gap: 0.4rem;
@@ -120,8 +129,8 @@
   grid-area: body;
   min-height: 0;
   min-width: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
+  overscroll-behavior: auto;
   padding: 0 0.25rem 1.5rem 0;
 }
 .ws-body h2 {
@@ -134,6 +143,7 @@
   overflow-wrap: anywhere;
 }
 .ws-awareness {
+  align-self: start;
   grid-area: awareness;
   min-height: 0;
   min-width: 0;
@@ -274,10 +284,13 @@
 }
 @media (max-width: 900px) {
   .operator-workspace {
-    grid-template:
-      'header' auto 'awareness' auto 'navigation' auto 'body' minmax(0, 1fr)
-      / minmax(0, 1fr);
     padding: 0.5rem 0.75rem 0;
+    gap: 0.5rem;
+  }
+  .ws-content {
+    grid-template:
+      'awareness' auto 'navigation' auto 'body' minmax(0, 1fr)
+      / minmax(0, 1fr);
     gap: 0.5rem;
   }
   .ws-header {
@@ -381,12 +394,9 @@
   }
 }
 @media (max-height: 500px) and (max-width: 1100px) {
-  .operator-workspace {
+  .ws-content {
     grid-template:
-      'header header' auto 'awareness navigation' auto 'awareness body' minmax(
-        0,
-        1fr
-      )
+      'awareness navigation' auto 'awareness body' minmax(0, 1fr)
       / 15rem minmax(0, 1fr);
     gap: 0 0.75rem;
   }
@@ -426,29 +436,50 @@
   display: none !important;
 }
 
-/* Keep service selection and Apply in reach without changing other workspace views. */
+/* The shared header must keep identical geometry as workspace tabs change. */
 .operator-workspace[data-view='transport'] .ws-quick-actions[hidden] {
   display: none;
 }
 @media (max-width: 900px) {
-  .operator-workspace[data-view='transport'] .ws-header .ws-mission-chooser {
+  .operator-workspace .ws-header .ws-mission-chooser {
     grid-column: 1;
     grid-row: 2;
   }
-  .operator-workspace[data-view='transport'] .ws-header-actions {
+  .operator-workspace .ws-header-actions {
     grid-column: 2;
     grid-row: 2;
   }
-  .operator-workspace[data-view='transport'] [aria-label='Operating context'] {
+  .operator-workspace [aria-label='Operating context'] {
     grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
   }
-  .operator-workspace[data-view='transport'] .ws-replay-note,
-  .operator-workspace[data-view='transport'] .ws-now,
-  .operator-workspace[data-view='transport'] .ws-next {
+  .operator-workspace .ws-replay-note {
     display: none;
+  }
+  .ws-tool-controls[data-open='true'] {
+    max-width: calc(100vw - 1.5rem);
+  }
+  .ws-now > .ws-meta + .ws-meta {
+    display: none;
+  }
+}
+@media (max-height: 500px) and (max-width: 900px) {
+  .operator-workspace .ws-header > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .operator-workspace .ws-header .ws-mission-chooser {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .operator-workspace .ws-header-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .operator-workspace [aria-label='Operating context'] {
+    grid-row: 2;
   }
 }
