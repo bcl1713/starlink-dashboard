@@ -2,11 +2,14 @@
 import { createRequire } from "node:module";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
+import { promisify } from "node:util";
 import { request } from "node:http";
 import { performance } from "node:perf_hooks";
 import { randomUUID } from "node:crypto";
-import { pollingCovered } from "./polling.mjs";
+import { networkMilliseconds, pollingCovered } from "./polling.mjs";
+
+const executeFile = promisify(execFile);
 
 const options = JSON.parse(process.env.PERF_RUN);
 const out = (name, value) =>
@@ -107,6 +110,7 @@ const contexts = [],
   latencies = {},
   failures = [],
   cancellations = [],
+  deliveryErrors = [],
   requests = new WeakMap();
 const cpuByPid = new Map(),
   subscriptions = [];
@@ -249,7 +253,13 @@ try {
         requests.delete(req);
         const response = await req.response();
         if (response?.ok()) {
-          (latencies[path] ||= []).push(elapsed);
+          try {
+            const network = networkMilliseconds(req.timing());
+            (latencies[path] ||= []).push(network);
+            deliveryErrors.push(Math.abs(elapsed - network));
+          } catch (error) {
+            failures.push({ path, error: error.message });
+          }
           if (path === "/api/overview-history")
             subscription.successful_completions++;
         }
@@ -441,19 +451,18 @@ try {
         probe.queries.evaluation_points;
     }
     if (now >= nextDisk) {
-      const data = JSON.parse(
-        execFileSync(
-          "docker",
-          [
-            "exec",
-            options.containers["starlink-location"],
-            "python",
-            "-c",
-            diskProbe,
-          ],
-          { encoding: "utf8", timeout: 15000 },
-        ),
+      const captured = await executeFile(
+        "docker",
+        [
+          "exec",
+          options.containers["starlink-location"],
+          "python",
+          "-c",
+          diskProbe,
+        ],
+        { encoding: "utf8", timeout: 15000 },
       );
+      const data = JSON.parse(captured.stdout);
       Object.assign(row.storage, data.storage);
       Object.assign(row.sqlite, data.sqlite);
       Object.assign(row.prometheus, data.prometheus_metrics);
@@ -464,6 +473,7 @@ try {
       delete latencies[path];
     }
     row.instrumentation = { sample_wall_ms: performance.now() - sampleStart };
+    row.latency.observer_delivery_error_ms = deliveryErrors.splice(0);
     row.subscriptions = subscriptions.map((s) => ({ ...s }));
     append("samples.jsonl", row);
     if (

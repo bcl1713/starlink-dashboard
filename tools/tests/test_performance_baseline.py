@@ -111,6 +111,34 @@ if __name__ == "__main__":
 
 
 class BrowserCleanupTests(unittest.TestCase):
+    def test_network_latency_uses_browser_offset_and_rejects_missing_timing(self):
+        module = (
+            Path(__file__).parents[1] / "acceptance/performance/polling.mjs"
+        ).as_uri()
+        result = subprocess.run(
+            [
+                "node",
+                "--input-type=module",
+                "-e",
+                f"""
+import {{networkMilliseconds}} from {json.dumps(module)};
+const values=[networkMilliseconds({{startTime:1792530000000,responseEnd:125}})];
+for (const value of [-1, NaN, Infinity]) {{
+ try {{ networkMilliseconds({{responseEnd:value}}); values.push('accepted'); }}
+ catch {{values.push('rejected');}}
+}}
+console.log(JSON.stringify(values));
+""",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(
+            json.loads(result.stdout), [125, "rejected", "rejected", "rejected"]
+        )
+
     def test_polling_must_cover_both_boundaries_and_sustain_completions(self):
         module = (
             Path(__file__).parents[1] / "acceptance/performance/polling.mjs"
