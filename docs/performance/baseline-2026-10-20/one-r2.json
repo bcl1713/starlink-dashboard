@@ -1,0 +1,445 @@
+{
+  "metadata": {
+    "candidate_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+    "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+    "status": "measured",
+    "source_archive_sha256": "cebfb7254994f0c6e31e0fd8cc06319430efcd32b4457787673c70ab21795153",
+    "hardware": {
+      "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+      "machine": "x86_64",
+      "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+      "docker": {
+        "ServerVersion": "29.8.1",
+        "Driver": "overlayfs",
+        "NCPU": 20,
+        "MemTotal": 65915523072,
+        "KernelVersion": "7.0.0-34-generic",
+        "OperatingSystem": "Ubuntu 26.04.1 LTS",
+        "Architecture": "x86_64"
+      },
+      "filesystem": "ext2/ext3 4096"
+    },
+    "images": {
+      "backend": {
+        "tag": "starlink-operator-perf390-v2-one-r2-backend:25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "id": "sha256:57417c5afd833fec6bd39440cd1d3a139f7f5b75097f4a15012c646c0d80f469",
+        "revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+      },
+      "frontend": {
+        "tag": "starlink-operator-perf390-v2-one-r2-frontend:25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "id": "sha256:1353e7c69ce7d7bb0b629569fc6ae1d8483ee4ffe65efe1e1b87655efed7056d",
+        "revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+      },
+      "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+    },
+    "backend_python": "Python 3.11.17",
+    "backend_packages_sha256": "4b4eed37464b5fec8f3c598f6fa3bdcf4a03edfb9936a0f9a628a0a42be5f153",
+    "fixture_hashes": {
+      "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+      "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+      "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+      "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+    },
+    "workload": {
+      "fixture": "perf390-v1",
+      "fixture_hashes": {
+        "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+        "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+        "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+        "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+      },
+      "viewers": 1,
+      "operator": false,
+      "window": 1800,
+      "cadence": 1,
+      "warmup": 30,
+      "duration": 120,
+      "operations": false
+    },
+    "instrumentation": "off",
+    "runtime": {
+      "mode": "simulation",
+      "backend_python": "Python 3.11.17",
+      "backend_packages_sha256": "4b4eed37464b5fec8f3c598f6fa3bdcf4a03edfb9936a0f9a628a0a42be5f153",
+      "scrape_seconds": 1,
+      "evaluation_seconds": 1,
+      "cpus_per_service": 2,
+      "memory_limit": "2g",
+      "viewport": [1920, 1080],
+      "dpr": 1,
+      "optional_layers": "default-off",
+      "transport": "published-port"
+    },
+    "browser": {
+      "node_version": "v22.12.0",
+      "mode": "headless-diagnostic",
+      "fullscreen": false,
+      "viewport": [1920, 1080],
+      "dpr": 1,
+      "version": "153.0.8010.12",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "executable_sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+    },
+    "request_outcomes": {
+      "unexpected_failures": 0,
+      "client_cancellations": 0
+    }
+  },
+  "measured_span_seconds": 120.000039996,
+  "sustained_60_minutes": false,
+  "resources": {
+    "backend.cpu_seconds": {
+      "samples": 25,
+      "first": 54.325743,
+      "last": 111.957066,
+      "max": 111.957066,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 23.070555529127045,
+      "cores_used": 0.4802608649290537
+    },
+    "backend.memory_bytes": {
+      "samples": 25,
+      "first": 426131456,
+      "last": 352309248,
+      "max": 893562880,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": -160734872.66771513
+    },
+    "backend.anonymous_bytes": {
+      "samples": 25,
+      "first": 384479232,
+      "last": 310984704,
+      "max": 833933312,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": -155647145.29604858
+    },
+    "prometheus.cpu_seconds": {
+      "samples": 25,
+      "first": 0.707994,
+      "last": 2.843452,
+      "max": 2.843452,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 1.0800687593931313,
+      "cores_used": 0.017795477402100714
+    },
+    "prometheus.memory_bytes": {
+      "samples": 25,
+      "first": 31547392,
+      "last": 42266624,
+      "max": 44929024,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 5795711.299751417
+    },
+    "prometheus.anonymous_bytes": {
+      "samples": 25,
+      "first": 28717056,
+      "last": 38461440,
+      "max": 41963520,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 6034791.884877902
+    },
+    "prometheus.prometheus_tsdb_head_chunks_storage_size_bytes": {
+      "samples": 4,
+      "first": 0,
+      "last": 131072,
+      "max": 131072,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 72149.35612895266
+    },
+    "prometheus.prometheus_tsdb_head_series": {
+      "samples": 4,
+      "first": 167,
+      "last": 198,
+      "max": 198,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 22.18397156671588
+    },
+    "prometheus.prometheus_tsdb_head_series_created_total": {
+      "samples": 4,
+      "first": 167,
+      "last": 198,
+      "max": 198,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 22.18397156671588
+    },
+    "prometheus.prometheus_tsdb_head_series_removed_total": {
+      "samples": 4,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_storage_blocks_bytes": {
+      "samples": 4,
+      "first": 232516,
+      "last": 232516,
+      "max": 232516,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_wal_storage_size_bytes": {
+      "samples": 4,
+      "first": 34166,
+      "last": 149661,
+      "max": 149661,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 69491.32759155007
+    },
+    "browser.cpu_seconds": {
+      "samples": 25,
+      "first": 226.26,
+      "last": 1356.0600000000002,
+      "max": 1356.0600000000002,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 570.888819518869,
+      "cores_used": 9.414996861981548
+    },
+    "browser.rss_bytes": {
+      "samples": 25,
+      "first": 1315262464,
+      "last": 1403682816,
+      "max": 1408516096,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 55310276.05106533
+    },
+    "browser.pss_bytes": {
+      "samples": 25,
+      "first": 1060118528,
+      "last": 1148038144,
+      "max": 1152871424,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 55054750.36119647
+    },
+    "browser.heap_bytes": {
+      "samples": 25,
+      "first": 44976100,
+      "last": 43079972,
+      "max": 85449812,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 7459217.422981198
+    },
+    "browser.task_seconds": {
+      "samples": 25,
+      "first": 29.407461,
+      "last": 147.99715,
+      "max": 147.99715,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 59.3320438312437
+    },
+    "browser.frame_count": {
+      "samples": 25,
+      "first": 3,
+      "last": 52,
+      "max": 53,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 8.99953476176025
+    },
+    "browser.long_task_ms": {
+      "samples": 25,
+      "first": 386,
+      "last": 4742,
+      "max": 4832,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 509.9749555054776
+    },
+    "sqlite.database_bytes": {
+      "samples": 4,
+      "first": 1986560,
+      "last": 1986560,
+      "max": 1986560,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "sqlite.wal_bytes": {
+      "samples": 4,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.mission_bytes": {
+      "samples": 4,
+      "first": 1832537,
+      "last": 1832537,
+      "max": 1832537,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.mission_allocated_bytes": {
+      "samples": 4,
+      "first": 1859584,
+      "last": 1859584,
+      "max": 1859584,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.operator_bytes": {
+      "samples": 4,
+      "first": 164025,
+      "last": 164025,
+      "max": 164025,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.operator_allocated_bytes": {
+      "samples": 4,
+      "first": 167936,
+      "last": 167936,
+      "max": 167936,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.data_bytes": {
+      "samples": 4,
+      "first": 2061688,
+      "last": 2061688,
+      "max": 2061688,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.data_allocated_bytes": {
+      "samples": 4,
+      "first": 2101248,
+      "last": 2101248,
+      "max": 2101248,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.routes_cache_export_bytes": {
+      "samples": 4,
+      "first": 2330,
+      "last": 2330,
+      "max": 2330,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "storage.routes_cache_export_allocated_bytes": {
+      "samples": 4,
+      "first": 8192,
+      "last": 8192,
+      "max": 8192,
+      "span_seconds": 99.99994906899997,
+      "slope_per_minute": 0.0
+    },
+    "instrumentation.sample_wall_ms": {
+      "samples": 25,
+      "first": 691.5049859999999,
+      "last": 335.9387589999824,
+      "max": 691.5049859999999,
+      "span_seconds": 120.000039996,
+      "slope_per_minute": 8.69279935527879
+    }
+  },
+  "latency": {
+    "frame": {
+      "p50_ms": 100,
+      "p95_ms": 116.80000000000291,
+      "p99_ms": 150,
+      "samples": 1186
+    },
+    "observer_status": {
+      "p50_ms": 10.267685999991954,
+      "p95_ms": 100.7646720000048,
+      "p99_ms": 107.28123799999594,
+      "samples": 25
+    },
+    "/api/v2/operator/health": {
+      "p50_ms": 3.207,
+      "p95_ms": 5.43,
+      "p99_ms": 5.43,
+      "samples": 8
+    },
+    "/api/status": {
+      "p50_ms": 11.62,
+      "p95_ms": 76.979,
+      "p99_ms": 107.654,
+      "samples": 101
+    },
+    "/api/active-x-link": {
+      "p50_ms": 11.171,
+      "p95_ms": 94.163,
+      "p99_ms": 111.197,
+      "samples": 101
+    },
+    "/api/overview-weather/settings": {
+      "p50_ms": 4.261,
+      "p95_ms": 42.879,
+      "p99_ms": 76.04,
+      "samples": 24
+    },
+    "/api/overview-adsb/settings": {
+      "p50_ms": 3.29,
+      "p95_ms": 43.016,
+      "p99_ms": 74.609,
+      "samples": 24
+    },
+    "/api/overview-clocks/settings": {
+      "p50_ms": 3.331,
+      "p95_ms": 33.85,
+      "p99_ms": 75.118,
+      "samples": 24
+    },
+    "/api/aviation-weather/v1/settings": {
+      "p50_ms": 7.868,
+      "p95_ms": 76.585,
+      "p99_ms": 78.803,
+      "samples": 24
+    },
+    "observer_delivery_error_ms": {
+      "p50_ms": 89.80859999999474,
+      "p95_ms": 138.84797500000138,
+      "p99_ms": 170.70664699999475,
+      "samples": 633
+    },
+    "/api/overview-history": {
+      "p50_ms": 195.371,
+      "p95_ms": 265.668,
+      "p99_ms": 364.211,
+      "samples": 87
+    },
+    "/api/overview-history/settings": {
+      "p50_ms": 3.101,
+      "p95_ms": 5.087,
+      "p99_ms": 7.41,
+      "samples": 24
+    },
+    "/api/satellites": {
+      "p50_ms": 6.634,
+      "p95_ms": 16.224,
+      "p99_ms": 94.17,
+      "samples": 23
+    },
+    "/api/overview-links/settings": {
+      "p50_ms": 9.187,
+      "p95_ms": 93.804,
+      "p99_ms": 94.011,
+      "samples": 23
+    },
+    "/api/routes/synthetic-route": {
+      "p50_ms": 10.198,
+      "p95_ms": 93.881,
+      "p99_ms": 95.051,
+      "samples": 23
+    },
+    "/api/overview/upcoming-pois": {
+      "p50_ms": 12.094,
+      "p95_ms": 93.921,
+      "p99_ms": 99.94,
+      "samples": 23
+    },
+    "/api/simulation/run": {
+      "p50_ms": 3.383,
+      "p95_ms": 74.438,
+      "p99_ms": 118.227,
+      "samples": 101
+    },
+    "/api/routes/": {
+      "p50_ms": 4.45,
+      "p95_ms": 95.944,
+      "p99_ms": 104.765,
+      "samples": 23
+    }
+  }
+}

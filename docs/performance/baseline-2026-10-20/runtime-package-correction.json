@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "original_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+  "reason": "Original docker exec pip list used root; entrypoint runs the application as appuser. Preserve originals and supply independently verified application-user inventory.",
+  "verification": "All accepted backend image RootFS layers and Config match the separately inspected diagnostic image; OCI index/attestation IDs vary. The retained original image archive contains this same runtime filesystem/configuration.",
+  "application_packages_sha256": "f4cf11f533ade1605b73e5e3a18e460d7151bb2ae2a7257c6389b0a5458f13ba",
+  "application_inventory": "application-user-packages.json",
+  "captured_from": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/real-prometheus-profile-r2",
+  "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+  "cases": [
+    {
+      "case": "reference-v2/activity-control",
+      "image_id": "sha256:e4b3ddc9ca3afed3abe92c9244932f19e7019b04ce7eb0a64077f7debdf356a6",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/none-r1",
+      "image_id": "sha256:95c097a344fafec8fa6092ad0df5947a8338312c89b93db48e496727ab205ce0",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/one-r1",
+      "image_id": "sha256:a6f87f1c678fd6ef545a04d0720e55782bed207e8e683f797d8de77da5e8f44e",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/one-r2",
+      "image_id": "sha256:57417c5afd833fec6bd39440cd1d3a139f7f5b75097f4a15012c646c0d80f469",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/one-r3",
+      "image_id": "sha256:a461b46c089167980198f982829e1db8088b71bcbbef3e639b4265423a433bc2",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/two-operator-r1",
+      "image_id": "sha256:c1ef3377cea9757bdc3d2776dd9dd0a896cd8cb2ab9871f89e92c28deb9292e2",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/two-operator-r2",
+      "image_id": "sha256:b824a01aa3465de21516f03bc99c2d663f0597c7d3b6b5804fbe6d6825b9ef29",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/two-operator-r3",
+      "image_id": "sha256:6c8022c356e83e12486505c2705d8fae9ee14f7d3a9aab32ddb14b065f05634d",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/two-operator-window-300",
+      "image_id": "sha256:d4c60c7dc516340198625a892375e987225bab87ed363c7c2178ea5717e6d91c",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v2/two-operator-window-900",
+      "image_id": "sha256:d18f8e0a16aef7478c7aaec5bf02687512a1ac751aafb9172b842e5ba47bb74c",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/counters-warm-two-r1",
+      "image_id": "sha256:c979da5f09f3b1ac6a9f6c30155a50a92bac391be1065b72c0e3faaf0114e3f4",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/counters-warm-two-r2",
+      "image_id": "sha256:7f1b6dac9630cd072f8574b00b3b9256f83caa46c464b2f18b0086aae7abae98",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/operator-only",
+      "image_id": "sha256:0b8e350e91ba731728c4065e33a49fccf685beddb5699952f6d80a88cc341987",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/two-operator-window-3600",
+      "image_id": "sha256:7fb03e25198c1d79085e43dcc0cde3a17070aca9211fd365f7069a294a1db511",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/warm-none",
+      "image_id": "sha256:a59426fd28c812388aa7faa39a40b6ef8cabf1966cfa3a40198389deb228f590",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/warm-one",
+      "image_id": "sha256:fd0b3cc4f960a8ac8edca2ec25b41234a7d275074e6392de0e6c04f7de297154",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    },
+    {
+      "case": "reference-v3/warm-two-operator",
+      "image_id": "sha256:592126ac58e5dd5f231653c6c26c73df8120e684e029b922baa18d906e048efc",
+      "filesystem_config_sha256": "52b5a5b9ca84c2d1b37b617c6c389962c57ada99952f5627f845874c4d9da523",
+      "original_inventory_scope": "root Python environment; not application packages"
+    }
+  ],
+  "future_comparison": "Verify candidate packages as appuser separately when replaying legacy frozen harnesses; their original root-package hash is not a dependency lock. New collector records appuser packages and filesystem/config hash.",
+  "application_packages_sha256_scope": "Raw pip JSON captured as appuser, retained in real-prometheus-profile-r2/application-user-packages.json",
+  "checked_in_inventory_sha256": "4dfc887c6ca41a9cee078eca1c8f525d1abfb21102b21153787cfb102912d55c"
+}
