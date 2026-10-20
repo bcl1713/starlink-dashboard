@@ -205,7 +205,17 @@ def run(args):
                 != sha
             ):
                 raise ValueError("Image revision differs from candidate")
-            result["images"][kind] = {"tag": tag, "id": image["Id"], "revision": sha}
+            result["images"][kind] = {
+                "tag": tag,
+                "id": image["Id"],
+                "revision": sha,
+                "filesystem_config_sha256": hashlib.sha256(
+                    json.dumps(
+                        {"RootFS": image["RootFS"], "Config": image["Config"]},
+                        sort_keys=True,
+                    ).encode()
+                ).hexdigest(),
+            }
         owner.execute(
             [
                 sys.executable,
@@ -243,6 +253,8 @@ def run(args):
             [
                 "docker",
                 "exec",
+                "--user",
+                "appuser",
                 containers["starlink-location"],
                 "python",
                 "-m",
