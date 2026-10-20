@@ -296,7 +296,4 @@ this acknowledgment before showing a saved/applied state.
 Presets add `operator_presets` metadata to existing Overview link settings JSON,
 without database migration or new infrastructure. Writes preserve that metadata
 and unfamiliar future fields. Include settings in normal configuration backups.
-Old binaries ignore and retain the metadata. Frontend/backend rollback preserves
-saved visibility and presets. Disable Operator to hide controls; Configuration
-remains available. Do not delete shared configuration or Operator journal
-volumes for rollback.
+Rollback preserves visibility and presets. Preserve configuration and journals.

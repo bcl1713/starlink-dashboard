@@ -258,12 +258,7 @@ covers the authoritative reread, refresh covers background query refreshes, and
 visible covers the confirmed-row-to-render interval. In browser DevTools
 Console:
 
-```js
-const saves = performance
-  .getEntriesByType("measure")
-  .filter((entry) => entry.name.startsWith("operator.save."));
-console.table(saves.slice(-30));
-```
+Inspect `performance.getEntriesByType("measure")` for these saved stages.
 
 ## Arrival after ordinary Activate
 
