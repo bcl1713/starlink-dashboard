@@ -298,3 +298,48 @@ def test_airborne_stale_capture_does_not_restore_planned_pop_windows(production,
         e.kind == "pop_advisory" and e.source_ref == "model:leg-a" and e.active
         for e in after.events
     )
+
+
+def test_live_eta_work_tracks_merged_restrictions_instead_of_sample_count(
+    production, clock, monkeypatch
+):
+    from app.operator.production_event_inputs import capture_current
+    from app.operator.production_live_timing import (
+        attach_boundary_geometry,
+        refresh_boundary_times,
+    )
+    from app.services.eta_calculator import ETACalculator
+
+    adapter, *_ = production
+    inputs = capture_current(adapter, "demo-mission", as_of=clock.now())
+    artifacts = inputs.prepare(production[5])
+    start, end = artifacts.projector.start_time, artifacts.projector.end_time
+    step = (end - start) / 1200
+    model = {
+        "capability_spans": [
+            {
+                "start_utc": (start + step * i).isoformat(),
+                "end_utc": (start + step * (i + 1)).isoformat(),
+                "ka": "available",
+                "x": "unavailable" if 600 <= i < 700 else "available",
+                "starshield": "available",
+            }
+            for i in range(1200)
+        ]
+    }
+    calls = []
+    calculate = ETACalculator._calculate_route_aware_eta_estimated
+
+    def counted(self, *args, **kwargs):
+        calls.append(1)
+        return calculate(self, *args, **kwargs)
+
+    monkeypatch.setattr(ETACalculator, "_calculate_route_aware_eta_estimated", counted)
+    attach_boundary_geometry(model, artifacts)
+    timed, available = refresh_boundary_times(model, inputs, as_of=clock.now())
+    assert available and timed["time_basis"] == "live_route_eta"
+    assert len(calls) == 2
+    assert set(timed["boundary_times"]) == {
+        (start + step * 600).isoformat(),
+        (start + step * 700).isoformat(),
+    }

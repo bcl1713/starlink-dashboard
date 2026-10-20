@@ -372,3 +372,32 @@ def test_telemetry_update_during_preparation_keeps_current_timing(
     again = adapter.capture("demo-mission", as_of=clock.now())
     assert again.models == captured.models
     assert preparations == ["leg-a"]
+
+
+def test_unchanged_static_capture_reuses_normalization_but_keeps_live_guards(
+    production, clock, monkeypatch
+):
+    from app.mission.slide_cache import capture
+    from app.operator.production_event_inputs import capture_current
+
+    calls = []
+    original = capture.normalize_capture
+
+    def counted(*args, **kwargs):
+        calls.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(capture, "normalize_capture", counted)
+    adapter, _publication, state, _config, routes, leg, _path = production
+    first = capture_current(adapter, "demo-mission", as_of=clock.now())
+    state["telemetry"].position.longitude += 0.01
+    second = capture_current(adapter, "demo-mission", as_of=clock.now())
+    assert first.revision == second.revision
+    assert first.sample_revision != second.sample_revision
+    assert len(calls) == 1
+    route = routes.get_route(leg.route_id).model_copy(deep=True)
+    route.points[-1].longitude += 0.1
+    routes.add_route(leg.route_id, route)
+    third = capture_current(adapter, "demo-mission", as_of=clock.now())
+    assert third.revision != first.revision
+    assert len(calls) == 2

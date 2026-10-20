@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from .clock import Clock
+from .clock import Clock, observation_now
 from .errors import OperatorError
 from .maintenance import admission, storage_error
 from .provenance import StoreHealth
@@ -311,7 +311,8 @@ class OperatorStore:
 
     def health(self) -> StoreHealth:
         regression = self._latest_recorded_at is not None and (
-            utc_timestamp(self.clock.now()) < utc_timestamp(self._latest_recorded_at)
+            utc_timestamp(observation_now(self.clock))
+            < utc_timestamp(self._latest_recorded_at)
         )
         return StoreHealth(
             ready=self._ready and not self._closed,

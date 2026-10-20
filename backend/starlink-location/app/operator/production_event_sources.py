@@ -5,6 +5,7 @@ from dataclasses import replace
 from app.mission import storage
 from app.services.pop.geometry import route_geometry_fingerprint
 
+from .clock import observation_now
 from .errors import OperatorError
 from .event_ledger import identity
 from .event_models import SourceCapture
@@ -62,7 +63,7 @@ class ProductionEventSources(EventSourceAdapter):
         # A display snapshot may use a still-fresh captured observation even
         # when the aircraft has published a newer sample. Actions remain strict.
         self._validate(mission_id, revision)
-        require_fresh_position(position, self.clock.now())
+        require_fresh_position(position, observation_now(self.clock))
 
     def capture(self, mission_id, *, as_of):
         captured = super().capture(mission_id, as_of=as_of)
@@ -251,6 +252,7 @@ class ProductionEventSources(EventSourceAdapter):
         for _revision, source, _model in self.cache.values():
             self.publication.invalidate(source.source)
         self.cache.clear()
+        self._static_capture = None
         for source_ref in self.live_sources | self.lifecycle_sources:
             self.publication.invalidate(source_ref)
         self.live_sources.clear()

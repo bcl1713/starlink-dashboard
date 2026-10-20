@@ -99,6 +99,23 @@ def start_paced(client, multiplier):
     assert response.status_code == 200, response.text
 
 
+@pytest.mark.parametrize("enabled", [True, False])
+def test_replay_pop_publication_keeps_accepted_leg_identity(pop_api, enabled):
+    from app.mission.storage import load_mission_v2, save_mission_v2
+
+    client, service, _clocks, pops, _set_sites = pop_api
+    mission = load_mission_v2("mission-1")
+    mission.legs[0].transports.starshield_enabled = enabled
+    save_mission_v2(mission)
+    start_paced(client, 1)
+    result = client.get("/api/status").json()
+    publication = pops.read_publication()
+    assert publication["mission_id"] == "mission-1"
+    assert publication["leg_id"] == "leg-1"
+    assert publication["simulation_run_id"] == service.status().run.run_id
+    assert result["pop_forecast"]["status"] == ("ready" if enabled else "disabled")
+
+
 @pytest.mark.parametrize("multiplier", [1, 10, 100])
 @pytest.mark.parametrize(
     "center_second, sites, changed_lon",
@@ -245,3 +262,26 @@ def test_ordinary_metrics_paced_gap_and_return_to_activate(pop_api):
     assert restored["metric_source"] == "simulated"
     assert all(restored["metric_availability"].values())
     assert restored["network"]["latency_ms"] > 0
+
+
+@pytest.mark.parametrize("startup_mode", ["live", "simulation"])
+def test_operator_clock_follows_published_paced_mission_time(
+    pop_api, monkeypatch, startup_mode
+):
+    client, service, clocks, _pops, _set_sites = pop_api
+    monkeypatch.setattr(
+        main,
+        "_simulation_config",
+        service.coordinator.config.model_copy(update={"mode": startup_mode}),
+    )
+    assert main._operator_mission_now() is None
+    start_paced(client, 1)
+    assert main._operator_mission_now() == service.status().run.simulation_time
+    clocks.advance(10)
+    service.collect(service.coordinator, service.publish)
+    assert (
+        main._operator_mission_now()
+        == service.status().run.planned_departure + timedelta(seconds=10)
+    )
+    service.runtime.cancel("test reset")
+    assert main._operator_mission_now() is None

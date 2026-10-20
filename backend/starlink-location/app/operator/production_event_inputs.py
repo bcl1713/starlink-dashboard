@@ -9,7 +9,6 @@ from zipfile import BadZipFile
 from app.mission.exporter.snapshot_inputs import (
     SourcePayload,
     canonical_json,
-    capture_inputs,
     captured_coverage,
 )
 from app.mission.exporter.snapshot_views import (
@@ -22,8 +21,10 @@ from app.mission.pop_coverage_evidence import coverage_snapshot
 from app.services.pop.catalog import parse_catalog
 from app.services.position_freshness import position_observation, speed_is_fresh
 
+from .clock import observation_now
 from .errors import OperatorError
 from .event_ledger import identity
+from .production_input_cache import capture_static
 from .replay_context import source_run
 
 
@@ -84,14 +85,8 @@ def capture_current(adapter, mission_id, *, as_of):
     if telemetry is None:
         raise OperatorError("event_source_unavailable", retryable=True)
     position = deepcopy(telemetry.position)
-    require_fresh_position(position, as_of)
-    metadata, sources, _ = capture_inputs(
-        mission_id,
-        adapter.route_manager,
-        adapter.poi_manager,
-        persisted=True,
-        include_timeline_cache=False,
-    )
+    require_fresh_position(position, observation_now(adapter.clock))
+    metadata, sources = capture_static(adapter, mission_id)
     mission = Mission.model_validate_json(metadata)
     from app.mission.active_context import resolve_active_mission_leg_context
 

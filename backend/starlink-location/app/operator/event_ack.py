@@ -3,6 +3,7 @@
 from dataclasses import replace
 from uuid import UUID, uuid4
 
+from .clock import observation_now
 from .commands import receipt_for_key
 from .errors import OperatorError
 from .event_ledger import identity, reconcile
@@ -122,7 +123,8 @@ def acknowledge(request, *, key, epoch, runtime, adapter=None):
             (request.occurrence_id, request.severity_generation),
         ).fetchone()
         command_id = str(uuid4())
-        ack_id, at = existing if existing else (str(uuid4()), now)
+        recorded_at = observation_now(runtime.clock)
+        ack_id, at = existing if existing else (str(uuid4()), recorded_at)
         receipt = AckReceipt(
             command_id=command_id,
             acknowledgment_id=ack_id,
@@ -143,6 +145,12 @@ def acknowledge(request, *, key, epoch, runtime, adapter=None):
             )
         connection.execute(
             "INSERT INTO commands VALUES (?, ?, ?, 1, ?, 200, ?)",
-            (command_id, key, request_hash, now.isoformat(), receipt.model_dump_json()),
+            (
+                command_id,
+                key,
+                request_hash,
+                recorded_at.isoformat(),
+                receipt.model_dump_json(),
+            ),
         )
         return receipt, False

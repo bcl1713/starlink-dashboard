@@ -3,6 +3,7 @@
 import json
 from uuid import uuid4
 
+from .clock import observation_now
 from .conference_actions import conference_audit_reason, validate_conference_update
 from .errors import OperatorError
 from .event_models import AckReceipt
@@ -63,7 +64,7 @@ def execute_in_transaction(
         content = {name: getattr(command, name) for name in RecordInput.model_fields}
     else:
         content = {name: getattr(current, name) for name in RecordInput.model_fields}
-    recorded_at = clock.now()
+    recorded_at = observation_now(clock)
     source_mode = connection.execute(
         "SELECT source_mode FROM store_metadata"
     ).fetchone()[0]
@@ -138,7 +139,7 @@ def execute_in_transaction(
         mutation_origin=(
             "retrospective"
             if content["time"].occurred_at is not None
-            and content["time"].occurred_at < recorded_at
+            and content["time"].occurred_at < clock.now()
             else "interactive"
         ),
     )

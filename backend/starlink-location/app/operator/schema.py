@@ -4,7 +4,7 @@ import hashlib
 import sqlite3
 from pathlib import Path
 
-from .clock import Clock
+from .clock import Clock, observation_now
 from .errors import OperatorError
 from .time_models import utc_timestamp
 
@@ -13,7 +13,7 @@ MIGRATION = Path(__file__).with_name("migrations") / "001_initial.sql"
 
 def timestamp(clock: Clock) -> str:
     return (
-        utc_timestamp(clock.now())
+        utc_timestamp(observation_now(clock))
         .isoformat(timespec="microseconds")
         .replace("+00:00", "Z")
     )
