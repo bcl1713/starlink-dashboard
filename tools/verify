@@ -61,7 +61,7 @@ STATIC: list[Command] = [
     ),
     (["npm", "--prefix", "frontend/mission-planner", "run", "lint"], ROOT),
     (["markdownlint-cli2", "docs/**/*.md"], ROOT),
-    (["lychee", "--no-progress", "docs/"], ROOT),
+    (["python3", "tools/check_docs_links.py", "docs/"], ROOT),
     (
         [
             "python3",
@@ -69,6 +69,7 @@ STATIC: list[Command] = [
             "pytest",
             "-q",
             "tools/tests/test_acceptance_platform_typing_policy.py",
+            "tools/tests/test_docs_links.py",
         ],
         ROOT,
     ),
@@ -127,11 +128,7 @@ def added_type_ignore_violations(
             continue
         if line.startswith("+") and not line.startswith("+++"):
             source_line = line[1:]
-            if (
-                path is not None
-                and path.endswith(".py")
-                and line_number is not None
-            ):
+            if path is not None and path.endswith(".py") and line_number is not None:
                 additions.setdefault(path, []).append((line_number, source_line))
             if line_number is not None:
                 line_number += 1

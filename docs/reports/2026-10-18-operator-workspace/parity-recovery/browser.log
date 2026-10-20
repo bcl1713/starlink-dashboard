@@ -1,0 +1,13 @@
+
+Running 6 tests using 1 worker
+
+(node:3938772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/e2e/operator-workspace.spec.ts:127:1 › hidden workspace: normal and busy layouts, real call save and parked notes (8.4s)
+  ✓  2 tests/e2e/operator-workspace.spec.ts:549:1 › hidden workspace: conference reuse and independent customer lifecycle at three sizes (8.3s)
+  ✓  3 tests/e2e/operator-workspace.spec.ts:695:1 › hidden workspace: missing mission and unavailable store remain actionable at three sizes (2.2s)
+  ✓  4 tests/e2e/operator-workspace.spec.ts:736:1 › hidden workspace: issue follow-up, correction and applied-only transport at three sizes (10.5s)
+  ✓  5 tests/e2e/operator-workspace.spec.ts:928:1 › hidden workspace: paged named transport relationships retain exact targets at three sizes (4.3s)
+  ✓  6 tests/e2e/operator-workspace.spec.ts:1146:1 › hidden workspace: real lost receipt exact retry and offline draft recovery at three sizes (50.5s)
+
+  6 passed (1.4m)

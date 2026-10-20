@@ -1,0 +1,50 @@
+
+Running 1 test using 1 worker
+
+(node:2560111) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/e2e/operator-display.spec.ts:10:1 › display presets restore actual weather rendering and report real conflicts and unavailable settings (6.8m)
+
+
+  1) tests/e2e/operator-display.spec.ts:10:1 › display presets restore actual weather rendering and report real conflicts and unavailable settings 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "{\"present\":true,\"wind\":true,\"temperature\":false,\"sigmet\":true}"
+    Received: "{\"present\":false}"
+
+    Call Log:
+    - Timeout 180000ms exceeded while waiting on the predicate
+
+      67 |             { timeout: 180000 }
+      68 |           )
+    > 69 |           .toBe(
+         |            ^
+      70 |             JSON.stringify({
+      71 |               present: true,
+      72 |               wind: on,
+        at scene (/tmp/starlink-290-gfs-source.x_vm88bw/frontend/mission-planner/tests/e2e/operator-display.spec.ts:69:12)
+        at /tmp/starlink-290-gfs-source.x_vm88bw/frontend/mission-planner/tests/e2e/operator-display.spec.ts:156:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/test-results/gfs-foundation/1792388342763786329/7bece5bf28f3a210ed900f0df7e402939b29f78f/display-browser/operator-display-display-p-8199c-ts-and-unavailable-settings/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/test-results/gfs-foundation/1792388342763786329/7bece5bf28f3a210ed900f0df7e402939b29f78f/display-browser/operator-display-display-p-8199c-ts-and-unavailable-settings/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/test-results/gfs-foundation/1792388342763786329/7bece5bf28f3a210ed900f0df7e402939b29f78f/display-browser/operator-display-display-p-8199c-ts-and-unavailable-settings/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/test-results/gfs-foundation/1792388342763786329/7bece5bf28f3a210ed900f0df7e402939b29f78f/display-browser/operator-display-display-p-8199c-ts-and-unavailable-settings/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../../../home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/test-results/gfs-foundation/1792388342763786329/7bece5bf28f3a210ed900f0df7e402939b29f78f/display-browser/operator-display-display-p-8199c-ts-and-unavailable-settings/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: tests/e2e/operator-display.spec.ts (6.8m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    tests/e2e/operator-display.spec.ts:10:1 › display presets restore actual weather rendering and report real conflicts and unavailable settings 

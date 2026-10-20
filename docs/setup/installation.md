@@ -13,13 +13,13 @@ checked-out file. Check [system requirements](system-requirements.md) first.
 ```bash
 git clone https://github.com/bcl1713/starlink-dashboard.git
 cd starlink-dashboard
-git checkout v2.0.0
+git checkout v3.0.0
 cp .env.example .env
 ./scripts/compose.sh config --quiet
 ./scripts/compose.sh up -d --build
 ```
 
-The example pins the v2.0.0 release. Choose `dev` explicitly for newer
+The example pins the v3.0.0 release. Choose `dev` explicitly for newer
 features and use its matching documentation; see
 [release notes](../release-notes.md).
 

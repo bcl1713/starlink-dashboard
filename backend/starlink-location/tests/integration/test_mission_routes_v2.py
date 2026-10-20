@@ -3,6 +3,7 @@
 import asyncio
 import io
 import json
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -832,7 +833,10 @@ class TestMissionV2ListEndpoint:
         )
 
         assert response.status_code == 200
-        assert response.headers["access-control-expose-headers"] == "X-Total-Count"
+        assert "X-Total-Count" in {
+            value.strip()
+            for value in response.headers["access-control-expose-headers"].split(",")
+        }
 
     def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
         """The additive total header lets clients paginate without breaking arrays."""
@@ -1004,9 +1008,20 @@ class TestMissionV2UpdateEndpoint:
 class TestMissionPackageImportLimits:
     """Regression coverage for the mission-package upload contract."""
 
-    def test_import_rejects_an_oversize_package_with_attributable_413(self, client):
+    @pytest.fixture(autouse=True)
+    def isolate_import_rate_limit(self):
+        # These boundary requests must not consume another test's shared
+        # five-per-minute allowance. Keep production rate limiting enabled.
+        mission_routes_v2.limiter.reset()
+        yield
+        mission_routes_v2.limiter.reset()
+
+    def test_import_rejects_an_oversize_package_with_attributable_413(
+        self, client, monkeypatch
+    ):
         """The application layer preserves its documented package-size rejection."""
-        package = b"x" * (100 * 1024 * 1024 + 1)
+        monkeypatch.setattr(mission_routes_v2, "MISSION_PACKAGE_MAX_UPLOAD_BYTES", 1024)
+        package = b"x" * 1025
 
         response = client.post(
             "/api/v2/missions/import",
@@ -1017,6 +1032,73 @@ class TestMissionPackageImportLimits:
         assert response.json()["detail"] == {
             "code": "mission_package_too_large",
             "layer": "application",
-            "max_bytes": 100 * 1024 * 1024,
+            "max_bytes": 1024,
             "received_bytes": len(package),
         }
+
+    def test_large_archive_imports_without_inflating_archival_members(
+        self, client, test_mission_v2, monkeypatch
+    ):
+        import tempfile
+
+        for leg in test_mission_v2.legs:
+            leg.route_id = ""
+        original = zipfile.ZipFile.read
+
+        def read_planning_only(archive, name, *args, **kwargs):
+            assert not str(name).startswith(("operations/", "telemetry/"))
+            return original(archive, name, *args, **kwargs)
+
+        monkeypatch.setattr(zipfile.ZipFile, "read", read_planning_only)
+        with tempfile.TemporaryFile() as package:
+            with zipfile.ZipFile(package, "w") as archive:
+                archive.writestr("mission.json", test_mission_v2.model_dump_json())
+                with archive.open("telemetry/large.csv", "w") as member:
+                    for _ in range(101):
+                        member.write(b"x" * 1024 * 1024)
+                archive.writestr("operations/journal.json", '{"archive_only":true}')
+            package.seek(0)
+            response = client.post(
+                "/api/v2/missions/import",
+                files={"file": ("large.zip", package, "application/zip")},
+            )
+        assert response.status_code == 200, response.text
+        assert response.json()["leg_count"] == len(test_mission_v2.legs)
+
+    def test_expanded_planning_limit_rejects_before_mission_read(
+        self, client, monkeypatch
+    ):
+        package = io.BytesIO()
+        with zipfile.ZipFile(package, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("mission.json", b"x" * (100 * 1024 * 1024 + 1))
+        response = client.post(
+            "/api/v2/missions/import",
+            files={"file": ("bomb.zip", package.getvalue(), "application/zip")},
+        )
+        assert response.status_code == 413
+        assert response.json()["detail"]["code"] == "mission_planning_data_too_large"
+
+    def test_rejects_excessive_zip_directory_before_loading_entries(
+        self, client, monkeypatch
+    ):
+        package = io.BytesIO()
+        with zipfile.ZipFile(package, "w") as archive:
+            for index in range(4):
+                archive.writestr(f"operations/{index}.json", "{}")
+            archive.writestr("mission.json", "{}")
+        monkeypatch.setattr(mission_routes_v2, "MISSION_PACKAGE_MAX_ENTRIES", 4)
+        original = zipfile.ZipFile._RealGetContents
+
+        def forbidden(self):
+            pytest.fail(
+                "Untrusted central directory was materialized before its limit check"
+            )
+
+        monkeypatch.setattr(zipfile.ZipFile, "_RealGetContents", forbidden)
+        response = client.post(
+            "/api/v2/missions/import",
+            files={"file": ("entries.zip", package.getvalue(), "application/zip")},
+        )
+        assert response.status_code == 413
+        assert response.json()["detail"]["code"] == "mission_package_too_many_entries"
+        monkeypatch.setattr(zipfile.ZipFile, "_RealGetContents", original)

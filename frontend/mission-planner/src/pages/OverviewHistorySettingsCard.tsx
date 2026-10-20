@@ -7,14 +7,18 @@ const HISTORY_WINDOWS = [300, 900, 1800, 3600];
 /** The persisted window applies to both the aircraft trail and network graphs. */
 export function OverviewHistorySettingsCard({
   embedded = false,
+  live = false,
 }: {
   embedded?: boolean;
+  live?: boolean;
 }) {
-  const { data, isLoading, isError } = useOverviewHistorySettings();
+  const { data, isLoading, isError } = useOverviewHistorySettings(live);
   const {
     mutate,
     isPending,
     isError: saveError,
+    isSuccess,
+    error,
   } = useUpdateOverviewHistorySettings();
   const custom = data && !HISTORY_WINDOWS.includes(data.window_seconds);
   const content = (
@@ -64,9 +68,11 @@ export function OverviewHistorySettingsCard({
       {isError && <p role="alert">Overview history settings unavailable</p>}
       {saveError && (
         <p role="alert">
-          Unable to save Overview history window. Please try again.
+          Unable to save Overview history window. {error?.message} Please try
+          again.
         </p>
       )}
+      {isSuccess && <p role="status">Overview history window saved</p>}
       {isPending && <p role="status">Saving Overview history window…</p>}
     </section>
   );

@@ -1,0 +1,80 @@
+{
+  "author": {
+    "backend": "restricted-access operator",
+    "operator_label": null
+  },
+  "command_id": "2bf7148e-a5e4-4de8-88e1-8253f1e8bfb0",
+  "deleted": false,
+  "journal_seq": 43,
+  "leg_id": null,
+  "mission_id": "synthetic-mission-b",
+  "operation": "update",
+  "payload": {
+    "call_id": null,
+    "conference_id": null,
+    "entry_type": "transport_decision",
+    "next_leg_id": null,
+    "note": "",
+    "previous_leg_id": null,
+    "reason": "Other client correction",
+    "schema_version": 1,
+    "services": [
+      {
+        "applied": {
+          "time": {
+            "at": "2026-10-17T16:44:00.000000Z",
+            "precision": "exact"
+          },
+          "transport": "Ka"
+        },
+        "checked": null,
+        "intended": null,
+        "requested": {
+          "time": {
+            "at": null,
+            "precision": "unknown"
+          },
+          "transport": "X"
+        },
+        "row_id": "e404014d-616c-47ab-b894-e0aecc2712dd",
+        "service": "Synthetic IPTV 1920"
+      },
+      {
+        "applied": null,
+        "checked": null,
+        "intended": {
+          "transport": "Starshield"
+        },
+        "requested": null,
+        "row_id": "dc758bf3-3a1b-4c5a-b3db-ad3c0649d3e6",
+        "service": "Secure voice"
+      }
+    ],
+    "title": "Synthetic IPTV 1920, Secure voice"
+  },
+  "previous_version": 4,
+  "provenance": {
+    "kind": "operator_reported",
+    "mutation_origin": "interactive",
+    "observed_at": null,
+    "predicted_at": null,
+    "source_mode": "simulation",
+    "source_ref": null
+  },
+  "reason": "Transport decision corrected",
+  "reason_origin": "automatic",
+  "record_id": "198ad598-102c-42d5-852a-c88cd384fb59",
+  "record_type": "transport_decision",
+  "recorded_at": "2026-10-17T16:45:00.000000Z",
+  "schema_version": 1,
+  "scope": "mission",
+  "time": {
+    "end_state": "unknown",
+    "ended_at": null,
+    "occurred_at": null,
+    "planned_end_at": null,
+    "planned_start_at": "2026-10-17T16:50:00.000000Z",
+    "precision": "unknown"
+  },
+  "version": 5
+}

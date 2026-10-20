@@ -1,3 +1,7 @@
+import {
+  presetWeatherSchema,
+  type PresetWeatherVisibility,
+} from './overview-preset-weather';
 import apiClient from './api-client';
 
 // Additive preferences preserve the existing layout on older installations.
@@ -97,12 +101,87 @@ export const overviewLinkSettingsApi = {
     return confirmedSettings(response.data);
   },
   async update(
-    changes: OverviewLinkSettingsUpdate
+    changes: OverviewLinkSettingsUpdate,
+    expectedValues?: OverviewLinkSettingsUpdate
   ): Promise<OverviewLinkSettings> {
     const response = await apiClient.put<unknown>(
       '/api/overview-links/settings',
-      changes
+      expectedValues ? { ...changes, expected_values: expectedValues } : changes
     );
     return confirmedSettings(response.data);
+  },
+};
+
+export const PRESET_NAMES = ['normal', 'communications', 'weather'] as const;
+export type OverviewPresetName = (typeof PRESET_NAMES)[number];
+export interface OverviewPreset {
+  weather_visibility?: PresetWeatherVisibility;
+  version: number;
+  settings: OverviewLinkSettingsUpdate;
+}
+export type OverviewPresets = Record<OverviewPresetName, OverviewPreset | null>;
+const visibilityFields = new Set([
+  ...Object.keys(OVERVIEW_VISIBILITY_DEFAULTS),
+  'starshield_link_enabled',
+  'x_band_link_enabled',
+  'orbital_traffic_enabled',
+  'aircraft_history_enabled',
+  'country_borders_enabled',
+  'state_borders_enabled',
+]);
+function confirmedPreset(data: unknown): OverviewPreset {
+  if (
+    !data ||
+    typeof data !== 'object' ||
+    !('version' in data) ||
+    !Number.isSafeInteger(data.version) ||
+    Number(data.version) < 1 ||
+    !('settings' in data) ||
+    !data.settings ||
+    typeof data.settings !== 'object' ||
+    Object.keys(data.settings).length === 0 ||
+    Object.entries(data.settings).some(
+      ([key, value]) => !visibilityFields.has(key) || typeof value !== 'boolean'
+    )
+  ) {
+    throw new Error('Invalid Overview preset acknowledgment');
+  }
+  if ('weather_visibility' in data)
+    presetWeatherSchema.parse(data.weather_visibility);
+  return data as OverviewPreset;
+}
+export const overviewPresetsApi = {
+  async get(signal?: AbortSignal): Promise<OverviewPresets> {
+    const { data } = await apiClient.get('/api/overview-links/presets', {
+      signal,
+    });
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      PRESET_NAMES.some((name) => !(name in data))
+    )
+      throw new Error('Invalid Overview presets response');
+    return Object.fromEntries(
+      PRESET_NAMES.map((name) => [
+        name,
+        data[name] === null ? null : confirmedPreset(data[name]),
+      ])
+    ) as OverviewPresets;
+  },
+  async save(
+    name: OverviewPresetName,
+    settings: OverviewLinkSettingsUpdate,
+    expectedVersion: number,
+    weatherVisibility?: PresetWeatherVisibility
+  ): Promise<OverviewPreset> {
+    const { data } = await apiClient.put(
+      `/api/overview-links/presets/${name}`,
+      {
+        settings,
+        expected_version: expectedVersion,
+        ...(weatherVisibility ? { weather_visibility: weatherVisibility } : {}),
+      }
+    );
+    return confirmedPreset(data);
   },
 };

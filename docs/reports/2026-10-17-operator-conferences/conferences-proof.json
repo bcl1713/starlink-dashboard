@@ -1,0 +1,14 @@
+{
+  "synthetic": true,
+  "captures": ["1920x1080", "390x844", "844x390"],
+  "joiningOrders": true,
+  "overlap": true,
+  "interruptRestore": true,
+  "reuse": true,
+  "discrepancy": true,
+  "sourceCoverage": true,
+  "twoClients": true,
+  "retryFrozenTime": true,
+  "retryConcurrentEdit": true,
+  "restart": true
+}

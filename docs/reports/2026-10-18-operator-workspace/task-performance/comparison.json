@@ -1,0 +1,113 @@
+{
+  "baselineSha": "1a3e77d3b4017ad1f7cb33d1b1ef20b9378e0244",
+  "candidateSha": "679a5c1f24088e4d185338a7e88ad6415e661598",
+  "browserHarness": {
+    "sha": "679a5c1f24088e4d185338a7e88ad6415e661598",
+    "testSha256": "7a1c6fd585d9e443519376d9855cee32bdccdd38263ff7fc8a2ba4fcfa45b006",
+    "scope": "External scripted qualification source; runtime images retain their own exact candidate SHA"
+  },
+  "rows": [
+    {
+      "task": "Create planned call",
+      "baselineMedianMs": 192.205156,
+      "candidateMedianMs": 411.51497499999914,
+      "deltaMs": 219.30981899999915,
+      "baselineActivations": [
+        1
+      ],
+      "candidateActivations": [
+        2
+      ]
+    },
+    {
+      "task": "Reschedule same call",
+      "baselineMedianMs": 230.34564450000107,
+      "candidateMedianMs": 520.8569785000018,
+      "deltaMs": 290.5113340000007,
+      "baselineActivations": [
+        3
+      ],
+      "candidateActivations": [
+        5
+      ]
+    },
+    {
+      "task": "Inspect original and replacement history",
+      "baselineMedianMs": 108.74431049999896,
+      "candidateMedianMs": 314.791624999998,
+      "deltaMs": 206.04731449999906,
+      "baselineActivations": [
+        2
+      ],
+      "candidateActivations": [
+        2
+      ]
+    },
+    {
+      "task": "Log mission note",
+      "baselineMedianMs": 180.56717199999912,
+      "candidateMedianMs": 505.37551299999905,
+      "deltaMs": 324.8083409999999,
+      "baselineActivations": [
+        1
+      ],
+      "candidateActivations": [
+        2
+      ]
+    },
+    {
+      "task": "Log issue",
+      "baselineMedianMs": 147.09089499999936,
+      "candidateMedianMs": 448.0026555000004,
+      "deltaMs": 300.91176050000104,
+      "baselineActivations": [
+        1
+      ],
+      "candidateActivations": [
+        3
+      ]
+    },
+    {
+      "task": "Resolve issue",
+      "baselineMedianMs": 158.0938535000014,
+      "candidateMedianMs": 93.82716249999976,
+      "deltaMs": -64.26669100000163,
+      "baselineActivations": [
+        1
+      ],
+      "candidateActivations": [
+        1
+      ]
+    },
+    {
+      "task": "Change shared display history window",
+      "baselineMedianMs": 167.05216899999914,
+      "candidateMedianMs": 591.820235000001,
+      "deltaMs": 424.7680660000019,
+      "baselineActivations": [
+        2
+      ],
+      "candidateActivations": [
+        2,
+        3
+      ]
+    },
+    {
+      "task": "Recover response loss with exact retry",
+      "baselineMedianMs": 335.564208,
+      "candidateMedianMs": 541.0886129999999,
+      "deltaMs": 205.5244049999999,
+      "baselineActivations": [
+        3
+      ],
+      "candidateActivations": [
+        4
+      ]
+    }
+  ],
+  "limits": {
+    "ordinaryTaskMs": 5000,
+    "injectedRecoveryTaskMs": 10000
+  },
+  "humanMisSelections": null
+}

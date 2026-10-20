@@ -1,7 +1,7 @@
 # Portainer GHCR Deployment Runbook
 
 Use the template and images from the same reviewed release or source revision.
-For v2.0.0, select `STARLINK_IMAGE_TAG=v2.0.0` only after its four-image
+For v3.0.0, select `STARLINK_IMAGE_TAG=v3.0.0` only after its four-image
 publishing workflow succeeds. Consult [release notes](../release-notes.md)
 for compatibility requirements and validation scope.
 

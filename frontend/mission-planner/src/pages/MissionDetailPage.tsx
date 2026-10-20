@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MissionFlightEvents } from './MissionFlightEvents';
 import { ImportDialog } from '../components/itinerary-import/ImportDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -258,6 +259,11 @@ export function MissionDetailPage() {
         </div>
       )}
       <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
+      <MissionFlightEvents
+        key={mission.id}
+        missionId={mission.id}
+        legs={mission.legs}
+      />
       {managed && (
         <div className="space-y-4">
           <h2 className="text-base font-semibold">Itinerary legs</h2>

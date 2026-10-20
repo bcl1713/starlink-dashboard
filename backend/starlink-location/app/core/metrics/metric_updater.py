@@ -71,6 +71,7 @@ def update_metrics_from_telemetry(
     active_route: Optional["ParsedRoute"] = None,
     poi_manager: Optional["POIManager"] = None,
     *,
+    flight_events_managed: bool = False,
     mission_context: Optional["MissionTimeContext"] = None,
     simulation_plan: Optional["PreparedMissionRun"] = None,
     simulation_frame: Optional["ReplayFrame"] = None,
@@ -229,7 +230,7 @@ def update_metrics_from_telemetry(
         detection_ready = position_state == "fresh" and speed_is_fresh(
             telemetry.position.speed, telemetry.position.speed_observed_at, now
         )
-        if mission_context is not None:
+        if mission_context is not None or flight_events_managed:
             detection_ready = False
         if not detection_ready:
             flight_state.reset_detection()

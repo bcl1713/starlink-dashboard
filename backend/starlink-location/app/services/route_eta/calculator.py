@@ -73,7 +73,8 @@ def project_point_to_line_segment(
 
     # Linear interpolation for projected point
     proj_lat = seg_start_lat + t * (seg_end_lat - seg_start_lat)
-    proj_lon = seg_start_lon + t * (seg_end_lon - seg_start_lon)
+    longitude_delta = (seg_end_lon - seg_start_lon + 180) % 360 - 180
+    proj_lon = (seg_start_lon + t * longitude_delta + 180) % 360 - 180
 
     # Distance from point to projected point
     dist_to_proj = haversine(
@@ -202,7 +203,9 @@ class RouteETACalculator:
         # Calculate progress percentage
         total_distance = self.route.get_total_distance()
         projected_route_progress = (
-            (best_distance_along_route / total_distance * 100)
+            # Projection is confined to route segments; floating-point longitude
+            # normalization can otherwise place the terminal fraction above 100.
+            min(100.0, max(0.0, best_distance_along_route / total_distance * 100))
             if total_distance > 0
             else 0.0
         )

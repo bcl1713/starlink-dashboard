@@ -1,0 +1,16 @@
+{
+  "README.md": "c478e54bd9f7baca62a1be162b1eb9dc49d2e4a0a21147d539e247f8273e0154",
+  "acceptance.json": "4b0a05426dcdbb93c13e280ba9a1ae3f65337028cfa442f66391e550023ad1ba",
+  "cleanup.json": "525544a01c19d217942d4277c1bc3e91d505b2b852d938290b5d9f8d86ffef3d",
+  "communications-1920x1080.png": "8608145daa6d1ccced9a474007a7cf34868b73e3a228d50b7917ff70ea459710",
+  "communications-390x844.png": "44ebf7b85e4f9a737387a3394a2ff3c7dc65c8a4d28210136cc9e02002628885",
+  "communications-844x390.png": "094666691837f6cb74e2a2697724c8fd52fc9fde0c886b56f6581db4c251eb7c",
+  "communications-proof.json": "de3226e881f4b73db60e3b3479148ed87c7cad636bd970435a93dde75037cda4",
+  "examples.json": "ee73d968657d4dffcb58309bcb3b1057443679be4486a5192c0fe0b406b8abea",
+  "exports.json": "044b96b547784c7ff352bd6d941b936cbe3a014624cbea6ac54d9e3605e14df4",
+  "failures.json": "38ff6b314f1d2db961ff8fb135cd3246558afa67ef02731d6edddc1bcb19f4c3",
+  "operations-activity-example.jsonl": "5b38f40cebf0699daa232adb98ca8706d6c7f405a42e61974325253f28ecdbe1",
+  "operations-audit-example.jsonl": "13ffc65148a95f05dbdc50be0aa48709caf21a83ba5d2a34801888f47bd0254e",
+  "operations-current-example.json": "4fd9a12634975f3aefdd01c1e3fe22abd924c97addc1b2d60b5f7742fd81260d",
+  "verification.json": "1bbde7a45c200614c9b29f513019ea3bb843eaa554eb5ea7d8606f086d03e81e"
+}

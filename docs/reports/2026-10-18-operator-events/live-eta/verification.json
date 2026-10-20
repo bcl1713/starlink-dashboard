@@ -1,0 +1,39 @@
+{
+  "productCommit": "ba59b615eff6960d66dc3aabac76bbcb2f743063",
+  "qualifiedCandidate": "4fdb318b5dc9da36335aefe0f4e6b98b2e2ed6b3",
+  "changesAfterProductCommit": "tests and documentation only; no product code changes",
+  "checks": {
+    "backend": {
+      "passed": 4136,
+      "skipped": 20,
+      "log": "backend-full.log",
+      "logSha256": "50f4168ca8d1bb9beda539e2c5acdb16be579502857bf511a0bb1e80570ab0bb"
+    },
+    "frontend": {
+      "passed": 1830,
+      "workers": 2,
+      "log": "frontend-full-bounded.log",
+      "logSha256": "73530a1801dc46632e4c60cb9911d71da8341ff2485bc77d4ea41c5f60f06f7a"
+    },
+    "liveTiming": {
+      "passed": 11,
+      "log": "timing-final.log",
+      "logSha256": "4473bc397baf0f3c44de5ae81a6386e213acc448100a961762d16547a8e3a882"
+    },
+    "harness": {
+      "passed": 25,
+      "log": "harness-green.log",
+      "logSha256": "2fb9f932e41b5f1285f88c90c3fc82e9fb671a851892dd94c8daeccdc79e2083"
+    },
+    "productionBuild": {
+      "passed": true,
+      "log": "build.log",
+      "logSha256": "450338ec562c8f0d265366195b9a97ceda6a6a3252bec97b4aafff90486fa68b"
+    },
+    "static": {
+      "passed": true,
+      "log": "static-evidence.log",
+      "logSha256": "99a5257718d05e2c04731ce127838328b690481493bfdddaad9ead0c32fb7118"
+    }
+  }
+}

@@ -1,0 +1,1144 @@
+{
+  "synthetic": true,
+  "receipts": [
+    {
+      "schema_version": 1,
+      "command_id": "8e73d2e0-6656-4f89-9a2b-b4155bbad268",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "preparing",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 15,
+          "command_id": "8e73d2e0-6656-4f89-9a2b-b4155bbad268",
+          "operation": "create",
+          "reason": "Conference preparation",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "c8641914-83bc-4251-b19a-3890229bf8da",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 16,
+          "command_id": "c8641914-83bc-4251-b19a-3890229bf8da",
+          "operation": "update",
+          "reason": "Conference established",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "58ac7e55-0da0-46ee-bb53-c788af1f13a7",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": "2026-10-17T17:05:00.000000Z",
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 17,
+          "command_id": "58ac7e55-0da0-46ee-bb53-c788af1f13a7",
+          "operation": "update",
+          "reason": "Conference verification updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2318704b-dcd9-4b72-917b-929c9c8642d8",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "interrupted",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 18,
+          "command_id": "2318704b-dcd9-4b72-917b-929c9c8642d8",
+          "operation": "update",
+          "reason": "Conference interrupted",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2e475c73-8737-47b5-9ecc-4f3338f5208c",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 19,
+          "command_id": "2e475c73-8737-47b5-9ecc-4f3338f5208c",
+          "operation": "update",
+          "reason": "Conference connection restored",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "82f2cafd-17d2-4761-b4be-9f3553464236",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T17:15:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional guided bridge call 1",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional guided bridge call 1",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 10,
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "6a184b7a-1bdb-493f-948b-b6fda1810926",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 20,
+          "command_id": "82f2cafd-17d2-4761-b4be-9f3553464236",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "6a971496-77a5-4d0b-8701-7983eb2fba04",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "call",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": "2026-10-17T17:25:00.000000Z",
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional guided bridge call 2",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "call",
+            "status": "scheduled",
+            "party": "Fictional guided bridge call 2",
+            "coordinator": null,
+            "communications_kind": null,
+            "prep_lead_minutes": 10,
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "6d659f10-1ac3-47ec-bb17-c06226eba8b1",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 21,
+          "command_id": "6a971496-77a5-4d0b-8701-7983eb2fba04",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "1a5c4799-622f-4672-863f-cebd7f82ea34",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Fictional first guided customer",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": "6a184b7a-1bdb-493f-948b-b6fda1810926",
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "1de4107f-a204-49ac-8424-2bf98156547a",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 22,
+          "command_id": "1a5c4799-622f-4672-863f-cebd7f82ea34",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "95a33194-83e8-4432-ac74-cfc1136c7367",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Fictional first guided customer",
+            "state": "interrupted",
+            "resumes_participation_id": null,
+            "call_id": "6a184b7a-1bdb-493f-948b-b6fda1810926",
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "1de4107f-a204-49ac-8424-2bf98156547a",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 23,
+          "command_id": "95a33194-83e8-4432-ac74-cfc1136c7367",
+          "operation": "update",
+          "reason": "Customer connection interrupted",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "26b67dc0-afeb-4d3a-968b-4e1401c00b19",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Fictional first guided customer",
+            "state": "connected",
+            "resumes_participation_id": "1de4107f-a204-49ac-8424-2bf98156547a",
+            "call_id": "6a184b7a-1bdb-493f-948b-b6fda1810926",
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "02df8ea4-609f-4c34-b319-7da809d272f6",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 24,
+          "command_id": "26b67dc0-afeb-4d3a-968b-4e1401c00b19",
+          "operation": "create",
+          "reason": "Customer connection restored",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "dd92f133-7d48-4ab7-a9ba-4b25e5da0df4",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Fictional second guided customer",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": "6d659f10-1ac3-47ec-bb17-c06226eba8b1",
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "00194158-c92e-448d-96f1-46bd79575fe9",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 25,
+          "command_id": "dd92f133-7d48-4ab7-a9ba-4b25e5da0df4",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ba3c023f-ad83-40f2-b216-551ae0b7f859",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Fictional second guided customer",
+            "state": "left",
+            "resumes_participation_id": null,
+            "call_id": "6d659f10-1ac3-47ec-bb17-c06226eba8b1",
+            "conference_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281"
+          },
+          "record_id": "00194158-c92e-448d-96f1-46bd79575fe9",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 26,
+          "command_id": "ba3c023f-ad83-40f2-b216-551ae0b7f859",
+          "operation": "update",
+          "reason": "Customer left",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ce68b591-e18e-4948-a35a-ecd95ea40a8b",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "closed",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 27,
+          "command_id": "ce68b591-e18e-4948-a35a-ecd95ea40a8b",
+          "operation": "update",
+          "reason": "Conference closed",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    }
+  ],
+  "history": {
+    "schema_version": 1,
+    "items": [
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "preparing",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 15,
+          "command_id": "8e73d2e0-6656-4f89-9a2b-b4155bbad268",
+          "operation": "create",
+          "reason": "Conference preparation",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      },
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 16,
+          "command_id": "c8641914-83bc-4251-b19a-3890229bf8da",
+          "operation": "update",
+          "reason": "Conference established",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      },
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": "2026-10-17T17:05:00.000000Z",
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 17,
+          "command_id": "58ac7e55-0da0-46ee-bb53-c788af1f13a7",
+          "operation": "update",
+          "reason": "Conference verification updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      },
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "interrupted",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 18,
+          "command_id": "2318704b-dcd9-4b72-917b-929c9c8642d8",
+          "operation": "update",
+          "reason": "Conference interrupted",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      },
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 19,
+          "command_id": "2e475c73-8737-47b5-9ecc-4f3338f5208c",
+          "operation": "update",
+          "reason": "Conference connection restored",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      },
+      {
+        "schema_version": 1,
+        "record": {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional Meridian guided reusable bridge",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "closed",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "31493665-bb0c-4bbe-b2aa-3ca636a2e281",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 27,
+          "command_id": "ce68b591-e18e-4948-a35a-ecd95ea40a8b",
+          "operation": "update",
+          "reason": "Conference closed",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "association": {
+          "status": "resolved",
+          "unresolved_fields": [],
+          "error_code": null
+        },
+        "freshness": {
+          "status": "unknown",
+          "threshold_seconds": null,
+          "as_of": "2026-10-17T17:05:00.000000Z"
+        }
+      }
+    ],
+    "cursor": null,
+    "H": 27,
+    "as_of": "2026-10-17T17:05:00.000000Z"
+  },
+  "automatic": [
+    "conference established verified",
+    "conference interrupted restored",
+    "conference reused closed",
+    "participation joined left",
+    "participation resumed new interval",
+    "participation overlap",
+    "participation discrepancy"
+  ],
+  "retainedAfterClosureReloadAndRestart": true,
+  "manualBridgeSemanticsStillRequiresHumanObservation": true
+}

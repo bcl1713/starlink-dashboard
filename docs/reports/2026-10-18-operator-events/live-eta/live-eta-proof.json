@@ -1,0 +1,137 @@
+{
+  "synthetic": true,
+  "rawInputsOnly": true,
+  "lateDeparture": true,
+  "earlyDeparture": true,
+  "speedThreshold": true,
+  "displayedTimeMatches": true,
+  "foregroundSoundOnce": true,
+  "deviationRejoin": true,
+  "revisedRoute": true,
+  "unavailableExplicit": true,
+  "viewports": [
+    1920,
+    390
+  ],
+  "times": [
+    {
+      "scenario": "late45min",
+      "distant": {
+        "schema_version": 1,
+        "event_id": "300a9593119bafd80301bfca6750310559d56f5667f035dd0393b90a72adaf67",
+        "mission_id": "synthetic-mission-a",
+        "leg_id": "synthetic-leg-1",
+        "kind": "restriction",
+        "title": "X modeled unavailable",
+        "due_at": "2026-10-17T16:53:00.347670Z",
+        "end_at": "2026-10-17T19:05:06.079998Z",
+        "state": "upcoming",
+        "provenance": "modeled",
+        "source_ref": "model:synthetic-leg-1",
+        "source_revision": "f996ff446f8c5cb39a56d76466ebe686bb20e7f8e384ebc28d57f7e50a4f13f8",
+        "source_captured_at": "2026-10-17T16:45:00.000000Z",
+        "freshness": "fresh",
+        "confidence": "Modeled estimate",
+        "time_basis": "live_route_eta",
+        "planned_due_at": "2026-10-17T16:01:00.000000Z",
+        "planned_end_at": "2026-10-17T16:40:00.000000Z",
+        "transport": "X",
+        "protected_participation_ids": [
+          "4a0af678-2521-41eb-bec0-4d2e601a7885",
+          "725a1c81-57dd-441b-96ff-1edc69ac40e5",
+          "8a63b0b3-043c-4553-95c6-9181f8ba6977"
+        ],
+        "conference_ids": [
+          "aded4ff2-6f54-4f50-a661-0bee8363fd69"
+        ],
+        "transport_relevance": "unknown",
+        "continuity_status": "unknown",
+        "discrepancies": [
+          "Connected customer; conference continuity unknown"
+        ],
+        "significance": "unavailable",
+        "active": true,
+        "schedule_key": "300a9593119bafd80301bfca6750310559d56f5667f035dd0393b90a72adaf67",
+        "family_key": "2b31767da09e4d663a95f179a04d96879db616f0bc483ccc9711821ec1944b92",
+        "dependent_versions": {
+          "725a1c81-57dd-441b-96ff-1edc69ac40e5": 1,
+          "aded4ff2-6f54-4f50-a661-0bee8363fd69": 1,
+          "4a0af678-2521-41eb-bec0-4d2e601a7885": 1,
+          "8a63b0b3-043c-4553-95c6-9181f8ba6977": 1
+        },
+        "notification": {
+          "generation": "a324964094acf8a95ed857e6c9d9038b9326c5ff9728f307fd118e94802bce69",
+          "severity_generation": 2,
+          "acknowledged": false,
+          "acknowledged_at": null,
+          "retired": false,
+          "preview": false,
+          "eligible": false,
+          "priority": 1,
+          "threshold_at": "2026-10-17T16:48:00.347670Z",
+          "acknowledgment_available": true,
+          "available": true,
+          "reason": null
+        }
+      },
+      "approaching": {
+        "schema_version": 1,
+        "event_id": "300a9593119bafd80301bfca6750310559d56f5667f035dd0393b90a72adaf67",
+        "mission_id": "synthetic-mission-a",
+        "leg_id": "synthetic-leg-1",
+        "kind": "restriction",
+        "title": "X modeled unavailable",
+        "due_at": "2026-10-17T16:49:00.173835Z",
+        "end_at": "2026-10-17T18:25:04.342856Z",
+        "state": "upcoming",
+        "provenance": "modeled",
+        "source_ref": "model:synthetic-leg-1",
+        "source_revision": "df222194a43941d1e2482106545aed1231741227b7a957bc0546493c58ca2762",
+        "source_captured_at": "2026-10-17T16:45:00.000000Z",
+        "freshness": "fresh",
+        "confidence": "Modeled estimate",
+        "time_basis": "live_route_eta",
+        "planned_due_at": "2026-10-17T16:01:00.000000Z",
+        "planned_end_at": "2026-10-17T16:40:00.000000Z",
+        "transport": "X",
+        "protected_participation_ids": [
+          "4a0af678-2521-41eb-bec0-4d2e601a7885",
+          "725a1c81-57dd-441b-96ff-1edc69ac40e5",
+          "8a63b0b3-043c-4553-95c6-9181f8ba6977"
+        ],
+        "conference_ids": [
+          "aded4ff2-6f54-4f50-a661-0bee8363fd69"
+        ],
+        "transport_relevance": "unknown",
+        "continuity_status": "unknown",
+        "discrepancies": [
+          "Connected customer; conference continuity unknown"
+        ],
+        "significance": "unavailable",
+        "active": true,
+        "schedule_key": "300a9593119bafd80301bfca6750310559d56f5667f035dd0393b90a72adaf67",
+        "family_key": "2b31767da09e4d663a95f179a04d96879db616f0bc483ccc9711821ec1944b92",
+        "dependent_versions": {
+          "725a1c81-57dd-441b-96ff-1edc69ac40e5": 1,
+          "aded4ff2-6f54-4f50-a661-0bee8363fd69": 1,
+          "4a0af678-2521-41eb-bec0-4d2e601a7885": 1,
+          "8a63b0b3-043c-4553-95c6-9181f8ba6977": 1
+        },
+        "notification": {
+          "generation": "a324964094acf8a95ed857e6c9d9038b9326c5ff9728f307fd118e94802bce69",
+          "severity_generation": 2,
+          "acknowledged": false,
+          "acknowledged_at": null,
+          "retired": false,
+          "preview": false,
+          "eligible": true,
+          "priority": 1,
+          "threshold_at": "2026-10-17T16:44:00.173835Z",
+          "acknowledgment_available": true,
+          "available": true,
+          "reason": null
+        }
+      }
+    }
+  ]
+}

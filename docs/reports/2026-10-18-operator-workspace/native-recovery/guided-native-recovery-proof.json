@@ -1,0 +1,5371 @@
+{
+  "synthetic": true,
+  "initial": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c",
+    "api_epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "kept": {
+    "schema_version": 1,
+    "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+    "saved_records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional retained backup note",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 9,
+        "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T16:00:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "committed": {
+    "schema_version": 1,
+    "command_id": "8ee7f12a-75c1-480c-810b-f0236109d7d3",
+    "saved_records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional discarded lost receipt",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "75208154-fd7d-4467-919c-0adb0b212e41",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 10,
+        "command_id": "8ee7f12a-75c1-480c-810b-f0236109d7d3",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T16:00:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "attempts": [
+    {
+      "body": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "entry_type": "note",
+          "title": "Fictional discarded lost receipt",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null
+        }
+      },
+      "key": "11b9741f-1ab0-482a-9e03-d51271dcfc02",
+      "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3"
+    }
+  ],
+  "backup": {
+    "manifest": "/app/data/operator/simulation/operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd/backups/backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.json",
+    "baseline": "/tmp/issue-376-training-proof-20261019-r35/recovery/backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.baseline.json"
+  },
+  "restored": {
+    "manifest": "/app/data/operator/simulation/operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd/backups/backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.json",
+    "evidence": "/tmp/issue-376-training-proof-20261019-r35/recovery/backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.evidence.json",
+    "health": {
+      "schema_version": 1,
+      "ready": true,
+      "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c",
+      "api_epoch": "c2a72a02-caba-479d-8be8-1f15d0f7a8ab",
+      "source_mode": "simulation",
+      "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+      "clock_regression": false,
+      "error_code": null,
+      "enabled": true
+    }
+  },
+  "report": {
+    "afterRestore": {
+      "H": 9,
+      "health": {
+        "api_epoch": "c2a72a02-caba-479d-8be8-1f15d0f7a8ab",
+        "clock_regression": false,
+        "enabled": true,
+        "error_code": null,
+        "ready": true,
+        "schema_version": 1,
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "history": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "missions": [
+        {
+          "created_at": "2026-10-19T04:44:46.694489Z",
+          "description": null,
+          "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "legs": [
+            {
+              "adjusted_departure_time": null,
+              "created_at": "2026-10-19T04:45:17.003103Z",
+              "description": null,
+              "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+              "import_provenance": null,
+              "is_active": false,
+              "name": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+              "notes": null,
+              "route_id": "",
+              "transports": {
+                "aar_windows": [],
+                "evaluation_context": null,
+                "initial_ka_satellite_ids": [
+                  "AOR",
+                  "POR",
+                  "IOR"
+                ],
+                "initial_x_satellite_id": "",
+                "ka_outages": [],
+                "ku_overrides": [],
+                "manual_aar_tracks": [],
+                "manual_route_splice": null,
+                "planning_inputs": null,
+                "planning_policy": null,
+                "starshield_enabled": null,
+                "x_transitions": []
+              },
+              "updated_at": "2026-10-19T04:45:17.003106Z"
+            },
+            {
+              "adjusted_departure_time": null,
+              "created_at": "2026-10-19T04:45:17.003114Z",
+              "description": null,
+              "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+              "import_provenance": null,
+              "is_active": false,
+              "name": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+              "notes": null,
+              "route_id": "",
+              "transports": {
+                "aar_windows": [],
+                "evaluation_context": null,
+                "initial_ka_satellite_ids": [
+                  "AOR",
+                  "POR",
+                  "IOR"
+                ],
+                "initial_x_satellite_id": "",
+                "ka_outages": [],
+                "ku_overrides": [],
+                "manual_aar_tracks": [],
+                "manual_route_splice": null,
+                "planning_inputs": null,
+                "planning_policy": null,
+                "starshield_enabled": null,
+                "x_transitions": []
+              },
+              "updated_at": "2026-10-19T04:45:17.003115Z"
+            }
+          ],
+          "metadata": {
+            "operator_training_fixture": {
+              "namespace": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+              "prerequisite_record_ids": [
+                "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+                "9d12bd56-850e-42b6-ae74-825b5809eff1",
+                "99e6b613-f94d-44c1-8f51-102cc85ee370",
+                "816ebe28-9063-47de-a32c-4865e2418e15",
+                "4ce41322-fc88-4373-b171-0c52794207a5",
+                "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+                "683b3694-bf51-46fb-95d2-6553c663d8c9",
+                "54d56e04-d3fb-48d7-98e7-1a85a6819b90"
+              ],
+              "version": 1
+            }
+          },
+          "name": "Training mission · Fictional Meridian 21",
+          "updated_at": "2026-10-19T04:44:46.694490Z"
+        }
+      ],
+      "records": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ]
+    },
+    "backup": {
+      "databaseSha256": "9eda5fa29916224b5e2f9e226bdaa571f15b6aed3e976f7533a89ed91b74ab5b",
+      "history": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "identity": {
+        "api_epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "status": "ready",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "manifest": {
+        "H": 9,
+        "checksum": "9eda5fa29916224b5e2f9e226bdaa571f15b6aed3e976f7533a89ed91b74ab5b",
+        "created_at": "2026-10-17T16:00:00.000000Z",
+        "database": "backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.sqlite3",
+        "publication_sequence": 1,
+        "schema_version": 3,
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "preservedIdentity": null,
+      "records": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "restoreReport": null
+    },
+    "beforeBackup": {
+      "H": 9,
+      "health": {
+        "api_epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+        "clock_regression": false,
+        "enabled": true,
+        "error_code": null,
+        "ready": true,
+        "schema_version": 1,
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "history": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "missions": [
+        {
+          "created_at": "2026-10-19T04:44:46.694489Z",
+          "description": null,
+          "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "legs": [
+            {
+              "adjusted_departure_time": null,
+              "created_at": "2026-10-19T04:45:06.573760Z",
+              "description": null,
+              "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+              "import_provenance": null,
+              "is_active": false,
+              "name": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+              "notes": null,
+              "route_id": "",
+              "transports": {
+                "aar_windows": [],
+                "evaluation_context": null,
+                "initial_ka_satellite_ids": [
+                  "AOR",
+                  "POR",
+                  "IOR"
+                ],
+                "initial_x_satellite_id": "",
+                "ka_outages": [],
+                "ku_overrides": [],
+                "manual_aar_tracks": [],
+                "manual_route_splice": null,
+                "planning_inputs": null,
+                "planning_policy": null,
+                "starshield_enabled": null,
+                "x_transitions": []
+              },
+              "updated_at": "2026-10-19T04:45:06.573763Z"
+            },
+            {
+              "adjusted_departure_time": null,
+              "created_at": "2026-10-19T04:45:06.573771Z",
+              "description": null,
+              "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+              "import_provenance": null,
+              "is_active": false,
+              "name": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+              "notes": null,
+              "route_id": "",
+              "transports": {
+                "aar_windows": [],
+                "evaluation_context": null,
+                "initial_ka_satellite_ids": [
+                  "AOR",
+                  "POR",
+                  "IOR"
+                ],
+                "initial_x_satellite_id": "",
+                "ka_outages": [],
+                "ku_overrides": [],
+                "manual_aar_tracks": [],
+                "manual_route_splice": null,
+                "planning_inputs": null,
+                "planning_policy": null,
+                "starshield_enabled": null,
+                "x_transitions": []
+              },
+              "updated_at": "2026-10-19T04:45:06.573772Z"
+            }
+          ],
+          "metadata": {
+            "operator_training_fixture": {
+              "namespace": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+              "prerequisite_record_ids": [
+                "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+                "9d12bd56-850e-42b6-ae74-825b5809eff1",
+                "99e6b613-f94d-44c1-8f51-102cc85ee370",
+                "816ebe28-9063-47de-a32c-4865e2418e15",
+                "4ce41322-fc88-4373-b171-0c52794207a5",
+                "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+                "683b3694-bf51-46fb-95d2-6553c663d8c9",
+                "54d56e04-d3fb-48d7-98e7-1a85a6819b90"
+              ],
+              "version": 1
+            }
+          },
+          "name": "Training mission · Fictional Meridian 21",
+          "updated_at": "2026-10-19T04:44:46.694490Z"
+        }
+      ],
+      "records": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ]
+    },
+    "beforeRestore": {
+      "H": 10,
+      "health": {
+        "api_epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+        "clock_regression": false,
+        "enabled": true,
+        "error_code": null,
+        "ready": true,
+        "schema_version": 1,
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "history": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "8ee7f12a-75c1-480c-810b-f0236109d7d3",
+          "deleted": false,
+          "journal_seq": 10,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional discarded lost receipt"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "75208154-fd7d-4467-919c-0adb0b212e41",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "missions": [
+        {
+          "created_at": "2026-10-19T04:44:46.694489Z",
+          "description": null,
+          "id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "legs": [
+            {
+              "adjusted_departure_time": null,
+              "created_at": "2026-10-19T04:45:09.892925Z",
+              "description": null,
+              "id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+              "import_provenance": null,
+              "is_active": false,
+              "name": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+              "notes": null,
+              "route_id": "",
+              "transports": {
+                "aar_windows": [],
+                "evaluation_context": null,
+                "initial_ka_satellite_ids": [
+                  "AOR",
+                  "POR",
+                  "IOR"
+                ],
+                "initial_x_satellite_id": "",
+                "ka_outages": [],
+                "ku_overrides": [],
+                "manual_aar_tracks": [],
+                "manual_route_splice": null,
+                "planning_inputs": null,
+                "planning_policy": null,
+                "starshield_enabled": null,
+                "x_transitions": []
+              },
+              "updated_at": "2026-10-19T04:45:09.892928Z"
+            },
+            {
+              "adjusted_departure_time": null,
+              "created_at": "2026-10-19T04:45:09.892937Z",
+              "description": null,
+              "id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+              "import_provenance": null,
+              "is_active": false,
+              "name": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+              "notes": null,
+              "route_id": "",
+              "transports": {
+                "aar_windows": [],
+                "evaluation_context": null,
+                "initial_ka_satellite_ids": [
+                  "AOR",
+                  "POR",
+                  "IOR"
+                ],
+                "initial_x_satellite_id": "",
+                "ka_outages": [],
+                "ku_overrides": [],
+                "manual_aar_tracks": [],
+                "manual_route_splice": null,
+                "planning_inputs": null,
+                "planning_policy": null,
+                "starshield_enabled": null,
+                "x_transitions": []
+              },
+              "updated_at": "2026-10-19T04:45:09.892937Z"
+            }
+          ],
+          "metadata": {
+            "operator_training_fixture": {
+              "namespace": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+              "prerequisite_record_ids": [
+                "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+                "9d12bd56-850e-42b6-ae74-825b5809eff1",
+                "99e6b613-f94d-44c1-8f51-102cc85ee370",
+                "816ebe28-9063-47de-a32c-4865e2418e15",
+                "4ce41322-fc88-4373-b171-0c52794207a5",
+                "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+                "683b3694-bf51-46fb-95d2-6553c663d8c9",
+                "54d56e04-d3fb-48d7-98e7-1a85a6819b90"
+              ],
+              "version": 1
+            }
+          },
+          "name": "Training mission · Fictional Meridian 21",
+          "updated_at": "2026-10-19T04:44:46.694490Z"
+        }
+      ],
+      "records": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "8ee7f12a-75c1-480c-810b-f0236109d7d3",
+          "deleted": false,
+          "journal_seq": 10,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional discarded lost receipt"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "75208154-fd7d-4467-919c-0adb0b212e41",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ]
+    },
+    "browserOrigin": "http://127.0.0.1:56533",
+    "checkHealth": {
+      "api_epoch": "c2a72a02-caba-479d-8be8-1f15d0f7a8ab",
+      "clock_regression": false,
+      "error_code": null,
+      "ready": true,
+      "schema_version": 1,
+      "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+      "source_mode": "simulation",
+      "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+    },
+    "nativeManifest": "/app/data/operator/simulation/operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd/backups/backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.json",
+    "restoreHealth": {
+      "api_epoch": "c2a72a02-caba-479d-8be8-1f15d0f7a8ab",
+      "clock_regression": false,
+      "error_code": null,
+      "ready": true,
+      "schema_version": 1,
+      "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+      "source_mode": "simulation",
+      "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+    },
+    "restoredBackup": {
+      "databaseSha256": "9eda5fa29916224b5e2f9e226bdaa571f15b6aed3e976f7533a89ed91b74ab5b",
+      "history": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "identity": {
+        "api_epoch": "c2a72a02-caba-479d-8be8-1f15d0f7a8ab",
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "status": "ready",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "manifest": {
+        "H": 9,
+        "checksum": "9eda5fa29916224b5e2f9e226bdaa571f15b6aed3e976f7533a89ed91b74ab5b",
+        "created_at": "2026-10-17T16:00:00.000000Z",
+        "database": "backup-2026-10-17T160000000000Z-17f9edca-310c-4c03-8212-acd2d70b07ef.sqlite3",
+        "publication_sequence": 1,
+        "schema_version": 3,
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "preservedIdentity": {
+        "api_epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+        "simulation_run_id": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+        "source_mode": "simulation",
+        "status": "ready",
+        "store_id": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c"
+      },
+      "records": [
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "2d401bd8-068d-446d-a1cd-125874ce5987",
+          "deleted": false,
+          "journal_seq": 5,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 5",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 5 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "4ce41322-fc88-4373-b171-0c52794207a5",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:47:00.000000Z",
+            "planned_start_at": "2026-10-17T16:32:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c91d4117-7ab5-42ae-b988-d566956fb14e",
+          "deleted": false,
+          "journal_seq": 8,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic overdue customer",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic overdue coordination"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "54d56e04-d3fb-48d7-98e7-1a85a6819b90",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T15:55:00.000000Z",
+            "planned_start_at": "2026-10-17T15:45:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "38e5bbf4-8ce6-42fd-9fbc-04b4fb38887a",
+          "deleted": false,
+          "journal_seq": 7,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 2"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "683b3694-bf51-46fb-95d2-6553c663d8c9",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:25:00.000000Z",
+            "planned_start_at": "2026-10-17T17:10:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "51bebde9-bcde-4965-b086-61c5cad8173c",
+          "deleted": false,
+          "journal_seq": 4,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 4",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 4 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "816ebe28-9063-47de-a32c-4865e2418e15",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:44:00.000000Z",
+            "planned_start_at": "2026-10-17T16:29:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "70ac44fe-9cb0-4744-9417-18f20cf98948",
+          "deleted": false,
+          "journal_seq": 3,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 3",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 3 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "99e6b613-f94d-44c1-8f51-102cc85ee370",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:41:00.000000Z",
+            "planned_start_at": "2026-10-17T16:26:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "584d74db-a8bb-4147-8893-f21992055927",
+          "deleted": false,
+          "journal_seq": 2,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 2",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 2 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "9d12bd56-850e-42b6-ae74-825b5809eff1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:38:00.000000Z",
+            "planned_start_at": "2026-10-17T16:23:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "command_id": "76ae04df-54c0-45e4-b1a5-dc165554f58e",
+          "deleted": false,
+          "journal_seq": 9,
+          "leg_id": null,
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "entry_type": "note",
+            "next_leg_id": null,
+            "note": "",
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "title": "Fictional retained backup note"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "dfadca97-61a0-4dd7-ad59-279a64a7662a",
+          "record_type": "journal_entry",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "mission",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": null,
+            "planned_start_at": null,
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "229cf736-fb4e-4a60-9b0e-a3ca51709014",
+          "deleted": false,
+          "journal_seq": 6,
+          "leg_id": "4a05e4ce-36b7-5e95-88ac-121236fe2eac",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic return briefing 1"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "e2ffc859-1964-4bf7-b1e0-efff4418d1a1",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T17:20:00.000000Z",
+            "planned_start_at": "2026-10-17T17:05:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        },
+        {
+          "author": {
+            "backend": "synthetic training prerequisites",
+            "operator_label": null
+          },
+          "command_id": "c7940ea5-974a-4f1a-b0a9-10b5c928d84f",
+          "deleted": false,
+          "journal_seq": 1,
+          "leg_id": "257b7da5-6013-5532-bf2b-cc613e75e2e2",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "operation": "create",
+          "payload": {
+            "communications_kind": "voice",
+            "conference_id": null,
+            "coordinator": "Synthetic coordinator",
+            "entry_type": "call",
+            "next_leg_id": null,
+            "note": "Fictional planned prerequisite; no connection reported.",
+            "party": "Synthetic customer 1",
+            "prep_lead_minutes": 10,
+            "previous_leg_id": null,
+            "schema_version": 1,
+            "status": "scheduled",
+            "title": "Synthetic customer 1 briefing"
+          },
+          "previous_version": null,
+          "provenance": {
+            "kind": "operator_reported",
+            "mutation_origin": "interactive",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_mode": "simulation",
+            "source_ref": null
+          },
+          "reason": null,
+          "reason_origin": null,
+          "record_id": "ef09f528-c8ad-4a7b-875b-fc8c088c55c3",
+          "record_type": "call",
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "schema_version": 1,
+          "scope": "leg",
+          "time": {
+            "end_state": "unknown",
+            "ended_at": null,
+            "occurred_at": null,
+            "planned_end_at": "2026-10-17T16:35:00.000000Z",
+            "planned_start_at": "2026-10-17T16:20:00.000000Z",
+            "precision": "unknown"
+          },
+          "version": 1
+        }
+      ],
+      "restoreReport": {
+        "api_epoch": "c2a72a02-caba-479d-8be8-1f15d0f7a8ab",
+        "backup_created_at": "2026-10-17T16:00:00.000000Z",
+        "preserved": "preserved-675981bf-19ad-49b0-a443-8c18c691d7e8",
+        "previous_H": 10,
+        "restored_H": 9
+      }
+    }
+  },
+  "proofs": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "pendingUnchanged": [
+        {
+          "command": {
+            "operation": "create",
+            "body": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "entry_type": "note",
+                "title": "Fictional discarded lost receipt",
+                "note": "",
+                "previous_leg_id": null,
+                "next_leg_id": null
+              }
+            }
+          },
+          "key": "11b9741f-1ab0-482a-9e03-d51271dcfc02",
+          "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+          "identity": "[\"363e0ed1-6e66-47ac-84ce-3e76b05bd33c\",\"355d6750-5a3f-4c7c-9959-ccc5f454d8f3\",\"simulation\",\"operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd\"]",
+          "workspace": {
+            "schemaVersion": 1,
+            "draftId": "ec43a6b5-56d5-4f3f-80de-c031da7010ae",
+            "revision": 2,
+            "baseVersion": null,
+            "target": {
+              "storeId": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c",
+              "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+              "sourceMode": "simulation",
+              "simulationRunId": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+              "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "recordType": "journal_entry",
+              "recordId": null,
+              "newDraftId": "ec43a6b5-56d5-4f3f-80de-c031da7010ae",
+              "scope": "mission",
+              "legId": null,
+              "previousLegId": null,
+              "nextLegId": null,
+              "correctionVersion": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pendingUnchanged": [
+        {
+          "command": {
+            "operation": "create",
+            "body": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "entry_type": "note",
+                "title": "Fictional discarded lost receipt",
+                "note": "",
+                "previous_leg_id": null,
+                "next_leg_id": null
+              }
+            }
+          },
+          "key": "11b9741f-1ab0-482a-9e03-d51271dcfc02",
+          "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+          "identity": "[\"363e0ed1-6e66-47ac-84ce-3e76b05bd33c\",\"355d6750-5a3f-4c7c-9959-ccc5f454d8f3\",\"simulation\",\"operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd\"]",
+          "workspace": {
+            "schemaVersion": 1,
+            "draftId": "ec43a6b5-56d5-4f3f-80de-c031da7010ae",
+            "revision": 2,
+            "baseVersion": null,
+            "target": {
+              "storeId": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c",
+              "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+              "sourceMode": "simulation",
+              "simulationRunId": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+              "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "recordType": "journal_entry",
+              "recordId": null,
+              "newDraftId": "ec43a6b5-56d5-4f3f-80de-c031da7010ae",
+              "scope": "mission",
+              "legId": null,
+              "previousLegId": null,
+              "nextLegId": null,
+              "correctionVersion": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "pendingUnchanged": [
+        {
+          "command": {
+            "operation": "create",
+            "body": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "entry_type": "note",
+                "title": "Fictional discarded lost receipt",
+                "note": "",
+                "previous_leg_id": null,
+                "next_leg_id": null
+              }
+            }
+          },
+          "key": "11b9741f-1ab0-482a-9e03-d51271dcfc02",
+          "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+          "identity": "[\"363e0ed1-6e66-47ac-84ce-3e76b05bd33c\",\"355d6750-5a3f-4c7c-9959-ccc5f454d8f3\",\"simulation\",\"operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd\"]",
+          "workspace": {
+            "schemaVersion": 1,
+            "draftId": "ec43a6b5-56d5-4f3f-80de-c031da7010ae",
+            "revision": 2,
+            "baseVersion": null,
+            "target": {
+              "storeId": "363e0ed1-6e66-47ac-84ce-3e76b05bd33c",
+              "epoch": "355d6750-5a3f-4c7c-9959-ccc5f454d8f3",
+              "sourceMode": "simulation",
+              "simulationRunId": "operator-training-v1-8f31c852-6326-40c3-b921-58fa94d593cd",
+              "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "recordType": "journal_entry",
+              "recordId": null,
+              "newDraftId": "ec43a6b5-56d5-4f3f-80de-c031da7010ae",
+              "scope": "mission",
+              "legId": null,
+              "previousLegId": null,
+              "nextLegId": null,
+              "correctionVersion": null
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

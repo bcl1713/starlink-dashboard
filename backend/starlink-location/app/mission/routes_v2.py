@@ -5,9 +5,9 @@
 # coordinate across storage, KML parsing, and state machines. Separation would
 # create circular imports. Deferred to v0.4.0.
 import asyncio
-import io
 import json
 import logging
+import sqlite3
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -74,7 +74,9 @@ logger = logging.getLogger(__name__)
 # Constants
 DEFAULT_PAGINATION_LIMIT = 10  # Default number of missions to return
 MAX_PAGINATION_LIMIT = 100  # Maximum number of missions to return
-MISSION_PACKAGE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MISSION_PACKAGE_MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
+MISSION_PACKAGE_MAX_PLANNING_BYTES = 100 * 1024 * 1024
+MISSION_PACKAGE_MAX_ENTRIES = 10000
 MISSION_PACKAGE_ENDPOINT_MARKER = "Imported by mission-package endpoint sync"
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
@@ -652,6 +654,7 @@ async def export_mission(
 
     from app.mission.package.export_job import download_response
     from app.mission.package.preparation_routes import get_export_preparation_service
+    from app.operator.errors import OperatorError
 
     service = get_export_preparation_service(request)
     try:
@@ -665,7 +668,7 @@ async def export_mission(
         return JSONResponse(
             job.model_dump(mode="json"), status_code=202, headers={"Location": location}
         )
-    except RuntimeError:
+    except (RuntimeError, OSError, sqlite3.Error, OperatorError):
         raise HTTPException(503, detail="Mission export preparation is unavailable")
 
 
@@ -1060,22 +1063,73 @@ async def import_mission(
         from app.mission.planning.packages import commit_package, stage_package
         from app.mission.planning.store import PlanningStore
 
-        contents = await file.read()
-        if len(contents) > MISSION_PACKAGE_MAX_UPLOAD_BYTES:
+        # UploadFile is already spooled by Starlette. Inspect its actual length;
+        # never copy the complete archival ZIP into application memory.
+        file.file.seek(0, 2)
+        received_bytes = file.file.tell()
+        file.file.seek(0)
+        if received_bytes > MISSION_PACKAGE_MAX_UPLOAD_BYTES:
             raise HTTPException(
                 413,
                 detail={
                     "code": "mission_package_too_large",
                     "layer": "application",
                     "max_bytes": MISSION_PACKAGE_MAX_UPLOAD_BYTES,
-                    "received_bytes": len(contents),
+                    "received_bytes": received_bytes,
                 },
             )
         if route_manager is None or poi_manager is None:
             raise HTTPException(503, detail="Package storage managers are unavailable")
-        with zipfile.ZipFile(io.BytesIO(contents)) as zf:
+        # The stdlib footer reader handles classic and ZIP64 records with
+        # bounded seeks (at most the 64 KiB ZIP comment), without loading the
+        # central directory. Apply metadata limits before ZipFile allocates it.
+        footer = zipfile._EndRecData(file.file)
+        if footer is None:
+            raise zipfile.BadZipFile("Missing ZIP end record")
+        if footer[zipfile._ECD_ENTRIES_TOTAL] > MISSION_PACKAGE_MAX_ENTRIES:
+            raise HTTPException(
+                413, detail={"code": "mission_package_too_many_entries"}
+            )
+        if footer[zipfile._ECD_SIZE] > 16 * 1024 * 1024:
+            raise HTTPException(
+                413, detail={"code": "mission_package_directory_too_large"}
+            )
+        file.file.seek(0)
+        with zipfile.ZipFile(file.file) as zf:
+            from app.mission.planning.packages import _safe_archive
+
             if "mission.json" not in zf.namelist():
                 raise HTTPException(400, detail="Invalid package: missing mission.json")
+            try:
+                _safe_archive(zf)
+            except ValueError as exc:
+                raise HTTPException(
+                    422, detail={"code": "invalid_mission_package", "message": str(exc)}
+                ) from exc
+            if len(zf.infolist()) > MISSION_PACKAGE_MAX_ENTRIES:
+                raise HTTPException(
+                    413, detail={"code": "mission_package_too_many_entries"}
+                )
+            # Only these namespaces can be read by planning import (including
+            # itinerary history). Archival records and the briefing are never
+            # decompressed or applied to destination operational stores.
+            planning_bytes = sum(
+                entry.file_size
+                for entry in zf.infolist()
+                if entry.filename == "mission.json"
+                or entry.filename.startswith(
+                    ("planning/", "routes/", "pois/", "itinerary/")
+                )
+            )
+            if planning_bytes > MISSION_PACKAGE_MAX_PLANNING_BYTES:
+                raise HTTPException(
+                    413,
+                    detail={
+                        "code": "mission_planning_data_too_large",
+                        "max_bytes": MISSION_PACKAGE_MAX_PLANNING_BYTES,
+                        "expanded_bytes": planning_bytes,
+                    },
+                )
             incoming = Mission.model_validate_json(zf.read("mission.json"))
             from app.mission.planning.packages import _selector
 
@@ -2647,7 +2701,9 @@ async def preview_leg_timeline(
         # Update transports from request if provided
         if "transports" in preview_request:
             transports_data = preview_request["transports"]
-            preview_leg.transports = TransportConfig(**transports_data)
+            preview_leg.transports = TransportConfig.model_validate(
+                {**leg.transports.model_dump(), **transports_data}
+            )
 
         # Update adjusted departure time if provided
         if "adjusted_departure_time" in preview_request:

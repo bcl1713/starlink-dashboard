@@ -1,0 +1,30 @@
+{
+  "candidateSha": "f72c9be4e88c84ac820b097d9d668925367bf112",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-369-transport-backend:f72c9be4e88c84ac820b097d9d668925367bf112",
+      "id": "sha256:2b54b23823aab4bbd115df3b9c0f4f204715bc19bdc4a4572048cd56c9e97768",
+      "revision": "f72c9be4e88c84ac820b097d9d668925367bf112"
+    },
+    "frontend": {
+      "tag": "starlink-operator-369-transport-frontend:f72c9be4e88c84ac820b097d9d668925367bf112",
+      "id": "sha256:bd08be6a43957f09459520ee62254fbfd4d3a685d47393896cd29745d952e910",
+      "revision": "f72c9be4e88c84ac820b097d9d668925367bf112"
+    }
+  },
+  "sourceArchiveSha256": "4723af942b01da066169ee25a39686017221048d3df76cd5e93b9c3944bc657c",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

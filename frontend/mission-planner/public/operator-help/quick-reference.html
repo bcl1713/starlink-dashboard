@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Operator quick reference</title>
+    <style>
+      :root {
+        font:
+          17px/1.45 system-ui,
+          sans-serif;
+        color: #142839;
+        background: #fff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 70rem;
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 2rem;
+        line-height: 1.15;
+      }
+      h2 {
+        font-size: 1.2rem;
+        border-bottom: 2px solid #126798;
+        padding-bottom: 0.3rem;
+        break-after: avoid;
+      }
+      a {
+        color: #075799;
+      }
+      section {
+        margin-bottom: 1.4rem;
+        break-inside: avoid;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.9rem;
+      }
+      th,
+      td {
+        text-align: left;
+        border: 1px solid #b8c7d2;
+        padding: 0.5rem;
+        vertical-align: top;
+      }
+      th {
+        background: #eef5f9;
+      }
+      li {
+        margin: 0.3rem 0;
+      }
+      p {
+        max-width: 78ch;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      .important {
+        border-left: 4px solid #126798;
+        padding: 0.5rem 1rem;
+        background: #edf7fc;
+      }
+      code {
+        font-size: 0.85em;
+      }
+      @media (max-width: 650px) {
+        .columns {
+          display: block;
+        }
+        body {
+          padding: 1rem;
+        }
+        table {
+          font-size: 0.8rem;
+        }
+      }
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+      @media print {
+        :root {
+          font-size: 10pt;
+        }
+        body {
+          max-width: none;
+          padding: 0;
+        }
+        h1 {
+          font-size: 20pt;
+        }
+        .no-print {
+          display: none;
+        }
+        a {
+          color: inherit;
+        }
+        section,
+        table {
+          break-inside: avoid;
+        }
+        .page-two {
+          break-before: page;
+        }
+        .columns {
+          gap: 8mm;
+        }
+        h2 {
+          font-size: 12pt;
+        }
+        td,
+        th {
+          padding: 3mm;
+        }
+        p {
+          margin: 0.4rem 0;
+        }
+      }
+      @media print {
+        :root {
+          line-height: 1.18;
+        }
+        h1 {
+          margin: 0 0 0.4em;
+        }
+        h2 {
+          margin: 0.6em 0 0.3em;
+          padding-bottom: 0.15em;
+        }
+        section {
+          margin-bottom: 0.5rem;
+        }
+        ul,
+        ol {
+          padding-left: 1.2em;
+          margin: 0.3em 0;
+        }
+        li {
+          margin: 0.1rem 0;
+        }
+        p {
+          margin: 0.3em 0;
+        }
+        td,
+        th {
+          padding: 1.5mm;
+        }
+        .columns {
+          gap: 6mm;
+        }
+        .important {
+          padding: 0.3em 0.7em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="no-print">
+        <a href="guide.html#context">Full user guide</a> ·
+        <a href="/operator?workspace=1" target="_top">Open Operator</a> · Use
+        the browser's Print command for this two-page reference.
+      </p>
+      <h1>Operator quick reference</h1>
+      <p class="important">
+        <strong>Before writing:</strong> confirm mission, named leg/gap,
+        original scope and UTC. Unknown occurrence times stay unknown. Planned
+        time, actual occurrence and backend recorded time are different.
+      </p>
+    </header>
+    <div class="columns">
+      <div>
+        <section>
+          <h2>Calls and preparation</h2>
+          <ol>
+            <li>
+              <strong>Create call</strong> for a requirement. A scheduled call
+              needs planned start UTC.
+            </li>
+            <li>
+              Use <strong>Record completed call</strong> for an event that
+              happened. Enter known actual times/precision; keep unknowns
+              unknown.
+            </li>
+            <li>
+              Expand timing/association details for duration, preparation lead,
+              shift, coordinator and conference. Zero lead is valid.
+            </li>
+            <li>
+              <strong>Edit call</strong> reschedules or changes status.
+              Cancel/reinstate differs from remove/restore record visibility.
+            </li>
+            <li>Wait for the receipt; review <strong>Call history</strong>.</li>
+          </ol>
+          <p><a href="guide.html#calls">Call procedure</a></p>
+        </section>
+        <section>
+          <h2>Conference and customer reports</h2>
+          <ol>
+            <li>
+              <strong>Create conference</strong>, then report
+              <strong>Establish</strong> and <strong>Verify</strong> after real
+              bridge operations/checks.
+            </li>
+            <li>
+              <strong>Customer Joined</strong> records an independent interval.
+              Select the correct call/conference and participant.
+            </li>
+            <li>
+              Check <strong>Report joined now using backend UTC</strong> only
+              for an intentional current join. Otherwise report known UTCs or
+              leave unknown.
+            </li>
+            <li>
+              <strong>Interrupt conference</strong> and
+              <strong>Restore conference connection</strong> concern the bridge.
+            </li>
+            <li>
+              <strong>Interrupt customer</strong> and
+              <strong>Restore connection</strong> concern that customer;
+              restoration creates a linked new interval.
+            </li>
+            <li>
+              <strong>Customer Left</strong> reports departure.
+              <strong>Close conference</strong> does not automatically remove
+              connected customer reports.
+            </li>
+          </ol>
+          <p>
+            These controls report actions; they do not provision, dial or test
+            hardware. Multiple reported customers may overlap.
+          </p>
+          <p>
+            <a href="guide.html#conferences">Bridge procedure</a> ·
+            <a href="guide.html#customers">Customer procedure</a>
+          </p>
+        </section>
+      </div>
+      <div>
+        <section>
+          <h2>Now, Next and predictions</h2>
+          <ul>
+            <li><strong>Now:</strong> customers reported connected.</li>
+            <li>
+              <strong>Next:</strong> future preparation; overdue work remains
+              separate attention.
+            </li>
+            <li>
+              Inspect source freshness and current-leg alignment.
+              Partial/unavailable coverage is not all-clear.
+            </li>
+            <li>
+              Unknown PoP/handover is not an outage. Assume Starshield available
+              unless disabled or deliberately down.
+            </li>
+            <li>
+              Transition windows remain advisories. Apply the agreed full
+              planning outage only where Starshield is sole usable transport,
+              accounting for usable Ka or coordinated concurrency-only X
+              fallback.
+            </li>
+          </ul>
+          <p>
+            Estimates do not require an uncertainty acknowledgment before saving
+            a plan.
+          </p>
+        </section>
+        <section>
+          <h2>Transport, issues and observations</h2>
+          <ul>
+            <li>
+              <strong>Transport:</strong> intended, requested, applied and
+              checked stages are independent. Applied-only is valid.
+            </li>
+            <li>
+              Report checks separately by service. A changed application
+              invalidates an earlier check; add the replacement check.
+            </li>
+            <li>
+              <strong>Issues:</strong> describe, add update/follow-up, Monitor,
+              Resolve, Reopen. Inspect clearing versus retaining follow-up.
+            </li>
+            <li>
+              Historical correction fixes an earlier message/report without
+              replaying its lifecycle or routing action.
+            </li>
+            <li>
+              Capability dimensions are independent; they do not replace an
+              issue or prove actual routing.
+            </li>
+            <li>
+              <strong>Notes/History:</strong> retain original scope, UTC
+              precision and unresolved associations. Load all relevant pages and
+              include removed records when auditing.
+            </li>
+          </ul>
+        </section>
+        <section>
+          <h2>Overview and alerts</h2>
+          <p>
+            Shared switches affect all displays; recenter targets a selected
+            local window. Verify actual rendering.
+          </p>
+          <p>
+            Presets include panel/map and weather visibility. Wind and
+            temperature are exclusive. Provider settings, forecast
+            level/horizon, ACKs, history window and camera stay separate.
+          </p>
+          <p>
+            Partial apply: review Confirmed / Unconfirmed, refresh and apply
+            again. Legacy presets report weather excluded.
+          </p>
+          <p>
+            Simulation retains chosen panels with Unavailable
+            measurements/history. Browser cues need supported foreground
+            permission and actual delivery checks. Acknowledge the current
+            occurrence.
+          </p>
+        </section>
+      </div>
+    </div>
+    <div class="page-two">
+      <h2>Keep this recovery table beside Operator</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Observed state</th>
+            <th>Action</th>
+            <th>Avoid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Unsent draft / changing mission</td>
+            <td>
+              Keep draft and return. Resume and confirm its pinned target.
+            </td>
+            <td>Replacing or silently retargeting an unsent draft.</td>
+          </tr>
+          <tr>
+            <td>Offline / store unavailable</td>
+            <td>
+              Continue retaining text. Reconnect, reread health/identity and
+              resume.
+            </td>
+            <td>Treating unavailable Save as a confirmed write.</td>
+          </tr>
+          <tr>
+            <td>Receipt uncertain</td>
+            <td>
+              Retain the original pending request. Retry same save with its
+              frozen key/body/epoch.
+            </td>
+            <td>A replacement key or duplicate write.</td>
+          </tr>
+          <tr>
+            <td>Accepted but current state unreadable</td>
+            <td>Keep the receipt and reread saved state.</td>
+            <td>Submitting again as if acceptance never happened.</td>
+          </tr>
+          <tr>
+            <td>Version conflict / counterpart edit</td>
+            <td>
+              Reread actual current version, compare and deliberately reconcile.
+            </td>
+            <td>Silently overwriting the counterpart change.</td>
+          </tr>
+          <tr>
+            <td>Changed epoch/store / quarantined</td>
+            <td>Preserve recovery material, confirm identity and reread.</td>
+            <td>Sending old pending commands to a new target.</td>
+          </tr>
+          <tr>
+            <td>Browser storage error</td>
+            <td>
+              Keep the only visible copy open and preserve the explicit error.
+            </td>
+            <td>
+              Claiming it will survive reload, or clearing browser storage.
+            </td>
+          </tr>
+          <tr>
+            <td>Partial preset acknowledgment</td>
+            <td>
+              Review confirmed/unconfirmed stores, refreshed settings, then
+              apply again.
+            </td>
+            <td>Claiming the whole current view was restored.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="columns">
+        <section>
+          <h2>Ground gap and original mission ZIP</h2>
+          <ol>
+            <li>Record Between legs with both named leg references.</li>
+            <li>
+              Preview/start the return leg in Missions normally. Verify
+              current-leg sources and the same journal.
+            </li>
+            <li>
+              Use the existing mission Export workflow for its single ZIP.
+              Verify preparation/download/cancel/failure state.
+            </li>
+            <li>
+              Extract and open the <strong>original briefing PDF</strong>; check
+              legs and printed time zone; check journal/history, telemetry and
+              checksums.
+            </li>
+            <li>
+              Import into the separate intended destination; verify its
+              pre-existing journal is unchanged.
+            </li>
+          </ol>
+          <p>
+            A ZIP download is not human PDF review. Mission import is not
+            journal backup/restore.
+          </p>
+        </section>
+        <section>
+          <h2>Private guided mission</h2>
+          <p>
+            Use a separate nonproduction instance and an empty marked root. Help
+            → Guided mission walkthrough uses the real controls.
+          </p>
+          <p>
+            <strong>Next:</strong> visits instructions.
+            <strong>Back:</strong> does not undo writes.
+            <strong>Skip:</strong> not Passed.
+            <strong>Check current evidence:</strong> requires current backend
+            facts. Human observations remain separate.
+          </p>
+          <p>
+            For lost receipt, check evidence while uncertain
+            <em>before</em> exact retry, then check again.
+          </p>
+          <p>
+            <strong>Reset guide:</strong> local guide progress only.
+            <strong>Reset mission:</strong> run the explicit local command, then
+            open its printed successor address. Old pending commands stay bound
+            to the old store.
+          </p>
+          <p>
+            Restart retains the journal; it does not reconstruct an expired
+            replay frame. Use the existing backup/check/restore procedure with
+            the correct root/mode/namespace and stop the writer before restore.
+          </p>
+          <p>
+            <a href="guide.html#training">Setup and T01–T11</a> ·
+            <a href="guide.html#restart-reset"
+              >Local commands and maintenance</a
+            >
+          </p>
+        </section>
+      </div>
+      <p>
+        <strong>Finish:</strong> incomplete, skipped, unavailable and
+        human-observed outcomes stay distinguishable. Complete the field/failure
+        checklist and first-use exercises before accepting the course.
+      </p>
+    </div>
+  </body>
+</html>

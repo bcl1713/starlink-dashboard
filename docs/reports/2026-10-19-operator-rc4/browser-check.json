@@ -1,0 +1,43 @@
+{
+  "scope": "Reused RC3 native fixture and existing routers/stores; no provider instances, no training changes.",
+  "steps": [
+    "New bridge uses current leg without a scope selector; configuration saved, established and verified.",
+    "Two same-leg calls complete independently; the bridge remains in the same established session.",
+    "Previous-leg session is not offered for reuse; explicit close/reestablish uses the same ID/configuration on Return and resets verification; customer records stay unchanged.",
+    "Actual Overview supports selected-window camera commands: Follow reports unavailable without aircraft data; Recenter acknowledges. Group navigation reaches existing weather/ADS-B controls."
+  ],
+  "errors": [],
+  "historyVersions": [
+    {
+      "version": 1,
+      "leg": "outbound",
+      "status": "preparing"
+    },
+    {
+      "version": 2,
+      "leg": "outbound",
+      "status": "established"
+    },
+    {
+      "version": 3,
+      "leg": "outbound",
+      "status": "established"
+    },
+    {
+      "version": 4,
+      "leg": "outbound",
+      "status": "closed"
+    },
+    {
+      "version": 5,
+      "leg": "return",
+      "status": "established"
+    },
+    {
+      "version": 6,
+      "leg": "return",
+      "status": "established"
+    }
+  ],
+  "probeNote": "The continuation corrected a fixture-only leg switch: missions store legs in separate files. No product fix was needed for that probe issue."
+}

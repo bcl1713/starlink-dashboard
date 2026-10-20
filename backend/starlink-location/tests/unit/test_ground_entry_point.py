@@ -578,3 +578,74 @@ def test_resolver_refresh_ignores_environment_override_by_default(
     )
 
     assert resolver.refresh() is discovered
+
+
+def test_observation_marks_changed_ip_unknown_until_retry_succeeds() -> None:
+    old = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
+    new = GroundEntryPoint("203.0.113.2", "Tokyo", "JP", 35, 139)
+    ips = iter([old.ip, new.ip, new.ip, old.ip])
+    entries = iter([old, None, new])
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: next(ips),
+        geolocator=lambda ip: next(entries),
+        poll_interval_seconds=0,
+    )
+    resolver.refresh()
+    assert resolver.observation().entry == old
+    resolver.refresh()
+    assert resolver.current() == old
+    current = resolver.observation()
+    assert (
+        current.status == "unknown" and current.ip == new.ip and current.entry is None
+    )
+    resolver.refresh()
+    assert resolver.observation().entry == new
+    resolver.refresh()
+    assert resolver.observation().entry == old
+
+
+def test_observation_same_ip_has_no_age_expiry() -> None:
+    entry = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
+    now = 0
+    calls = []
+
+    def geolocate(ip):
+        calls.append(ip)
+        return entry
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: entry.ip, geolocator=geolocate, time_source=lambda: now
+    )
+    resolver.refresh()
+    now = 10**9
+    resolver.refresh()
+    assert resolver.observation().entry == entry and calls == [entry.ip]
+
+
+def test_changed_ip_http_timeout_retains_display_but_cannot_complete_transition():
+    old = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
+    ips = iter([old.ip, "203.0.113.2"])
+
+    def geolocate(ip):
+        if ip != old.ip:
+            raise gep.httpx.ReadTimeout("geolocation unavailable")
+        return old
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: next(ips), geolocator=geolocate, poll_interval_seconds=0
+    )
+    resolver.refresh()
+    assert resolver.refresh() == old
+    assert resolver.observation().status == "unknown"
+    assert resolver.observation().entry is None
+
+
+def test_real_http_failure_uses_dns_fallback(monkeypatch):
+    def trace(timeout_seconds):
+        raise gep.httpx.ConnectError("trace unavailable")
+
+    monkeypatch.setattr(gep, "resolve_public_ip_via_cloudflare_trace", trace)
+    monkeypatch.setattr(
+        gep, "resolve_public_ip_via_dns", lambda **kwargs: "203.0.113.7"
+    )
+    assert gep.resolve_public_ip() == "203.0.113.7"

@@ -5,6 +5,8 @@ from pathlib import Path
 
 from filelock import FileLock
 
+from app.services.overview_link_settings import OverviewSettingsConflict
+
 DEFAULT_OVERVIEW_HISTORY_WINDOW_SECONDS = 1800
 
 
@@ -43,13 +45,22 @@ class OverviewHistorySettingsStore:
                 payload = json.load(handle)
         return self._validate_window_seconds(payload["window_seconds"])
 
-    def set_window_seconds(self, window_seconds: int) -> None:
+    def set_window_seconds(
+        self, window_seconds: int, expected_window_seconds: int | None = None
+    ) -> None:
         """Persist a validated dashboard-selected query window atomically."""
         payload = {
             "window_seconds": self._validate_window_seconds(window_seconds),
         }
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
+            if (
+                expected_window_seconds is not None
+                and self.get_window_seconds() != expected_window_seconds
+            ):
+                raise OverviewSettingsConflict(
+                    "History window changed; refresh before retrying"
+                )
             descriptor, temporary_path = tempfile.mkstemp(
                 dir=self._path.parent,
                 prefix=f"{self._path.name}.",

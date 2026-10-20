@@ -1,0 +1,218 @@
+{
+  "candidateSha": "92612aa206d1d546e1c8b515e55499a9108d0449",
+  "checksPassed": true,
+  "cleanup": {
+    "/tmp/issue-376-training-lifecycle-20261018-r2-reset-304da7f1": {
+      "container": [],
+      "network": [],
+      "volume": []
+    },
+    "/tmp/issue-376-training-lifecycle-20261018-r2": {
+      "container": [],
+      "network": [],
+      "volume": []
+    }
+  },
+  "firstHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "807e21a2-bf15-45a1-be2f-c53eff953985",
+    "api_epoch": "0d8595c0-c056-4753-aa31-eb107cdf53c8",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-53fccaaa-da4f-46ed-b8e7-c56db8b42e33",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "restoredHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "807e21a2-bf15-45a1-be2f-c53eff953985",
+    "api_epoch": "0f0a7ac0-2ba2-4281-8c67-25aa471bfedc",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-53fccaaa-da4f-46ed-b8e7-c56db8b42e33",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "freshHealth": {
+    "schema_version": 1,
+    "ready": true,
+    "store_id": "b6c867a7-3135-4f7c-8959-b57dafb75b88",
+    "api_epoch": "2803e0cc-1930-48ba-b6b6-ad9ebc2a0f2f",
+    "source_mode": "simulation",
+    "simulation_run_id": "operator-training-v1-eb329670-e4c7-43c3-8947-4846a943b31e",
+    "clock_regression": false,
+    "error_code": null,
+    "enabled": true
+  },
+  "retainedRoot": "/tmp/issue-376-training-lifecycle-20261018-r2",
+  "newRoot": "/tmp/issue-376-training-lifecycle-20261018-r2-reset-304da7f1",
+  "retainedRecordIds": [
+    "0acb17a9-4dbe-4d7f-a6f1-0d96ac2b07cc",
+    "6041594b-1c96-4415-b4b2-0c1298a95b50",
+    "7e708b24-606d-4f0d-9e43-56ad262e79ee",
+    "810406d8-7394-45d3-9b64-c8845e12f098",
+    "bae867fb-71e0-427a-808c-3a0eb916a837",
+    "de4ad707-9c48-41e6-ab06-9004bb27cacc",
+    "ea86a854-92d9-44fa-acbf-036ae350ab45",
+    "eec21ab0-e231-4496-b8cc-79b0861b29eb",
+    "fb07b18b-b3e7-4a85-9f63-28227fa31c9d"
+  ],
+  "retainedReceipt": {
+    "schema_version": 1,
+    "command_id": "6e4bf56d-1cbd-437c-b7da-f182f4bc2fdc",
+    "saved_records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Synthetic retained backup sentinel",
+          "note": "Fictional disposable lifecycle evidence",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "7e708b24-606d-4f0d-9e43-56ad262e79ee",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 9,
+        "command_id": "6e4bf56d-1cbd-437c-b7da-f182f4bc2fdc",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T16:00:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "discardedReceipt": {
+    "schema_version": 1,
+    "command_id": "0a9c0892-34c9-4626-9dcb-706d0cb0b05d",
+    "saved_records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Synthetic write after backup",
+          "note": "Fictional disposable lifecycle evidence",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "d215430b-3a73-42f2-a944-f1ac6ef56f62",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 10,
+        "command_id": "0a9c0892-34c9-4626-9dcb-706d0cb0b05d",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T16:00:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "destinationReceipt": {
+    "schema_version": 1,
+    "command_id": "b919eee7-0c90-486f-a368-7a6bf03627a1",
+    "saved_records": [
+      {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "synthetic-import-sentinel",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Synthetic destination Operator sentinel",
+          "note": "Fictional disposable lifecycle evidence",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "note"
+        },
+        "record_id": "1bdefe9d-d160-4d1f-a027-9325e2fae653",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 1,
+        "command_id": "b919eee7-0c90-486f-a368-7a6bf03627a1",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-18T21:59:41.316302Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    ]
+  },
+  "backupManifest": "/app/data/operator/simulation/operator-training-v1-53fccaaa-da4f-46ed-b8e7-c56db8b42e33/backups/backup-2026-10-17T160000000000Z-1d1163bd-cb5c-4224-a40d-06bce99f3b2b.json",
+  "oldDataRetained": true,
+  "parentResetRemovedImportDestination": true
+}

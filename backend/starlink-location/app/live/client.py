@@ -356,7 +356,12 @@ class StarlinkClient:
             # Extract position data
             lat = location.get("latitude")
             lon = location.get("longitude")
-            alt = location.get("altitude", 0.0)
+            alt = location.get("altitude")
+            altitude_valid = (
+                isinstance(alt, (int, float))
+                and not isinstance(alt, bool)
+                and math.isfinite(alt)
+            )
 
             position_valid = valid_coordinate(lat, 90) and valid_coordinate(lon, 180)
             if not position_valid:
@@ -370,6 +375,10 @@ class StarlinkClient:
 
             position = PositionData(
                 observed_at=position_collected_at if position_valid else None,
+                altitude_observed_at=position_collected_at if altitude_valid else None,
+                altitude_validity_source=(
+                    "dish_location_collection" if altitude_valid else None
+                ),
                 latitude=float(lat),
                 longitude=float(lon),
                 altitude=alt_feet,
@@ -430,6 +439,7 @@ class StarlinkClient:
                 position=position,
                 network=network,
                 obstruction=obstruction_pct,
+                metric_source="observed",
                 metric_availability=MetricAvailability(
                     latency_ms=latency_available,
                     throughput_down_mbps=downlink_available,

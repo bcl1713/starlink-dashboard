@@ -11,6 +11,8 @@ import { OverviewMetricHistoryPanel } from './OverviewMetricHistoryPanel';
 import { statusObservationAgeMs } from './status-freshness';
 
 interface Props {
+  simulated?: boolean;
+  unavailableReason?: string;
   settings?: Partial<OverviewLinkSettings>;
   history: OverviewHistoryBundle | undefined;
   error: boolean;
@@ -29,6 +31,8 @@ export function OverviewMetricHistoryPanels({
   selectedWindowSeconds,
   nowMs,
   settings,
+  unavailableReason,
+  simulated = false,
 }: Props) {
   const [acceptedStatus, setAcceptedStatus] = useState<StatusResponse>();
   const timestamp = status ? Date.parse(status.timestamp) : NaN;
@@ -37,6 +41,7 @@ export function OverviewMetricHistoryPanels({
     typeof status.timestamp === 'string' &&
     statusObservationAgeMs(status.timestamp, nowMs) !== null;
   if (
+    !unavailableReason &&
     status &&
     status !== acceptedStatus &&
     validTimestamp &&
@@ -50,7 +55,9 @@ export function OverviewMetricHistoryPanels({
   // Failed requests retain the accepted sample, explicitly projected as stale.
   const readoutStatus = status && !validTimestamp ? status : acceptedStatus;
   const readouts = OVERVIEW_METRIC_GRAPHS.map((descriptor) =>
-    statusMetricReadout(readoutStatus, descriptor, nowMs, statusError)
+    unavailableReason
+      ? null
+      : statusMetricReadout(readoutStatus, descriptor, nowMs, statusError)
   );
   const state = networkStatusState(readouts);
   const observedAge = readouts.find((readout) => readout !== null)?.ageMs;
@@ -81,6 +88,12 @@ export function OverviewMetricHistoryPanels({
         <div className="overview-metric-history-panels__freshness">
           <p role="status">
             Network
+            {simulated && !unavailableReason && (
+              <span>
+                {' '}
+                · <span>SIMULATED DATA</span>
+              </span>
+            )}
             <span
               className={
                 state === 'fresh' ? 'overview-visually-hidden' : undefined
@@ -104,7 +117,12 @@ export function OverviewMetricHistoryPanels({
             Rolling statistics: 5 minutes
           </p>
         </div>
-        {(statusError || error) && (
+        {unavailableReason && (
+          <p className="overview-metric-history-panels__error">
+            {unavailableReason}
+          </p>
+        )}
+        {!unavailableReason && (statusError || error) && (
           <p className="overview-metric-history-panels__error">
             {statusError && <span>Status refresh unavailable</span>}
             {error && <span>History refresh unavailable</span>}
@@ -119,7 +137,7 @@ export function OverviewMetricHistoryPanels({
               className="overview-metric-history__key--observed"
               aria-hidden="true"
             />
-            Observed
+            {simulated ? 'Simulated' : 'Observed'}
           </li>
           <li>
             <span
@@ -138,11 +156,16 @@ export function OverviewMetricHistoryPanels({
         </ul>
       </header>
       {visibleGraphs.map((descriptor) => (
-        <div data-metric-panel={descriptor.id} key={descriptor.id}>
+        <div
+          data-metric-panel={descriptor.id}
+          key={`${descriptor.id}:${unavailableReason ?? 'observed'}`}
+        >
           <OverviewMetricHistoryPanel
+            simulated={simulated}
             descriptor={descriptor}
-            history={history}
-            error={error}
+            sourceUnavailable={!!unavailableReason}
+            history={unavailableReason ? undefined : history}
+            error={unavailableReason ? false : error}
             selectedWindowSeconds={windowSeconds}
             nowMs={nowMs}
             readout={readouts[OVERVIEW_METRIC_GRAPHS.indexOf(descriptor)]}

@@ -1,0 +1,9 @@
+
+Running 2 tests using 1 worker
+
+(node:3017560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/e2e/operator-workspace-release.spec.ts:23:1 › release gate: retained drafts and uncertain command remain recoverable through whole-shell backout (7.2s)
+  ✓  2 tests/e2e/operator-workspace-release.spec.ts:228:1 › release gate: sixty-second foreground CPU, render commits and polling traces (2.1m)
+
+  2 passed (2.3m)

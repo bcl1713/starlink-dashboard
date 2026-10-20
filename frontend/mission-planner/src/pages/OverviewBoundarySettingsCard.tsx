@@ -11,6 +11,7 @@ export function OverviewBoundarySettingsCard() {
     isPending,
     isSuccess,
     isError: saveError,
+    error,
   } = useUpdateOverviewLinkSettings();
   const id = useId();
   return (
@@ -70,7 +71,9 @@ export function OverviewBoundarySettingsCard() {
       {isPending && <p role="status">Saving boundary settings…</p>}
       {isSuccess && <p role="status">Boundary settings saved</p>}
       {saveError && (
-        <p role="alert">Unable to save boundary settings. Please try again.</p>
+        <p role="alert">
+          Unable to save boundary settings. {error?.message} Please try again.
+        </p>
       )}
     </ConfigurationSection>
   );

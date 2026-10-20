@@ -37,6 +37,7 @@ class PreparedMissionRun:
     preview: SimulationPreview
     replay_events: tuple[MissionEvent, ...]
     initial_x_satellite_id: str | None
+    starshield_enabled: bool = True
 
 
 def normalize_pacing(pacing: PacingInput, duration_seconds: float) -> NormalizedPacing:
@@ -97,6 +98,7 @@ def prepare_mission_run(
         "end": projector.end_time.isoformat(),
         "pacing": pacing.model_dump(mode="json"),
         "initial_x": leg.transports.initial_x_satellite_id,
+        "starshield_enabled": leg.transports.starshield_enabled is not False,
         "x_assignments": artifacts.x_assignments,
         "events": [vars(event) for event in artifacts.events],
     }
@@ -121,4 +123,5 @@ def prepare_mission_run(
         preview,
         replay_events,
         leg.transports.initial_x_satellite_id,
+        starshield_enabled=leg.transports.starshield_enabled is not False,
     )

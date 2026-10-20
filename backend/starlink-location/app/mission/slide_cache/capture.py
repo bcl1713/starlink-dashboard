@@ -40,12 +40,17 @@ def dependency_token(mission_id, route_manager, poi_manager):
                 stat.st_ctime_ns,
             )
         )
+    from app.mission.exporter.snapshot_pop import catalog_dependency_token
     from app.satellites.rules import ConstraintConfig
     from app.services.ground_entry_point import get_cached_ground_entry_point
 
     ground = get_cached_ground_entry_point()
     return tuple(tokens), canonical_json(
-        [asdict(ConstraintConfig()), asdict(ground) if ground else None]
+        [
+            asdict(ConstraintConfig()),
+            asdict(ground) if ground else None,
+            catalog_dependency_token(),
+        ]
     )
 
 
@@ -100,7 +105,9 @@ def capture_is_current(raw):
     )
 
 
-def normalize_capture(raw, *, persisted=True, fingerprints=True):
+def normalize_capture(
+    raw, *, persisted=True, fingerprints=True, include_timeline_cache=True
+):
     import json
 
     from app.mission.exporter.snapshot_inputs import _read_dependencies
@@ -112,6 +119,8 @@ def normalize_capture(raw, *, persisted=True, fingerprints=True):
     mission = storage._ordered_mission(Mission.model_validate(metadata))
     metadata = canonical_json(mission.model_dump(mode="json"))
     options = {"persisted": True} if persisted else {}
+    if not include_timeline_cache:
+        options["include_timeline_cache"] = False
     first = _read_dependencies(mission, raw.route_manager, raw.poi_manager, **options)
     second = _read_dependencies(mission, raw.route_manager, raw.poi_manager, **options)
     if first != second or not capture_is_current(raw):

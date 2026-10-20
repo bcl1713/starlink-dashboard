@@ -149,6 +149,10 @@ async def get_overview_upcoming_pois(
     )
     response.position_observed_at = observed_at
     response.position_state = position_state
+    runtime = getattr(request.app.state, "flight_event_runtime", None)
+    if runtime is not None and not selection:
+        for key, value in runtime.status(mission_id, resolution.context.leg.id).items():
+            setattr(response, key, value)
     if timing_unavailable:
         response.state = "unavailable"
     return response

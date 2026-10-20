@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "captures": [
+    "normal-1920x1080-workspace.png",
+    "normal-390x844-workspace.png",
+    "normal-844x390-workspace.png",
+    "busy-1920x1080-workspace.png",
+    "busy-390x844-workspace.png",
+    "busy-844x390-workspace.png"
+  ],
+  "realCallReceipts": 6,
+  "parkedNotes": 6,
+  "inlineValidation": true,
+  "viewportResize": true,
+  "targets44": true,
+  "nativeAccessibleNames": true,
+  "keyboardFocusTrapAndReturn": true,
+  "physicalDeviceKeyboard": "pending human device check; viewport resize is emulation"
+}

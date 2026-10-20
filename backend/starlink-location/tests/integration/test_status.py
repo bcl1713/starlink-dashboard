@@ -7,6 +7,8 @@ from unittest.mock import Mock
 import pytest
 
 from app.api import status as status_api
+from app.mission.pop_status import PopStatusService
+from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
 from app.services.ground_entry_point import GroundEntryPoint
 from tests.conftest import default_mock_telemetry
@@ -50,7 +52,13 @@ def test_status_projects_availability_without_mutating_batch(
     assert data["position"] == {
         key: value
         for key, value in payload["position"].items()
-        if key not in {"observed_at", "speed_observed_at"}
+        if key
+        not in {
+            "observed_at",
+            "speed_observed_at",
+            "altitude_observed_at",
+            "altitude_validity_source",
+        }
     }
     assert "observed_at" not in data["position"]
     assert data["environmental"] == payload["environmental"]
@@ -66,6 +74,11 @@ def test_status_projects_availability_without_mutating_batch(
 async def test_status_exposes_current_cached_ground_entry_point(
     test_client, monkeypatch
 ):
+    monkeypatch.setattr(
+        status_api,
+        "_pop_service",
+        PopStatusService(config_provider=lambda: SimulationConfig(mode="live")),
+    )
     monkeypatch.setattr(
         status_api,
         "get_cached_ground_entry_point",
@@ -93,6 +106,11 @@ async def test_status_exposes_current_cached_ground_entry_point(
 async def test_status_marks_unavailable_ground_entry_point_as_null(
     test_client, monkeypatch
 ):
+    monkeypatch.setattr(
+        status_api,
+        "_pop_service",
+        PopStatusService(config_provider=lambda: SimulationConfig(mode="live")),
+    )
     monkeypatch.setattr(
         status_api,
         "get_cached_ground_entry_point",

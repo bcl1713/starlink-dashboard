@@ -1044,3 +1044,64 @@ def test_package_source_context_cannot_be_unbound_or_rebound(service):
                 route_manager=service.store.route_manager,
             )
         )
+
+
+def test_enhanced_archive_transfers_planning_to_clean_store_without_operator_restore(
+    service, tmp_path, monkeypatch
+):
+    from app.mission.package.operations_archive import append_archive
+    from app.mission.planning.packages import commit_package, stage_package
+    from app.mission.planning.store import PlanningStore
+    from app.operator.clock import SystemClock
+    from app.operator.settings import OperatorSettings
+    from app.operator.store import OperatorStore
+    from app.services.poi_manager import POIManager
+    from app.services.route_manager import RouteManager
+
+    view, _ = create(service)
+    view = bind(service, tmp_path)
+    original = archive(service, view.mission.id)
+    snapshot = {
+        "schema_version": 1,
+        "capture_policy": "sequential_component_snapshots",
+        "components": {},
+        "files": {
+            "operations/current.json": '[{"record_id":"archival-only"}]\n',
+            "operations/audit.jsonl": '{"sensitive_history":"synthetic"}\n',
+        },
+    }
+    with original:
+        enhanced = append_archive(
+            original, snapshot, planning_fingerprint="synthetic", cancel=None
+        )
+    root = tmp_path / "destination"
+    monkeypatch.setattr(storage, "MISSIONS_DIR", (root / "missions").resolve())
+    destination = PlanningStore(
+        root / "missions", RouteManager(root / "routes"), POIManager(root / "pois.json")
+    )
+    operator = OperatorStore.open(
+        OperatorSettings(enabled=True, root=root / "operator"),
+        initialize=True,
+        clock=SystemClock(),
+    )
+    try:
+        with enhanced, zipfile.ZipFile(enhanced) as zf:
+            assert b"archival-only" in zf.read("operations/current.json")
+            imported = commit_package(
+                stage_package(zf, None, destination.sources), None
+            )
+        assert imported.mission.id == view.mission.id
+        assert [c.leg for c in imported.expected_legs] == [
+            c.leg for c in view.expected_legs
+        ]
+        assert (
+            destination.sources.path(
+                destination._load(imported.mission.id)[1].source_revisions[0]
+            ).read_bytes()
+            == b"synthetic pdf"
+        )
+        with operator.connect() as db:
+            assert db.execute("SELECT count(*) FROM revisions").fetchone()[0] == 0
+            assert db.execute("SELECT count(*) FROM commands").fetchone()[0] == 0
+    finally:
+        operator.close()

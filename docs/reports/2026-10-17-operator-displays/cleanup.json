@@ -1,0 +1,74 @@
+[
+  {
+    "candidate": "9f0132dcf8609dd23e22ff3953ecaeacd2f4f1d7",
+    "project": "starlink-operator-364-displays",
+    "checksPassed": false,
+    "runnerCleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "hostVerifiedRemaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "imageTagsRemaining": "",
+    "listenerGone": true
+  },
+  {
+    "candidate": "3901c394874c3db9345e685ada06d253bd20709b",
+    "project": "starlink-operator-364-display-final",
+    "checksPassed": true,
+    "runnerCleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "hostVerifiedRemaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "imageTagsRemaining": "",
+    "listenerGone": true
+  },
+  {
+    "candidate": "bc0a02b58e2919ca4dc4410f58fd946f58d7d0c6",
+    "project": "starlink-operator-364-qualified",
+    "checksPassed": true,
+    "runnerCleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "hostVerifiedRemaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "imageTagsRemaining": "",
+    "listenerGone": true
+  }
+]

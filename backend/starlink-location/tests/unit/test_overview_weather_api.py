@@ -73,3 +73,23 @@ def test_optional_weather_initialization_failure_keeps_core_api(tmp_path, monkey
         assert client.get("/api/overview-weather/settings").json()["enabled"] is False
         assert client.get("/api/weather/radar/rainviewer/2/0/0.png").status_code == 404
         assert client.get("/health").status_code == 200
+
+
+async def test_radar_cas_conflict_is_409_and_preserves_settings(tmp_path):
+    streams = WeatherStreams(http_response(metadata()))
+    service, store = service_for(tmp_path, streams)
+    store.update({"enabled": True})
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(weather_app(service, store)),
+        base_url="http://test",
+    ) as client:
+        response = await client.put(
+            "/api/overview-weather/settings",
+            json={"enabled": False, "expected_revision": 0},
+        )
+        assert response.status_code == 409
+        assert (await client.get("/api/overview-weather/settings")).json() == {
+            "enabled": True,
+            "revision": 1,
+        }
+    await service.aclose()

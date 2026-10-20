@@ -134,3 +134,13 @@ def test_old_worker_heartbeat_cannot_authorize_a_replacement_owner(tmp_path):
         atomic_json(box.root / "worker.json", {"owner": second})
         assert not box.healthy(RUN)
         assert not box.acknowledged(enabled.revision)
+
+
+def test_reader_and_worker_take_current_clock_after_admission_lock(tmp_path):
+    box, _settings, enabled = mailbox(tmp_path)
+    owner = uuid.uuid4().hex
+    box.renew(owner, enabled, RUN + 1000)
+    box.renew(owner, enabled, RUN, clock=lambda: RUN + 2000)
+    assert box.current(RUN, clock=lambda: RUN + 2000) is not None
+    # A real current-clock rollback must still revoke demand.
+    assert box.current(RUN + 2000, clock=lambda: RUN - 1) is None

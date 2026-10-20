@@ -1,0 +1,40 @@
+{
+  "synthetic": true,
+  "coverage": "Large fixture exercises frozen-supplement persistence, ZIP assembly and HTTP import; not source capture capacity. Full capture is covered by singlePackageRoundTrip.",
+  "source": "36-hour, 13-channel, 1 Hz CSV size fixture; not aircraft observations",
+  "storageQuotaRejectionAtomic": true,
+  "snapshotQuotaRejectionAtomic": true,
+  "expiredSnapshotAndArtifactRemoved": true,
+  "rows": 1684800,
+  "expandedTelemetryBytes": 153351912,
+  "preparedZipBytes": 11637260,
+  "largeTransferZipBytes": 154703848,
+  "databasePeakBytes": 155525120,
+  "databaseAfterReleaseBytes": 155525120,
+  "liveSnapshotsAfterRelease": 0,
+  "cleanDestinationJournalUnchanged": true,
+  "sourceJournalUnchanged": true,
+  "directAndProductionNginxImport": true,
+  "uploadBoundaries": [
+    {
+      "zipBytes": 2147483648,
+      "status": 200,
+      "layer": null
+    },
+    {
+      "zipBytes": 2147483649,
+      "status": 413,
+      "layer": "application"
+    },
+    {
+      "zipBytes": 2149580800,
+      "status": 413,
+      "layer": "mission-planner-nginx"
+    }
+  ],
+  "backendHighWaterBeforeBytes": 291774464,
+  "backendHighWaterAfterBytes": 294436864,
+  "probePeakRssBytes": 967196672,
+  "elapsedSeconds": 19.93,
+  "temporaryFilesRemoved": true
+}

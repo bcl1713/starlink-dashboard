@@ -38,7 +38,8 @@ Use the narrowest tier that covers the change while developing. Before a pull
 request is ready, run the applicable tier or `./tools/verify all`.
 
 - `static` runs formatting and linting checks, filename conventions, Markdown
-  formatting, and documentation link validation.
+  formatting, and documentation link validation. Internal files and anchors are
+  required; external HTTP/HTTPS failures are reported as nonblocking warnings.
 - `backend` runs the complete backend pytest suite from its established
   `backend/starlink-location` context.
 - `frontend` runs Vitest with `npm run test:unit` and then the frontend
@@ -49,6 +50,25 @@ request is ready, run the applicable tier or `./tools/verify all`.
 The commands resolve their own working directories. Do not replace them with
 similar commands from another directory: root-relative static and frontend
 commands and the backend pytest context are deliberate parts of the contract.
+
+## Documentation Link Policy
+
+The static tier runs `python3 tools/check_docs_links.py docs/` in two passes:
+
+1. **Required internal links:** Lychee runs offline with the `file` scheme,
+   fragment checks and an explicit file inclusion that overrides the legacy
+   `.lycheeignore` file exclusion. Missing files, broken anchors, invalid
+   inputs, a missing checker or an internal-check timeout fail the static gate.
+2. **Advisory external links:** HTTP/HTTPS checks retain normal failure reports
+   and emit a CI warning, but remote timeouts, TLS errors, rate limits and other
+   external failures do not fail the gate. Each request has a ten-second limit
+   with no retry; each pass has a two-minute process limit.
+
+This is the repository's accepted external-link failure policy. It does not
+waive formatting, lint, internal-link validation, typing-policy tests or other
+required checks. The regression tests exercise missing local files, missing
+anchors, ignore-file bypass and an unreachable local HTTP target without needing
+an external service. CI continues to call the same canonical static command.
 
 ## CI Mapping
 

@@ -17,6 +17,7 @@ from app.mission.derived_route import (
     build_derived_route_estimate,
 )
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
+from app.mission.pop_capabilities import CapturedCallCapabilities
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
 from app.mission.timeline_builder.aar import (
@@ -54,6 +55,7 @@ from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
+_CONFIGURED_POP_CATALOG = object()
 
 
 @dataclass(frozen=True)
@@ -68,6 +70,7 @@ class TimelineArtifacts:
     export_x_conditions: tuple[MissionEvent, ...] | None = None
     validated_leg: MissionLeg | None = None
     planning_evaluation: PlanningEvaluation | None = None
+    call_capabilities: CapturedCallCapabilities | None = None
 
 
 def prepare_mission_timeline(
@@ -83,6 +86,7 @@ def prepare_mission_timeline(
     discover_coverage: bool = True,
     satellite_catalog: SatelliteCatalog | None = None,
     constraint_config: ConstraintConfig | None = None,
+    pop_catalog=_CONFIGURED_POP_CATALOG,
 ) -> TimelineArtifacts:
     """Prepare effective geometry, canonical events and POIs without publishing."""
 
@@ -214,6 +218,7 @@ def prepare_mission_timeline(
         ),
     )
 
+    capability_ka_sampler = resolved_sampler
     coverage_samples = samples
     coverage_enabled = resolved_sampler is not None
     if planning_evaluation is not None:
@@ -229,6 +234,7 @@ def prepare_mission_timeline(
             ka_sampler = CoverageSampler()
             ka_sampler.coverage_data = captured_coverage["data"]
             ka_sampler.satellite_polygons = captured_coverage["polygons"]
+        capability_ka_sampler = ka_sampler
         coverage_enabled = ka_sampler is not None
         coverage_samples = generate_timeline_samples(projector, ka_sampler)
     coverage_result = analyze_ka_coverage(
@@ -306,6 +312,71 @@ def prepare_mission_timeline(
     normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
 
+    # Forecasts are attached only after transport evaluation and statistics.
+    from app.mission.pop_forecast import configured_forecast_for_mission
+
+    if pop_catalog is _CONFIGURED_POP_CATALOG:
+        timeline.pop_forecast = configured_forecast_for_mission(
+            route,
+            projector,
+            starshield_enabled=mission.transports.starshield_enabled is not False,
+        )
+    else:
+        from app.mission.pop_forecast import (
+            forecast_for_mission,
+            mission_forecast_revision,
+        )
+
+        timeline.pop_forecast = forecast_for_mission(
+            route,
+            projector,
+            pop_catalog,
+            revision=mission_forecast_revision(route, projector, pop_catalog),
+            starshield_enabled=mission.transports.starshield_enabled is not False,
+        )
+
+    from app.mission.pop_pois import transition_window_pois
+
+    pop_pois = transition_window_pois(
+        mission, timeline.pop_forecast, projector, parent_mission_id
+    )
+    generated_pois += pop_pois
+    timeline.map_pois.extend(
+        TimelineMapPoi.model_validate(p.model_dump()) for p in pop_pois
+    )
+
+    from app.mission.pop_capabilities import (
+        capability_input_revision,
+        capture_call_capabilities,
+        capture_source_evidence,
+    )
+    from app.mission.pop_continuity import attach_call_continuity
+    from app.mission.pop_coverage_evidence import coverage_source_kind
+
+    evidence = capture_source_evidence(
+        mission,
+        samples,
+        transition_schedule,
+        capability_ka_sampler,
+        planning_evaluation,
+        satellite_catalog,
+        coverage_source_kind(
+            capability_ka_sampler,
+            injected=coverage_sampler is not None,
+            planning=planning_evaluation is not None,
+        ),
+    )
+    timeline.statistics["_call_capability_evidence"] = evidence
+    timeline.call_capability_revision = capability_input_revision(
+        mission,
+        route,
+        constraint_config,
+        satellite_catalog,
+        ka_snapshot=evidence["ka_snapshot"],
+    )
+    attach_call_continuity(timeline)
+    call_capabilities = capture_call_capabilities(timeline, route, projector)
+
     # Attach route samples if requested (for preview rendering)
     if include_samples:
         from app.mission.models import RouteSampleData
@@ -354,6 +425,7 @@ def prepare_mission_timeline(
         tuple(transition_schedule),
         tuple(export_x_conditions) if export_x_conditions is not None else None,
         planning_evaluation=planning_evaluation,
+        call_capabilities=call_capabilities,
     )
 
 

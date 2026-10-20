@@ -6,6 +6,8 @@ from pathlib import Path
 
 from filelock import FileLock
 
+from app.models.overview_presets import PresetWeatherVisibility
+
 
 @dataclass(frozen=True)
 class OverviewLinkSettings:
@@ -36,6 +38,13 @@ class OverviewLinkSettings:
     starshield_events_enabled: bool = True
     ground_entry_point_enabled: bool = True
     configured_satellites_enabled: bool = True
+
+
+PRESET_NAMES = ("normal", "communications", "weather")
+
+
+class OverviewSettingsConflict(Exception):
+    """The supplied baseline no longer matches persisted settings."""
 
 
 _SETTING_FIELDS = frozenset(OverviewLinkSettings.__dataclass_fields__)
@@ -88,34 +97,106 @@ class OverviewLinkSettingsStore:
             raise TypeError("Overview link settings must be an object")
         return payload
 
-    def update(self, changes: dict[str, bool]) -> OverviewLinkSettings:
+    def update(
+        self, changes: dict[str, bool], expected_values: dict[str, bool] | None = None
+    ) -> OverviewLinkSettings:
         """Merge only supplied fields without losing another viewer's edits."""
         changes = _validate_fields(changes)
         if not changes:
             raise ValueError("At least one overview link setting is required")
+        if expected_values is not None:
+            _validate_fields(expected_values)
+            if expected_values.keys() != changes.keys():
+                raise ValueError("Expected values must match changed fields")
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
             payload = self._read_payload()
-            payload.update(asdict(_settings_from_payload(payload)))
+            current = asdict(_settings_from_payload(payload))
+            if expected_values is not None and any(
+                current[key] != value for key, value in expected_values.items()
+            ):
+                raise OverviewSettingsConflict(
+                    "Settings changed; refresh before retrying"
+                )
+            payload.update(current)
             payload.update(changes)
             settings = _settings_from_payload(payload)
-            temporary_path: Path | None = None
-            try:
-                with tempfile.NamedTemporaryFile(
-                    mode="w",
-                    dir=self._path.parent,
-                    prefix=f".{self._path.name}.",
-                    suffix=".tmp",
-                    encoding="utf-8",
-                    delete=False,
-                ) as handle:
-                    temporary_path = Path(handle.name)
-                    json.dump(payload, handle)
-                    handle.write("\n")
-                    handle.flush()
-                    os.fsync(handle.fileno())
-                os.replace(temporary_path, self._path)
-            finally:
-                if temporary_path is not None:
-                    temporary_path.unlink(missing_ok=True)
+            self._write(payload)
             return settings
+
+    def get_presets(self) -> dict:
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            return self._presets(self._read_payload())
+
+    @staticmethod
+    def _presets(payload: dict) -> dict:
+        saved = payload.get("operator_presets", {})
+        if not isinstance(saved, dict):
+            raise TypeError("Invalid saved presets")
+        result = {}
+        for name in PRESET_NAMES:
+            preset = saved.get(name)
+            if preset is not None and (
+                not isinstance(preset, dict)
+                or type(preset.get("version")) is not int
+                or preset["version"] < 1
+                or not _validate_fields(preset.get("settings"))
+            ):
+                raise ValueError("Invalid saved preset")
+            if preset is not None and "weather_visibility" in preset:
+                PresetWeatherVisibility.model_validate(preset["weather_visibility"])
+            result[name] = preset
+        return result
+
+    def save_preset(
+        self,
+        name: str,
+        settings: dict[str, bool],
+        expected_version: int,
+        weather_visibility: dict[str, bool] | None = None,
+    ) -> dict:
+        if name not in PRESET_NAMES or not _validate_fields(settings):
+            raise ValueError("Invalid preset")
+        if weather_visibility is not None:
+            weather_visibility = PresetWeatherVisibility.model_validate(
+                weather_visibility
+            ).model_dump()
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            payload = self._read_payload()
+            _settings_from_payload(payload)
+            current = self._presets(payload)[name]
+            version = current["version"] if current else 0
+            if version != expected_version:
+                raise OverviewSettingsConflict(
+                    "Preset changed; refresh before retrying"
+                )
+            preset = {"version": version + 1, "settings": settings}
+            if weather_visibility is not None:
+                preset["weather_visibility"] = weather_visibility
+            payload.setdefault("operator_presets", {})[name] = preset
+            self._write(payload)
+            return preset
+
+    def _write(self, payload: dict) -> None:
+        """Replace the shared file only after flushing the complete new state."""
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                dir=self._path.parent,
+                prefix=f".{self._path.name}.",
+                suffix=".tmp",
+                encoding="utf-8",
+                delete=False,
+            ) as handle:
+                temporary_path = Path(handle.name)
+                json.dump(payload, handle)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary_path, self._path)
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)

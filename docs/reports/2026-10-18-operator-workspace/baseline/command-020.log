@@ -1,0 +1,35 @@
+
+Running 1 test using 1 worker
+
+(node:2781626) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/e2e/operator-workspace.spec.ts:94:1 › approved workspace: mission awareness and contextual actions (10.4s)
+
+
+  1) tests/e2e/operator-workspace.spec.ts:94:1 › approved workspace: mission awareness and contextual actions 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('navigation', { name: 'Operator workspace' })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('navigation', { name: 'Operator workspace' }) with timeout 10000ms
+      - waiting for getByRole('navigation', { name: 'Operator workspace' })
+
+
+      107 |   await expect(
+      108 |     page.getByRole('navigation', { name: 'Operator workspace' })
+    > 109 |   ).toBeVisible();
+          |     ^
+      110 |   await expect(
+      111 |     page.getByRole('region', { name: 'Now and next' })
+      112 |   ).toBeVisible();
+        at /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/tests/e2e/operator-workspace.spec.ts:109:5
+
+    Error Context: ../../../../../../../../tmp/issue-376-workspace-baseline-20261018-r3/workspace-playwright/operator-workspace-approve-dad0d-ness-and-contextual-actions/error-context.md
+
+  1 failed
+    tests/e2e/operator-workspace.spec.ts:94:1 › approved workspace: mission awareness and contextual actions 

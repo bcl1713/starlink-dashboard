@@ -1,0 +1,92 @@
+# Standalone acceptance Compose: invoke with a task-specific -p project name.
+services:
+  starlink-location:
+    image:
+      ${OPERATOR_BACKEND_IMAGE:-starlink-operator-backend}:${ACCEPTANCE_CANDIDATE_SHA:?exact
+      SHA required}
+    build:
+      context: ${OPERATOR_SOURCE_ROOT:?archived source required}
+      dockerfile: backend/starlink-location/Dockerfile
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    command:
+      [uvicorn, "${OPERATOR_ACCEPTANCE_ENTRYPOINT:-backend_fixture}:app", --host, 0.0.0.0, --port, "8000"]
+    labels:
+      acceptance.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
+      acceptance.synthetic: "true"
+    environment:
+      PYTHONPATH: /acceptance:/app
+      STARLINK_MODE: simulation
+      SIMULATION_MODE: "true"
+      STARLINK_DISABLE_BACKGROUND_TASKS: "1"
+      OPERATOR_ENABLED: "true"
+      OPERATOR_MODEL_ALERTS_ACCEPTANCE: ${OPERATOR_MODEL_ALERTS_ACCEPTANCE:-false}
+      OPERATOR_EVENTS_ACCEPTANCE: ${OPERATOR_EVENTS_ACCEPTANCE:-false}
+      OPERATOR_ARCHIVE_ACCEPTANCE: ${OPERATOR_ARCHIVE_ACCEPTANCE:-false}
+      OPERATOR_ACCEPTANCE_FIXTURE: synthetic-local-only
+      OPERATOR_ACCEPTANCE_ROOT: /app/data
+      STARLINK_GROUND_ENTRY_LATITUDE: "0"
+      STARLINK_GROUND_ENTRY_LONGITUDE: "0"
+      PROMETHEUS_URL: http://127.0.0.1:1
+    volumes:
+      - ${OPERATOR_SOURCE_ROOT}/tools/acceptance/operator-journal:/acceptance:ro
+      - fixture-data:/app/data
+      - operator-data:/app/data/operator
+      - route-data:/data
+    healthcheck:
+      test: [CMD, curl, -f, "http://localhost:8000${OPERATOR_ACCEPTANCE_HEALTH_PATH:-/api/v2/operator/health}"]
+      interval: 2s
+      timeout: 5s
+      retries: 45
+      start_period: 30s
+  mission-planner:
+    image:
+      ${OPERATOR_FRONTEND_IMAGE:-starlink-operator-frontend}:${ACCEPTANCE_CANDIDATE_SHA:?exact
+      SHA required}
+    build:
+      context: ${OPERATOR_SOURCE_ROOT}/frontend/mission-planner
+      args:
+        ACCEPTANCE_CANDIDATE_SHA: ${ACCEPTANCE_CANDIDATE_SHA}
+    labels:
+      acceptance.candidate: ${ACCEPTANCE_CANDIDATE_SHA}
+      acceptance.synthetic: "true"
+    ports:
+      - "127.0.0.1:${OPERATOR_ACCEPTANCE_PORT:?choose an unused private port}:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+  import-destination:
+    profiles: [archive]
+    image: ${OPERATOR_BACKEND_IMAGE:-starlink-operator-backend}:${ACCEPTANCE_CANDIDATE_SHA}
+    command: [uvicorn, archive_destination:app, --host, 0.0.0.0, --port, "8000"]
+    environment:
+      PYTHONPATH: /acceptance:/app
+      STARLINK_MODE: simulation
+      SIMULATION_MODE: "true"
+      STARLINK_DISABLE_BACKGROUND_TASKS: "1"
+      OPERATOR_ENABLED: "true"
+      OPERATOR_ACCEPTANCE_FIXTURE: synthetic-local-only
+      STARLINK_GROUND_ENTRY_LATITUDE: "0"
+      STARLINK_GROUND_ENTRY_LONGITUDE: "0"
+      PROMETHEUS_URL: http://127.0.0.1:1
+    volumes:
+      - ${OPERATOR_SOURCE_ROOT}/tools/acceptance/operator-journal:/acceptance:ro
+      - destination-data:/app/data
+      - destination-routes:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/api/v2/operator/health]
+      interval: 2s
+      timeout: 5s
+      retries: 45
+      start_period: 30s
+
+volumes:
+  fixture-data:
+  operator-data:
+  route-data:
+  destination-data:
+  destination-routes:
+
+networks:
+  default:
+    internal: true

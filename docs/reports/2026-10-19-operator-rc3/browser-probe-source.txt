@@ -1,0 +1,114 @@
+import { chromium, expect } from '/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/@playwright/test/index.mjs';
+import { writeFileSync } from 'node:fs';
+const root='/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/docs/reports/2026-10-19-operator-rc3';
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+const context=await browser.newContext({locale:'en-GB',viewport:{width:1440,height:1000},timezoneId:'America/Los_Angeles'});
+const evidence={synthetic:true, timezone:'America/Los_Angeles',scope:'Vite + actual existing public Operator routers and SQLite store, real shared visibility/weather/ADS-B stores. Scientific provider acquisition not included.',steps:[],errors:[]};
+const page=await context.newPage();
+page.on('pageerror',e=>evidence.errors.push(e.message));
+const step=(name)=>{evidence.steps.push(name);console.log(name)};
+const card=(party)=>page.getByRole('heading',{name:party,exact:true}).locator('..');
+async function save(){await page.getByRole('button',{name:'Save call',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();}
+try {
+ await page.goto('http://127.0.0.1:5178/operator?workspace=1&mission_id=rc3-mission&view=communications');
+ const communications=page.getByRole('region',{name:'Communications',exact:true});
+ await expect(communications.getByRole('button',{name:'Create conference',exact:true})).toBeEnabled();
+ await communications.getByRole('button',{name:'Create call',exact:true}).click();
+ await page.getByLabel('Party / participant (optional)').fill('Synthetic customer A');
+ await page.getByLabel('Planned start date (UTC)').fill('2026-10-20');
+ await page.getByLabel('Planned start time (UTC)').fill('11:00');
+ await page.getByLabel('Communications type').selectOption('voice');
+ await expect(page.getByText('Mission association: Outbound · 10:00–12:00 UTC',{exact:true})).toBeVisible();
+ await save(); step('Schedule initial voice call using UTC date/time pickers and inferred Outbound leg');
+ await card('Synthetic customer A').getByRole('button',{name:'Reschedule',exact:true}).click();
+ await page.getByLabel('Planned start time (UTC)').fill('11:30');
+ await save();
+ await expect(card('Synthetic customer A')).toContainText(/20 Oct 2026, 11:30 UTC/); step('Reschedule via ordinary UTC time, saved');
+ await communications.getByRole('button',{name:'Create conference',exact:true}).click();
+ await page.getByLabel('Conference name (optional)').fill('Synthetic reusable bridge');
+ await page.getByRole('button',{name:'Save conference',exact:true}).click();
+ await expect(page.getByRole('dialog')).toBeHidden();
+ const bridge=page.getByRole('article',{name:'Conference Synthetic reusable bridge'});
+ await expect(bridge.getByRole('button',{name:'Establish',exact:true})).toBeEnabled();
+ await bridge.getByRole('button',{name:'Establish',exact:true}).click();
+ await expect(bridge.getByRole('button',{name:'Verify',exact:true})).toBeEnabled();
+ await bridge.getByRole('button',{name:'Verify',exact:true}).click();
+ await expect(bridge).toContainText('Bridge verification reported.'); step('Create, establish and verify reusable bridge');
+ await card('Synthetic customer A').getByRole('button',{name:'Choose bridge',exact:true}).click();
+ await page.getByLabel('Conference (optional)').selectOption({label:'Synthetic reusable bridge'});
+ await save();
+ await communications.getByRole('button',{name:'Create call',exact:true}).click();
+ await expect(page.getByRole('button',{name:/Keep my input using current version/})).toHaveCount(0);
+ await page.getByLabel('Party / participant (optional)').fill('Synthetic customer B');
+ await page.getByLabel('Planned start date (UTC)').fill('2026-10-20');
+ await page.getByLabel('Planned start time (UTC)').fill('15:00');
+ await page.getByLabel('Communications type').selectOption('vtc');
+ await page.getByLabel('Conference (optional)').selectOption({label:'Synthetic reusable bridge'});
+ await expect(page.getByText('Mission association: Return · 14:00–16:00 UTC',{exact:true})).toBeVisible();
+ await page.screenshot({path:`${root}/desktop-schedule.png`});
+ await save(); step('Schedule second call, inferred Return leg, select existing bridge');
+ for(const party of ['Synthetic customer A','Synthetic customer B']) {
+   const call=card(party);
+   await expect(call.getByRole('button',{name:'Start call',exact:true})).toBeEnabled();
+   await call.getByRole('button',{name:'Start call',exact:true}).click();
+   await expect(call.getByRole('button',{name:'Report customer connected',exact:true})).toBeEnabled();
+   await call.getByRole('button',{name:'Report customer connected',exact:true}).click();
+   await expect(call).toContainText('1 reported connected');
+   await expect(call.getByRole('button',{name:'Report call tested',exact:true})).toBeEnabled();
+   await call.getByRole('button',{name:'Report call tested',exact:true}).click();
+   await expect(call).toContainText('Call test: reported in Notes');
+   if(party.endsWith('A')) {
+     await call.scrollIntoViewIfNeeded();
+     await page.screenshot({path:`${root}/desktop-call.png`});
+     await page.setViewportSize({width:390,height:844});
+     await call.scrollIntoViewIfNeeded();
+     await page.screenshot({path:`${root}/mobile-call.png`});
+     const width=await page.evaluate(()=>({content:document.documentElement.scrollWidth,viewport:innerWidth}));
+     expect(width.content).toBeLessThanOrEqual(width.viewport);
+     await page.setViewportSize({width:1440,height:1000});
+   }
+   await expect(call.getByRole('button',{name:'Report customer left',exact:true})).toBeEnabled();
+   await call.getByRole('button',{name:'Report customer left',exact:true}).click();
+   await expect(call.getByRole('button',{name:'Finish call',exact:true})).toBeEnabled();
+   await call.getByRole('button',{name:'Finish call',exact:true}).click();
+   await expect(call).toBeHidden();
+   step(`${party}: start → connect → test → leave → finish; bridge retained`);
+ }
+ await expect(bridge).toContainText('Conference: established');
+ await bridge.getByText('Other bridge actions',{exact:true}).click();
+ await bridge.getByRole('button',{name:'Close conference',exact:true}).click();
+ await expect(bridge).toContainText('Conference: closed');
+ await bridge.getByRole('button',{name:'Establish',exact:true}).click();
+ await expect(bridge.getByRole('button',{name:'Verify',exact:true})).toBeEnabled();
+ await bridge.getByRole('button',{name:'Verify',exact:true}).click();
+ await expect(bridge).toContainText('Bridge verification reported.'); step('Close and reopen bridge for further reuse');
+ await page.reload();
+ await expect(page.getByRole('article',{name:'Conference Synthetic reusable bridge'})).toContainText('Conference: established');
+ const all=await (await page.request.get('http://127.0.0.1:5178/api/v2/operator/records?mission_id=rc3-mission')).json();
+ const calls=all.items.map(i=>i.record).filter(r=>r.record_type==='call');
+ expect(calls).toHaveLength(2);expect(calls.every(r=>r.payload.status==='completed')).toBe(true);
+ expect(calls.find(r=>r.payload.party==='Synthetic customer A').leg_id).toBe('outbound');
+ expect(calls.find(r=>r.payload.party==='Synthetic customer B').leg_id).toBe('return');
+ expect(all.items.filter(i=>i.record.record_type==='participation').every(i=>i.record.payload.state==='left')).toBe(true);
+ step('Reload retained two completed calls, leg associations, customer intervals and observations');
+ await page.getByRole('button',{name:'Display tools',exact:true}).click();
+ const tools=page.getByRole('dialog',{name:'Display tools',exact:true});
+ await expect(tools.getByRole('switch',{name:'Precipitation radar',exact:true})).toBeVisible();
+ await expect(tools.getByRole('switch',{name:'ADS-B aircraft layer',exact:true})).toBeVisible();
+ await expect(tools.getByRole('button',{name:'Show display controls'})).toHaveCount(0);
+ for (const name of ['Starshield data link','Precipitation radar','ADS-B aircraft layer']) {
+   const toggle=tools.getByRole('switch',{name,exact:true});
+   const before=await toggle.isChecked();
+   await expect(toggle).toBeEnabled();await toggle.click();
+   if(before) await expect(toggle).not.toBeChecked();else await expect(toggle).toBeChecked();
+ }
+ await page.locator('.ws-editor-body').evaluate(el=>{el.scrollTop=0});
+ await page.screenshot({path:`${root}/desktop-display.png`});
+ await page.setViewportSize({width:390,height:844});
+ await tools.getByRole('switch',{name:'Precipitation radar',exact:true}).scrollIntoViewIfNeeded();
+ await page.screenshot({path:`${root}/mobile-display.png`});
+ step('Immediate Display tools; real visibility, radar and ADS-B settings writes at desktop/mobile sizes');
+ const settings={};for(const [key,path] of Object.entries({links:'overview-links/settings',weather:'overview-weather/settings',adsb:'overview-adsb/settings'})) settings[key]=await(await page.request.get('http://127.0.0.1:5178/api/'+path)).json();
+ evidence.settings=settings;evidence.recordSummary=all.items.map(i=>({type:i.record.record_type,version:i.record.version,leg:i.record.leg_id,status:i.record.payload.status??i.record.payload.state}));
+} catch(e) {console.log(e.stack); evidence.failure=e.stack;writeFileSync('/tmp/rc3-preview-383/workflow-error.txt',await page.locator('body').innerText());await page.screenshot({path:'/tmp/rc3-preview-383/workflow-error.png'});process.exitCode=1;}
+finally {writeFileSync(`${root}/browser-check.json`,JSON.stringify(evidence,null,2));await context.close();await browser.close();}

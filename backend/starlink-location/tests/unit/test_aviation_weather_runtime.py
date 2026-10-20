@@ -503,3 +503,19 @@ async def test_future_cancellation_cutoff_removes_retained_geometry_when_refresh
     assert (await service.products())[2].state == "unavailable"
     assert service.payload(first.instance_id, "sigmet.json") is None
     await service.aclose()
+
+
+async def test_aviation_cas_conflict_is_409_without_changing_visibility(tmp_path):
+    service, store, source, _now = runtime(tmp_path)
+    store.update({"sigmet": True})
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app_for(service)), base_url="http://test"
+    ) as client:
+        response = await client.put(
+            "/api/aviation-weather/v1/settings",
+            json={"sigmet": False, "expected_revision": 0},
+        )
+        assert response.status_code == 409
+        assert store.get().sigmet is True
+        assert source.calls == []
+    await service.aclose()

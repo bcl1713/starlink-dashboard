@@ -5,13 +5,16 @@ export interface DisplayHostState {
   label: string | null;
 }
 export function useOverviewDisplayHost(
-  onRecenter: () => void
+  onRecenter: () => void,
+  onFollow?: () => boolean
 ): DisplayHostState {
   const resetRef = useRef(onRecenter);
+  const followRef = useRef(onFollow);
   const [label, setLabel] = useState<string | null>(null);
   useLayoutEffect(() => {
     resetRef.current = onRecenter;
-  }, [onRecenter]);
+    followRef.current = onFollow;
+  }, [onRecenter, onFollow]);
   useEffect(() => {
     let disposed = false;
     let available = false;
@@ -21,9 +24,15 @@ export function useOverviewDisplayHost(
         available = snapshot.available;
         if (!available) setLabel(null);
       },
-      readPeer: () => ({ actions: ['recenter'] }),
-      onCommand: async (_action, expiresAtMs) => {
+      readPeer: () => ({
+        actions: followRef.current
+          ? ['recenter', 'follow_aircraft']
+          : ['recenter'],
+      }),
+      onCommand: async (action, expiresAtMs) => {
         if (disposed || Date.now() >= expiresAtMs) return 'expired';
+        if (action === 'follow_aircraft')
+          return followRef.current?.() ? 'accepted' : 'unsupported';
         resetRef.current();
         return 'accepted';
       },

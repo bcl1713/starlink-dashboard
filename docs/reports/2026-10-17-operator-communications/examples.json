@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "candidateSha": "de9567cec70aff570ff99f176a02e46e91ad4559",
+  "scope": "Filtered exact-product projection excerpts; not a mission ZIP",
+  "selectedRecordId": "2d7ebe73-af27-475a-8ce8-61b1d6157fb4",
+  "originalProjectionChecksums": {
+    "operations/current.json": "2a0cc107f1bbafb21e60e6360930772c7dc10bd509bfa98822759eb4c07a2957",
+    "operations/activity.jsonl": "2a8bb6fe17db68de96d361375f21559f5ecc824d431ed79f4956d1e0d0f4c4cf",
+    "operations/audit.jsonl": "a8722bec125f84b53fc7e29ceddb572143f3b1bdc48a522e2d6a3bb9ea5c50b3"
+  },
+  "exampleChecksums": {
+    "operations-current-example.json": "4fd9a12634975f3aefdd01c1e3fe22abd924c97addc1b2d60b5f7742fd81260d",
+    "operations-audit-example.jsonl": "13ffc65148a95f05dbdc50be0aa48709caf21a83ba5d2a34801888f47bd0254e",
+    "operations-activity-example.jsonl": "5b38f40cebf0699daa232adb98ca8706d6c7f405a42e61974325253f28ecdbe1"
+  }
+}

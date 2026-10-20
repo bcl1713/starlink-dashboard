@@ -102,6 +102,40 @@ export function deriveArrivalPanel(
       exception: refreshException,
     };
 
+  const movement = response.movement_state;
+  const movementAge = response.movement_observed_at
+    ? statusObservationAgeMs(response.movement_observed_at, now)
+    : null;
+  const movementFresh = movementAge !== null && movementAge < 10_000;
+  const groundLabels: Record<string, string> = {
+    taxi_out: 'TAXI OUT',
+    probable_landed_rollout: 'LANDED · INFERRED',
+    taxi_in: 'TAXI IN',
+    parked_at_stop: 'PARKED · INTERMEDIATE STOP',
+    parked: 'PARKED',
+  };
+  if (
+    movement &&
+    groundLabels[movement] &&
+    (movement !== 'parked' || response.on_blocks_at)
+  ) {
+    const uncertain =
+      response.movement_uncertain || !movementFresh || refreshUnavailable;
+    return {
+      ...empty,
+      exception: uncertain ? 'Movement state uncertain or stale' : null,
+      sections: [
+        {
+          label: groundLabels[movement],
+          name: null,
+          timing: null,
+          unavailable: uncertain
+            ? 'Last recorded state; confirmation unavailable'
+            : '',
+        },
+      ],
+    };
+  }
   const departures = response.pois.filter((p) => p.kind === 'departure');
   const arrivals = response.pois.filter((p) => p.kind === 'arrival');
   const destination = arrivals.length === 1 ? arrivals[0] : null;
@@ -206,7 +240,9 @@ export function deriveArrivalPanel(
             routeProgress(poi) !== null &&
             response.current_route_progress >= routeProgress(poi)!
           ? 'Destination passed; awaiting landed state'
-          : 'Arrival eligibility unavailable'
+          : routeProgress(poi) === null
+            ? 'Destination route position unavailable'
+            : 'Route position unavailable — ETA unavailable'
       : label === 'LANDING'
         ? 'Destination unavailable'
         : 'Next POI unavailable',

@@ -19,6 +19,7 @@ https://10.*
 http://172.16.*
 https://172.16.*
 
-# File links
-# Excluding file:// links as they are local paths
+# File links are excluded from the advisory network pass.
+# tools/check_docs_links.py explicitly includes them in its required offline pass,
+# including fragment validation; this exclusion cannot disable that pass.
 file://*

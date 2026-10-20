@@ -14,6 +14,7 @@ class WeatherSettings(BaseModel):
 class WeatherSettingsUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     enabled: bool
+    expected_revision: int | None = Field(default=None, ge=0)
 
 
 class WeatherAttribution(BaseModel):

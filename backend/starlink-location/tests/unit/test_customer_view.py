@@ -35,14 +35,16 @@ def test_checkpoint_pair_has_independent_assessment_and_known_risks():
         }
         if name.endswith("assessed"):
             assert not any(d.value == "?" for i in leg.intervals for d in i.decisions)
-            assert {i.posture for i in leg.intervals} == {
+            assert {i.physical_posture for i in leg.intervals} == {
                 "Nominal",
                 "Degraded",
                 "Limited / elevated risk",
                 "Communications unavailable",
             }
             outage = [
-                i for i in leg.intervals if i.posture == "Communications unavailable"
+                i
+                for i in leg.intervals
+                if i.physical_posture == "Communications unavailable"
             ]
             assert len(outage) == 1
             assert (outage[0].start_time, outage[0].end_time) == (
@@ -77,7 +79,11 @@ def test_customer_view_groups_equivalent_adjacent_sources():
     assert row.end_time == utc("2026-10-25T16:15:00Z")
     assert len(row.interval_ids) == 2
     assert {"risk-Ka", "risk-Ka-other"} <= set(row.source_ids)
-    assert not any(r.start_time == utc("2026-10-25T14:15:00Z") for r in result.rows)
+    assert any(
+        r.start_time == utc("2026-10-25T14:15:00Z")
+        and r.posture == "Assessment incomplete"
+        for r in result.rows
+    )
     assert "Commercial Ka unavailable" in row.impact
     assert not any(
         token in repr(result.rows)
@@ -90,12 +96,22 @@ def test_unknown_x_has_one_notice_and_keeps_known_outages():
     result = view(captured)
     assert (
         result.notice
-        == "X-Band planning incomplete — confirmed transport capability shown below."
+        == "X-Band planning incomplete — confirmed transport capability shown below. Call continuity unresolved."
     )
-    assert len(result.rows) == 5  # SOF twice; Ka, overlap, Ka recovery.
+    assert (
+        len(result.rows) >= 5
+    )  # Unknown continuity also retains otherwise quiet spans.
     assert all(r.posture == "Assessment incomplete" for r in result.rows)
-    assert any(r.remaining == "Starshield confirmed" for r in result.rows)
-    assert any(r.remaining == "No transport confirmed available" for r in result.rows)
+    assert all(r.remaining == "Call continuity unresolved" for r in result.rows)
+    from app.mission.exporter.customer_view import confirmed_capability
+
+    assert any(
+        confirmed_capability(i) == "Starshield confirmed" for i in result.intervals
+    )
+    assert any(
+        confirmed_capability(i) == "No transport confirmed available"
+        for i in result.intervals
+    )
     assert not any("Communications unavailable" in r.posture for r in result.rows)
 
 
@@ -126,7 +142,11 @@ def test_checkpoint_oct25_eight_hours_and_nested_outages():
     assert result.title == "LEG 1 OF 1 — KADW → PAED"
     assert result.date_label == "25 Oct 2026"
     assert result.timing_label == "DEP 10:00 ET | ARR 18:00 ET | 8h 00m"
-    outage = [i for i in result.intervals if i.posture == "Communications unavailable"]
+    outage = [
+        i
+        for i in result.intervals
+        if i.physical_posture == "Communications unavailable"
+    ]
     assert len(outage) == 1
     assert (outage[0].start_time, outage[0].end_time) == (
         utc("2026-10-25T16:25:00Z"),
@@ -137,8 +157,16 @@ def test_checkpoint_oct25_eight_hours_and_nested_outages():
 def test_checkpoint_incomplete_x_keeps_confirmed_risks():
     result = view(snapshot(fixture("composition-incomplete-x")))
     assert all(i.decisions[2].value == "?" for i in result.intervals)
-    assert any(r.remaining == "Starshield confirmed" for r in result.rows)
-    assert any(r.remaining == "No transport confirmed available" for r in result.rows)
+    assert all(r.remaining == "Call continuity unresolved" for r in result.rows)
+    from app.mission.exporter.customer_view import confirmed_capability
+
+    assert any(
+        confirmed_capability(i) == "Starshield confirmed" for i in result.intervals
+    )
+    assert any(
+        confirmed_capability(i) == "No transport confirmed available"
+        for i in result.intervals
+    )
 
 
 def test_customer_grouping_ignores_internal_rule_identity():
@@ -177,7 +205,9 @@ def test_customer_uncertainty_change_without_outage_is_material():
     captured = snapshot(fixture("composition-assessed"))
     projection = project_briefing_leg(captured)
     nominal = next(
-        i for i in projection.intervals if not i.restrictions and i.posture == "Nominal"
+        i
+        for i in projection.intervals
+        if not i.restrictions and i.physical_posture == "Nominal"
     )
     changed = replace(
         nominal,
@@ -199,7 +229,8 @@ def test_customer_uncertainty_change_without_outage_is_material():
         r for r in view(captured, projection).rows if r.start_time == changed.start_time
     )
     assert row.posture == "Assessment incomplete"
-    assert row.remaining == "Ka + Starshield confirmed"
+    assert row.remaining == "Call continuity unresolved"
+    assert changed.physical_remaining_transports == ("Commercial Ka", "Starshield")
     assert row.end_time == changed.end_time
 
 
@@ -209,7 +240,9 @@ def test_available_ka_note_does_not_invent_a_customer_operating_constraint():
     captured = snapshot(fixture("composition-assessed"))
     projection = project_briefing_leg(captured)
     nominal = next(
-        i for i in projection.intervals if not i.restrictions and i.posture == "Nominal"
+        i
+        for i in projection.intervals
+        if not i.restrictions and i.physical_posture == "Nominal"
     )
     constrained = replace(
         nominal,
@@ -226,7 +259,11 @@ def test_available_ka_note_does_not_invent_a_customer_operating_constraint():
         ),
     )
     result = view(captured, projection)
-    assert not any(row.start_time == nominal.start_time for row in result.rows)
+    assert any(
+        row.start_time == nominal.start_time
+        and row.impact == "Call continuity unresolved"
+        for row in result.rows
+    )
     assert not any("operating constraint" in row.impact for row in result.rows)
     assert constrained.decisions[0].value == "Up"
     assert constrained.decisions[0].limitation == "PRIVATE internal geometry"

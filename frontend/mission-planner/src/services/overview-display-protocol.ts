@@ -1,4 +1,4 @@
-export type DisplayAction = 'recenter';
+export type DisplayAction = 'recenter' | 'follow_aircraft';
 export type DisplayResult = 'accepted' | 'unsupported' | 'expired' | 'failed';
 
 export interface DisplayPeer {
@@ -55,7 +55,7 @@ const commonFields = ['v', 'type', 'sender', 'target', 'seq'];
 const isText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= 128;
 const isAction = (value: unknown): value is DisplayAction =>
-  value === 'recenter';
+  value === 'recenter' || value === 'follow_aircraft';
 const isResult = (value: unknown): value is DisplayResult =>
   value === 'accepted' ||
   value === 'unsupported' ||
@@ -68,13 +68,13 @@ function parseActions(value: unknown): DisplayAction[] | null {
   const descriptors: Record<string, PropertyDescriptor> =
     Object.getOwnPropertyDescriptors(value);
   const length = descriptors.length.value;
-  if (length > 2 || Reflect.ownKeys(value).length !== length + 1) return null;
+  if (length > 3 || Reflect.ownKeys(value).length !== length + 1) return null;
   const actions: DisplayAction[] = [];
   for (let index = 0; index < length; index++) {
     const descriptor = descriptors[String(index)];
     if (!descriptor || !('value' in descriptor)) return null;
     // Legacy Overview windows still advertise fullscreen. Ignore that capability
-    // in discovery; command/result actions remain strictly recenter-only.
+    // in discovery; command/result actions remain limited to supported camera actions.
     if (descriptor.value === 'fullscreen') continue;
     if (!isAction(descriptor.value)) return null;
     actions.push(descriptor.value);

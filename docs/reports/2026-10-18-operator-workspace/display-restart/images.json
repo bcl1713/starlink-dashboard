@@ -1,0 +1,17 @@
+[
+  {
+    "kind": "backend",
+    "id": "sha256:d9882bc384ab28f626f6d31a406438a81b4fff1b2e2b1066f0fe935b677e80e0",
+    "revision": "bd8069fb0c75558d6b58fc46639ae02bdca5aebc"
+  },
+  {
+    "kind": "frontend",
+    "id": "sha256:8982f9f27a2c8e64f9e8826132685f7b50cb001db05d2788d1e9e4954428676e",
+    "revision": "bd8069fb0c75558d6b58fc46639ae02bdca5aebc"
+  },
+  {
+    "kind": "worker",
+    "id": "sha256:f82d996b3a4d26b019e413ddce6e802869f3270eb657456e06bc3218a871a285",
+    "revision": "bd8069fb0c75558d6b58fc46639ae02bdca5aebc"
+  }
+]

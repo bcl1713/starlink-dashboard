@@ -1,0 +1,142 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { test, expect } from '@playwright/test';
+import {
+  evidence,
+  noOverflow,
+  origin,
+  ready,
+} from './operator-journal-helpers';
+
+test('single mission ZIP archive uses existing export and import controls', async ({
+  browser,
+}) => {
+  const captures: string[] = [];
+  const errors: string[] = [];
+  for (const [width, height] of [
+    [1920, 1080],
+    [390, 844],
+    [844, 390],
+  ]) {
+    const context = await browser.newContext({
+      viewport: { width, height },
+      acceptDownloads: true,
+    });
+    try {
+      const page = await context.newPage();
+      page.on('pageerror', (error) => errors.push(error.message));
+      await ready(page);
+      await page.goto(`${origin}/missions`);
+      const card = page.locator('div.rounded-xl.border.bg-card').filter({
+        has: page.getByText('Synthetic Mission A', { exact: true }),
+      });
+      await card.getByRole('button', { name: 'Export', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(
+        dialog.getByRole('heading', { name: 'Export Mission' })
+      ).toBeVisible();
+      await noOverflow(page);
+      await dialog.evaluate(async (node) => {
+        await Promise.all(
+          node
+            .getAnimations({ subtree: true })
+            .map((animation) => animation.finished.catch(() => {}))
+        );
+      });
+      await expect(dialog).toBeInViewport({ ratio: 1 });
+      await page.screenshot({
+        animations: 'disabled',
+        path: join(evidence, `archive-export-${width}x${height}.png`),
+        fullPage: false,
+      });
+      if (width === 1920) {
+        await page.route(
+          '**/api/v2/missions/synthetic-mission-a/export',
+          (route) => route.abort('failed')
+        );
+        await dialog
+          .getByRole('button', { name: 'Export', exact: true })
+          .click();
+        await expect(
+          dialog.getByText('Export failed. Please try again.', { exact: true })
+        ).toBeVisible();
+        await page.unroute('**/api/v2/missions/synthetic-mission-a/export');
+      }
+      const downloading = page.waitForEvent('download', { timeout: 600_000 });
+      await dialog.getByRole('button', { name: 'Export', exact: true }).click();
+      const download = await downloading;
+      expect(download.suggestedFilename()).toBe('synthetic-mission-a.zip');
+      expect(await download.failure()).toBeNull();
+      await download.saveAs(join(evidence, `browser-mission-${width}.zip`));
+      await expect(dialog).not.toBeVisible({ timeout: 20_000 });
+      await page.goto(`${origin}/operator?mission_id=synthetic-mission-a`);
+      await expect(
+        page.getByRole('heading', { name: 'Operator', exact: true })
+      ).toBeVisible();
+      await noOverflow(page);
+      await page.screenshot({
+        path: join(evidence, `archive-operator-${width}x${height}.png`),
+        fullPage: false,
+      });
+      captures.push(`${width}x${height}`);
+    } finally {
+      await context.close();
+    }
+  }
+  const importingContext = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+  });
+  try {
+    const page = await importingContext.newPage();
+    page.on('pageerror', (error) => errors.push(error.message));
+    const journalPath = `${origin}/api/v2/operator/records?mission_id=synthetic-mission-a`;
+    const before = await (await page.request.get(journalPath)).json();
+    const deactivated = await page.request.post(
+      `${origin}/api/v2/missions/synthetic-mission-a/legs/deactivate`
+    );
+    expect(deactivated.ok(), await deactivated.text()).toBe(true);
+    await page.goto(`${origin}/missions`);
+    await page
+      .getByRole('button', { name: 'Import Mission', exact: true })
+      .click();
+    const dialog = page.getByRole('dialog');
+    await dialog
+      .locator('input[type=file]')
+      .setInputFiles(join(evidence, 'browser-mission-1920.zip'));
+    await expect(
+      dialog.getByText('Import successful!', { exact: true })
+    ).toBeVisible();
+    await page.screenshot({
+      path: join(evidence, 'archive-existing-import-controls.png'),
+    });
+    const after = await (await page.request.get(journalPath)).json();
+    expect(after.items).toEqual(before.items);
+    expect(after.H).toEqual(before.H);
+  } finally {
+    await importingContext.close();
+  }
+  expect(errors).toEqual([]);
+  writeFileSync(
+    join(evidence, 'archive-browser.json'),
+    JSON.stringify(
+      {
+        synthetic: true,
+        captures,
+        existingExportControls: true,
+        failedNetworkRetry: true,
+        downloadableZip: true,
+        existingImportControls: true,
+        uiImportSucceededWithoutJournalMutation: true,
+        operatorResponsive: true,
+        browserErrors: errors,
+      },
+      null,
+      2
+    )
+  );
+  expect(
+    readFileSync(join(evidence, 'browser-mission-1920.zip'))
+      .subarray(0, 2)
+      .toString()
+  ).toBe('PK');
+});

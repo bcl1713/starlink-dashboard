@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import {
   timelineService,
   type Timeline,
   type TimelinePreviewRequest,
 } from '../../services/timeline';
-
 interface UseTimelinePreviewOptions {
   debounceMs?: number;
   enabled?: boolean;
@@ -17,79 +16,51 @@ export function useTimelinePreview(
   options: UseTimelinePreviewOptions = {}
 ) {
   const { debounceMs = 500, enabled = true } = options;
-
-  const [preview, setPreview] = useState<Timeline | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const calculatePreview = useCallback(
-    async (previewRequest: TimelinePreviewRequest) => {
-      // Cancel previous request if in flight
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      abortControllerRef.current = new AbortController();
-      setIsCalculating(true);
-      setError(null);
-
-      const result = await timelineService.previewTimeline(
+  const [result, setResult] = useState<{
+    missionId: string;
+    legId: string;
+    request: TimelinePreviewRequest | null;
+    preview: Timeline | null;
+    error: Error | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!enabled || !request || !missionId || !legId) return;
+    let current = true;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      const preview = await timelineService.previewTimeline(
         missionId,
         legId,
-        previewRequest,
-        abortControllerRef.current.signal
+        request,
+        controller.signal
       );
-
-      if (result) {
-        setPreview(result);
-      } else {
-        setError(new Error('Failed to calculate preview'));
-      }
-      setIsCalculating(false);
-    },
-    [missionId, legId]
-  );
-
-  useEffect(() => {
-    if (!enabled || !request || !missionId || !legId) {
-      return;
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new debounce timer
-    debounceTimerRef.current = setTimeout(() => {
-      calculatePreview(request);
+      // An HTTP adapter may finish despite abort. Only this input generation owns publication.
+      if (!current) return;
+      setResult({
+        missionId,
+        legId,
+        request,
+        preview,
+        error: preview ? null : new Error('Failed to calculate preview'),
+      });
     }, debounceMs);
-
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+      current = false;
+      controller.abort();
+      clearTimeout(timer);
     };
-  }, [request, missionId, legId, enabled, debounceMs, calculatePreview]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-
+  }, [missionId, legId, request, enabled, debounceMs]);
+  const matches =
+    enabled &&
+    request &&
+    result?.missionId === missionId &&
+    result?.legId === legId &&
+    result?.request === request;
   return {
-    preview,
-    isCalculating,
-    error,
+    preview: matches ? result.preview : null,
+    isCalculating: Boolean(
+      enabled && request && missionId && legId && !matches
+    ),
+    error: matches ? result.error : null,
   };
 }

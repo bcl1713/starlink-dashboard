@@ -1,0 +1,17 @@
+{
+  "candidateSha": "e44ac196eb63aa7f321642650f029c1a06a9d7f1",
+  "sourceArchiveSha256": "e41887cdd5d4851211bf49ea2c4bc8a1f5cf7ffb4e8fe11ff63cfe11c6150ec9",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-training-e1f79bd80bd2-backend:e44ac196eb63aa7f321642650f029c1a06a9d7f1",
+      "id": "sha256:3d14f9ee1900455a728f73ef441bf86ac7c74688b9a86b276d8d1a40f8479884",
+      "revision": "e44ac196eb63aa7f321642650f029c1a06a9d7f1"
+    },
+    "frontend": {
+      "tag": "starlink-operator-training-e1f79bd80bd2-frontend:e44ac196eb63aa7f321642650f029c1a06a9d7f1",
+      "id": "sha256:53df09408159618fff69a7d22d718f115ec2b2e8981d1056084d9e237226fac5",
+      "revision": "e44ac196eb63aa7f321642650f029c1a06a9d7f1"
+    }
+  },
+  "capturedAfterOwnedTeardown": true
+}

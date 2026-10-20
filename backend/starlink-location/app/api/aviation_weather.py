@@ -15,6 +15,7 @@ from app.services.overview_weather.request import (
     WeatherRequestDisconnected,
     await_weather_request,
 )
+from app.services.settings_conflict import SettingsConflict
 
 router = APIRouter(prefix="/api/aviation-weather/v1")
 
@@ -33,6 +34,8 @@ def runtime(request):
 async def guarded(request, operation):
     try:
         return await await_weather_request(request, operation)
+    except SettingsConflict as error:
+        raise HTTPException(409, str(error)) from error
     except WeatherRequestDisconnected:
         return Response(status_code=499)
     except (WeatherUnavailable, OSError, ValueError, TypeError, ValidationError):

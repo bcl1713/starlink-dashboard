@@ -142,3 +142,74 @@ test('measurement consumes the caller budget without resetting it', async () => 
     (e) => e.code === 'deadline'
   );
 });
+
+test('PoP overlaps continue at whole-row boundaries with unchanged one-line copy and IDs', async () => {
+  const { composeMissionPage } = await import('./document.mjs');
+  const payload = mission(1, 8);
+  const leg = payload.legs[0];
+  const identity = leg.legId;
+  Object.assign(leg, {
+    header: {
+      title: 'LEG 1 OF 1',
+      date: '25 Oct 2026',
+      timing: 'DEP 10:00 ET | ARR 18:00 ET',
+    },
+    intervals: [],
+    legId: identity,
+  });
+  leg.popTransitions = [
+    {
+      id: 'crossing',
+      windowStartUtc: '2026-10-25T15:55:00Z',
+      windowEndUtc: '2026-10-25T16:05:00Z',
+    },
+  ];
+  const event =
+    'Takeoff SOF; Commercial Ka unavailable; Starshield Transition Window';
+  leg.rows.forEach((row) => {
+    row.popTransitionIds = ['crossing'];
+    row.displayCells = [
+      '11:55 - 12:05',
+      event,
+      'Starshield, X-Band',
+      'Degraded',
+    ];
+  });
+  const before = JSON.stringify(leg);
+  const plan = await (
+    await planner()
+  )({
+    payload,
+    budget,
+    measure: async (request) => ({
+      fits: request.rowIds.length <= (request.kind === 'primary' ? 3 : 5),
+    }),
+  });
+  assert.equal(plan.pages.length, 2);
+  const assets = {
+    apoDataUrl: 'data:image/png;base64,AA==',
+    regularFontDataUrl: 'data:font/ttf;base64,AA==',
+    boldFontDataUrl: 'data:font/ttf;base64,AA==',
+    cssText: '',
+  };
+  for (const page of plan.pages) {
+    const html = composeMissionPage(leg, page, assets);
+    assert.doesNotMatch(html, /pop-impact/);
+    assert.equal(
+      (
+        html.match(
+          /Takeoff SOF; Commercial Ka unavailable; Starshield Transition Window/g
+        ) ?? []
+      ).length,
+      page.rowIds.length
+    );
+    assert.ok(page.rowIds.every((id) => html.includes(`data-row-id="${id}"`)));
+    if (page.kind === 'continuation')
+      assert.match(html, /Coordination windows continued/);
+  }
+  assert.deepEqual(
+    plan.pages.flatMap((page) => page.rowIds),
+    leg.rows.map((row) => row.id)
+  );
+  assert.equal(JSON.stringify(leg), before);
+});

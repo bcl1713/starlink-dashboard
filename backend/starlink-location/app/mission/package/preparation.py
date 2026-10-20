@@ -4,11 +4,12 @@ import json
 import logging
 import threading
 import time
+from datetime import datetime, timezone
 from hashlib import sha256
 from uuid import uuid4
 
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.slide_cache.capture import capture_raw
+from app.mission.slide_cache.capture import capture_is_current, capture_raw
 from app.mission.slide_cache.identity import renderer_revision
 from app.mission.slide_cache.store import default_store
 
@@ -17,6 +18,7 @@ from .customer_artifacts import (
     MissionPackageDownload,
     build_mission_package_download,
 )
+from .json_stream import iter_json
 from .preparation_store import ExportPreparation, PreparationStore
 from .preparation_worker import PreparationWorker
 
@@ -34,9 +36,12 @@ class ExportPreparationService(PreparationWorker):
         cache=None,
         clock=time.time,
         builder=None,
+        archive_capture=None,
     ):
         self.route_manager, self.poi_manager = route_manager, poi_manager
         self.enabled, self.clock = enabled, clock
+        self.archive_capture = archive_capture
+        self.capture_guard = threading.Lock()
         self.builder = builder or build_mission_package_download
         self.cache = cache or default_store()
         self.jobs = PreparationStore(self.cache)
@@ -68,21 +73,69 @@ class ExportPreparationService(PreparationWorker):
         )
 
     @staticmethod
-    def fingerprint(raw):
-        return sha256(
-            raw.metadata
-            + canonical_json(raw.dependency_token[0])
-            + raw.dependency_token[1]
-            + raw.renderer_revision.encode()
-        ).hexdigest()
+    def fingerprint(raw, archive=None):
+        archive_identity = (
+            None
+            if archive is None
+            else {
+                "schema_version": archive["schema_version"],
+                "files": archive["files"],
+                "components": {
+                    name: {
+                        k: v
+                        for k, v in component.items()
+                        if k not in ("capture_started_at", "capture_finished_at")
+                    }
+                    for name, component in archive["components"].items()
+                },
+            }
+        )
+        identity = sha256()
+        if archive is not None:
+            for chunk in iter_json(archive_identity, compact=True):
+                identity.update(chunk.encode("ascii"))
+        identity.update(raw.metadata)
+        identity.update(canonical_json(raw.dependency_token[0]))
+        identity.update(raw.dependency_token[1])
+        identity.update(raw.renderer_revision.encode())
+        return identity.hexdigest()
 
     def start(self, mission_id):
+        if not self.capture_guard.acquire(blocking=False):
+            raise RuntimeError("Archive capture already in progress; retry")
+        try:
+            return self._start(mission_id)
+        finally:
+            self.capture_guard.release()
+
+    def _start(self, mission_id):
         if self.stop.is_set():
             raise RuntimeError("Export preparation is stopping")
         now = self.clock()
         capture_started = time.monotonic()
         raw = self.capture(mission_id)
-        fingerprint = self.fingerprint(raw)
+        planning_captured_at = self.clock()
+        archive = self.archive_capture(mission_id) if self.archive_capture else None
+        if archive is not None:
+            if not capture_is_current(raw):
+                raise RuntimeError("Mission changed during archive capture; retry")
+            archive = {
+                **archive,
+                "components": {
+                    **archive["components"],
+                    "planning": {
+                        "capture_started_at": datetime.fromtimestamp(
+                            now, timezone.utc
+                        ).isoformat(),
+                        "capture_finished_at": datetime.fromtimestamp(
+                            planning_captured_at, timezone.utc
+                        ).isoformat(),
+                        "fingerprint": self.fingerprint(raw),
+                        "metadata_sha256": sha256(raw.metadata).hexdigest(),
+                    },
+                },
+            }
+        fingerprint = self.fingerprint(raw, archive)
         metadata = json.loads(raw.metadata)
         revision = (
             metadata.get("metadata", {}).get("itinerary_planning", {}).get("revision")
@@ -108,7 +161,7 @@ class ExportPreparationService(PreparationWorker):
                 deadline=now + 600,
                 stage_timings={"capture": time.monotonic() - capture_started},
             )
-            self.jobs.write(job)
+            self.jobs.write(job, archive=archive)
             self.captures[job.id] = raw
             self.wake.set()
             return job
@@ -143,6 +196,8 @@ class ExportPreparationService(PreparationWorker):
                 }
             if job.state in TERMINAL and job_id not in self.executing:
                 self.captures.pop(job_id, None)
+                if job.state != "ready":
+                    self.jobs.discard_archive(job_id)
             return job
 
     def sweep_captures(self):
@@ -167,6 +222,8 @@ class ExportPreparationService(PreparationWorker):
                     return self.jobs.read(mission_id, job_id)
             if job_id not in self.executing:
                 self.captures.pop(job_id, None)
+                if job.state != "ready":
+                    self.jobs.discard_archive(job_id)
             self.wake.set()
             return job
 

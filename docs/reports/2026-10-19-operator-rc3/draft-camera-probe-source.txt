@@ -1,0 +1,42 @@
+import { chromium,expect } from '/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/@playwright/test/index.mjs';
+import {writeFileSync} from 'node:fs';
+const root='/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/docs/reports/2026-10-19-operator-rc3';
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'en-GB',timezoneId:'America/Los_Angeles'});
+const result={steps:[],overviewPageErrors:[]};
+try {
+ const page=await context.newPage();
+ await page.goto('http://127.0.0.1:5178/operator?workspace=1&mission_id=rc3-mission&view=communications');
+ const create=page.getByRole('region',{name:'Communications',exact:true}).getByRole('button',{name:'Create call',exact:true});
+ await expect(create).toBeEnabled();await create.click();
+ await page.getByLabel('Planned start date (UTC)').fill('2026-10-21');
+ await page.getByLabel('Planned start time (UTC)').fill('');
+ await page.getByLabel('Party / participant (optional)').fill('Parked partial date');
+ await page.getByRole('button',{name:'Save call',exact:true}).click();
+ await expect(page.getByRole('dialog')).toBeVisible();
+ await page.getByRole('button',{name:'Keep draft and return',exact:true}).click();
+ await page.reload();
+ await page.getByRole('button',{name:/Parked partial date/}).click();
+ await expect(page.getByLabel('Planned start date (UTC)')).toHaveValue('2026-10-21');
+ await expect(page.getByLabel('Planned start time (UTC)')).toHaveValue('');
+ await page.getByRole('button',{name:'Discard draft',exact:true}).click();
+ await expect(page.getByRole('dialog')).toBeHidden();
+ result.steps.push('Native incomplete date/time prevents save; partial date and party survive parking and page reload; explicit discard removes only that unsent draft.');
+ const overview=await context.newPage();overview.on('pageerror',e=>result.overviewPageErrors.push(e.message));
+ await overview.goto('http://127.0.0.1:5178/overview');
+ await page.bringToFront();
+ await page.getByRole('button',{name:'Display tools',exact:true}).click();
+ const tools=page.getByRole('dialog',{name:'Display tools',exact:true});
+ await expect(tools.getByRole('button',{name:'Recenter view',exact:true})).toBeEnabled({timeout:15000});
+ await tools.getByRole('button',{name:'Recenter view',exact:true}).click();
+ await expect(tools.getByText(/Recenter accepted/)).toBeVisible();
+ result.steps.push('Actual Overview page discovered through existing browser session; Recenter view received an accepted acknowledgment (no scientific/map-position accuracy claim).');
+ await expect(tools.getByRole('switch',{name:'Precipitation radar',exact:true})).toBeInViewport();
+ await expect(tools.getByRole('switch',{name:'ADS-B aircraft layer',exact:true})).toBeInViewport();
+ await page.screenshot({path:`${root}/desktop-display.png`});
+ await page.setViewportSize({width:390,height:844});
+ await tools.getByRole('switch',{name:'Precipitation radar',exact:true}).scrollIntoViewIfNeeded();
+ await page.screenshot({path:`${root}/mobile-display.png`});
+ console.log(result);
+} catch(e){console.log(e.stack);result.failure=e.stack;process.exitCode=1;}
+finally{writeFileSync(`${root}/draft-camera-check.json`,JSON.stringify(result,null,2));await context.close();await browser.close();}

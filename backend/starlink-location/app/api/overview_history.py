@@ -11,6 +11,7 @@ from app.services.overview_history_prometheus import (
     OverviewHistoryPrometheusResponseError,
 )
 from app.services.overview_history_settings import OverviewHistorySettingsStore
+from app.services.overview_link_settings import OverviewSettingsConflict
 
 router = APIRouter()
 
@@ -19,6 +20,7 @@ class OverviewHistorySettingsUpdate(BaseModel):
     """Validated dashboard update for the Prometheus query lookback."""
 
     window_seconds: int = Field(gt=0, strict=True)
+    expected_window_seconds: int | None = Field(default=None, gt=0, strict=True)
 
 
 _overview_history_reader: Callable[[], Awaitable[dict]] | None = None
@@ -71,9 +73,12 @@ async def get_overview_history_settings():
             status_code=503,
             detail="Overview history settings are not yet initialized",
         )
-    return {
-        "window_seconds": _overview_history_settings_store.get_window_seconds(),
-    }
+    try:
+        return {"window_seconds": _overview_history_settings_store.get_window_seconds()}
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        raise HTTPException(
+            status_code=503, detail="History settings could not be read"
+        ) from error
 
 
 @router.put("/api/overview-history/settings")
@@ -86,9 +91,17 @@ async def update_overview_history_settings(
             status_code=503,
             detail="Overview history settings are not yet initialized",
         )
-    _overview_history_settings_store.set_window_seconds(
-        settings.window_seconds,
-    )
+    try:
+        _overview_history_settings_store.set_window_seconds(
+            settings.window_seconds,
+            settings.expected_window_seconds,
+        )
+    except OverviewSettingsConflict as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        raise HTTPException(
+            status_code=503, detail="History settings could not be saved"
+        ) from error
     if _overview_history_invalidator is not None:
         _overview_history_invalidator()
     return {

@@ -1,0 +1,1959 @@
+{
+  "synthetic": true,
+  "proofs": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "created": {
+        "schema_version": 1,
+        "command_id": "9faa1185-2cef-4264-82ea-5200bde77112",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 1920",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 15,
+            "command_id": "9faa1185-2cef-4264-82ea-5200bde77112",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "counterpart": {
+        "schema_version": 1,
+        "command_id": "92534687-a554-4a81-afb0-533dfd5cd359",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 1920",
+              "note": "Genuine second-client update",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 16,
+            "command_id": "92534687-a554-4a81-afb0-533dfd5cd359",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "rejectedRequest": {
+        "body": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 1920",
+            "note": "Learner retained input after reviewing counterpart",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "expected_version": 1
+        },
+        "key": "99bd7e81-2e00-47b8-9d38-e7083d91b93b"
+      },
+      "error": {
+        "error": {
+          "code": "version_conflict",
+          "message": "Operator state requires reconciliation",
+          "retryable": false,
+          "current_version": 2
+        },
+        "request_id": "3ac195d0-865c-4907-8d20-1a5e46a4bd75"
+      },
+      "accepted": {
+        "schema_version": 1,
+        "command_id": "f300611a-826b-4444-baa0-3a4ce068b4f4",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 1920",
+              "note": "Learner retained input after reviewing counterpart",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+            "version": 3,
+            "previous_version": 2,
+            "journal_seq": 17,
+            "command_id": "f300611a-826b-4444-baa0-3a4ce068b4f4",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "history": {
+        "schema_version": 1,
+        "items": [
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 1920",
+                "note": "",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 15,
+              "command_id": "9faa1185-2cef-4264-82ea-5200bde77112",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          },
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 1920",
+                "note": "Genuine second-client update",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+              "version": 2,
+              "previous_version": 1,
+              "journal_seq": 16,
+              "command_id": "92534687-a554-4a81-afb0-533dfd5cd359",
+              "operation": "update",
+              "reason": "Operator correction",
+              "reason_origin": "automatic",
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          },
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 1920",
+                "note": "Learner retained input after reviewing counterpart",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+              "version": 3,
+              "previous_version": 2,
+              "journal_seq": 17,
+              "command_id": "f300611a-826b-4444-baa0-3a4ce068b4f4",
+              "operation": "update",
+              "reason": "Operator correction",
+              "reason_origin": "automatic",
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          }
+        ],
+        "cursor": null,
+        "H": 17,
+        "as_of": "2026-10-17T16:00:00.000000Z"
+      },
+      "observation": {
+        "identity": {
+          "fixtureVersion": 1,
+          "origin": "http://127.0.0.1:56533",
+          "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+          "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+          "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b"
+        },
+        "namespace": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+        "request": {
+          "command": {
+            "operation": "update",
+            "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+            "body": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 1920",
+                "note": "Learner retained input after reviewing counterpart",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "expected_version": 1
+            }
+          },
+          "key": "99bd7e81-2e00-47b8-9d38-e7083d91b93b",
+          "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+          "identity": "[\"68b2747b-1806-4900-bc1c-51333e12b2ab\",\"53eed03c-22e7-4773-b735-42d1c2129b75\",\"simulation\",\"operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca\"]",
+          "workspace": {
+            "schemaVersion": 1,
+            "draftId": "484b1d18-47af-46d0-aa00-97469436108c",
+            "revision": 2,
+            "baseVersion": 1,
+            "target": {
+              "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+              "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+              "sourceMode": "simulation",
+              "simulationRunId": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+              "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "recordType": "journal_entry",
+              "recordId": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+              "newDraftId": null,
+              "scope": "mission",
+              "legId": null,
+              "previousLegId": null,
+              "nextLegId": null,
+              "correctionVersion": null
+            }
+          }
+        },
+        "failure": {
+          "status": 409,
+          "code": "version_conflict",
+          "message": "Operator state requires reconciliation",
+          "retryable": false,
+          "current_version": 2
+        },
+        "attemptIds": [
+          "be36daff-65fb-4039-b0b3-060df5046348"
+        ],
+        "observedCurrent": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 1920",
+            "note": "Genuine second-client update",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 16,
+          "command_id": "92534687-a554-4a81-afb0-533dfd5cd359",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "reviewedCurrent": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 1920",
+            "note": "Genuine second-client update",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 16,
+          "command_id": "92534687-a554-4a81-afb0-533dfd5cd359",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "replacement": {
+          "attempt": {
+            "id": "9bfddddb-8d60-40e4-876a-07ada9a5830d",
+            "request": {
+              "command": {
+                "operation": "update",
+                "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+                "body": {
+                  "schema_version": 1,
+                  "record_type": "journal_entry",
+                  "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                  "leg_id": null,
+                  "scope": "mission",
+                  "time": {
+                    "occurred_at": null,
+                    "ended_at": null,
+                    "precision": "unknown",
+                    "end_state": "unknown",
+                    "planned_start_at": null,
+                    "planned_end_at": null
+                  },
+                  "payload": {
+                    "schema_version": 1,
+                    "title": "Fictional reviewed conflict 1920",
+                    "note": "Learner retained input after reviewing counterpart",
+                    "previous_leg_id": null,
+                    "next_leg_id": null,
+                    "entry_type": "note"
+                  },
+                  "expected_version": 2
+                }
+              },
+              "key": "b5a58efc-d6e3-4884-8572-a559a340e8ba",
+              "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+              "identity": "[\"68b2747b-1806-4900-bc1c-51333e12b2ab\",\"53eed03c-22e7-4773-b735-42d1c2129b75\",\"simulation\",\"operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca\"]",
+              "workspace": {
+                "schemaVersion": 1,
+                "draftId": "484b1d18-47af-46d0-aa00-97469436108c",
+                "revision": 3,
+                "baseVersion": 2,
+                "target": {
+                  "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+                  "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+                  "sourceMode": "simulation",
+                  "simulationRunId": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+                  "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                  "recordType": "journal_entry",
+                  "recordId": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+                  "newDraftId": null,
+                  "scope": "mission",
+                  "legId": null,
+                  "previousLegId": null,
+                  "nextLegId": null,
+                  "correctionVersion": null
+                }
+              }
+            }
+          },
+          "receipt": {
+            "schema_version": 1,
+            "command_id": "f300611a-826b-4444-baa0-3a4ce068b4f4",
+            "saved_records": [
+              {
+                "schema_version": 1,
+                "record_type": "journal_entry",
+                "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                "leg_id": null,
+                "scope": "mission",
+                "time": {
+                  "occurred_at": null,
+                  "ended_at": null,
+                  "precision": "unknown",
+                  "end_state": "unknown",
+                  "planned_start_at": null,
+                  "planned_end_at": null
+                },
+                "payload": {
+                  "schema_version": 1,
+                  "title": "Fictional reviewed conflict 1920",
+                  "note": "Learner retained input after reviewing counterpart",
+                  "previous_leg_id": null,
+                  "next_leg_id": null,
+                  "entry_type": "note"
+                },
+                "record_id": "53f97221-f890-47dc-9a34-12aeb7f7391b",
+                "version": 3,
+                "previous_version": 2,
+                "journal_seq": 17,
+                "command_id": "f300611a-826b-4444-baa0-3a4ce068b4f4",
+                "operation": "update",
+                "reason": "Operator correction",
+                "reason_origin": "automatic",
+                "deleted": false,
+                "recorded_at": "2026-10-17T16:00:00.000000Z",
+                "author": {
+                  "backend": "restricted-access operator",
+                  "operator_label": null
+                },
+                "provenance": {
+                  "kind": "operator_reported",
+                  "source_mode": "simulation",
+                  "observed_at": null,
+                  "predicted_at": null,
+                  "source_ref": null,
+                  "mutation_origin": "interactive"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "created": {
+        "schema_version": 1,
+        "command_id": "10eb5a3b-9297-4500-b63a-4192d364c85b",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 390",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "2477a419-3168-4234-b047-da047b089a32",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 18,
+            "command_id": "10eb5a3b-9297-4500-b63a-4192d364c85b",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "counterpart": {
+        "schema_version": 1,
+        "command_id": "3144a98e-7d65-4b5c-a141-8392c2935836",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 390",
+              "note": "Genuine second-client update",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "2477a419-3168-4234-b047-da047b089a32",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 19,
+            "command_id": "3144a98e-7d65-4b5c-a141-8392c2935836",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "rejectedRequest": {
+        "body": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 390",
+            "note": "Learner retained input after reviewing counterpart",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "expected_version": 1
+        },
+        "key": "94d757e1-0c4f-4939-94df-6897b9137a66"
+      },
+      "error": {
+        "error": {
+          "code": "version_conflict",
+          "message": "Operator state requires reconciliation",
+          "retryable": false,
+          "current_version": 2
+        },
+        "request_id": "a933dbfb-7d75-415e-b89f-840c1b0d0df2"
+      },
+      "accepted": {
+        "schema_version": 1,
+        "command_id": "6787006e-c810-40f7-a43b-11ce297a723d",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 390",
+              "note": "Learner retained input after reviewing counterpart",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "2477a419-3168-4234-b047-da047b089a32",
+            "version": 3,
+            "previous_version": 2,
+            "journal_seq": 20,
+            "command_id": "6787006e-c810-40f7-a43b-11ce297a723d",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "history": {
+        "schema_version": 1,
+        "items": [
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 390",
+                "note": "",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "2477a419-3168-4234-b047-da047b089a32",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 18,
+              "command_id": "10eb5a3b-9297-4500-b63a-4192d364c85b",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          },
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 390",
+                "note": "Genuine second-client update",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "2477a419-3168-4234-b047-da047b089a32",
+              "version": 2,
+              "previous_version": 1,
+              "journal_seq": 19,
+              "command_id": "3144a98e-7d65-4b5c-a141-8392c2935836",
+              "operation": "update",
+              "reason": "Operator correction",
+              "reason_origin": "automatic",
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          },
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 390",
+                "note": "Learner retained input after reviewing counterpart",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "2477a419-3168-4234-b047-da047b089a32",
+              "version": 3,
+              "previous_version": 2,
+              "journal_seq": 20,
+              "command_id": "6787006e-c810-40f7-a43b-11ce297a723d",
+              "operation": "update",
+              "reason": "Operator correction",
+              "reason_origin": "automatic",
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          }
+        ],
+        "cursor": null,
+        "H": 20,
+        "as_of": "2026-10-17T16:00:00.000000Z"
+      },
+      "observation": {
+        "identity": {
+          "fixtureVersion": 1,
+          "origin": "http://127.0.0.1:56533",
+          "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+          "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+          "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b"
+        },
+        "namespace": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+        "request": {
+          "command": {
+            "operation": "update",
+            "record_id": "2477a419-3168-4234-b047-da047b089a32",
+            "body": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 390",
+                "note": "Learner retained input after reviewing counterpart",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "expected_version": 1
+            }
+          },
+          "key": "94d757e1-0c4f-4939-94df-6897b9137a66",
+          "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+          "identity": "[\"68b2747b-1806-4900-bc1c-51333e12b2ab\",\"53eed03c-22e7-4773-b735-42d1c2129b75\",\"simulation\",\"operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca\"]",
+          "workspace": {
+            "schemaVersion": 1,
+            "draftId": "fc5e5b55-e887-432a-8ce3-14011004da94",
+            "revision": 2,
+            "baseVersion": 1,
+            "target": {
+              "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+              "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+              "sourceMode": "simulation",
+              "simulationRunId": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+              "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "recordType": "journal_entry",
+              "recordId": "2477a419-3168-4234-b047-da047b089a32",
+              "newDraftId": null,
+              "scope": "mission",
+              "legId": null,
+              "previousLegId": null,
+              "nextLegId": null,
+              "correctionVersion": null
+            }
+          }
+        },
+        "failure": {
+          "status": 409,
+          "code": "version_conflict",
+          "message": "Operator state requires reconciliation",
+          "retryable": false,
+          "current_version": 2
+        },
+        "attemptIds": [
+          "36ad7c3a-c690-4fd7-a91f-e7c0c4772586"
+        ],
+        "observedCurrent": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 390",
+            "note": "Genuine second-client update",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "2477a419-3168-4234-b047-da047b089a32",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 19,
+          "command_id": "3144a98e-7d65-4b5c-a141-8392c2935836",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "reviewedCurrent": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 390",
+            "note": "Genuine second-client update",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "2477a419-3168-4234-b047-da047b089a32",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 19,
+          "command_id": "3144a98e-7d65-4b5c-a141-8392c2935836",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "replacement": {
+          "attempt": {
+            "id": "f07e93a1-4935-4b14-b5f0-ab18488b887a",
+            "request": {
+              "command": {
+                "operation": "update",
+                "record_id": "2477a419-3168-4234-b047-da047b089a32",
+                "body": {
+                  "schema_version": 1,
+                  "record_type": "journal_entry",
+                  "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                  "leg_id": null,
+                  "scope": "mission",
+                  "time": {
+                    "occurred_at": null,
+                    "ended_at": null,
+                    "precision": "unknown",
+                    "end_state": "unknown",
+                    "planned_start_at": null,
+                    "planned_end_at": null
+                  },
+                  "payload": {
+                    "schema_version": 1,
+                    "title": "Fictional reviewed conflict 390",
+                    "note": "Learner retained input after reviewing counterpart",
+                    "previous_leg_id": null,
+                    "next_leg_id": null,
+                    "entry_type": "note"
+                  },
+                  "expected_version": 2
+                }
+              },
+              "key": "436e7abc-70c4-40c4-b3f9-def9a4211380",
+              "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+              "identity": "[\"68b2747b-1806-4900-bc1c-51333e12b2ab\",\"53eed03c-22e7-4773-b735-42d1c2129b75\",\"simulation\",\"operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca\"]",
+              "workspace": {
+                "schemaVersion": 1,
+                "draftId": "fc5e5b55-e887-432a-8ce3-14011004da94",
+                "revision": 3,
+                "baseVersion": 2,
+                "target": {
+                  "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+                  "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+                  "sourceMode": "simulation",
+                  "simulationRunId": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+                  "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                  "recordType": "journal_entry",
+                  "recordId": "2477a419-3168-4234-b047-da047b089a32",
+                  "newDraftId": null,
+                  "scope": "mission",
+                  "legId": null,
+                  "previousLegId": null,
+                  "nextLegId": null,
+                  "correctionVersion": null
+                }
+              }
+            }
+          },
+          "receipt": {
+            "schema_version": 1,
+            "command_id": "6787006e-c810-40f7-a43b-11ce297a723d",
+            "saved_records": [
+              {
+                "schema_version": 1,
+                "record_type": "journal_entry",
+                "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                "leg_id": null,
+                "scope": "mission",
+                "time": {
+                  "occurred_at": null,
+                  "ended_at": null,
+                  "precision": "unknown",
+                  "end_state": "unknown",
+                  "planned_start_at": null,
+                  "planned_end_at": null
+                },
+                "payload": {
+                  "schema_version": 1,
+                  "title": "Fictional reviewed conflict 390",
+                  "note": "Learner retained input after reviewing counterpart",
+                  "previous_leg_id": null,
+                  "next_leg_id": null,
+                  "entry_type": "note"
+                },
+                "record_id": "2477a419-3168-4234-b047-da047b089a32",
+                "version": 3,
+                "previous_version": 2,
+                "journal_seq": 20,
+                "command_id": "6787006e-c810-40f7-a43b-11ce297a723d",
+                "operation": "update",
+                "reason": "Operator correction",
+                "reason_origin": "automatic",
+                "deleted": false,
+                "recorded_at": "2026-10-17T16:00:00.000000Z",
+                "author": {
+                  "backend": "restricted-access operator",
+                  "operator_label": null
+                },
+                "provenance": {
+                  "kind": "operator_reported",
+                  "source_mode": "simulation",
+                  "observed_at": null,
+                  "predicted_at": null,
+                  "source_ref": null,
+                  "mutation_origin": "interactive"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "created": {
+        "schema_version": 1,
+        "command_id": "1580d658-1741-4da7-a95f-2ae6733a20a3",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 844",
+              "note": "",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+            "version": 1,
+            "previous_version": null,
+            "journal_seq": 21,
+            "command_id": "1580d658-1741-4da7-a95f-2ae6733a20a3",
+            "operation": "create",
+            "reason": null,
+            "reason_origin": null,
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "counterpart": {
+        "schema_version": 1,
+        "command_id": "303794fc-d73c-4808-88b5-4b6d99732f55",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 844",
+              "note": "Genuine second-client update",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+            "version": 2,
+            "previous_version": 1,
+            "journal_seq": 22,
+            "command_id": "303794fc-d73c-4808-88b5-4b6d99732f55",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "rejectedRequest": {
+        "body": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 844",
+            "note": "Learner retained input after reviewing counterpart",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "expected_version": 1
+        },
+        "key": "0eb42b01-7b85-4ca7-9578-3320eaf535b4"
+      },
+      "error": {
+        "error": {
+          "code": "version_conflict",
+          "message": "Operator state requires reconciliation",
+          "retryable": false,
+          "current_version": 2
+        },
+        "request_id": "d060ee75-d78f-4c5b-9897-130cece7e4fb"
+      },
+      "accepted": {
+        "schema_version": 1,
+        "command_id": "ba9be1e4-7158-48cd-851d-6d07e29aaef4",
+        "saved_records": [
+          {
+            "schema_version": 1,
+            "record_type": "journal_entry",
+            "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+            "leg_id": null,
+            "scope": "mission",
+            "time": {
+              "occurred_at": null,
+              "ended_at": null,
+              "precision": "unknown",
+              "end_state": "unknown",
+              "planned_start_at": null,
+              "planned_end_at": null
+            },
+            "payload": {
+              "schema_version": 1,
+              "title": "Fictional reviewed conflict 844",
+              "note": "Learner retained input after reviewing counterpart",
+              "previous_leg_id": null,
+              "next_leg_id": null,
+              "entry_type": "note"
+            },
+            "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+            "version": 3,
+            "previous_version": 2,
+            "journal_seq": 23,
+            "command_id": "ba9be1e4-7158-48cd-851d-6d07e29aaef4",
+            "operation": "update",
+            "reason": "Operator correction",
+            "reason_origin": "automatic",
+            "deleted": false,
+            "recorded_at": "2026-10-17T16:00:00.000000Z",
+            "author": {
+              "backend": "restricted-access operator",
+              "operator_label": null
+            },
+            "provenance": {
+              "kind": "operator_reported",
+              "source_mode": "simulation",
+              "observed_at": null,
+              "predicted_at": null,
+              "source_ref": null,
+              "mutation_origin": "interactive"
+            }
+          }
+        ]
+      },
+      "history": {
+        "schema_version": 1,
+        "items": [
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 844",
+                "note": "",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 21,
+              "command_id": "1580d658-1741-4da7-a95f-2ae6733a20a3",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          },
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 844",
+                "note": "Genuine second-client update",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+              "version": 2,
+              "previous_version": 1,
+              "journal_seq": 22,
+              "command_id": "303794fc-d73c-4808-88b5-4b6d99732f55",
+              "operation": "update",
+              "reason": "Operator correction",
+              "reason_origin": "automatic",
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          },
+          {
+            "schema_version": 1,
+            "record": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 844",
+                "note": "Learner retained input after reviewing counterpart",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+              "version": 3,
+              "previous_version": 2,
+              "journal_seq": 23,
+              "command_id": "ba9be1e4-7158-48cd-851d-6d07e29aaef4",
+              "operation": "update",
+              "reason": "Operator correction",
+              "reason_origin": "automatic",
+              "deleted": false,
+              "recorded_at": "2026-10-17T16:00:00.000000Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "interactive"
+              }
+            },
+            "association": {
+              "status": "resolved",
+              "unresolved_fields": [],
+              "error_code": null
+            },
+            "freshness": {
+              "status": "unknown",
+              "threshold_seconds": null,
+              "as_of": "2026-10-17T16:00:00.000000Z"
+            }
+          }
+        ],
+        "cursor": null,
+        "H": 23,
+        "as_of": "2026-10-17T16:00:00.000000Z"
+      },
+      "observation": {
+        "identity": {
+          "fixtureVersion": 1,
+          "origin": "http://127.0.0.1:56533",
+          "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+          "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+          "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b"
+        },
+        "namespace": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+        "request": {
+          "command": {
+            "operation": "update",
+            "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+            "body": {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": null,
+                "ended_at": null,
+                "precision": "unknown",
+                "end_state": "unknown",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Fictional reviewed conflict 844",
+                "note": "Learner retained input after reviewing counterpart",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "expected_version": 1
+            }
+          },
+          "key": "0eb42b01-7b85-4ca7-9578-3320eaf535b4",
+          "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+          "identity": "[\"68b2747b-1806-4900-bc1c-51333e12b2ab\",\"53eed03c-22e7-4773-b735-42d1c2129b75\",\"simulation\",\"operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca\"]",
+          "workspace": {
+            "schemaVersion": 1,
+            "draftId": "da7a3729-4599-493b-a820-eccfedf45353",
+            "revision": 2,
+            "baseVersion": 1,
+            "target": {
+              "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+              "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+              "sourceMode": "simulation",
+              "simulationRunId": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+              "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+              "recordType": "journal_entry",
+              "recordId": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+              "newDraftId": null,
+              "scope": "mission",
+              "legId": null,
+              "previousLegId": null,
+              "nextLegId": null,
+              "correctionVersion": null
+            }
+          }
+        },
+        "failure": {
+          "status": 409,
+          "code": "version_conflict",
+          "message": "Operator state requires reconciliation",
+          "retryable": false,
+          "current_version": 2
+        },
+        "attemptIds": [
+          "c6680a29-f47f-468f-8366-69cb2386d202"
+        ],
+        "observedCurrent": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 844",
+            "note": "Genuine second-client update",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 22,
+          "command_id": "303794fc-d73c-4808-88b5-4b6d99732f55",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "reviewedCurrent": {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional reviewed conflict 844",
+            "note": "Genuine second-client update",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "note"
+          },
+          "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 22,
+          "command_id": "303794fc-d73c-4808-88b5-4b6d99732f55",
+          "operation": "update",
+          "reason": "Operator correction",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        },
+        "replacement": {
+          "attempt": {
+            "id": "f1fa0f6c-d3f8-4eca-b27c-29871821c743",
+            "request": {
+              "command": {
+                "operation": "update",
+                "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+                "body": {
+                  "schema_version": 1,
+                  "record_type": "journal_entry",
+                  "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                  "leg_id": null,
+                  "scope": "mission",
+                  "time": {
+                    "occurred_at": null,
+                    "ended_at": null,
+                    "precision": "unknown",
+                    "end_state": "unknown",
+                    "planned_start_at": null,
+                    "planned_end_at": null
+                  },
+                  "payload": {
+                    "schema_version": 1,
+                    "title": "Fictional reviewed conflict 844",
+                    "note": "Learner retained input after reviewing counterpart",
+                    "previous_leg_id": null,
+                    "next_leg_id": null,
+                    "entry_type": "note"
+                  },
+                  "expected_version": 2
+                }
+              },
+              "key": "870a5515-00ab-4059-b1bc-46aa68b3b62e",
+              "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+              "identity": "[\"68b2747b-1806-4900-bc1c-51333e12b2ab\",\"53eed03c-22e7-4773-b735-42d1c2129b75\",\"simulation\",\"operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca\"]",
+              "workspace": {
+                "schemaVersion": 1,
+                "draftId": "da7a3729-4599-493b-a820-eccfedf45353",
+                "revision": 3,
+                "baseVersion": 2,
+                "target": {
+                  "storeId": "68b2747b-1806-4900-bc1c-51333e12b2ab",
+                  "epoch": "53eed03c-22e7-4773-b735-42d1c2129b75",
+                  "sourceMode": "simulation",
+                  "simulationRunId": "operator-training-v1-ff78b8cb-4bb3-4e16-9c9d-7e11dc4333ca",
+                  "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                  "recordType": "journal_entry",
+                  "recordId": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+                  "newDraftId": null,
+                  "scope": "mission",
+                  "legId": null,
+                  "previousLegId": null,
+                  "nextLegId": null,
+                  "correctionVersion": null
+                }
+              }
+            }
+          },
+          "receipt": {
+            "schema_version": 1,
+            "command_id": "ba9be1e4-7158-48cd-851d-6d07e29aaef4",
+            "saved_records": [
+              {
+                "schema_version": 1,
+                "record_type": "journal_entry",
+                "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+                "leg_id": null,
+                "scope": "mission",
+                "time": {
+                  "occurred_at": null,
+                  "ended_at": null,
+                  "precision": "unknown",
+                  "end_state": "unknown",
+                  "planned_start_at": null,
+                  "planned_end_at": null
+                },
+                "payload": {
+                  "schema_version": 1,
+                  "title": "Fictional reviewed conflict 844",
+                  "note": "Learner retained input after reviewing counterpart",
+                  "previous_leg_id": null,
+                  "next_leg_id": null,
+                  "entry_type": "note"
+                },
+                "record_id": "208ffb5d-ff7e-4efd-a3ae-1eeead55cbd4",
+                "version": 3,
+                "previous_version": 2,
+                "journal_seq": 23,
+                "command_id": "ba9be1e4-7158-48cd-851d-6d07e29aaef4",
+                "operation": "update",
+                "reason": "Operator correction",
+                "reason_origin": "automatic",
+                "deleted": false,
+                "recorded_at": "2026-10-17T16:00:00.000000Z",
+                "author": {
+                  "backend": "restricted-access operator",
+                  "operator_label": null
+                },
+                "provenance": {
+                  "kind": "operator_reported",
+                  "source_mode": "simulation",
+                  "observed_at": null,
+                  "predicted_at": null,
+                  "source_ref": null,
+                  "mutation_origin": "interactive"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "manualObservations": "not claimed"
+}

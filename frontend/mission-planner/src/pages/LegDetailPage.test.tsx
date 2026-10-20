@@ -1,7 +1,14 @@
 /** @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+import type { TransportConfig } from '../types/mission';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 vi.mock('../hooks/api/useMissions', () => ({
   useMission: vi.fn(),
@@ -12,16 +19,24 @@ vi.mock('../hooks/api/useTimeline', () => ({
   useTimeline: () => ({ data: undefined }),
 }));
 vi.mock('../hooks/api/useTimelinePreview', () => ({
-  useTimelinePreview: () => ({
+  useTimelinePreview: vi.fn(() => ({
     preview: null,
     isCalculating: false,
     error: null,
-  }),
+  })),
 }));
 vi.mock('./LegDetailPage/useLegData', () => ({
-  useLegData: () => ({
-    satelliteConfig: { xband_transitions: [], ka_outages: [], ku_outages: [] },
-    aarConfig: { segments: [], manualTracks: [] },
+  useLegData: ({ legTransports }: { legTransports?: TransportConfig }) => ({
+    satelliteConfig: {
+      xband_starting_satellite: legTransports?.initial_x_satellite_id,
+      xband_transitions: legTransports?.x_transitions ?? [],
+      ka_outages: legTransports?.ka_outages ?? [],
+      ku_outages: legTransports?.ku_overrides ?? [],
+    },
+    aarConfig: {
+      segments: legTransports?.aar_windows ?? [],
+      manualTracks: legTransports?.manual_aar_tracks ?? [],
+    },
     routeCoordinates: [],
     availableWaypoints: [],
     waypointNames: [],
@@ -42,6 +57,35 @@ vi.mock('../components/planning/PlanningLegReview', () => ({
     </>
   ),
 }));
+vi.mock('./LegDetailPage/LegConfigTabs', async () => {
+  const actual = await vi.importActual<
+    typeof import('./LegDetailPage/LegConfigTabs')
+  >('./LegDetailPage/LegConfigTabs');
+  return {
+    LegConfigTabs: (
+      props: React.ComponentProps<typeof actual.LegConfigTabs>
+    ) => (
+      <>
+        <actual.LegConfigTabs {...props} />
+        <button
+          onClick={() =>
+            void props.onManualTrackSave({
+              id: 'track',
+              name: 'Manual track',
+              points: [
+                { latitude: 0, longitude: 0 },
+                { latitude: 1, longitude: 1 },
+              ],
+            })
+          }
+        >
+          Save manual track fixture
+        </button>
+      </>
+    ),
+  };
+});
+import { useTimelinePreview } from '../hooks/api/useTimelinePreview';
 import { useMission } from '../hooks/api/useMissions';
 import { usePlanning } from '../hooks/api/usePlanning';
 import { LegDetailPage } from './LegDetailPage';
@@ -219,5 +263,106 @@ it.each([false, true])(
         transports: expect.objectContaining({ starshield_enabled: enabled }),
       })
     );
+  }
+);
+
+it.each(['preview', 'save', 'manual-track'])(
+  'preserves captured planning policy and context in the %s transport projection',
+  async (operation) => {
+    saveLeg.mockResolvedValue({});
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const anchor = {
+      route_id: 'r',
+      content_hash: 'c'.repeat(64),
+      segment_index: 0,
+      fraction: 0.5,
+      occurrence_id: 'middle',
+      source_time: '2035-01-01T00:30:00Z',
+      latitude: 0,
+      longitude: 0,
+    };
+    const transports = {
+      x_transitions: [
+        {
+          id: 'swap',
+          latitude: 0,
+          longitude: 0,
+          target_satellite_id: 'X-2',
+          anchor,
+        },
+      ],
+      aar_windows: [
+        {
+          id: 'ar',
+          start_waypoint_name: 'IN',
+          end_waypoint_name: 'OUT',
+          start_anchor: anchor,
+          end_anchor: { ...anchor, fraction: 0.6 },
+        },
+      ],
+      initial_x_satellite_id: 'X-1',
+      starshield_enabled: true,
+      planning_policy: 'prefer_starshield_v1',
+      evaluation_context: { input_identity: 'captured-input' },
+      planning_inputs: {
+        route_json: '{}',
+        anchor_route_json: '{}',
+        structural_draft_json: '{}',
+        constraints_json: '{}',
+        start_time: '2035-01-01T00:00:00Z',
+        end_time: '2035-01-01T01:00:00Z',
+        satellites: [],
+        starshield_enabled: true,
+      },
+    };
+    const original = structuredClone(transports);
+    vi.mocked(useMission).mockReturnValue({
+      data: {
+        id: 'm',
+        metadata: {},
+        legs: [
+          {
+            id: 'canonical',
+            name: 'Captured policy',
+            route_id: 'r',
+            transports,
+          },
+        ],
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(usePlanning).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    } as never);
+    render(
+      <MemoryRouter initialEntries={['/missions/m/legs/canonical']}>
+        <Routes>
+          <Route
+            path="/missions/:missionId/legs/:legId"
+            element={<LegDetailPage />}
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+    if (operation === 'preview') {
+      expect(
+        vi.mocked(useTimelinePreview).mock.calls.at(-1)?.[2]?.transports
+      ).toEqual(expect.objectContaining(original));
+    } else {
+      fireEvent.click(
+        screen.getByText(
+          operation === 'save' ? 'Save Changes' : 'Save manual track fixture'
+        )
+      );
+      await waitFor(() =>
+        expect(saveLeg).toHaveBeenCalledWith(
+          expect.objectContaining({
+            transports: expect.objectContaining(original),
+          })
+        )
+      );
+    }
+    expect(transports).toEqual(original);
   }
 );

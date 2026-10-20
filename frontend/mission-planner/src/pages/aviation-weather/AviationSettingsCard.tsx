@@ -33,7 +33,11 @@ const options: {
     label: 'GFS air temperature',
   },
 ];
-export function AviationSettingsCard() {
+export function AviationSettingsCard({
+  controlsOnly = false,
+}: {
+  controlsOnly?: boolean;
+}) {
   const query = useAviationSettings(),
     save = useSaveAviationSettings();
   const selected = query.data?.gfs_selection;
@@ -109,82 +113,84 @@ export function AviationSettingsCard() {
           </fieldset>
         )
       )}
-      <fieldset disabled={disabled} className="my-3 space-y-3">
-        <legend className="text-sm text-muted-foreground">
-          Shared atmosphere selection
-        </legend>
-        <label className="flex items-center justify-between gap-4 text-sm">
-          Atmosphere level
-          <select
-            aria-label="Atmosphere level"
-            value={
-              selection.vertical.kind === 'pressure'
-                ? `pressure:${selection.vertical.pressure_pa}`
-                : `fl:${selection.vertical.flight_level}`
-            }
-            onChange={(event) => {
-              const [kind, value] = event.target.value.split(':');
-              const vertical =
-                kind === 'pressure'
-                  ? {
-                      kind: 'pressure' as const,
-                      pressure_pa: Number(value) as (typeof levels)[number],
-                    }
-                  : {
-                      kind: 'flight-level' as const,
-                      flight_level: Number(
-                        value
-                      ) as (typeof flightLevels)[number],
-                    };
-              save.mutate({ gfs_selection: { ...selection, vertical } });
-            }}
-          >
-            <option disabled>Surface · unsupported</option>
-            <optgroup label="Native pressure">
-              {levels.map((p) => (
-                <option key={p} value={`pressure:${p}`}>
-                  {p / 100} hPa
+      {!controlsOnly && (
+        <fieldset disabled={disabled} className="my-3 space-y-3">
+          <legend className="text-sm text-muted-foreground">
+            Shared atmosphere selection
+          </legend>
+          <label className="flex items-center justify-between gap-4 text-sm">
+            Atmosphere level
+            <select
+              aria-label="Atmosphere level"
+              value={
+                selection.vertical.kind === 'pressure'
+                  ? `pressure:${selection.vertical.pressure_pa}`
+                  : `fl:${selection.vertical.flight_level}`
+              }
+              onChange={(event) => {
+                const [kind, value] = event.target.value.split(':');
+                const vertical =
+                  kind === 'pressure'
+                    ? {
+                        kind: 'pressure' as const,
+                        pressure_pa: Number(value) as (typeof levels)[number],
+                      }
+                    : {
+                        kind: 'flight-level' as const,
+                        flight_level: Number(
+                          value
+                        ) as (typeof flightLevels)[number],
+                      };
+                save.mutate({ gfs_selection: { ...selection, vertical } });
+              }}
+            >
+              <option disabled>Surface · unsupported</option>
+              <optgroup label="Native pressure">
+                {levels.map((p) => (
+                  <option key={p} value={`pressure:${p}`}>
+                    {p / 100} hPa
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="ISA / log-pressure interpolation">
+                {flightLevels.map((fl) => (
+                  <option key={fl} value={`fl:${fl}`}>
+                    FL{String(fl).padStart(3, '0')}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-4 text-sm">
+            Forecast horizon
+            <select
+              aria-label="Forecast horizon"
+              value={selection.horizon_hours}
+              onChange={(event) =>
+                save.mutate({
+                  gfs_selection: {
+                    ...selection,
+                    horizon_hours: Number(
+                      event.target.value
+                    ) as (typeof horizons)[number],
+                  },
+                })
+              }
+            >
+              {horizons.map((h) => (
+                <option key={h} value={h}>
+                  UTC now + {h} h
                 </option>
               ))}
-            </optgroup>
-            <optgroup label="ISA / log-pressure interpolation">
-              {flightLevels.map((fl) => (
-                <option key={fl} value={`fl:${fl}`}>
-                  FL{String(fl).padStart(3, '0')}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-        </label>
-        <label className="flex items-center justify-between gap-4 text-sm">
-          Forecast horizon
-          <select
-            aria-label="Forecast horizon"
-            value={selection.horizon_hours}
-            onChange={(event) =>
-              save.mutate({
-                gfs_selection: {
-                  ...selection,
-                  horizon_hours: Number(
-                    event.target.value
-                  ) as (typeof horizons)[number],
-                },
-              })
-            }
-          >
-            {horizons.map((h) => (
-              <option key={h} value={h}>
-                UTC now + {h} h
-              </option>
-            ))}
-          </select>
-        </label>
-        <p className="text-xs text-muted-foreground">
-          One level and horizon for both model layers on all Overview displays.
-          Flight levels use the standard atmosphere and interpolate
-          U/V/temperature in log pressure; masked terrain is unknown.
-        </p>
-      </fieldset>
+            </select>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            One level and horizon for both model layers on all Overview
+            displays. Flight levels use the standard atmosphere and interpolate
+            U/V/temperature in log pressure; masked terrain is unknown.
+          </p>
+        </fieldset>
+      )}
       <div aria-live="polite" className="text-sm">
         {query.isLoading && (
           <p role="status">Loading aviation weather settings…</p>

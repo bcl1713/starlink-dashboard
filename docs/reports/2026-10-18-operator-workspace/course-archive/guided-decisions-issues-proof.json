@@ -1,0 +1,3027 @@
+{
+  "synthetic": true,
+  "actualWrites": 33,
+  "captures": [
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "issueId": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+      "corrected": {
+        "schema_version": 1,
+        "record_type": "issue",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": "2026-10-17T17:05:00.000000Z",
+          "ended_at": null,
+          "precision": "exact",
+          "end_state": "instant",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional training audio issue 1920",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "issue",
+          "status": "reopened",
+          "priority": null,
+          "mitigation": "workaround",
+          "functional_area": null,
+          "responsible_party": null,
+          "follow_up_at": null,
+          "update_text": "Corrected fictional workaround wording only",
+          "capability_id": null,
+          "call_id": null,
+          "conference_id": null,
+          "transport": null,
+          "corrects_version": 3,
+          "corrected_update_at": "2026-10-17T17:05:00.000000Z"
+        },
+        "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+        "version": 6,
+        "previous_version": 5,
+        "journal_seq": 63,
+        "command_id": "ecba854a-53db-4a0b-83d3-0c224d6a9429",
+        "operation": "update",
+        "reason": "Issue update corrected",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "capability": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": "2026-10-17T17:05:00.000000Z",
+          "ended_at": null,
+          "precision": "exact",
+          "end_state": "instant",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional audio assessment 1920",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "capability_assessment",
+          "functional_status": "degraded",
+          "redundancy_status": "unknown",
+          "functional_observed_at": "2026-10-17T17:05:00.000000Z",
+          "redundancy_observed_at": null,
+          "functional_time_precision": "exact",
+          "redundancy_time_precision": "unknown"
+        },
+        "record_id": "6e2fcc2b-14bf-43b3-a31a-73b479bb1f06",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 64,
+        "command_id": "c425ceef-c318-4914-80d8-b05f319002d9",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "decision": {
+        "schema_version": 1,
+        "record_type": "transport_decision",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional IPTV 1920, Fictional secure voice 1920",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "transport_decision",
+          "services": [
+            {
+              "row_id": "5645d9d7-d492-4841-8273-bbd2ae2a29ae",
+              "service": "Fictional IPTV 1920",
+              "intended": null,
+              "requested": null,
+              "applied": {
+                "transport": "X",
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                }
+              },
+              "checked": {
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                },
+                "result": "satisfactory",
+                "note": ""
+              }
+            },
+            {
+              "row_id": "aac1b7e5-1173-454f-a86d-ae3f1223e560",
+              "service": "Fictional secure voice 1920",
+              "intended": null,
+              "requested": null,
+              "applied": {
+                "transport": "Starshield",
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                }
+              },
+              "checked": {
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                },
+                "result": "issue_reported",
+                "note": ""
+              }
+            }
+          ],
+          "reason": "",
+          "call_id": null,
+          "conference_id": null
+        },
+        "record_id": "59f8a8dc-e11e-4586-a80c-d383f7a5fd8f",
+        "version": 4,
+        "previous_version": 3,
+        "journal_seq": 68,
+        "command_id": "5daca12e-af43-4a21-852f-459f09af861b",
+        "operation": "update",
+        "reason": "Transport decision corrected",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "issueId": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+      "corrected": {
+        "schema_version": 1,
+        "record_type": "issue",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": "2026-10-17T17:05:00.000000Z",
+          "ended_at": null,
+          "precision": "exact",
+          "end_state": "instant",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional training audio issue 390",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "issue",
+          "status": "reopened",
+          "priority": null,
+          "mitigation": "workaround",
+          "functional_area": null,
+          "responsible_party": null,
+          "follow_up_at": null,
+          "update_text": "Corrected fictional workaround wording only",
+          "capability_id": null,
+          "call_id": null,
+          "conference_id": null,
+          "transport": null,
+          "corrects_version": 3,
+          "corrected_update_at": "2026-10-17T17:05:00.000000Z"
+        },
+        "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+        "version": 6,
+        "previous_version": 5,
+        "journal_seq": 74,
+        "command_id": "f173ff54-3227-4ab6-b606-7219674fac2d",
+        "operation": "update",
+        "reason": "Issue update corrected",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "capability": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": "2026-10-17T17:05:00.000000Z",
+          "ended_at": null,
+          "precision": "exact",
+          "end_state": "instant",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional audio assessment 390",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "capability_assessment",
+          "functional_status": "degraded",
+          "redundancy_status": "unknown",
+          "functional_observed_at": "2026-10-17T17:05:00.000000Z",
+          "redundancy_observed_at": null,
+          "functional_time_precision": "exact",
+          "redundancy_time_precision": "unknown"
+        },
+        "record_id": "5b79144c-5d30-4ff5-8b2d-0880aa75b01d",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 75,
+        "command_id": "4cbd9482-2939-432a-9d78-fe8b3f319edd",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "decision": {
+        "schema_version": 1,
+        "record_type": "transport_decision",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional IPTV 390, Fictional secure voice 390",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "transport_decision",
+          "services": [
+            {
+              "row_id": "8c59164e-d6c0-43fc-b78e-78b6d9ae258a",
+              "service": "Fictional IPTV 390",
+              "intended": null,
+              "requested": null,
+              "applied": {
+                "transport": "X",
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                }
+              },
+              "checked": {
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                },
+                "result": "satisfactory",
+                "note": ""
+              }
+            },
+            {
+              "row_id": "29125286-9fa4-4567-abb4-791ff269b098",
+              "service": "Fictional secure voice 390",
+              "intended": null,
+              "requested": null,
+              "applied": {
+                "transport": "Starshield",
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                }
+              },
+              "checked": {
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                },
+                "result": "issue_reported",
+                "note": ""
+              }
+            }
+          ],
+          "reason": "",
+          "call_id": null,
+          "conference_id": null
+        },
+        "record_id": "9db07c0f-1f53-40a5-adf9-2e4e7da94508",
+        "version": 4,
+        "previous_version": 3,
+        "journal_seq": 79,
+        "command_id": "3e225d65-e3d0-4988-b943-02a9e0e4ec5b",
+        "operation": "update",
+        "reason": "Transport decision corrected",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "issueId": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+      "corrected": {
+        "schema_version": 1,
+        "record_type": "issue",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": "2026-10-17T17:05:00.000000Z",
+          "ended_at": null,
+          "precision": "exact",
+          "end_state": "instant",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional training audio issue 844",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "issue",
+          "status": "reopened",
+          "priority": null,
+          "mitigation": "workaround",
+          "functional_area": null,
+          "responsible_party": null,
+          "follow_up_at": null,
+          "update_text": "Corrected fictional workaround wording only",
+          "capability_id": null,
+          "call_id": null,
+          "conference_id": null,
+          "transport": null,
+          "corrects_version": 3,
+          "corrected_update_at": "2026-10-17T17:05:00.000000Z"
+        },
+        "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+        "version": 6,
+        "previous_version": 5,
+        "journal_seq": 85,
+        "command_id": "43a8523b-92f7-439f-b977-c190ba841bde",
+        "operation": "update",
+        "reason": "Issue update corrected",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "capability": {
+        "schema_version": 1,
+        "record_type": "journal_entry",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": "2026-10-17T17:05:00.000000Z",
+          "ended_at": null,
+          "precision": "exact",
+          "end_state": "instant",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional audio assessment 844",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "capability_assessment",
+          "functional_status": "degraded",
+          "redundancy_status": "unknown",
+          "functional_observed_at": "2026-10-17T17:05:00.000000Z",
+          "redundancy_observed_at": null,
+          "functional_time_precision": "exact",
+          "redundancy_time_precision": "unknown"
+        },
+        "record_id": "4e4029d7-6d5e-40e8-aa12-11427da1743d",
+        "version": 1,
+        "previous_version": null,
+        "journal_seq": 86,
+        "command_id": "08d185d8-6532-4e63-aa3a-cde97d3a1273",
+        "operation": "create",
+        "reason": null,
+        "reason_origin": null,
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      },
+      "decision": {
+        "schema_version": 1,
+        "record_type": "transport_decision",
+        "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+        "leg_id": null,
+        "scope": "mission",
+        "time": {
+          "occurred_at": null,
+          "ended_at": null,
+          "precision": "unknown",
+          "end_state": "unknown",
+          "planned_start_at": null,
+          "planned_end_at": null
+        },
+        "payload": {
+          "schema_version": 1,
+          "title": "Fictional IPTV 844, Fictional secure voice 844",
+          "note": "",
+          "previous_leg_id": null,
+          "next_leg_id": null,
+          "entry_type": "transport_decision",
+          "services": [
+            {
+              "row_id": "1f553d00-9537-41c1-81a0-615e01ff211d",
+              "service": "Fictional IPTV 844",
+              "intended": null,
+              "requested": null,
+              "applied": {
+                "transport": "X",
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                }
+              },
+              "checked": {
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                },
+                "result": "satisfactory",
+                "note": ""
+              }
+            },
+            {
+              "row_id": "8e652b8c-7561-4ce7-88df-41018ea36f3d",
+              "service": "Fictional secure voice 844",
+              "intended": null,
+              "requested": null,
+              "applied": {
+                "transport": "Starshield",
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                }
+              },
+              "checked": {
+                "time": {
+                  "at": null,
+                  "precision": "unknown"
+                },
+                "result": "issue_reported",
+                "note": ""
+              }
+            }
+          ],
+          "reason": "",
+          "call_id": null,
+          "conference_id": null
+        },
+        "record_id": "6befcf72-9e9e-4ab0-9af8-1073939acae3",
+        "version": 4,
+        "previous_version": 3,
+        "journal_seq": 90,
+        "command_id": "f313d0cc-22cd-4d15-b4e7-2f95084dbfef",
+        "operation": "update",
+        "reason": "Transport decision corrected",
+        "reason_origin": "automatic",
+        "deleted": false,
+        "recorded_at": "2026-10-17T17:05:00.000000Z",
+        "author": {
+          "backend": "restricted-access operator",
+          "operator_label": null
+        },
+        "provenance": {
+          "kind": "operator_reported",
+          "source_mode": "simulation",
+          "observed_at": null,
+          "predicted_at": null,
+          "source_ref": null,
+          "mutation_origin": "interactive"
+        }
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": 1,
+      "command_id": "e770d11e-1cb8-4b3a-978b-4070bf024da5",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "open",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 58,
+          "command_id": "e770d11e-1cb8-4b3a-978b-4070bf024da5",
+          "operation": "create",
+          "reason": "Issue opened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3ed96eb9-3add-4b10-871e-4222acd6ab3c",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 59,
+          "command_id": "3ed96eb9-3add-4b10-871e-4222acd6ab3c",
+          "operation": "update",
+          "reason": "Issue monitoring",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3b48af32-adda-44f9-8c9b-2c26bd894177",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "Fictional workaround observation",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 60,
+          "command_id": "3b48af32-adda-44f9-8c9b-2c26bd894177",
+          "operation": "update",
+          "reason": "Issue update recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "0b627c14-27b3-4d39-986a-3aa7d85fb7e0",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "resolved",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 61,
+          "command_id": "0b627c14-27b3-4d39-986a-3aa7d85fb7e0",
+          "operation": "update",
+          "reason": "Issue resolved; Issue follow-up updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "6710e640-9304-4acd-ab68-13923da66515",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 62,
+          "command_id": "6710e640-9304-4acd-ab68-13923da66515",
+          "operation": "update",
+          "reason": "Issue reopened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ecba854a-53db-4a0b-83d3-0c224d6a9429",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "Corrected fictional workaround wording only",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": 3,
+            "corrected_update_at": "2026-10-17T17:05:00.000000Z"
+          },
+          "record_id": "9733b053-910a-479d-af48-0a23d4fc3ea0",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 63,
+          "command_id": "ecba854a-53db-4a0b-83d3-0c224d6a9429",
+          "operation": "update",
+          "reason": "Issue update corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "c425ceef-c318-4914-80d8-b05f319002d9",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional audio assessment 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "capability_assessment",
+            "functional_status": "degraded",
+            "redundancy_status": "unknown",
+            "functional_observed_at": "2026-10-17T17:05:00.000000Z",
+            "redundancy_observed_at": null,
+            "functional_time_precision": "exact",
+            "redundancy_time_precision": "unknown"
+          },
+          "record_id": "6e2fcc2b-14bf-43b3-a31a-73b479bb1f06",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 64,
+          "command_id": "c425ceef-c318-4914-80d8-b05f319002d9",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "fdcf4980-7789-479d-bb78-9739c347ca97",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "5645d9d7-d492-4841-8273-bbd2ae2a29ae",
+                "service": "Fictional IPTV 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "59f8a8dc-e11e-4586-a80c-d383f7a5fd8f",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 65,
+          "command_id": "fdcf4980-7789-479d-bb78-9739c347ca97",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "0eff2257-b2f4-43f6-89c0-ed49c5184d2a",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 1920, Fictional secure voice 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "5645d9d7-d492-4841-8273-bbd2ae2a29ae",
+                "service": "Fictional IPTV 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "satisfactory",
+                  "note": ""
+                }
+              },
+              {
+                "row_id": "aac1b7e5-1173-454f-a86d-ae3f1223e560",
+                "service": "Fictional secure voice 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "59f8a8dc-e11e-4586-a80c-d383f7a5fd8f",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 66,
+          "command_id": "0eff2257-b2f4-43f6-89c0-ed49c5184d2a",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "8e63776d-fba2-4e7b-8546-a9edf9a0c741",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 1920, Fictional secure voice 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "5645d9d7-d492-4841-8273-bbd2ae2a29ae",
+                "service": "Fictional IPTV 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "X",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              },
+              {
+                "row_id": "aac1b7e5-1173-454f-a86d-ae3f1223e560",
+                "service": "Fictional secure voice 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "59f8a8dc-e11e-4586-a80c-d383f7a5fd8f",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 67,
+          "command_id": "8e63776d-fba2-4e7b-8546-a9edf9a0c741",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "5daca12e-af43-4a21-852f-459f09af861b",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 1920, Fictional secure voice 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "5645d9d7-d492-4841-8273-bbd2ae2a29ae",
+                "service": "Fictional IPTV 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "X",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "satisfactory",
+                  "note": ""
+                }
+              },
+              {
+                "row_id": "aac1b7e5-1173-454f-a86d-ae3f1223e560",
+                "service": "Fictional secure voice 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "59f8a8dc-e11e-4586-a80c-d383f7a5fd8f",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 68,
+          "command_id": "5daca12e-af43-4a21-852f-459f09af861b",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "5d85362a-426a-4df4-aad0-50c74258639d",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "open",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 69,
+          "command_id": "5d85362a-426a-4df4-aad0-50c74258639d",
+          "operation": "create",
+          "reason": "Issue opened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ec011558-0699-4c95-85ee-f5eab25684de",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 70,
+          "command_id": "ec011558-0699-4c95-85ee-f5eab25684de",
+          "operation": "update",
+          "reason": "Issue monitoring",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "e1e5c7da-ff0a-4947-9086-08ae904e3c96",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "Fictional workaround observation",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 71,
+          "command_id": "e1e5c7da-ff0a-4947-9086-08ae904e3c96",
+          "operation": "update",
+          "reason": "Issue update recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2e699dfe-23b1-4ddc-ade0-b65fcaa06fbd",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "resolved",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 72,
+          "command_id": "2e699dfe-23b1-4ddc-ade0-b65fcaa06fbd",
+          "operation": "update",
+          "reason": "Issue resolved; Issue follow-up updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "d7827963-c58e-40ea-ae2a-1f02684e2ca7",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 73,
+          "command_id": "d7827963-c58e-40ea-ae2a-1f02684e2ca7",
+          "operation": "update",
+          "reason": "Issue reopened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "f173ff54-3227-4ab6-b606-7219674fac2d",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "Corrected fictional workaround wording only",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": 3,
+            "corrected_update_at": "2026-10-17T17:05:00.000000Z"
+          },
+          "record_id": "cf5fa8a6-ea18-4ed0-ab67-34fcb69aadbb",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 74,
+          "command_id": "f173ff54-3227-4ab6-b606-7219674fac2d",
+          "operation": "update",
+          "reason": "Issue update corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "4cbd9482-2939-432a-9d78-fe8b3f319edd",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional audio assessment 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "capability_assessment",
+            "functional_status": "degraded",
+            "redundancy_status": "unknown",
+            "functional_observed_at": "2026-10-17T17:05:00.000000Z",
+            "redundancy_observed_at": null,
+            "functional_time_precision": "exact",
+            "redundancy_time_precision": "unknown"
+          },
+          "record_id": "5b79144c-5d30-4ff5-8b2d-0880aa75b01d",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 75,
+          "command_id": "4cbd9482-2939-432a-9d78-fe8b3f319edd",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "e167fd86-6e86-4192-a2cb-374ca7ed3f58",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "8c59164e-d6c0-43fc-b78e-78b6d9ae258a",
+                "service": "Fictional IPTV 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "9db07c0f-1f53-40a5-adf9-2e4e7da94508",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 76,
+          "command_id": "e167fd86-6e86-4192-a2cb-374ca7ed3f58",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3f931444-8330-4fcc-b1e0-f818f2a689e3",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 390, Fictional secure voice 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "8c59164e-d6c0-43fc-b78e-78b6d9ae258a",
+                "service": "Fictional IPTV 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "satisfactory",
+                  "note": ""
+                }
+              },
+              {
+                "row_id": "29125286-9fa4-4567-abb4-791ff269b098",
+                "service": "Fictional secure voice 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "9db07c0f-1f53-40a5-adf9-2e4e7da94508",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 77,
+          "command_id": "3f931444-8330-4fcc-b1e0-f818f2a689e3",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "a749fd0c-8220-4da3-9360-832c49cb39bf",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 390, Fictional secure voice 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "8c59164e-d6c0-43fc-b78e-78b6d9ae258a",
+                "service": "Fictional IPTV 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "X",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              },
+              {
+                "row_id": "29125286-9fa4-4567-abb4-791ff269b098",
+                "service": "Fictional secure voice 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "9db07c0f-1f53-40a5-adf9-2e4e7da94508",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 78,
+          "command_id": "a749fd0c-8220-4da3-9360-832c49cb39bf",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3e225d65-e3d0-4988-b943-02a9e0e4ec5b",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 390, Fictional secure voice 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "8c59164e-d6c0-43fc-b78e-78b6d9ae258a",
+                "service": "Fictional IPTV 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "X",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "satisfactory",
+                  "note": ""
+                }
+              },
+              {
+                "row_id": "29125286-9fa4-4567-abb4-791ff269b098",
+                "service": "Fictional secure voice 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "9db07c0f-1f53-40a5-adf9-2e4e7da94508",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 79,
+          "command_id": "3e225d65-e3d0-4988-b943-02a9e0e4ec5b",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2e3896aa-5919-4701-b731-faee764e190d",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "open",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 80,
+          "command_id": "2e3896aa-5919-4701-b731-faee764e190d",
+          "operation": "create",
+          "reason": "Issue opened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "0747d1d1-f599-4801-abcf-e2bba269da7c",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 81,
+          "command_id": "0747d1d1-f599-4801-abcf-e2bba269da7c",
+          "operation": "update",
+          "reason": "Issue monitoring",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "95755b9f-e13b-4979-9665-ea08a9227898",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T16:50:00.000000Z",
+            "update_text": "Fictional workaround observation",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 82,
+          "command_id": "95755b9f-e13b-4979-9665-ea08a9227898",
+          "operation": "update",
+          "reason": "Issue update recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "a177e4b3-b212-4065-a4ea-97c55593ae62",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "resolved",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 83,
+          "command_id": "a177e4b3-b212-4065-a4ea-97c55593ae62",
+          "operation": "update",
+          "reason": "Issue resolved; Issue follow-up updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "010fdc88-1f3f-461f-ba9e-23309474eea9",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 84,
+          "command_id": "010fdc88-1f3f-461f-ba9e-23309474eea9",
+          "operation": "update",
+          "reason": "Issue reopened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "43a8523b-92f7-439f-b977-c190ba841bde",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional training audio issue 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "Corrected fictional workaround wording only",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": 3,
+            "corrected_update_at": "2026-10-17T17:05:00.000000Z"
+          },
+          "record_id": "cc701bd5-9727-40be-ad0c-053b37b50ab2",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 85,
+          "command_id": "43a8523b-92f7-439f-b977-c190ba841bde",
+          "operation": "update",
+          "reason": "Issue update corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "08d185d8-6532-4e63-aa3a-cde97d3a1273",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T17:05:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional audio assessment 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "capability_assessment",
+            "functional_status": "degraded",
+            "redundancy_status": "unknown",
+            "functional_observed_at": "2026-10-17T17:05:00.000000Z",
+            "redundancy_observed_at": null,
+            "functional_time_precision": "exact",
+            "redundancy_time_precision": "unknown"
+          },
+          "record_id": "4e4029d7-6d5e-40e8-aa12-11427da1743d",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 86,
+          "command_id": "08d185d8-6532-4e63-aa3a-cde97d3a1273",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "37240bf5-09f4-45f2-9e91-c790c2e42e02",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "1f553d00-9537-41c1-81a0-615e01ff211d",
+                "service": "Fictional IPTV 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "6befcf72-9e9e-4ab0-9af8-1073939acae3",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 87,
+          "command_id": "37240bf5-09f4-45f2-9e91-c790c2e42e02",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ce094b9a-4376-427c-a8df-614aa5ddc879",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 844, Fictional secure voice 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "1f553d00-9537-41c1-81a0-615e01ff211d",
+                "service": "Fictional IPTV 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "satisfactory",
+                  "note": ""
+                }
+              },
+              {
+                "row_id": "8e652b8c-7561-4ce7-88df-41018ea36f3d",
+                "service": "Fictional secure voice 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "6befcf72-9e9e-4ab0-9af8-1073939acae3",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 88,
+          "command_id": "ce094b9a-4376-427c-a8df-614aa5ddc879",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "9fcc6c5a-3352-4cc0-a726-512812df968f",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 844, Fictional secure voice 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "1f553d00-9537-41c1-81a0-615e01ff211d",
+                "service": "Fictional IPTV 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "X",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              },
+              {
+                "row_id": "8e652b8c-7561-4ce7-88df-41018ea36f3d",
+                "service": "Fictional secure voice 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "6befcf72-9e9e-4ab0-9af8-1073939acae3",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 89,
+          "command_id": "9fcc6c5a-3352-4cc0-a726-512812df968f",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "f313d0cc-22cd-4d15-b4e7-2f95084dbfef",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Fictional IPTV 844, Fictional secure voice 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "1f553d00-9537-41c1-81a0-615e01ff211d",
+                "service": "Fictional IPTV 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "X",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "satisfactory",
+                  "note": ""
+                }
+              },
+              {
+                "row_id": "8e652b8c-7561-4ce7-88df-41018ea36f3d",
+                "service": "Fictional secure voice 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Starshield",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": {
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  },
+                  "result": "issue_reported",
+                  "note": ""
+                }
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "6befcf72-9e9e-4ab0-9af8-1073939acae3",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 90,
+          "command_id": "f313d0cc-22cd-4d15-b4e7-2f95084dbfef",
+          "operation": "update",
+          "reason": "Transport decision corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T17:05:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    }
+  ],
+  "manualHumanFirstUse": "not claimed"
+}

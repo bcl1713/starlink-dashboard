@@ -164,3 +164,44 @@ def test_overview_history_settings_put_rejects_invalid_windows(
         overview_history.set_overview_history_settings_store(None)
     assert response.status_code == 422
     assert store.get_window_seconds() == 1800
+
+
+def test_history_conditional_update_conflict_and_media_failure(tmp_path, monkeypatch):
+    store = OverviewHistorySettingsStore(
+        tmp_path / "history.json", default_window_seconds=1800
+    )
+    overview_history.set_overview_history_settings_store(store)
+    app = FastAPI()
+    app.include_router(overview_history.router)
+    url = "/api/overview-history/settings"
+    try:
+        with TestClient(app) as client:
+            assert (
+                client.put(
+                    url, json={"window_seconds": 900, "expected_window_seconds": 1800}
+                ).status_code
+                == 200
+            )
+            assert (
+                client.put(
+                    url, json={"window_seconds": 300, "expected_window_seconds": 1800}
+                ).status_code
+                == 409
+            )
+            assert client.get(url).json() == {"window_seconds": 900}
+
+            def fail_replace(*args):
+                raise PermissionError("synthetic media failure")
+
+            monkeypatch.setattr(
+                "app.services.overview_history_settings.os.replace", fail_replace
+            )
+            assert (
+                client.put(
+                    url, json={"window_seconds": 300, "expected_window_seconds": 900}
+                ).status_code
+                == 503
+            )
+            assert client.get(url).json() == {"window_seconds": 900}
+    finally:
+        overview_history.set_overview_history_settings_store(None)

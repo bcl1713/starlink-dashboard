@@ -1,0 +1,87 @@
+{
+  "synthetic": true,
+  "scope": "Native accessible names; keyboard focus/resize asserted in journey. Does not certify contrast, screen-reader use or real-device keyboards.",
+  "audits": [
+    {
+      "stage": "candidate final Overview 1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 11
+    },
+    {
+      "stage": "candidate final Missions 1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 26
+    },
+    {
+      "stage": "candidate final Configuration 1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "unnamed": [],
+      "controlsChecked": 34
+    },
+    {
+      "stage": "candidate final Overview 390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 6
+    },
+    {
+      "stage": "candidate final Missions 390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 19
+    },
+    {
+      "stage": "candidate final Configuration 390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "unnamed": [],
+      "controlsChecked": 27
+    },
+    {
+      "stage": "candidate final Overview 844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 6
+    },
+    {
+      "stage": "candidate final Missions 844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 19
+    },
+    {
+      "stage": "candidate final Configuration 844x390",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "unnamed": [],
+      "controlsChecked": 27
+    }
+  ]
+}

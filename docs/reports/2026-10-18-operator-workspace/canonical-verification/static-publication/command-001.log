@@ -1,0 +1,70 @@
+All done! ✨ 🍰 ✨
+773 files would be left unchanged.
+All checks passed!
+Checking filename conventions in docs...
+All markdown files follow the naming convention.
+Checking formatting...
+All matched files use Prettier code style!
+
+> mission-planner@0.0.0 lint
+> eslint .
+
+markdownlint-cli2 v0.23.3 (markdownlint v0.41.1)
+Finding: docs/**/*.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 504 files
+Summary: 0 issues in 0 files
+Checking internal documentation files and anchors (required)
+🔍 1506 Total (in 0s) ✅ 1296 OK 🚫 0 Errors 👻 210 Excluded
+Checking external documentation links (advisory)
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+Issues found in 7 inputs. Find details below.
+
+[docs/api/endpoints/overview-adsb.md]:
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/development/adsb-provider-acquisition.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/features/system.md]:
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+
+[docs/reports/2026-10-03-overview-adsb-aircraft-layer.md]:
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/reports/2026-10-17-operator-displays/static-ci-limitations.txt]:
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/superpowers/plans/2026-10-03-overview-adsb-aircraft-layer.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/superpowers/specs/2026-10-03-overview-adsb-aircraft-addon-design.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+🔍 1506 Total (in 1s) ✅ 170 OK 🚫 12 Errors 👻 1324 Excluded
+::warning title=External documentation links::External check did not pass: Lychee exited with status 2; see link report above. Internal files and anchors passed; external availability is nonblocking.
+............                                                             [100%]
+12 passed in 0.37s
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ uv run --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/backend/starlink-location) $ uv run --with-requirements requirements-dev.txt ruff check app tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ python tools/check_filename_convention.py
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner exec -- prettier --check frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner run lint
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ markdownlint-cli2 docs/**/*.md
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ python3 tools/check_docs_links.py docs/
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ python3 -m pytest -q tools/tests/test_acceptance_platform_typing_policy.py tools/tests/test_docs_links.py

@@ -1,0 +1,1538 @@
+{
+  "synthetic": true,
+  "receipts": [
+    {
+      "schema_version": 1,
+      "command_id": "7bd6dced-71f0-4b3a-95de-1a420857c7ef",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "open",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "94026b51-165e-4497-b8e4-a5fa92773f28",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 58,
+          "command_id": "7bd6dced-71f0-4b3a-95de-1a420857c7ef",
+          "operation": "create",
+          "reason": "Issue opened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "f3017452-a9b9-48e6-a724-2f4325800513",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "94026b51-165e-4497-b8e4-a5fa92773f28",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 59,
+          "command_id": "f3017452-a9b9-48e6-a724-2f4325800513",
+          "operation": "update",
+          "reason": "Issue monitoring",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "8fdf20c0-570d-4340-893a-d740cd860384",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "Synthetic workaround update",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "94026b51-165e-4497-b8e4-a5fa92773f28",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 60,
+          "command_id": "8fdf20c0-570d-4340-893a-d740cd860384",
+          "operation": "update",
+          "reason": "Issue update recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3370a234-3b01-4b73-af0d-be0b41778fa0",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "resolved",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "94026b51-165e-4497-b8e4-a5fa92773f28",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 61,
+          "command_id": "3370a234-3b01-4b73-af0d-be0b41778fa0",
+          "operation": "update",
+          "reason": "Issue resolved; Issue follow-up updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2193d836-dd54-4372-afb3-0ccdf139af18",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "94026b51-165e-4497-b8e4-a5fa92773f28",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 62,
+          "command_id": "2193d836-dd54-4372-afb3-0ccdf139af18",
+          "operation": "update",
+          "reason": "Issue reopened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "a0a5b73c-a3a0-451c-8acd-fa6bf30b1b3a",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "Synthetic corrected workaround message",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": 3,
+            "corrected_update_at": "2026-10-17T16:00:00.000000Z"
+          },
+          "record_id": "94026b51-165e-4497-b8e4-a5fa92773f28",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 63,
+          "command_id": "a0a5b73c-a3a0-451c-8acd-fa6bf30b1b3a",
+          "operation": "update",
+          "reason": "Issue update corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "44a86be2-748f-4894-ab4c-5aebce92d041",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic IPTV 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "2d56d6c3-3464-4b09-a9d7-5e7fc0ecbbcf",
+                "service": "Synthetic IPTV 1920",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "dfa7b5f6-ca6b-42a4-875f-9299840921c9",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 64,
+          "command_id": "44a86be2-748f-4894-ab4c-5aebce92d041",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "df5c7708-4fa0-431f-9866-7c86c621c2b5",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "capability_assessment",
+            "functional_status": "degraded",
+            "redundancy_status": "unknown",
+            "functional_observed_at": "2026-10-17T16:00:00.000000Z",
+            "redundancy_observed_at": null,
+            "functional_time_precision": "exact",
+            "redundancy_time_precision": "unknown"
+          },
+          "record_id": "c3fe5da0-1adc-4fd2-b8f5-b349da6adfcf",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 65,
+          "command_id": "df5c7708-4fa0-431f-9866-7c86c621c2b5",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "112e0e63-0d39-4214-b695-bdf1adc4e417",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "open",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "99f56ee7-bfeb-41d9-97c4-2d27aa6a6829",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 66,
+          "command_id": "112e0e63-0d39-4214-b695-bdf1adc4e417",
+          "operation": "create",
+          "reason": "Issue opened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "12f50b36-6df4-4e1a-afec-a35b1f47aa5a",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "99f56ee7-bfeb-41d9-97c4-2d27aa6a6829",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 67,
+          "command_id": "12f50b36-6df4-4e1a-afec-a35b1f47aa5a",
+          "operation": "update",
+          "reason": "Issue monitoring",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "71764f97-1d01-440f-ae1b-328933753949",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "Synthetic workaround update",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "99f56ee7-bfeb-41d9-97c4-2d27aa6a6829",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 68,
+          "command_id": "71764f97-1d01-440f-ae1b-328933753949",
+          "operation": "update",
+          "reason": "Issue update recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "cae687a2-8a08-4d1c-bcd1-cfdb84b6ce73",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "resolved",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "99f56ee7-bfeb-41d9-97c4-2d27aa6a6829",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 69,
+          "command_id": "cae687a2-8a08-4d1c-bcd1-cfdb84b6ce73",
+          "operation": "update",
+          "reason": "Issue resolved; Issue follow-up updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "902ac36f-8700-4c8f-a08c-97ba9b84632f",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "99f56ee7-bfeb-41d9-97c4-2d27aa6a6829",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 70,
+          "command_id": "902ac36f-8700-4c8f-a08c-97ba9b84632f",
+          "operation": "update",
+          "reason": "Issue reopened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "45d1e08e-34e3-46c6-9045-6b97bb44148e",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "Synthetic corrected workaround message",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": 3,
+            "corrected_update_at": "2026-10-17T16:00:00.000000Z"
+          },
+          "record_id": "99f56ee7-bfeb-41d9-97c4-2d27aa6a6829",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 71,
+          "command_id": "45d1e08e-34e3-46c6-9045-6b97bb44148e",
+          "operation": "update",
+          "reason": "Issue update corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ea3b86cf-381c-413d-9d6f-d4c0024e229a",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic IPTV 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "d4e923d4-820e-4c4d-8cad-35e16da6ed4d",
+                "service": "Synthetic IPTV 390",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "fdddf208-2e2c-4111-ae6a-55f7eab0aea4",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 72,
+          "command_id": "ea3b86cf-381c-413d-9d6f-d4c0024e229a",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "82ae539a-e2ea-4ab1-8395-0a4bbbb33510",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "capability_assessment",
+            "functional_status": "degraded",
+            "redundancy_status": "unknown",
+            "functional_observed_at": "2026-10-17T16:00:00.000000Z",
+            "redundancy_observed_at": null,
+            "functional_time_precision": "exact",
+            "redundancy_time_precision": "unknown"
+          },
+          "record_id": "4c138d2e-26e3-493f-8a91-fbe82e01f5aa",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 73,
+          "command_id": "82ae539a-e2ea-4ab1-8395-0a4bbbb33510",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "0df6c515-f884-48f3-8a78-9d6c88665b4b",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "open",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "0ecb04ba-536b-4eb9-bfe5-121249bdbc06",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 74,
+          "command_id": "0df6c515-f884-48f3-8a78-9d6c88665b4b",
+          "operation": "create",
+          "reason": "Issue opened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "8c2f582e-3a10-4dbc-8983-6ec0b7b8daf5",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "0ecb04ba-536b-4eb9-bfe5-121249bdbc06",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 75,
+          "command_id": "8c2f582e-3a10-4dbc-8983-6ec0b7b8daf5",
+          "operation": "update",
+          "reason": "Issue monitoring",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "783d9f9d-c881-4aeb-9da7-301c29f2c5a6",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "monitoring",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": "2026-10-17T15:30:00.000000Z",
+            "update_text": "Synthetic workaround update",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "0ecb04ba-536b-4eb9-bfe5-121249bdbc06",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 76,
+          "command_id": "783d9f9d-c881-4aeb-9da7-301c29f2c5a6",
+          "operation": "update",
+          "reason": "Issue update recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "38226451-2b51-4f17-8a37-d04fb21a2d02",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "resolved",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "0ecb04ba-536b-4eb9-bfe5-121249bdbc06",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 77,
+          "command_id": "38226451-2b51-4f17-8a37-d04fb21a2d02",
+          "operation": "update",
+          "reason": "Issue resolved; Issue follow-up updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "df571a8a-bc97-4537-beb0-ce924bc8fe16",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": null,
+            "corrected_update_at": null
+          },
+          "record_id": "0ecb04ba-536b-4eb9-bfe5-121249bdbc06",
+          "version": 5,
+          "previous_version": 4,
+          "journal_seq": 78,
+          "command_id": "df571a8a-bc97-4537-beb0-ce924bc8fe16",
+          "operation": "update",
+          "reason": "Issue reopened",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "cc2fd921-4d15-4176-81c1-f8632ea82c58",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "issue",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio problem 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "issue",
+            "status": "reopened",
+            "priority": null,
+            "mitigation": "workaround",
+            "functional_area": null,
+            "responsible_party": null,
+            "follow_up_at": null,
+            "update_text": "Synthetic corrected workaround message",
+            "capability_id": null,
+            "call_id": null,
+            "conference_id": null,
+            "transport": null,
+            "corrects_version": 3,
+            "corrected_update_at": "2026-10-17T16:00:00.000000Z"
+          },
+          "record_id": "0ecb04ba-536b-4eb9-bfe5-121249bdbc06",
+          "version": 6,
+          "previous_version": 5,
+          "journal_seq": 79,
+          "command_id": "cc2fd921-4d15-4176-81c1-f8632ea82c58",
+          "operation": "update",
+          "reason": "Issue update corrected",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "0b273903-9d5b-4de0-bbd4-cb924a9d7ebf",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "transport_decision",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic IPTV 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "transport_decision",
+            "services": [
+              {
+                "row_id": "1971b017-5095-46ad-a0b5-ded88977cbb8",
+                "service": "Synthetic IPTV 844",
+                "intended": null,
+                "requested": null,
+                "applied": {
+                  "transport": "Ka",
+                  "time": {
+                    "at": null,
+                    "precision": "unknown"
+                  }
+                },
+                "checked": null
+              }
+            ],
+            "reason": "",
+            "call_id": null,
+            "conference_id": null
+          },
+          "record_id": "8966668f-0eff-476f-b4da-0e9df28ebdbd",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 80,
+          "command_id": "0b273903-9d5b-4de0-bbd4-cb924a9d7ebf",
+          "operation": "create",
+          "reason": "Transport decision recorded",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "fe58a40a-ad4b-415c-bc5a-511b962ee3ce",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "journal_entry",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic audio 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "capability_assessment",
+            "functional_status": "degraded",
+            "redundancy_status": "unknown",
+            "functional_observed_at": "2026-10-17T16:00:00.000000Z",
+            "redundancy_observed_at": null,
+            "functional_time_precision": "exact",
+            "redundancy_time_precision": "unknown"
+          },
+          "record_id": "112f07b3-816d-4caf-b6b2-e81baa06a34a",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 81,
+          "command_id": "fe58a40a-ad4b-415c-bc5a-511b962ee3ce",
+          "operation": "create",
+          "reason": null,
+          "reason_origin": null,
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    }
+  ]
+}

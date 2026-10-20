@@ -1,0 +1,63 @@
+All done! ✨ 🍰 ✨
+773 files would be left unchanged.
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/operator/test_author_labels.py:3:1
+  |
+1 |   """Optional API labels remain unverified attribution, never backend identity."""
+2 |
+3 | / from copy import deepcopy
+4 | | from uuid import uuid4
+5 | |
+6 | | import pytest
+7 | | from tests.operator.api_helpers import BASE, create, headers
+8 | | from tests.operator.test_call_api import call_data
+  | |__________________________________________________^
+help: Organize imports
+  |
+6 | import pytest
+7 +
+8 | from tests.operator.api_helpers import BASE, create, headers
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/operator/test_call_api.py:3:1
+  |
+1 |   """Call API defaults, corrections and immutable receipt contracts."""
+2 |
+3 | / from copy import deepcopy
+4 | | from uuid import uuid4
+5 | |
+6 | | import pytest
+7 | | from tests.operator.api_helpers import BASE, create, headers
+  | |____________________________________________________________^
+help: Organize imports
+  |
+6 | import pytest
+7 +
+8 | from tests.operator.api_helpers import BASE, create, headers
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/operator/test_parity_lifecycle.py:3:1
+  |
+1 |   """Previously uncovered public typed removal/restoration and immutable history."""
+2 |
+3 | / from copy import deepcopy
+4 | |
+5 | | import pytest
+6 | | from tests.operator.api_helpers import BASE, create, headers
+7 | | from tests.operator.test_capability_api import assessment
+8 | | from tests.operator.test_conference_api import conference_data
+9 | | from tests.operator.test_transport_contract import decision, row
+  | |________________________________________________________________^
+help: Organize imports
+  |
+5 | import pytest
+6 +
+7 | from tests.operator.api_helpers import BASE, create, headers
+  |
+
+Found 3 errors.
+[*] 3 fixable with the `--fix` option.
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ uv run --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/backend/starlink-location) $ uv run --with-requirements requirements-dev.txt ruff check app tests

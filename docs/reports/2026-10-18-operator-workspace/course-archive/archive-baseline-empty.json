@@ -1,0 +1,27 @@
+{
+  "identity": {
+    "origin": "http://127.0.0.1:56533",
+    "fixtureVersion": 1,
+    "storeId": "5c7d6f6a-40b3-46cc-bb55-fab90211f0b6",
+    "epoch": "cfa8e1ad-0f27-469e-99ec-e8892f130ea0",
+    "missionId": "4063022a-14a6-5c70-94b0-1d790a01311b"
+  },
+  "destination": {
+    "health": {
+      "schema_version": 1,
+      "ready": true,
+      "store_id": "1e387dd3-fe43-4f81-b4af-fc41c91bf852",
+      "api_epoch": "22bda13c-3ffb-4d05-8023-f1d61a376d2a",
+      "source_mode": "simulation",
+      "simulation_run_id": "synthetic-operator-demo-v1",
+      "clock_regression": false,
+      "error_code": null,
+      "enabled": true
+    },
+    "H": 0,
+    "records": [],
+    "history": [],
+    "missions": [],
+    "planFiles": []
+  }
+}

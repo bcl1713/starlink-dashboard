@@ -1,0 +1,35 @@
+{
+  "candidate": "4bd49cf06b7130a5dcdf752cc51e3140cdfdc940",
+  "status": "passed",
+  "source": "local cached Chromium over CDP; production Docker images and Nginx",
+  "download_manifest": {
+    "artifact_kind": "telemetry",
+    "legs": [
+      {
+        "checksum": {
+          "events.csv": "29ccb1bf217fe26fb1de950dc58438849ff64c2ce0e7ff39bcaa978acb3f4660",
+          "observations.csv": "1f033fb38cfbc65ef6c4ea08f596540c95f2295a2e35130feb0f05fc6e82c618"
+        },
+        "complete": false,
+        "end": "2026-10-16T14:25:00+00:00",
+        "leg_id": "local-leg",
+        "path": "legs/001",
+        "revision": "8a82d425b7205b34c2e2d619cbab65edc9148e6b897e975a448e149f71dc56e9",
+        "start": "2026-10-16T12:35:00+00:00"
+      }
+    ],
+    "mission_id": "browser-flight-events",
+    "partial": true,
+    "schema_version": 1,
+    "source_mode": "live"
+  },
+  "cleanup": {
+    "compose_exit": 0,
+    "remaining": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "processes_reaped": true
+  }
+}

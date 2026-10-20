@@ -183,3 +183,48 @@ test('map_raster_tracks_final_pagination', async () => {
     );
   }
 });
+
+test('row fitting leaves print glyph clearance without reducing the 9pt minimum', async () => {
+  const { fitBriefingRows } = await import('./briefing-mission-layout.mjs');
+  const rows = [100, 160].map((width) => {
+    const row = { style: { fontSize: '' }, cells: [] };
+    row.cells = [{ clientWidth: 100, row, width }];
+    return row;
+  });
+  const page = {
+    evaluate: async (callback) => {
+      const saved = [globalThis.document, globalThis.getComputedStyle];
+      globalThis.document = {
+        querySelectorAll: () => rows,
+        createRange: () => {
+          let cell;
+          return {
+            selectNodeContents: (value) => {
+              cell = value;
+            },
+            getBoundingClientRect: () => ({
+              width:
+                (cell.width * (parseFloat(cell.row.style.fontSize) || 16)) / 16,
+            }),
+          };
+        },
+      };
+      globalThis.getComputedStyle = (element) => ({
+        fontSize: element.style?.fontSize || '16px',
+        paddingLeft: '0px',
+        paddingRight: '0px',
+      });
+      try {
+        return callback();
+      } finally {
+        [globalThis.document, globalThis.getComputedStyle] = saved;
+      }
+    },
+  };
+  await fitBriefingRows(page, { workRemainingMs: () => 1000 });
+  assert.ok(
+    parseFloat(rows[0].style.fontSize) <= 15.3,
+    'DOM-perfect fit must leave at least 4px for printed glyphs'
+  );
+  assert.equal(rows[1].style.fontSize, '12px');
+});

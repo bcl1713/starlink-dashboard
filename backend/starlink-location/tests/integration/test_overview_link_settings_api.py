@@ -357,3 +357,178 @@ def test_visibility_updates_require_boolean_confirmation(client, field, value):
     before = client.get(URL).json()
     assert client.put(URL, json={field: value}).status_code == 422
     assert client.get(URL).json() == before
+
+
+def test_conditional_switches_merge_disjoint_edits_and_reject_stale_values(client):
+    assert (
+        client.put(
+            URL,
+            json={
+                "starshield_link_enabled": False,
+                "expected_values": {"starshield_link_enabled": True},
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.put(
+            URL,
+            json={
+                "x_band_link_enabled": False,
+                "expected_values": {"x_band_link_enabled": True},
+            },
+        ).status_code
+        == 200
+    )
+    response = client.put(
+        URL,
+        json={
+            "starshield_link_enabled": True,
+            "expected_values": {"starshield_link_enabled": True},
+        },
+    )
+    assert response.status_code == 409
+    assert client.get(URL).json()["starshield_link_enabled"] is False
+    assert client.get(URL).json()["x_band_link_enabled"] is False
+
+
+@pytest.mark.parametrize(
+    "expected",
+    [
+        {},
+        {"unknown": True},
+        {"x_band_link_enabled": True},
+        {"starshield_link_enabled": 1},
+    ],
+)
+def test_conditional_updates_require_matching_strict_fields(client, expected):
+    assert (
+        client.put(
+            URL, json={"starshield_link_enabled": False, "expected_values": expected}
+        ).status_code
+        == 422
+    )
+
+
+def test_presets_roundtrip_revision_conflict_restart_and_apply(client, tmp_path):
+    url = "/api/overview-links/presets"
+    assert client.get(url).json() == {
+        "normal": None,
+        "communications": None,
+        "weather": None,
+    }
+    bundle = {"latency_panel_enabled": False, "legend_enabled": True}
+    saved = client.put(
+        f"{url}/weather", json={"settings": bundle, "expected_version": 0}
+    )
+    assert saved.status_code == 200
+    assert saved.json() == {"version": 1, "settings": bundle}
+    assert (
+        client.get(URL).json()["latency_panel_enabled"] is True
+    )  # saving is not applying
+    assert (
+        client.put(
+            f"{url}/weather",
+            json={"settings": {"legend_enabled": False}, "expected_version": 0},
+        ).status_code
+        == 409
+    )
+    overview_link_settings.set_overview_link_settings_store(
+        OverviewLinkSettingsStore(tmp_path / "overview-links.json")
+    )
+    assert client.get(url).json()["weather"] == saved.json()
+    applied = client.put(
+        URL,
+        json={
+            **bundle,
+            "expected_values": {"latency_panel_enabled": True, "legend_enabled": True},
+        },
+    )
+    assert applied.status_code == 200
+    assert applied.json()["latency_panel_enabled"] is False
+    assert client.get(url).json()["weather"] == saved.json()
+
+
+@pytest.mark.parametrize(
+    "name,payload",
+    [
+        ("unknown", {"settings": {"legend_enabled": True}, "expected_version": 0}),
+        ("normal", {"settings": {"fictional_layer": True}, "expected_version": 0}),
+        ("normal", {"settings": {}, "expected_version": 0}),
+        ("normal", {"settings": {"legend_enabled": 1}, "expected_version": 0}),
+        ("normal", {"settings": {"legend_enabled": True}, "expected_version": -1}),
+    ],
+)
+def test_presets_reject_invalid_names_fields_and_versions(client, name, payload):
+    assert (
+        client.put(f"/api/overview-links/presets/{name}", json=payload).status_code
+        == 422
+    )
+
+
+def test_preset_write_failure_keeps_previous_bundle(client, monkeypatch):
+    url = "/api/overview-links/presets/normal"
+    saved = client.put(
+        url, json={"settings": {"legend_enabled": False}, "expected_version": 0}
+    )
+    assert saved.status_code == 200
+
+    def fail_replace(*args):
+        raise PermissionError("synthetic write failure")
+
+    monkeypatch.setattr("app.services.overview_link_settings.os.replace", fail_replace)
+    assert (
+        client.put(
+            url, json={"settings": {"legend_enabled": True}, "expected_version": 1}
+        ).status_code
+        == 503
+    )
+    assert client.get("/api/overview-links/presets").json()["normal"] == saved.json()
+
+
+def test_preset_retains_display_weather_only_and_legacy_compatibility(client):
+    weather = {
+        "radar": True,
+        "metar": True,
+        "taf": False,
+        "sigmet": True,
+        "sigmet_intersecting_only": True,
+        "winds": True,
+        "temperature": False,
+    }
+    response = client.put(
+        "/api/overview-links/presets/weather",
+        json={
+            "settings": {"legend_enabled": False},
+            "weather_visibility": weather,
+            "expected_version": 0,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["weather_visibility"] == weather
+    assert (
+        client.get("/api/overview-links/presets").json()["weather"] == response.json()
+    )
+    for invalid in [
+        {**weather, "temperature": True},
+        {**weather, "gfs_selection": {}},
+        {**weather, "provider_key": "secret"},
+    ]:
+        rejected = client.put(
+            "/api/overview-links/presets/weather",
+            json={
+                "settings": {"legend_enabled": True},
+                "weather_visibility": invalid,
+                "expected_version": 1,
+            },
+        )
+        assert rejected.status_code == 422
+    assert (
+        client.get("/api/overview-links/presets").json()["weather"] == response.json()
+    )
+    legacy = client.put(
+        "/api/overview-links/presets/normal",
+        json={"settings": {"legend_enabled": True}, "expected_version": 0},
+    )
+    assert legacy.status_code == 200
+    assert "weather_visibility" not in legacy.json()

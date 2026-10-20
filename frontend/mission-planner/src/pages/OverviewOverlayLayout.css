@@ -656,3 +656,84 @@
   font-size: 12px;
   padding: 6px;
 }
+
+/* Only information panels reserve a side rail. Corner actions and the display
+   identity float over the map when the information panels are hidden.
+   Keep the right-panel content test in sync with useOverviewLayout. */
+.overview-page[data-layout='desktop'] {
+  --overview-arrival-left: 20px;
+  --overview-arrival-right: 20px;
+}
+.overview-page[data-layout='desktop']:has(.overview-metrics-overlays) {
+  --overview-arrival-left: 480px;
+}
+.overview-page[data-layout='desktop']:has(
+    .overview-satellite-overlays,
+    .overview-starshield-advisory,
+    .overview-map-overlays > :not(.overview-display-label)
+  ) {
+  --overview-arrival-right: 360px;
+}
+.overview-page[data-layout='desktop'] .overview-arrival-overlays {
+  left: var(--overview-arrival-left);
+  right: var(--overview-arrival-right);
+}
+.overview-page[data-layout='landscape']:not(
+    :has(
+      .overview-metrics-overlays,
+      .overview-satellite-overlays,
+      .overview-starshield-advisory,
+      .overview-map-overlays > :not(.overview-display-label)
+    )
+  ) {
+  .overview-overlay-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .overview-sidebar {
+    grid-column: 1;
+    justify-self: end;
+    width: clamp(240px, 24vw, 320px);
+    overflow: visible;
+    pointer-events: none;
+  }
+  .overview-right-overlays {
+    flex: 1;
+    pointer-events: none;
+  }
+  .overview-map-overlays {
+    margin-top: auto;
+  }
+}
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 600px) {
+  .overview-page[data-layout='stacked']:not(
+      :has(
+        .overview-metrics-overlays,
+        .overview-satellite-overlays,
+        .overview-starshield-advisory,
+        .overview-map-overlays > :not(.overview-display-label)
+      )
+    ) {
+    .overview-overlay-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .overview-sidebar {
+      grid-column: 1;
+      grid-row: 2 / -1;
+      justify-self: end;
+      width: clamp(220px, 30%, 280px);
+      overflow: visible;
+      pointer-events: none;
+    }
+    .overview-overlay-layout:not(:has(> .overview-top-overlays))
+      .overview-sidebar {
+      grid-row: 1 / -1;
+    }
+    .overview-right-overlays {
+      flex: 1;
+      pointer-events: none;
+    }
+    .overview-map-overlays {
+      margin-top: auto;
+    }
+  }
+}

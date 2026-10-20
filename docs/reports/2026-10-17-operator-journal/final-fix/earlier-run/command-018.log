@@ -1,0 +1,25 @@
+
+Running 1 test using 1 worker
+
+(node:1088170) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/e2e/operator-journal.spec.ts:16:1 › production desktop/mobile journal, conflict, real media 503 and exact retries (680ms)
+
+
+  1) tests/e2e/operator-journal.spec.ts:16:1 › production desktop/mobile journal, conflict, real media 503 and exact retries
+
+    Error: route.continue: Route is already handled!
+
+      37 |         new URL(route.request().url()).origin === origin ||
+      38 |         route.request().url().startsWith('data:')
+    > 39 |           ? route.continue()
+         |                           ^
+      40 |           : route.abort()
+      41 |       );
+      42 |     }
+        at /workspace/starlink-dashboard/frontend/mission-planner/tests/e2e/operator-journal.spec.ts:39:27
+
+    Error Context: ../../../../../../../../tmp/starlink-operator-362-finalfix-evidence/playwright/operator-journal-productio-56aee-media-503-and-exact-retries/error-context.md
+
+  1 failed
+    tests/e2e/operator-journal.spec.ts:16:1 › production desktop/mobile journal, conflict, real media 503 and exact retries

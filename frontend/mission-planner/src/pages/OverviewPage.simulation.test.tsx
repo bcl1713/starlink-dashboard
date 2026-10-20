@@ -15,6 +15,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, type ReactNode } from 'react';
 import { runningStatus, completedStatus } from '@/test/simulation-run-fixtures';
+import type { StatusResponse } from '@/services/status';
 import type { SimulationRunStatus } from '@/services/simulation-run';
 vi.hoisted(() => {
   vi.stubGlobal(
@@ -36,12 +37,14 @@ vi.hoisted(() => {
 });
 const state = vi.hoisted(() => ({
   run: undefined as SimulationRunStatus | undefined,
+  status: undefined as StatusResponse | undefined,
   failed: false,
   mounts: 0,
   historyReads: 0,
   routeReads: 0,
   geometry: undefined as unknown,
   solarTimes: [] as number[],
+  visibility: {} as Record<string, boolean>,
 }));
 vi.mock('@/hooks/api/useSimulationRun', () => ({
   useSimulationRun: () => ({ data: state.run, isError: state.failed }),
@@ -81,7 +84,9 @@ vi.mock('@/hooks/api/useRoutes', () => ({
     return {};
   },
 }));
-vi.mock('@/hooks/api/useStatus', () => ({ useStatus: () => ({}) }));
+vi.mock('@/hooks/api/useStatus', () => ({
+  useStatus: () => ({ data: state.status }),
+}));
 vi.mock('@/hooks/api/useOverviewHistory', () => ({
   useOverviewHistory: () => {
     state.historyReads++;
@@ -93,7 +98,7 @@ vi.mock('@/hooks/api/useSatellites', () => ({
 }));
 vi.mock('@/hooks/api/useActiveXLink', () => ({ useActiveXLink: () => ({}) }));
 vi.mock('@/hooks/api/useOverviewLinkSettings', () => ({
-  useOverviewLinkSettings: () => ({}),
+  useOverviewLinkSettings: () => ({ data: state.visibility }),
 }));
 vi.mock('@/hooks/useOverviewAdsbLayer', () => ({
   useOverviewAdsbLayer: () => ({ contacts: [] }),
@@ -125,12 +130,14 @@ import { OverviewPage } from './OverviewPage';
 afterEach(cleanup);
 beforeEach(() => {
   state.run = undefined;
+  state.status = undefined;
   state.failed = false;
   state.mounts = 0;
   state.historyReads = 0;
   state.routeReads = 0;
   state.geometry = undefined;
   state.solarTimes = [];
+  state.visibility = {};
 });
 function mount() {
   const client = new QueryClient({
@@ -145,15 +152,18 @@ function mount() {
     rerenderOverview: () => view.rerender(wrap(<OverviewPage />)),
   };
 }
-it('hides all five network cards and header while retaining Canvas and history', () => {
+it('keeps configured network cards visible with unavailable measurements during replay', () => {
   const view = mount(),
     canvas = screen.getByTestId('canvas');
   expect(screen.getByLabelText('Overview metric history')).toBeVisible();
   expect(screen.getByLabelText('Network history context')).toBeVisible();
   state.run = runningStatus();
   view.rerenderOverview();
-  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
-  expect(screen.queryByLabelText('Network history context')).toBeNull();
+  expect(screen.getByLabelText('Overview metric history')).toBeVisible();
+  expect(screen.getByLabelText('Network history context')).toBeVisible();
+  expect(
+    screen.getByText('Paced simulation · network measurements unavailable')
+  ).toBeVisible();
   expect(screen.queryByLabelText('Simulation run')).toBeNull();
   expect(screen.getByText('SIMULATED TIME')).toBeVisible();
   expect(screen.getByTestId('canvas')).toBe(canvas);
@@ -162,7 +172,7 @@ it('hides all five network cards and header while retaining Canvas and history',
   expect(state.routeReads).toBeGreaterThan(1);
   state.failed = true;
   view.rerenderOverview();
-  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
+  expect(screen.getByLabelText('Overview metric history')).toBeVisible();
   state.run = completedStatus();
   state.failed = false;
   view.rerenderOverview();
@@ -176,7 +186,7 @@ it('hides all five network cards and header while retaining Canvas and history',
   expect(state.mounts).toBe(1);
 });
 it.each(['cancelled', 'failed', 'idle'] as const)(
-  'restores the network rail in %s state',
+  'preserves configured network rail visibility in %s state',
   (terminal) => {
     state.run = runningStatus();
     const view = mount();
@@ -204,4 +214,91 @@ it('places simulated time below the clocks and lights the globe at mission time'
   expect(state.solarTimes.at(-1)).toBe(
     Date.parse(state.run.run!.simulation_time)
   );
+});
+
+it('preserves selected and hidden panels across replay states and failed refreshes', () => {
+  state.visibility = {
+    latency_panel_enabled: false,
+    uplink_panel_enabled: false,
+  };
+  const view = mount();
+  for (const run of [
+    runningStatus(),
+    completedStatus(),
+    { ...runningStatus(), state: 'idle' as const, run: null },
+  ]) {
+    state.run = run;
+    state.failed = true;
+    view.rerenderOverview();
+    expect(view.container.querySelectorAll('[data-metric-panel]')).toHaveLength(
+      3
+    );
+    expect(
+      view.container.querySelector('[data-metric-panel="latency"]')
+    ).toBeNull();
+    expect(
+      view.container.querySelector('[data-metric-panel="uplink"]')
+    ).toBeNull();
+  }
+  state.visibility = {
+    latency_panel_enabled: false,
+    downlink_panel_enabled: false,
+    uplink_panel_enabled: false,
+    packet_loss_panel_enabled: false,
+    obstruction_panel_enabled: false,
+  };
+  view.rerenderOverview();
+  expect(screen.queryByLabelText('Overview metric history')).toBeNull();
+  expect(state.mounts).toBe(1);
+});
+
+it('shows ordinary simulated metrics, makes paced performance unavailable, and restores them after ordinary activation', () => {
+  state.run = { ...runningStatus(), state: 'idle', run: null };
+  state.status = {
+    timestamp: '2026-10-05T00:00:00Z',
+    metric_source: 'simulated',
+    metric_availability: { latency_ms: true },
+    network: { latency_ms: 42 },
+  };
+  const view = mount();
+  const latency = screen.getByLabelText('Network latency history');
+  expect(latency.querySelector('strong')?.textContent).toBe('42 ms');
+  expect(screen.getByText('SIMULATED DATA')).toBeVisible();
+  state.run = runningStatus();
+  view.rerenderOverview();
+  expect(
+    screen.getByLabelText('Network latency history').querySelector('strong')
+      ?.textContent
+  ).toBe('Unavailable');
+  state.status = {
+    ...state.status,
+    metric_source: 'unavailable',
+    metric_availability: {},
+    network: { latency_ms: null },
+  };
+  view.rerenderOverview();
+  state.run = { ...runningStatus(), state: 'idle', run: null };
+  state.status = {
+    ...state.status,
+    metric_source: 'simulated',
+    metric_availability: { latency_ms: true },
+    network: { latency_ms: 43 },
+  };
+  view.rerenderOverview();
+  expect(
+    screen.getByLabelText('Network latency history').querySelector('strong')
+      ?.textContent
+  ).toBe('43 ms');
+  state.run = { ...state.run, service_mode: 'live' };
+  state.status = {
+    ...state.status,
+    metric_source: 'observed',
+    network: { latency_ms: 7 },
+  };
+  view.rerenderOverview();
+  expect(
+    screen.getByLabelText('Network latency history').querySelector('strong')
+      ?.textContent
+  ).toBe('7 ms');
+  expect(screen.queryByText('SIMULATED DATA')).toBeNull();
 });

@@ -1,0 +1,75 @@
+# Private guide controls checkpoint
+
+Candidate `f4e7415537a9e298d443915ca98e98042d47e94b`; image IDs and source
+archive hash recorded automatically before browser execution. Four production
+browser tests passed in1.7minutes: two-leg/guide/actual Overview
+visibility1.2minutes, guided lost-receipt recovery6.7seconds, retained
+closed-conference milestones18.2seconds, and packaged Help/print3.6seconds.
+
+At1920×1080,390×844,844×390, Help opens the context-gated private guide; reset
+progress, explicit evidence check, Next, actual Communications navigation, Skip,
+Back and dismissal pass. Incomplete and Skipped remain distinct. This same test
+then passes normal two-leg replay, actual current-leg X/Ka/PoP source checks,
+future Next alongside overdue work, retained editor focus and
+journal/acknowledgment restart continuity.
+
+The preceding cc7b5719 run exposed a cold-load null-evidence crash. Trace
+confirmed missing identities compared equal before reading absent evidence.H. A
+real cold-workspace component regression and explicit identity guard fix it.
+That failed run and this successful run both removed all owned
+containers/networks/disposable volumes.
+
+Opening lesson controls now collapses instructions into a resumable panel.
+Compact screenshots show Create call/Create conference visible at portrait and
+landscape sizes. The airborne guide explicitly verifies first-leg replay and
+current model sources from normal service responses. These are focused
+screenshots, not final whole-product visual approval. Complete T01–T11
+evidence/failure adapters, full parity, original ZIP/import validation, final
+manual content reconciliation and uncoached human sessions remain required. No
+feature cutover or merge approval is claimed.
+
+This rerun additionally confirms the stricter receipt/history record comparison
+against actual API data and separate evidence-error handling. Unit regressions
+cover retained historical conference/transport/issue milestones, learner edits
+of planned prerequisites without creation credit, valid unknown times,
+conflicting immutable responses, and incomplete/stale evidence. Those
+regressions do not substitute for the remaining full guided lifecycle/failure
+journeys.
+
+The recovery exercise commits a real note, drops its HTTP response, checks
+backend evidence while uncertain, reloads, and retries through the existing
+pending owner. The identical body/key/epoch yields the original receipt and one
+immutable journal version. The guide recognizes only the lost-receipt outcome
+and leaves the overall T08 lesson incomplete. Raw pre-retry evidence resumes
+from identity-scoped local progress; no training write API or second sender is
+used. The preceding r9 recovery test failed on its label locator; the actual
+accessible Lesson combobox lookup fixes the test. Both runs cleaned all owned
+runtime resources.
+
+The conference case uses13 actual UI writes: a
+created/established/verified/interrupted/restored/closed bridge (six immutable
+versions), two associated calls and three customer intervals including a
+distinct linked resume. Seven automatic T03 outcomes remain verified after
+closure, reload and private backend restart. The bridge-understanding
+observation remains Needs evidence and T03 stays Incomplete. No retained React
+receipt is required after the restart. The two-leg case additionally opens
+actual Overview: five default network cards remain visible during running; two
+are deliberately hidden and the three selected cards persist through
+completed/second-running/restart-idle, always suppressing synthetic measured
+values. All owned containers/networks/disposable volumes were removed. Packaged
+Help/print checks now pass at this candidate.
+
+The exact retry case additionally saves an unrelated later note, verifies the
+original accepted tray entry has retired, reloads again, and rechecks the
+original lost-receipt outcome against persisted raw reply/attempt facts and
+authoritative complete history. The third observed POST in the proof is that
+explicitly separate later note, not a third exact-retry attempt. T08 remains
+Incomplete.
+
+Packaged Help runs with external origins blocked. The same-origin script-free
+guide loads all three figures, resolves section links, returns to the retained
+unsent draft, and opens the quick reference at mobile size. Actual Chromium A4
+output is two pages; the retained PDF is the operator reference, not the mission
+customer briefing. Only the two static documents allow same-origin framing; the
+application retains frame-ancestors none. This does not establish uncoached
+human usability or final manual completeness.

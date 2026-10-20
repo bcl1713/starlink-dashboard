@@ -175,7 +175,7 @@ describe('arrival derivation', () => {
       now
     );
     expect(view.sections.at(-1)?.unavailable).toBe(
-      'Arrival eligibility unavailable'
+      'Route position unavailable — ETA unavailable'
     );
   });
   it('reports absent or ambiguous destinations and missing route context', () => {
@@ -226,4 +226,44 @@ it.each([
   [5_940_000, '1 HR 39 MIN'],
 ])('formats duration %i', (ms, expected) => {
   expect(formatCountdown(ms)).toBe(expected);
+});
+
+it('shows taxi out and arrival ground phases independently of legacy phase', () => {
+  for (const [movement, label] of [
+    ['taxi_out', 'TAXI OUT'],
+    ['probable_landed_rollout', 'LANDED · INFERRED'],
+    ['taxi_in', 'TAXI IN'],
+    ['parked', 'PARKED'],
+  ] as const) {
+    const state = deriveArrivalPanel(
+      response({
+        movement_state: movement,
+        movement_uncertain: false,
+        movement_observed_at: new Date(now).toISOString(),
+        on_blocks_at:
+          movement === 'parked' ? new Date(now).toISOString() : null,
+      }),
+      now
+    );
+    expect(state.sections[0].label).toBe(label);
+    expect(state.sections[0].timing).toBeNull();
+  }
+});
+
+it('explains missing destination route projection without claiming it was passed', () => {
+  const view = deriveArrivalPanel(
+    response({
+      pois: [
+        poi('landing', 100, {
+          kind: 'arrival',
+          upcoming: false,
+          projected_route_progress: null,
+        }),
+      ],
+    }),
+    now
+  );
+  expect(view.sections.at(-1)?.unavailable).toBe(
+    'Destination route position unavailable'
+  );
 });

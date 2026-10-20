@@ -1,0 +1,83 @@
+{
+  "missionId": "transport-check-0fc51223-ff97-46f0-897e-53b9f65db6ef",
+  "checks": [
+    {
+      "viewport": {
+        "viewport": 1920,
+        "document": 1920,
+        "body": 1920
+      }
+    },
+    {
+      "viewport": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    {
+      "viewport": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    "ordinary active mission and leg inherited on Apply",
+    "custom catalogs, explicit Apply, accepted visibility, history, reload, mission switch, archived display/restore, ordinary simulation, desktop/mobile no overflow",
+    {
+      "cleanupRecord": "9e0f70dc-de3e-4735-902f-0fd2e5ef30b3",
+      "status": 200
+    },
+    {
+      "cleanupRecord": "6a9529e2-7147-4b7d-984f-1320ae9aa344",
+      "status": 200
+    },
+    {
+      "cleanupRecord": "db127430-fdb8-4e04-9bd5-3e1b06bb6dd0",
+      "status": 200
+    },
+    {
+      "cleanupRecord": "e12b9d09-8f5d-4fe6-bce8-7408f543f7ab",
+      "status": 200
+    }
+  ],
+  "saves": [
+    {
+      "httpMs": 55,
+      "visibleAfterAcceptanceMs": 21,
+      "record": "9e0f70dc-de3e-4735-902f-0fd2e5ef30b3"
+    },
+    {
+      "httpMs": 44,
+      "visibleAfterAcceptanceMs": 19,
+      "record": "6a9529e2-7147-4b7d-984f-1320ae9aa344"
+    },
+    {
+      "httpMs": 35,
+      "visibleAfterAcceptanceMs": 16,
+      "record": "db127430-fdb8-4e04-9bd5-3e1b06bb6dd0"
+    },
+    {
+      "httpMs": 174,
+      "visibleAfterAcceptanceMs": 52,
+      "record": "e12b9d09-8f5d-4fe6-bce8-7408f543f7ab"
+    }
+  ],
+  "context": {
+    "state": "available",
+    "mission_id": "41823245-3ab0-4860-aa97-9907b1eabc56",
+    "mission_name": "27-02",
+    "leg_id": "8b7cc90c-4b68-44a4-bf95-66b1bdfe1d6c",
+    "leg_name": "KADW\u2013RPLL",
+    "phase": "in_flight",
+    "source_mode": "simulation",
+    "replay_run_id": null,
+    "operating_context_id": "ordinary:eb2607e0-7dae-42b3-8949-4239e4a3263c:1:4f9b145c78884cc7999b389bd1047f72"
+  },
+  "cleanupMissionStatus": 204,
+  "implementation_commit": "d568010c91c86502897273af0e32b8a3ce244a5a",
+  "backend_tests": 48,
+  "frontend_tests": 51,
+  "runtime": "production Dockerfiles and Nginx, retained nonproduction server, real APIs, no intercepted fixtures",
+  "cleanup": "All owned reports soft-removed, test mission deleted, test catalog entries archived, browser closed. Existing mission activation and all volumes preserved."
+}

@@ -1,0 +1,2 @@
+{"synthetic": true, "source_format": "synthetic-operational-format", "relation_to_replay": "independent archive exercise; not replay measurements or aircraft data", "existing_fixture": "tools/acceptance/operator-journal/scenario.py:flight_observations/SyntheticRawReader", "mission_id": "4063022a-14a6-5c70-94b0-1d790a01311b", "sealedLegs": 2}
+

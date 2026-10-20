@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from app.mission.input_admission import model_input_write
 from app.mission.models import MissionLeg, MissionLegTimeline
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
@@ -46,6 +47,7 @@ def build_mission_timeline(
     return artifacts.timeline, artifacts.summary
 
 
+@model_input_write
 def _get_default_coverage_sampler() -> CoverageSampler | None:
     global _COVERAGE_SAMPLER
     if _COVERAGE_SAMPLER is not None:

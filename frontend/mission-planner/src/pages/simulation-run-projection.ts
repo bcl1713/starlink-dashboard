@@ -49,3 +49,16 @@ export function projectMissionTime(
     Math.max(projected, previousDisplayTimeMs ?? observed)
   );
 }
+
+/** Advisory cursors retain the captured terminal clock after replay completes. */
+export function popDisplayTime(
+  status: SimulationRunStatus | undefined,
+  missionNowMs: number,
+  realNowMs: number
+): number {
+  if (status?.state === 'completed' && status.run) {
+    const terminal = Date.parse(status.run.simulation_time);
+    return Number.isFinite(terminal) ? terminal : realNowMs;
+  }
+  return status?.state === 'running' ? missionNowMs : realNowMs;
+}

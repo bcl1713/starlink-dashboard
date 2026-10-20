@@ -1,0 +1,312 @@
+{
+  "candidateSha": "fe2f0399709074b8ef26c03d58a5b3e3c185b274",
+  "project": "starlink-operator-issue367-a12",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-issue367-a12-backend:fe2f0399709074b8ef26c03d58a5b3e3c185b274",
+      "id": "sha256:d099ce0c5125090d48a836c58ec7aca03982118c279a80b88fb156c258222341",
+      "revision": "fe2f0399709074b8ef26c03d58a5b3e3c185b274"
+    },
+    "frontend": {
+      "tag": "starlink-operator-issue367-a12-frontend:fe2f0399709074b8ef26c03d58a5b3e3c185b274",
+      "id": "sha256:eb042a1bde6ea64c06d5fcffeb7c074815bc01162f73f1f133f09c1374aa46b8",
+      "revision": "fe2f0399709074b8ef26c03d58a5b3e3c185b274"
+    }
+  },
+  "sourceArchiveSha256": "07a5ecbc03e7211511dfb8bac11c1f5f9eb643ee5bbaf142b5605b7c4df752cd",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  },
+  "qualification": {
+    "browser": {
+      "journal": {
+        "synthetic": true,
+        "clock": "2026-10-17T16:00:00Z",
+        "browser": {
+          "protocolVersion": "1.3",
+          "product": "HeadlessChrome/153.0.8010.12",
+          "revision": "@971a7443b0c9b0a9b2860529b33331b76077ec62",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+          "jsVersion": "15.3.76.4"
+        },
+        "saveStatus": {
+          "heldRealResponse": true,
+          "savingAnnounced": true,
+          "receiptAcknowledged": true
+        },
+        "historyValues": {
+          "originalEnd": "15:45 UTC",
+          "correctedEnd": "15:35 UTC",
+          "originalLeg": "synthetic-leg-1",
+          "correctedLeg": "synthetic-leg-2",
+          "authorVisible": true
+        },
+        "conflict": {
+          "status": 409,
+          "draftRetained": true,
+          "explicitReconciliation": true
+        },
+        "actualMedia503": {
+          "requests": [
+            {
+              "key": "4dbba486-8fb5-48aa-b858-15a9c2aa3ed0",
+              "epoch": "04f857b5-cdc0-46a3-b25d-35cdbd3d811d",
+              "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic mobile retained 503 draft\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+              "method": "POST",
+              "url": "http://127.0.0.1:53183/api/v2/operator/records"
+            },
+            {
+              "key": "4dbba486-8fb5-48aa-b858-15a9c2aa3ed0",
+              "epoch": "04f857b5-cdc0-46a3-b25d-35cdbd3d811d",
+              "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic mobile retained 503 draft\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+              "method": "POST",
+              "url": "http://127.0.0.1:53183/api/v2/operator/records"
+            }
+          ],
+          "failureBody": {
+            "error": {
+              "code": "store_unavailable",
+              "message": "Operator store unavailable",
+              "retryable": false
+            },
+            "request_id": "22f57279-ad25-487c-a969-d79366b0fbad"
+          },
+          "counts": {
+            "receipts": 1,
+            "revisions": 1
+          },
+          "retainedDraft": true
+        },
+        "browserResponseLossInjection": {
+          "mechanism": "route.fetch committed backend then route.abort acknowledgment",
+          "requests": [
+            {
+              "key": "2531b68c-e79c-4d31-b762-2975dac26d08",
+              "epoch": "04f857b5-cdc0-46a3-b25d-35cdbd3d811d",
+              "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic lost acknowledgment\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+              "method": "POST",
+              "url": "http://127.0.0.1:53183/api/v2/operator/records"
+            },
+            {
+              "key": "2531b68c-e79c-4d31-b762-2975dac26d08",
+              "epoch": "04f857b5-cdc0-46a3-b25d-35cdbd3d811d",
+              "body": "{\"schema_version\":1,\"record_type\":\"journal_entry\",\"mission_id\":\"synthetic-mission-a\",\"leg_id\":null,\"scope\":\"mission\",\"time\":{\"occurred_at\":null,\"ended_at\":null,\"precision\":\"unknown\",\"end_state\":\"unknown\",\"planned_start_at\":null,\"planned_end_at\":null},\"payload\":{\"schema_version\":1,\"entry_type\":\"note\",\"title\":\"Synthetic lost acknowledgment\",\"note\":\"\",\"previous_leg_id\":null,\"next_leg_id\":null}}",
+              "method": "POST",
+              "url": "http://127.0.0.1:53183/api/v2/operator/records"
+            }
+          ],
+          "onePersistedRevision": true
+        },
+        "dialogs": 0,
+        "recordIds": {
+          "late": "e387dc45-e740-4e4c-9e1c-ced1c2059808",
+          "ended": "635a1684-4d94-4d56-901e-63f5a22355b4"
+        },
+        "baseline": {
+          "desktop": {
+            "/overview": 200,
+            "/missions": 200,
+            "/configuration": 200,
+            "/export": 200
+          },
+          "mobile": {
+            "/overview": 200,
+            "/missions": 200,
+            "/configuration": 200,
+            "/export": 200
+          }
+        }
+      },
+      "shell": {
+        "synthetic": true,
+        "clock": "2026-10-17T16:00:00Z",
+        "captures": [
+          "shell-1920x1080-preflight.png",
+          "shell-1920x1080-leg.png",
+          "shell-1920x1080-between-legs.png",
+          "shell-390x844-preflight.png",
+          "shell-390x844-leg.png",
+          "shell-390x844-between-legs.png",
+          "shell-844x390-preflight.png",
+          "shell-844x390-leg.png",
+          "shell-844x390-between-legs.png"
+        ],
+        "requirementOrdering": {
+          "future": "Synthetic customer coordination",
+          "overdueAttention": "Synthetic overdue coordination",
+          "bothVisibleAtAllViewports": true
+        },
+        "recovery": {
+          "failedReadVisible": true,
+          "reconnect": true,
+          "restart": true,
+          "unchangedRecords": 4,
+          "summaryRequestsOver16Seconds": 0
+        }
+      },
+      "displays": {
+        "synthetic": true,
+        "clock": "2026-10-17T16:00:00Z",
+        "captures": [
+          "display-controls-1920x1080.png",
+          "display-presets-1920x1080.png",
+          "display-controls-390x844.png",
+          "display-presets-390x844.png",
+          "display-controls-844x390.png",
+          "display-presets-844x390.png"
+        ],
+        "sameBrowserRecenterAcknowledged": true,
+        "separateBrowserCannotRecenter": true,
+        "disjointConcurrentChanges": true,
+        "conflictRejected": true,
+        "historySynced": true,
+        "overviewRenderedVisibilitySynced": true,
+        "presetRoundtrip": true,
+        "receiptRequired": true,
+        "offlineFailureDoesNotConfirm": true,
+        "unacknowledgedTimeoutAndStaleTarget": true,
+        "restartPersistence": true,
+        "browserErrors": [],
+        "completed": true
+      },
+      "communications": {
+        "synthetic": true,
+        "clock": "2026-10-17T16:00:00Z",
+        "captures": ["1920x1080", "390x844", "844x390"],
+        "duplicateSubmission": true,
+        "createReschedule": true,
+        "retrospectiveCorrection": true,
+        "removeRestore": true,
+        "conferenceIndependent": true,
+        "twoClientConflict": true,
+        "offlineRetry": true,
+        "restart": true
+      },
+      "conferences": {
+        "synthetic": true,
+        "captures": ["1920x1080", "390x844", "844x390"],
+        "joiningOrders": true,
+        "overlap": true,
+        "interruptRestore": true,
+        "reuse": true,
+        "discrepancy": true,
+        "sourceCoverage": true,
+        "twoClients": true,
+        "retryFrozenTime": true,
+        "retryConcurrentEdit": true,
+        "restart": true
+      },
+      "issues": {
+        "synthetic": true,
+        "captures": ["1920x1080", "390x844", "844x390"],
+        "descriptionOnly": true,
+        "workaroundMonitoring": true,
+        "independentCapability": true,
+        "snapshotBoundaries": true,
+        "twoClients": true,
+        "resolvedCorrection": true,
+        "correctionLineage": true,
+        "reloadFrozenRetry": true,
+        "epochQuarantine": true,
+        "restart": true,
+        "multileg": true,
+        "noReadinessInference": true
+      }
+    },
+    "failures": {
+      "crashes": [
+        {
+          "barrier": "before_commit",
+          "beforeRetryCounts": [6, 6, 6],
+          "afterRetryCounts": [7, 7, 7],
+          "walBytes": 0,
+          "childReaped": true
+        },
+        {
+          "barrier": "after_commit",
+          "beforeRetryCounts": [7, 7, 7],
+          "afterRetryCounts": [7, 7, 7],
+          "walBytes": 49472,
+          "childReaped": true
+        }
+      ],
+      "recovery": {
+        "backupH": 6,
+        "preRestoreH": 7,
+        "restoredH": 6,
+        "epochRotated": true,
+        "oldEpochRejected": true,
+        "failClosed": {
+          "missing": "store_recovery_required",
+          "schema": "unsupported_schema"
+        }
+      },
+      "media": [
+        {
+          "physicalFailure": "read-only",
+          "error": "store_unavailable",
+          "countsUnchanged": [6, 6, 6],
+          "reopenReady": true,
+          "filesystem": "private 4 MiB tmpfs"
+        },
+        {
+          "physicalFailure": "full",
+          "error": "commit_outcome_unknown",
+          "countsUnchanged": [6, 6, 6],
+          "reopenReady": true,
+          "filesystem": "private 4 MiB tmpfs"
+        }
+      ],
+      "baselinePagesAfterFailures": true
+    },
+    "issues": {
+      "synthetic": true,
+      "normalRevisionRows": 30,
+      "selectedCorrections": 3,
+      "oneLogicalMessagePerRoot": true,
+      "manualAssessmentsIndependent": true,
+      "auditRetained": true
+    },
+    "conferences": {
+      "synthetic": true,
+      "conferences": 3,
+      "resumedIntervals": 3,
+      "immutableAudit": true
+    },
+    "node": "v22.22.2",
+    "exports": {
+      "conferenceLifecycleUnchanged": true,
+      "issueCapabilityLifecycleUnchanged": true,
+      "fixture": "separately generated synthetic operational-format input; never relabeled simulation",
+      "telemetryZipSha256Before": "8420911b14d51fd63aac810d0d300e45f5618f1b2c62b62c0e20679c5ccc3f97",
+      "telemetryZipSha256After": "8420911b14d51fd63aac810d0d300e45f5618f1b2c62b62c0e20679c5ccc3f97",
+      "captureIdentitiesAndRevisionsUnchanged": true,
+      "planningCsvSemanticSha256Before": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+      "planningCsvSemanticSha256After": "3e2a4c9fdd1aa873329590bf9aa879e738699db5e3d6d5ac5ebcd218a0315b8d",
+      "planningComparison": "existing combined timeline CSV; generated-at header excluded",
+      "simulationExportRejected": true
+    },
+    "communications": {
+      "synthetic": true,
+      "correctedCalls": 3,
+      "projectionAuditVerified": true,
+      "checksums": {
+        "operations/current.json": "56630a7dae8702caa9fdd625025fa428e8e6216e380d3426b7cd283d4ccee99d",
+        "operations/activity.jsonl": "72be58a087f7d4d89beb90b837f0f35532da9387f3e2b7ac52072ae4ff2e1ec3",
+        "operations/audit.jsonl": "61797c274890fbd5523951b1b881b7f2467788ea47ee0ca9ceeed455524e7939"
+      }
+    },
+    "projectionsPassed": true
+  }
+}

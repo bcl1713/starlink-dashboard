@@ -55,12 +55,13 @@ export function useMission(id: string) {
   const client = useQueryClient();
   return useQuery({
     queryKey: ['missions', id],
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       newestMission(
-        await missionsApi.get(id),
+        await missionsApi.get(id, signal),
         client.getQueryData(['missions', id])
       ),
     enabled: !!id,
+    retry: false,
   });
 }
 

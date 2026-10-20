@@ -271,6 +271,32 @@ def test_snapshot_package_matches_fixed_clock_legacy(export_inputs, monkeypatch,
                     assert x.namelist() == y.namelist()
                     for member in x.namelist():
                         assert x.read(member) == y.read(member), (case, name, member)
+            elif case == "cached" and name.endswith("/timeline.csv"):
+                # Rebased cached forecasts cannot certify current call continuity.
+                # Every physical lane and original restriction remains identical.
+                import csv
+
+                from app.mission.exporter.csv_continuity import CONTINUITY_COLUMNS
+
+                left = list(csv.DictReader(io.StringIO(a.read(name).decode())))
+                right = list(csv.DictReader(io.StringIO(b.read(name).decode())))
+                assert len(left) == len(right)
+                for old, current in zip(left, right):
+                    assert current["Call Posture"] == "Call continuity unresolved"
+                    assert current["Call Continuity"] == "unknown"
+                    assert (
+                        current["Planned Communications Outage Seconds"] == "Unresolved"
+                    )
+                    assert {
+                        k: current[k] for k in ("X-Band", "CommKa", "StarShield")
+                    } == {k: old[k] for k in ("X-Band", "CommKa", "StarShield")}
+                    for row in (old, current):
+                        metadata = json.loads(row["Metadata"])
+                        metadata.pop("call_posture", None)
+                        row["Metadata"] = metadata
+                        for field in (*CONTINUITY_COLUMNS, "Call Posture"):
+                            row.pop(field)
+                    assert old == current
             else:
                 assert a.read(name) == b.read(name), (case, name)
 

@@ -2,19 +2,13 @@
 
 import asyncio
 import os
+import sqlite3
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -38,6 +32,7 @@ from app.api import (
     status,
     ui,
 )
+from app.api.operator import router as operator_router
 from app.api.simulation_run import router as simulation_run_router
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
@@ -57,6 +52,8 @@ from app.mission.planning.sources import SourceStore
 from app.mission.planning.store import PlanningStore
 from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
+from app.operator.clock import MissionClock
+from app.operator.runtime import OperatorRuntimeBinding
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
@@ -68,7 +65,6 @@ from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
 from app.services.aviation_weather.transport import AwcTransport
 from app.services.ground_entry_point import (
-    get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
@@ -99,6 +95,12 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -355,9 +357,7 @@ async def startup_event():
                     exc_info=True,
                 )
         else:
-            publish_ground_entry_point_metrics(
-                get_cached_ground_entry_point(include_environment_override=True)
-            )
+            publish_ground_entry_point_metrics(None)
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data
             logger.info_json("Initializing LiveCoordinator for live mode")
@@ -436,6 +436,20 @@ async def startup_event():
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
+            from app.mission.pop_status import PopStatusService
+            from app.simulation.pop import SimulationPopObservationProvider
+
+            app.state.pop_status_service = PopStatusService(
+                _route_manager,
+                _current_runtime_config,
+                observation_provider=SimulationPopObservationProvider(
+                    _pop_lifecycle_token
+                ),
+                snapshot_context_provider=_simulation_pop_context,
+            )
+            status.set_pop_service(app.state.pop_status_service)
+            if _simulation_config.mode == "simulation":
+                _publish_pop_observation(_coordinator.get_current_telemetry())
 
             # Inject into metrics_export as well
             # from app.api import metrics_export
@@ -489,6 +503,20 @@ async def startup_event():
                 exc_info=True,
             )
             raise
+
+        if active_mode == "live":
+            from app.services.flight_events.live_adapter import FlightEventRuntime
+
+            try:
+                app.state.flight_event_runtime = FlightEventRuntime(
+                    Path(os.getenv("FLIGHT_ARCHIVE_ROOT", "data/flight-events"))
+                )
+            except (OSError, sqlite3.Error, ValueError) as archive_error:
+                app.state.flight_event_runtime = None
+                logger.warning_json(
+                    "Live recording unavailable",
+                    extra_fields={"error": type(archive_error).__name__},
+                )
 
         # Initialize CommKa coverage for Grafana static file serving
         logger.info_json("Initializing CommKa satellite coverage")
@@ -546,6 +574,18 @@ async def startup_event():
             run_service.coordinator = _coordinator
         run_service.publish = _publish_replay_telemetry
         app.state.simulation_run_service = run_service
+        app.state.operator_live_source = _operator_live_source
+        app.state.operator_event_source_factory = _operator_event_sources
+        app.state.operator_binding = OperatorRuntimeBinding(
+            clock=MissionClock(_operator_mission_now),
+            context=_operator_context,
+            mission_journals=True,
+            operating_context=_operator_operating_context,
+        )
+        # This optional runtime reports its own failures; it never initializes
+        # or replaces a store as a side effect of application startup.
+        with app.state.operator_binding.access():
+            pass
 
         if _background_updates_enabled:
             run_service.wakeup = ReplayWakeup()
@@ -560,8 +600,6 @@ async def startup_event():
             _simulation_config.exports.customer_briefing_enabled
             and _background_updates_enabled
         ):
-            import sqlite3
-
             from app.mission.slide_cache.coordinator import start_runtime
 
             try:
@@ -573,6 +611,9 @@ async def startup_event():
                     "Customer PDF background preparation unavailable", exc_info=True
                 )
 
+        from types import SimpleNamespace
+
+        from app.mission.package.operations_archive import capture_archive
         from app.mission.package.preparation import ExportPreparationService
 
         app.state.export_preparation_service = ExportPreparationService(
@@ -581,6 +622,9 @@ async def startup_event():
             enabled=lambda: ConfigManager()
             .get_config()
             .exports.customer_briefing_enabled,
+            archive_capture=lambda mission_id: capture_archive(
+                SimpleNamespace(app=app), mission_id
+            ),
         )
         logger.info_json("Starlink Location Backend ready")
     except Exception as e:
@@ -597,6 +641,10 @@ async def shutdown_event():
     from app.mission.planning.deadlines import shutdown_workers
 
     await asyncio.to_thread(shutdown_workers)
+    operator_binding = getattr(app.state, "operator_binding", None)
+    if operator_binding is not None:
+        await asyncio.to_thread(operator_binding.close)
+        del app.state.operator_binding
     global _background_task, _overview_history_client
     global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
     global _overview_link_settings_store
@@ -667,6 +715,10 @@ async def shutdown_event():
         if hasattr(app.state, "overview_history_reader"):
             await app.state.overview_history_reader.aclose()
             del app.state.overview_history_reader
+        flight_event_runtime = getattr(app.state, "flight_event_runtime", None)
+        if flight_event_runtime is not None:
+            flight_event_runtime.close()
+            app.state.flight_event_runtime = None
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None
@@ -689,28 +741,207 @@ async def shutdown_event():
         )
 
 
+def _current_runtime_config():
+    """Prefer validated current config; legacy adapters use application config."""
+    getter = getattr(_coordinator, "get_config", None)
+    candidate = getter() if callable(getter) else None
+    return candidate if isinstance(candidate, SimulationConfig) else _simulation_config
+
+
+def _operator_mission_now():
+    """Read published replay time without acquiring the repository input gate."""
+    service = getattr(app.state, "simulation_run_service", None)
+    config = _current_runtime_config()
+    if config is None or config.mode != "simulation" or service is None:
+        return None
+    status = service.status()
+    if status.state in ("running", "completed") and status.run is not None:
+        return status.run.simulation_time
+    return None
+
+
+def _operator_context():
+    config = _current_runtime_config()
+    run_service = getattr(app.state, "simulation_run_service", None)
+    status = run_service.status() if run_service is not None else None
+    run = status.run if status and status.state in ("running", "completed") else None
+    return config.mode, run.run_id if run is not None else None
+
+
+def _operator_operating_context():
+    """Identify ordinary activation using the existing replay runtime revision.
+
+    This is a source boundary, not a new mode or persisted session service.
+    Paced activity continues to use its actual replay ID. A backend restart
+    conservatively requires reporting readiness again; definitions remain usable.
+    """
+    service = getattr(app.state, "simulation_run_service", None)
+    if _current_runtime_config().mode != "simulation" or service is None:
+        return None
+    status = service.status()
+    route_id = _route_manager.get_active_route_id() if _route_manager else None
+    if status.state != "idle" or not route_id:
+        return None
+    return f"ordinary:{status.runtime_id}:{status.revision}:{route_id}"
+
+
+def _operator_model_context():
+    from app.services.flight_state import get_flight_state_manager
+
+    mode, run_id = _operator_context()
+    if mode == "simulation":
+        run_id = run_id or os.getenv("OPERATOR_SIMULATION_RUN_ID") or None
+    flight = get_flight_state_manager().get_status()
+    manager = getattr(app.state, "route_manager", None)
+    return {
+        "source_mode": mode,
+        "simulation_run_id": run_id,
+        "lifecycle": _pop_lifecycle_token(run_id),
+        "active_route_id": manager.get_active_route_id() if manager else None,
+        "phase": flight.phase.value,
+        "departure_time": flight.departure_time,
+        "arrival_time": flight.arrival_time,
+    }
+
+
+def _operator_event_sources(runtime):
+    from app.operator.production_event_sources import ProductionEventSources
+
+    def telemetry():
+        connected = getattr(_coordinator, "is_connected", None)
+        if callable(connected) and not connected():
+            return None
+        return _coordinator.get_current_telemetry()
+
+    return ProductionEventSources(
+        runtime.service,
+        clock=runtime.clock,
+        publication=runtime.event_publication,
+        route_manager=app.state.route_manager,
+        poi_manager=app.state.poi_manager,
+        config_provider=_current_runtime_config,
+        telemetry_provider=telemetry,
+        context_provider=_operator_model_context,
+        live_provider=_operator_live_source,
+        pop_service=app.state.pop_status_service,
+    )
+
+
+def _operator_live_source(mission_id):
+    service = getattr(app.state, "pop_status_service", None)
+    publication = service.read_publication() if service is not None else None
+    if (
+        publication
+        and publication.get("mission_id") == mission_id
+        and publication.get("leg_id")
+    ):
+        return publication["leg_id"], publication
+    return None
+
+
+def _pop_lifecycle_token(run_id=None):
+    service = getattr(app.state, "simulation_run_service", None)
+    run = service.status().run if service is not None else None
+    return (
+        id(_coordinator),
+        getattr(_coordinator, "pop_lifecycle_token", 0),
+        run_id or (run.run_id if run is not None else None),
+    )
+
+
+def _simulation_pop_context():
+    from app.simulation.run_timing import published_replay
+
+    replay = published_replay(getattr(app.state, "simulation_run_service", None))
+    context = {
+        "lifecycle_token": _pop_lifecycle_token(),
+        "simulation_run_id": _operator_context()[1]
+        or os.getenv("OPERATOR_SIMULATION_RUN_ID")
+        or None,
+    }
+    if replay is not None:
+        plan, frame, _clock = replay
+        context.update(
+            mission_id=plan.mission_id,
+            leg_id=plan.leg_id,
+            simulation_run_id=_pop_lifecycle_token()[-1],
+            route=plan.artifacts.route,
+            call_capabilities=plan.artifacts.call_capabilities,
+            projector=plan.artifacts.projector,
+            now=frame.simulation_time,
+            observed_now=datetime.now(timezone.utc),
+            flight_phase=frame.phase.value,
+            unavailable_reason=None,
+            enabled=plan.starshield_enabled,
+        )
+    return context
+
+
+def _publish_pop_observation(telemetry, tick=None):
+    """Publish synthetic legacy metrics from the same emitted observation as status."""
+    config = _current_runtime_config()
+    if config is None or config.mode != "simulation":
+        return
+    from app.services.pop.catalog import load_catalog
+    from app.simulation.pop import SimulationPopObservationProvider
+
+    service = getattr(app.state, "pop_status_service", None)
+    if service is None or telemetry is None:
+        publish_ground_entry_point_metrics(None)
+        return
+    try:
+        catalog = load_catalog(config.pop.catalog_path)
+    except (OSError, ValueError):
+        catalog = None
+    provider = service.observation_provider
+    if isinstance(provider, SimulationPopObservationProvider):
+        observation = provider.simulation_observation(
+            telemetry,
+            catalog,
+            lifecycle_token=_pop_lifecycle_token(
+                tick.status.run.run_id if tick else None
+            ),
+        )
+    else:
+        observation = provider("simulation", telemetry, catalog)
+    publish_ground_entry_point_metrics(observation.entry)
+
+
 def _publish_replay_telemetry(telemetry, tick):
     from app.core.metrics import update_metrics_from_telemetry
     from app.simulation.run_timing import mission_time_context
 
     update_metrics_from_telemetry(
         telemetry,
-        _simulation_config,
-        tick.plan.artifacts.route,
+        _current_runtime_config(),
+        tick.plan.artifacts.route.model_copy(deep=True),
         app.state.poi_manager,
         mission_context=mission_time_context(tick.status),
         simulation_plan=tick.plan,
         simulation_frame=tick.frame,
     )
+    _publish_pop_observation(telemetry, tick)
 
 
 def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
     """One complete ordered telemetry/metric update, owned by the async loop."""
-    if should_automatically_refresh_ground_entry_point(_simulation_config):
-        maybe_refresh_ground_entry_point_metrics(
-            refresh_interval_seconds=refresh_interval
+    current_config = _current_runtime_config()
+    if should_automatically_refresh_ground_entry_point(current_config):
+        publish_ground_entry_point_metrics(
+            maybe_refresh_ground_entry_point_metrics(
+                refresh_interval_seconds=refresh_interval
+            )
         )
 
+    runtime = getattr(app.state, "flight_event_runtime", None)
+    if runtime is not None:
+        try:
+            runtime.tick()
+        except (OSError, sqlite3.Error, ValueError) as archive_error:
+            logger.warning_json(
+                "Telemetry archive recovery pending",
+                extra_fields={"error": type(archive_error).__name__},
+            )
     if _coordinator:
         run_service = getattr(app.state, "simulation_run_service", None)
         paced = (
@@ -721,6 +952,8 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             if paced
             else _coordinator.update()
         )
+        if not paced:
+            _publish_pop_observation(telemetry)
         update_count += 1
 
         if telemetry is None:
@@ -747,8 +980,36 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 if _route_manager is not None:
                     active_route = _route_manager.get_active_route()
 
+                flight_events_managed = False
+                runtime = getattr(app.state, "flight_event_runtime", None)
+                if runtime is not None and current_config.mode == "live":
+                    from app.mission.active_context import (
+                        resolve_active_mission_leg_context,
+                    )
+                    from app.services.flight_state import get_flight_state_manager
+
+                    resolution = resolve_active_mission_leg_context(_route_manager)
+                    flight_events_managed = True
+                    try:
+                        runtime.record_live(telemetry)
+                        if resolution.context is not None:
+                            runtime.observe_live(telemetry, resolution.context)
+                            runtime.sync_legacy_phase(
+                                get_flight_state_manager(),
+                                resolution.context.parent_mission_id,
+                                resolution.context.leg.id,
+                            )
+                    except (OSError, sqlite3.Error, ValueError) as archive_error:
+                        logger.warning_json(
+                            "Live recording pending recovery",
+                            extra_fields={"error": type(archive_error).__name__},
+                        )
                 update_metrics_from_telemetry(
-                    telemetry, _simulation_config, active_route, poi_manager
+                    telemetry,
+                    current_config,
+                    active_route,
+                    poi_manager,
+                    flight_events_managed=flight_events_managed,
                 )
                 scrape_duration = time.time() - scrape_start
                 starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
@@ -902,7 +1163,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Total-Count"],
+    expose_headers=["X-Total-Count", "Idempotency-Replayed", "ETag"],
 )
 
 # Mount data/sat_coverage directory for satellite coverage overlays (Ka/CommKa GeoJSON)
@@ -948,7 +1209,11 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # Register API routers
+from app.api.flight_events import router as flight_events_router
+
+app.include_router(flight_events_router)
 app.include_router(simulation_run_router)
+app.include_router(operator_router)
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])

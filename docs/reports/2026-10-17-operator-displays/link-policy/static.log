@@ -1,0 +1,76 @@
+All done! ✨ 🍰 ✨
+704 files would be left unchanged.
+All checks passed!
+Checking filename conventions in docs...
+All markdown files follow the naming convention.
+Checking formatting...
+All matched files use Prettier code style!
+
+> mission-planner@0.0.0 lint
+> eslint .
+
+markdownlint-cli2 v0.23.3 (markdownlint v0.41.1)
+Finding: docs/**/*.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 433 files
+Summary: 0 issues in 0 files
+Checking internal documentation files and anchors (required)
+🔍 1322 Total (in 0s) ✅ 1122 OK 🚫 0 Errors 👻 200 Excluded
+Checking external documentation links (advisory)
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+Issues found in 7 inputs. Find details below.
+
+[docs/api/endpoints/overview-adsb.md]:
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+
+[docs/development/adsb-provider-acquisition.md]:
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+
+[docs/features/system.md]:
+[TIMEOUT] https://adsb.lol/ | Timeout
+
+[docs/reports/2026-10-03-overview-adsb-aircraft-layer.md]:
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+
+[docs/reports/2026-10-17-operator-displays/static-ci-limitations.txt]:
+[TIMEOUT] https://adsb.lol/ | Timeout
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+
+[docs/superpowers/plans/2026-10-03-overview-adsb-aircraft-layer.md]:
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+[TIMEOUT] https://www.adsb.lol/ | Timeout
+
+[docs/superpowers/specs/2026-10-03-overview-adsb-aircraft-addon-design.md]:
+[TIMEOUT] https://api.adsb.lol/api/openapi.json | Timeout
+[TIMEOUT] https://api.adsb.lol/docs | Timeout
+
+🔍 1322 Total (in 10s) ✅ 157 OK 🚫 0 Errors 👻 1150 Excluded ⏳ 15 Timeouts
+::warning title=External documentation links::External check did not pass: Lychee exited with status 2; see link report above. Internal files and anchors passed; external availability is nonblocking.
+............                                                             [100%]
+12 passed in 0.38s
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ uv run --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays/backend/starlink-location) $ uv run --with-requirements requirements-dev.txt ruff check app tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ python tools/check_filename_convention.py
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ npm --prefix frontend/mission-planner exec -- prettier --check frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ npm --prefix frontend/mission-planner run lint
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ markdownlint-cli2 docs/**/*.md
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ python3 tools/check_docs_links.py docs/
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-364-operator-displays) $ python3 -m pytest -q tools/tests/test_acceptance_platform_typing_policy.py tools/tests/test_docs_links.py

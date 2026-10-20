@@ -21,6 +21,7 @@ vi.mock('../hooks/api/useMissions', () => ({
   useUpdateMission: () => ({}),
 }));
 vi.mock('../hooks/api/usePlanning', () => ({ usePlanning: vi.fn() }));
+vi.mock('./MissionFlightEvents', () => ({ MissionFlightEvents: () => null }));
 vi.mock('../components/missions/MissionSimulationStatus', () => ({
   MissionSimulationStatus: () => null,
 }));

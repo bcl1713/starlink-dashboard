@@ -1375,6 +1375,9 @@ def _segment_rows(
     """Convert timeline segments into a pandas DataFrame."""
     export_timeline = timeline.model_copy(deep=True)
     normalize_call_availability_timeline(export_timeline)
+    from .csv_continuity import CONTINUITY_COLUMNS, apply_csv_continuity
+
+    apply_csv_continuity(export_timeline)
     mission_start = mission_start_timestamp(export_timeline)
     ground_entry_point = (
         SnapshotViews(export_snapshot).ground_entry_point()
@@ -1434,8 +1437,18 @@ def _segment_rows(
             "Reasons": _compact_reason_label(segment),
             "Notes / Source Events": notes_and_sources,
             **ground_entry_values,
+            **metadata.get("call_continuity_csv", {}),
             "Metadata": (
-                json.dumps(segment.metadata, sort_keys=True) if segment.metadata else ""
+                json.dumps(
+                    {
+                        k: v
+                        for k, v in segment.metadata.items()
+                        if k != "call_continuity_csv"
+                    },
+                    sort_keys=True,
+                )
+                if segment.metadata
+                else ""
             ),
         }
         rows.append((start_utc, 1, record))
@@ -1460,6 +1473,7 @@ def _segment_rows(
         "Systems Affected",
         "Reasons",
         "Notes / Source Events",
+        *CONTINUITY_COLUMNS,
         "Ground Entry City",
         "Ground Entry Country",
         "Ground Entry IP",

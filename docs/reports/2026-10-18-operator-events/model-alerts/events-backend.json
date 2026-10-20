@@ -1,0 +1,64 @@
+{
+  "synthetic": true,
+  "oneDurableAcknowledgment": true,
+  "operationsUnchanged": true,
+  "backupRestore": true,
+  "commitCrashBefore": true,
+  "commitCrashAfter": true,
+  "example": {
+    "event": {
+      "schema_version": 1,
+      "event_id": "6d9cd94b9b053635dfeda9ed1d8637310ab85ee70b52161bb78424c2f8aa1658",
+      "mission_id": "synthetic-mission-a",
+      "leg_id": null,
+      "kind": "call_prep",
+      "title": "Prepare: Synthetic durable requirement",
+      "due_at": "2026-10-17T16:02:00.000000Z",
+      "end_at": "2026-10-17T16:27:00.000000Z",
+      "state": "upcoming",
+      "provenance": "scheduled",
+      "source_ref": "f60a3e06-e456-41ac-9c99-fbba0efa4132",
+      "source_revision": "1",
+      "source_captured_at": "2026-10-17T16:00:00.000000Z",
+      "freshness": "fresh",
+      "confidence": null,
+      "transport": null,
+      "protected_participation_ids": [],
+      "conference_ids": [],
+      "transport_relevance": "unknown",
+      "continuity_status": "unknown",
+      "discrepancies": [],
+      "significance": "routine",
+      "active": true,
+      "schedule_key": "de09746a5dd350b22800d46546d145f86ec1d9c10f08480c56be62fb4fcfb6aa",
+      "family_key": "",
+      "dependent_versions": {
+        "f60a3e06-e456-41ac-9c99-fbba0efa4132": 1
+      },
+      "notification": {
+        "generation": "294120401a418b0abb5ec89bb1f7cad825e03848f8f07617e82940e54f3dab2a",
+        "severity_generation": 2,
+        "acknowledged": false,
+        "acknowledged_at": null,
+        "retired": false,
+        "preview": false,
+        "eligible": false,
+        "priority": 2,
+        "threshold_at": "2026-10-17T16:02:00.000000Z",
+        "acknowledgment_available": true,
+        "available": true,
+        "reason": null
+      }
+    },
+    "acknowledgment": {
+      "schema_version": 1,
+      "receipt_type": "event_acknowledgment",
+      "command_id": "1bcb780b-25a8-469a-86bf-722d61c25c8f",
+      "acknowledgment_id": "6febef10-76ae-4ee6-8d4e-da314a31fab1",
+      "occurrence_id": "294120401a418b0abb5ec89bb1f7cad825e03848f8f07617e82940e54f3dab2a",
+      "severity_generation": 2,
+      "acknowledged_at": "2026-10-17T16:00:00.000000Z",
+      "replayed": false
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "synthetic": true,
+  "rawInputsOnly": true,
+  "captures": [
+    "1920x1080",
+    "390x844",
+    "844x390"
+  ],
+  "incomingProtectedActivity": true,
+  "foregroundSoundOnce": true,
+  "partialIndependentWarning": true,
+  "twoClientAcknowledgment": true,
+  "positionUpdatesActualPop": true,
+  "staleReason": true,
+  "unavailableReason": true,
+  "routeScheduleUpdated": true,
+  "deactivationRetires": true,
+  "offlineReconnect": true,
+  "restartNoResurrection": true
+}

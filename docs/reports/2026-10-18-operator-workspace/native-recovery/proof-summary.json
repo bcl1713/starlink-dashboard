@@ -1,0 +1,10 @@
+{
+  "candidateSha": "dc44e086bded909a224cbcff9d365f07c11fe8c2",
+  "checksPassed": true,
+  "scope": "recovery-only",
+  "cleanup": {
+    "container": [],
+    "network": [],
+    "volume": []
+  }
+}

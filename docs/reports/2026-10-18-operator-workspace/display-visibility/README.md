@@ -1,0 +1,36 @@
+# Connected display visibility acceptance
+
+Candidate `cbcf23ba191762d05986250b930543bff9f61488`. The real production
+Nginx/backend/GFS worker/browser test passed in 8.2 minutes. Images and upstream
+source hashes are retained. Synthetic historical source inputs include actual
+small GRIB messages processed by the existing scientific decoder, worker, IPC,
+artifact APIs and native scene renderer. This does not certify current NOAA
+availability or production rendering performance; SwiftShader software rendering
+was used.
+
+Configuration weather switches and the existing Operator Display tools save a
+Weather preset, reverse to a Normal temperature preset, and restore
+wind/radar/SIGMET rendering in two connected Overview windows. The test verifies
+stored visibility values and unchanged GFS forecast selection. A real
+counterpart settings write causes HTTP409; the UI reports confirmed and
+unconfirmed stores, with no false full-success label. Fresh-baseline retry
+renders the reverse bundle in both windows. A failed weather preflight makes no
+settings changes; a later retry restores the requested native scene. Screenshots
+capture the actual visible desktop, portrait and landscape viewports. Configured
+simulation network panels remain present and report unavailable measurements;
+their running/completed/restart continuity is separately proved in
+guidance-controls.
+
+The earlier r6 run reached all functional assertions but exhausted its 12-minute
+whole-test budget during full-page captures, which resized the offscreen WebGL
+surface. The passing run uses bounded visible-viewport captures and a 14-minute
+whole-test budget; per-scene180-second waits and source quotas remain unchanged.
+The actual scene checks remain mandatory. This acceptance is not the final
+performance/device/human usability gate.
+
+Cleanup verifies zero owned containers, networks, volumes and processes, free
+listeners and no relay survivor. No runtime was retained. The inherited browser
+metadata used another harness's test filename and therefore records a null test
+hash. The separately labeled committed-test-identity.json derives the actual
+test's hash from this exact Git revision after execution; it is not presented as
+a pre-execution capture.

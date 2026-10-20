@@ -63,3 +63,83 @@ test('PDF expectations reject omitted and duplicate measured rows', async () => 
     /row/
   );
 });
+
+test('PoP overlap expectations preserve the complete canonical event cell', async () => {
+  const event = 'Takeoff SOF; Ka unavailable; Starshield Transition Window';
+  const payload = {
+    legId: 'leg',
+    rows: [
+      {
+        id: 'overlap',
+        popTransitionIds: ['one', 'two'],
+        displayCells: [
+          '01:58 - 01:02',
+          event,
+          'Starshield, X-Band',
+          'Degraded',
+        ],
+      },
+    ],
+  };
+  const result = (await builder())(payload, {
+    rows: [
+      {
+        id: 'overlap',
+        cellBoundsPx: [
+          [0, 0, 100, 60],
+          [100, 0, 500, 60],
+          [500, 0, 800, 60],
+          [800, 0, 1000, 60],
+        ],
+      },
+    ],
+  });
+  assert.equal(result.rows[0].displayCells[1], event);
+  assert.deepEqual(result.rows[0].cellBoundsPt[1], [75, 0, 375, 45]);
+  assert.deepEqual(payload.rows[0].popTransitionIds, ['one', 'two']);
+});
+
+test('conditional continuity expectations retain canonical outage fallback and unresolved cells', async () => {
+  const build = await builder();
+  for (const [classification, remaining, posture] of [
+    ['planned_outage', 'No secure-call transport', 'Unavailable'],
+    ['x_fallback', 'Planned X-Band fallback', 'Elevated risk'],
+    ['unknown', 'Call continuity unresolved', 'Incomplete'],
+  ]) {
+    const cells = [
+      '23:55 - 00:00',
+      'Starshield Transition Window',
+      remaining,
+      posture,
+    ];
+    const payload = {
+      legId: 'leg',
+      rows: [
+        {
+          id: 'partial',
+          callClassification: classification,
+          popTransitionIds: ['one'],
+          startUtc: '2035-03-01T23:55:00Z',
+          endUtc: '2035-03-02T00:00:00Z',
+          displayCells: cells,
+        },
+      ],
+    };
+    const result = build(payload, {
+      rows: [
+        {
+          id: 'partial',
+          cellBoundsPx: [
+            [0, 0, 100, 60],
+            [100, 0, 500, 60],
+            [500, 0, 800, 60],
+            [800, 0, 1000, 60],
+          ],
+        },
+      ],
+    });
+    assert.deepEqual(result.rows[0].displayCells, cells);
+    assert.equal(result.rows[0].rowId, 'partial');
+    assert.deepEqual(payload.rows[0].popTransitionIds, ['one']);
+  }
+});

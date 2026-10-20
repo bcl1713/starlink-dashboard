@@ -43,21 +43,12 @@ def validate_review(leg, request, evaluation=None):
             "review_incomplete",
             "Confirm AR windows or exclusions, no-AR status, satellite access and the satellite plan before saving",
         )
-    if evaluation is not None:
-        if evaluation.errors:
-            raise PlanningFailure(
-                422,
-                "review_incomplete",
-                "Resolve provisional planning inputs before saving",
-            )
-        if (
-            evaluation.outage_seconds or evaluation.backup_gaps
-        ) and not request.gap_acknowledged:
-            raise PlanningFailure(
-                422,
-                "gap_acknowledgment_required",
-                "Acknowledge X-band outages and backup gaps before saving",
-            )
+    if evaluation is not None and evaluation.errors:
+        raise PlanningFailure(
+            422,
+            "review_incomplete",
+            "Resolve provisional planning inputs before saving",
+        )
 
 
 def preview(service, mission_id, leg_id, request):

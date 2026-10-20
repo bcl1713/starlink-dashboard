@@ -81,7 +81,10 @@ export const overviewWeatherApi = {
     );
     return settingsSchema.parse(data);
   },
-  async updateSettings(update: { enabled: boolean }): Promise<WeatherSettings> {
+  async updateSettings(update: {
+    enabled: boolean;
+    expected_revision?: number;
+  }): Promise<WeatherSettings> {
     const { data } = await apiClient.put<unknown>(
       '/api/overview-weather/settings',
       update

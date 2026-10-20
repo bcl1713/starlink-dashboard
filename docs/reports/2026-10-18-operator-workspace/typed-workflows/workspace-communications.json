@@ -1,0 +1,1529 @@
+{
+  "synthetic": true,
+  "receipts": [
+    {
+      "schema_version": 1,
+      "command_id": "def0d0fe-468f-446d-bf46-90dfb944ba47",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "preparing",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "5a58d3be-8ab0-48b7-8362-3977275690f0",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 31,
+          "command_id": "def0d0fe-468f-446d-bf46-90dfb944ba47",
+          "operation": "create",
+          "reason": "Conference preparation",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "62c2434c-cb25-4240-9893-01c9de791d5e",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "5a58d3be-8ab0-48b7-8362-3977275690f0",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 32,
+          "command_id": "62c2434c-cb25-4240-9893-01c9de791d5e",
+          "operation": "update",
+          "reason": "Conference established",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "65824d60-e4b1-4e57-8ca5-52dcc0d148d0",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": "2026-10-17T16:00:00.000000Z",
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "5a58d3be-8ab0-48b7-8362-3977275690f0",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 33,
+          "command_id": "65824d60-e4b1-4e57-8ca5-52dcc0d148d0",
+          "operation": "update",
+          "reason": "Conference verification updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "b1978e68-0884-4318-a440-d785ed5454c5",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 1920",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "5a58d3be-8ab0-48b7-8362-3977275690f0"
+          },
+          "record_id": "3f51ce72-3d9e-42a1-aa4b-ceb875d515fb",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 34,
+          "command_id": "b1978e68-0884-4318-a440-d785ed5454c5",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "d1b37e4f-8471-478a-af9d-0e6fe53024a0",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": "2026-10-17T16:00:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 1920",
+            "state": "interrupted",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "5a58d3be-8ab0-48b7-8362-3977275690f0"
+          },
+          "record_id": "3f51ce72-3d9e-42a1-aa4b-ceb875d515fb",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 35,
+          "command_id": "d1b37e4f-8471-478a-af9d-0e6fe53024a0",
+          "operation": "update",
+          "reason": "Customer connection interrupted",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "6b16fea2-4623-4467-9d01-fea6684c2b20",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 1920",
+            "state": "connected",
+            "resumes_participation_id": "3f51ce72-3d9e-42a1-aa4b-ceb875d515fb",
+            "call_id": null,
+            "conference_id": "5a58d3be-8ab0-48b7-8362-3977275690f0"
+          },
+          "record_id": "03e366ba-b57a-4490-8a14-d639b4ce7782",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 36,
+          "command_id": "6b16fea2-4623-4467-9d01-fea6684c2b20",
+          "operation": "create",
+          "reason": "Customer connection restored",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ce51dc00-4cab-4c1b-a29c-f291cf246bce",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic second 1920",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "5a58d3be-8ab0-48b7-8362-3977275690f0"
+          },
+          "record_id": "a1401fed-7a9d-4a39-9d39-69a918170640",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 37,
+          "command_id": "ce51dc00-4cab-4c1b-a29c-f291cf246bce",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "1f37cc9a-abc3-4324-b32e-1d594171e2ba",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": "2026-10-17T16:00:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic second 1920",
+            "state": "left",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "5a58d3be-8ab0-48b7-8362-3977275690f0"
+          },
+          "record_id": "a1401fed-7a9d-4a39-9d39-69a918170640",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 38,
+          "command_id": "1f37cc9a-abc3-4324-b32e-1d594171e2ba",
+          "operation": "update",
+          "reason": "Customer left",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ee1e593b-e9dc-4bb4-84b4-2d37b6508743",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 1920",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "closed",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "5a58d3be-8ab0-48b7-8362-3977275690f0",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 39,
+          "command_id": "ee1e593b-e9dc-4bb4-84b4-2d37b6508743",
+          "operation": "update",
+          "reason": "Conference closed",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2bef5682-3283-4801-9d1a-cfb968bcb7b3",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "preparing",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "607437a0-5283-410f-a432-b5de294b019b",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 40,
+          "command_id": "2bef5682-3283-4801-9d1a-cfb968bcb7b3",
+          "operation": "create",
+          "reason": "Conference preparation",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "6f27ce59-f1ee-44af-9790-30f530973b2d",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "607437a0-5283-410f-a432-b5de294b019b",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 41,
+          "command_id": "6f27ce59-f1ee-44af-9790-30f530973b2d",
+          "operation": "update",
+          "reason": "Conference established",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3ec7284c-e569-4efa-93be-18e932ffd154",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": "2026-10-17T16:00:00.000000Z",
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "607437a0-5283-410f-a432-b5de294b019b",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 42,
+          "command_id": "3ec7284c-e569-4efa-93be-18e932ffd154",
+          "operation": "update",
+          "reason": "Conference verification updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "f571b68a-4ae7-4456-9935-e15d6f37b515",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 390",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "607437a0-5283-410f-a432-b5de294b019b"
+          },
+          "record_id": "a4144c30-b0cd-43ff-8006-2a53c7aff8bf",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 43,
+          "command_id": "f571b68a-4ae7-4456-9935-e15d6f37b515",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "4a26a67f-953d-4641-bbb6-d0aa7255e292",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": "2026-10-17T16:00:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 390",
+            "state": "interrupted",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "607437a0-5283-410f-a432-b5de294b019b"
+          },
+          "record_id": "a4144c30-b0cd-43ff-8006-2a53c7aff8bf",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 44,
+          "command_id": "4a26a67f-953d-4641-bbb6-d0aa7255e292",
+          "operation": "update",
+          "reason": "Customer connection interrupted",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "ae80b0fe-0bbc-46d8-ad4e-ffe2524a7e67",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 390",
+            "state": "connected",
+            "resumes_participation_id": "a4144c30-b0cd-43ff-8006-2a53c7aff8bf",
+            "call_id": null,
+            "conference_id": "607437a0-5283-410f-a432-b5de294b019b"
+          },
+          "record_id": "78493a22-e6de-4161-a4f7-275d5457dd85",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 45,
+          "command_id": "ae80b0fe-0bbc-46d8-ad4e-ffe2524a7e67",
+          "operation": "create",
+          "reason": "Customer connection restored",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "53ab0ea4-c92b-40e9-afe2-0cbe3fd9d988",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic second 390",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "607437a0-5283-410f-a432-b5de294b019b"
+          },
+          "record_id": "59e8fbed-ac2a-46a7-a05b-2adf8994ee35",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 46,
+          "command_id": "53ab0ea4-c92b-40e9-afe2-0cbe3fd9d988",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "af8574cd-7761-4ca9-8b77-69a939833156",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": "2026-10-17T16:00:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic second 390",
+            "state": "left",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "607437a0-5283-410f-a432-b5de294b019b"
+          },
+          "record_id": "59e8fbed-ac2a-46a7-a05b-2adf8994ee35",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 47,
+          "command_id": "af8574cd-7761-4ca9-8b77-69a939833156",
+          "operation": "update",
+          "reason": "Customer left",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "dd0d4f4f-8008-42fc-aee4-2bd3803ac2e9",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 390",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "closed",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "607437a0-5283-410f-a432-b5de294b019b",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 48,
+          "command_id": "dd0d4f4f-8008-42fc-aee4-2bd3803ac2e9",
+          "operation": "update",
+          "reason": "Conference closed",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "9174e730-5e05-4b4b-86b5-e9918d4ba208",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": null,
+            "ended_at": null,
+            "precision": "unknown",
+            "end_state": "unknown",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "preparing",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "1ca8da89-0456-4518-8945-5c294937f050",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 49,
+          "command_id": "9174e730-5e05-4b4b-86b5-e9918d4ba208",
+          "operation": "create",
+          "reason": "Conference preparation",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "85f4e104-527e-4689-a1b0-c1b3e250a8ff",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "1ca8da89-0456-4518-8945-5c294937f050",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 50,
+          "command_id": "85f4e104-527e-4689-a1b0-c1b3e250a8ff",
+          "operation": "update",
+          "reason": "Conference established",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "3da3f6d0-ff80-4ba6-aede-2c6ee5486ff3",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "established",
+            "coordinator": null,
+            "verified_at": "2026-10-17T16:00:00.000000Z",
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "1ca8da89-0456-4518-8945-5c294937f050",
+          "version": 3,
+          "previous_version": 2,
+          "journal_seq": 51,
+          "command_id": "3da3f6d0-ff80-4ba6-aede-2c6ee5486ff3",
+          "operation": "update",
+          "reason": "Conference verification updated",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "2cc556b6-ee07-4495-9ad7-8ed48e74960a",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 844",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "1ca8da89-0456-4518-8945-5c294937f050"
+          },
+          "record_id": "29c9ec24-aecd-4dee-b927-bd65d09c5c19",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 52,
+          "command_id": "2cc556b6-ee07-4495-9ad7-8ed48e74960a",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "b6d3bcae-c38f-457c-8a65-5cb44db008ea",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": "2026-10-17T16:00:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 844",
+            "state": "interrupted",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "1ca8da89-0456-4518-8945-5c294937f050"
+          },
+          "record_id": "29c9ec24-aecd-4dee-b927-bd65d09c5c19",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 53,
+          "command_id": "b6d3bcae-c38f-457c-8a65-5cb44db008ea",
+          "operation": "update",
+          "reason": "Customer connection interrupted",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "de10969f-942e-489f-844e-b88ad04f5568",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic first 844",
+            "state": "connected",
+            "resumes_participation_id": "29c9ec24-aecd-4dee-b927-bd65d09c5c19",
+            "call_id": null,
+            "conference_id": "1ca8da89-0456-4518-8945-5c294937f050"
+          },
+          "record_id": "27c1bab4-241c-482a-97bb-71a429e422fe",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 54,
+          "command_id": "de10969f-942e-489f-844e-b88ad04f5568",
+          "operation": "create",
+          "reason": "Customer connection restored",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "c4f6eaad-cc84-4719-8b1a-a88a7ee861dc",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "ongoing",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic second 844",
+            "state": "connected",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "1ca8da89-0456-4518-8945-5c294937f050"
+          },
+          "record_id": "c1930794-c990-4735-a848-b29dfe62c2e5",
+          "version": 1,
+          "previous_version": null,
+          "journal_seq": 55,
+          "command_id": "c4f6eaad-cc84-4719-8b1a-a88a7ee861dc",
+          "operation": "create",
+          "reason": "Customer joined",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "658ea348-bf3f-4aae-a3d8-ca57b3433772",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "participation",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": "2026-10-17T16:00:00.000000Z",
+            "precision": "exact",
+            "end_state": "known",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Unknown customer",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "participation",
+            "participant": "Synthetic second 844",
+            "state": "left",
+            "resumes_participation_id": null,
+            "call_id": null,
+            "conference_id": "1ca8da89-0456-4518-8945-5c294937f050"
+          },
+          "record_id": "c1930794-c990-4735-a848-b29dfe62c2e5",
+          "version": 2,
+          "previous_version": 1,
+          "journal_seq": 56,
+          "command_id": "658ea348-bf3f-4aae-a3d8-ca57b3433772",
+          "operation": "update",
+          "reason": "Customer left",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "command_id": "226b8556-664a-43a3-b8d9-5cd49aabb214",
+      "saved_records": [
+        {
+          "schema_version": 1,
+          "record_type": "conference",
+          "mission_id": "e83b5788-e9cb-5f6a-8654-4499956322b8",
+          "leg_id": null,
+          "scope": "mission",
+          "time": {
+            "occurred_at": "2026-10-17T16:00:00.000000Z",
+            "ended_at": null,
+            "precision": "exact",
+            "end_state": "instant",
+            "planned_start_at": null,
+            "planned_end_at": null
+          },
+          "payload": {
+            "schema_version": 1,
+            "title": "Synthetic reusable bridge 844",
+            "note": "",
+            "previous_leg_id": null,
+            "next_leg_id": null,
+            "entry_type": "conference",
+            "status": "closed",
+            "coordinator": null,
+            "verified_at": null,
+            "intended_transport": null,
+            "configured_transport": null,
+            "configuration_reported_at": null
+          },
+          "record_id": "1ca8da89-0456-4518-8945-5c294937f050",
+          "version": 4,
+          "previous_version": 3,
+          "journal_seq": 57,
+          "command_id": "226b8556-664a-43a3-b8d9-5cd49aabb214",
+          "operation": "update",
+          "reason": "Conference closed",
+          "reason_origin": "automatic",
+          "deleted": false,
+          "recorded_at": "2026-10-17T16:00:00.000000Z",
+          "author": {
+            "backend": "restricted-access operator",
+            "operator_label": null
+          },
+          "provenance": {
+            "kind": "operator_reported",
+            "source_mode": "simulation",
+            "observed_at": null,
+            "predicted_at": null,
+            "source_ref": null,
+            "mutation_origin": "interactive"
+          }
+        }
+      ]
+    }
+  ]
+}

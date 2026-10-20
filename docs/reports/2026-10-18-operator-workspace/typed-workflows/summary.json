@@ -1,0 +1,47 @@
+{
+  "candidateSha": "ffcce9b596014d7bd3da7f0e5d7f8d59f2f6fc35",
+  "project": "starlink-operator-376-populated",
+  "checksPassed": true,
+  "fixture": "synthetic simulation fixed at 2026-10-17T16:00:00Z; no aircraft claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-376-populated-backend:ffcce9b596014d7bd3da7f0e5d7f8d59f2f6fc35",
+      "id": "sha256:6dbd0a25b4ba5e0d0b64015883f6123c9117eb65b8dd715967c3fcf7acb8bebe",
+      "revision": "ffcce9b596014d7bd3da7f0e5d7f8d59f2f6fc35"
+    },
+    "frontend": {
+      "tag": "starlink-operator-376-populated-frontend:ffcce9b596014d7bd3da7f0e5d7f8d59f2f6fc35",
+      "id": "sha256:1ba4192aa8645d487683c4d5d6e288e763b69284d089ae2cff5d334e593c725c",
+      "revision": "ffcce9b596014d7bd3da7f0e5d7f8d59f2f6fc35"
+    }
+  },
+  "sourceArchiveSha256": "d440f0ed9d9e8f3277b646f87f5ef430c2e4d6bafd59a39e368b94f5ae382ed7",
+  "qualification": {
+    "synthetic": true,
+    "captures": [
+      "normal-1920x1080-workspace.png",
+      "normal-390x844-workspace.png",
+      "normal-844x390-workspace.png",
+      "busy-1920x1080-workspace.png",
+      "busy-390x844-workspace.png",
+      "busy-844x390-workspace.png"
+    ],
+    "realCallReceipts": 6,
+    "parkedNotes": 6,
+    "inlineValidation": true,
+    "viewportResize": true,
+    "targets44": true
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

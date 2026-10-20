@@ -1,0 +1,47 @@
+import { defineConfig } from '@playwright/test';
+if (
+  !process.env.OPERATOR_TRAINING_ORIGIN ||
+  !process.env.OPERATOR_TRAINING_PROOF_ROOT
+)
+  throw new Error('Owned disposable training origin/root required');
+const phase =
+  process.env.OPERATOR_TRAINING_RECOVERY_ONLY === 'true'
+    ? 'recovery'
+    : process.env.OPERATOR_TRAINING_CLIENTS_ONLY === 'true'
+      ? 'clients'
+      : process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
+        ? 'records'
+        : process.env.OPERATOR_TRAINING_DECISIONS_ONLY === 'true'
+          ? 'decisions'
+          : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
+            ? 'archive'
+            : 'training';
+export default defineConfig({
+  testDir: './tests/e2e',
+  testMatch:
+    process.env.OPERATOR_TRAINING_RECOVERY_ONLY === 'true'
+      ? 'operator-training-recovery.spec.ts'
+      : process.env.OPERATOR_TRAINING_CLIENTS_ONLY === 'true'
+        ? 'operator-training-client.spec.ts'
+        : process.env.OPERATOR_TRAINING_RECORDS_ONLY === 'true'
+          ? 'operator-training-records.spec.ts'
+          : process.env.OPERATOR_TRAINING_DECISIONS_ONLY === 'true'
+            ? 'operator-training-decisions.spec.ts'
+            : process.env.OPERATOR_TRAINING_ARCHIVE_ONLY === 'true'
+              ? 'operator-training-archive.spec.ts'
+              : 'operator-training-fixture.spec.ts',
+  workers: 1,
+  retries: 0,
+  timeout: 240_000,
+  expect: { timeout: 15_000 },
+  reporter: 'list',
+  outputDir: `${process.env.OPERATOR_TRAINING_PROOF_ROOT}/browser/${phase}`,
+  use: {
+    baseURL: process.env.OPERATOR_TRAINING_ORIGIN,
+    headless: true,
+    actionTimeout: 15_000,
+    launchOptions: { args: ['--disable-dev-shm-usage', '--no-sandbox'] },
+    screenshot: 'only-on-failure',
+    trace: 'on',
+  },
+});

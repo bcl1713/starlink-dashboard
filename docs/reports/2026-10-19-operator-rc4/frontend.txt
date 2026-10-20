@@ -1,0 +1,12 @@
+
+> mission-planner@0.0.0 test:unit
+> NODE_ENV=test vitest run src/components/operator/OperatorDisplayTools.test.tsx src/components/operator/workspace/WorkspaceEditor.test.tsx src/components/operator/workspace/CommunicationsView.test.tsx src/components/operator/workspace/OperatorWorkspace.test.tsx src/components/operator/conferenceCommands.test.ts src/components/operator/ConferenceCard.test.tsx src/components/operator/OperatorConferences.test.tsx src/components/operator/CallList.test.tsx src/components/operator/rc3-usability.test.tsx src/pages/OverviewDisplaySettingsCard.test.tsx src/pages/OverviewPage.contract.test.ts src/pages/OverviewPage.layers.test.tsx src/pages/OverviewMapController.test.tsx src/hooks/useOverviewDisplayHost.test.tsx src/hooks/api/useAviationSettings.test.ts src/services/overview-display-protocol.test.ts src/services/overview-display-session.test.ts
+
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner
+
+
+ Test Files  17 passed (17)
+      Tests  209 passed (209)
+   Start at  12:53:32
+   Duration  5.58s (transform 7.66s, setup 0ms, import 16.73s, tests 9.47s, environment 22.52s)

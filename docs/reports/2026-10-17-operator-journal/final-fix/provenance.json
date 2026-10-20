@@ -1,0 +1,31 @@
+{
+  "rawSourceSha256": {
+    "summary.json": "2a88f08dcf1c0503a93fc0f408073eed06225dbc4ae9dc8a877624df4dbfb65e",
+    "ownership.json": "ee8cf46f9e05ebac26fdea1ba6000e7ca2b81f2052cc934f9c729797e91e4b31",
+    "exports.json": "efd1b6f1c2e5b3739a76a32290a18f26f4960ad1cbe4c178a86e82bb9981e456",
+    "projections.json": "87082a2da4238bb18f8d077fc6f4d6d5d3f9f7389d541e04648c692b753b3bb3",
+    "failures.json": "c72037f6aa990ccdf9c84231455488ee30847f1fbae37dc07fa60f073e5be25b",
+    "qualification.json": "d2691bc4375e341e130d71f4a70fefded45f40257b0027aef7981616332bd106",
+    "mobile-trace.zip": "be2703091666b013b519416a9fc78405e5460f03cb11410c060f8d5dcbc0adff",
+    "desktop-trace.zip": "9d24432ec33768b13b87d172f0a8b5d674a383d73f7a1e98d90359d7e2385dfb",
+    "mobile-overview-baseline.png": "7d7d0763335431846ac2f0304cc3dd39eec8781aabaa577c99df38826b673d36",
+    "desktop-overview-baseline.png": "b40f645139c2613ccf212370aa29b2d9b4dabcaa86ebf79d48b90ce07d5c607e",
+    "browser-proof.json": "7549317e9dc400df239713b9fa5efe3904e0f1fcb583d9fdb33575fb34d93bfa",
+    "browser-control-1792258347382036675.json": "7090257922ccc5bf44176cbf9b08ccef98e50c52ce2206e9370b2a4d6d0b3cc3",
+    "mobile-844x390-saved.png": "fda3bbd0c53602896b5df4eb3651b5600ed5ed5a17f9ac09df9c8d3078ef175c",
+    "browser-control-1792258347217632701.json": "e17d6d01908fc388b2cc4b7e181369bfec4525a7a41cbb8a2c75d7c034de4d78",
+    "browser-control-1792258347003918805.json": "5012ca2321b2f77395b6cc0952ca07252909f28c828706b4d5411f0187d5264d",
+    "browser-control-1792258346770918483.json": "7b367ef097107af8ce0cbea30c8596d0bc2d67a927805b3cfe9031ef19ec7bb2",
+    "browser-control-1792258341411270829.json": "e5713000544ee5166dd0bd22fe0597f384c6ee1d53e4d4e2697557296fe9fc1a",
+    "browser-control-1792258341306344172.json": "6bb085a437cf38b9cb2cc4555456a0b6fe16ed965089619d53953e3e495cc708",
+    "mobile-390x844-error.png": "9821394821ac6544657cd488aff10c81d3cc556efa37d56371e1d77983f0fe79",
+    "browser-control-1792258341006344589.json": "93dfbafe54eb7be3822f9c155544ba7a03174fbb706ba7536baf451435b7ee6a",
+    "desktop-1920x1080.png": "c1911116f8b0fc39e667717a00e3f7ead9497f5d1b5554b4e898cfb70c46b62a",
+    "earlier-run/summary.json": "327d37c550b8bc50026c6b263f272335e40e7e404292f2ebc2c7c0834a84c70e",
+    "earlier-run/ownership.json": "ba9712e08a10546d3d6573dc44e71743cd134d596563056d72a0d59a58946c64",
+    "earlier-run/qualification.json": "c4b9bffb3d41a55768388b8ce3e850acca17825b768612cbdf346fc4fb94dca7",
+    "earlier-run/desktop-trace.zip": "9441ab9e045c36f1ff30058aaf73d866666a9d7cde1048875c334e76905522fc",
+    "earlier-run/command-018.log": "cf142ef9b1ca821a2f1ec251d1e8508b3241e43affef0e55cea0361b4bac01b4"
+  },
+  "sanitization": "Local workspace/home paths replaced; synthetic values preserved; no raw environment/build logs. Interrupted earlier ZIP trace recovered as partial JSONL. Trailing whitespace removed from the earlier browser diagnostic log."
+}

@@ -1,0 +1,44 @@
+
+> mission-planner@0.0.0 test:unit
+> NODE_ENV=test vitest run
+
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner
+
+
+ Test Files  305 passed (305)
+      Tests  2057 passed (2057)
+   Start at  07:08:45
+   Duration  69.02s (transform 31.64s, setup 0ms, import 126.09s, tests 163.59s, environment 242.11s)
+
+
+> mission-planner@0.0.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+✓ 3053 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                           0.46 kB │ gzip:   0.30 kB
+dist/assets/overview-label-layout.worker-_XMzcRrn.js      4.17 kB
+dist/assets/orbital.worker-CMk1Mfgi.js                   29.17 kB
+dist/assets/index-D2_VGdr5.js                           308.06 kB
+dist/assets/index-Bk5miFC_.css                          117.54 kB │ gzip:  25.32 kB
+dist/assets/index-B1kCI3EW.js                         2,644.27 kB │ gzip: 777.19 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 11.11s
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner run test:unit
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner run build

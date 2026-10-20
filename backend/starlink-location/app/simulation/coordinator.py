@@ -3,7 +3,6 @@
 # FR-004: File exceeds 300 lines (307 lines) because coordinator orchestrates
 # position, telemetry, and environmental simulators with shared state and timing.
 # Splitting would fragment simulation lifecycle. Deferred to v0.4.0.
-
 import logging
 import time
 from datetime import datetime, timezone
@@ -12,6 +11,7 @@ from app.core.metrics import (
     starlink_current_waypoint_index,
     starlink_route_progress_percent,
 )
+from app.mission.input_admission import model_input_write
 from app.models.config import SimulationConfig
 from app.models.telemetry import (
     EnvironmentalData,
@@ -39,6 +39,7 @@ class SimulationCoordinator:
             config: Simulation configuration
         """
         self.config = config
+        self.pop_lifecycle_token = 0
         self.start_time = time.time()
 
         # Initialize all simulators
@@ -60,6 +61,7 @@ class SimulationCoordinator:
         # Get initial telemetry
         self._last_valid_telemetry = self._generate_telemetry()
 
+    @model_input_write
     def update(self, replay_frame: ReplayFrame | None = None) -> TelemetryData:
         """
         Update all simulators and return current telemetry.
@@ -240,12 +242,13 @@ class SimulationCoordinator:
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,
+            metric_source="simulated" if replay_frame is None else "unavailable",
             metric_availability=MetricAvailability(
-                latency_ms=True,
-                throughput_down_mbps=True,
-                throughput_up_mbps=True,
-                packet_loss_percent=True,
-                obstruction_percent=True,
+                latency_ms=replay_frame is None,
+                throughput_down_mbps=replay_frame is None,
+                throughput_up_mbps=replay_frame is None,
+                packet_loss_percent=replay_frame is None,
+                obstruction_percent=replay_frame is None,
             ),
             environmental=environmental_data,
         )
@@ -257,6 +260,7 @@ class SimulationCoordinator:
             else None
         )
 
+    @model_input_write
     def restore_telemetry(self, checkpoint: TelemetryData | None) -> None:
         self._last_valid_telemetry = (
             checkpoint.model_copy(deep=True) if checkpoint else None
@@ -273,8 +277,10 @@ class SimulationCoordinator:
             return self._generate_telemetry()
         return self._last_valid_telemetry
 
+    @model_input_write
     def reset(self) -> None:
         """Reset all simulators to initial state."""
+        self.pop_lifecycle_token += 1
         self.start_time = time.time()
         self.position_sim.reset()
         self.network_sim.reset()
@@ -282,6 +288,7 @@ class SimulationCoordinator:
         self.speed_tracker.reset()
         self._last_valid_telemetry = self._generate_telemetry()
 
+    @model_input_write
     def set_position_progress(self, progress: float) -> None:
         """
         Set position progress along route (0.0 to 1.0).
@@ -290,6 +297,7 @@ class SimulationCoordinator:
             progress: Progress value
         """
         self.position_sim.set_progress(progress)
+        self.pop_lifecycle_token += 1
 
     def get_uptime_seconds(self) -> float:
         """
@@ -319,6 +327,7 @@ class SimulationCoordinator:
         """
         return self.config
 
+    @model_input_write
     def update_config(self, new_config: SimulationConfig) -> None:
         """
         Update configuration and reinitialize simulators.
@@ -327,6 +336,7 @@ class SimulationCoordinator:
             new_config: New simulation configuration
         """
         self.config = new_config
+        self.pop_lifecycle_token += 1
 
         # Reinitialize simulators with new config
         self.position_sim = PositionSimulator(new_config.route, new_config.position)
@@ -339,6 +349,7 @@ class SimulationCoordinator:
         self.start_time = time.time()
         self._last_valid_telemetry = self._generate_telemetry()
 
+    @model_input_write
     def set_route_manager(self, manager) -> None:
         """
         Set the RouteManager instance for KML route following.

@@ -1,0 +1,58 @@
+{
+  "baseCommit": "574492d7ae114338d8a4899c53d7f02549e4c88b",
+  "scope": "RC4 focused usability follow-up; no training changes or provider instances",
+  "frontend": {
+    "filesPassed": 17,
+    "testsPassed": 209
+  },
+  "backend": {
+    "testsPassed": 8,
+    "files": [
+      "tests/operator/test_conference_api.py",
+      "tests/operator/test_conference_actions.py"
+    ],
+    "initialAttempt": "Sandbox run did not progress; stopped verified PID and confirmed it exited before the host retry passed."
+  },
+  "build": "passed; existing bundle/externalized-module advisories retained",
+  "sourceSha256": {
+    "frontend/mission-planner/src/components/operator/CallList.tsx": "4c1b72e8901c04cc8fee20f25b946068b148541f116c071499a690946367b1ba",
+    "frontend/mission-planner/src/components/operator/ConferenceCard.test.tsx": "f8cc25d1839c65ab0bb6614efeb6fd9a41afed5dd2b7586491e96b141f840f30",
+    "frontend/mission-planner/src/components/operator/ConferenceCard.tsx": "4fe96d47f6f4e2e4a52238d7dc6f9edddce83aabe3d44c789ea30421d21ce16c",
+    "frontend/mission-planner/src/components/operator/OperatorDisplayTools.test.tsx": "91dafc2f52181a769c546be36b2ebcd2d1e29324143fe28385329ee316554459",
+    "frontend/mission-planner/src/components/operator/OperatorDisplayTools.tsx": "33de7a27d2af8fa738b170cf6192ca0e84b15c7b47987a144facbf3544498368",
+    "frontend/mission-planner/src/components/operator/conferenceCommands.test.ts": "146342039595162743f5923403354aabb6c42f273be28f1cbde6f033dfa99ee3",
+    "frontend/mission-planner/src/components/operator/conferenceCommands.ts": "7ad7e6988465699a8136a8204257936696d216f95d79d7ec61eab091d0ec5730",
+    "frontend/mission-planner/src/components/operator/useMissionAssociation.ts": "a37a93c4a85cb3d1b8a327dc8d587df8c427d6c1fb91ba212014f2ec09023f24",
+    "frontend/mission-planner/src/components/operator/workspace/CommunicationsView.test.tsx": "db83a76f20c52e0429367774b6badb04b783a43fbf4ac9b447bde4c4961f4021",
+    "frontend/mission-planner/src/components/operator/workspace/CommunicationsView.tsx": "d1f6cb00d0859a732e3167b7c851d299fbbbf6c53e58d159d30319555fa935ec",
+    "frontend/mission-planner/src/components/operator/workspace/OperatorWorkspace.tsx": "018775c5bf36c11f45f9d3ff4556e8476d46e89ca702475e0b2c64dd2776961c",
+    "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.test.tsx": "b692116e48f92b4cfe08a52cd3b7219fd0aaf4dfaa1b4c22843f5be3e19ca433",
+    "frontend/mission-planner/src/components/operator/workspace/WorkspaceEditor.tsx": "485f8821c5dd5d5180321421e5338f2cf90b43198787eb885f8da742bcc80553",
+    "frontend/mission-planner/src/hooks/useOverviewDisplayHost.test.tsx": "40971c6aa665e163e280e2482a03513322c550a8fab44497e8683c1b63629590",
+    "frontend/mission-planner/src/hooks/useOverviewDisplayHost.ts": "548490c5ecfc175335686266f0425d57cc2b13aa13fa7a74ec291786114a008f",
+    "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.test.tsx": "b14d00f0147209ed149cd189efbfb00847fa59918a360e1f9bdf06a4afcadc16",
+    "frontend/mission-planner/src/pages/OverviewDisplaySettingsCard.tsx": "174068aa7709e9b705ab27a7e1f027861d6809c78c63138966665a7e6f25595f",
+    "frontend/mission-planner/src/pages/OverviewPage.tsx": "8be729c1b7cddd1f920b6e1cd390660b5a7f6b90f5f933c14468f823e56dcb7b",
+    "frontend/mission-planner/src/services/overview-display-protocol.ts": "3a67bbe42ef07ee1f209d2c8b704d29d6f4d89d3d08bcb38b5a41ea46e3ae854"
+  },
+  "review": "Targeted read-only review found an explicit-association edge case; fixed and regression-tested for missing context and initial establishment.",
+  "browser": "Reused native RC3 fixture/public routers/stores; actual conference commands and history, actual Overview camera messages; no provider acquisition",
+  "humanApproval": "pending",
+  "cleanup": {
+    "remainingOwnedProcessGroups": [],
+    "remainingAPITestProcesses": [],
+    "remainingListeners": [],
+    "runnerStopped": true,
+    "providerInstances": [],
+    "containers": [],
+    "networks": [],
+    "volumes": [],
+    "browserContexts": "closed in finally",
+    "temporaryFilesRemoved": true
+  },
+  "staticChecks": {
+    "changedSourcePrettier": "passed",
+    "changedSourceESLint": "passed",
+    "previewMarkdownlint": "passed"
+  }
+}

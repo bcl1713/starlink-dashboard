@@ -1,0 +1,22 @@
+All done! ✨ 🍰 ✨
+773 files would be left unchanged.
+All checks passed!
+Checking filename conventions in docs...
+All markdown files follow the naming convention.
+Checking formatting...
+All matched files use Prettier code style!
+
+> mission-planner@0.0.0 lint
+> eslint .
+
+markdownlint-cli2 v0.23.3 (markdownlint v0.41.1)
+Finding: docs/**/*.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 501 files
+Summary: 1 issue in 1 file
+docs/operations/operator-journal.md:1 error MAX_LINES Limit file length [File has 301 lines (max 300).]
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ uv run --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation/backend/starlink-location) $ uv run --with-requirements requirements-dev.txt ruff check app tests
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ python tools/check_filename_convention.py
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner exec -- prettier --check frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ npm --prefix frontend/mission-planner run lint
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-376-operator-implementation) $ markdownlint-cli2 docs/**/*.md

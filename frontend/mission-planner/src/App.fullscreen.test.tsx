@@ -30,10 +30,19 @@ vi.mock('./pages/OverviewPage', () => ({
   OverviewPage: () => <main>Overview</main>,
 }));
 
+vi.mock('./services/operator', () => ({
+  getOperatorHealth: vi
+    .fn()
+    .mockRejectedValue({ cause: { response: { status: 404 } } }),
+}));
+import { getOperatorHealth } from './services/operator';
 import App from './App';
 
 afterEach(() => {
   cleanup();
+  vi.mocked(getOperatorHealth).mockRejectedValue({
+    cause: { response: { status: 404 } },
+  });
   Reflect.deleteProperty(document, 'fullscreenElement');
   window.history.replaceState({}, '', '/');
 });
@@ -79,4 +88,26 @@ describe('App native fullscreen navigation', () => {
       screen.getByRole('navigation', { name: 'Primary navigation' })
     ).toBeTruthy();
   });
+});
+
+it('hides Operator navigation on 404 and shows it for an enabled unavailable store', async () => {
+  const view = render(<App />);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(screen.queryByRole('link', { name: 'Operator' })).toBeNull();
+  view.unmount();
+  vi.mocked(getOperatorHealth).mockResolvedValue({
+    schema_version: 1,
+    enabled: true,
+    ready: false,
+    store_id: null,
+    api_epoch: null,
+    source_mode: 'live',
+    simulation_run_id: null,
+    clock_regression: false,
+    error_code: 'store_unavailable',
+  });
+  render(<App />);
+  expect(
+    (await screen.findByRole('link', { name: 'Operator' })).getAttribute('href')
+  ).toBe('/operator');
 });

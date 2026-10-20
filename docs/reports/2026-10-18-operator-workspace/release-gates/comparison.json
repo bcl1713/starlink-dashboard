@@ -1,0 +1,90 @@
+[
+  {
+    "page": "operator",
+    "taskDurationSeconds": {
+      "baseline": 0.134842,
+      "candidate": 0.11293700000000001,
+      "changePercent": -16.244938520638954
+    },
+    "scriptDurationSeconds": {
+      "baseline": 0.025631,
+      "candidate": 0.020352,
+      "changePercent": -20.596153095860494
+    },
+    "baseline": {
+      "threadCpuSeconds": 0.196876,
+      "reactCommits": 8,
+      "renderFrames": null,
+      "requestCounts": {
+        "/api/v2/operator/health": 4,
+        "/api/v2/operator/events": 4
+      }
+    },
+    "candidate": {
+      "threadCpuSeconds": 0.18761599999999998,
+      "reactCommits": 8,
+      "renderFrames": null,
+      "requestCounts": {
+        "/api/v2/operator/health": 4,
+        "/api/v2/operator/events": 4
+      }
+    }
+  },
+  {
+    "page": "overview",
+    "taskDurationSeconds": {
+      "baseline": 43.962956000000005,
+      "candidate": 43.952381,
+      "changePercent": -0.024054342478707635
+    },
+    "scriptDurationSeconds": {
+      "baseline": 1.9535289999999998,
+      "candidate": 1.936223,
+      "changePercent": -0.8858839566753152
+    },
+    "baseline": {
+      "threadCpuSeconds": 6.298934,
+      "reactCommits": 2249,
+      "renderFrames": 1384,
+      "requestCounts": {
+        "/api/simulation/run": 59,
+        "/api/active-x-link": 58,
+        "/api/status": 58,
+        "/api/overview-adsb/settings": 12,
+        "/api/overview-weather/settings": 12,
+        "/api/aviation-weather/v1/settings": 12,
+        "/api/overview-clocks/settings": 12,
+        "/api/overview-links/settings": 12,
+        "/api/overview-history/settings": 12,
+        "/api/overview/upcoming-pois": 12,
+        "/api/overview-history": 12,
+        "/api/satellites": 12,
+        "/api/routes": 12,
+        "/api/routes/": 12,
+        "/api/v2/operator/health": 4
+      }
+    },
+    "candidate": {
+      "threadCpuSeconds": 6.267939,
+      "reactCommits": 2195,
+      "renderFrames": 1390,
+      "requestCounts": {
+        "/api/simulation/run": 59,
+        "/api/active-x-link": 58,
+        "/api/status": 58,
+        "/api/overview-adsb/settings": 12,
+        "/api/overview-weather/settings": 12,
+        "/api/overview-clocks/settings": 12,
+        "/api/aviation-weather/v1/settings": 12,
+        "/api/overview-history/settings": 12,
+        "/api/satellites": 12,
+        "/api/overview-history": 12,
+        "/api/routes": 12,
+        "/api/routes/": 12,
+        "/api/overview/upcoming-pois": 12,
+        "/api/overview-links/settings": 12,
+        "/api/v2/operator/health": 4
+      }
+    }
+  }
+]
