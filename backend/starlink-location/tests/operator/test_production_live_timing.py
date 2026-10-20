@@ -195,6 +195,30 @@ def test_passed_restriction_is_retired_without_planned_clock_resurrection(
     )
 
 
+def test_restriction_passed_during_preparation_is_not_upcoming(
+    production, clock, monkeypatch
+):
+    from app.operator.production_event_inputs import ModelInputs
+
+    runtime, adapter = runtime_for(production, clock)
+    prepare = ModelInputs.prepare
+
+    def moving(self, leg):
+        artifacts = prepare(self, leg)
+        clock.advance(6)
+        position = production[2]["telemetry"].position
+        position.longitude = 10
+        position.observed_at = position.speed_observed_at = clock.now()
+        return artifacts
+
+    monkeypatch.setattr(ModelInputs, "prepare", moving)
+    snapshot = build_snapshot(runtime, "demo-mission", adapter)
+    source = next(s for s in snapshot.sources if s.source == "model:leg-a")
+    assert source.guardable and source.freshness == "fresh"
+    assert not any(e.transport == "X" and e.active for e in snapshot.events)
+    assert snapshot.as_of == clock.now()
+
+
 def test_preflight_changed_boundary_supersedes_overlapping_occurrence(
     production, clock
 ):

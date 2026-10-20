@@ -113,30 +113,34 @@ class ProductionEventSources(EventSourceAdapter):
                     attach_boundary_geometry(model, artifacts)
                     model["unavailable_inputs"] = missing
                     item = (inputs.revision, source, model)
-                model, timing_available = refresh_boundary_times(
-                    item[2], inputs, as_of=as_of
-                )
-                timed_source = item[1].model_copy(
-                    update={
-                        "revision": identity(item[2], model["time_basis"]),
-                        "generation": identity(inputs.revision, inputs.sample_revision),
-                        "captured_at": as_of,
-                        "freshness": "fresh" if timing_available else "unknown",
-                        "guardable": timing_available,
-                        "reason": (
-                            "Live route-aware transport estimate"
-                            if model["time_basis"] == "live_route_eta"
-                            else (
-                                "Preflight planning estimate"
-                                if timing_available
-                                else "Live restriction timing unavailable; planning times are reference only"
-                            )
-                        ),
-                    }
-                )
                 with storage.get_active_leg_lock():
-                    self._validate_timing(
-                        mission_id, inputs.revision, inputs.sample_revision
+                    # Preparation can outlast several telemetry samples. Verify
+                    # static inputs, then time the accepted model with the newest
+                    # sample rather than rejecting normal aircraft movement.
+                    inputs = self._validate(mission_id, inputs.revision)
+                    timing_as_of = self.clock.now()
+                    model, timing_available = refresh_boundary_times(
+                        item[2], inputs, as_of=timing_as_of
+                    )
+                    timed_source = item[1].model_copy(
+                        update={
+                            "revision": identity(item[2], model["time_basis"]),
+                            "generation": identity(
+                                inputs.revision, inputs.sample_revision
+                            ),
+                            "captured_at": timing_as_of,
+                            "freshness": "fresh" if timing_available else "unknown",
+                            "guardable": timing_available,
+                            "reason": (
+                                "Live route-aware transport estimate"
+                                if model["time_basis"] == "live_route_eta"
+                                else (
+                                    "Preflight planning estimate"
+                                    if timing_available
+                                    else "Live restriction timing unavailable; planning times are reference only"
+                                )
+                            ),
+                        }
                     )
                     self.publication.publish(
                         timed_source,
@@ -159,7 +163,7 @@ class ProductionEventSources(EventSourceAdapter):
                     )
                 from .production_pop_events import live_pop_events
 
-                live = live_pop_events(self, inputs, leg, as_of=as_of)
+                live = live_pop_events(self, inputs, leg, as_of=self.clock.now())
                 if live is not None:
                     model_key, live_source, live_model = live
                     models[model_key] = live_model

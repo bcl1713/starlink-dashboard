@@ -14,6 +14,9 @@ from .transport_review import derive_transport_review
 def build_snapshot(runtime, mission_id, adapter):
     service, now = runtime.service, runtime.clock.now()
     inputs = adapter.capture(mission_id, as_of=now)
+    # A cold model capture may span telemetry updates and transition boundaries.
+    # Classify the resulting estimates against completion time.
+    now = runtime.clock.now()
     from dataclasses import replace
 
     from .replay_context import current_records

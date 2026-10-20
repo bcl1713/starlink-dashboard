@@ -318,3 +318,44 @@ def test_timing_guard_uses_one_coherent_input_capture(production, clock, monkeyp
         }
     )
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize("preparation_seconds", [1, 6, 15])
+@pytest.mark.parametrize("with_pop", [False, True])
+def test_telemetry_update_during_preparation_keeps_current_timing(
+    production, clock, monkeypatch, preparation_seconds, with_pop
+):
+    from app.operator.production_event_inputs import ModelInputs
+
+    adapter, publication, state, *_ = production
+    if with_pop:
+        from app.mission.pop_status import PopStatusService
+
+        adapter.pop_service = PopStatusService(production[4], lambda: production[3])
+    prepare = ModelInputs.prepare
+    preparations = []
+
+    def moving(self, leg):
+        preparations.append(leg.id)
+        artifacts = prepare(self, leg)
+        clock.advance(preparation_seconds)
+        position = state["telemetry"].position
+        position.longitude = -9
+        position.observed_at = position.speed_observed_at = clock.now()
+        return artifacts
+
+    monkeypatch.setattr(ModelInputs, "prepare", moving)
+    captured = adapter.capture("demo-mission", as_of=clock.now())
+    source = next(s for s in captured.sources if s.source == "model:leg-a")
+    assert source.guardable and source.aligned and source.freshness == "fresh"
+    assert source.captured_at == clock.now()
+    assert captured.models["leg-a"]["time_basis"] == "live_route_eta"
+    with publication.guard([source]):
+        pass
+    if with_pop:
+        live = next(s for s in captured.sources if s.source.endswith(":live-pop"))
+        assert live.guardable and live.freshness == "fresh"
+        assert live.captured_at == clock.now()
+    again = adapter.capture("demo-mission", as_of=clock.now())
+    assert again.models == captured.models
+    assert preparations == ["leg-a"]
