@@ -219,6 +219,40 @@ def test_restriction_passed_during_preparation_is_not_upcoming(
     assert snapshot.as_of == clock.now()
 
 
+@pytest.mark.parametrize("change", ["telemetry", "route", "captured_sample_stale"])
+@pytest.mark.parametrize("with_pop", [False, True])
+def test_snapshot_validation_allows_new_sample_but_rejects_changed_inputs(
+    production, clock, monkeypatch, change, with_pop
+):
+    runtime, adapter = runtime_for(production, clock)
+    if with_pop:
+        from app.mission.pop_status import PopStatusService
+
+        adapter.pop_service = PopStatusService(production[4], lambda: production[3])
+    capture = adapter.capture
+
+    def moving(*args, **kwargs):
+        captured = capture(*args, **kwargs)
+        clock.advance(11 if change == "captured_sample_stale" else 1)
+        position = production[2]["telemetry"].position
+        position.longitude = -9
+        position.observed_at = position.speed_observed_at = clock.now()
+        if change == "route":
+            routes, leg = production[4:6]
+            route = routes.get_route(leg.route_id).model_copy(deep=True)
+            route.points[-1].longitude += 1
+            routes.add_route(leg.route_id, route)
+        return captured
+
+    monkeypatch.setattr(adapter, "capture", moving)
+    if change != "telemetry":
+        with pytest.raises(OperatorError):
+            build_snapshot(runtime, "demo-mission", adapter)
+    else:
+        snapshot = build_snapshot(runtime, "demo-mission", adapter)
+        assert restriction(snapshot).time_basis == "live_route_eta"
+
+
 def test_preflight_changed_boundary_supersedes_overlapping_occurrence(
     production, clock
 ):

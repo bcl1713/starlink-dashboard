@@ -17,7 +17,7 @@ class EventPublication:
         self._validators = {}
         self.input_gate = nullcontext
 
-    def publish(self, source, *, update=None, validate=None):
+    def publish(self, source, *, update=None, validate=None, snapshot_validate=None):
         with self.input_gate(), self._lock:
             if update is not None:
                 # Input mutation and its replacement publication share the gate.
@@ -27,7 +27,10 @@ class EventPublication:
             self._sources[source.source] = source.model_copy(deep=True)
             self._validators.pop(source.source, None)
             if validate is not None:
-                self._validators[source.source] = validate
+                self._validators[source.source] = (
+                    validate,
+                    snapshot_validate or validate,
+                )
 
     def invalidate(self, source):
         with self._lock:
@@ -35,7 +38,7 @@ class EventPublication:
             self._validators.pop(source, None)
 
     @contextmanager
-    def guard(self, expected):
+    def guard(self, expected, *, snapshot=False):
         with self.input_gate(), self._lock:
             for source in expected:
                 if (
@@ -44,9 +47,9 @@ class EventPublication:
                     or source.freshness != "fresh"
                 ):
                     raise OperatorError("event_source_unavailable", retryable=True)
-                validator = self._validators.get(source.source)
-                if validator is not None:
-                    validator()
+                validators = self._validators.get(source.source)
+                if validators is not None:
+                    validators[1 if snapshot else 0]()
                 current = self._sources.get(source.source)
                 if current is None:
                     raise OperatorError("event_source_unavailable", retryable=True)

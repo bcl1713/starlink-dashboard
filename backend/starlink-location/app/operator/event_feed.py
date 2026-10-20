@@ -50,7 +50,7 @@ def build_snapshot(runtime, mission_id, adapter):
         for s in inputs.sources
         if s.guardable and s.aligned and s.freshness == "fresh"
     )
-    with runtime.event_publication.guard(guarded), service.store.connect(
+    with runtime.event_publication.guard(guarded, snapshot=True), service.store.connect(
         write=True
     ) as connection:
         versions = dict(

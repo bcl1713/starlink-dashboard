@@ -36,9 +36,8 @@ def live_pop_events(adapter, inputs, leg, *, as_of):
     with storage.get_active_leg_lock():
         adapter._validate(inputs.mission.id, inputs.revision)
         sample = sample_identity(adapter)
-        result = adapter.pop_service.status_payload(
-            deepcopy(adapter.telemetry_provider()), now=as_of
-        )
+        telemetry = deepcopy(adapter.telemetry_provider())
+        result = adapter.pop_service.status_payload(telemetry, now=as_of)
         published = adapter.pop_service.read_publication()
         health = adapter.service.store.health()
         aligned = (
@@ -70,7 +69,13 @@ def live_pop_events(adapter, inputs, leg, *, as_of):
             if sample_identity(adapter) != sample:
                 raise OperatorError("event_snapshot_changed", retryable=True)
 
-        adapter.publication.publish(source, validate=validate)
+        adapter.publication.publish(
+            source,
+            validate=validate,
+            snapshot_validate=lambda: adapter._validate_snapshot(
+                inputs.mission.id, inputs.revision, telemetry.position
+            ),
+        )
         adapter.live_sources.add(source_ref)
         model = {
             "_leg_id": leg.id,

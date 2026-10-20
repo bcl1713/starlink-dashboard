@@ -320,6 +320,19 @@ def test_timing_guard_uses_one_coherent_input_capture(production, clock, monkeyp
     assert len(calls) == 1
 
 
+def test_current_model_inputs_do_not_read_discarded_timeline_caches(
+    production, clock, monkeypatch
+):
+    from app.operator.production_event_inputs import capture_current
+
+    def read_unused_cache(*args, **kwargs):
+        pytest.fail("Current model inputs must not parse saved output timelines")
+
+    monkeypatch.setattr(storage, "load_mission_timeline", read_unused_cache)
+    inputs = capture_current(production[0], "demo-mission", as_of=clock.now())
+    assert inputs.prepare(production[5]).timeline is not None
+
+
 @pytest.mark.parametrize("preparation_seconds", [1, 6, 15])
 @pytest.mark.parametrize("with_pop", [False, True])
 def test_telemetry_update_during_preparation_keeps_current_timing(

@@ -56,6 +56,20 @@ class ModelInputs:
         )
 
 
+def require_fresh_position(position, as_of):
+    _, freshness = position_observation(
+        position.latitude, position.longitude, position.observed_at, as_of
+    )
+    if freshness != "fresh" or not speed_is_fresh(
+        position.speed, position.speed_observed_at, as_of
+    ):
+        raise OperatorError(
+            "event_source_unavailable",
+            retryable=True,
+            fields={"source": "Position or speed evidence stale or unavailable"},
+        )
+
+
 def capture_current(adapter, mission_id, *, as_of):
     """Caller holds repository admission; detached models never consult live inputs."""
     config = adapter.config_provider().model_copy(deep=True)
@@ -70,19 +84,13 @@ def capture_current(adapter, mission_id, *, as_of):
     if telemetry is None:
         raise OperatorError("event_source_unavailable", retryable=True)
     position = deepcopy(telemetry.position)
-    _, freshness = position_observation(
-        position.latitude, position.longitude, position.observed_at, as_of
-    )
-    if freshness != "fresh" or not speed_is_fresh(
-        position.speed, position.speed_observed_at, as_of
-    ):
-        raise OperatorError(
-            "event_source_unavailable",
-            retryable=True,
-            fields={"source": "Position or speed evidence stale or unavailable"},
-        )
+    require_fresh_position(position, as_of)
     metadata, sources, _ = capture_inputs(
-        mission_id, adapter.route_manager, adapter.poi_manager, persisted=True
+        mission_id,
+        adapter.route_manager,
+        adapter.poi_manager,
+        persisted=True,
+        include_timeline_cache=False,
     )
     mission = Mission.model_validate_json(metadata)
     from app.mission.active_context import resolve_active_mission_leg_context

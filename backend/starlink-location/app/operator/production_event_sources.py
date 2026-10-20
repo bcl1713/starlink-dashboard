@@ -9,7 +9,7 @@ from .errors import OperatorError
 from .event_ledger import identity
 from .event_models import SourceCapture
 from .event_sources import EventSourceAdapter
-from .production_event_inputs import capture_current
+from .production_event_inputs import capture_current, require_fresh_position
 from .production_live_timing import attach_boundary_geometry, refresh_boundary_times
 
 
@@ -57,6 +57,12 @@ class ProductionEventSources(EventSourceAdapter):
         current = self._validate(mission_id, revision)
         if current.sample_revision != sample:
             raise OperatorError("event_snapshot_changed", retryable=True)
+
+    def _validate_snapshot(self, mission_id, revision, position):
+        # A display snapshot may use a still-fresh captured observation even
+        # when the aircraft has published a newer sample. Actions remain strict.
+        self._validate(mission_id, revision)
+        require_fresh_position(position, self.clock.now())
 
     def capture(self, mission_id, *, as_of):
         captured = super().capture(mission_id, as_of=as_of)
@@ -146,6 +152,9 @@ class ProductionEventSources(EventSourceAdapter):
                         timed_source,
                         validate=lambda m=mission_id, r=inputs.revision, t=inputs.sample_revision: self._validate_timing(
                             m, r, t
+                        ),
+                        snapshot_validate=lambda m=mission_id, r=inputs.revision, p=inputs.position: self._validate_snapshot(
+                            m, r, p
                         ),
                     )
                     self.cache[key] = item
