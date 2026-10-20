@@ -239,6 +239,38 @@ def run(args):
             name: owner.compose("ps", "-q", name, timeout=15).strip()
             for name in services
         }
+        dependencies = owner.execute(
+            [
+                "docker",
+                "exec",
+                containers["starlink-location"],
+                "python",
+                "-m",
+                "pip",
+                "--disable-pip-version-check",
+                "list",
+                "--format=json",
+            ],
+            timeout=30,
+        )
+        (owner.root / "backend-packages.json").write_text(dependencies)
+        result["backend_python"] = owner.execute(
+            ["docker", "exec", containers["starlink-location"], "python", "--version"],
+            timeout=15,
+        ).strip()
+        result["backend_packages_sha256"] = hashlib.sha256(
+            dependencies.encode()
+        ).hexdigest()
+        result["fixture_hashes"] = {}
+        for relative in (
+            "backend/starlink-location/config.yaml",
+            "monitoring/prometheus/prometheus.yml",
+            "tools/acceptance/operator-journal/scenario.py",
+            "tools/acceptance/overview_history/seed.py",
+        ):
+            result["fixture_hashes"][relative] = hashlib.sha256(
+                (source / relative).read_bytes()
+            ).hexdigest()
         result["images"]["prometheus"] = json.loads(
             owner.execute(
                 [
@@ -289,6 +321,7 @@ def run(args):
         result.update(
             workload={
                 "fixture": "perf390-v1",
+                "fixture_hashes": result["fixture_hashes"],
                 "viewers": args.viewers,
                 "operator": args.operator,
                 "window": args.window,
@@ -300,6 +333,8 @@ def run(args):
             instrumentation=args.instrumentation,
             runtime={
                 "mode": "simulation",
+                "backend_python": result["backend_python"],
+                "backend_packages_sha256": result["backend_packages_sha256"],
                 "scrape_seconds": 1,
                 "evaluation_seconds": 1,
                 "cpus_per_service": args.cpus,

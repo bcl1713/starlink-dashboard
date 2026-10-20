@@ -120,6 +120,7 @@ const handler = () => {
 process.on("SIGTERM", handler);
 process.on("SIGINT", handler);
 const browserMeta = {
+  node_version: process.version,
   mode: "headless-diagnostic",
   fullscreen: false,
   viewport: [1920, 1080],
@@ -180,6 +181,11 @@ try {
     });
     browser = await chromium.connect(server.wsEndpoint());
     browserMeta.version = browser.version();
+    browserMeta.executable_sha256 = execFileSync(
+      "sha256sum",
+      [server.process().spawnargs[0]],
+      { encoding: "utf8", timeout: 10000 },
+    ).split(" ")[0];
     rootSession = await browser.newBrowserCDPSession();
     for (let i = 0; i < options.viewers + Number(options.operator); i++) {
       const context = await browser.newContext({
