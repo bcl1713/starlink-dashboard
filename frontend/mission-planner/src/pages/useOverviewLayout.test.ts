@@ -12,7 +12,7 @@ afterEach(() => {
 
 function setup(width = 1366, height = 703) {
   document.body.innerHTML =
-    '<div><main><div class="overview-map-stage"><div class="overview-globe-viewport"><div class="overview-globe"></div></div><div class="overview-right-overlays"><aside class="globe-legend"><button aria-expanded="false">Legend</button></aside></div></div></main></div>';
+    '<div><main><div class="overview-map-stage"><div class="overview-globe-viewport"><div class="overview-globe"></div></div><div class="overview-right-overlays"><div class="overview-map-overlays"><aside class="globe-legend"><button aria-expanded="false">Legend</button></aside></div></div></div></main></div>';
   const host = document.body.firstElementChild as HTMLElement;
   const page = host.firstElementChild as HTMLElement;
   const stage = page.firstElementChild as HTMLDivElement;
@@ -241,4 +241,34 @@ it('fullscreen keeps the taller center opening when the right-side gap would shr
     width: 1080,
     height: 751,
   });
+});
+
+it('centers the desktop camera when only corner controls and display identity remain', () => {
+  const { page, stage, globe, measure } = setup(1920, 1080);
+  vi.mocked(globe.getBoundingClientRect).mockReturnValue(
+    new DOMRect(0, 0, 1920, 1080)
+  );
+  const rail = page.querySelector('.overview-right-overlays')!;
+  rail.innerHTML =
+    '<div class="overview-map-controls">Reset</div><div class="overview-map-overlays"><span class="overview-display-label">Display 1</span></div>';
+  vi.spyOn(rail, 'getBoundingClientRect').mockReturnValue(
+    new DOMRect(1580, 136, 320, 924)
+  );
+  const { result } = renderHook(() =>
+    useOverviewLayout({ current: page }, { current: stage }, 'loaded', true)
+  );
+  expect(result.current.safeRect).toEqual({
+    x: 20,
+    y: 20,
+    width: 1880,
+    height: 1040,
+  });
+  const card = document.createElement('div');
+  card.className = 'overview-satellite-overlays';
+  rail.append(card);
+  measure();
+  expect(result.current.safeRect.width).toBe(1540);
+  card.remove();
+  measure();
+  expect(result.current.safeRect.width).toBe(1880);
 });

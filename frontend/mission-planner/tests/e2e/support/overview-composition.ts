@@ -55,6 +55,7 @@ export async function compositionFixture(page: Page) {
       return route.fulfill({
         json: {
           timestamp: observed,
+          metric_source: 'observed',
           position: state.position,
           ground_entry_point: { latitude: 36, longitude: -102 },
           metric_availability: {
@@ -219,7 +220,10 @@ export async function desktopGeometry(page: Page) {
     // The fullscreen action is inside the map-controls group. Compare sibling
     // panel areas, rather than reporting their intentional containment as overlap.
     const bounds = panels
-      .filter((node) => !node.matches('.overview-map-controls .overview-fullscreen-control'))
+      .filter(
+        (node) =>
+          !node.matches('.overview-map-controls .overview-fullscreen-control')
+      )
       .map((node) => node.getBoundingClientRect());
     return {
       fits: panels.every(
