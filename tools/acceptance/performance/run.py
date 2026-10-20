@@ -314,6 +314,7 @@ def run(args):
                     "duration": args.duration,
                     "instrumentation": args.instrumentation,
                     "operations": args.operations,
+                    "fullscreen": args.fullscreen,
                     "root": str(ROOT),
                 }
             )
@@ -329,6 +330,7 @@ def run(args):
                 "warmup": args.warmup,
                 "duration": args.duration,
                 "operations": args.operations,
+                "fullscreen": args.fullscreen,
             },
             instrumentation=args.instrumentation,
             runtime={
@@ -361,6 +363,9 @@ def run(args):
                     timeout=30,
                 )
         result["browser"] = json.loads((owner.root / "browser.json").read_text())
+        result["runtime"]["history_step_seconds"] = result["browser"][
+            "history_step_seconds"
+        ]
         result["request_outcomes"] = json.loads(
             (owner.root / "request-outcomes.json").read_text()
         )
@@ -414,6 +419,11 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--viewers", type=int, choices=(0, 1, 2), default=1)
     parser.add_argument("--operator", action="store_true")
+    parser.add_argument(
+        "--fullscreen",
+        action="store_true",
+        help="request the actual app fullscreen layout",
+    )
     parser.add_argument(
         "--operations",
         action="store_true",

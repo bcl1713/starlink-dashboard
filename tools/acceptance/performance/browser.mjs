@@ -7,7 +7,11 @@ import { promisify } from "node:util";
 import { request } from "node:http";
 import { performance } from "node:perf_hooks";
 import { randomUUID } from "node:crypto";
-import { networkMilliseconds, pollingCovered } from "./polling.mjs";
+import {
+  networkMilliseconds,
+  pollingCovered,
+  validateHistory,
+} from "./polling.mjs";
 
 const executeFile = promisify(execFile);
 
@@ -128,7 +132,8 @@ process.on("SIGINT", handler);
 const browserMeta = {
   node_version: process.version,
   mode: "headless-diagnostic",
-  fullscreen: false,
+  fullscreen: !!options.fullscreen,
+  physical_fullscreen: false,
   viewport: [1920, 1080],
   dpr: 1,
   version: null,
@@ -160,8 +165,7 @@ try {
       ]),
     ),
   });
-  if (history.step_seconds !== 1 || history.window_seconds !== options.window)
-    throw new Error("History cadence/window differs from workload");
+  browserMeta.history_step_seconds = validateHistory(history, options.window);
   if (options.viewers || options.operator) {
     const { chromium } = createRequire(
       resolve(options.root, "frontend/mission-planner/package.json"),
@@ -296,6 +300,15 @@ try {
         options.origin + (i < options.viewers ? "/overview" : "/operator"),
         { waitUntil: "domcontentloaded", timeout: 60000 },
       );
+      if (options.fullscreen && i < options.viewers) {
+        await page
+          .getByRole("button", { name: "Enter fullscreen overview" })
+          .click();
+        await page.waitForFunction(() => !!document.fullscreenElement);
+        const size = await page.evaluate(() => [innerWidth, innerHeight]);
+        if (size[0] !== 1920 || size[1] !== 1080)
+          throw new Error("Fullscreen viewport differs from 1920x1080");
+      }
       if (i === 0)
         browserMeta.renderer = await page.evaluate(() => {
           const gl = document.createElement("canvas").getContext("webgl2");
@@ -401,18 +414,22 @@ try {
             frames: p.frames,
             longTasks: p.longTasks,
             hidden: document.hidden,
+            fullscreen: !!document.fullscreenElement,
           };
           p.frames = [];
           p.longTasks = [];
           return result;
         });
         row.latency.frame.push(...paint.frames);
+        if (options.fullscreen && i < options.viewers && !paint.fullscreen)
+          throw new Error("Overview left requested fullscreen layout");
         row.browser.frame_count += paint.frames.length;
         row.browser.long_task_ms += paint.longTasks.reduce((s, v) => s + v, 0);
         append("browser-pages.jsonl", {
           seconds: elapsed,
           page: i,
           hidden: paint.hidden,
+          fullscreen: paint.fullscreen,
           metrics,
         });
       }
@@ -539,6 +556,8 @@ try {
   if (stopped) throw new Error("Measurement interrupted");
   out("polling.json", subscriptions);
   const final = await api("/api/overview-history");
+  if (validateHistory(final, options.window) !== history.step_seconds)
+    throw new Error("History resolution changed during run");
   out("final-history.json", {
     end: final.end_timestamp_seconds,
     step: final.step_seconds,

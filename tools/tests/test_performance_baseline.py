@@ -111,6 +111,32 @@ if __name__ == "__main__":
 
 
 class BrowserCleanupTests(unittest.TestCase):
+    def test_history_validation_records_adaptive_grid_and_rejects_gaps(self):
+        module = (
+            Path(__file__).parents[1] / "acceptance/performance/polling.mjs"
+        ).as_uri()
+        result = subprocess.run(
+            [
+                "node",
+                "--input-type=module",
+                "-e",
+                f"""
+import {{validateHistory}} from {json.dumps(module)};
+const series=Object.fromEntries(Array.from({{length:11}},(_,i)=>['metric'+i,Array.from({{length:1801}},(_,n)=>[n*2,1])]));
+const values=[validateHistory({{window_seconds:3600,step_seconds:2,series}},3600)];
+series.metric0[20][1]=null;
+try {{validateHistory({{window_seconds:3600,step_seconds:2,series}},3600);values.push('accepted');}}
+catch {{values.push('rejected');}}
+console.log(JSON.stringify(values));
+""",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(json.loads(result.stdout), [2, "rejected"])
+
     def test_network_latency_uses_browser_offset_and_rejects_missing_timing(self):
         module = (
             Path(__file__).parents[1] / "acceptance/performance/polling.mjs"

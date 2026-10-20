@@ -1,4 +1,24 @@
 /** Liveness coverage; configured delay and observed request rate stay separate. */
+export function validateHistory(history, window) {
+  const step = history.step_seconds;
+  if (history.window_seconds !== window || !Number.isInteger(step) || step < 1)
+    throw new Error("History window/resolution is invalid");
+  const series = Object.values(history.series);
+  const points = Math.floor(window / step) + 1;
+  if (
+    series.length !== 11 ||
+    series.some(
+      (values) =>
+        values.length !== points ||
+        values.some(
+          (point) => !Number.isFinite(point[0]) || !Number.isFinite(point[1]),
+        ),
+    )
+  )
+    throw new Error("Synthetic history must have 11 dense finite series");
+  return step;
+}
+
 export function networkMilliseconds(timing) {
   // Playwright responseEnd is already an offset from its epoch startTime.
   if (!Number.isFinite(timing.responseEnd) || timing.responseEnd < 0)
