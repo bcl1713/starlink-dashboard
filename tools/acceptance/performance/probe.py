@@ -1,6 +1,7 @@
 """Opt-in bounded acceptance counters. Uninstrumented controls use fixture:app."""
 
 import asyncio
+import cProfile
 import sqlite3
 import threading
 import time
@@ -9,6 +10,7 @@ from contextlib import asynccontextmanager
 
 lock = threading.Lock()
 counts = Counter()
+armed_profiles = set()
 timings = defaultdict(lambda: deque(maxlen=4096))
 connect = sqlite3.connect
 
@@ -39,9 +41,16 @@ original_tick = main._background_update_tick
 
 def tick(*args, **kwargs):
     began, cpu = time.perf_counter(), time.thread_time()
+    profile = cProfile.Profile() if "tick" in armed_profiles else None
+    if profile:
+        armed_profiles.discard("tick")
+        profile.enable()
     try:
         return original_tick(*args, **kwargs)
     finally:
+        if profile:
+            profile.disable()
+            profile.dump_stats("/data/perf-tick.prof")
         with lock:
             timings["tick_wall_ms"].append((time.perf_counter() - began) * 1000)
             timings["tick_thread_cpu_ms"].append((time.thread_time() - cpu) * 1000)
@@ -56,9 +65,16 @@ original_prepare = metrics_export._prepare_metrics
 
 def prepare_metrics(*args, **kwargs):
     began, cpu = time.perf_counter(), time.thread_time()
+    profile = cProfile.Profile() if "metrics" in armed_profiles else None
+    if profile:
+        armed_profiles.discard("metrics")
+        profile.enable()
     try:
         return original_prepare(*args, **kwargs)
     finally:
+        if profile:
+            profile.disable()
+            profile.dump_stats("/data/perf-metrics.prof")
         with lock:
             timings["metrics_prepare_wall_ms"].append(
                 (time.perf_counter() - began) * 1000
@@ -131,6 +147,12 @@ async def lifespan(application):
 
 
 app.router.lifespan_context = lifespan
+
+
+@app.post("/api/_acceptance/arm-profile")
+def arm_profile():
+    armed_profiles.update(("tick", "metrics"))
+    return {"diagnostic_only": True}
 
 
 @app.get("/api/_acceptance/performance")

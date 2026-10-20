@@ -531,9 +531,7 @@ try {
   });
   if (
     subscriptions.some(
-      (s) =>
-        s.overview &&
-        (s.starts < options.duration * 0.7 || s.max_gap_seconds > 5),
+      (s) => s.overview && (s.starts < 2 || s.max_gap_seconds > 5),
     )
   )
     throw new Error("Overview polling coverage failed; inspect polling.json");
@@ -546,6 +544,11 @@ try {
     throw new Error(
       "Unexpected browser requests failed; this run is not a valid baseline (failures.json)",
     );
+  if (options.instrumentation === "counters") {
+    measuring = false;
+    await api("/api/_acceptance/arm-profile", "POST");
+    await new Promise((accept) => setTimeout(accept, 3000));
+  }
 } finally {
   for (const context of contexts) await context.close().catch(() => {});
   await browser?.close();

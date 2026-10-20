@@ -314,6 +314,17 @@ def run(args):
             ["node", str(HERE / "browser.mjs")],
             timeout=args.warmup + args.duration + 120,
         )
+        if args.instrumentation == "counters":
+            for name in ("tick", "metrics"):
+                owner.execute(
+                    [
+                        "docker",
+                        "cp",
+                        f"{containers['starlink-location']}:/data/perf-{name}.prof",
+                        str(owner.root / f"{name}.prof"),
+                    ],
+                    timeout=30,
+                )
         result["browser"] = json.loads((owner.root / "browser.json").read_text())
         rows = [
             json.loads(line)
