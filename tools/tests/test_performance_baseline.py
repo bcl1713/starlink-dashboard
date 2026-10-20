@@ -80,6 +80,18 @@ class BaselineReportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             summarize(self.metadata, self.rows)
 
+    def test_lost_resource_coverage_cannot_look_like_an_improvement(self):
+        baseline = summarize(self.metadata, self.rows)
+        other = copy.deepcopy(baseline)
+        del other["resources"]["backend.cpu_seconds"]
+        with self.assertRaisesRegex(ValueError, "coverage"):
+            compare(baseline, other)
+
+    def test_counter_reset_cannot_look_like_negative_cpu(self):
+        self.rows[-1]["backend"]["cpu_seconds"] = 1
+        with self.assertRaisesRegex(ValueError, "counter"):
+            summarize(self.metadata, self.rows)
+
 
 if __name__ == "__main__":
     unittest.main()
