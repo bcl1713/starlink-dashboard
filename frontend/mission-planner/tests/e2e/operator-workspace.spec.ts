@@ -25,7 +25,12 @@ test('baseline: normal and busy production journeys at three sizes', async ({
       const context = await browser.newContext({ viewport, timezoneId: 'UTC' });
       try {
         const page = await context.newPage();
+        await page.goto('/');
+        await expect(page).toHaveURL(/\/missions$/);
         await page.goto(`/operator?mission_id=${fixture.mission.id}`);
+        await expect(
+          page.getByRole('link', { name: 'Previous workspace' })
+        ).toHaveCount(0);
         await expect(
           page.getByRole('heading', { name: 'Operator journal', exact: true })
         ).toBeVisible();
@@ -234,14 +239,23 @@ test('hidden workspace: normal and busy layouts, real call save and parked notes
         const name = `Synthetic ${fixture.seed} ${viewport.width} customer with a long descriptive label`;
         await party.fill(name);
         await dialog
+          .getByLabel('Planned start date (UTC)', { exact: true })
+          .fill('');
+        await dialog
+          .getByLabel('Planned start time (UTC)', { exact: true })
+          .fill('');
+        await dialog
           .getByRole('button', { name: 'Save call', exact: true })
           .click();
         await expect(dialog.getByRole('alert')).toContainText(
           'Scheduled calls require a planned start'
         );
         await dialog
-          .getByLabel('Planned start (UTC)', { exact: true })
-          .fill('2026-10-17T17:00:00Z');
+          .getByLabel('Planned start date (UTC)', { exact: true })
+          .fill('2026-10-17');
+        await dialog
+          .getByLabel('Planned start time (UTC)', { exact: true })
+          .fill('17:00');
         await party.focus();
         await page.evaluate(() => window.dispatchEvent(new Event('focus')));
         await expect(party).toBeFocused();
@@ -408,11 +422,13 @@ test('fresh install: explicit simulation journal setup and real CRUD without mod
       await page
         .getByLabel('Party / participant (optional)')
         .fill(`${prefix} call`);
+      const plannedStart = new Date(Date.now() + 3_600_000).toISOString();
       await page
-        .getByLabel('Planned start (UTC)', { exact: true })
-        .fill(
-          new Date(Date.now() + 3_600_000).toISOString().slice(0, 19) + 'Z'
-        );
+        .getByLabel('Planned start date (UTC)', { exact: true })
+        .fill(plannedStart.slice(0, 10));
+      await page
+        .getByLabel('Planned start time (UTC)', { exact: true })
+        .fill(plannedStart.slice(11, 16));
       ids.push((await save('Save call')).record_id);
       await communications
         .locator('summary')
@@ -1522,10 +1538,21 @@ test('performance: matching operational tasks on original and candidate shells',
               editor.getByLabel('Party / participant (optional)'),
               callName
             );
-            await fill(
-              editor.getByLabel('Planned start (UTC)', { exact: true }),
-              '2026-10-17T17:00:00Z'
-            );
+            if (candidate) {
+              await fill(
+                editor.getByLabel('Planned start date (UTC)', { exact: true }),
+                '2026-10-17'
+              );
+              await fill(
+                editor.getByLabel('Planned start time (UTC)', { exact: true }),
+                '17:00'
+              );
+            } else {
+              await fill(
+                editor.getByLabel('Planned start (UTC)', { exact: true }),
+                '2026-10-17T17:00:00Z'
+              );
+            }
             const receipt = await save('POST', () =>
               click(
                 editor.getByRole('button', { name: 'Save call', exact: true })
