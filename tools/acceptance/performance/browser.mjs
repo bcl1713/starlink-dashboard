@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { request } from "node:http";
 import { performance } from "node:perf_hooks";
+import { randomUUID } from "node:crypto";
 
 const options = JSON.parse(process.env.PERF_RUN);
 const out = (name, value) =>
@@ -48,10 +49,10 @@ function stats(id) {
     req.end();
   });
 }
-async function api(path, method = "GET", body = undefined) {
+async function api(path, method = "GET", body = undefined, headers = {}) {
   const response = await fetch(options.origin + path, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(30000),
   });
@@ -242,7 +243,7 @@ try {
   let nextSample = readyAt,
     nextDisk = 0,
     operation = 0;
-  while (!stopped && seconds() <= end + 0.2) {
+  while (!stopped) {
     const now = seconds(),
       elapsed = now - readyAt;
     if (!measuring && elapsed >= options.warmup) {
@@ -420,7 +421,38 @@ try {
         elapsed_ms: performance.now() - t,
         result,
       });
+      const health = await api("/api/v2/operator/health");
+      const receipt = await api(
+        "/api/v2/operator/records",
+        "POST",
+        {
+          schema_version: 1,
+          record_type: "journal_entry",
+          mission_id: "synthetic-mission-a",
+          scope: "mission",
+          time: {
+            occurred_at: new Date().toISOString(),
+            precision: "exact",
+            end_state: "instant",
+          },
+          payload: {
+            entry_type: "note",
+            title: `Synthetic measured operation ${action}`,
+            note: "Fictional performance workload",
+          },
+        },
+        {
+          "Idempotency-Key": randomUUID(),
+          "X-Operator-Store-Epoch": health.api_epoch,
+        },
+      );
+      append("operations.jsonl", {
+        seconds: elapsed,
+        operation: "journal_write",
+        receipt,
+      });
     }
+    if (now >= end) break;
     nextSample += 5;
     if (seconds() > nextSample + 5) nextSample = seconds() + 5;
   }

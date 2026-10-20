@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import signal
+import socket
 import subprocess
 import sys
 import tarfile
@@ -41,6 +42,8 @@ def run(args):
     owner.compose_file = owner.root / "compose.json"
     source, archive = owner.root / "source", owner.root / "source.tar"
     port, prom_port = free_port(), free_port()
+    while prom_port == port:
+        prom_port = free_port()
     owner.ownership.update(
         composeFile=str(owner.compose_file),
         port=port,
@@ -321,10 +324,13 @@ def run(args):
         )
     finally:
         try:
-            if owner.admitted and owner.compose_file.exists():
-                owner.compose("logs", "--no-color", timeout=30)
-            result["cleanup"] = owner.close()
-            with __import__("socket").socket() as listener:
+            try:
+                if owner.admitted and owner.compose_file.exists():
+                    owner.compose("logs", "--no-color", timeout=30)
+            finally:
+                result["cleanup"] = owner.close()
+            with socket.socket() as listener:
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 listener.bind(("127.0.0.1", prom_port))
             result["cleanup"]["prometheusListenerRemoved"] = True
         finally:
