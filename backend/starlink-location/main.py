@@ -52,7 +52,7 @@ from app.mission.planning.sources import SourceStore
 from app.mission.planning.store import PlanningStore
 from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
-from app.operator.clock import SystemClock
+from app.operator.clock import MissionClock
 from app.operator.runtime import OperatorRuntimeBinding
 from app.satellites import routes as satellite_routes
 from app.services.adsb_lol import AdsbLolProvider
@@ -577,7 +577,7 @@ async def startup_event():
         app.state.operator_live_source = _operator_live_source
         app.state.operator_event_source_factory = _operator_event_sources
         app.state.operator_binding = OperatorRuntimeBinding(
-            clock=SystemClock(),
+            clock=MissionClock(_operator_mission_now),
             context=_operator_context,
             mission_journals=True,
             operating_context=_operator_operating_context,
@@ -748,6 +748,18 @@ def _current_runtime_config():
     return candidate if isinstance(candidate, SimulationConfig) else _simulation_config
 
 
+def _operator_mission_now():
+    """Read published replay time without acquiring the repository input gate."""
+    service = getattr(app.state, "simulation_run_service", None)
+    config = _current_runtime_config()
+    if config is None or config.mode != "simulation" or service is None:
+        return None
+    status = service.status()
+    if status.state in ("running", "completed") and status.run is not None:
+        return status.run.simulation_time
+    return None
+
+
 def _operator_context():
     config = _current_runtime_config()
     run_service = getattr(app.state, "simulation_run_service", None)
@@ -849,10 +861,9 @@ def _simulation_pop_context():
     }
     if replay is not None:
         plan, frame, _clock = replay
-        leg = plan.artifacts.validated_leg
         context.update(
             mission_id=plan.mission_id,
-            leg_id=leg.id if leg else None,
+            leg_id=plan.leg_id,
             simulation_run_id=_pop_lifecycle_token()[-1],
             route=plan.artifacts.route,
             call_capabilities=plan.artifacts.call_capabilities,
@@ -861,7 +872,7 @@ def _simulation_pop_context():
             observed_now=datetime.now(timezone.utc),
             flight_phase=frame.phase.value,
             unavailable_reason=None,
-            enabled=leg.transports.starshield_enabled is not False if leg else True,
+            enabled=plan.starshield_enabled,
         )
     return context
 

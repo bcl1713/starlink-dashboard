@@ -1,7 +1,6 @@
 """Locate planned restriction boundaries, then reuse the application's live ETA."""
 
 from bisect import bisect_right
-from copy import deepcopy
 from datetime import timedelta
 from math import isfinite
 
@@ -11,6 +10,7 @@ from app.services.aviation_weather.live_encounters import _unique_projection
 from app.services.eta.segment_timing import has_route_timing
 from app.services.eta_calculator import ETACalculator
 
+from .restriction_windows import restriction_windows
 from .time_models import utc_timestamp
 
 
@@ -18,10 +18,12 @@ def attach_boundary_geometry(model, artifacts):
     """Use the existing inverse temporal projector and route interpolation."""
     projector = artifacts.projector
     times = set()
-    for span in model.get("capability_spans", []):
-        times.update((span["start_utc"], span["end_utc"]))
-    for span in (model.get("call_continuity") or {}).get("intervals", []):
-        times.update((span["start_utc"], span["end_utc"]))
+    # Available samples and internal boundaries of one merged restriction never
+    # produce events. Only project endpoints that the feed actually consumes.
+    for _transport, _causes, _index, start, end, _severity in restriction_windows(
+        model
+    ):
+        times.update((start, end))
     boundaries = {}
     for timestamp in times:
         distance = projector.distance_for_timestamp(utc_timestamp(timestamp))
@@ -42,7 +44,8 @@ def attach_boundary_geometry(model, artifacts):
 
 def refresh_boundary_times(model, inputs, *, as_of):
     """No delay offsets, new transport model, or planned-time airborne fallback."""
-    model = deepcopy(model)
+    # Only top-level timing fields change; cached evidence remains read-only.
+    model = dict(model)
     phase = inputs.context.get("phase")
     model["time_basis"] = "planned_utc"
     if phase == "pre_departure":

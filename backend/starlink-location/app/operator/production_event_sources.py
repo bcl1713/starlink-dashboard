@@ -5,12 +5,14 @@ from dataclasses import replace
 from app.mission import storage
 from app.services.pop.geometry import route_geometry_fingerprint
 
+from .clock import observation_now
 from .errors import OperatorError
 from .event_ledger import identity
 from .event_models import SourceCapture
 from .event_sources import EventSourceAdapter
-from .production_event_inputs import capture_current
+from .production_event_inputs import capture_current, require_fresh_position
 from .production_live_timing import attach_boundary_geometry, refresh_boundary_times
+from .restriction_windows import compact_event_model
 
 
 class ProductionEventSources(EventSourceAdapter):
@@ -37,14 +39,48 @@ class ProductionEventSources(EventSourceAdapter):
             context_provider,
         )
         self.cache = {}
+        self.saved_projections = {}
         self.live_sources = set()
         self.lifecycle_sources = set()
         self.pop_service = pop_service
         self.publication.input_gate = storage.get_active_leg_lock
 
+    def _saved_model(self, leg, mission_id):
+        from copy import deepcopy
+
+        path = storage.get_leg_timeline_path(leg.id, mission_id)
+        key = (mission_id, leg.id)
+        if not path.exists():
+            self.saved_projections.pop(key, None)
+            return None
+        stat = path.stat()
+        token = (
+            str(path),
+            leg.route_id,
+            stat.st_dev,
+            stat.st_ino,
+            stat.st_size,
+            stat.st_mtime_ns,
+            stat.st_ctime_ns,
+        )
+        cached = self.saved_projections.get(key)
+        if cached is None or cached[0] != token:
+            saved = super()._saved_model(leg, mission_id)
+            if saved is None:
+                return None
+            payload, revision, created_at = saved
+            cached = (token, (compact_event_model(payload), revision, created_at))
+            self.saved_projections[key] = cached
+            while len(self.saved_projections) > 32:
+                self.saved_projections.pop(next(iter(self.saved_projections)))
+        # Callers receive their own small projection, never shared mutable data.
+        return deepcopy(cached[1])
+
     def _validate(self, mission_id, revision):
         try:
-            current = capture_current(self, mission_id, as_of=self.clock.now())
+            current = capture_current(
+                self, mission_id, as_of=self.clock.now(), validation_only=True
+            )
         except (OSError, ValueError, TypeError, AttributeError, RuntimeError) as exc:
             raise OperatorError("event_source_unavailable", retryable=True) from exc
         if current.revision != revision:
@@ -57,6 +93,12 @@ class ProductionEventSources(EventSourceAdapter):
         current = self._validate(mission_id, revision)
         if current.sample_revision != sample:
             raise OperatorError("event_snapshot_changed", retryable=True)
+
+    def _validate_snapshot(self, mission_id, revision, position):
+        # A display snapshot may use a still-fresh captured observation even
+        # when the aircraft has published a newer sample. Actions remain strict.
+        self._validate(mission_id, revision)
+        require_fresh_position(position, observation_now(self.clock))
 
     def capture(self, mission_id, *, as_of):
         captured = super().capture(mission_id, as_of=as_of)
@@ -112,36 +154,43 @@ class ProductionEventSources(EventSourceAdapter):
                     )
                     attach_boundary_geometry(model, artifacts)
                     model["unavailable_inputs"] = missing
-                    item = (inputs.revision, source, model)
-                model, timing_available = refresh_boundary_times(
-                    item[2], inputs, as_of=as_of
-                )
-                timed_source = item[1].model_copy(
-                    update={
-                        "revision": identity(item[2], model["time_basis"]),
-                        "generation": identity(inputs.revision, inputs.sample_revision),
-                        "captured_at": as_of,
-                        "freshness": "fresh" if timing_available else "unknown",
-                        "guardable": timing_available,
-                        "reason": (
-                            "Live route-aware transport estimate"
-                            if model["time_basis"] == "live_route_eta"
-                            else (
-                                "Preflight planning estimate"
-                                if timing_available
-                                else "Live restriction timing unavailable; planning times are reference only"
-                            )
-                        ),
-                    }
-                )
+                    item = (inputs.revision, source, compact_event_model(model))
                 with storage.get_active_leg_lock():
-                    self._validate_timing(
-                        mission_id, inputs.revision, inputs.sample_revision
+                    # Preparation can outlast several telemetry samples. Verify
+                    # static inputs, then time the accepted model with the newest
+                    # sample rather than rejecting normal aircraft movement.
+                    inputs = self._validate(mission_id, inputs.revision)
+                    timing_as_of = self.clock.now()
+                    model, timing_available = refresh_boundary_times(
+                        item[2], inputs, as_of=timing_as_of
+                    )
+                    timed_source = item[1].model_copy(
+                        update={
+                            "revision": identity(item[1].revision, model["time_basis"]),
+                            "generation": identity(
+                                inputs.revision, inputs.sample_revision
+                            ),
+                            "captured_at": timing_as_of,
+                            "freshness": "fresh" if timing_available else "unknown",
+                            "guardable": timing_available,
+                            "reason": (
+                                "Live route-aware transport estimate"
+                                if model["time_basis"] == "live_route_eta"
+                                else (
+                                    "Preflight planning estimate"
+                                    if timing_available
+                                    else "Live restriction timing unavailable; planning times are reference only"
+                                )
+                            ),
+                        }
                     )
                     self.publication.publish(
                         timed_source,
                         validate=lambda m=mission_id, r=inputs.revision, t=inputs.sample_revision: self._validate_timing(
                             m, r, t
+                        ),
+                        snapshot_validate=lambda m=mission_id, r=inputs.revision, p=inputs.position: self._validate_snapshot(
+                            m, r, p
                         ),
                     )
                     self.cache[key] = item
@@ -159,7 +208,7 @@ class ProductionEventSources(EventSourceAdapter):
                     )
                 from .production_pop_events import live_pop_events
 
-                live = live_pop_events(self, inputs, leg, as_of=as_of)
+                live = live_pop_events(self, inputs, leg, as_of=self.clock.now())
                 if live is not None:
                     model_key, live_source, live_model = live
                     models[model_key] = live_model
@@ -238,6 +287,9 @@ class ProductionEventSources(EventSourceAdapter):
         for _revision, source, _model in self.cache.values():
             self.publication.invalidate(source.source)
         self.cache.clear()
+        self.saved_projections.clear()
+        self._static_capture = None
+        self._validated_capture = None
         for source_ref in self.live_sources | self.lifecycle_sources:
             self.publication.invalidate(source_ref)
         self.live_sources.clear()

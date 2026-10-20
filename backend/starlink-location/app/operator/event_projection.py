@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from .event_ledger import identity
 from .event_models import EventNotification, OperationalEvent
+from .restriction_windows import restriction_windows
 from .time_models import utc_timestamp
 
 
@@ -250,146 +251,72 @@ def derive_events(inputs, *, as_of, policy):
             )
             _protect(event, inputs.records)
             events.append(event)
-        spans = []
-        for interval in (model.get("call_continuity") or {}).get("intervals", []):
-            classification = interval["classification"]
-            if classification in ("ordinary", "advisory", "x_fallback"):
-                continue
-            spans.append(
-                (
-                    None,
-                    (
-                        "call_outage"
-                        if classification in ("planned_outage", "existing_outage")
-                        else "advisory"
-                    ),
-                    tuple(sorted(interval.get("source_ids", []))),
-                    _time(interval["start_utc"]),
-                    _time(interval["end_utc"]),
-                )
-            )
-        for capability in model.get("capability_spans", []):
-            for transport, field in (
-                ("Ka", "ka"),
-                ("X", "x"),
-                ("Starshield", "starshield"),
-            ):
-                if capability.get(field) != "unavailable":
-                    continue
-                concurrent = (
-                    field == "x" and capability.get("x_concurrency_only") is True
-                )
-                spans.append(
-                    (
-                        transport,
-                        "degraded" if concurrent else "unavailable",
-                        (
-                            ("x_concurrency_only",)
-                            if concurrent
-                            else ("modeled_capability", transport)
-                        ),
-                        _time(capability["start_utc"]),
-                        _time(capability["end_utc"]),
-                    )
-                )
-        for segment in (
-            () if "capability_spans" in model else model.get("segments", [])
+        for transport, causes, index, start, end, severity in restriction_windows(
+            model
         ):
-            for transport, field in (
-                ("Ka", "ka_state"),
-                ("X", "x_state"),
-                ("Starshield", "ku_state"),
-            ):
-                state = segment.get(field)
-                if state in ("offline", "degraded"):
-                    spans.append(
-                        (
-                            transport,
-                            "unavailable" if state == "offline" else "degraded",
-                            tuple(sorted(segment.get("reasons") or [])),
-                            _time(segment["start_time"]),
-                            _time(segment["end_time"]),
-                        )
-                    )
-        # Combine adjacent same-cause restrictions before assigning ordered occurrence.
-        groups = {}
-        for transport, severity, causes, start, end in spans:
-            if end <= start:
-                continue
-            groups.setdefault((transport, causes), []).append((start, end, severity))
-        for (transport, causes), windows in groups.items():
-            merged = []
-            for start, end, severity in sorted(windows):
-                if merged and start <= merged[-1][1] and merged[-1][2] == severity:
-                    merged[-1] = (merged[-1][0], max(merged[-1][1], end), severity)
-                else:
-                    merged.append((start, end, severity))
-            for index, (start, end, severity) in enumerate(merged):
+            key = identity(
+                mission_id,
+                model_key,
+                "restriction",
+                model.get("route_geometry_identity"),
+                transport,
+                causes,
+                index,
+            )
+            boundaries = model.get("restriction_boundaries")
+            if boundaries is not None:
                 key = identity(
+                    key,
+                    boundaries.get(start.isoformat()),
+                    boundaries.get(end.isoformat()),
+                )
+            planned_start, planned_end = start, end
+            time_basis = model.get("time_basis")
+            if time_basis in ("live_route_eta", "live_unavailable"):
+                start = _time(model.get("boundary_times", {}).get(start.isoformat()))
+                end = _time(model.get("boundary_times", {}).get(end.isoformat()))
+            event = OperationalEvent(
+                **common,
+                time_basis=time_basis,
+                planned_due_at=planned_start if time_basis else None,
+                planned_end_at=planned_end if time_basis else None,
+                event_id=key,
+                kind="restriction",
+                title=(transport + " " if transport else "Customer communications ")
+                + "modeled "
+                + (
+                    "concurrency restriction"
+                    if "x_concurrency_only" in causes
+                    else severity.replace("_", " ")
+                ),
+                due_at=start,
+                end_at=end,
+                transport=transport,
+                significance=severity,
+                **(
+                    _window_state(start, end, as_of, source)
+                    if start and end
+                    else {"active": True, "state": "unknown"}
+                ),
+                schedule_key=key,
+                family_key=identity(
                     mission_id,
                     model_key,
-                    "restriction",
                     model.get("route_geometry_identity"),
                     transport,
                     causes,
-                    index,
-                )
-                boundaries = model.get("restriction_boundaries")
-                if boundaries is not None:
-                    key = identity(
-                        key,
-                        boundaries.get(start.isoformat()),
-                        boundaries.get(end.isoformat()),
-                    )
-                planned_start, planned_end = start, end
-                time_basis = model.get("time_basis")
-                if time_basis in ("live_route_eta", "live_unavailable"):
-                    start = _time(
-                        model.get("boundary_times", {}).get(start.isoformat())
-                    )
-                    end = _time(model.get("boundary_times", {}).get(end.isoformat()))
-                event = OperationalEvent(
-                    **common,
-                    time_basis=time_basis,
-                    planned_due_at=planned_start if time_basis else None,
-                    planned_end_at=planned_end if time_basis else None,
-                    event_id=key,
-                    kind="restriction",
-                    title=(transport + " " if transport else "Customer communications ")
-                    + "modeled "
-                    + (
-                        "concurrency restriction"
-                        if "x_concurrency_only" in causes
-                        else severity.replace("_", " ")
-                    ),
-                    due_at=start,
-                    end_at=end,
-                    transport=transport,
-                    significance=severity,
-                    **(
-                        _window_state(start, end, as_of, source)
-                        if start and end
-                        else {"active": True, "state": "unknown"}
-                    ),
-                    schedule_key=key,
-                    family_key=identity(
-                        mission_id,
-                        model_key,
-                        model.get("route_geometry_identity"),
-                        transport,
-                        causes,
-                    ),
-                    notification=EventNotification(
-                        severity_generation={
-                            "advisory": 0,
-                            "degraded": 1,
-                            "unavailable": 2,
-                            "call_outage": 3,
-                        }[severity]
-                    ),
-                )
-                _protect(event, inputs.records)
-                events.append(event)
+                ),
+                notification=EventNotification(
+                    severity_generation={
+                        "advisory": 0,
+                        "degraded": 1,
+                        "unavailable": 2,
+                        "call_outage": 3,
+                    }[severity]
+                ),
+            )
+            _protect(event, inputs.records)
+            events.append(event)
     return sorted(
         events, key=lambda e: (e.due_at is None, e.due_at or as_of, e.event_id)
     )

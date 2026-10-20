@@ -79,7 +79,12 @@ def _coverage_inputs(*, persisted: bool = False) -> tuple[SourcePayload, ...]:
 
 
 def _read_dependencies(
-    mission: Mission, route_manager, poi_manager, *, persisted: bool = False
+    mission: Mission,
+    route_manager,
+    poi_manager,
+    *,
+    persisted: bool = False,
+    include_timeline_cache: bool = True,
 ) -> tuple[SourcePayload, ...]:
     from .snapshot_pop import capture_pop_catalog
 
@@ -227,22 +232,30 @@ def _read_dependencies(
     sources.extend(
         _coverage_inputs(persisted=True) if persisted else _coverage_inputs()
     )
-    for leg in mission.legs:
-        try:
-            timeline = storage.load_mission_timeline(
-                leg.id, parent_mission_id=mission.id
-            )
-            content = canonical_json(
-                timeline.model_dump(mode="json") if timeline else None
-            )
-        except (OSError, ValueError, TypeError) as exc:
-            # A corrupt optional cache must not prevent a successful rebuild.
-            content = canonical_json({"cache_error": type(exc).__name__})
-        sources.append(SourcePayload(f"cache/{leg.id}", content))
+    if include_timeline_cache:
+        for leg in mission.legs:
+            try:
+                timeline = storage.load_mission_timeline(
+                    leg.id, parent_mission_id=mission.id
+                )
+                content = canonical_json(
+                    timeline.model_dump(mode="json") if timeline else None
+                )
+            except (OSError, ValueError, TypeError) as exc:
+                # A corrupt optional cache must not prevent a successful rebuild.
+                content = canonical_json({"cache_error": type(exc).__name__})
+            sources.append(SourcePayload(f"cache/{leg.id}", content))
     return tuple(sources)
 
 
-def capture_inputs(mission_id: str, route_manager, poi_manager, *, persisted=False):
+def capture_inputs(
+    mission_id: str,
+    route_manager,
+    poi_manager,
+    *,
+    persisted=False,
+    include_timeline_cache=True,
+):
     """Capture bytes under the gate, then validate detached inputs outside it."""
     from app.mission.slide_cache.capture import capture_raw, normalize_capture
 
@@ -251,7 +264,10 @@ def capture_inputs(mission_id: str, route_manager, poi_manager, *, persisted=Fal
         try:
             raw = capture_raw(mission_id, route_manager, poi_manager)
             metadata, sources, warnings, _ = normalize_capture(
-                raw, persisted=persisted, fingerprints=False
+                raw,
+                persisted=persisted,
+                fingerprints=False,
+                include_timeline_cache=include_timeline_cache,
             )
             if attempt:
                 warnings += (

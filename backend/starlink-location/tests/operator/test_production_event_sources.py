@@ -318,3 +318,173 @@ def test_timing_guard_uses_one_coherent_input_capture(production, clock, monkeyp
         }
     )
     assert len(calls) == 1
+
+
+def test_current_model_inputs_do_not_read_discarded_timeline_caches(
+    production, clock, monkeypatch
+):
+    from app.operator.production_event_inputs import capture_current
+
+    def read_unused_cache(*args, **kwargs):
+        pytest.fail("Current model inputs must not parse saved output timelines")
+
+    monkeypatch.setattr(storage, "load_mission_timeline", read_unused_cache)
+    inputs = capture_current(production[0], "demo-mission", as_of=clock.now())
+    assert inputs.prepare(production[5]).timeline is not None
+
+
+@pytest.mark.parametrize("preparation_seconds", [1, 6, 15])
+@pytest.mark.parametrize("with_pop", [False, True])
+def test_telemetry_update_during_preparation_keeps_current_timing(
+    production, clock, monkeypatch, preparation_seconds, with_pop
+):
+    from app.operator.production_event_inputs import ModelInputs
+
+    adapter, publication, state, *_ = production
+    if with_pop:
+        from app.mission.pop_status import PopStatusService
+
+        adapter.pop_service = PopStatusService(production[4], lambda: production[3])
+    prepare = ModelInputs.prepare
+    preparations = []
+
+    def moving(self, leg):
+        preparations.append(leg.id)
+        artifacts = prepare(self, leg)
+        clock.advance(preparation_seconds)
+        position = state["telemetry"].position
+        position.longitude = -9
+        position.observed_at = position.speed_observed_at = clock.now()
+        return artifacts
+
+    monkeypatch.setattr(ModelInputs, "prepare", moving)
+    captured = adapter.capture("demo-mission", as_of=clock.now())
+    source = next(s for s in captured.sources if s.source == "model:leg-a")
+    assert source.guardable and source.aligned and source.freshness == "fresh"
+    assert source.captured_at == clock.now()
+    assert captured.models["leg-a"]["time_basis"] == "live_route_eta"
+    with publication.guard([source]):
+        pass
+    if with_pop:
+        live = next(s for s in captured.sources if s.source.endswith(":live-pop"))
+        assert live.guardable and live.freshness == "fresh"
+        assert live.captured_at == clock.now()
+    again = adapter.capture("demo-mission", as_of=clock.now())
+    assert again.models == captured.models
+    assert preparations == ["leg-a"]
+
+
+def test_unchanged_static_capture_reuses_normalization_but_keeps_live_guards(
+    production, clock, monkeypatch
+):
+    from app.mission.slide_cache import capture
+    from app.operator.production_event_inputs import capture_current
+
+    calls = []
+    original = capture.normalize_capture
+
+    def counted(*args, **kwargs):
+        calls.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(capture, "normalize_capture", counted)
+    adapter, _publication, state, _config, routes, leg, _path = production
+    first = capture_current(adapter, "demo-mission", as_of=clock.now())
+    state["telemetry"].position.longitude += 0.01
+    second = capture_current(adapter, "demo-mission", as_of=clock.now())
+    assert first.revision == second.revision
+    assert first.sample_revision != second.sample_revision
+    assert len(calls) == 1
+    route = routes.get_route(leg.route_id).model_copy(deep=True)
+    route.points[-1].longitude += 0.1
+    routes.add_route(leg.route_id, route)
+    third = capture_current(adapter, "demo-mission", as_of=clock.now())
+    assert third.revision != first.revision
+    assert len(calls) == 2
+
+
+def test_warm_events_do_not_rescan_capability_samples(production, clock, monkeypatch):
+    from app.operator import restriction_windows
+    from app.operator.event_projection import derive_events
+
+    adapter, *_ = production
+    first = adapter.capture("demo-mission", as_of=clock.now())
+    expected = derive_events(first, as_of=clock.now(), policy=EventPolicy())
+    assert any(e.kind == "restriction" for e in expected)
+
+    def rescan(*args, **kwargs):
+        pytest.fail(
+            "Warm event polls must reuse merged windows, not parse sample timestamps"
+        )
+
+    monkeypatch.setattr(restriction_windows, "utc_timestamp", rescan)
+    second = adapter.capture("demo-mission", as_of=clock.now())
+    actual = derive_events(second, as_of=clock.now(), policy=EventPolicy())
+    assert actual == expected
+    assert "samples" not in second.models["leg-a"]
+    assert "capability_spans" not in second.models["leg-a"]
+
+
+def test_saved_event_projection_reuses_timeline_until_file_changes(
+    production, clock, monkeypatch
+):
+    from app.operator.event_sources import EventSourceAdapter
+    from app.operator.production_event_inputs import capture_current
+
+    adapter, *_ = production
+    artifacts = capture_current(adapter, "demo-mission", as_of=clock.now()).prepare(
+        production[5]
+    )
+    storage.save_mission_timeline("leg-a", artifacts.timeline, "demo-mission")
+    reads = []
+    load = storage.load_mission_timeline
+
+    def counted(*args):
+        reads.append(1)
+        return load(*args)
+
+    monkeypatch.setattr(storage, "load_mission_timeline", counted)
+
+    def capture():
+        return EventSourceAdapter.capture(adapter, "demo-mission", as_of=clock.now())
+
+    first = capture()
+    second = capture()
+    assert first == second
+    # Missing caches for other missions are not parsed.
+    assert len(reads) == 1
+    assert "samples" not in second.models["leg-a"]
+    from datetime import timedelta
+
+    artifacts.timeline.created_at += timedelta(seconds=1)
+    storage.save_mission_timeline("leg-a", artifacts.timeline, "demo-mission")
+    changed = capture()
+    assert changed.sources[0].revision != first.sources[0].revision
+    assert len(reads) == 2
+    storage.delete_mission_timeline("leg-a", "demo-mission")
+    assert "leg-a" not in capture().models
+
+
+def test_validation_reuses_parsed_inputs_but_detects_other_active_missions(
+    production, clock, monkeypatch
+):
+    from app.mission.models import Mission
+    from app.operator.production_event_inputs import capture_current
+
+    adapter, *_ = production
+    first = capture_current(adapter, "demo-mission", as_of=clock.now())
+    validate = Mission.model_validate_json
+    calls = []
+
+    def counted(*args, **kwargs):
+        calls.append(1)
+        return validate(*args, **kwargs)
+
+    monkeypatch.setattr(Mission, "model_validate_json", counted)
+    adapter._validate("demo-mission", first.revision)
+    assert calls == []
+    other = storage.load_mission_v2("other-mission")
+    other.legs[0].is_active = True
+    storage.save_mission_v2(other)
+    with pytest.raises(OperatorError):
+        adapter._validate("demo-mission", first.revision)

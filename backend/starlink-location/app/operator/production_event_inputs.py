@@ -2,14 +2,13 @@
 
 import json
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile
 
 from app.mission.exporter.snapshot_inputs import (
     SourcePayload,
     canonical_json,
-    capture_inputs,
     captured_coverage,
 )
 from app.mission.exporter.snapshot_views import (
@@ -22,8 +21,10 @@ from app.mission.pop_coverage_evidence import coverage_snapshot
 from app.services.pop.catalog import parse_catalog
 from app.services.position_freshness import position_observation, speed_is_fresh
 
+from .clock import observation_now
 from .errors import OperatorError
 from .event_ledger import identity
+from .production_input_cache import capture_static, validation_key
 from .replay_context import source_run
 
 
@@ -56,7 +57,21 @@ class ModelInputs:
         )
 
 
-def capture_current(adapter, mission_id, *, as_of):
+def require_fresh_position(position, as_of):
+    _, freshness = position_observation(
+        position.latitude, position.longitude, position.observed_at, as_of
+    )
+    if freshness != "fresh" or not speed_is_fresh(
+        position.speed, position.speed_observed_at, as_of
+    ):
+        raise OperatorError(
+            "event_source_unavailable",
+            retryable=True,
+            fields={"source": "Position or speed evidence stale or unavailable"},
+        )
+
+
+def capture_current(adapter, mission_id, *, as_of, validation_only=False):
     """Caller holds repository admission; detached models never consult live inputs."""
     config = adapter.config_provider().model_copy(deep=True)
     context = dict(adapter.context_provider())
@@ -70,20 +85,23 @@ def capture_current(adapter, mission_id, *, as_of):
     if telemetry is None:
         raise OperatorError("event_source_unavailable", retryable=True)
     position = deepcopy(telemetry.position)
-    _, freshness = position_observation(
-        position.latitude, position.longitude, position.observed_at, as_of
+    require_fresh_position(position, observation_now(adapter.clock))
+    metadata, sources = capture_static(adapter, mission_id)
+    try:
+        content = config.pop.catalog_path.read_bytes()
+    except OSError:
+        content = b"null"
+    key = validation_key(adapter, metadata, sources, config, context, content)
+    sample_revision = identity(
+        position.latitude,
+        position.longitude,
+        position.speed,
+        position.observed_at,
+        position.speed_observed_at,
     )
-    if freshness != "fresh" or not speed_is_fresh(
-        position.speed, position.speed_observed_at, as_of
-    ):
-        raise OperatorError(
-            "event_source_unavailable",
-            retryable=True,
-            fields={"source": "Position or speed evidence stale or unavailable"},
-        )
-    metadata, sources, _ = capture_inputs(
-        mission_id, adapter.route_manager, adapter.poi_manager, persisted=True
-    )
+    cached = getattr(adapter, "_validated_capture", None)
+    if validation_only and cached is not None and cached[0] == key:
+        return replace(cached[1], position=position, sample_revision=sample_revision)
     mission = Mission.model_validate_json(metadata)
     from app.mission.active_context import resolve_active_mission_leg_context
 
@@ -112,10 +130,6 @@ def capture_current(adapter, mission_id, *, as_of):
         for leg in mission.legs
     ):
         raise OperatorError("event_source_unavailable", retryable=True)
-    try:
-        content = config.pop.catalog_path.read_bytes()
-    except OSError:
-        content = b"null"
     try:
         catalog = parse_catalog(content)
     except (ValueError, TypeError):
@@ -160,7 +174,7 @@ def capture_current(adapter, mission_id, *, as_of):
         context,
         coverage,
     )
-    return ModelInputs(
+    result = ModelInputs(
         mission,
         sources,
         revision,
@@ -168,12 +182,8 @@ def capture_current(adapter, mission_id, *, as_of):
         context,
         sampler,
         position,
-        identity(
-            position.latitude,
-            position.longitude,
-            position.speed,
-            position.observed_at,
-            position.speed_observed_at,
-        ),
+        sample_revision,
         catalog is None,
     )
+    adapter._validated_capture = key, result
+    return result

@@ -195,6 +195,64 @@ def test_passed_restriction_is_retired_without_planned_clock_resurrection(
     )
 
 
+def test_restriction_passed_during_preparation_is_not_upcoming(
+    production, clock, monkeypatch
+):
+    from app.operator.production_event_inputs import ModelInputs
+
+    runtime, adapter = runtime_for(production, clock)
+    prepare = ModelInputs.prepare
+
+    def moving(self, leg):
+        artifacts = prepare(self, leg)
+        clock.advance(6)
+        position = production[2]["telemetry"].position
+        position.longitude = 10
+        position.observed_at = position.speed_observed_at = clock.now()
+        return artifacts
+
+    monkeypatch.setattr(ModelInputs, "prepare", moving)
+    snapshot = build_snapshot(runtime, "demo-mission", adapter)
+    source = next(s for s in snapshot.sources if s.source == "model:leg-a")
+    assert source.guardable and source.freshness == "fresh"
+    assert not any(e.transport == "X" and e.active for e in snapshot.events)
+    assert snapshot.as_of == clock.now()
+
+
+@pytest.mark.parametrize("change", ["telemetry", "route", "captured_sample_stale"])
+@pytest.mark.parametrize("with_pop", [False, True])
+def test_snapshot_validation_allows_new_sample_but_rejects_changed_inputs(
+    production, clock, monkeypatch, change, with_pop
+):
+    runtime, adapter = runtime_for(production, clock)
+    if with_pop:
+        from app.mission.pop_status import PopStatusService
+
+        adapter.pop_service = PopStatusService(production[4], lambda: production[3])
+    capture = adapter.capture
+
+    def moving(*args, **kwargs):
+        captured = capture(*args, **kwargs)
+        clock.advance(11 if change == "captured_sample_stale" else 1)
+        position = production[2]["telemetry"].position
+        position.longitude = -9
+        position.observed_at = position.speed_observed_at = clock.now()
+        if change == "route":
+            routes, leg = production[4:6]
+            route = routes.get_route(leg.route_id).model_copy(deep=True)
+            route.points[-1].longitude += 1
+            routes.add_route(leg.route_id, route)
+        return captured
+
+    monkeypatch.setattr(adapter, "capture", moving)
+    if change != "telemetry":
+        with pytest.raises(OperatorError):
+            build_snapshot(runtime, "demo-mission", adapter)
+    else:
+        snapshot = build_snapshot(runtime, "demo-mission", adapter)
+        assert restriction(snapshot).time_basis == "live_route_eta"
+
+
 def test_preflight_changed_boundary_supersedes_overlapping_occurrence(
     production, clock
 ):
@@ -240,3 +298,48 @@ def test_airborne_stale_capture_does_not_restore_planned_pop_windows(production,
         e.kind == "pop_advisory" and e.source_ref == "model:leg-a" and e.active
         for e in after.events
     )
+
+
+def test_live_eta_work_tracks_merged_restrictions_instead_of_sample_count(
+    production, clock, monkeypatch
+):
+    from app.operator.production_event_inputs import capture_current
+    from app.operator.production_live_timing import (
+        attach_boundary_geometry,
+        refresh_boundary_times,
+    )
+    from app.services.eta_calculator import ETACalculator
+
+    adapter, *_ = production
+    inputs = capture_current(adapter, "demo-mission", as_of=clock.now())
+    artifacts = inputs.prepare(production[5])
+    start, end = artifacts.projector.start_time, artifacts.projector.end_time
+    step = (end - start) / 1200
+    model = {
+        "capability_spans": [
+            {
+                "start_utc": (start + step * i).isoformat(),
+                "end_utc": (start + step * (i + 1)).isoformat(),
+                "ka": "available",
+                "x": "unavailable" if 600 <= i < 700 else "available",
+                "starshield": "available",
+            }
+            for i in range(1200)
+        ]
+    }
+    calls = []
+    calculate = ETACalculator._calculate_route_aware_eta_estimated
+
+    def counted(self, *args, **kwargs):
+        calls.append(1)
+        return calculate(self, *args, **kwargs)
+
+    monkeypatch.setattr(ETACalculator, "_calculate_route_aware_eta_estimated", counted)
+    attach_boundary_geometry(model, artifacts)
+    timed, available = refresh_boundary_times(model, inputs, as_of=clock.now())
+    assert available and timed["time_basis"] == "live_route_eta"
+    assert len(calls) == 2
+    assert set(timed["boundary_times"]) == {
+        (start + step * 600).isoformat(),
+        (start + step * 700).isoformat(),
+    }
