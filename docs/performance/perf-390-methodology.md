@@ -33,7 +33,7 @@ timeout --kill-after=20s 90m python3 tools/acceptance/performance/run.py \
   --sha 25e34168f0e2cecb149b0323f1f5a795cb28cae0 \
   --project starlink-operator-perf390-original-two-r1 \
   --output /tmp/perf390-evidence/original-two-r1 \
-  --viewers 2 --operator --window 1800 --warmup 60 --duration 600 \
+  --viewers 2 --operator --window 1800 --warmup 120 --duration 180 \
   --total-timeout 5300
 ```
 
@@ -69,19 +69,25 @@ The existing history seed supplies 4,201 seconds of 11 metric series with finite
 zeros, spikes and varying values. Real Prometheus loads these into a private
 TSDB. Current data comes from normal **one-second scrape and rule evaluation**.
 The frontend's independently configured **one-second history polling** is left
-unchanged. Retain seed endpoint/time and fixture hashes. Synthetic historical
-density must not be presented as physical source-observation freshness.
+unchanged. The original API uses a one-second output grid through 30 minutes and
+a two-second grid at 60 minutes under its existing point cap. Validate all 11
+shared timestamp grids, finite values, endpoints and spacing, and record actual
+resolution rather than changing it. Retain seed endpoint/time and fixture
+hashes. Synthetic historical density must not be presented as physical
+source-observation freshness.
 
 Viewers are independent browser contexts/pages at 1920×1080 and DPR 1. The
 currently installed browser runs headlessly with explicit SwiftShader support;
-record its actual renderer. Headless viewport emulation is **not** physical
-fullscreen or representative hardware GPU acceptance. Do not assert 10-foot
-display FPS from this lane. An Operator client opens the actual Operator page;
-the sampler also performs one explicit records read per five seconds. With
-`--operations`, measured quarter points switch to leg two, deactivate the
-mission, and reactivate leg one; each operation also writes one idempotent
-journal note through the real API. Keep this activity workload separate from
-steady state.
+record its actual renderer. `--fullscreen` uses the real Overview fullscreen
+control and verifies `document.fullscreenElement` and its 1920×1080 dimensions.
+The warmed one-viewer control exercises this mode; windowed cases are labeled
+separately. Headless app fullscreen is **not** physical fullscreen or
+representative hardware GPU acceptance. Do not assert 10-foot display FPS from
+this lane. An Operator client opens the actual Operator page; the sampler also
+performs one explicit records read per five seconds. With `--operations`,
+measured quarter points switch to leg two, deactivate the mission, and
+reactivate leg one; each operation also writes one idempotent journal note
+through the real API. Keep this activity workload separate from steady state.
 
 Required matrix, with coverage recorded per cell rather than inferred:
 
@@ -106,10 +112,15 @@ optimizations; do not substitute the mock-transport microbenchmark.
 Primary timings use `--instrumentation off`: fixture inputs only, no backend
 monkeypatches or profilers. Every five seconds sample cumulative service CPU and
 cgroup memory/I/O, browser process CPU, available RSS/PSS, JS heap, task
-duration, frame intervals/long tasks and actual API request completion latency.
-Browser metrics retain page and process owners. RSS sums are descriptive and may
-double count shared pages; they are never a leak diagnosis. Missing PSS or I/O
-counters must be marked unavailable rather than claimed as zero activity.
+duration, frame intervals/long tasks and actual API request completion latency
+from Playwright protocol `request.timing().responseEnd` (an offset in
+milliseconds). Observer callback arrival can be delayed by sampling/rendering;
+record its error separately and never substitute callback elapsed time for
+network duration. Slow disk probes use asynchronous child processes so they do
+not block the observer event loop. Browser metrics retain page and process
+owners. RSS sums are descriptive and may double count shared pages; they are
+never a leak diagnosis. Missing PSS or I/O counters must be marked unavailable
+rather than claimed as zero activity.
 
 Every 30 seconds, a short owned backend exec reads file sizes/allocated blocks,
 SQLite database/WAL bytes and Prometheus series/churn/storage metrics. It does
@@ -133,20 +144,40 @@ not exclusive async request CPU.
 
 Record sampler wall-time per sample; sampling time/interval is observer duty,
 not CPU attribution. Observer HTTP reads and short exec processes also create
-load. Estimate overhead using matched off/counters runs and repeated original
+load; disk-probe exec CPU is included in the backend cgroup. The off control
+still has observer traffic and sampling, whose absolute impact is not isolated.
+Estimate overhead using matched off/counters runs and repeated original
 controls. Do not subtract noisy differences as if exact. Use the existing
 `tools/profile_overview_history.py` and opt-in HTTP cProfile for separate
 first-order diagnostic profiles; never mix profiler timings into normal p95.
 `tools/benchmark_overview_history.py` uses MockTransport and cannot replace
 them.
 
+The frontend schedules its next poll after a configured one-second delay plus
+request/processing time. Record observed starts/completions, maximum gap and
+both measurement boundaries; a configured 1 Hz delay does not imply exactly one
+completed request per second. Missing failures or cancellation samples must not
+be counted as successful low latencies.
+
+The startup/preparation reference discards 30 seconds and measures 120 seconds;
+existing customer-slide cache jobs can continue into this window. The warmed
+reference discards 120 seconds and measures 180 seconds. Keep these phases and
+windowed/fullscreen modes separate. Profiles run after timing collection, not
+inside primary distributions. Counter instrumentation is opt-in and bounded;
+normal fixture-only runs do not patch application timing functions.
+
 Quantiles use nearest rank and report sample counts. Warm-only ordinary least
 squares slopes include time span and endpoints. A short startup-heavy slope or a
 positive noisy slope does not establish a leak. Discard warm-up consistently;
 repeat at least three canonical runs and report min/median/max variability
 before attributing a performance gain. Report errors, late samples and
-outstanding work. Keep large samples/traces/screenshots outside Git; check in
-compact reports and hash inventories referencing their retained location.
+outstanding work. Keep large samples/traces outside Git; check in compact
+reports, representative screenshots and hash inventories referencing their
+retained location. Each case records the exact harness SHA; measurement fixes
+are new cohorts, never evidence of application speedups. Preserve original
+production image binaries and a Git bundle of the measurement revisions outside
+Git so mutable upstream image tags or later branch deletion do not erase the
+reproducible reference.
 
 ## Comparison and operational gates
 
@@ -155,6 +186,23 @@ python3 tools/acceptance/performance/report.py \
   /retained/original-one-r1/summary.json \
   /retained/candidate-one-r1/summary.json > /retained/comparison.json
 ```
+
+Run a candidate application through the **frozen per-case measurement harness**,
+not the candidate branch's newer `HEAD`. For example, create a separate
+read-only measurement checkout with
+`git worktree add --detach .worktrees/perf390-reference-harness <case-harness-sha>`,
+provide its existing Playwright installation, and run
+`run.py --sha <candidate-application-sha>` there with the original case flags.
+The shared Git object database supplies the candidate archive without changing
+the frozen harness. The original cohorts pre-date the package-inventory user
+correction: their raw `backend_packages` fields describe root's Python
+environment, not application dependencies. Read the baseline's runtime-package
+correction and verify candidate packages as `appuser` separately when replaying
+these frozen revisions; do not treat that legacy hash as a dependency lock.
+Matching image filesystem/configuration hashes prove which original cases share
+the corrected inventory. Recover measurement revisions from the retained Git
+bundle if squash merging later removes their branch reachability. Keep the
+implementation worktree separate.
 
 The comparison refuses changed workload, hardware, runtime, instrumentation,
 browser, harness revision or materially different measured duration. Inspect

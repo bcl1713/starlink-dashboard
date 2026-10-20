@@ -1,0 +1,510 @@
+{
+  "schema_version": 1,
+  "original_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+  "harness_revisions": [
+    "02cdf20a219fa3aca7beebbd53619cfe7e3b2de8",
+    "13cbf1d54b526307747578ecd4fc691562846834",
+    "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb"
+  ],
+  "measurement": "browser protocol responseEnd timings; async observer disk sampling; separate uninstrumented/counters cases",
+  "source": "frozen original before performance changes; never replace with preceding-PR-only reference",
+  "hardware_limitations": [
+    "headless SwiftShader software rendering; app fullscreen exercised in warm-one, no physical display/hardware-GPU acceptance",
+    "shared CPU cores; service quotas not reservations",
+    "short measured windows; not 60min or 8h continuous soaks",
+    "simulation; accepted live archive, overlays, export-under-load, hidden/resume and restart not qualified by this matrix"
+  ],
+  "evidence_store": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence",
+  "raw_inventory": "raw-sha256.json",
+  "final_archival_inventory": "final-archive-sha256.json",
+  "runtime_package_correction": "runtime-package-correction.json",
+  "cases": [
+    {
+      "case": "none-r1",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "none-r1.json",
+      "measured_seconds": 119.99959714799996,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": false
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/none-r1"
+    },
+    {
+      "case": "one-r1",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "one-r1.json",
+      "measured_seconds": 120.000041486,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 2966818,
+        "pgid": 2966818,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/one-r1"
+    },
+    {
+      "case": "one-r2",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "one-r2.json",
+      "measured_seconds": 120.000039996,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3000167,
+        "pgid": 3000167,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/one-r2"
+    },
+    {
+      "case": "one-r3",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "one-r3.json",
+      "measured_seconds": 120.01741547300001,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3032976,
+        "pgid": 3032976,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/one-r3"
+    },
+    {
+      "case": "two-operator-r1",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "two-operator-r1.json",
+      "measured_seconds": 120.000032306,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 2983414,
+        "pgid": 2983414,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/two-operator-r1"
+    },
+    {
+      "case": "two-operator-r2",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "two-operator-r2.json",
+      "measured_seconds": 120.03074844299996,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3016541,
+        "pgid": 3016541,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/two-operator-r2"
+    },
+    {
+      "case": "two-operator-r3",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "two-operator-r3.json",
+      "measured_seconds": 119.99926644599998,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3049174,
+        "pgid": 3049174,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/two-operator-r3"
+    },
+    {
+      "case": "two-operator-window-300",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "two-operator-window-300.json",
+      "measured_seconds": 119.999955293,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3065703,
+        "pgid": 3065703,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/two-operator-window-300"
+    },
+    {
+      "case": "two-operator-window-900",
+      "phase": "startup-preparation",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "two-operator-window-900.json",
+      "measured_seconds": 119.999286653,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3082203,
+        "pgid": 3082203,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/two-operator-window-900"
+    },
+    {
+      "case": "activity-control",
+      "phase": "transition",
+      "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+      "cohort": "reference-v2",
+      "summary": "activity-control.json",
+      "measured_seconds": 45.000394486,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 2938994,
+        "pgid": 2938994,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite values and exact timestamp spacing not independently enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v2/activity-control"
+    },
+    {
+      "case": "warm-none",
+      "phase": "warmed",
+      "harness_sha": "02cdf20a219fa3aca7beebbd53619cfe7e3b2de8",
+      "cohort": "reference-v3",
+      "summary": "warm-none.json",
+      "measured_seconds": 180.00091936799998,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": false
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite points checked, exact timestamp spacing not enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/warm-none"
+    },
+    {
+      "case": "warm-one",
+      "phase": "warmed",
+      "harness_sha": "02cdf20a219fa3aca7beebbd53619cfe7e3b2de8",
+      "cohort": "reference-v3",
+      "summary": "warm-one.json",
+      "measured_seconds": 180.000060401,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3116517,
+        "pgid": 3116517,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; finite points checked, exact timestamp spacing not enforced; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/warm-one"
+    },
+    {
+      "case": "warm-two-operator",
+      "phase": "warmed",
+      "harness_sha": "13cbf1d54b526307747578ecd4fc691562846834",
+      "cohort": "reference-v3",
+      "summary": "warm-two-operator.json",
+      "measured_seconds": 180.00103402299993,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3179873,
+        "pgid": 3179873,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; exact shared finite timestamp grid and bounds checked; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/warm-two-operator"
+    },
+    {
+      "case": "two-operator-window-3600",
+      "phase": "startup-preparation",
+      "harness_sha": "13cbf1d54b526307747578ecd4fc691562846834",
+      "cohort": "reference-v3",
+      "summary": "two-operator-window-3600.json",
+      "measured_seconds": 119.99970466399999,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3207516,
+        "pgid": 3207516,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 2s output resolution at initial/final checks; exact shared finite timestamp grid and bounds checked; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/two-operator-window-3600"
+    },
+    {
+      "case": "counters-warm-two-r1",
+      "phase": "warmed",
+      "harness_sha": "13cbf1d54b526307747578ecd4fc691562846834",
+      "cohort": "reference-v3",
+      "summary": "counters-warm-two-r1.json",
+      "measured_seconds": 180.000018726,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3224124,
+        "pgid": 3224124,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; exact shared finite timestamp grid and bounds checked; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/counters-warm-two-r1"
+    },
+    {
+      "case": "counters-warm-two-r2",
+      "phase": "warmed",
+      "harness_sha": "13cbf1d54b526307747578ecd4fc691562846834",
+      "cohort": "reference-v3",
+      "summary": "counters-warm-two-r2.json",
+      "measured_seconds": 179.99986185699993,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3251959,
+        "pgid": 3251959,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; exact shared finite timestamp grid and bounds checked; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/counters-warm-two-r2"
+    },
+    {
+      "case": "operator-only",
+      "phase": "startup-preparation",
+      "harness_sha": "13cbf1d54b526307747578ecd4fc691562846834",
+      "cohort": "reference-v3",
+      "summary": "operator-only.json",
+      "measured_seconds": 120.00027952800001,
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 3279857,
+        "pgid": 3279857,
+        "remaining": []
+      },
+      "history": "11 series; expected non-null point counts and 1s output resolution at initial/final checks; exact shared finite timestamp grid and bounds checked; synthetic provenance",
+      "raw_path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence/reference-v3/operator-only"
+    }
+  ]
+}

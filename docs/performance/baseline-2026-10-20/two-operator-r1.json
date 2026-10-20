@@ -1,0 +1,463 @@
+{
+  "metadata": {
+    "candidate_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+    "harness_sha": "dedf68a1a07ec5e6b09aa68fa413b7b4c5e9cbdb",
+    "status": "measured",
+    "source_archive_sha256": "cebfb7254994f0c6e31e0fd8cc06319430efcd32b4457787673c70ab21795153",
+    "hardware": {
+      "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+      "machine": "x86_64",
+      "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+      "docker": {
+        "ServerVersion": "29.8.1",
+        "Driver": "overlayfs",
+        "NCPU": 20,
+        "MemTotal": 65915523072,
+        "KernelVersion": "7.0.0-34-generic",
+        "OperatingSystem": "Ubuntu 26.04.1 LTS",
+        "Architecture": "x86_64"
+      },
+      "filesystem": "ext2/ext3 4096"
+    },
+    "images": {
+      "backend": {
+        "tag": "starlink-operator-perf390-v2-two-operator-r1-backend:25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "id": "sha256:c1ef3377cea9757bdc3d2776dd9dd0a896cd8cb2ab9871f89e92c28deb9292e2",
+        "revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+      },
+      "frontend": {
+        "tag": "starlink-operator-perf390-v2-two-operator-r1-frontend:25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "id": "sha256:09b01d9d0b03aba19a92191d298b14022ab3c0568dfdf704413f90fb3af8323e",
+        "revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+      },
+      "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+    },
+    "backend_python": "Python 3.11.17",
+    "backend_packages_sha256": "4b4eed37464b5fec8f3c598f6fa3bdcf4a03edfb9936a0f9a628a0a42be5f153",
+    "fixture_hashes": {
+      "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+      "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+      "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+      "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+    },
+    "workload": {
+      "fixture": "perf390-v1",
+      "fixture_hashes": {
+        "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+        "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+        "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+        "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+      },
+      "viewers": 2,
+      "operator": true,
+      "window": 1800,
+      "cadence": 1,
+      "warmup": 30,
+      "duration": 120,
+      "operations": false
+    },
+    "instrumentation": "off",
+    "runtime": {
+      "mode": "simulation",
+      "backend_python": "Python 3.11.17",
+      "backend_packages_sha256": "4b4eed37464b5fec8f3c598f6fa3bdcf4a03edfb9936a0f9a628a0a42be5f153",
+      "scrape_seconds": 1,
+      "evaluation_seconds": 1,
+      "cpus_per_service": 2,
+      "memory_limit": "2g",
+      "viewport": [1920, 1080],
+      "dpr": 1,
+      "optional_layers": "default-off",
+      "transport": "published-port"
+    },
+    "browser": {
+      "node_version": "v22.12.0",
+      "mode": "headless-diagnostic",
+      "fullscreen": false,
+      "viewport": [1920, 1080],
+      "dpr": 1,
+      "version": "153.0.8010.12",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "executable_sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+    },
+    "request_outcomes": {
+      "unexpected_failures": 0,
+      "client_cancellations": 0
+    }
+  },
+  "measured_span_seconds": 120.000032306,
+  "sustained_60_minutes": false,
+  "resources": {
+    "backend.cpu_seconds": {
+      "samples": 25,
+      "first": 58.778371,
+      "last": 125.681124,
+      "max": 125.681124,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 28.813414376957528,
+      "cores_used": 0.557522791572239
+    },
+    "backend.memory_bytes": {
+      "samples": 25,
+      "first": 440274944,
+      "last": 352092160,
+      "max": 946049024,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": -205662907.3377108
+    },
+    "backend.anonymous_bytes": {
+      "samples": 25,
+      "first": 400826368,
+      "last": 313368576,
+      "max": 885026816,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": -198536709.45676613
+    },
+    "prometheus.cpu_seconds": {
+      "samples": 25,
+      "first": 0.960539,
+      "last": 3.841919,
+      "max": 3.841919,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 1.4309880672218782,
+      "cores_used": 0.02401149353570575
+    },
+    "prometheus.memory_bytes": {
+      "samples": 25,
+      "first": 28233728,
+      "last": 36413440,
+      "max": 37924864,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 793403.9700788399
+    },
+    "prometheus.anonymous_bytes": {
+      "samples": 25,
+      "first": 26279936,
+      "last": 33550336,
+      "max": 35315712,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 391169.76606979297
+    },
+    "prometheus.prometheus_tsdb_head_chunks_storage_size_bytes": {
+      "samples": 4,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_head_series": {
+      "samples": 4,
+      "first": 167,
+      "last": 198,
+      "max": 198,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 17.23914116861677
+    },
+    "prometheus.prometheus_tsdb_head_series_created_total": {
+      "samples": 4,
+      "first": 167,
+      "last": 198,
+      "max": 198,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 17.23914116861677
+    },
+    "prometheus.prometheus_tsdb_head_series_removed_total": {
+      "samples": 4,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_storage_blocks_bytes": {
+      "samples": 4,
+      "first": 232453,
+      "last": 232453,
+      "max": 232453,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_wal_storage_size_bytes": {
+      "samples": 4,
+      "first": 36701,
+      "last": 151293,
+      "max": 151293,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 72305.30255898972
+    },
+    "browser.cpu_seconds": {
+      "samples": 25,
+      "first": 228.89,
+      "last": 1343.52,
+      "max": 1343.52,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 562.7885825205185,
+      "cores_used": 9.288580832692565
+    },
+    "browser.rss_bytes": {
+      "samples": 25,
+      "first": 2466742272,
+      "last": 2682011648,
+      "max": 2682011648,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 120267483.35589033
+    },
+    "browser.pss_bytes": {
+      "samples": 25,
+      "first": 1916140544,
+      "last": 2128445440,
+      "max": 2128445440,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 118466483.71324302
+    },
+    "browser.heap_bytes": {
+      "samples": 25,
+      "first": 93535228,
+      "last": 122973056,
+      "max": 200681356,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 11554729.110279247
+    },
+    "browser.task_seconds": {
+      "samples": 25,
+      "first": 53.534088,
+      "last": 274.154743,
+      "max": 274.154743,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 109.88916871797785
+    },
+    "browser.frame_count": {
+      "samples": 25,
+      "first": 5,
+      "last": 124,
+      "max": 134,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 17.400164981496193
+    },
+    "browser.long_task_ms": {
+      "samples": 25,
+      "first": 555,
+      "last": 8484,
+      "max": 9362,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": 748.8697837140356
+    },
+    "sqlite.database_bytes": {
+      "samples": 4,
+      "first": 1990656,
+      "last": 1990656,
+      "max": 1990656,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "sqlite.wal_bytes": {
+      "samples": 4,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.mission_bytes": {
+      "samples": 4,
+      "first": 1836633,
+      "last": 1836633,
+      "max": 1836633,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.mission_allocated_bytes": {
+      "samples": 4,
+      "first": 1863680,
+      "last": 1863680,
+      "max": 1863680,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.operator_bytes": {
+      "samples": 4,
+      "first": 164025,
+      "last": 164025,
+      "max": 164025,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.operator_allocated_bytes": {
+      "samples": 4,
+      "first": 167936,
+      "last": 167936,
+      "max": 167936,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.data_bytes": {
+      "samples": 4,
+      "first": 2065784,
+      "last": 2065784,
+      "max": 2065784,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.data_allocated_bytes": {
+      "samples": 4,
+      "first": 2105344,
+      "last": 2105344,
+      "max": 2105344,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.routes_cache_export_bytes": {
+      "samples": 4,
+      "first": 2330,
+      "last": 2330,
+      "max": 2330,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "storage.routes_cache_export_allocated_bytes": {
+      "samples": 4,
+      "first": 8192,
+      "last": 8192,
+      "max": 8192,
+      "span_seconds": 94.99980097400001,
+      "slope_per_minute": 0.0
+    },
+    "instrumentation.sample_wall_ms": {
+      "samples": 25,
+      "first": 535.4190559999988,
+      "last": 467.6253020000004,
+      "max": 1057.1459020000038,
+      "span_seconds": 120.000032306,
+      "slope_per_minute": -31.893604239295435
+    }
+  },
+  "latency": {
+    "frame": {
+      "p50_ms": 83.39999999999418,
+      "p95_ms": 250,
+      "p99_ms": 283.40000000000146,
+      "samples": 2980
+    },
+    "observer_status": {
+      "p50_ms": 13.11144899998908,
+      "p95_ms": 44.344356000001426,
+      "p99_ms": 200.21217099999922,
+      "samples": 25
+    },
+    "observer_operator_read": {
+      "p50_ms": 10.991959000006318,
+      "p95_ms": 55.50711199999205,
+      "p99_ms": 70.30634499999724,
+      "samples": 25
+    },
+    "/api/v2/operator/health": {
+      "p50_ms": 7.709,
+      "p95_ms": 107.779,
+      "p99_ms": 282.121,
+      "samples": 24
+    },
+    "/api/v2/operator/events": {
+      "p50_ms": 15.115,
+      "p95_ms": 97.268,
+      "p99_ms": 97.268,
+      "samples": 9
+    },
+    "/api/overview-weather/settings": {
+      "p50_ms": 13.149,
+      "p95_ms": 153.626,
+      "p99_ms": 186.66,
+      "samples": 47
+    },
+    "/api/overview-adsb/settings": {
+      "p50_ms": 13.338,
+      "p95_ms": 167.6,
+      "p99_ms": 254.145,
+      "samples": 47
+    },
+    "/api/overview-clocks/settings": {
+      "p50_ms": 11.156,
+      "p95_ms": 124.623,
+      "p99_ms": 188.24,
+      "samples": 46
+    },
+    "/api/aviation-weather/v1/settings": {
+      "p50_ms": 17.161,
+      "p95_ms": 159.421,
+      "p99_ms": 190.428,
+      "samples": 46
+    },
+    "/api/overview-links/settings": {
+      "p50_ms": 19.901,
+      "p95_ms": 107.362,
+      "p99_ms": 167.071,
+      "samples": 46
+    },
+    "/api/overview-history/settings": {
+      "p50_ms": 12.399,
+      "p95_ms": 102.986,
+      "p99_ms": 189.219,
+      "samples": 46
+    },
+    "/api/satellites": {
+      "p50_ms": 20.907,
+      "p95_ms": 106.258,
+      "p99_ms": 166.855,
+      "samples": 46
+    },
+    "/api/simulation/run": {
+      "p50_ms": 11.828,
+      "p95_ms": 155.573,
+      "p99_ms": 230.486,
+      "samples": 193
+    },
+    "/api/v2/operator/context": {
+      "p50_ms": 9.084,
+      "p95_ms": 126.064,
+      "p99_ms": 302.465,
+      "samples": 59
+    },
+    "observer_delivery_error_ms": {
+      "p50_ms": 102.43000500000781,
+      "p95_ms": 229.84718699999996,
+      "p99_ms": 329.57257200000026,
+      "samples": 1288
+    },
+    "/api/overview/upcoming-pois": {
+      "p50_ms": 23.114,
+      "p95_ms": 115.956,
+      "p99_ms": 154.247,
+      "samples": 46
+    },
+    "/api/routes/synthetic-route": {
+      "p50_ms": 16.798,
+      "p95_ms": 116.628,
+      "p99_ms": 153.767,
+      "samples": 46
+    },
+    "/api/active-x-link": {
+      "p50_ms": 19.287,
+      "p95_ms": 175.366,
+      "p99_ms": 229.987,
+      "samples": 189
+    },
+    "/api/status": {
+      "p50_ms": 18.596,
+      "p95_ms": 172.187,
+      "p99_ms": 230.949,
+      "samples": 190
+    },
+    "/api/overview-history": {
+      "p50_ms": 213.182,
+      "p95_ms": 386.956,
+      "p99_ms": 485.438,
+      "samples": 162
+    },
+    "/api/routes/": {
+      "p50_ms": 6.199,
+      "p95_ms": 42.615,
+      "p99_ms": 56.276,
+      "samples": 46
+    }
+  }
+}
