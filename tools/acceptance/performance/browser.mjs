@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { request } from "node:http";
 import { performance } from "node:perf_hooks";
 import { randomUUID } from "node:crypto";
+import { pollingCovered } from "./polling.mjs";
 
 const options = JSON.parse(process.env.PERF_RUN);
 const out = (name, value) =>
@@ -544,9 +545,7 @@ try {
   });
   if (
     subscriptions.some(
-      (s) =>
-        s.overview &&
-        (s.starts < 2 || s.successful_completions < 2 || s.max_gap_seconds > 5),
+      (s) => s.overview && !pollingCovered(s, readyAt + options.warmup, end),
     )
   )
     throw new Error("Overview polling coverage failed; inspect polling.json");

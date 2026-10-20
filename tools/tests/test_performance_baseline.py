@@ -111,6 +111,34 @@ if __name__ == "__main__":
 
 
 class BrowserCleanupTests(unittest.TestCase):
+    def test_polling_must_cover_both_boundaries_and_sustain_completions(self):
+        module = (
+            Path(__file__).parents[1] / "acceptance/performance/polling.mjs"
+        ).as_uri()
+        result = subprocess.run(
+            [
+                "node",
+                "--input-type=module",
+                "-e",
+                f"""
+import {{pollingCovered}} from {json.dumps(module)};
+const good={{starts:400,successful_completions:400,first:61,last:659,max_gap_seconds:1.7}};
+console.log(JSON.stringify([
+ pollingCovered(good,60,660),
+ pollingCovered({{...good,starts:2,successful_completions:2,last:63}},60,660),
+ pollingCovered({{...good,first:70}},60,660),
+ pollingCovered({{...good,last:640}},60,660),
+ pollingCovered({{...good,successful_completions:2}},60,660)
+]));
+""",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(json.loads(result.stdout), [True, False, False, False, False])
+
     def test_separate_browser_group_is_verified_and_terminated(self):
         with tempfile.TemporaryDirectory(prefix="perf390-lifecycle-") as directory:
             child = subprocess.Popen(
