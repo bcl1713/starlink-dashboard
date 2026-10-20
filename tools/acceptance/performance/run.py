@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "tools/acceptance/operator-journal"))
+from lifecycle import verify_browser
 from ownership import Owner, free_port
 from report import summarize
 
@@ -328,7 +329,10 @@ def run(args):
                 if owner.admitted and owner.compose_file.exists():
                     owner.compose("logs", "--no-color", timeout=30)
             finally:
-                result["cleanup"] = owner.close()
+                try:
+                    result["browser_cleanup"] = verify_browser(owner.root)
+                finally:
+                    result["cleanup"] = owner.close()
             with socket.socket() as listener:
                 listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 listener.bind(("127.0.0.1", prom_port))

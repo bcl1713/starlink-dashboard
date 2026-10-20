@@ -43,9 +43,7 @@ def summarize(metadata, rows):
     summary = {}
     for name, points in resources.items():
         times, values = zip(*points)
-        if name.endswith("cpu_seconds") and any(
-            b < a for a, b in pairwise(values)
-        ):
+        if name.endswith("cpu_seconds") and any(b < a for a, b in pairwise(values)):
             raise ValueError(f"CPU counter reset: {name}; split the run")
         span = times[-1] - times[0]
         tmean, vmean = sum(times) / len(times), sum(values) / len(values)
@@ -96,6 +94,15 @@ def compare(baseline, candidate):
     for section in ("resources", "latency"):
         if baseline[section].keys() != candidate[section].keys():
             raise ValueError(f"Incompatible measurement coverage: {section}")
+    for name, before in baseline["resources"].items():
+        after = candidate["resources"][name]
+        if (
+            before["samples"] < 2
+            or after["samples"] < 2
+            or abs(before["samples"] - after["samples"]) > 1
+            or abs(before["span_seconds"] - after["span_seconds"]) > 10
+        ):
+            raise ValueError(f"Incompatible resource coverage: {name}")
     for section, fields in (
         ("resources", ("last", "slope_per_minute", "cores_used")),
         ("latency", ("p50_ms", "p95_ms", "p99_ms")),

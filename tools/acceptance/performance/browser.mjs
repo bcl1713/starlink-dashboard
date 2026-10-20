@@ -164,8 +164,17 @@ try {
       args: ["--enable-unsafe-swiftshader", "--window-size=1920,1080"],
       timeout: 30000,
     });
+    const processFields = readFileSync(
+      `/proc/${server.process().pid}/stat`,
+      "utf8",
+    )
+      .split(") ")[1]
+      .trim()
+      .split(/\s+/);
     out("browser-owner.json", {
       pid: server.process().pid,
+      pgid: Number(processFields[2]),
+      start_ticks: processFields[19],
       purpose: "perf390 isolated Chromium",
       command: server.process().spawnargs,
     });
@@ -222,13 +231,15 @@ try {
           maxInflight = Math.max(maxInflight, inflight);
         }
       });
-      page.on("requestfinished", (req) => {
+      page.on("requestfinished", async (req) => {
         const start = requests.get(req);
         if (start === undefined) return;
         inflight--;
         const path = new URL(req.url()).pathname;
-        (latencies[path] ||= []).push(performance.now() - start);
+        const elapsed = performance.now() - start;
         requests.delete(req);
+        const response = await req.response();
+        if (response?.ok()) (latencies[path] ||= []).push(elapsed);
       });
       page.on("requestfailed", (req) => {
         if (requests.has(req)) {
@@ -241,7 +252,14 @@ try {
         }
       });
       page.on("response", (response) => {
-        if (measuring && response.status() >= 400)
+        if (
+          measuring &&
+          response.status() >= 400 &&
+          !(
+            new URL(response.url()).pathname === "/api/v2/gps/config" &&
+            response.status() === 503
+          )
+        )
           failures.push({
             path: new URL(response.url()).pathname,
             status: response.status(),
@@ -478,6 +496,10 @@ try {
         {
           "Idempotency-Key": randomUUID(),
           "X-Operator-Store-Epoch": health.api_epoch,
+          "X-Operator-Replay-Id":
+            health.operating_context_id ||
+            health.replay_run_id ||
+            `idle:${health.simulation_run_id}`,
         },
       );
       append("operations.jsonl", {
@@ -520,6 +542,10 @@ try {
       path: resolve(options.output, `page-${i}.png`),
     });
   out("failures.json", failures);
+  if (failures.length)
+    throw new Error(
+      "Unexpected browser requests failed; this run is not a valid baseline (failures.json)",
+    );
 } finally {
   for (const context of contexts) await context.close().catch(() => {});
   await browser?.close();

@@ -1,8 +1,14 @@
 """Reject misleading comparisons and distinguish warm growth from startup."""
 
 import copy
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
+from acceptance.performance.lifecycle import identity, verify_browser
 from acceptance.performance.report import compare, summarize
 
 
@@ -92,6 +98,34 @@ class BaselineReportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "counter"):
             summarize(self.metadata, self.rows)
 
+    def test_single_surviving_sample_is_not_comparable_coverage(self):
+        baseline = summarize(self.metadata, self.rows)
+        candidate = copy.deepcopy(baseline)
+        candidate["resources"]["backend.memory_bytes"].update(samples=1, span_seconds=0)
+        with self.assertRaisesRegex(ValueError, "coverage"):
+            compare(baseline, candidate)
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BrowserCleanupTests(unittest.TestCase):
+    def test_separate_browser_group_is_verified_and_terminated(self):
+        with tempfile.TemporaryDirectory(prefix="perf390-lifecycle-") as directory:
+            child = subprocess.Popen(
+                [sys.executable, "-c", "import time; time.sleep(60)"],
+                start_new_session=True,
+            )
+            try:
+                record = identity(child.pid) | {"pid": child.pid, "command": child.args}
+                root = Path(directory)
+                (root / "browser-owner.json").write_text(json.dumps(record))
+                result = verify_browser(root)
+                child.wait(timeout=2)
+                self.assertEqual(result["remaining"], [])
+                self.assertLess(child.returncode, 0)
+            finally:
+                if child.poll() is None:
+                    child.terminate()
+                child.wait(timeout=2)
