@@ -19,6 +19,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.OPERATOR_ACCEPTANCE_ORIGIN,
     headless: true,
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
     screenshot: 'only-on-failure',
     trace: 'on',
     launchOptions: { args: ['--disable-dev-shm-usage', '--no-sandbox'] },

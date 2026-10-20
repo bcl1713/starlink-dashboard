@@ -709,8 +709,7 @@ test('hidden workspace: conference reuse and independent customer lifecycle at t
         restored.payload.resumes_participation_id
       );
       await bridge
-        .locator('..')
-        .getByRole('button', { name: 'Reuse conference', exact: true })
+        .getByRole('button', { name: 'Customer Joined', exact: true })
         .click();
       await dialog
         .getByLabel('Participant (optional)')
