@@ -204,6 +204,30 @@ the corrected inventory. Recover measurement revisions from the retained Git
 bundle if squash merging later removes their branch reachability. Keep the
 implementation worktree separate.
 
+Use the **current report tool** on frozen summaries; only the measurement runner
+must stay at the matching frozen revision. Reporting fixes do not rewrite
+original summaries or their harness identities.
+
+Latency comparisons require at least 20 samples for polling, periodic backend
+counters and frame/delivery diagnostics; observer and infrequent API requests
+require at least five. History/status/link/simulation polling also retains the
+existing five-second liveness floor per viewer; periodic tick/metrics counters
+use a single producer. Five-second observer reads require 80% of their expected
+rate, allowing a boundary completion. Infrequent API calls have no assumed 1 Hz
+rate. Every class requires before/after completions per measured second within
+20% of the larger rate, plus one boundary sample. Ordinary jitter is allowed;
+1-vs-100 or 50-vs-200 coverage is not a valid latency improvement.
+
+The tool rejects the whole comparison before emitting deltas if any endpoint has
+insufficient/different coverage, an invalid measured span, failed requests or
+missing request outcomes. Accepted latency output includes class, before/ after
+sample counts and completion rates alongside quantile deltas. These are
+conservative comparability rules, not statistical confidence guarantees for p99.
+A valid short activity measurement may remain incomparable because one-off
+operations lack samples. Keep it as evidence; do not remove sparse endpoints to
+manufacture a passing comparison. Per-client boundary/gap and successful-polling
+checks at collection remain unchanged.
+
 The comparison refuses changed workload, hardware, runtime, instrumentation,
 browser, harness revision or materially different measured duration. Inspect
 coverage and missing measurements as well as deltas. Record absolute and

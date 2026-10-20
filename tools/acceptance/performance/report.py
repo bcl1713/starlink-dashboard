@@ -72,6 +72,71 @@ def summarize(metadata, rows):
     }
 
 
+def latency_coverage(endpoint, baseline, candidate):
+    """Conservative coverage gates; these do not establish quantile precision."""
+    viewers = max(1, baseline["metadata"]["workload"].get("viewers", 1))
+    polling = {
+        "/api/overview-history",
+        "/api/status",
+        "/api/active-x-link",
+        "/api/simulation/run",
+    }
+    periodic = {
+        "backend_tick_wall_ms",
+        "backend_tick_thread_cpu_ms",
+        "backend_metrics_prepare_wall_ms",
+        "backend_metrics_prepare_thread_cpu_ms",
+        "backend_event_loop_delay_ms",
+        "backend_/metrics",
+    }
+    if endpoint in {"observer_status", "observer_operator_read"}:
+        category, minimum, floor = "observer", 5, 0.8 / 5
+    elif endpoint.removeprefix("backend_") in polling:
+        # Same five-second liveness floor as the existing browser polling guard.
+        category, minimum, floor = "polling", 20, viewers / 5
+    elif endpoint in periodic:
+        category, minimum, floor = "periodic", 20, 1 / 5
+    elif endpoint in {"frame", "observer_delivery_error_ms"}:
+        category, minimum, floor = "diagnostic", 20, 0
+    else:
+        # Settings/Operator/event requests do not have a one-second contract.
+        category, minimum, floor = "infrequent", 5, 0
+    counts, rates, spans = [], [], []
+    for label, run in (("baseline", baseline), ("candidate", candidate)):
+        count = run["latency"][endpoint].get("samples")
+        span = run["measured_span_seconds"]
+        if type(count) is not int or count < minimum:
+            raise ValueError(
+                f"Incompatible latency coverage: {endpoint} ({category}, {label}); "
+                f"requires at least {minimum} samples, got {count}"
+            )
+        rate = count / span
+        # One completion at a window boundary is ordinary count jitter.
+        if count + 1 < floor * span:
+            raise ValueError(
+                f"Incompatible latency coverage: {endpoint} ({category}, {label}); "
+                f"completion rate {rate:.3f}/s is below {floor:.3f}/s"
+            )
+        counts.append(count)
+        rates.append(rate)
+        spans.append(span)
+    # Symmetric 20% rate tolerance, plus one boundary completion. Normalize by
+    # each measured span: equal counts need not mean equal completion rates.
+    tolerance = max(rates) * 0.2 + 1 / min(spans)
+    if abs(rates[0] - rates[1]) > tolerance:
+        raise ValueError(
+            f"Incompatible latency completion rate: {endpoint} ({category}); "
+            f"{counts[0]} vs {counts[1]} samples, {rates[0]:.3f} vs {rates[1]:.3f}/s"
+        )
+    return {
+        "coverage_class": category,
+        "samples_before": counts[0],
+        "samples_after": counts[1],
+        "completions_per_second_before": rates[0],
+        "completions_per_second_after": rates[1],
+    }
+
+
 def compare(baseline, candidate):
     for field in (
         "workload",
@@ -83,6 +148,17 @@ def compare(baseline, candidate):
     ):
         if baseline["metadata"].get(field) != candidate["metadata"].get(field):
             raise ValueError(f"Incompatible {field}; no valid comparison")
+    for run in (baseline, candidate):
+        span = run["measured_span_seconds"]
+        if not math.isfinite(span) or span <= 0:
+            raise ValueError(
+                "Incompatible measured duration: positive finite span required"
+            )
+        outcomes = run["metadata"].get("request_outcomes", {})
+        if outcomes.get("unexpected_failures") != 0:
+            raise ValueError(
+                "Incompatible request coverage: failed requests or missing outcomes"
+            )
     if abs(baseline["measured_span_seconds"] - candidate["measured_span_seconds"]) > 10:
         raise ValueError("Incompatible measured duration")
     result = {
@@ -103,12 +179,16 @@ def compare(baseline, candidate):
             or abs(before["span_seconds"] - after["span_seconds"]) > 10
         ):
             raise ValueError(f"Incompatible resource coverage: {name}")
+    coverage = {
+        endpoint: latency_coverage(endpoint, baseline, candidate)
+        for endpoint in baseline["latency"]
+    }
     for section, fields in (
         ("resources", ("last", "slope_per_minute", "cores_used")),
         ("latency", ("p50_ms", "p95_ms", "p99_ms")),
     ):
         for key in baseline[section].keys() & candidate[section].keys():
-            delta = {}
+            delta = coverage[key].copy() if section == "latency" else {}
             for field in fields:
                 before, after = baseline[section][key].get(field), candidate[section][
                     key
