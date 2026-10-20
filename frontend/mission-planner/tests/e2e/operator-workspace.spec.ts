@@ -932,7 +932,13 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
         .getByRole('button', { name: 'Transport', exact: true })
         .click();
       await page
-        .getByRole('button', { name: 'Record another move', exact: true })
+        .getByText('History and advanced records', { exact: true })
+        .click();
+      await page
+        .getByRole('button', {
+          name: 'Create advanced transport record',
+          exact: true,
+        })
         .click();
       await editor
         .getByLabel('Service 1', { exact: true })
@@ -953,7 +959,10 @@ test('hidden workspace: issue follow-up, correction and applied-only transport a
       });
       await expect(editor).toHaveCount(0);
       await expect(
-        page.getByRole('button', { name: 'Record another move', exact: true })
+        page.getByRole('button', {
+          name: 'Create advanced transport record',
+          exact: true,
+        })
       ).toBeEnabled();
       await page.screenshot({
         path: join(
@@ -1097,7 +1106,13 @@ test('hidden workspace: paged named transport relationships retain exact targets
       const page = await context.newPage();
       await page.goto(`/operator?mission_id=${missionId}&view=transport`);
       await page
-        .getByRole('button', { name: 'Record another move', exact: true })
+        .getByText('History and advanced records', { exact: true })
+        .click();
+      await page
+        .getByRole('button', {
+          name: 'Create advanced transport record',
+          exact: true,
+        })
         .click();
       const editor = page.getByRole('dialog');
       await editor
