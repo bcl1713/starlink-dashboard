@@ -105,6 +105,7 @@ const contexts = [],
   sessions = [],
   latencies = {},
   failures = [],
+  cancellations = [],
   requests = new WeakMap();
 const cpuByPid = new Map(),
   subscriptions = [];
@@ -214,6 +215,7 @@ try {
         page: i,
         overview: i < options.viewers,
         starts: 0,
+        successful_completions: 0,
         first: null,
         last: null,
         max_gap_seconds: 0,
@@ -245,13 +247,18 @@ try {
         const elapsed = performance.now() - start;
         requests.delete(req);
         const response = await req.response();
-        if (response?.ok()) (latencies[path] ||= []).push(elapsed);
+        if (response?.ok()) {
+          (latencies[path] ||= []).push(elapsed);
+          if (path === "/api/overview-history")
+            subscription.successful_completions++;
+        }
       });
       page.on("requestfailed", (req) => {
         if (requests.has(req)) {
           inflight--;
           requests.delete(req);
-          failures.push({
+          const cancelled = req.failure()?.errorText === "net::ERR_ABORTED";
+          (cancelled ? cancellations : failures).push({
             path: new URL(req.url()).pathname,
             error: req.failure(),
           });
@@ -537,7 +544,9 @@ try {
   });
   if (
     subscriptions.some(
-      (s) => s.overview && (s.starts < 2 || s.max_gap_seconds > 5),
+      (s) =>
+        s.overview &&
+        (s.starts < 2 || s.successful_completions < 2 || s.max_gap_seconds > 5),
     )
   )
     throw new Error("Overview polling coverage failed; inspect polling.json");
@@ -546,6 +555,11 @@ try {
       path: resolve(options.output, `page-${i}.png`),
     });
   out("failures.json", failures);
+  out("cancellations.json", cancellations);
+  out("request-outcomes.json", {
+    unexpected_failures: failures.length,
+    client_cancellations: cancellations.length,
+  });
   if (failures.length)
     throw new Error(
       "Unexpected browser requests failed; this run is not a valid baseline (failures.json)",

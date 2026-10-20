@@ -361,6 +361,9 @@ def run(args):
                     timeout=30,
                 )
         result["browser"] = json.loads((owner.root / "browser.json").read_text())
+        result["request_outcomes"] = json.loads(
+            (owner.root / "request-outcomes.json").read_text()
+        )
         rows = [
             json.loads(line)
             for line in (owner.root / "samples.jsonl").read_text().splitlines()
