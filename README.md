@@ -5,7 +5,7 @@ Starlink terminal monitoring and mission communication planning, with a native
 Docker stack runs Mission Planner, a FastAPI backend, Prometheus, and an
 optional-demand NOAA GFS processing worker.
 
-**Release baseline: v2.0.0.** These documents describe the checked-out
+**Release baseline: v3.0.0.** These documents describe the checked-out
 branch. See the [release notes](docs/release-notes.md) for compatibility and
 upgrade requirements.
 
@@ -17,7 +17,7 @@ simulation mode without a Starlink terminal:
 ```bash
 git clone https://github.com/bcl1713/starlink-dashboard.git
 cd starlink-dashboard
-git checkout v2.0.0
+git checkout v3.0.0
 cp .env.example .env
 ./scripts/compose.sh up -d --build
 curl --fail http://localhost:8000/health

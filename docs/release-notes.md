@@ -1,5 +1,60 @@
 # Release Notes
 
+## v3.0.0
+
+This release promotes the Operator workspace, durable flight telemetry and
+Starshield transition planning from `dev` since v2.0.0.
+
+### v3 Compatibility and Upgrade
+
+This is a major release because Operator is now the default workspace and the
+legacy Operator page has been retired. Use the
+[Operator user guide](operations/operator-user-guide.md) and
+[quick reference](operations/operator-quick-reference.md) for the current
+workflow. Set `OPERATOR_ENABLED=false` to disable Operator when required.
+
+Deploy backend and frontend together. Back up persistent mission, route,
+Operator, weather and monitoring storage before upgrading; include
+`OPERATOR_ROOT/transport-catalog.json` with the Operator volume backup.
+Existing Operator databases require the explicit maintenance CLI upgrade to
+schema 003; startup never silently upgrades them. Stop the relevant writer and
+follow the [journal maintenance guide](operations/operator-journal.md) and
+[transport deployment guide](operations/operator-transport.md). Older binaries
+reject upgraded databases: rollback requires the previous application and its
+matching pre-upgrade backup. Preserve newer records separately before restore.
+
+The v2 itinerary conversion and v1 API boundaries still apply: `/api/missions`
+returns 404; use `/api/v2/missions` and route-bound leg activation. Flat v1
+mission artifacts remain retained but inert, with no automatic migration or
+cleanup. This release introduces no automatic reverse conversion.
+
+After all four GHCR image builds succeed, pin
+`STARLINK_IMAGE_TAG=v3.0.0`, or check out `v3.0.0` and run
+`./scripts/compose.sh up -d --build --remove-orphans`.
+
+### v3 Highlights
+
+- Default responsive Operator workspace with durable journal history, recovery,
+  communications requirements, conferences, issues and manual capabilities.
+- Reported transport assignments with managed service/transport catalogs;
+  Apply records an operator report and does not command routing equipment.
+- Overview controls, saved presets, guided mission procedures and packaged help.
+- Durable mission flight events and telemetry, plus predicted Starshield PoP
+  transition advisories and planning windows with fallback-aware protection.
+- Improved Overview framing and fullscreen layout, mobile controls, and stable
+  transition timing across telemetry updates.
+
+### v3 Validation and Limits
+
+Merged changes retain production browser, backend, migration and recovery
+evidence in the [Operator workspace report](reports/2026-10-18-operator-workspace)
+and linked feature PRs, including
+[default workspace acceptance](https://github.com/bcl1713/starlink-dashboard/pull/384)
+and [transition timing correction](https://github.com/bcl1713/starlink-dashboard/pull/386).
+Release PR checks must pass before promotion. Synthetic software acceptance does
+not establish aircraft readiness, provider availability or hardware performance.
+This release preparation adds no aircraft validation or live deployment.
+
 ## v2.0.0
 
 This release promotes the validated SIGMET, itinerary import, offline
