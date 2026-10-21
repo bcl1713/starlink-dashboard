@@ -665,7 +665,14 @@ async def startup_event():
 
 
 async def shutdown_event():
-    """Cleanup on shutdown."""
+    """Drain the complete teardown even if its lifespan waiter is cancelled."""
+    from app.core.metrics.lifecycle import drain_work
+
+    await drain_work(asyncio.create_task(_shutdown_resources()))
+
+
+async def _shutdown_resources():
+    """Cleanup on shutdown; owned by the shielded lifespan teardown task."""
     from app.mission.planning.deadlines import shutdown_workers
 
     await asyncio.to_thread(shutdown_workers)
@@ -1339,9 +1346,11 @@ async def _background_update_loop(poi_manager=None):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    await startup_event()
-    yield
-    await shutdown_event()
+    try:
+        await startup_event()
+        yield
+    finally:
+        await shutdown_event()
 
 
 # Create FastAPI application
