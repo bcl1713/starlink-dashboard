@@ -47,6 +47,7 @@ class ETACalculator(_ETACalculator):
         flight_phase: FlightPhase | None = None,
         *,
         mission_now: datetime | None = None,
+        track_passage: bool = True,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -61,6 +62,7 @@ class ETACalculator(_ETACalculator):
             active_route,
             eta_mode,
             flight_phase,
+            **({"track_passage": False} if not track_passage else {}),
             **({"mission_now": mission_now} if mission_now is not None else {}),
         )
 

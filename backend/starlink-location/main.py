@@ -5,7 +5,7 @@ import os
 import sqlite3
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -565,7 +565,7 @@ async def startup_event():
 
         run_service = SimulationRunService(
             SimulationRunRuntime(
-                time.monotonic, lambda: datetime.now(timezone.utc), active_mode
+                time.monotonic, lambda: datetime.now(UTC), active_mode
             ),
             _route_manager,
             poi_manager,
@@ -869,7 +869,7 @@ def _simulation_pop_context():
             call_capabilities=plan.artifacts.call_capabilities,
             projector=plan.artifacts.projector,
             now=frame.simulation_time,
-            observed_now=datetime.now(timezone.utc),
+            observed_now=datetime.now(UTC),
             flight_phase=frame.phase.value,
             unavailable_reason=None,
             enabled=plan.starshield_enabled,
@@ -967,7 +967,6 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             # Track metric collection duration
             from app.core.metrics import (
                 starlink_metrics_generation_errors_total,
-                starlink_metrics_last_update_timestamp_seconds,
                 starlink_metrics_scrape_duration_seconds,
                 update_metrics_from_telemetry,
             )
@@ -1004,16 +1003,28 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                             "Live recording pending recovery",
                             extra_fields={"error": type(archive_error).__name__},
                         )
+                # Carry producer-owned progress with this observation, never
+                # through standalone coupled Gauge writes in the coordinator.
+                route_progress = None
+                position_sim = getattr(_coordinator, "position_sim", None)
+                follower = getattr(position_sim, "route_follower", None)
+                if current_config.mode == "simulation" and follower is not None:
+                    progress = position_sim.progress
+                    count = follower.get_point_count()
+                    route_progress = (
+                        progress * 100,
+                        min(int(progress * (count - 1)), count - 1),
+                    )
                 update_metrics_from_telemetry(
                     telemetry,
                     current_config,
                     active_route,
                     poi_manager,
                     flight_events_managed=flight_events_managed,
+                    route_progress=route_progress,
                 )
                 scrape_duration = time.time() - scrape_start
                 starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
-                starlink_metrics_last_update_timestamp_seconds.set(time.time())
             except Exception as metric_error:  # noqa: BLE001
                 starlink_metrics_generation_errors_total.inc()
                 logger.warning_json(

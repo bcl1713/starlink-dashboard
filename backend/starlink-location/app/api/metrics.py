@@ -60,7 +60,7 @@ async def metrics(
     set_last_scrape_time(time.time())
 
     try:
-        # Delegate to metrics_export for on-demand POI updates (handles pre-flight cases)
+        # Serialize the frame committed by its producer.
         metrics_output = await metrics_export.get_metrics(route_manager, poi_manager)
     except (
         RuntimeError,
@@ -115,6 +115,7 @@ async def position_table():
     }
     ```
     """
+    position = _current_position.snapshot()
     return JSONResponse(
         {
             "columns": [
@@ -126,9 +127,9 @@ async def position_table():
             "rows": [
                 [
                     "starlink-dish",
-                    _current_position["latitude"],
-                    _current_position["longitude"],
-                    _current_position["altitude"],
+                    position["latitude"],
+                    position["longitude"],
+                    position["altitude"],
                 ]
             ],
         }

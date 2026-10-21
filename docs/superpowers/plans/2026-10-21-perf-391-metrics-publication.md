@@ -2,7 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution; use subagent-driven execution only if the user later
-> requests it. Task 1 only is authorized by approval at `c7792320`.
+> requests it. Task 2 is authorized after the reviewed Task 1 checkpoint; stop
+> before Task 3.
 
 **Goal:** Eliminate scrape-time simulation/ETA/storage work with one bounded,
 consistent snapshot for coupled gauges and unchanged independent instruments.
@@ -22,9 +23,10 @@ the frozen #390 Docker/Playwright harness. No dependency/deployment change.
 and
 [architecture decision and probe](../specs/2026-10-21-perf-391-metrics-publication-decision.md).
 
-**Status:** Approved at `c7792320`; Task 1 foundation is at its mandatory
-[stop/go checkpoint](../../performance/perf-391-task-1-checkpoint.md). Tasks 2–6
-remain unstarted and require checkpoint review before proceeding.
+**Status:** Design approved at `c7792320`; Task 1 passed review at `b2c90832`.
+Task 2 is at its
+[review checkpoint](../../performance/perf-391-task-2-checkpoint.md). Tasks 3–6
+remain unstarted; stop for review before Task 3.
 
 ## Global constraints
 

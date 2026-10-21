@@ -1,0 +1,530 @@
+{
+  "base": "b2c908326709e4e56482d12869e342b203ed1bb1",
+  "approval_comment": "https://github.com/bcl1713/starlink-dashboard/pull/403#issuecomment-6305647846",
+  "scope": "Task 2 only; stop before Task 3",
+  "client_matrix": {
+    "0.19.0": {
+      "passed": 410,
+      "skipped": 18,
+      "failed": 0,
+      "summary": "======================= 410 passed, 18 skipped in 12.20s ======================="
+    },
+    "0.26.0": {
+      "passed": 410,
+      "skipped": 18,
+      "failed": 0,
+      "summary": "======================= 410 passed, 18 skipped in 12.48s ======================="
+    }
+  },
+  "independent_contracts": {
+    "base": "b2c90832",
+    "independent_instruments": 29,
+    "unchanged_definitions": [
+      "mission_active_info",
+      "mission_comm_state",
+      "mission_critical_seconds",
+      "mission_degraded_seconds",
+      "mission_next_conflict_seconds",
+      "mission_phase_state",
+      "mission_timeline_generated_timestamp",
+      "simulation_errors_total",
+      "simulation_updates_total",
+      "starlink_connection_attempts_total",
+      "starlink_connection_failures_total",
+      "starlink_device_location",
+      "starlink_dish_outage_active",
+      "starlink_dish_thermal_throttle",
+      "starlink_dish_uptime_seconds",
+      "starlink_distance_to_waypoint_meters",
+      "starlink_eta_to_waypoint_seconds",
+      "starlink_ground_entry_point_info",
+      "starlink_ground_entry_point_latitude_degrees",
+      "starlink_ground_entry_point_location",
+      "starlink_ground_entry_point_longitude_degrees",
+      "starlink_metrics_generation_errors_total",
+      "starlink_metrics_scrape_duration_seconds",
+      "starlink_network_latency_ms",
+      "starlink_network_throughput_down_mbps",
+      "starlink_network_throughput_up_mbps",
+      "starlink_outage_events_total",
+      "starlink_route_segment_speed_knots",
+      "starlink_thermal_events_total"
+    ],
+    "coupled_schema_families": 29,
+    "legacy_shims_changed": false,
+    "new_private_client_dependencies": false
+  },
+  "baseline_verification": [
+    {
+      "files": 2072,
+      "root": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence",
+      "mismatches": [],
+      "inventory_sha256": "0764879764432196349b6f03fcdbbce0b3d38f12f283518aeaf46f4d943cd577"
+    },
+    {
+      "files": 128,
+      "root": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf391/evidence",
+      "mismatches": [],
+      "inventory_sha256": "99a833a16df7394bcfd23bff89b8920f79369bed7146ab0ed1b7f49aac1e1198"
+    }
+  ],
+  "test_environment_packages": [
+    {
+      "name": "adjusttext",
+      "version": "1.4.0"
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.5"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "name": "arrow",
+      "version": "1.4.0"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "black",
+      "version": "26.5.1"
+    },
+    {
+      "name": "cartopy",
+      "version": "0.26.0"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.19"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0"
+    },
+    {
+      "name": "contourpy",
+      "version": "1.3.3"
+    },
+    {
+      "name": "coverage",
+      "version": "7.16.2"
+    },
+    {
+      "name": "cycler",
+      "version": "0.12.1"
+    },
+    {
+      "name": "deprecated",
+      "version": "1.3.1"
+    },
+    {
+      "name": "dnspython",
+      "version": "2.9.0"
+    },
+    {
+      "name": "eccodes",
+      "version": "2.49.0"
+    },
+    {
+      "name": "eccodeslib",
+      "version": "2.49.0.30"
+    },
+    {
+      "name": "eckitlib",
+      "version": "2.3.0.30"
+    },
+    {
+      "name": "et-xmlfile",
+      "version": "2.0.0"
+    },
+    {
+      "name": "fastapi",
+      "version": "0.156.4"
+    },
+    {
+      "name": "fastkml",
+      "version": "1.4.0"
+    },
+    {
+      "name": "filelock",
+      "version": "4.0.12"
+    },
+    {
+      "name": "findlibs",
+      "version": "0.1.3"
+    },
+    {
+      "name": "flatbuffers",
+      "version": "25.12.19"
+    },
+    {
+      "name": "fonttools",
+      "version": "4.67.0"
+    },
+    {
+      "name": "geojson",
+      "version": "3.3.0"
+    },
+    {
+      "name": "grpcio",
+      "version": "1.84.0"
+    },
+    {
+      "name": "grpcio-reflection",
+      "version": "1.84.0"
+    },
+    {
+      "name": "grpcio-tools",
+      "version": "1.84.0"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "h3",
+      "version": "4.5.0"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpcore2",
+      "version": "2.15.1"
+    },
+    {
+      "name": "httptools",
+      "version": "0.9.0"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "httpx2",
+      "version": "2.15.1"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.1"
+    },
+    {
+      "name": "kiwisolver",
+      "version": "1.5.1"
+    },
+    {
+      "name": "limits",
+      "version": "5.8.0"
+    },
+    {
+      "name": "lxml",
+      "version": "6.1.3"
+    },
+    {
+      "name": "matplotlib",
+      "version": "3.11.2"
+    },
+    {
+      "name": "mypy-extensions",
+      "version": "1.1.0"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.6"
+    },
+    {
+      "name": "openpyxl",
+      "version": "3.1.5"
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.45.1"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "pandas",
+      "version": "3.0.6"
+    },
+    {
+      "name": "pathspec",
+      "version": "1.1.1"
+    },
+    {
+      "name": "pillow",
+      "version": "13.0.0"
+    },
+    {
+      "name": "platformdirs",
+      "version": "4.13.5"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.7.0"
+    },
+    {
+      "name": "prometheus-client",
+      "version": "0.26.0"
+    },
+    {
+      "name": "protobuf",
+      "version": "7.36.2"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.11"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.5"
+    },
+    {
+      "name": "pydantic-core",
+      "version": "2.46.5"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.1"
+    },
+    {
+      "name": "pygeoif",
+      "version": "1.6.0"
+    },
+    {
+      "name": "pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "pyparsing",
+      "version": "3.3.3"
+    },
+    {
+      "name": "pypdf",
+      "version": "6.21.1"
+    },
+    {
+      "name": "pyproj",
+      "version": "3.7.2"
+    },
+    {
+      "name": "pyshp",
+      "version": "3.1.6"
+    },
+    {
+      "name": "pytest",
+      "version": "9.1.1"
+    },
+    {
+      "name": "pytest-asyncio",
+      "version": "1.4.0"
+    },
+    {
+      "name": "pytest-cov",
+      "version": "7.1.0"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "2.9.0.post0"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4"
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "name": "python-pptx",
+      "version": "1.0.2"
+    },
+    {
+      "name": "pytokens",
+      "version": "0.4.1"
+    },
+    {
+      "name": "pyyaml",
+      "version": "6.0.3"
+    },
+    {
+      "name": "reverse-geocoder",
+      "version": "1.5.1"
+    },
+    {
+      "name": "ruff",
+      "version": "0.16.8"
+    },
+    {
+      "name": "scipy",
+      "version": "1.17.1"
+    },
+    {
+      "name": "setuptools",
+      "version": "84.2.1"
+    },
+    {
+      "name": "shapely",
+      "version": "2.2.0"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0"
+    },
+    {
+      "name": "slowapi",
+      "version": "0.1.10"
+    },
+    {
+      "name": "starlette",
+      "version": "1.9.0"
+    },
+    {
+      "name": "starlink-grpc-core",
+      "version": "1.2.5"
+    },
+    {
+      "name": "timezonefinder",
+      "version": "9.0.0"
+    },
+    {
+      "name": "timezonefinder-data",
+      "version": "3.2026.3.post1"
+    },
+    {
+      "name": "truststore",
+      "version": "0.10.5"
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.5"
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0"
+    },
+    {
+      "name": "uvloop",
+      "version": "0.23.0"
+    },
+    {
+      "name": "watchdog",
+      "version": "6.0.0"
+    },
+    {
+      "name": "watchfiles",
+      "version": "1.3.0"
+    },
+    {
+      "name": "websockets",
+      "version": "17.3"
+    },
+    {
+      "name": "wrapt",
+      "version": "2.5.1"
+    },
+    {
+      "name": "xlsxwriter",
+      "version": "3.2.9"
+    },
+    {
+      "name": "yagrc",
+      "version": "1.1.3"
+    }
+  ],
+  "review": {
+    "important_findings": 2,
+    "critical_findings": 0,
+    "fixes": "3 RED->GREEN cases for naive countdown and failed legacy counter; verified in full relevant matrix"
+  },
+  "full_suite": {
+    "status": "passed",
+    "exit_code": 0,
+    "collected": 4349,
+    "passed": 4329,
+    "skipped": 20,
+    "warnings": 1,
+    "seconds": 579.63,
+    "hard_timeout_seconds": 1200,
+    "prior_58_gfs_failures_now_passed": 58,
+    "warning": "Cartopy facecolor has no effect for a feature defined as never, test_mission_exporter.py::TestMissionTimelineExporters::test_generate_pptx_starts_with_zip_header",
+    "skipped_tests": [
+      "tests/integration/test_route_endpoints_with_timing.py::test_upload_route_includes_timing_data_in_response",
+      "tests/integration/test_route_endpoints_with_timing.py::test_backward_compatibility_routes_without_timing",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_kml_routes_directory_exists",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_with_timing",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_departure_time",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_arrival_time",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_duration",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_segment_speeds",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_all_legs_without_crash",
+      "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_timing_profile_metadata",
+      "tests/integration/test_route_eta.py::TestTimingDataAccuracy::test_waypoint_timestamp_format",
+      "tests/integration/test_route_eta.py::TestTimingDataAccuracy::test_segment_speed_calculation_math",
+      "tests/integration/test_route_eta.py::TestTimingDataAccuracy::test_total_duration_calculation",
+      "tests/integration/test_route_eta.py::TestRouteResponseIntegration::test_route_response_includes_timing_flag",
+      "tests/integration/test_route_eta.py::TestRouteResponseIntegration::test_route_detail_response_includes_profile",
+      "tests/integration/test_route_eta.py::TestEdgeCasesAndRobustness::test_handle_missing_waypoint_timestamps",
+      "tests/integration/test_route_eta.py::TestEdgeCasesAndRobustness::test_handle_incomplete_timing_data",
+      "tests/integration/test_route_eta.py::TestEdgeCasesAndRobustness::test_handle_out_of_order_timestamps",
+      "tests/integration/test_route_eta.py::TestRealWorldFlight::test_leg_1_is_overwater_flight",
+      "tests/integration/test_route_eta.py::TestRealWorldFlight::test_segment_speeds_within_flight_envelope"
+    ],
+    "failures": []
+  },
+  "application_performance_claim": false,
+  "minimum_60_minute_gate": "retained for Task 6",
+  "foundation_sha256": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368",
+  "initial_failures": {
+    "integration": [
+      "test_metric_publication_failure_propagates_for_paced_frames: moved injection site",
+      "test_metrics_values_are_finite_except_unavailable_ground_entry_point_coordinates: explicit producer fixture",
+      "test_metrics_exposes_eta_type_labels: explicit producer fixture"
+    ],
+    "relevant": [
+      "test_api_estimates_and_metrics_share_simulated_now: public registry read",
+      "test_transport_evidence_does_not_replace_historical_planning_references[False]: stdin multiprocessing launch",
+      "test_transport_evidence_does_not_replace_historical_planning_references[True]: stdin multiprocessing launch"
+    ],
+    "review": [
+      "test_naive_departure_retains_legacy_utc_countdown[False]",
+      "test_naive_departure_retains_legacy_utc_countdown[True]",
+      "test_failed_legacy_preparation_counts_admitted_sample_once"
+    ]
+  },
+  "cleanup": {
+    "owned_runtime_survivors": [],
+    "temporary_test_environment": "removed after final post-commit checks",
+    "open_worktree_and_evidence": "retained"
+  }
+}

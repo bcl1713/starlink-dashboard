@@ -1,10 +1,9 @@
 # Gauge snapshot implementation tasks
 
-Part of the [revised plan](2026-10-21-perf-391-metrics-publication.md). All
-Tasks 2–6 are unstarted. Written approval was given at `c7792320`; Task 1
-results are at the
-[mandatory checkpoint](../../performance/perf-391-task-1-checkpoint.md).
-Checkpoint review is required before production integration.
+Part of the [revised plan](2026-10-21-perf-391-metrics-publication.md). Task 1
+passed review at `b2c90832`. Task 2 is at its
+[mandatory review checkpoint](../../performance/perf-391-task-2-checkpoint.md).
+Tasks 3–6 remain unstarted; do not proceed before Task 3 approval.
 
 ## Task 1: Snapshot foundation and compatibility checkpoint
 
@@ -109,6 +108,14 @@ timestamp.
       only the directly superseded frame, and derived refresh adds no counts,
       observations, detector/clock changes, or successful-observation timestamp.
       Run focused metric/ETA tests, then commit.
+
+**Registration transition, approved review conditions:** Pull the pure
+`metrics_export.py` serialization change forward from Task 5 before collector
+registration. Mechanically include timestamp/progress in the accepted updater
+and remove their standalone main/coordinator setters; preserve existing replay
+callback/commit ordering until Task 3. Capture the position mapping once for the
+position-table response. Full source admission, lifecycle notifications and
+HTTP/health behavior remain later tasks. See the checkpoint for exact scope.
 
 ## Task 3: Source and replay publication ordering
 

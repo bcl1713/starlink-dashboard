@@ -1,10 +1,8 @@
 """Unit tests for Prometheus metrics export endpoint."""
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from app.api import metrics_export
 from app.models.poi import POI
 from app.models.route import (
@@ -33,8 +31,10 @@ def _make_telemetry(speed_knots: float = 250.0) -> TelemetryData:
             packet_loss_percent=True,
             obstruction_percent=True,
         ),
-        timestamp=datetime.now(timezone.utc),
+        metric_source="simulated",
+        timestamp=datetime.now(UTC),
         position=PositionData(
+            observed_at=datetime.now(UTC),
             latitude=40.0,
             longitude=-73.0,
             altitude=10000.0,
@@ -50,16 +50,6 @@ def _make_telemetry(speed_knots: float = 250.0) -> TelemetryData:
         obstruction=ObstructionData(obstruction_percent=5.0),
         environmental=EnvironmentalData(),
     )
-
-
-class _DummyCoordinator:
-    """Minimal coordinator stub that returns canned telemetry."""
-
-    def __init__(self, telemetry: TelemetryData):
-        self._telemetry = telemetry
-
-    def get_current_telemetry(self) -> TelemetryData:
-        return self._telemetry
 
 
 class _DummyPOIManager:
@@ -99,7 +89,7 @@ def _make_parsed_route(has_timing: bool = True) -> ParsedRoute:
     ]
     timing_profile = None
     if has_timing:
-        departure_time = datetime.now(timezone.utc)
+        departure_time = datetime.now(UTC)
         arrival_time = departure_time + timedelta(hours=2)
         timing_profile = RouteTimingProfile(
             departure_time=departure_time,
@@ -132,13 +122,9 @@ async def test_metrics_export_emits_eta_labels(monkeypatch: pytest.MonkeyPatch) 
     dummy_poi_manager = _DummyPOIManager(poi)
     dummy_route_manager = _DummyRouteManager(active_route=None)
 
-    # metrics_export.set_poi_manager(dummy_poi_manager)
-    # metrics_export.set_route_manager(dummy_route_manager)
+    from app.core.metrics import update_metrics_from_telemetry
 
-    def _coordinator_factory(config: Any) -> _DummyCoordinator:
-        return _DummyCoordinator(telemetry)
-
-    monkeypatch.setattr(metrics_export, "SimulationCoordinator", _coordinator_factory)
+    update_metrics_from_telemetry(telemetry, poi_manager=dummy_poi_manager)
 
     output = await metrics_export.get_metrics(
         route_manager=dummy_route_manager,
@@ -171,13 +157,12 @@ async def test_metrics_export_includes_route_timing(
         active_route=_make_parsed_route(has_timing=True)
     )
 
-    # metrics_export.set_poi_manager(dummy_poi_manager)
-    # metrics_export.set_route_manager(dummy_route_manager)
+    from app.core.metrics import update_metrics_from_telemetry
 
-    monkeypatch.setattr(
-        metrics_export,
-        "SimulationCoordinator",
-        lambda config: _DummyCoordinator(telemetry),
+    update_metrics_from_telemetry(
+        telemetry,
+        active_route=dummy_route_manager.get_active_route(),
+        poi_manager=dummy_poi_manager,
     )
 
     output = await metrics_export.get_metrics(
@@ -191,3 +176,28 @@ async def test_metrics_export_includes_route_timing(
     assert "starlink_route_arrival_time_unix" in output
     assert "starlink_route_segment_count_with_timing" in output
     assert 'eta_type="' in output
+
+
+@pytest.mark.anyio("asyncio")
+async def test_exposition_ignores_managers_and_does_not_recalculate():
+    import asyncio
+
+    from app.core import eta_service
+    from app.core.metrics import prometheus_metrics as metrics
+
+    class ForbiddenManager:
+        def __getattribute__(self, name):
+            raise AssertionError("scrape manager access: " + name)
+
+    head = metrics.FRAME_STORE.read()
+    stats = eta_service.get_eta_calculator().get_stats()
+    outputs = await asyncio.gather(
+        *(
+            metrics_export.get_metrics(ForbiddenManager(), ForbiddenManager())
+            for _ in range(100)
+        )
+    )
+    assert len(set(outputs)) == 1
+    assert outputs[0].count("# EOF") == 1
+    assert metrics.FRAME_STORE.read() is head
+    assert eta_service.get_eta_calculator().get_stats() == stats

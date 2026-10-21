@@ -28,10 +28,15 @@ def test_labels_bind_without_visible_child():
     with store.prepare(FrameIdentity(), 0) as builder:
         child.set(3)
         view.labels(kind="estimated", poi="new").set(4)
+        view.labels("second", "anticipated").set(8)
         assert not next(view.collect()).samples
         frame = builder.seal()
     assert store.publish(store.read(), frame)
     assert registry.get_sample_value("eta", {"poi": "new", "kind": "estimated"}) == 4
+    assert [(s.labels, s.value) for s in next(child.collect()).samples] == [
+        ({"poi": "new", "kind": "estimated"}, 4),
+        ({"poi": "second", "kind": "anticipated"}, 8),
+    ]
     assert next(child.collect()).samples == next(view.collect()).samples
     assert not hasattr(view, "_value") and not hasattr(view, "_metrics")
 

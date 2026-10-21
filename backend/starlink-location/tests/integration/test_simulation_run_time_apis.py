@@ -1,10 +1,10 @@
 """All public estimates share the published mission clock and real freshness."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-
 from app.models.poi import POICreate
+
 from tests.integration.test_simulation_run_api import api, start
 
 __all__ = ["api"]
@@ -18,7 +18,7 @@ def timed_api(api, monkeypatch):
     from app.api.routes import eta
 
     client, service, clocks = api
-    clocks.utc = datetime.now(timezone.utc)
+    clocks.utc = datetime.now(UTC)
     client.app.state.coordinator = service.coordinator
     client.app.include_router(flight_status.router)
     client.app.include_router(overview_upcoming_pois.router)
@@ -45,7 +45,6 @@ def timed_api(api, monkeypatch):
 
 
 def test_api_estimates_and_metrics_share_simulated_now(timed_api):
-    from app.core.metrics.prometheus_metrics import starlink_eta_poi_seconds
 
     client, service, clocks = timed_api
     assert start(client).status_code == 200
@@ -76,12 +75,16 @@ def test_api_estimates_and_metrics_share_simulated_now(timed_api):
         },
     ).json()
     assert route["estimated_time_remaining_seconds"] == 1080
+    from app.core.metrics import REGISTRY
+
     assert (
-        starlink_eta_poi_seconds.labels(
-            name="Arrival", category="mission-event", eta_type="estimated"
-        )._value.get()
+        REGISTRY.get_sample_value(
+            "starlink_eta_poi_seconds",
+            {"name": "Arrival", "category": "mission-event", "eta_type": "estimated"},
+        )
         == 1080
     )
+
     clocks.elapsed = 120
     service.collect(service.coordinator, service.publish)
     assert (
