@@ -943,12 +943,14 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
         source_routes = _route_manager
         source_route = source_routes.get_active_route() if source_routes else None
         source_route_id = source_routes.get_active_route_id() if source_routes else None
-        source_route_revision = route_source_identity(source_route)
         current_config = _current_runtime_config()
         source_config = (
             current_config.model_dump_json()
             if isinstance(current_config, SimulationConfig)
             else None
+        )
+        source_route_revision = (
+            route_source_identity(source_route) if source_config is not None else None
         )
         source_service = getattr(app.state, "simulation_run_service", None)
         source_status = source_service.status() if source_service is not None else None
@@ -964,6 +966,14 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
     source_mission = None
 
     def source_is_current():
+        # Legacy adapters use the application fallback configuration and may not
+        # expose domain-model/source readers. Runnable sources have a validated
+        # SimulationConfig and use all admission checks below.
+        if source_config is None:
+            return (
+                _coordinator is coordinator
+                and _current_runtime_config() is current_config
+            )
         from app.core.metrics.source_admission import model_identity
 
         current_service = getattr(app.state, "simulation_run_service", None)
