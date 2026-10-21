@@ -1,9 +1,10 @@
 # Gauge snapshot implementation tasks
 
-Part of the [revised plan](2026-10-21-perf-391-metrics-publication.md). Task 1
-passed review at `b2c90832`. Task 2 is at its
-[mandatory review checkpoint](../../performance/perf-391-task-2-checkpoint.md).
-Tasks 3–6 remain unstarted; do not proceed before Task 3 approval.
+Part of the [revised plan](2026-10-21-perf-391-metrics-publication.md). Tasks
+1–5 have passed their mandatory review checkpoints. Task 6 verification is
+underway; its
+[availability-harness checkpoint](../../performance/perf-391-task-6-availability-checkpoint.md)
+does not complete performance or sustained acceptance.
 
 ## Task 1: Snapshot foundation and compatibility checkpoint
 
@@ -216,6 +217,15 @@ schemas; add the specified publication diagnostic to health.
       may be based only on this focused selection.
 
 ## Task 6: Matched measurement, soak, rollback and PR review
+
+After the setup-NaN investigation, the user approved a separate
+[availability-aware v2 contract](../../performance/perf-391-availability-contract-v2.md).
+Keep the original strict harness and evidence frozen. Use the identical
+committed v2 source for fresh original/current-dev/candidate controls, with
+instrumentation off and counters separate. Do not treat strict and v2 cohorts as
+equivalent. The short original/candidate pair passed; stop at the requested
+checkpoint before another long soak. Three matched repetitions and the minimum
+60-minute measured acceptance remain required; no performance gate is waived.
 
 **Files:** Create `docs/performance/perf-391-results.md` during future
 acceptance; retain frozen tooling, both original inventories and the

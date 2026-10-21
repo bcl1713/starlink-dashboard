@@ -1,0 +1,830 @@
+{
+  "contract_version": "perf390-availability-v2",
+  "harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+  "candidate_application_sha": "aa05a00a626faea475046544737fe218435dd6ab",
+  "original_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+  "current_dev_sha": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+  "strict_original_harness_sha": "13cbf1d54b526307747578ecd4fc691562846834",
+  "short_pair": {
+    "original": {
+      "status": "passed",
+      "application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+      "contract_version": "perf390-availability-v2",
+      "workload": {
+        "fixture": "perf390-v1",
+        "kind": "steady",
+        "availability_contract": "perf390-availability-v2",
+        "availability_observer_hz": 1,
+        "fixture_hashes": {
+          "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+          "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+          "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+          "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+        },
+        "viewers": 2,
+        "operator": true,
+        "window": 1800,
+        "cadence": 1,
+        "warmup": 10,
+        "duration": 30,
+        "operations": false,
+        "fullscreen": false
+      },
+      "backend_python": "Python 3.11.17",
+      "backend_packages_sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+      "browser": {
+        "availability_contract": "perf390-availability-v2",
+        "node_version": "v22.12.0",
+        "mode": "headless-diagnostic",
+        "fullscreen": false,
+        "physical_fullscreen": false,
+        "viewport": [1920, 1080],
+        "dpr": 1,
+        "version": "153.0.8010.12",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "history_step_seconds": 1,
+        "executable_sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+      },
+      "images": {
+        "backend": {
+          "tag": "starlink-operator-perf391t6-v2-short-r2-original-backend:25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+          "id": "sha256:df488183a32e3631e90baa18279eeabf09bc1e21d159299b550c469985a2a2b9",
+          "revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+          "filesystem_config_sha256": "c95682331bb978213f0a0a9943d48342313c13823a79fe94f52792aa77bd98e7"
+        },
+        "frontend": {
+          "tag": "starlink-operator-perf391t6-v2-short-r2-original-frontend:25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+          "id": "sha256:3b485865f7086292026a42432ff220531b5c1571830bc8ac32dd523007330ffd",
+          "revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+          "filesystem_config_sha256": "a98d78d928c19174b19c2643f7b90aa92b23d920ef8175dad550c85243974b52"
+        },
+        "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      },
+      "measurement": {
+        "start": 1792606011.876,
+        "end": 1792606042.519
+      },
+      "setup_transition": {
+        "id": "initial-activation",
+        "kind": "activation",
+        "phase": "setup",
+        "started_at": 1792605998.858,
+        "required_fields": [
+          "starlink_dish_latitude_degrees",
+          "starlink_dish_longitude_degrees",
+          "starlink_dish_altitude_feet",
+          "starlink_dish_speed_knots",
+          "starlink_dish_heading_degrees",
+          "starlink_network_latency_ms_current",
+          "starlink_network_throughput_down_mbps_current",
+          "starlink_network_throughput_up_mbps_current",
+          "starlink_network_packet_loss_percent",
+          "starlink_dish_obstruction_percent",
+          "starlink_signal_quality_percent"
+        ],
+        "expected_mode": "simulation",
+        "expected_identity": {
+          "active_route_id": "synthetic-route"
+        },
+        "completed_at": 1792605999.457,
+        "recovered": {
+          "at": 1792605999.513618,
+          "publication": {
+            "state": "legacy-untracked",
+            "reason": "No frame store in baseline"
+          },
+          "source": {
+            "mode": "simulation",
+            "metric_source": "simulated",
+            "acquired_at": 1792605999.458073,
+            "coordinator_id": "135224023469712:1792605993.7762094:0",
+            "active_route_id": "synthetic-route"
+          },
+          "expected_source": {},
+          "acquisition_age_seconds": 0.05554509162902832,
+          "fields": {
+            "starlink_dish_latitude_degrees": {
+              "available": true
+            },
+            "starlink_dish_longitude_degrees": {
+              "available": true
+            },
+            "starlink_dish_altitude_feet": {
+              "available": true
+            },
+            "starlink_dish_speed_knots": {
+              "available": true
+            },
+            "starlink_dish_heading_degrees": {
+              "available": true
+            },
+            "starlink_network_latency_ms_current": {
+              "available": true
+            },
+            "starlink_network_throughput_down_mbps_current": {
+              "available": true
+            },
+            "starlink_network_throughput_up_mbps_current": {
+              "available": true
+            },
+            "starlink_network_packet_loss_percent": {
+              "available": true
+            },
+            "starlink_dish_obstruction_percent": {
+              "available": true
+            },
+            "starlink_signal_quality_percent": {
+              "available": true
+            }
+          },
+          "capture_wall_ms": 0.3872229717671871,
+          "capture_thread_cpu_ms": 0.38670200000000005
+        }
+      },
+      "recovery_after_completion_ms": 56.61797523498535,
+      "setup_gap_counts": {
+        "starlink_dish_latitude_degrees": 0,
+        "starlink_dish_longitude_degrees": 0,
+        "starlink_dish_altitude_feet": 0,
+        "starlink_dish_speed_knots": 0,
+        "starlink_dish_heading_degrees": 0,
+        "starlink_network_latency_ms_current": 0,
+        "starlink_network_throughput_down_mbps_current": 0,
+        "starlink_network_throughput_up_mbps_current": 0,
+        "starlink_network_packet_loss_percent": 0,
+        "starlink_dish_obstruction_percent": 0,
+        "starlink_signal_quality_percent": 0
+      },
+      "setup_nan_evidence": [],
+      "analysis_grid_points": 1801,
+      "finite_coverage": {
+        "starlink_dish_latitude_degrees": 1,
+        "starlink_dish_longitude_degrees": 1,
+        "starlink_dish_altitude_feet": 1,
+        "starlink_dish_speed_knots": 1,
+        "starlink_dish_heading_degrees": 1,
+        "starlink_network_latency_ms_current": 1,
+        "starlink_network_throughput_down_mbps_current": 1,
+        "starlink_network_throughput_up_mbps_current": 1,
+        "starlink_network_packet_loss_percent": 1,
+        "starlink_dish_obstruction_percent": 1,
+        "starlink_signal_quality_percent": 1
+      },
+      "cadence": {
+        "samples": 30,
+        "first": 1792606012.701,
+        "last": 1792606041.701,
+        "max_gap_seconds": 1.00600004196167
+      },
+      "acquisition_progress": {
+        "samples": 31,
+        "distinct_acquisitions": 30,
+        "first": 1792606011.894861,
+        "last": 1792606041.9383771
+      },
+      "measured_unavailable_samples": [],
+      "request_outcomes": {
+        "unexpected_failures": 0,
+        "client_cancellations": 0
+      },
+      "publication_observation_state_counts": {
+        "legacy-untracked:all-observations-available": 46
+      },
+      "capture_thread_cpu_ms": {
+        "samples": 46,
+        "p50": 0.6805730000000038,
+        "p95": 0.9546039999999996
+      },
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 480767,
+        "pgid": 480767,
+        "remaining": []
+      },
+      "offline_mutation_replay": {
+        "harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+        "contract_version": "perf390-availability-v2",
+        "application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "validator_sha256": "4044e3f612969c69146fa3e3e2a3b96043c8ca3b8cfdcfeca955d0e429d9e7e0",
+        "outcomes": [
+          {
+            "name": "unchanged_real_capture",
+            "outcome": "accepted"
+          },
+          {
+            "name": "missing_actual_scrape",
+            "outcome": "rejected",
+            "reason": "Actual scrape cadence gap"
+          },
+          {
+            "name": "unexplained_measured_nan",
+            "outcome": "rejected",
+            "reason": "unexplained steady-state stored NaN: starlink_dish_altitude_feet"
+          },
+          {
+            "name": "deleted_finite_api_timestamp",
+            "outcome": "rejected",
+            "reason": "API filtering/projection error: starlink_dish_obstruction_percent"
+          },
+          {
+            "name": "shifted_raw_timestamp",
+            "outcome": "rejected",
+            "reason": "Incomplete or shifted raw evaluation grid: starlink_dish_altitude_feet"
+          },
+          {
+            "name": "missing_raw_series",
+            "outcome": "rejected",
+            "reason": "missing raw series: starlink_signal_quality_percent"
+          },
+          {
+            "name": "persistent_startup_failure",
+            "outcome": "rejected",
+            "reason": "Required observation fields unavailable during recovery"
+          },
+          {
+            "name": "late_recovery",
+            "outcome": "rejected",
+            "reason": "Setup recovery deadline exceeded or invalid event times"
+          },
+          {
+            "name": "wrong_route_provenance",
+            "outcome": "rejected",
+            "reason": "Source identity mismatch: active_route_id"
+          }
+        ]
+      }
+    },
+    "candidate": {
+      "status": "passed",
+      "application_sha": "aa05a00a626faea475046544737fe218435dd6ab",
+      "harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+      "contract_version": "perf390-availability-v2",
+      "workload": {
+        "fixture": "perf390-v1",
+        "kind": "steady",
+        "availability_contract": "perf390-availability-v2",
+        "availability_observer_hz": 1,
+        "fixture_hashes": {
+          "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+          "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+          "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+          "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+        },
+        "viewers": 2,
+        "operator": true,
+        "window": 1800,
+        "cadence": 1,
+        "warmup": 10,
+        "duration": 30,
+        "operations": false,
+        "fullscreen": false
+      },
+      "backend_python": "Python 3.11.17",
+      "backend_packages_sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+      "browser": {
+        "availability_contract": "perf390-availability-v2",
+        "node_version": "v22.12.0",
+        "mode": "headless-diagnostic",
+        "fullscreen": false,
+        "physical_fullscreen": false,
+        "viewport": [1920, 1080],
+        "dpr": 1,
+        "version": "153.0.8010.12",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "history_step_seconds": 1,
+        "executable_sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+      },
+      "images": {
+        "backend": {
+          "tag": "starlink-operator-perf391t6-v2-short-r2-candidate-backend:aa05a00a626faea475046544737fe218435dd6ab",
+          "id": "sha256:3b1e8c2b1c86bada9ed2e37026df7bad74a44957c0322f0b040050c08ee2ad17",
+          "revision": "aa05a00a626faea475046544737fe218435dd6ab",
+          "filesystem_config_sha256": "02acb298a3872b8a75b23a932717b3f62b9c9e0cde6c941f34d4976fdcd3fad5"
+        },
+        "frontend": {
+          "tag": "starlink-operator-perf391t6-v2-short-r2-candidate-frontend:aa05a00a626faea475046544737fe218435dd6ab",
+          "id": "sha256:98e1191564875c78bafaa82adef27fa95699a1bbde6149e290fde1e7872998a2",
+          "revision": "aa05a00a626faea475046544737fe218435dd6ab",
+          "filesystem_config_sha256": "ee3364b9968c93a924a75bf733fd9301f11cfa2d65ef5061612ae7492b298fce"
+        },
+        "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+      },
+      "measurement": {
+        "start": 1792606081.491,
+        "end": 1792606112.386
+      },
+      "setup_transition": {
+        "id": "initial-activation",
+        "kind": "activation",
+        "phase": "setup",
+        "started_at": 1792606068.538,
+        "required_fields": [
+          "starlink_dish_latitude_degrees",
+          "starlink_dish_longitude_degrees",
+          "starlink_dish_altitude_feet",
+          "starlink_dish_speed_knots",
+          "starlink_dish_heading_degrees",
+          "starlink_network_latency_ms_current",
+          "starlink_network_throughput_down_mbps_current",
+          "starlink_network_throughput_up_mbps_current",
+          "starlink_network_packet_loss_percent",
+          "starlink_dish_obstruction_percent",
+          "starlink_signal_quality_percent"
+        ],
+        "expected_mode": "simulation",
+        "expected_identity": {
+          "active_route_id": "synthetic-route"
+        },
+        "completed_at": 1792606069.074,
+        "recovered": {
+          "at": 1792606069.1805193,
+          "publication": {
+            "state": "ready",
+            "reason": null,
+            "input_revision": 7
+          },
+          "source": {
+            "mode": "simulation",
+            "metric_source": "simulated",
+            "acquired_at": 1792606069.12699,
+            "coordinator_id": "134290535111696:1792606063.5195036:0",
+            "active_route_id": "synthetic-route",
+            "last_observation_publication_time": 1792606069.128851,
+            "observation_id": "844b778e5f5d03fc524d781a90dc1b452726cd7cfed8711b84ce42c2c4ab7287",
+            "route_id": "81d9026ef3508e253e6bd84da9b2d1a807611383c580ac99459dbf096e615d77",
+            "replay_runtime_id": null,
+            "replay_run_id": null,
+            "replay_revision": null,
+            "replay_mission_time": null
+          },
+          "expected_source": {
+            "coordinator_id": "134290535111696:1792606063.5195036:0",
+            "mode": "simulation",
+            "replay_runtime_id": null,
+            "replay_run_id": null,
+            "route_id": "81d9026ef3508e253e6bd84da9b2d1a807611383c580ac99459dbf096e615d77"
+          },
+          "acquisition_age_seconds": 0.05352926254272461,
+          "fields": {
+            "starlink_dish_latitude_degrees": {
+              "available": true
+            },
+            "starlink_dish_longitude_degrees": {
+              "available": true
+            },
+            "starlink_dish_altitude_feet": {
+              "available": true
+            },
+            "starlink_dish_speed_knots": {
+              "available": true
+            },
+            "starlink_dish_heading_degrees": {
+              "available": true
+            },
+            "starlink_network_latency_ms_current": {
+              "available": true
+            },
+            "starlink_network_throughput_down_mbps_current": {
+              "available": true
+            },
+            "starlink_network_throughput_up_mbps_current": {
+              "available": true
+            },
+            "starlink_network_packet_loss_percent": {
+              "available": true
+            },
+            "starlink_dish_obstruction_percent": {
+              "available": true
+            },
+            "starlink_signal_quality_percent": {
+              "available": true
+            }
+          },
+          "capture_wall_ms": 0.1260419376194477,
+          "capture_thread_cpu_ms": 0.12407899999999993
+        }
+      },
+      "recovery_after_completion_ms": 106.51946067810059,
+      "setup_gap_counts": {
+        "starlink_dish_latitude_degrees": 1,
+        "starlink_dish_longitude_degrees": 1,
+        "starlink_dish_altitude_feet": 1,
+        "starlink_dish_speed_knots": 1,
+        "starlink_dish_heading_degrees": 1,
+        "starlink_network_latency_ms_current": 1,
+        "starlink_network_throughput_down_mbps_current": 1,
+        "starlink_network_throughput_up_mbps_current": 1,
+        "starlink_network_packet_loss_percent": 1,
+        "starlink_dish_obstruction_percent": 1,
+        "starlink_signal_quality_percent": 1
+      },
+      "setup_nan_evidence": [
+        {
+          "metric": "starlink_dish_latitude_degrees",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_dish_longitude_degrees",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_dish_altitude_feet",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_dish_speed_knots",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_dish_heading_degrees",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_network_latency_ms_current",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_network_throughput_down_mbps_current",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_network_throughput_up_mbps_current",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_network_packet_loss_percent",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_dish_obstruction_percent",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        },
+        {
+          "metric": "starlink_signal_quality_percent",
+          "evaluation_at": 1792606069,
+          "sample_at": 1792606068.676,
+          "event_id": "initial-activation",
+          "stored_sample": [1792606068.676, "NaN"]
+        }
+      ],
+      "analysis_grid_points": 1801,
+      "finite_coverage": {
+        "starlink_dish_latitude_degrees": 0.9994447529150472,
+        "starlink_dish_longitude_degrees": 0.9994447529150472,
+        "starlink_dish_altitude_feet": 0.9994447529150472,
+        "starlink_dish_speed_knots": 0.9994447529150472,
+        "starlink_dish_heading_degrees": 0.9994447529150472,
+        "starlink_network_latency_ms_current": 0.9994447529150472,
+        "starlink_network_throughput_down_mbps_current": 0.9994447529150472,
+        "starlink_network_throughput_up_mbps_current": 0.9994447529150472,
+        "starlink_network_packet_loss_percent": 0.9994447529150472,
+        "starlink_dish_obstruction_percent": 0.9994447529150472,
+        "starlink_signal_quality_percent": 0.9994447529150472
+      },
+      "cadence": {
+        "samples": 31,
+        "first": 1792606081.676,
+        "last": 1792606111.676,
+        "max_gap_seconds": 1
+      },
+      "acquisition_progress": {
+        "samples": 31,
+        "distinct_acquisitions": 29,
+        "first": 1792606081.5496762,
+        "last": 1792606111.6210656
+      },
+      "measured_unavailable_samples": [],
+      "request_outcomes": {
+        "unexpected_failures": 0,
+        "client_cancellations": 0
+      },
+      "publication_observation_state_counts": {
+        "ready:all-observations-available": 47,
+        "pending:some-observations-unavailable": 1
+      },
+      "capture_thread_cpu_ms": {
+        "samples": 48,
+        "p50": 0.17180599999999852,
+        "p95": 0.2952149999999997
+      },
+      "cleanup": {
+        "remaining": {
+          "containers": "",
+          "networks": "",
+          "volumes": ""
+        },
+        "composeRemoved": true,
+        "childrenReaped": true,
+        "listenerRemoved": true,
+        "temporaryPathsRemoved": true,
+        "imagesRemoved": true,
+        "prometheusListenerRemoved": true
+      },
+      "browser_cleanup": {
+        "started": true,
+        "pid": 488686,
+        "pgid": 488686,
+        "remaining": []
+      },
+      "offline_mutation_replay": {
+        "harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+        "contract_version": "perf390-availability-v2",
+        "application_sha": "aa05a00a626faea475046544737fe218435dd6ab",
+        "validator_sha256": "4044e3f612969c69146fa3e3e2a3b96043c8ca3b8cfdcfeca955d0e429d9e7e0",
+        "outcomes": [
+          {
+            "name": "unchanged_real_capture",
+            "outcome": "accepted"
+          },
+          {
+            "name": "missing_actual_scrape",
+            "outcome": "rejected",
+            "reason": "Actual scrape cadence gap"
+          },
+          {
+            "name": "unexplained_measured_nan",
+            "outcome": "rejected",
+            "reason": "unexplained steady-state stored NaN: starlink_dish_altitude_feet"
+          },
+          {
+            "name": "deleted_finite_api_timestamp",
+            "outcome": "rejected",
+            "reason": "API filtering/projection error: starlink_dish_longitude_degrees"
+          },
+          {
+            "name": "shifted_raw_timestamp",
+            "outcome": "rejected",
+            "reason": "Incomplete or shifted raw evaluation grid: starlink_dish_altitude_feet"
+          },
+          {
+            "name": "missing_raw_series",
+            "outcome": "rejected",
+            "reason": "missing raw series: starlink_signal_quality_percent"
+          },
+          {
+            "name": "persistent_startup_failure",
+            "outcome": "rejected",
+            "reason": "Required observation fields unavailable during recovery"
+          },
+          {
+            "name": "late_recovery",
+            "outcome": "rejected",
+            "reason": "Setup recovery deadline exceeded or invalid event times"
+          },
+          {
+            "name": "wrong_route_provenance",
+            "outcome": "rejected",
+            "reason": "Source identity mismatch: active_route_id"
+          }
+        ]
+      }
+    }
+  },
+  "scope": "Acceptance harness and documentation only in f3029024. Previous Task6 aa05 independently reproduced JSON-unavailability fix retained. No application changes for availability-v2.",
+  "performance_claim": null,
+  "long_soak_started": false,
+  "three_matched_v2_cohorts_complete": false,
+  "regressions": {
+    "node_adversarial_cases": 34,
+    "focused_python_plus_strict_harness": {
+      "passed": 28,
+      "subtests_passed": 20,
+      "seconds": 5.48
+    },
+    "new_adapter_client019": {
+      "passed": 8,
+      "seconds": 0.29
+    },
+    "new_adapter_client026": {
+      "passed": 8,
+      "seconds": 0.31
+    },
+    "full_backend": {
+      "passed": 4486,
+      "skipped": 20,
+      "warnings": 1,
+      "seconds": 630.26,
+      "application_bytes_equal_candidate": true
+    },
+    "rollback": {
+      "commit": "bbcdde453480d98a4f3c4f3eea310cbbbedba0db",
+      "tree_equals_current_dev": true,
+      "focused_tests_passed": 114,
+      "seconds": 5.71,
+      "production_image_strict_http_smoke": "passed; zero viewers,10sec diagnostic; not performance comparison",
+      "deployed": false
+    },
+    "broad_tooling": {
+      "full_run": "4min hard timeout; not a passing suite",
+      "corrected_import_path_diagnostic": {
+        "passed": 14,
+        "failed": 3,
+        "seconds": 4.15,
+        "failures": [
+          "test_backend_dockerfile_consumes_candidate_in_app_source_stage",
+          "test_candidate_is_not_persisted_in_dockerfile_runtime_metadata",
+          "test_lossless_assembly_comparison_has_zero_pixel_difference"
+        ]
+      },
+      "limitations": "First two Dockerfile assertions already differ in unchanged dev; pdftoppm unavailable; no assertions relaxed."
+    },
+    "frozen_evidence_files_reverified": 2525,
+    "frozen_evidence_mismatches": 0,
+    "canonical_static": {
+      "status": "passed",
+      "policy_tests_passed": 12,
+      "external_links": "12 advisory availability errors/one timeout; internal links passed"
+    }
+  },
+  "rejected_attempts": [
+    {
+      "name": "availability-v2-short-r1/original",
+      "reason": "Missing Playwright before browser launch after broad-tooling dependency side effects; cleanup passed; excluded"
+    },
+    {
+      "name": "availability-v2-tools-broad",
+      "reason": "Optional h5py/netCDF4 collection dependencies missing"
+    },
+    {
+      "name": "availability-v2-tools-broad-r2",
+      "reason": "Optional rasterio collection dependency missing"
+    },
+    {
+      "name": "availability-v2-tools-broad-r3",
+      "reason": "4min timeout; subprocess PYTHONPATH absent, pdftoppm missing, pre-existing Dockerfile assertions; shared dependency target restored"
+    },
+    {
+      "name": "availability-v2-canonical-static",
+      "reason": "Required ACCEPTANCE_POLICY_BASE_SHA not supplied; rerun with explicit frozen dev base"
+    },
+    {
+      "name": "availability-v2-canonical-static-r2",
+      "reason": "Final policy-test dispatch resolved system python3 lacking pytest; rerun with private environment prepended to PATH passed."
+    }
+  ],
+  "readiness": {
+    "short_validation_pair": "passed",
+    "long_soak": "Not started; stop for requested review. Remaining3matched original/dev/candidate controls per instrumentation cohort and60min measured acceptance required.",
+    "net_backend_cpu_improvement": "not established; old strict and v2 results are separate cohorts",
+    "review": "fresh reviewer found4Important issues; all fixed with RED/GREEN evidence; noCritical"
+  },
+  "matched_short_metadata": {
+    "hardware": true,
+    "harness_sha": true,
+    "harness_files_sha256": true,
+    "workload": true,
+    "instrumentation": true,
+    "backend_packages_sha256": true,
+    "runtime": true
+  },
+  "hardware": {
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "machine": "x86_64",
+    "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+    "docker": {
+      "ServerVersion": "29.8.1",
+      "Driver": "overlayfs",
+      "NCPU": 20,
+      "MemTotal": 65915523072,
+      "KernelVersion": "7.0.0-34-generic",
+      "OperatingSystem": "Ubuntu 26.04.1 LTS",
+      "Architecture": "x86_64"
+    },
+    "filesystem": "ext2/ext3 4096"
+  },
+  "cleanup": {
+    "at": 1792606566.4464924,
+    "remaining_docker": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "remaining_processes": [],
+    "owned_browser_processes": [],
+    "listeners": [
+      {
+        "owner": "availability-timeline-r1",
+        "key": "port",
+        "port": 40155,
+        "removed": true
+      },
+      {
+        "owner": "availability-timeline-r1",
+        "key": "backendPort",
+        "port": 39281,
+        "removed": true
+      },
+      {
+        "owner": "availability-timeline-r1",
+        "key": "prometheusPort",
+        "port": 45929,
+        "removed": true
+      },
+      {
+        "owner": "runs/off-r4-candidate-final-extra-r4",
+        "key": "port",
+        "port": 40445,
+        "removed": true
+      },
+      {
+        "owner": "runs/off-r4-candidate-final-extra-r4",
+        "key": "prometheusPort",
+        "port": 34987,
+        "removed": true
+      },
+      {
+        "owner": "availability-v2-short-r1/original",
+        "key": "port",
+        "port": 43607,
+        "removed": true
+      },
+      {
+        "owner": "availability-v2-short-r1/original",
+        "key": "prometheusPort",
+        "port": 35953,
+        "removed": true
+      },
+      {
+        "owner": "availability-v2-short-r2/original",
+        "key": "port",
+        "port": 58181,
+        "removed": true
+      },
+      {
+        "owner": "availability-v2-short-r2/original",
+        "key": "prometheusPort",
+        "port": 44867,
+        "removed": true
+      },
+      {
+        "owner": "availability-v2-short-r2/candidate",
+        "key": "port",
+        "port": 59297,
+        "removed": true
+      },
+      {
+        "owner": "availability-v2-short-r2/candidate",
+        "key": "prometheusPort",
+        "port": 44245,
+        "removed": true
+      },
+      {
+        "owner": "rollback-short-final",
+        "key": "port",
+        "port": 37281,
+        "removed": true
+      },
+      {
+        "owner": "rollback-short-final",
+        "key": "prometheusPort",
+        "port": 57315,
+        "removed": true
+      }
+    ],
+    "clean": true
+  }
+}
