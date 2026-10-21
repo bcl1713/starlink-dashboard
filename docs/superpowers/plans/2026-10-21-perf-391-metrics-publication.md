@@ -1,156 +1,111 @@
-# Producer owned metrics publication implementation plan
+# Producer owned gauge snapshot implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
-> for native execution, or superpowers:subagent-driven-development only if the
-> user selects delegation. Execute task by task after separate
-> written-specification and plan approval.
+> for native execution; use subagent-driven execution only if the user later
+> requests it. No implementation is authorized yet.
 
-**Goal:** Make `/metrics` a read-only collection of a consistent registry
-generation while preserving source, preflight, replay, and Prometheus contracts.
+**Goal:** Eliminate scrape-time simulation/ETA/storage work with one bounded,
+consistent snapshot for coupled gauges and unchanged independent instruments.
 
-**Architecture:** Keep the existing Prometheus client objects and registry as
-the only authoritative metric store. Producers prepare batches, reserve a write
-epoch, apply with a temporary undo journal, and finalize the epoch; scrapers
-accept detached collections only across unchanged even epochs. Existing-loop
-dirty wakes and a disabled-background one-shot path refresh lifecycle changes.
+**Architecture:** A registered collector captures one immutable gauge frame;
+producers replace that frame with a short compare-and-swap under a mutex.
+Standard independent Gauge, Counter and Histogram objects retain their existing
+owners. There is no global epoch, client-internal undo, or replay checkpoint.
 
-**Tech Stack:** Python 3.11, FastAPI/Starlette threadpool, asyncio, existing
-Python Prometheus client and repository admission, pytest, existing #390 Docker
-and Playwright acceptance tooling. No dependency or deployment change.
+**Tech stack:** Python 3.11, FastAPI/Starlette threadpool, existing repository
+admission and asyncio update loop, public prometheus-client APIs, pytest, and
+the frozen #390 Docker/Playwright harness. No dependency/deployment change.
 
-**Spec:**
-[Read only metrics scraping and producer publication](../specs/2026-10-21-perf-391-metrics-publication-design.md).
+**Specification:**
+[Revised design](../specs/2026-10-21-perf-391-metrics-publication-design.md),
+[ownership contract](../specs/2026-10-21-perf-391-metrics-publication-contracts.md),
+and
+[architecture decision and probe](../specs/2026-10-21-perf-391-metrics-publication-decision.md).
 
-**Status:** Documentation only, awaiting separate approval of both artifacts.
-The user explicitly requested both documents together; writing this plan does
-not imply approval of the accompanying specification. No task below has begun.
+**Status:** Revised for PR #403 review; specification and plan still need
+separate approval. Only an isolated disposable design probe has executed.
 
 ## Global constraints
 
-- The existing Python Prometheus registry remains the only authoritative metric
-  store.
-- No exposition byte cache, replacement metric implementation, new periodic
-  worker, or external infrastructure is added.
-- Publication synchronization must not perform domain calculations, filesystem
-  operations, registry collection, or exposition serialization while holding the
-  publication mutex.
-- Derived refresh does not mutate any telemetry timestamps, replay runtime
-  revision/frame, or the successful-telemetry last-update gauge.
-- Do not change ETA algorithms, mission lookup caching, history cadence,
-  transport modeling, evidence recording, or UI.
-- General stale-label/cardinality repair, including the existing
-  `mission_active_info` empty-route child bug, remains #393.
-- Do not deploy, merge, or close #391 without separate authorization.
-- Preserve frozen original application
-  `25e34168f0e2cecb149b0323f1f5a795cb28cae0` and per-case harness
-  `13cbf1d54b526307747578ecd4fc691562846834`; never rewrite original evidence,
-  the before-change controls, or comparison guards.
+- Zero simulator/ETA/mission/POI work or source advancement during scraping.
+- One numeric authority for the coupled families; no duplicate mutable gauges.
+- One pointer mutex; no calculation, filesystem access, collection,
+  serialization or wait while holding it. No global scrape retry/undo subsystem.
+- Independent counters/histograms retain standard semantics and client types.
+- Preserve live/simulation/replay/planned provenance, preflight behavior and
+  acquisition times. Derived refresh does not observe an existing sample again.
+- No new periodic worker, UI change, mission cache, storage migration,
+  dependency pin, general label sweep or `mission_active_info` repair (#393).
+- Preserve original `25e34168f0e2cecb149b0323f1f5a795cb28cae0`, investigation
+  base `33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96`, and per-case measurement
+  harness `13cbf1d54b526307747578ecd4fc691562846834`; retain every original
+  digest/guard.
+- No application implementation before approval; no deployment, merge or issue
+  closure without separate authorization.
 
-Use the existing feature worktree and branch. Before implementation, fetch
-`origin/dev` and compare it with the documented base; preserve reviewed
-documents, rebase and revalidate drift if needed. Do not create another feature
-branch for these same tasks or edit the primary checkout. All commands below run
-inside the feature worktree unless a frozen harness checkout is specified.
+Continue in `.worktrees/perf-391-readonly-metrics` on
+`perf/391-readonly-metrics`; primary checkout stays on `dev`. Fetch/revalidate
+upstream drift before later implementation. Do not replace frozen references
+with preceding-dev-only evidence.
 
 ## Review focus
 
-1. A client library upgrade changes histogram internals: fail closed rather than
-   corrupt cumulative buckets; covered by Task 1 compatibility tests.
-2. A replay finalizer mutates runtime and then raises: restore its in-memory
-   checkpoint and registry before any success response; covered by Task 3.
-3. A timing-only correction does not trigger a phase callback: explicitly notify
-   and refresh without telemetry; covered by Task 4.
-4. An external POI edit occurs while no telemetry arrives: existing periodic
-   refresh must observe file reload; covered by Task 4.
-5. Many POIs change during shutdown: coalesce work and prevent callback-driven
-   task resurrection after draining; covered by Task 4.
+1. A hidden caller expects a real Gauge or `_value`: audit all import/write
+   sites and stop at the compatibility checkpoint rather than building a proxy.
+2. A producer finishes after config/mission replacement: compare the captured
+   publication head/source identity before swapping; discard obsolete work.
+3. A timing-only correction bypasses phase callbacks: notification and refresh
+   must still run without collecting telemetry.
+4. A failed preparation or abandoned new label must not become a finite live
+   observation or create a visible zero-valued child.
+5. Many mutations overlap shutdown: retain at most one coalesced one-shot task
+   and prevent detached callbacks from resurrecting work.
 
-## Components, interfaces, and file map
+## Components and file responsibilities
 
 ```mermaid
 flowchart TD
-    A[Task 1 registry transaction and capture] --> B[Task 2 frame preparation and ETA derivation]
-    B --> C[Task 3 producer and replay integration]
-    C --> D[Task 4 lifecycle refresh ownership]
-    D --> E[Task 5 read only HTTP and contracts]
-    E --> F[Task 6 measurement soak and review]
+    A[Task 1 snapshot schema views and component tests] --> G[Stop go review]
+    G --> B[Task 2 authoritative gauge publication and ETA derivation]
+    B --> C[Task 3 source and replay publication ordering]
+    C --> D[Task 4 lifecycle refresh]
+    D --> E[Task 5 HTTP health and regressions]
+    E --> F[Task 6 matched benchmarks soak and PR review]
 ```
 
-```mermaid
-flowchart LR
-    S[Accepted source and current input identity] --> I[Detached FrameInputs]
-    I --> B[PreparedMetricBatch]
-    B --> W[Reserved registry write and optional replay finalization]
-    W --> R[Existing registry]
-    R --> C[Validated detached capture]
-    C --> T[Existing text serializer]
-    N[Lifecycle notifications] --> I
-```
+| File under `backend/starlink-location` unless otherwise stated                                                              | Change                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/core/metrics/frames.py` (new)                                                                                          | Immutable frame/state/store, registered collector, small frame-backed handles; no client-private access                                           |
+| `app/core/metrics/frame_builder.py` (new)                                                                                   | Complete accepted/derived/unavailable frame preparation from detached inputs                                                                      |
+| `app/core/metrics/lifecycle.py` (new)                                                                                       | Bounded invalidation/refresh owner; existing-loop dirty wake and disabled-mode one-shot                                                           |
+| `app/core/metrics/prometheus_metrics.py`                                                                                    | Declare 29 coupled schemas through handles, register one collector, retain 18 ordinary Gauges, seven Counters, four Histograms and position alias |
+| `app/core/metrics/metric_updater.py`, both metric import shims                                                              | Keep named helper/import contracts; stage coupled writes; leave independent instrument semantics intact                                           |
+| `app/core/eta_service.py`, `app/services/eta_calculator.py`, `app/services/eta/projection.py`                               | Explicit read-only derivation using detached smoothing state; preserve calculation formulas/defaults                                              |
+| `main.py`, `app/simulation/coordinator.py`                                                                                  | Correct complete-frame preparation and accounting; eliminate early progress writes; preserve update deadline and cleanup                          |
+| `app/simulation/run_service.py`, `app/mission/leg_activation.py`                                                            | Stage gauge frame in existing callback, publish after successful `commit_tick`; preserve existing failure handling                                |
+| `app/services/route_manager.py`, `app/services/poi/manager.py`, `app/services/flight_state/manager.py`, `app/api/config.py` | Notify accepted input changes, including reload, timing-only edits and transaction restore                                                        |
+| `app/api/metrics.py`, `app/api/metrics_export.py`, `app/api/health.py`                                                      | Pure exposition, same-source position table and truthful publication health                                                                       |
+| `tests/unit/test_metrics_frames.py`, `test_metrics_frame_views.py` (new)                                                    | Real schema, view compatibility, atomic old/new frame and failure tests                                                                           |
+| `tests/integration/test_metrics_publication_lifecycle.py` (new), existing metrics/ETA/replay tests, `tests/conftest.py`     | Replace private Gauge/dictionary fixture writes with explicit frame publication; preserve all regression assertions                               |
+| Repository `docs/performance/probes/perf391_snapshot.py`                                                                    | Already-created disposable public-API feasibility probe; never imported by application code                                                       |
+| Repository `docs/performance/perf-391-results.md` (future)                                                                  | Matched system measurements, limitations, source correctness, soak/cleanup and rollback evidence                                                  |
 
-| File                                                                    | Responsibility and planned change                                                                                                                 |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/core/metrics/publication.py` (new)                                 | Epoch admission, operation types, touched-state undo journal, client-shape guard, snapshot validation, bounded retries and explicit failure state |
-| `app/core/metrics/frame_builder.py` (new)                               | Detached frame inputs; full, derived-only, and unavailable batches; targeted active-frame invalidation                                            |
-| `app/core/metrics/lifecycle.py` (new)                                   | Input revision and dirty-event owner; callbacks, one-shot fallback, task drain                                                                    |
-| `app/core/metrics/prometheus_metrics.py`                                | Bind one coordinator to existing registry and position store; retain all definitions and PositionCollector format                                 |
-| `app/core/metrics/metric_updater.py`                                    | Preserve compatibility functions while routing every mutation through prepared batches                                                            |
-| `app/core/metrics/__init__.py`, `app/core/metrics.py`                   | Keep current import contracts and expose internal coordinator where required                                                                      |
-| `app/core/eta_service.py`                                               | Accepted-sample entry point and read-only derivation with detached smoothing state                                                                |
-| `app/services/eta_calculator.py`, `app/services/eta/projection.py`      | Optional passage-tracking switch, default unchanged; no ETA formula changes                                                                       |
-| `main.py`                                                               | Startup frame, producer accounting, dirty-wake scheduling, unchanged collection deadline, disconnect refresh, lifespan cleanup                    |
-| `app/simulation/coordinator.py`                                         | Stop early progress-gauge mutation; provide frame progress to publisher                                                                           |
-| `app/simulation/run_service.py`, `app/simulation/run_runtime.py`        | Prepared metric batch plus in-memory replay checkpoint/finalization/rollback                                                                      |
-| `app/mission/leg_activation.py`                                         | Join startup tick publication to existing activation transaction and restore on failure                                                           |
-| `app/services/ground_entry_point.py`                                    | Preserve resolver behavior; group metric set/clear operations transactionally                                                                     |
-| `app/services/route_manager.py`                                         | Optional accepted-mutation notification including active parse failure/reload/removal                                                             |
-| `app/services/poi/manager.py`                                           | Notify accepted POI publication, bulk operations, reload, projection, and checkpoint restoration                                                  |
-| `app/services/flight_state/manager.py`                                  | Notify accepted phase, mode, route-context, and timing-only mutations without recursion                                                           |
-| `app/api/config.py`                                                     | Notify successful configuration replacement and coordinator lifecycle changes                                                                     |
-| `app/api/metrics.py`, `app/api/metrics_export.py`                       | Remove manager dependencies; use capture for normal/fallback serialization; preserve probe callable                                               |
-| `tests/unit/test_metrics_publication.py` (new)                          | Atomicity, rollback, client contracts, lock boundaries and custom registries                                                                      |
-| `tests/unit/test_metrics_frames.py` (new)                               | Frame ownership, source identity, preflight and targeted invalidation                                                                             |
-| `tests/integration/test_metrics_publication_lifecycle.py` (new)         | Concurrent producer/lifecycle/replay and task cleanup                                                                                             |
-| Existing metrics, ETA, live-background and replay tests                 | Migrate scrape-owned fixtures to explicit producer publication and retain regression assertions                                                   |
-| `tools/acceptance/performance/metrics_publication_diagnostics.py` (new) | Separate bounded component/allocation diagnostics; no production instrumentation                                                                  |
-| `docs/performance/perf-391-results.md` (new, during acceptance)         | Matched results, limitations, failure evidence, cleanup, rollback and PR review references                                                        |
+Do not modify `app/simulation/run_runtime.py` to add metric transactions or
+checkpoints. Do not change GEP ownership or independent metric implementation.
+Record their existing behavior in regression tests instead.
 
-Paths in that table are relative to `backend/starlink-location` for `app/` and
-`tests/`, and repository-relative for `main.py` only as
-`backend/starlink-location/main.py`; `tools/` and `docs/` are
-repository-relative.
-
-Internal types are frozen dataclasses except the coordinator/owner. The
-operation union consists of `GaugeSet(metric, labels, value)`,
-`CounterAdd(metric, labels, amount)`, `HistogramObserve(metric, labels, value)`,
-and `PositionSet(latitude, longitude, altitude)`. Labels are normalized tuples
-in the existing metric's label-name order. Operations refer to existing parent
-objects without calling `.labels()` during preparation. A batch carries
-`identity`, `operations`, `full_frame`, and `admit_observation`.
-
-`MetricInputIdentity` fields are `input_revision`, `mode`, `coordinator_token`,
-`observation_key`, `observed_at`, `speed_observed_at`, `route_revision`,
-`poi_revision`, `phase_revision`, `replay_runtime_id`, `replay_run_id`,
-`replay_revision`, and `simulation_time`; unavailable fields are `None`. Reuse
-existing source/replay identifiers and authoritative revision checks; local
-counters only invalidate and never replace disk coherency checks.
-
-The producer regression file set includes
-`tests/unit/test_simulation_run_service.py`,
-`tests/unit/test_simulation_run_runtime.py`,
-`tests/unit/test_simulation_run_timing.py`,
-`tests/unit/test_ground_entry_point.py`,
-`tests/integration/test_simulation_run_lifecycle.py`, and
-`tests/integration/test_simulation_run_time_apis.py`, in addition to the focused
-metrics/ETA files below. Task 3 owns their producer assertions; Task 4 owns
-lifecycle notification/cancellation assertions.
-
-## Ordered implementation tasks
+## Task interfaces and execution checkpoint
 
 The [six task definitions](2026-10-21-perf-391-metrics-publication-tasks.md) are
-a required part of this plan. Execute registry foundation, frame/ETA
-preparation, producer/replay integration, lifecycle ownership, read-only HTTP,
-and measured acceptance in that order. Each task includes its failing tests,
-interfaces, implementation changes, verification, and commit boundary.
+part of this plan. They pin frame/store/view interfaces, file changes, failing
+tests, verification and commit boundaries. All tasks remain unstarted.
+
+After written-artifact approval, Task 1 establishes the actual 29-family schema
+and compatibility/concurrency component tests. Stop and present its evidence for
+a go/no-go review **before** production producer/replay/lifecycle integration.
+The disposable three-family probe is feasibility evidence, not permission to
+skip that checkpoint. Unknown operational raw-Gauge dependencies, duplicate
+state, unbounded retention, or erased savings return the design to review.
 
 ## Verification commands
 
@@ -161,7 +116,7 @@ task data path for every run and record ownership before starting. Example:
 STARLINK_TEST_DATA_DIR=/tmp/perf391-tests-r1 \
   timeout --kill-after=10s 10m uv run \
   --with-requirements requirements-dev.txt --with pytest --with pytest-asyncio \
-  pytest tests/unit/test_metrics_publication.py tests/unit/test_metrics_frames.py \
+  pytest tests/unit/test_metrics_frames.py tests/unit/test_metrics_frame_views.py \
   tests/unit/test_metrics_export.py tests/unit/test_metrics.py \
   tests/unit/test_eta_service.py \
   tests/integration/test_metrics_publication_lifecycle.py \
@@ -169,11 +124,12 @@ STARLINK_TEST_DATA_DIR=/tmp/perf391-tests-r1 \
   tests/integration/test_live_background_route.py
 ```
 
-Repeat the publication unit tests with `--with 'prometheus-client==0.19.0'` and
+Repeat the frame/view unit tests with `--with 'prometheus-client==0.19.0'` and
 the independently recorded deployed version, in separate temporary test
 environments. Expected result: all supported-client tests pass, no skipped
-rollback/atomicity cases, and no dependency-manifest modifications. Investigate
-incompatibility rather than raising the minimum version without approval.
+snapshot/compatibility cases, and no dependency-manifest modifications.
+Investigate incompatibility rather than raising the minimum version without
+approval.
 
 Canonical commands run from repository root with recorded ownership and explicit
 limits, following [quality gates](../../contributing/quality-gates.md):
@@ -244,18 +200,16 @@ timeout --kill-after=20s 2h python3 tools/acceptance/performance/run.py \
 ```
 
 Require summary `measured_span_seconds >= 3600`, complete browser polling and
-Prometheus ingestion, successful request coverage, no steady-state contention
-503s, and explicit resource cleanup. Run a separate matched activity workload
-with `--operations`, keeping those distributions separate. The 60-minute
-simulation soak cannot prove accepted-live archive behavior or eight-hour
-stability. At failures/timeouts, verify old process trees before retrying and
-retain partial evidence; do not restart into occupied projects.
+Prometheus ingestion, successful request coverage, no synchronization-induced
+scrape failures, and explicit resource cleanup. Run a separate matched activity
+workload with `--operations`, keeping those distributions separate. The
+60-minute simulation soak cannot prove accepted-live archive behavior or
+eight-hour stability. At failures/timeouts, verify old process trees before
+retrying and retain partial evidence; do not restart into occupied projects.
 
-## Approval and execution handoff
+## Approval and handoff
 
-The written specification and this plan each require explicit user approval.
-Recommend native execution because these six tasks share registry and producer
-interfaces and benefit from one consistent integration context. No subagents are
-authorized at the documentation stage. If the user selects delegation, follow
-the corresponding execution skill after approval. Authorizations for deployment,
-merge, and issue closure remain separate in either execution mode.
+Both revised written artifacts await separate approval. Native execution is
+recommended because the store/view/builder interfaces are tightly related.
+Approval does not remove the Task 1 stop/go review, the 60-minute acceptance
+gate, or separate deployment/merge/closure authorizations. Keep PR #403 draft.

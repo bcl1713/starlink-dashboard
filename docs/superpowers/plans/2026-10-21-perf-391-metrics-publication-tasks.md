@@ -1,298 +1,241 @@
-# Metrics publication implementation tasks
+# Gauge snapshot implementation tasks
 
-Unstarted tasks for the
-[implementation plan](2026-10-21-perf-391-metrics-publication.md). Both written
-artifacts require separate approval before execution.
+Part of the [revised plan](2026-10-21-perf-391-metrics-publication.md). All
+application tasks are unstarted. Written approval and the Task 1 stop/go review
+are required before production integration.
 
-## Task 1: Registry transactions and optimistic capture
+## Task 1: Snapshot foundation and compatibility checkpoint
 
-**Files:** Create `app/core/metrics/publication.py` and
-`tests/unit/test_metrics_publication.py`; modify
-`app/core/metrics/prometheus_metrics.py` only to bind the coordinator and
-position store. Existing producer wiring waits until Task 3.
+**Files:** Create `app/core/metrics/frames.py`,
+`tests/unit/test_metrics_frames.py`, and
+`tests/unit/test_metrics_frame_views.py`. Production registration/writers are
+not changed in this task.
 
-**Interfaces:**
-
-- `PublicationCoordinator(registry: CollectorRegistry, position: dict[str, float])`.
-
-```text
-commit(batch: PreparedMetricBatch, *, finalize: Callable[[], None] | None = None, rollback: Callable[[], None] | None = None) -> int  # committed even epoch
-```
-
-```text
-capture(*, max_attempts: int = 3, contention_timeout_seconds: float = 0.05) -> CapturedRegistry  # raises PublicationUnavailable on failure
-```
-
-- `mark_dirty(reason: str) -> int` increments input revision and notifies; it
-  performs no domain work.
-- `CapturedRegistry.collect() -> Iterable[Metric]` yields only detached accepted
-  samples.
-- `capture_position() -> tuple[float, float, float]` validates the three-value
-  position copy using the same epoch/revision/failure protocol, for the
-  compatibility table endpoint.
-
-- [ ] Write failing tests `test_capture_never_accepts_mixed_generation`,
-      `test_collect_and_serialize_run_outside_mutex`,
-      `test_rollback_restores_all_supported_client_state`, and
-      `test_failed_undo_quarantines_registry`. Assert old/new tuple equality,
-      rejection of a reader spanning an odd epoch, original counter/bucket/sum/
-      exemplar/created values after undo, removal only of newly created
-      children, and explicit unavailability after restoration failure.
-- [ ] Run the new unit file with a hard wall-clock timeout. Confirm assertion
-      failures or missing-interface errors establish the intended red state.
-- [ ] Implement normalized operation validation, startup shape checks, short
-      metadata admission/finalization, outside-mutex journal/application/undo,
-      and three-attempt/50-ms capture admission. Use the existing client encoder
-      for tests. Do not implement public metric proxies, a new encoder, or a
-      persistent sample cache.
-- [ ] Add and pass `test_client_floor_and_deployed_histogram_layout`,
-      `test_custom_registry_has_independent_epoch`,
-      `test_created_and_counter_values_do_not_change_on_read`,
-      `test_unknown_collector_shape_fails_closed`, and
-      `test_registration_is_sealed_after_initialization`. Test the declared
-      client floor and deployed version in separate test environments, recording
-      actual versions without changing production dependency manifests.
-- [ ] Exercise simultaneous writers, reader retry exhaustion, dirty revision
-      during preparation, and smaller transactions failing to clear full-frame
-      faults. All waits must release the publication mutex.
-- [ ] Commit only Task 1 files after focused tests and formatting pass.
-
-## Task 2: Full frame preparation and read only ETA derivation
-
-**Files:** Create `app/core/metrics/frame_builder.py`,
-`tests/unit/test_metrics_frames.py`; modify `app/core/eta_service.py`,
-`app/services/eta_calculator.py`, `app/services/eta/projection.py`, and existing
-`tests/unit/test_eta_service.py`.
-
-**Interfaces:**
-
-- `FrameInputs` contains detached telemetry/config/route/POIs/flight status,
-  optional replay plan/frame, identity, and producer wall/mission clocks.
-- `prepare_frame(inputs: FrameInputs, *, admit_observation: bool) -> PreparedMetricBatch`
-  performs no registry mutation.
-- `prepare_unavailable_frame(inputs: FrameInputs) -> PreparedMetricBatch`
-  preserves valid planned/state values and clears observation-dependent values.
+**Interfaces:** `GaugeDefinition(name, documentation, labelnames)` is frozen
+metadata. `GaugeFrame(identity, families, last_observation_publication_time)`
+contains immutable family/sample tuples. `FrameIdentity` contains mode,
+coordinator/observation/route/POI/phase identity, input revision and optional
+replay runtime/run/revision/mission time.
+`PublicationState(frame, status, reason)` is the immutable published head.
 
 ```text
-derive_eta_metrics(latitude, longitude, speed_knots, active_route=None, eta_mode=None, flight_phase=None, poi_manager=None, *, mission_now=None, pois: tuple[POI, ...] | None = None) -> dict  # read-only counterpart to update_eta_metrics
+FrameStore.read() -> PublicationState
+FrameStore.publish(expected: PublicationState, frame: GaugeFrame) -> bool
+FrameStore.invalidate(reason: str) -> PublicationState
+FrameStore.fail(expected: PublicationState, reason: str) -> bool
+TelemetryFrameCollector(store, schema).collect() -> Iterable[Metric]
+TelemetryFrameCollector(store, schema).describe() -> Iterable[Metric]
+FrameGaugeView(store, definition, labelvalues=()).labels(*args, **kwargs)
+FrameGaugeView.set(value) -> None  # writes only to current preparation builder
+FrameGaugeView.collect() -> Iterable[Metric]  # read-only single-family view
 ```
 
-- Existing `update_eta_metrics` remains the accepted-observation operation. Add
-  the same optional keyword-only `pois` snapshot argument while preserving all
-  existing positional arguments and defaults. Builders supply the captured
-  tuple, so neither path rereads managers during calculation. Both capture POIs
-  before the ETA computation guard. Derivation copies the calculator's
-  smoothing/passage state under that guard, then computes on the detached copy,
-  without appending speed. Add keyword-only `track_passage: bool = True` to
-  compatibility calculator/projection POI calculation; derivation passes `False`
-  to suppress passage mutation/logging.
+`publish` and `fail` compare the expected head; an obsolete calculation cannot
+invalidate or overwrite a newer successful frame. `invalidate` changes input
+revision/status without mutating stored values. No callback is accepted in the
+pointer swap. Masking, collection and schema validation happen outside the
+mutex.
 
-- [ ] Write failing tests for fresh preflight position with zero speed,
-      timed/untimed routes, future/past departure, missing position, in-flight
-      stale speed, no route/POIs, and replay mission time. Assert the existing
-      150-knot preflight estimate and planned-duration semantics, NaN unknown
-      distances, anticipated/estimated labels, and no fictional observed
-      position/speed.
-- [ ] Run the new frame/ETA tests to establish failure before changing code.
-- [ ] Extract existing calculation-to-operation preparation, including all five
-      route timing fields and coupled position/phase/progress/POI state. Pass an
-      explicit POI snapshot into preparation instead of re-reading managers
-      inside the computation guard. Extract position-independent anticipated
-      waypoint timing from the existing projection logic without changing
-      formulas.
-- [ ] Add and pass `test_derived_refresh_does_not_append_speed_or_passage`,
-      `test_derived_refresh_preserves_acquisition_and_last_update`,
-      `test_unchanged_observation_is_not_observed_twice`, and
-      `test_superseded_active_frame_only_is_invalidated`. Keep unrelated
-      historical labels, mission clear-helper behavior, and cumulative totals
-      unchanged.
-- [ ] Confirm preparation creates no registry child, changes no metric, and
-      leaves client shapes/buckets unchanged. Commit the cohesive frame/ETA
-      change.
+- [ ] Write failing tests `test_old_frame_survives_pointer_and_label_change`,
+      `test_reader_paused_between_families_sees_one_frame`,
+      `test_all_29_schemas_and_position_alias_match_baseline`,
+      `test_labels_bind_without_visible_child`, and
+      `test_superseded_prepare_cannot_publish_or_fail_new_head`.
+- [ ] Run these new tests with the focused command in the plan, confirm the
+      intended failures, then implement the smallest store/collector/view. Use
+      only public GaugeMetricFamily/registry APIs and immutable scalar data.
+- [ ] Test positional/keyword labels, preparation-context writes, read views,
+      aborted builders, duplicate-label last-write behavior, custom registries,
+      same-object re-exports, and explicit rejection of standalone coupled
+      writes. Audit every operational caller; do not emulate `_value`/`_metrics`
+      or retain unregistered mutable Gauge copies.
+- [ ] Test standard independent Counter/Histogram objects, label initialization,
+      buckets/count/sum/exemplars/created series, and a read-only independent
+      callback collector. Snapshot abort must neither restore nor repeat their
+      operations. Add lock assertions proving all family construction and
+      serializer work runs outside the mutex.
+- [ ] Run at client 0.19.0 and deployed version; separately measure
+      0/10/100/1100 POIs, one writer and concurrent readers, preparation CPU,
+      pointer cost, allocations and retained frames. There must be no
+      frame-history queue, whole-registry retries, or mixed coupled values.
+- [ ] Commit the tested foundation, then **stop for go/no-go review**. Report
+      compatibility changes and remaining limits before touching production
+      producer, replay or lifecycle paths. The existing design probe does not
+      replace tests using the actual schema and import surface.
 
-## Task 3: Producer and replay integration
+## Task 2: Authoritative coupled gauges and ETA preparation
 
-**Files:** Modify `app/core/metrics/metric_updater.py`, both metric import
-shims, `main.py`, `app/simulation/coordinator.py`,
-`app/simulation/run_service.py`, `app/simulation/run_runtime.py`,
-`app/mission/leg_activation.py`, and `app/services/ground_entry_point.py`;
-extend existing metrics, live-background, replay and mission-activation tests.
+**Files:** Modify `app/core/metrics/prometheus_metrics.py`,
+`app/core/metrics/metric_updater.py`, both metric import shims,
+`app/core/eta_service.py`, `app/services/eta_calculator.py`,
+`app/services/eta/projection.py`; create `app/core/metrics/frame_builder.py`.
+Extend existing metric/ETA tests and `tests/conftest.py` after checkpoint
+approval.
 
-**Interfaces:** Existing public updater/clear/service/mission helper signatures
-remain unchanged. Add internal
-`prepare_metrics_from_telemetry(...) -> PreparedMetricBatch` for replay callers;
-its arguments match the current telemetry updater.
-`SimulationRunRuntime.checkpoint_publication() -> ReplayPublicationCheckpoint`
-and `restore_publication(checkpoint) -> None` preserve previous status, plan,
-frame, and start-monotonic state.
-`SimulationCoordinator.route_progress_snapshot()` returns optional
-`(route_name, progress_percent, waypoint_index)` from its current accepted
-observation without advancing it.
+**Interfaces:** `FrameInputs` carries detached source/config/route/POI/phase
+inputs and expected publication head.
+`prepare_frame(inputs, admit_observation: bool) -> GaugeFrame` calculates all
+coupled values without changing current state. The builder preparation context
+is the sole target of coupled handle setters; it seals a complete validated
+frame or discards all work. `prepare_unavailable_frame(inputs) -> GaugeFrame`
+preserves applicable planned/state values and the old successful-observation
+timestamp.
 
-- [ ] Write failing tests proving legacy simulation and replay position,
-      progress, route timing, phase and ETA enter the same generation. Inject a
-      replay finalizer failure both before and after runtime mutation; assert
-      the original run revision/clock, coordinator, flight state and registry
-      are restored and no success scrape exposes a prepared tick.
-- [ ] Run those tests red, then route all existing gauge/counter/histogram
-      mutations through coordinator transactions. Remove early progress mutation
-      in `_generate_telemetry`; do not call a simulator to fill missing live
-      data.
-- [ ] Join existing replay collection and leg activation to the prepared batch
-      transaction. Keep the epoch odd until runtime finalization succeeds, with
-      in-memory replay/flight/coordinator rollback hooks outside the publication
-      mutex. Do not run mission writes in the publication section.
-- [ ] Group GEP clear/set mutations in one transaction and preserve resolver,
-      PoP, identity removal, and network behavior. Keep its observation identity
-      independent from telemetry acquisition.
-- [ ] Preserve producer duration/error/last-update meanings and all historical
-      counter behavior. Publish ordinary disconnection as a complete unavailable
-      frame rather than a publication error. A failed full frame remains
-      unavailable despite successful GEP or error-accounting transactions.
-- [ ] Run existing metrics, live-background ordering/cancellation, replay,
-      mission lifecycle, provenance, and archive tests. Search all production
-      `.set/.inc/.observe/.remove/.clear` sites for metric objects and verify
-      each writer participates. Compatibility test helpers may still manipulate
-      private fixture registries outside concurrent runs.
-- [ ] Commit after focused regressions pass; HTTP integration is Task 5.
+- [ ] Add failing tests for the 29-schema registry wiring, position alias and
+      canonical `REGISTRY.get_sample_value`, no duplicate registration/state,
+      and fixture reset without private Gauge/dictionary writes. Run red.
+- [ ] Replace only the 29 coupled Gauge definitions with frame-backed handles.
+      Register one full collector after the schema is complete; keep all 18
+      independent Gauges, seven Counters and four Histograms unchanged. Keep
+      named helper/import signatures and PositionCollector output. Convert
+      `_current_position` into a read-only view; no second position dictionary.
+- [ ] Prepare all coupled fields together, including five route timing values,
+      source mode and original last-update meaning. Known unavailable optional
+      fields become NaN in a complete frame, not an early partial publication.
+      Do not reclassify per-mission/GEP instruments into this frame.
+- [ ] Add a read-only `derive_eta_metrics` counterpart to `update_eta_metrics`
+      with the same arguments plus keyword-only `pois` snapshot. Add optional
+      keyword-only `pois` to the existing updater as well. Capture POIs before
+      its computation guard; derive from detached smoothing state without speed
+      append. Add `track_passage: bool = True` to calculator/projection POI
+      calculation; refresh-only work passes `False`.
+- [ ] Pass timed/untimed, future/past departure, fresh zero speed, missing
+      speed/ position, in-flight stale inputs, anticipated/estimated labels, and
+      replay clock tests. Preserve the existing 150-knot preflight fallback and
+      planned duration behavior without inventing observed coordinates/speed.
+- [ ] Assert failed builders publish no new labels/zeros, invalidation touches
+      only the directly superseded frame, and derived refresh adds no counts,
+      observations, detector/clock changes, or successful-observation timestamp.
+      Run focused metric/ETA tests, then commit.
 
-## Task 4: Lifecycle refresh without a new periodic worker
+## Task 3: Source and replay publication ordering
+
+**Files:** Modify `main.py`, `app/simulation/coordinator.py`,
+`app/simulation/run_service.py`, `app/mission/leg_activation.py`, and updater
+integration from Task 2. Do not change replay runtime algorithms/checkpoints or
+GEP internals. Extend existing live-background and simulation-run tests.
+
+**Interfaces:** `prepare_metrics_from_telemetry(...) -> GaugeFrame` matches
+existing updater inputs and stages instead of publishing. Existing public
+`update_metrics_from_telemetry(...) -> None` remains the accepted producer entry
+point. `route_progress_snapshot()` returns current simulation progress without
+advancing the coordinator. The replay callback returns a prepared frame; its
+owner publishes only after successful existing `commit_tick`.
+
+- [ ] Write failing normal/live/replay tests for same-frame position, mode,
+      route progress, timing, phase and POI values. Pause preparation across
+      source/config replacement and ensure the stale result is rejected.
+- [ ] Remove early coordinator progress writes. Include progress in the accepted
+      frame, preserve original source timestamps, availability and accounting,
+      and publish a truthful unavailable frame on ordinary disconnect.
+- [ ] Stage the replay gauge frame during the existing callback; keep it private
+      until runtime commit returns successfully under existing repository
+      admission, then perform the already validated pointer swap. On failure,
+      discard it and use the existing failed-run/activation recovery path plus
+      unavailable publication. Add no metric journal or new runtime checkpoint.
+- [ ] Test failures before runtime commit and in the existing runtime commit
+      path: no success scrape may expose the prepared gauge frame. Preserve
+      existing independent per-mission instrument semantics and run-clock
+      behavior; do not claim they share aircraft acquisition generations.
+- [ ] Verify one observation-accounting call per accepted sample. A CAS loss or
+      derived refresh may rebuild gauges but never repeat histogram/counter
+      operations. Run existing live-background ordering/cancellation, replay,
+      mission, provenance and archive regressions; commit the integration.
+
+## Task 4: Exact lifecycle refresh ownership
 
 **Files:** Create `app/core/metrics/lifecycle.py` and
 `tests/integration/test_metrics_publication_lifecycle.py`; modify `main.py`,
 `app/services/route_manager.py`, `app/services/poi/manager.py`,
-`app/services/flight_state/manager.py`, `app/api/config.py`, and replay/leg
-integration points from Task 3.
+`app/services/flight_state/manager.py`, `app/api/config.py`, and existing
+replay/ activation notification boundaries.
 
-**Interfaces:**
+**Interfaces:** Optional manager
+`set_metrics_change_callback(Callable[[str], None] | None)` invokes only
+`MetricsRefreshOwner.mark_dirty(reason)`. Async `refresh_without_collection()`
+captures/revalidates and computes in the threadpool. Async `close()` rejects new
+callbacks and drains its task handle. The existing loop responds to dirty events
+without moving its source collection deadline; disabled background mode owns one
+coalesced one-shot task, no timer.
 
-- Managers receive optional
-  `set_metrics_change_callback(callback: Callable[[str], None] | None) -> None`;
-  no callback dependency is required for standalone tests.
-- `MetricsRefreshOwner.mark_dirty(reason: str) -> None` records a bounded reason
-  set, increments the coordinator input revision, and signals the event loop
-  without reading inputs.
-- `MetricsRefreshOwner.refresh_without_collection() -> None` is asynchronous,
-  captures inputs under existing repository admission and prepares/commits in a
-  threadpool; it never calls coordinator collection/update.
-- `MetricsRefreshOwner.close() -> None` is asynchronous; close admission before
-  draining work and detaching callbacks.
-- The normal loop retains an absolute collection deadline; dirty wakes cannot
-  move it or count as an accepted update. Disabled-background mode owns at most
-  one one-shot drain task and no timer.
+- [ ] Write failing parametrized tests for every lifecycle row in the ownership
+      contract, including timing-only corrections, active-route parse failure,
+      POI bulk/projection/restore, config reset, transaction rollback, replay
+      cancel/failure, source expiry, unchanged source and shutdown.
+- [ ] Implement the bounded notifications and complete startup frame. Refresh
+      waits for repository admission after nested changes commit/restore.
+      Existing periodic checks still run when telemetry is None or unchanged.
+- [ ] Prove external POI/route reload without telemetry updates planned/derived
+      values. In disabled mode require explicit reload for unannounced disk
+      edits; neither mode discovers files through scraping.
+- [ ] Prove dirty wakes and one-shot tasks never collect a source, advance
+      replay, add speed/passage history, write evidence or add observations.
+      Test producer/config/mission barriers and stale-failure rejection.
+- [ ] Verify at most one one-shot task, no busy retry queue, callback detachment
+      and repeated-cancellation drain; run lifecycle/regression tests and
+      commit.
 
-- [ ] Write failing parametrized tests for every lifecycle row in the spec:
-      route mutation/reload/parse failure, all POI publication and
-      bulk/projection/ restore paths, phase and timing-only changes, config
-      reset, mission switch/ rollback, replay cancellation, startup, source
-      expiry, and shutdown.
-- [ ] Include `test_timing_only_correction_refreshes_without_phase_callback`,
-      `test_external_poi_reload_refreshes_while_telemetry_is_none`,
-      `test_dirty_wake_preserves_next_collection_deadline`,
-      `test_disabled_background_coalesces_refresh_and_never_collects`, and
-      `test_shutdown_bulk_poi_callbacks_cannot_resurrect_task`. Use explicit
-      reload in disabled-background mode for unannounced disk edits.
-- [ ] Run the lifecycle file red. Implement only the notification and refresh
-      boundaries in the spec. Notifications may occur inside an existing
-      repository transaction, but preparation waits until admission can capture
-      its final committed/restored inputs. Coalesce nested/bulk notifications.
-- [ ] Publish a complete actual/unavailable startup frame after managers are
-      ready. Keep production periodic checks running with `telemetry is None` or
-      unchanged, so external reloads and planned/countdown values still change.
-- [ ] Add source/config/mission race barriers. Assert stale batches cannot
-      commit, no lock-order deadlock occurs, and source
-      acquisition/replay/smoothing/ event/archive state is untouched by
-      refresh-only work.
-- [ ] Run lifecycle and existing mutation/recovery tests; verify all owned task
-      handles are drained on repeated cancellation. Commit the lifecycle change.
-
-## Task 5: Read only HTTP scraping and complete contracts
+## Task 5: Read only HTTP, compatibility and truthful health
 
 **Files:** Modify `app/api/metrics.py`, `app/api/metrics_export.py`,
-`tests/unit/test_metrics_export.py`,
-`tests/integration/test_metrics_endpoint.py`,
-`tests/integration/test_eta_modes.py`; extend new publication tests.
+`app/api/health.py`, metrics endpoint/unit and ETA-mode integration tests.
 
-**Interfaces:** `_prepare_metrics(route_manager=None, poi_manager=None) -> str`
-and async `get_metrics(...) -> str` retain direct-call compatibility and frozen
-probe interception, but ignore old manager arguments. FastAPI no longer resolves
-route/POI dependencies for `/metrics`. `PublicationUnavailable` maps to 503;
-normal/fallback paths both use validated capture.
+**Interfaces:** Keep async `get_metrics(...)` and
+`_prepare_metrics(route_manager=None, poi_manager=None) -> str` for legacy calls
+and frozen instrumentation. Ignore old manager arguments; remove FastAPI manager
+dependencies. Keep existing encoder, content type, EOF and position response
+schemas; add the specified publication diagnostic to health.
 
-- [ ] Write failing 100-scrape sequential/concurrent tests spying on simulator
-      construction, ETA construction/calculation, manager lookup/list/get,
-      storage writes, replay advancement, smoothing and flight/event state.
-      Assert all scraper-side counts are zero and accepted upstream publication
-      still changes the exported values as expected.
-- [ ] Run them red. Replace scrape preparation with capture, existing client
-      serialization, and single EOF handling in the threadpool. Preserve
-      health's last-scrape-attempt timestamp, content type, position table
-      behavior, and `_prepare_metrics` probe compatibility. Do not fall back to
-      raw registry reads.
-- [ ] Move old tests that relied on synthetic scrape publication to explicit
-      startup/lifecycle/producer fixtures. Retain preflight assertions at the
-      new owner; do not simply delete them or blanket-relax finite-value checks.
-- [ ] Verify dedicated and custom registry schemas, PositionCollector, all
-      metric names/labels/types/buckets, created and counter semantics,
-      NaN/unknown, no active mission, empty data, normal/fallback serialization,
-      contention 503, and producer-failure recovery. Test two viewers and
-      independent scrapers.
-- [ ] Run canonical backend/static gates with hard timeouts. Record known
-      unchanged failures separately, including the previously documented stale
-      Dockerfile tests if still present. Do not claim a green full suite from a
-      focused pass. Commit the HTTP change only after its contracts pass.
+- [ ] Write failing 100-scrape sequential/concurrent tests asserting zero
+      simulator/ETA construction, route/POI access/calculation, storage writes,
+      acquisition renewal, smoothing, source/clock advancement and detector
+      work.
+- [ ] Replace scrape preparation with standard registry serialization in the
+      threadpool. Normal/fallback paths use the same registered frame collector,
+      with no byte cache, epoch validation, retries or raw-live-gauge bypass.
+      Read the position table from one captured frame.
+- [ ] Preserve source-unavailable HTTP 200 with honest NaN. Test true
+      serializer/ registration failure returning 503 and degraded health despite
+      recent attempts. Failed/pending publication must not look fresh; recovery
+      needs successful complete publication/exposition, not another request.
+- [ ] Retain preflight assertions under explicit producer/lifecycle fixtures.
+      Verify all metric schemas, independent client types, alias samples,
+      counter/histogram contracts, empty inputs, safe fallback and one EOF. Do
+      not drop tests or blanket-relax finite-value checks to hide regressions.
+- [ ] Run focused tests and applicable canonical gates with timeouts, record
+      unchanged failures distinctly, then commit. No whole-suite success claim
+      may be based only on this focused selection.
 
-## Task 6: Measurement, sustained acceptance, rollback and review
+## Task 6: Matched measurement, soak, rollback and PR review
 
-**Files:** Create
-`tools/acceptance/performance/metrics_publication_diagnostics.py` and
-`docs/performance/perf-391-results.md`; update the performance rollup only with
-reviewed evidence. Preserve the frozen runner and all original artifacts.
+**Files:** Create `docs/performance/perf-391-results.md` during future
+acceptance; retain frozen tooling, both original inventories and the
+design-probe artifacts.
 
-**Interfaces:** The diagnostic tool accepts `--sha`, `--output`,
-`--pois {0,10,100,1100}`, `--scrapes`, and `--total-timeout`. It uses isolated
-processes and fixture registries to report constructor/calculation counts,
-allocation samples, collection retries, actual mutex hold time versus logical
-reservation time, and write journal bytes. Never run it inside primary timing
-windows. Match original/candidate probe revision for allocation comparisons.
-
-- [ ] Write tool argument/ownership/result-integrity tests before implementing
-      the standalone diagnostic. Record its owner, command, PID/group, private
-      registry/process lifetime, timeout and cleanup. No production endpoint or
-      always-on instrumentation is added.
-- [ ] Run the component matrix separately; stop for design review if the undo
-      adapter or optimistic retries erase CPU savings or require a different
-      client support/API contract. Do not add a byte cache as an unreviewed
-      workaround.
-- [ ] Verify the retained #390 and #391 inventories before new runs. Preserve
-      original images/bundle and use a clean frozen harness checkout for all
-      matched system cases. Commit candidate application changes before
-      archiving its SHA.
-- [ ] Run at least three original and candidate warmed off controls serially,
-      then matched counter controls. Also compare candidate with immediately
-      preceding dev; never replace the original reference or aggregate unlike
-      workloads. Keep successful and rejected comparisons, errors, all samples,
-      hardware/browser/dependency identity, and run-to-run ranges.
-- [ ] Run matched original/candidate minimum 60-minute steady soaks and separate
-      transition/activity controls. Verify finite/NaN meaning, actual 1-Hz
-      ingestion, grids and freshness, status/Operator interactions,
-      memory/storage slopes, counter monotonicity, and absence of recurring
-      task/series growth.
-- [ ] Run existing production Docker/Nginx rendered acceptance for Overview and
-      Operator, plus mission switch, restart and export under load. Add
-      deterministic synthetic-live acquisition/disconnect tests separately from
-      the simulation benchmark. State physical-GPU/live-device limitations
-      explicitly; do not claim those unexecuted gates passed. The final
-      eight-hour integration stays #390.
-- [ ] Verify task PID/groups, browser children, listeners, Compose containers,
-      networks, and disposable volumes are gone on the host. Preserve evidence
-      and open-PR worktree, not runtime resources.
-- [ ] Build and test a clean revert candidate for rollback evidence. Revert only
-      #391 implementation commits, preserving these documents and evidence.
-      There is no schema migration. Document restoration of the old synthetic
-      scrape hazard; rollback deployment is not authorized.
-- [ ] Record results and limitations, run applicable canonical checks, review
-      the diff against latest dev, push the feature branch and open a PR against
-      `dev` per repository workflow. Do not merge, modify production deployment,
-      or close #391. Keep the worktree for review; remove branches/worktree only
-      after a separately authorized merge and verified cleanup.
+- [ ] Verify original #390/#391 hashes. Use clean committed application SHAs and
+      the frozen harness checkout, private projects, fixed fixtures and actual
+      appuser package/browser identity. Do not change comparison guards.
+- [ ] Run three matched original/current-dev/candidate warmed controls, separate
+      off/counters cohorts, and separate allocation/component diagnostics.
+      Compare total exporter/service CPU, preparation/publication cost, latency,
+      source grids/freshness, memory/storage slopes and independent instruments.
+- [ ] Stop for review if import compatibility, snapshot retention or CPU cost
+      invalidates the architecture. Never claim application savings from the
+      disposable probe, constructor counts or unlike workloads.
+- [ ] Execute matched original/candidate minimum 60-minute steady soaks and
+      separate activity cases using the plan's runbook. Require actual measured
+      span at least 3,600 seconds, real 1-Hz ingestion, correct
+      gaps/availability, stable interactions and no new task/series/frame
+      retention attributable to #391. Attribute unchanged independent label
+      growth to #393.
+- [ ] Run production Docker/Nginx browser acceptance and mission switch,
+      restart, export and synthetic-live/disconnect regressions. Label
+      live-device/GPU limits. Final integrated eight-hour acceptance remains
+      #390.
+- [ ] Verify owned processes, browser children, listeners, containers, networks
+      and disposable volumes are gone. Retain evidence and the open PR worktree.
+- [ ] Build/test a reviewed revert candidate; no durable migration is involved.
+      Disclose restoration of the old synthetic scrape hazard. Rollback
+      deployment remains separately authorized.
+- [ ] Record evidence, review against current dev, push/update PR #403 per the
+      repository workflow. Do not deploy, merge or close #391.

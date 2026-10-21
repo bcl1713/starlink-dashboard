@@ -1,0 +1,273 @@
+{
+  "kind": "Disposable component probe; no application speedup or system acceptance claim",
+  "timing": "nearest-rank, 100 serial scrapes per case; thread CPU and wall clocks; tracemalloc in separate single-scrape diagnostic",
+  "raw_control": "ordinary mutable gauges, no atomicity guarantee; pointer/frame diagnostics refer only to the snapshot model",
+  "versions": [
+    {
+      "python": "3.11.16",
+      "client": "0.26.0",
+      "probe_sha256": "78e32be3eb029d563610a8c64017157c85612feaf765d285be99daad23ddd3dd",
+      "proofs": {
+        "detached_old_frame": true,
+        "dynamic_labels": true,
+        "failed_prepare_unchanged": true,
+        "independent_client_types": true,
+        "compatibility_staging": true,
+        "barrier_overlap": true,
+        "superseded_input_rejected": true,
+        "standard_exemplars": true,
+        "no_generation_history": true,
+        "independent_readonly_callback": true
+      },
+      "measurements": [
+        {
+          "pois": 0,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 0.109048,
+          "cpu_p95_ms": 0.114352,
+          "wall_p95_ms": 0.114761,
+          "separate_one_scrape_tracemalloc_peak_bytes": 14772,
+          "separate_traced_frame_prepare_cpu_us": 13.593,
+          "separate_frame_retained_bytes": 376,
+          "separate_frame_peak_bytes": 624,
+          "prebuilt_pointer_publish_mean_us": 0.32471
+        },
+        {
+          "pois": 0,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 0.104817,
+          "cpu_p95_ms": 0.111715,
+          "wall_p95_ms": 0.11212,
+          "separate_one_scrape_tracemalloc_peak_bytes": 14475,
+          "separate_traced_frame_prepare_cpu_us": 12.624,
+          "separate_frame_retained_bytes": 376,
+          "separate_frame_peak_bytes": 624,
+          "prebuilt_pointer_publish_mean_us": 0.35985
+        },
+        {
+          "pois": 10,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 0.155953,
+          "cpu_p95_ms": 0.165887,
+          "wall_p95_ms": 0.166405,
+          "separate_one_scrape_tracemalloc_peak_bytes": 17140,
+          "separate_traced_frame_prepare_cpu_us": 26.916,
+          "separate_frame_retained_bytes": 1760,
+          "separate_frame_peak_bytes": 1952,
+          "prebuilt_pointer_publish_mean_us": 0.32969
+        },
+        {
+          "pois": 10,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 0.140541,
+          "cpu_p95_ms": 0.150889,
+          "wall_p95_ms": 0.151435,
+          "separate_one_scrape_tracemalloc_peak_bytes": 15611,
+          "separate_traced_frame_prepare_cpu_us": 38.38,
+          "separate_frame_retained_bytes": 1872,
+          "separate_frame_peak_bytes": 2064,
+          "prebuilt_pointer_publish_mean_us": 0.48499000000000003
+        },
+        {
+          "pois": 100,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 0.555262,
+          "cpu_p95_ms": 0.575878,
+          "wall_p95_ms": 0.576442,
+          "separate_one_scrape_tracemalloc_peak_bytes": 50401,
+          "separate_traced_frame_prepare_cpu_us": 174.014,
+          "separate_frame_retained_bytes": 20138,
+          "separate_frame_peak_bytes": 20554,
+          "prebuilt_pointer_publish_mean_us": 0.40235000000000004
+        },
+        {
+          "pois": 100,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 0.441177,
+          "cpu_p95_ms": 0.445747,
+          "wall_p95_ms": 0.446137,
+          "separate_one_scrape_tracemalloc_peak_bytes": 46033,
+          "separate_traced_frame_prepare_cpu_us": 170.754,
+          "separate_frame_retained_bytes": 20250,
+          "separate_frame_peak_bytes": 20666,
+          "prebuilt_pointer_publish_mean_us": 0.34594
+        },
+        {
+          "pois": 1100,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 5.120951,
+          "cpu_p95_ms": 5.680202,
+          "wall_p95_ms": 5.681158,
+          "separate_one_scrape_tracemalloc_peak_bytes": 452631,
+          "separate_traced_frame_prepare_cpu_us": 1814.368,
+          "separate_frame_retained_bytes": 226238,
+          "separate_frame_peak_bytes": 227958,
+          "prebuilt_pointer_publish_mean_us": 0.79673
+        },
+        {
+          "pois": 1100,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 3.823083,
+          "cpu_p95_ms": 4.229292,
+          "wall_p95_ms": 4.231385,
+          "separate_one_scrape_tracemalloc_peak_bytes": 448983,
+          "separate_traced_frame_prepare_cpu_us": 1868.612,
+          "separate_frame_retained_bytes": 226350,
+          "separate_frame_peak_bytes": 228070,
+          "prebuilt_pointer_publish_mean_us": 0.65899
+        }
+      ],
+      "contention": {
+        "seconds": 30,
+        "pois": 1100,
+        "writer_hz": 1,
+        "scrapers": 3,
+        "counts": [30, 30, 30, 30],
+        "mixed_frames": 0,
+        "retries": 0,
+        "remaining_threads": 0
+      }
+    },
+    {
+      "python": "3.11.16",
+      "client": "0.19.0",
+      "probe_sha256": "78e32be3eb029d563610a8c64017157c85612feaf765d285be99daad23ddd3dd",
+      "proofs": {
+        "detached_old_frame": true,
+        "dynamic_labels": true,
+        "failed_prepare_unchanged": true,
+        "independent_client_types": true,
+        "compatibility_staging": true,
+        "barrier_overlap": true,
+        "superseded_input_rejected": true,
+        "standard_exemplars": true,
+        "no_generation_history": true,
+        "independent_readonly_callback": true
+      },
+      "measurements": [
+        {
+          "pois": 0,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 0.080844,
+          "cpu_p95_ms": 0.085254,
+          "wall_p95_ms": 0.085602,
+          "separate_one_scrape_tracemalloc_peak_bytes": 14450,
+          "separate_traced_frame_prepare_cpu_us": 12.049,
+          "separate_frame_retained_bytes": 376,
+          "separate_frame_peak_bytes": 624,
+          "prebuilt_pointer_publish_mean_us": 0.33774
+        },
+        {
+          "pois": 0,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 0.076393,
+          "cpu_p95_ms": 0.090608,
+          "wall_p95_ms": 0.090921,
+          "separate_one_scrape_tracemalloc_peak_bytes": 14153,
+          "separate_traced_frame_prepare_cpu_us": 13.046,
+          "separate_frame_retained_bytes": 376,
+          "separate_frame_peak_bytes": 624,
+          "prebuilt_pointer_publish_mean_us": 0.31782
+        },
+        {
+          "pois": 10,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 0.114866,
+          "cpu_p95_ms": 0.120211,
+          "wall_p95_ms": 0.120567,
+          "separate_one_scrape_tracemalloc_peak_bytes": 16817,
+          "separate_traced_frame_prepare_cpu_us": 28.1,
+          "separate_frame_retained_bytes": 1760,
+          "separate_frame_peak_bytes": 1952,
+          "prebuilt_pointer_publish_mean_us": 0.32371
+        },
+        {
+          "pois": 10,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 0.097303,
+          "cpu_p95_ms": 0.101112,
+          "wall_p95_ms": 0.101389,
+          "separate_one_scrape_tracemalloc_peak_bytes": 15290,
+          "separate_traced_frame_prepare_cpu_us": 28.549,
+          "separate_frame_retained_bytes": 1872,
+          "separate_frame_peak_bytes": 2064,
+          "prebuilt_pointer_publish_mean_us": 0.3147
+        },
+        {
+          "pois": 100,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 0.399119,
+          "cpu_p95_ms": 0.534125,
+          "wall_p95_ms": 0.535062,
+          "separate_one_scrape_tracemalloc_peak_bytes": 50209,
+          "separate_traced_frame_prepare_cpu_us": 176.619,
+          "separate_frame_retained_bytes": 20138,
+          "separate_frame_peak_bytes": 20554,
+          "prebuilt_pointer_publish_mean_us": 0.35174
+        },
+        {
+          "pois": 100,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 0.281282,
+          "cpu_p95_ms": 0.286606,
+          "wall_p95_ms": 0.286981,
+          "separate_one_scrape_tracemalloc_peak_bytes": 45841,
+          "separate_traced_frame_prepare_cpu_us": 178.096,
+          "separate_frame_retained_bytes": 20250,
+          "separate_frame_peak_bytes": 20666,
+          "prebuilt_pointer_publish_mean_us": 0.34196
+        },
+        {
+          "pois": 1100,
+          "mode": "raw_client_unsafe_control",
+          "samples": 100,
+          "cpu_p50_ms": 3.594988,
+          "cpu_p95_ms": 4.163571,
+          "wall_p95_ms": 4.164876,
+          "separate_one_scrape_tracemalloc_peak_bytes": 443389,
+          "separate_traced_frame_prepare_cpu_us": 1836.333,
+          "separate_frame_retained_bytes": 226238,
+          "separate_frame_peak_bytes": 227958,
+          "prebuilt_pointer_publish_mean_us": 0.9164
+        },
+        {
+          "pois": 1100,
+          "mode": "snapshot",
+          "samples": 100,
+          "cpu_p50_ms": 2.338323,
+          "cpu_p95_ms": 2.588391,
+          "wall_p95_ms": 2.589013,
+          "separate_one_scrape_tracemalloc_peak_bytes": 439189,
+          "separate_traced_frame_prepare_cpu_us": 1851.777,
+          "separate_frame_retained_bytes": 226350,
+          "separate_frame_peak_bytes": 228070,
+          "prebuilt_pointer_publish_mean_us": 0.62339
+        }
+      ],
+      "contention": {
+        "seconds": 10,
+        "pois": 1100,
+        "writer_hz": 1,
+        "scrapers": 3,
+        "counts": [10, 10, 10, 10],
+        "mixed_frames": 0,
+        "retries": 0,
+        "remaining_threads": 0
+      }
+    }
+  ]
+}
