@@ -89,10 +89,7 @@ class MetricsRefreshOwner:
             return
         self._attempted_revision = head.input_revision
         self._work = asyncio.create_task(self._run_refresh(head))
-        try:
-            return await drain_work(self._work)
-        finally:
-            self._work = None
+        return await drain_work(self._work)
 
     async def _run_refresh(self, expected):
         try:
@@ -102,6 +99,10 @@ class MetricsRefreshOwner:
             logger.exception("Metric refresh owner failed")
             return False
         finally:
+            # Release the shared handle in its owner before waking waiters. A
+            # cancelled waiter may resume after the one-shot; it cannot be
+            # responsible for clearing completed work or clear a newer task.
+            self._work = None
             head = self._store.read()
             if head.status == "failed":
                 self._attempted_revision = head.input_revision

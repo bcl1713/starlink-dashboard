@@ -93,3 +93,42 @@ async def test_closed_owner_rejects_callback_registration():
     await owner.close()
     with pytest.raises(RuntimeError):
         owner.attach(source)
+
+
+async def test_cancelled_waiter_cannot_leave_dirty_one_shot_spinning_on_completed_work():
+    from app.core.metrics import lifecycle
+
+    store = FrameStore((GaugeDefinition("test", "test"),))
+    entered, release = Event(), Event()
+    calls = []
+
+    def refresh():
+        expected = store.read()
+        calls.append(1)
+        if len(calls) == 1:
+            entered.set()
+            assert release.wait(3)
+        store.fail(expected, "controlled failure")
+
+    owner = lifecycle.MetricsRefreshOwner(
+        refresh, background_enabled=False, store=store
+    )
+    manual = asyncio.create_task(owner.refresh_without_collection(force=True))
+    try:
+        assert await asyncio.to_thread(entered.wait, 2)
+        owner.mark_dirty("arrived during old preparation")
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        manual.cancel()
+        await asyncio.sleep(0)
+        manual.cancel()
+        await asyncio.sleep(0)
+        release.set()
+        await asyncio.wait_for(asyncio.gather(manual, return_exceptions=True), 2)
+        await owner.close()
+        assert len(calls) == 2
+        assert store.read().status == "failed"
+        assert owner.task is None
+    finally:
+        release.set()
+        await owner.close()
