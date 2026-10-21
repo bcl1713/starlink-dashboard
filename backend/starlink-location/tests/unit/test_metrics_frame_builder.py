@@ -5,6 +5,8 @@ from datetime import UTC, datetime, timedelta
 from math import isnan
 
 import pytest
+from prometheus_client import Counter, Gauge, Histogram
+
 from app.core import eta_service
 from app.core.metrics import prometheus_metrics as metrics
 from app.core.metrics.frame_builder import (
@@ -15,8 +17,6 @@ from app.core.metrics.frame_builder import (
 from app.core.metrics.frames import FrameGaugeView
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
 from app.models.poi import POI
-from prometheus_client import Counter, Gauge, Histogram
-
 from tests.unit.metrics_frame_support import actual_schema
 
 NOW = datetime.now(UTC)
@@ -196,7 +196,6 @@ def test_timed_preflight_uses_plan_without_fabricated_position(
     coordinator, future, usable_position
 ):
     from app.models.route import RouteWaypoint
-
     from tests.unit.test_metrics_export import _make_parsed_route
 
     route = _make_parsed_route()

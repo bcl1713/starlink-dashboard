@@ -1,6 +1,8 @@
 """Narrow staged setters: binding a label must never publish a child."""
 
 import pytest
+from prometheus_client import CollectorRegistry
+
 from app.core.metrics.frames import (
     FrameGaugeView,
     FrameIdentity,
@@ -8,7 +10,6 @@ from app.core.metrics.frames import (
     GaugeDefinition,
     TelemetryFrameCollector,
 )
-from prometheus_client import CollectorRegistry
 
 
 def setup_views():

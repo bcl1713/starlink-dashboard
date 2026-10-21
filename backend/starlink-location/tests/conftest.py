@@ -56,6 +56,8 @@ def patched_poi_init(self, pois_file=TEST_DATA_DIR / "pois.json"):
 poi_manager_module.POIManager.__init__ = patched_poi_init
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.core.config import ConfigManager
 from app.models.config import (
     NetworkConfig,
@@ -73,7 +75,6 @@ from app.models.telemetry import (
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
-from fastapi.testclient import TestClient
 from main import app
 
 

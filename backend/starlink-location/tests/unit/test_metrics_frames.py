@@ -8,13 +8,6 @@ import weakref
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from app.core.metrics.frames import (
-    FrameIdentity,
-    FrameStore,
-    GaugeDefinition,
-    GaugeFrame,
-    TelemetryFrameCollector,
-)
 from prometheus_client import (
     CollectorRegistry,
     Counter,
@@ -24,6 +17,13 @@ from prometheus_client import (
 )
 from prometheus_client.openmetrics.exposition import generate_latest as openmetrics
 
+from app.core.metrics.frames import (
+    FrameIdentity,
+    FrameStore,
+    GaugeDefinition,
+    GaugeFrame,
+    TelemetryFrameCollector,
+)
 from tests.unit.metrics_frame_support import actual_schema
 
 
