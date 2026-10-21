@@ -226,6 +226,7 @@ def prepare_metrics_from_telemetry(
     simulation_frame: Optional["ReplayFrame"] = None,
     route_progress: tuple[float, int] | None = None,
     coordinator_id: str | None = None,
+    _captured_head=None,
 ) -> "GaugeFrame | None":
     """Account for one accepted observation and return a private complete frame.
 
@@ -241,7 +242,6 @@ def prepare_metrics_from_telemetry(
 
         get_flight_state_manager().reset_detection()
         return
-    expected = FRAME_STORE.read()
     try:
         _observe_independent_metrics(
             telemetry, config, simulation_plan, simulation_frame
@@ -271,6 +271,9 @@ def prepare_metrics_from_telemetry(
                     count - 1,
                 ),
             )
+        expected = FRAME_STORE.read()
+        if _captured_head is not None:
+            _captured_head(expected)
         inputs = FrameInputs(
             expected,
             telemetry=telemetry,
@@ -319,6 +322,11 @@ def update_metrics_from_telemetry(
         if source_is_current is not None and not source_is_current():
             return
         expected = FRAME_STORE.read()
+
+        def captured(head):
+            nonlocal expected
+            expected = head
+
         try:
             frame = prepare_metrics_from_telemetry(
                 telemetry,
@@ -331,6 +339,7 @@ def update_metrics_from_telemetry(
                 simulation_frame=simulation_frame,
                 route_progress=route_progress,
                 coordinator_id=coordinator_id,
+                _captured_head=captured,
             )
             if frame is None:
                 return

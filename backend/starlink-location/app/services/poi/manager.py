@@ -19,6 +19,7 @@ from filelock import FileLock
 
 from app.mission.storage import planning_read_gate
 from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def _route_geometry_hash(route) -> str:
     ).hexdigest()
 
 
-class POIManager:
+class POIManager(MetricsChangeSource):
     """
     Manages POI storage and retrieval from JSON file.
 
@@ -95,6 +96,7 @@ class POIManager:
                 logger.error(f"Failed to create POI file: {e}")
 
     @planning_read_gate
+    @metrics_changed("POIManager:_load_pois")
     def _load_pois(self) -> None:
         """Load POIs from JSON file with file locking.
 
@@ -111,6 +113,7 @@ class POIManager:
         except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
+            self._persisted_signature = _file_signature(self.pois_file)
             return
         except (
             RuntimeError,
@@ -126,6 +129,7 @@ class POIManager:
         ) as e:
             logger.error(f"Failed to acquire lock for reading POI file: {e}")
             self._pois = {}
+            self._persisted_signature = _file_signature(self.pois_file)
             return
 
         # Load POIs from the "pois" section (global POIs)
@@ -176,6 +180,7 @@ class POIManager:
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
     @planning_read_gate
+    @metrics_changed("POIManager:_save_pois")
     def _save_pois(self) -> None:
         """Save POIs to JSON file with file locking and atomic writes.
 
@@ -270,6 +275,7 @@ class POIManager:
         )
 
     @_poi_access
+    @metrics_changed("POIManager:restore_checkpoint")
     def restore_checkpoint(
         self, checkpoint: tuple[dict[str, POI], bytes | None]
     ) -> None:
@@ -304,6 +310,17 @@ class POIManager:
         if mission_id:
             pois = [poi for poi in pois if poi.mission_id == mission_id]
         return pois
+
+    @_poi_access
+    def metrics_input_identity(self) -> str:
+        """Revalidate current models without allocating another detached POI list.
+
+        The ordinary access gate still detects disk changes. Hash the models on
+        every call, including legacy references; this is not a revision cache.
+        """
+        return hashlib.sha256(
+            "".join(poi.model_dump_json() for poi in self._pois.values()).encode()
+        ).hexdigest()
 
     @_poi_access
     def get_poi(self, poi_id: str) -> POI | None:

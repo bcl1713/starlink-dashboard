@@ -12,13 +12,14 @@ from app.mission.input_admission import model_input_write
 from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
 from app.services.heading_tracker import HeadingTracker
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 from app.services.position_freshness import position_observation
 from app.services.speed_tracker import SpeedTracker
 
 logger = logging.getLogger(__name__)
 
 
-class LiveCoordinator:
+class LiveCoordinator(MetricsChangeSource):
     """Orchestrates live data collection from Starlink dish via gRPC.
 
     Mirrors the SimulationCoordinator interface but collects real telemetry
@@ -194,6 +195,7 @@ class LiveCoordinator:
         return self._last_valid_telemetry
 
     @model_input_write
+    @metrics_changed("LiveCoordinator:reset")
     def reset(self) -> None:
         """Reset coordinator to initial state.
 
@@ -236,6 +238,7 @@ class LiveCoordinator:
         return self.config
 
     @model_input_write
+    @metrics_changed("LiveCoordinator:update_config")
     def update_config(self, new_config: SimulationConfig) -> None:
         """
         Update configuration and reinitialize services.

@@ -14,6 +14,7 @@ from app.models.telemetry import (
     MetricAvailability,
     TelemetryData,
 )
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 from app.services.speed_tracker import SpeedTracker
 from app.simulation.kml_follower import KMLRouteFollower
 from app.simulation.network import NetworkSimulator
@@ -24,7 +25,7 @@ from app.simulation.run_replay import ReplayFrame
 logger = logging.getLogger(__name__)
 
 
-class SimulationCoordinator:
+class SimulationCoordinator(MetricsChangeSource):
     """Orchestrates all simulators and maintains state."""
 
     def __init__(self, config: SimulationConfig):
@@ -242,6 +243,7 @@ class SimulationCoordinator:
         return self._last_valid_telemetry
 
     @model_input_write
+    @metrics_changed("SimulationCoordinator:reset")
     def reset(self) -> None:
         """Reset all simulators to initial state."""
         self.pop_lifecycle_token += 1
@@ -301,6 +303,7 @@ class SimulationCoordinator:
         return self.config
 
     @model_input_write
+    @metrics_changed("SimulationCoordinator:update_config")
     def update_config(self, new_config: SimulationConfig) -> None:
         """
         Update configuration and reinitialize simulators.

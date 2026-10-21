@@ -273,6 +273,7 @@ class PlanningStore:
                 raise conflict("Deactivate the affected leg before editing")
         return mission, manifest, leg
 
+    @storage.mission_metrics_changed("planning publication or restoration")
     def persist(self, mission, manifest, *, files=None, poi_scope=None, pois=None):
         manifest = PlanningManifest.model_validate(manifest.storage_record())
         updated = mission.model_copy(deep=True)

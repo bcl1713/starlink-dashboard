@@ -588,6 +588,33 @@ async def startup_event():
         with app.state.operator_binding.access():
             pass
 
+        from app.core.metrics.lifecycle import MetricsRefreshOwner
+        from app.services.flight_state import get_flight_state_manager
+
+        initial_refresh = True
+
+        def refresh_metrics():
+            nonlocal initial_refresh
+            initial, initial_refresh = initial_refresh, False
+            return _refresh_metrics_without_collection(initial)
+
+        owner = MetricsRefreshOwner(
+            refresh_metrics,
+            background_enabled=_background_updates_enabled,
+        )
+        from app.services.metrics_changes import mission_metrics_changes
+
+        owner.attach(
+            _route_manager,
+            poi_manager,
+            get_flight_state_manager(),
+            _coordinator,
+            run_service.runtime,
+            mission_metrics_changes,
+        )
+        app.state.metrics_refresh_owner = owner
+        await owner.refresh_without_collection(force=True)
+
         if _background_updates_enabled:
             run_service.wakeup = ReplayWakeup()
             logger.info_json("Starting background update task")
@@ -652,6 +679,10 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        owner = getattr(app.state, "metrics_refresh_owner", None)
+        if owner is not None:
+            await owner.close()
+            del app.state.metrics_refresh_owner
         if _background_task:
             logger.info_json("Cancelling background update task")
             _background_task.cancel()
@@ -660,6 +691,10 @@ async def shutdown_event():
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
             _background_task = None
+
+        from app.core.metrics.prometheus_metrics import FRAME_STORE
+
+        FRAME_STORE.invalidate("shutdown")
 
         if hasattr(app.state, "itinerary_import_service"):
             await asyncio.to_thread(app.state.itinerary_import_service.close)
@@ -927,6 +962,23 @@ def _publish_replay_telemetry(telemetry, tick):
     return frame
 
 
+def _refresh_metrics_without_collection(initial=False):
+    from app.core.metrics.metric_updater import UTC, datetime
+    from app.core.metrics.refresh_inputs import refresh_current_metrics
+
+    return refresh_current_metrics(
+        lambda: (
+            _coordinator,
+            _current_runtime_config(),
+            _route_manager,
+            app.state.poi_manager,
+            getattr(app.state, "simulation_run_service", None),
+        ),
+        initial=initial,
+        now=datetime.now(UTC),
+    )
+
+
 def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
     """One complete ordered telemetry/metric update, owned by the async loop."""
     # Capture the producer binding before collection, including replacements
@@ -1048,9 +1100,17 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             _publish_pop_observation(telemetry)
         update_count += 1
 
-        # A graceful-degradation fallback is the same acquisition, not another
-        # accepted observation. Lifecycle-only refresh belongs to Task 4.
+        # Retained acquisition: refresh planned values and freshness without
+        # observation accounting, source generation, or detection side effects.
         if telemetry is not None and telemetry is previous_telemetry and not paced:
+            with get_active_leg_lock():
+                active_route = (
+                    _route_manager.get_active_route() if _route_manager else None
+                )
+                if source_is_current():
+                    _refresh_metrics_without_collection()
+                else:
+                    FRAME_STORE.fail(source_expected, "retained source superseded")
             return update_count
 
         # Only update metrics if telemetry is available
@@ -1236,7 +1296,15 @@ async def _background_update_loop(poi_manager=None):
                     if run_service and run_service.status().state == "running"
                     else _simulation_config.update_interval_seconds
                 )
-                if run_service and run_service.wakeup:
+                owner = getattr(app.state, "metrics_refresh_owner", None)
+                if owner is not None and _background_updates_enabled:
+                    deadline = asyncio.get_running_loop().time() + delay
+                    while not await owner.wait(
+                        deadline - asyncio.get_running_loop().time(),
+                        run_service.wakeup if run_service else None,
+                    ):
+                        await owner.refresh_without_collection()
+                elif run_service and run_service.wakeup:
                     await run_service.wakeup.wait(delay)
                 else:
                     await asyncio.sleep(delay)

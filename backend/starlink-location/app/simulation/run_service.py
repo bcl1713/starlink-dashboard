@@ -132,8 +132,8 @@ class SimulationRunService:
             try:
                 telemetry = coordinator.update(replay_frame=tick.frame)
                 flight.apply_simulation_frame(tick.plan, tick.frame)
-                expected = FRAME_STORE.read()
                 inputs = replay_input_identity(self, tick)
+                expected = FRAME_STORE.read()
                 frame = publish(telemetry, tick)
                 if advancing:
                     self.runtime.commit_tick(tick)

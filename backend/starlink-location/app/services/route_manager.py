@@ -15,6 +15,7 @@ from watchdog.observers import Observer
 from app.mission.input_admission import model_input_write
 from app.models.route import ParsedRoute
 from app.services.kml_parser import KMLParseError, parse_kml_file
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class RouteChangeHandler(FileSystemEventHandler):
             self.route_manager._load_route_file(event.src_path)
 
 
-class RouteManager:
+class RouteManager(MetricsChangeSource):
     """
     Manages KML routes with file watching capabilities.
 
@@ -81,6 +82,13 @@ class RouteManager:
         self._errors: dict[str, str] = {}  # Tracks errors by route_id
 
         logger.info(f"RouteManager initialized with directory: {self.routes_dir}")
+
+    def _metrics_key(self):
+        return (
+            self._active_route_id,
+            id(self._routes.get(self._active_route_id)),
+            self._errors.get(self._active_route_id),
+        )
 
     def start_watching(self) -> None:
         """Start watching the routes directory for file changes."""
@@ -137,6 +145,7 @@ class RouteManager:
         return profile
 
     @model_input_write
+    @metrics_changed("RouteManager:_load_route_file", key="_metrics_key")
     def _load_route_file(self, file_path: str) -> None:
         """
         Load a single KML file and add to routes cache.
@@ -222,8 +231,15 @@ class RouteManager:
             self._routes.pop(route_id, None)
             self._errors[route_id] = error_msg
             logger.error(error_msg)
+        if self._active_route_id == route_id and route_id not in self._routes:
+            from app.services.flight_state import get_flight_state_manager
+
+            get_flight_state_manager().clear_route_context(
+                reason="active_route_parse_failed"
+            )
 
     @model_input_write
+    @metrics_changed("RouteManager:add_route", key="_metrics_key")
     def add_route(self, route_id: str, parsed_route: ParsedRoute) -> None:
         """
         Register a ParsedRoute in the manager cache.
@@ -238,6 +254,12 @@ class RouteManager:
         )
         if route_id in self._errors:
             del self._errors[route_id]
+        if self._active_route_id == route_id:
+            from app.services.flight_state import get_flight_state_manager
+
+            get_flight_state_manager().update_route_context(
+                parsed_route, auto_reset=False, reason="route_replaced"
+            )
         logger.info(
             f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()"
         )
@@ -247,6 +269,7 @@ class RouteManager:
         return self._source_file_revisions.get(route_id)
 
     @model_input_write
+    @metrics_changed("RouteManager:_remove_route", key="_metrics_key")
     def _remove_route(self, route_id: str) -> None:
         """
         Remove a route from cache.
@@ -323,8 +346,18 @@ class RouteManager:
             try:
                 self.resolve_ingestion_profile(route_id)
             except KMLParseError as exc:
-                self._routes.pop(route_id, None)
-                self._errors[route_id] = str(exc)
+                from app.mission.storage import get_active_leg_lock
+                from app.services.flight_state import get_flight_state_manager
+
+                with get_active_leg_lock():
+                    before = self._metrics_key()
+                    self._routes.pop(route_id, None)
+                    self._errors[route_id] = str(exc)
+                    if before != self._metrics_key():
+                        get_flight_state_manager().clear_route_context(
+                            reason="active_route_profile_invalid"
+                        )
+                        self._notify_metrics_changed("active route profile invalid")
                 return None
         return self._routes.get(route_id)
 
@@ -344,6 +377,7 @@ class RouteManager:
         return self.get_route(self._active_route_id)
 
     @model_input_write
+    @metrics_changed("RouteManager:activate_route", key="_metrics_key")
     def activate_route(self, route_id: str) -> bool:
         """
         Activate a route.
@@ -390,6 +424,7 @@ class RouteManager:
         return True
 
     @model_input_write
+    @metrics_changed("RouteManager:deactivate_route", key="_metrics_key")
     def deactivate_route(self, route_id: str | None = None) -> None:
         """Deactivate a specific route or the current active route.
 
@@ -471,6 +506,7 @@ class RouteManager:
         return len(self._errors) > 0
 
     @model_input_write
+    @metrics_changed("RouteManager:reload_all_routes")
     def reload_all_routes(self) -> None:
         """Reload all routes from disk."""
         self._routes.clear()

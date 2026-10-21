@@ -97,7 +97,10 @@ def prepare_frame(inputs: FrameInputs, admit_observation: bool) -> GaugeFrame:
     identity = FrameIdentity(
         mode=mode,
         coordinator_id=inputs.coordinator_id,
-        observation_id=telemetry.timestamp.isoformat() if telemetry else None,
+        # Timestamp alone can identify two different payloads when acquisition
+        # clocks have coarse resolution. Keep a scalar semantic identity; never
+        # retain a second telemetry/gauge store in the publication layer.
+        observation_id=model_identity(telemetry),
         observation_timestamp=telemetry.timestamp.timestamp() if telemetry else None,
         route_id=model_identity(route),
         poi_id=poi_identity(inputs.pois),

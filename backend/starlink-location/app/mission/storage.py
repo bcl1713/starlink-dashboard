@@ -12,6 +12,7 @@ from filelock import FileLock
 
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline
 from app.mission.repository_gate import RepositoryGate
+from app.services.metrics_changes import mission_metrics_changed
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +204,7 @@ def save_mission_v2(mission: Mission) -> dict:
         return result
 
 
+@mission_metrics_changed("mission persistence")
 def _save_mission_v2_unlocked(mission: Mission) -> dict:
     """Write a v2 mission while the active-leg repository lock is held."""
     mission_dir = get_mission_directory(mission.id)

@@ -54,6 +54,14 @@ def phase_identity(status):
     return sha256(record.encode()).hexdigest()
 
 
+def current_poi_identity(manager):
+    from app.services.poi.manager import POIManager
+
+    if isinstance(manager, POIManager):
+        return manager.metrics_input_identity()
+    return poi_identity(manager.list_pois())
+
+
 def replay_input_identity(service, tick):
     """Re-read the known mission only; do not enumerate missions or cache files."""
     from app.mission.storage import load_mission_v2
@@ -63,7 +71,7 @@ def replay_input_identity(service, tick):
         service.route_manager.get_active_route_id(),
         model_identity(service.route_manager.get_active_route()),
         model_identity(tick.plan.artifacts.route),
-        poi_identity(service.poi_manager.list_pois()),
+        current_poi_identity(service.poi_manager),
         phase_identity(
             get_flight_state_manager().get_status(
                 mission_now=tick.frame.simulation_time
@@ -81,7 +89,7 @@ def frame_inputs_are_current(frame, active_route, poi_manager):
     manager = poi_manager if poi_manager is not None else eta_service.get_poi_manager()
     return (
         frame.identity.route_id == model_identity(active_route)
-        and frame.identity.poi_id == poi_identity(manager.list_pois())
+        and frame.identity.poi_id == current_poi_identity(manager)
         and frame.identity.phase_id
         == phase_identity(get_flight_state_manager().get_status())
     )

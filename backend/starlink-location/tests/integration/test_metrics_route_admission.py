@@ -13,6 +13,13 @@ from tests.integration.test_live_background_route import background_runtime
 __all__ = ["background_runtime"]
 
 
+@pytest.fixture(autouse=True)
+async def manual_publication_owner(background_runtime):
+    # This suite explicitly controls all publication barriers. Lifecycle-owned
+    # concurrency is exercised in test_metrics_publication_lifecycle.py.
+    await main.app.state.metrics_refresh_owner.close()
+
+
 @pytest.mark.parametrize("background_runtime", ["simulation"], indirect=True)
 @pytest.mark.parametrize("change", ["activate", "remove", "timing"])
 async def test_route_changed_after_collection_cannot_relabel_old_progress(

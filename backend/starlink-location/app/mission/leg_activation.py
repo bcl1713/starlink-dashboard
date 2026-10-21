@@ -106,9 +106,13 @@ def activate_leg_transaction(
             telemetry = coordinator.update(replay_frame=tick.frame)
             flight.apply_simulation_frame(tick.plan, tick.frame)
             from app.core.metrics.source_admission import replay_input_identity
+            from app.services.metrics_changes import mission_metrics_changes
 
-            expected_metrics = FRAME_STORE.read()
+            mission_metrics_changes._notify_metrics_changed(
+                "activation inputs finalized"
+            )
             metric_inputs = replay_input_identity(run_service, tick)
+            expected_metrics = FRAME_STORE.read()
             metric_frame = run_service.publish(telemetry, tick)
             result = run_service.runtime.commit_tick(tick)
             run_service.publish_committed_metrics(
@@ -142,6 +146,9 @@ def activate_leg_transaction(
                 timeline_path.write_bytes(timeline_bytes)
             flight.restore_checkpoint(flight_checkpoint)
             coordinator.restore_telemetry(telemetry_checkpoint)
+            from app.services.metrics_changes import mission_metrics_changes
+
+            mission_metrics_changes._notify_metrics_changed("activation restored")
             FRAME_STORE.fail(expected_metrics, "replay activation failed")
             from app.core.metrics.metric_updater import clear_independent_dish_metrics
 
