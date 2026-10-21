@@ -131,22 +131,22 @@ point. `route_progress_snapshot()` returns current simulation progress without
 advancing the coordinator. The replay callback returns a prepared frame; its
 owner publishes only after successful existing `commit_tick`.
 
-- [ ] Write failing normal/live/replay tests for same-frame position, mode,
+- [x] Write failing normal/live/replay tests for same-frame position, mode,
       route progress, timing, phase and POI values. Pause preparation across
       source/config replacement and ensure the stale result is rejected.
-- [ ] Remove early coordinator progress writes. Include progress in the accepted
+- [x] Remove early coordinator progress writes. Include progress in the accepted
       frame, preserve original source timestamps, availability and accounting,
       and publish a truthful unavailable frame on ordinary disconnect.
-- [ ] Stage the replay gauge frame during the existing callback; keep it private
+- [x] Stage the replay gauge frame during the existing callback; keep it private
       until runtime commit returns successfully under existing repository
       admission, then perform the already validated pointer swap. On failure,
       discard it and use the existing failed-run/activation recovery path plus
       unavailable publication. Add no metric journal or new runtime checkpoint.
-- [ ] Test failures before runtime commit and in the existing runtime commit
+- [x] Test failures before runtime commit and in the existing runtime commit
       path: no success scrape may expose the prepared gauge frame. Preserve
       existing independent per-mission instrument semantics and run-clock
       behavior; do not claim they share aircraft acquisition generations.
-- [ ] Verify one observation-accounting call per accepted sample. A CAS loss or
+- [x] Verify one observation-accounting call per accepted sample. A CAS loss or
       derived refresh may rebuild gauges but never repeat histogram/counter
       operations. Run existing live-background ordering/cancellation, replay,
       mission, provenance and archive regressions; commit the integration.

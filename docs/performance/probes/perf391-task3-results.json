@@ -1,0 +1,318 @@
+{
+  "scope": "Task 3 only; stop for review before Task 4",
+  "source_commit": "a076ced4ca3fbe9700405735189f34ff79d97908",
+  "prior_checkpoint": "f63e463ceaf424cda8996d7694516c8922622a18",
+  "new_task3_cases": 60,
+  "client_matrix": {
+    "0.19.0": {
+      "passed": 503,
+      "skipped": 18,
+      "skip_reason": "existing real-KML fixture requirements",
+      "log": "matrix-019-complete.log",
+      "seconds": 32.47
+    },
+    "0.26.0": {
+      "passed": 503,
+      "skipped": 18,
+      "skip_reason": "existing real-KML fixture requirements",
+      "log": "matrix-026-complete.log",
+      "seconds": 32.66
+    }
+  },
+  "full_backend": {
+    "status": "passed",
+    "hard_timeout": "20m",
+    "kill_grace": "10s",
+    "source_commit": "a076ced4ca3fbe9700405735189f34ff79d97908",
+    "prior_interruption": "35% diagnostic run intentionally TERM-stopped for independent-dish-clear audit; partial evidence retained, group verified gone",
+    "passed": 4389,
+    "skipped": 20,
+    "warning": 1,
+    "seconds": 626.68,
+    "exit_code": 0,
+    "log": "full-suite.log",
+    "prior_failed_run": {
+      "source_commit": "2729606d6983b336c6f1fff307dffbc5c1e7c74a",
+      "passed": 4386,
+      "failed": 3,
+      "skipped": 20,
+      "seconds": 629.5,
+      "cause": "Existing mock live-recording adapters; assertions preserved and adapters fixed",
+      "log": "full-suite-failed-adapters.log"
+    }
+  },
+  "review": {
+    "important_findings": 2,
+    "fixes": "Seven RED-to-GREEN review cases; full backend suite passed after fixes",
+    "capacity_recovery": "initial Astra reviewer interrupted; completed read-only recovery by gpt-6.1-sol/high",
+    "self_audit": "Two additional RED-to-GREEN cases preserve the original independent dish-status failure clears",
+    "remaining_critical_important": 0
+  },
+  "baseline_verification": [
+    {
+      "source": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence",
+      "files": 2072,
+      "inventory_sha256": "0764879764432196349b6f03fcdbbce0b3d38f12f283518aeaf46f4d943cd577",
+      "mismatches": []
+    },
+    {
+      "source": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf391/evidence",
+      "files": 128,
+      "inventory_sha256": "99a833a16df7394bcfd23bff89b8920f79369bed7146ab0ed1b7f49aac1e1198",
+      "mismatches": []
+    },
+    {
+      "source": ".superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence",
+      "files": 26,
+      "inventory_sha256": "a463de6fdfafbd04c9926c9d7b43a5136125710335a73e9bd088753d234fe473",
+      "mismatches": []
+    },
+    {
+      "source": ".superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task2",
+      "files": 28,
+      "inventory_sha256": "e80fd48d989875a0984e3bbb8e822c862e20b003f3f9c9f61efe6a0a0ba69d50",
+      "mismatches": []
+    }
+  ],
+  "component_diagnostics": {
+    "scope": "Component diagnostics only; not frozen-baseline application comparison or soak",
+    "pid": 309823,
+    "pgid": 309822,
+    "client": "0.26.0",
+    "python": "3.11.16 (main, Sep 24 2026, 17:56:40) [Clang 22.1.3 ]",
+    "gate_roundtrip": {
+      "iterations": 1000,
+      "wall_us": {
+        "p50": 103.2995,
+        "p95": 118.121
+      },
+      "thread_cpu_us": {
+        "p50": 103.8945,
+        "p95": 118.721
+      }
+    },
+    "rows": [
+      {
+        "pois": 0,
+        "prepare_with_admission": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 557.5360000000001,
+            "p95": 581.782
+          },
+          "thread_cpu_us": {
+            "p50": 558.2575,
+            "p95": 582.515
+          }
+        },
+        "validate_publication": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 144.8835,
+            "p95": 152.704
+          },
+          "thread_cpu_us": {
+            "p50": 145.5635,
+            "p95": 153.402
+          }
+        },
+        "publish_complete_frame": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 5.0695,
+            "p95": 5.325
+          },
+          "thread_cpu_us": {
+            "p50": 5.16,
+            "p95": 5.46
+          }
+        },
+        "accepted_update_including_validation": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 736.351,
+            "p95": 773.601
+          },
+          "thread_cpu_us": {
+            "p50": 737.126,
+            "p95": 774.48
+          }
+        },
+        "registry_collection": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 147.2235,
+            "p95": 154.458
+          },
+          "thread_cpu_us": {
+            "p50": 147.614,
+            "p95": 155.029
+          }
+        },
+        "single_update_traced_bytes": {
+          "retained": 13222,
+          "peak": 29589
+        },
+        "retained_of_last_20_frames": 1
+      },
+      {
+        "pois": 100,
+        "prepare_with_admission": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 7477.895,
+            "p95": 7971.289
+          },
+          "thread_cpu_us": {
+            "p50": 7479.469,
+            "p95": 7973.754
+          }
+        },
+        "validate_publication": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 2235.652,
+            "p95": 2542.582
+          },
+          "thread_cpu_us": {
+            "p50": 2236.648,
+            "p95": 2544.962
+          }
+        },
+        "publish_complete_frame": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 21.23,
+            "p95": 34.016
+          },
+          "thread_cpu_us": {
+            "p50": 21.3925,
+            "p95": 34.405
+          }
+        },
+        "accepted_update_including_validation": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 9964.099,
+            "p95": 10690.331
+          },
+          "thread_cpu_us": {
+            "p50": 9965.99,
+            "p95": 10692.943
+          }
+        },
+        "registry_collection": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 248.0755,
+            "p95": 306.548
+          },
+          "thread_cpu_us": {
+            "p50": 248.454,
+            "p95": 306.91
+          }
+        },
+        "single_update_traced_bytes": {
+          "retained": 167670,
+          "peak": 693377
+        },
+        "retained_of_last_20_frames": 1
+      },
+      {
+        "pois": 1100,
+        "prepare_with_admission": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 80783.22649999999,
+            "p95": 109547.968
+          },
+          "thread_cpu_us": {
+            "p50": 80786.37849999999,
+            "p95": 109551.244
+          }
+        },
+        "validate_publication": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 23711.987999999998,
+            "p95": 24553.279
+          },
+          "thread_cpu_us": {
+            "p50": 23715.174,
+            "p95": 24556.621
+          }
+        },
+        "publish_complete_frame": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 190.3055,
+            "p95": 200.436
+          },
+          "thread_cpu_us": {
+            "p50": 190.5335,
+            "p95": 200.935
+          }
+        },
+        "accepted_update_including_validation": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 106210.99100000001,
+            "p95": 128477.688
+          },
+          "thread_cpu_us": {
+            "p50": 106211.7875,
+            "p95": 128474.222
+          }
+        },
+        "registry_collection": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 1425.741,
+            "p95": 1571.793
+          },
+          "thread_cpu_us": {
+            "p50": 1426.895,
+            "p95": 1573.373
+          }
+        },
+        "single_update_traced_bytes": {
+          "retained": 690774,
+          "peak": 6967857
+        },
+        "retained_of_last_20_frames": 1
+      }
+    ],
+    "source_sha256": {
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/.superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task3/source-cost-probe.py": "d9aeb5ecc0d7d9e454a464a3a442051242119ad08efea22fd90fe048a7e7d302",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/backend/starlink-location/app/core/metrics/source_admission.py": "b85e462bb22b996daa2868b055cbd6e1d2e137fdb6a577ae1c8c6986b339b6d2",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/backend/starlink-location/app/core/metrics/metric_updater.py": "e8a20626fbd6a4f837e74870143afa564ee96a37d72c9ee3b268626895f409ee",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/backend/starlink-location/app/core/metrics/frames.py": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368"
+    }
+  },
+  "unchanged": [
+    "29 coupled schemas and position alias",
+    "70-name compatibility shims",
+    "18 independent Gauges, 7 Counters, 4 Histograms constructors",
+    "FrameStore/collector foundation",
+    "read-only exporter and standard serializer",
+    "replay runtime algorithms and checkpoints"
+  ],
+  "remaining_gates": [
+    "Task 4 lifecycle refresh",
+    "Task 5 outer HTTP/health policy",
+    "Task 6 matched original/candidate performance, minimum 60-minute soak, Docker/browser and rollback acceptance",
+    "integrated eight-hour #390 gate"
+  ],
+  "application_speedup_claim": false,
+  "new_dependency_or_deployment_change": false,
+  "frozen_controls": {
+    "original_application": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+    "instrumented_dev": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+    "harness": "13cbf1d54b526307747578ecd4fc691562846834"
+  },
+  "cleanup": {
+    "runtime_evidence": "evidence/task3/cleanup.json at handoff",
+    "temporary_paths": "removed after exact-commit verification",
+    "compose_or_server_started": false
+  }
+}
