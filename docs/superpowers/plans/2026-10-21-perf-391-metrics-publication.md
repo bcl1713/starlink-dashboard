@@ -2,8 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution; use subagent-driven execution only if the user later
-> requests it. Task 4 is authorized after the reviewed Task 3 checkpoint; stop
-> before Task 5.
+> requests it. Task 5 is authorized after the reviewed Task 4 checkpoint; stop
+> before Task 6.
 
 **Goal:** Eliminate scrape-time simulation/ETA/storage work with one bounded,
 consistent snapshot for coupled gauges and unchanged independent instruments.
@@ -23,11 +23,11 @@ the frozen #390 Docker/Playwright harness. No dependency/deployment change.
 and
 [architecture decision and probe](../specs/2026-10-21-perf-391-metrics-publication-decision.md).
 
-**Status:** Design approved at `c7792320`; Tasks 1–3 passed their checkpoint
-reviews. Task 4 lifecycle implementation is at its
-[review checkpoint](../../performance/perf-391-task-4-checkpoint.md), following
-[Task 3 authorization](https://github.com/bcl1713/starlink-dashboard/pull/403#issuecomment-6313005132).
-Tasks 5–6 remain unstarted. Stop for review before Task 5.
+**Status:** Design approved at `c7792320`; Tasks 1–4 passed their checkpoint
+reviews. Task 5 HTTP/health implementation is at its
+[review checkpoint](../../performance/perf-391-task-5-checkpoint.md), following
+[Task 4 authorization](https://github.com/bcl1713/starlink-dashboard/pull/403#issuecomment-6314366138).
+Task 6 remains unstarted. Stop for review before Task 6.
 
 ## Global constraints
 

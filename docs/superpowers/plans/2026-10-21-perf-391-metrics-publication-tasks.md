@@ -195,23 +195,23 @@ and frozen instrumentation. Ignore old manager arguments; remove FastAPI manager
 dependencies. Keep existing encoder, content type, EOF and position response
 schemas; add the specified publication diagnostic to health.
 
-- [ ] Write failing 100-scrape sequential/concurrent tests asserting zero
+- [x] Write failing 100-scrape sequential/concurrent tests asserting zero
       simulator/ETA construction, route/POI access/calculation, storage writes,
       acquisition renewal, smoothing, source/clock advancement and detector
       work.
-- [ ] Replace scrape preparation with standard registry serialization in the
+- [x] Replace scrape preparation with standard registry serialization in the
       threadpool. Normal/fallback paths use the same registered frame collector,
       with no byte cache, epoch validation, retries or raw-live-gauge bypass.
       Read the position table from one captured frame.
-- [ ] Preserve source-unavailable HTTP 200 with honest NaN. Test true
+- [x] Preserve source-unavailable HTTP 200 with honest NaN. Test true
       serializer/ registration failure returning 503 and degraded health despite
       recent attempts. Failed/pending publication must not look fresh; recovery
       needs successful complete publication/exposition, not another request.
-- [ ] Retain preflight assertions under explicit producer/lifecycle fixtures.
+- [x] Retain preflight assertions under explicit producer/lifecycle fixtures.
       Verify all metric schemas, independent client types, alias samples,
       counter/histogram contracts, empty inputs, safe fallback and one EOF. Do
       not drop tests or blanket-relax finite-value checks to hide regressions.
-- [ ] Run focused tests and applicable canonical gates with timeouts, record
+- [x] Run focused tests and applicable canonical gates with timeouts, record
       unchanged failures distinctly, then commit. No whole-suite success claim
       may be based only on this focused selection.
 

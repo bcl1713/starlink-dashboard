@@ -1,0 +1,79 @@
+{
+  "task": 5,
+  "stop_before_task": 6,
+  "source_commit": "69b6c92bd917b469129f44d50897b346417b7d47",
+  "approved_task4_comment": "https://github.com/bcl1713/starlink-dashboard/pull/403#issuecomment-6314366138",
+  "new_task5_cases": 17,
+  "changed_application_files": [
+    "app/api/metrics.py",
+    "app/api/metrics_export.py",
+    "app/api/health.py"
+  ],
+  "full_backend": {
+    "passed": 4477,
+    "skipped": 20,
+    "warnings": 1,
+    "seconds": 595.98,
+    "exit_code": 0,
+    "limit": "20m, kill grace 10s",
+    "log": "full-suite.log",
+    "application_source_matches_final_commit": true,
+    "test_only_strengthening_after_collection": "Counter/Histogram purity now compares every labeled sample; final client and checkpoint matrices validate strengthened assertion."
+  },
+  "compatibility": {
+    "0.19.0": {
+      "passed": 601,
+      "skipped": 18,
+      "seconds": 44.91,
+      "exit_code": 0,
+      "limit": "6m, kill grace 10s",
+      "log": "matrix019-final.log",
+      "final_strengthened_tests": true
+    },
+    "0.26.0": {
+      "passed": 601,
+      "skipped": 18,
+      "seconds": 47.27,
+      "exit_code": 0,
+      "limit": "6m, kill grace 10s",
+      "log": "postcommit.log",
+      "source_commit": "69b6c92bd917b469129f44d50897b346417b7d47",
+      "final_strengthened_tests": true
+    }
+  },
+  "frozen_and_prior_evidence": {
+    "verified_files": 2468,
+    "mismatches": 0,
+    "verification": "baseline-final-verification.json"
+  },
+  "independent_instruments": "Existing schema and client types retained. HTTP owns existing scrape-duration and generation-error instruments; accepted-observation instruments remain unchanged by scrapes.",
+  "http_contracts": {
+    "ready": 200,
+    "pending": 200,
+    "failed_publication": 200,
+    "uninitialized_publication": 200,
+    "ordinary_source_unavailability": 200,
+    "exporter_failure": 503,
+    "coordinator_uninitialized_health": 503,
+    "health_pending_failed_uninitialized_or_exposition_fault": "degraded",
+    "exposition_recovery": "successful complete exposition required"
+  },
+  "deviations": [
+    "Remove legacy direct-registry fallback per latest review; ordinary unavailability uses registered collector NaNs.",
+    "No position-table code change necessary: existing one-head snapshot retained and stress-tested.",
+    "Final purity assertion strengthened after broad test collection; final application bytes match broad run."
+  ],
+  "performance_acceptance": "Not run in Task 5. Frozen comparison methodology and minimum 60-minute Task 6 soak remain required.",
+  "cleanup": {
+    "status": "verified",
+    "owned_processes": 0,
+    "owned_listeners": 0,
+    "owned_containers": 0,
+    "owned_networks": 0,
+    "owned_volumes": 0,
+    "removed_temporary_paths": 38,
+    "remaining_temporary_paths": 0,
+    "actor_docker_configuration_preserved": true,
+    "open_pr_worktree_and_evidence_preserved": true
+  }
+}
