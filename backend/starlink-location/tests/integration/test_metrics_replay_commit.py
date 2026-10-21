@@ -125,3 +125,32 @@ def test_postcommit_metric_failure_keeps_successful_runtime_and_domain_state(
     )
     assert metrics.FRAME_STORE.read().status == "failed"
     assert metrics.FRAME_STORE.read().frame is old.frame
+
+
+@pytest.mark.parametrize("activation", [True, False])
+def test_precommit_replay_failure_preserves_independent_dish_clears(
+    timed_api, monkeypatch, activation
+):
+    client, service, clocks = timed_api
+    if not activation:
+        assert start(client).status_code == 200
+    gauges = [
+        metrics.starlink_dish_uptime_seconds,
+        metrics.starlink_dish_thermal_throttle,
+        metrics.starlink_dish_outage_active,
+    ]
+    for gauge in gauges:
+        gauge.set(7)
+
+    def failed_commit(tick):
+        raise RuntimeError("precommit failure")
+
+    monkeypatch.setattr(service.runtime, "commit_tick", failed_commit)
+    if activation:
+        assert start(client).status_code == 500
+    else:
+        clocks.advance(1)
+        with pytest.raises(RuntimeError):
+            service.collect(service.coordinator, service.publish)
+    for gauge in gauges:
+        assert isnan(next(iter(gauge.collect())).samples[0].value)

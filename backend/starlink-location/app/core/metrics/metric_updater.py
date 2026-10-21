@@ -418,6 +418,11 @@ def clear_telemetry_metrics(
             old.last_observation_publication_time,
         )
     FRAME_STORE.publish(expected, frame)
+    clear_independent_dish_metrics()
+
+
+def clear_independent_dish_metrics() -> None:
+    """Retain the existing disconnect/failure clears for dormant dish gauges."""
     for gauge in (
         starlink_dish_uptime_seconds,
         starlink_dish_thermal_throttle,

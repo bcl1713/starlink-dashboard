@@ -143,6 +143,9 @@ def activate_leg_transaction(
             flight.restore_checkpoint(flight_checkpoint)
             coordinator.restore_telemetry(telemetry_checkpoint)
             FRAME_STORE.fail(expected_metrics, "replay activation failed")
+            from app.core.metrics.metric_updater import clear_independent_dish_metrics
+
+            clear_independent_dish_metrics()
             logger.exception("Paced activation failed and was compensated")
             raise HTTPException(500, "Failed to activate paced mission leg") from exc
         if run_service.wakeup:

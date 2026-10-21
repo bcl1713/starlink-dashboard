@@ -153,6 +153,11 @@ class SimulationRunService:
                 coordinator.restore_telemetry(checkpoint)
                 flight.restore_checkpoint(flight_checkpoint)
                 FRAME_STORE.fail(expected, "replay collection failed")
+                from app.core.metrics.metric_updater import (
+                    clear_independent_dish_metrics,
+                )
+
+                clear_independent_dish_metrics()
                 self.runtime.fail(
                     "collection_error",
                     "Replay collection failed; stop and restart the run",
