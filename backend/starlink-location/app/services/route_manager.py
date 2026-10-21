@@ -234,8 +234,8 @@ class RouteManager(MetricsChangeSource):
         if self._active_route_id == route_id and route_id not in self._routes:
             from app.services.flight_state import get_flight_state_manager
 
-            get_flight_state_manager().clear_route_context(
-                reason="active_route_parse_failed"
+            get_flight_state_manager().update_route_context(
+                None, auto_reset=False, reason="active_route_parse_failed"
             )
 
     @model_input_write
@@ -354,8 +354,10 @@ class RouteManager(MetricsChangeSource):
                     self._routes.pop(route_id, None)
                     self._errors[route_id] = str(exc)
                     if before != self._metrics_key():
-                        get_flight_state_manager().clear_route_context(
-                            reason="active_route_profile_invalid"
+                        get_flight_state_manager().update_route_context(
+                            None,
+                            auto_reset=False,
+                            reason="active_route_profile_invalid",
                         )
                         self._notify_metrics_changed("active route profile invalid")
                 return None

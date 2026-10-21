@@ -36,9 +36,9 @@ def _poi_access(fn):
     @wraps(fn)
     @planning_read_gate
     def coherent(self, *args, **kwargs):
-        if _file_signature(self.pois_file) != getattr(
-            self, "_persisted_signature", None
-        ):
+        if getattr(self, "_load_failed", False) or _file_signature(
+            self.pois_file
+        ) != getattr(self, "_persisted_signature", None):
             self._load_pois()
         return fn(self, *args, **kwargs)
 
@@ -95,9 +95,24 @@ class POIManager(MetricsChangeSource):
             except OSError as e:
                 logger.error(f"Failed to create POI file: {e}")
 
+    def _metrics_load_key(self):
+        return getattr(self, "_load_generation", 0), getattr(
+            self, "_load_failed", False
+        )
+
+    @property
+    def metrics_inputs_available(self):
+        return not getattr(self, "_load_failed", False)
+
     @planning_read_gate
-    @metrics_changed("POIManager:_load_pois")
+    @metrics_changed("POIManager:_load_pois", key="_metrics_load_key")
     def _load_pois(self) -> None:
+        # Uncaught parse/validation errors must invalidate too. Retain the last
+        # accepted file signature so the existing access lifecycle can retry.
+        self._load_failed = True
+        self._read_pois_file()
+
+    def _read_pois_file(self) -> None:
         """Load POIs from JSON file with file locking.
 
         Reads POIs from the pois section of the JSON file and converts
@@ -113,7 +128,7 @@ class POIManager(MetricsChangeSource):
         except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
-            self._persisted_signature = _file_signature(self.pois_file)
+            self._load_failed = True
             return
         except (
             RuntimeError,
@@ -129,7 +144,7 @@ class POIManager(MetricsChangeSource):
         ) as e:
             logger.error(f"Failed to acquire lock for reading POI file: {e}")
             self._pois = {}
-            self._persisted_signature = _file_signature(self.pois_file)
+            self._load_failed = True
             return
 
         # Load POIs from the "pois" section (global POIs)
@@ -177,6 +192,8 @@ class POIManager(MetricsChangeSource):
                 logger.warning(f"Failed to load POI {poi_id}: {e}")
 
         self._persisted_signature = signature
+        self._load_failed = False
+        self._load_generation = getattr(self, "_load_generation", 0) + 1
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
     @planning_read_gate
@@ -318,6 +335,8 @@ class POIManager(MetricsChangeSource):
         The ordinary access gate still detects disk changes. Hash the models on
         every call, including legacy references; this is not a revision cache.
         """
+        if not self.metrics_inputs_available:
+            raise OSError("POI source read failed")
         return hashlib.sha256(
             "".join(poi.model_dump_json() for poi in self._pois.values()).encode()
         ).hexdigest()

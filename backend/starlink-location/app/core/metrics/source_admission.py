@@ -58,6 +58,8 @@ def current_poi_identity(manager):
     from app.services.poi.manager import POIManager
 
     if isinstance(manager, POIManager):
+        if not manager.metrics_inputs_available:
+            raise OSError("POI source read failed")
         return manager.metrics_input_identity()
     return poi_identity(manager.list_pois())
 

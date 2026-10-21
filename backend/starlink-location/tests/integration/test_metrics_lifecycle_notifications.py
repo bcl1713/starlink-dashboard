@@ -48,11 +48,41 @@ async def test_bulk_deletion_notifies_once_without_observations(
     assert metrics.FRAME_STORE.read().input_revision == revision + 1
     await owner.refresh_without_collection()
     assert metrics.FRAME_STORE.read().status == "ready"
+
     family = next(
         f for f in metrics.REGISTRY.collect() if f.name == "starlink_eta_poi_seconds"
     )
     assert not family.samples
     assert metrics.REGISTRY.get_sample_value("simulation_updates_total") == before
+
+
+@pytest.mark.parametrize("background_runtime", ["simulation"], indirect=True)
+@pytest.mark.parametrize("failure", ["parse", "profile"])
+async def test_route_read_failure_preserves_confirmed_flight_phase(
+    background_runtime, failure
+):
+    from app.models.flight_status import FlightPhase
+    from app.services.kml_parser import KMLParseError
+
+    routes = background_runtime.route_manager
+    routes.activate_route("first")
+    flight = background_runtime.flight_state
+    flight.trigger_departure(background_runtime.origin)
+    before = flight.get_status()
+    if failure == "parse":
+        path = routes.routes_dir / "first.kml"
+        path.write_text("broken KML")
+        routes._load_route_file(str(path))
+    else:
+
+        def invalid(_):
+            raise KMLParseError("profile unavailable")
+
+        routes._profile_resolver = invalid
+        assert routes.get_active_route() is None
+    assert flight.get_status().phase == FlightPhase.IN_FLIGHT
+    assert flight.get_status().departure_time == before.departure_time
+    assert flight.get_status().active_route_id is None
 
 
 @pytest.mark.parametrize("background_runtime", ["simulation"], indirect=True)
