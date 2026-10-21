@@ -263,6 +263,15 @@ class SimulationCoordinator:
         self.position_sim.set_progress(progress)
         self.pop_lifecycle_token += 1
 
+    def route_progress_snapshot(self) -> tuple[float, int] | None:
+        """Read the current accepted simulation progress without advancing it."""
+        follower = self.position_sim.route_follower
+        if follower is None:
+            return None
+        count = follower.get_point_count()
+        progress = self.position_sim.progress
+        return progress * 100, min(int(progress * (count - 1)), count - 1)
+
     def get_uptime_seconds(self) -> float:
         """
         Get simulation uptime in seconds.

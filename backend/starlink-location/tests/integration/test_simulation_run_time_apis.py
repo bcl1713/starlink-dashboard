@@ -3,8 +3,8 @@
 from datetime import UTC, datetime
 
 import pytest
-from app.models.poi import POICreate
 
+from app.models.poi import POICreate
 from tests.integration.test_simulation_run_api import api, start
 
 __all__ = ["api"]
@@ -31,9 +31,9 @@ def timed_api(api, monkeypatch):
     def publish(telemetry, tick):
         from app.simulation.run_timing import mission_time_context
 
-        metrics.update_metrics_from_telemetry(
+        return metrics.prepare_metrics_from_telemetry(
             telemetry,
-            active_route=tick.plan.artifacts.route,
+            active_route=tick.plan.artifacts.route.model_copy(deep=True),
             poi_manager=service.poi_manager,
             mission_context=mission_time_context(tick.status),
             simulation_plan=tick.plan,

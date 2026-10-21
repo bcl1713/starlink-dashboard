@@ -4,20 +4,26 @@ import time
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from hashlib import sha256
 from math import isfinite, nan
 
 from app.core import eta_service
 from app.core.metrics import prometheus_metrics as metrics
 from app.core.metrics.frames import FrameIdentity, GaugeFrame, PublicationState
+from app.core.metrics.source_admission import (
+    model_identity,
+    phase_identity,
+    poi_identity,
+)
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
 from app.services.position_freshness import position_observation, speed_is_fresh
 
 
-def _identity(value):
-    if value is None:
-        return None
-    return sha256(value.model_dump_json().encode()).hexdigest()
+def coordinator_identity(coordinator) -> str:
+    """Process-local source lifecycle, including reset without mode replacement."""
+    return (
+        f"{id(coordinator)}:{getattr(coordinator, 'start_time', None)}:"
+        f"{getattr(coordinator, 'pop_lifecycle_token', 0)}"
+    )
 
 
 @dataclass(frozen=True)
@@ -33,6 +39,7 @@ class FrameInputs:
     replay_eta_metrics: dict | None = None
     now: datetime | None = None
     version: str | None = None
+    coordinator_id: str | None = None
 
     def __post_init__(self):
         # No manager reference survives capture. Mutable domain models are detached.
@@ -89,13 +96,12 @@ def prepare_frame(inputs: FrameInputs, admit_observation: bool) -> GaugeFrame:
     mode = _mode(inputs)
     identity = FrameIdentity(
         mode=mode,
+        coordinator_id=inputs.coordinator_id,
         observation_id=telemetry.timestamp.isoformat() if telemetry else None,
         observation_timestamp=telemetry.timestamp.timestamp() if telemetry else None,
-        route_id=_identity(route),
-        poi_id=sha256(
-            "".join(p.model_dump_json() for p in inputs.pois).encode()
-        ).hexdigest(),
-        phase_id=_identity(status),
+        route_id=model_identity(route),
+        poi_id=poi_identity(inputs.pois),
+        phase_id=phase_identity(status),
         input_revision=inputs.expected.input_revision,
         replay_runtime_id=context.runtime_id if context else None,
         replay_run_id=context.run_id if context else None,
@@ -316,7 +322,7 @@ def prepare_frame(inputs: FrameInputs, admit_observation: bool) -> GaugeFrame:
                 flight_phase=phase,
                 pois=inputs.pois,
                 **({"mission_now": clock} if context else {}),
-                **extra
+                **extra,
             )
         else:
             eta_values = {}

@@ -7,13 +7,16 @@
 
 import logging
 import math
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Optional
 
+from app.mission.input_admission import model_input_write
 from app.services.position_freshness import position_observation, speed_is_fresh
 
 if TYPE_CHECKING:
     from app.core.config import ConfigManager
+    from app.core.metrics.frames import GaugeFrame
     from app.models.mission_time import MissionTimeContext
     from app.models.route import ParsedRoute
     from app.models.telemetry import TelemetryData
@@ -210,7 +213,8 @@ def _observe_independent_metrics(telemetry, config, simulation_plan, simulation_
         )
 
 
-def update_metrics_from_telemetry(
+@model_input_write
+def prepare_metrics_from_telemetry(
     telemetry: Optional["TelemetryData"],
     config: Optional["ConfigManager"] = None,
     active_route: Optional["ParsedRoute"] = None,
@@ -221,12 +225,12 @@ def update_metrics_from_telemetry(
     simulation_plan: Optional["PreparedMissionRun"] = None,
     simulation_frame: Optional["ReplayFrame"] = None,
     route_progress: tuple[float, int] | None = None,
-) -> None:
-    """Accepted producer entry point: prepare once, then publish one whole frame.
+    coordinator_id: str | None = None,
+) -> "GaugeFrame | None":
+    """Account for one accepted observation and return a private complete frame.
 
-    Existing replay callback ordering is unchanged here; delaying the commit until
-    replay runtime success is Task 3. Independent observation operations are never
-    rolled back or repeated on CAS loss.
+    The producer owns repository admission and publication. Replay owners defer
+    publication until runtime commit. No retry or derived refresh calls this API.
     """
     from app.core import eta_service
     from app.core.metrics.frame_builder import FrameInputs, prepare_frame
@@ -278,25 +282,80 @@ def update_metrics_from_telemetry(
             progress=route_progress,
             replay_eta_metrics=replay_eta,
             now=datetime.now(UTC),
+            coordinator_id=coordinator_id,
         )
-        frame = prepare_frame(inputs, admit_observation=True)
-        FRAME_STORE.publish(expected, frame)
-        if mission_context is not None:
-            simulation_updates_total.inc()
-    except Exception:
-        FRAME_STORE.fail(expected, "telemetry preparation failed")
-        if mission_context is not None:
-            raise
-        logger.exception("Complete metric frame preparation failed")
-
+        return prepare_frame(inputs, admit_observation=True)
     finally:
-        # Legacy telemetry accounting counted admitted updates even if a later
-        # optional phase/ETA calculation failed; do not make it transactional.
-        if mission_context is None:
-            simulation_updates_total.inc()
+        # Independent accounting belongs to acceptance, even if optional frame
+        # preparation fails or its eventual CAS loses. Never repeat it on retry.
+        simulation_updates_total.inc()
 
 
-def clear_telemetry_metrics() -> None:
+def update_metrics_from_telemetry(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    source_is_current: Callable[[], bool] | None = None,
+) -> None:
+    """Publish one admitted observation; source writers use the same admission.
+
+    Only the FrameStore reference operations take its short pointer mutex.
+    Repository admission serializes accepted calculation with model/source writes;
+    Prometheus readers never enter it. Independent observations are not rolled back.
+    """
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
+    from app.core.metrics.source_admission import frame_inputs_are_current
+    from app.mission.storage import get_active_leg_lock
+
+    with get_active_leg_lock():
+        if source_is_current is not None and not source_is_current():
+            return
+        expected = FRAME_STORE.read()
+        try:
+            frame = prepare_metrics_from_telemetry(
+                telemetry,
+                config,
+                active_route,
+                poi_manager,
+                flight_events_managed=flight_events_managed,
+                mission_context=mission_context,
+                simulation_plan=simulation_plan,
+                simulation_frame=simulation_frame,
+                route_progress=route_progress,
+                coordinator_id=coordinator_id,
+            )
+            if frame is None:
+                return
+            # Recheck immediately before the CAS, under repository admission.
+            if (
+                source_is_current is not None and not source_is_current()
+            ) or not frame_inputs_are_current(frame, active_route, poi_manager):
+                FRAME_STORE.fail(expected, "telemetry source superseded")
+                return
+            FRAME_STORE.publish(expected, frame)
+        except Exception:
+            FRAME_STORE.fail(expected, "telemetry preparation failed")
+            if mission_context is not None:
+                raise
+            logger.exception("Complete metric frame preparation failed")
+
+
+@model_input_write
+def clear_telemetry_metrics(
+    *,
+    config=None,
+    active_route=None,
+    poi_manager=None,
+    coordinator_id=None,
+) -> None:
     """Publish an unavailable observation atomically, retaining service/planned state."""
     from dataclasses import replace
 
@@ -305,7 +364,25 @@ def clear_telemetry_metrics() -> None:
     from app.core.metrics.prometheus_metrics import COUPLED_SCHEMA, FRAME_STORE
 
     expected = FRAME_STORE.read()
-    if expected.frame is None:
+    if config is not None or poi_manager is not None:
+        from app.services.flight_state import get_flight_state_manager
+
+        try:
+            frame = prepare_unavailable_frame(
+                FrameInputs(
+                    expected,
+                    config=config,
+                    active_route=active_route,
+                    pois=poi_manager.list_pois() if poi_manager is not None else (),
+                    flight_status=get_flight_state_manager().get_status(),
+                    coordinator_id=coordinator_id,
+                    now=datetime.now(UTC),
+                )
+            )
+        except Exception:
+            FRAME_STORE.fail(expected, "unavailable frame preparation failed")
+            raise
+    elif expected.frame is None:
         frame = prepare_unavailable_frame(FrameInputs(expected))
     else:
         old = expected.frame

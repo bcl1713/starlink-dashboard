@@ -64,6 +64,15 @@ def activate_leg_transaction(
         flight = get_flight_state_manager()
         flight_checkpoint = flight.checkpoint()
         coordinator = run_service.coordinator
+        from app.core.metrics.prometheus_metrics import FRAME_STORE
+
+        expected_metrics = FRAME_STORE.read()
+        from app.core.metrics.frame_builder import coordinator_identity
+
+        source_config = (
+            coordinator_identity(coordinator),
+            coordinator.get_config().model_dump_json(),
+        )
         telemetry_checkpoint = coordinator.checkpoint_telemetry()
         timeline_path = get_leg_timeline_path(leg_id, mission_id)
         timeline_bytes = timeline_path.read_bytes() if timeline_path.exists() else None
@@ -96,8 +105,21 @@ def activate_leg_transaction(
             )
             telemetry = coordinator.update(replay_frame=tick.frame)
             flight.apply_simulation_frame(tick.plan, tick.frame)
-            run_service.publish(telemetry, tick)
+            from app.core.metrics.source_admission import replay_input_identity
+
+            expected_metrics = FRAME_STORE.read()
+            metric_inputs = replay_input_identity(run_service, tick)
+            metric_frame = run_service.publish(telemetry, tick)
             result = run_service.runtime.commit_tick(tick)
+            run_service.publish_committed_metrics(
+                expected_metrics,
+                metric_frame,
+                tick,
+                coordinator,
+                source_config,
+                telemetry,
+                metric_inputs,
+            )
         except (
             RuntimeError,
             ValueError,
@@ -120,9 +142,7 @@ def activate_leg_transaction(
                 timeline_path.write_bytes(timeline_bytes)
             flight.restore_checkpoint(flight_checkpoint)
             coordinator.restore_telemetry(telemetry_checkpoint)
-            from app.core.metrics import clear_telemetry_metrics
-
-            clear_telemetry_metrics()
+            FRAME_STORE.fail(expected_metrics, "replay activation failed")
             logger.exception("Paced activation failed and was compensated")
             raise HTTPException(500, "Failed to activate paced mission leg") from exc
         if run_service.wakeup:

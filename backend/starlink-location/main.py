@@ -9,6 +9,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -95,12 +102,6 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -908,10 +909,11 @@ def _publish_pop_observation(telemetry, tick=None):
 
 
 def _publish_replay_telemetry(telemetry, tick):
-    from app.core.metrics import update_metrics_from_telemetry
+    from app.core.metrics.frame_builder import coordinator_identity
+    from app.core.metrics.metric_updater import prepare_metrics_from_telemetry
     from app.simulation.run_timing import mission_time_context
 
-    update_metrics_from_telemetry(
+    frame = prepare_metrics_from_telemetry(
         telemetry,
         _current_runtime_config(),
         tick.plan.artifacts.route.model_copy(deep=True),
@@ -919,13 +921,77 @@ def _publish_replay_telemetry(telemetry, tick):
         mission_context=mission_time_context(tick.status),
         simulation_plan=tick.plan,
         simulation_frame=tick.frame,
+        coordinator_id=coordinator_identity(_coordinator),
     )
     _publish_pop_observation(telemetry, tick)
+    return frame
 
 
 def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
     """One complete ordered telemetry/metric update, owned by the async loop."""
-    current_config = _current_runtime_config()
+    # Capture the producer binding before collection, including replacements
+    # that happen while live transport is blocked outside repository admission.
+    from app.core.metrics.frame_builder import coordinator_identity
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
+    from app.mission.storage import get_active_leg_lock
+
+    with get_active_leg_lock():
+        source_expected = FRAME_STORE.read()
+        coordinator = _coordinator
+        source_lifecycle = coordinator_identity(coordinator)
+        current_config = _current_runtime_config()
+        source_config = (
+            current_config.model_dump_json()
+            if isinstance(current_config, SimulationConfig)
+            else None
+        )
+        source_service = getattr(app.state, "simulation_run_service", None)
+        source_status = source_service.status() if source_service is not None else None
+        source_revision = (
+            (
+                getattr(source_status, "runtime_id", None),
+                getattr(source_status, "revision", None),
+            )
+            if source_status
+            else None
+        )
+
+    source_mission = None
+
+    def source_is_current():
+        from app.core.metrics.source_admission import model_identity
+
+        current_service = getattr(app.state, "simulation_run_service", None)
+        status = current_service.status() if current_service is not None else None
+        revision = (
+            (getattr(status, "runtime_id", None), getattr(status, "revision", None))
+            if status
+            else None
+        )
+        return (
+            _coordinator is coordinator
+            and coordinator_identity(coordinator) == source_lifecycle
+            and _current_runtime_config() is current_config
+            and (
+                source_config is None
+                or current_config.model_dump_json() == source_config
+            )
+            and current_service is source_service
+            and revision == source_revision
+            and (
+                source_mission is None
+                or model_identity(mission_storage.load_mission_v2(source_mission[0]))
+                == source_mission[1]
+            )
+            and (
+                coordinator.get_current_telemetry() is telemetry
+                if telemetry is not None
+                else not getattr(coordinator, "is_connected", lambda: False)()
+            )
+            and (_route_manager.get_active_route() if _route_manager else None)
+            is active_route
+        )
+
     if should_automatically_refresh_ground_entry_point(current_config):
         publish_ground_entry_point_metrics(
             maybe_refresh_ground_entry_point_metrics(
@@ -947,19 +1013,25 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
         paced = (
             run_service is not None and run_service.runtime.selected_plan() is not None
         )
+        try:
+            previous_telemetry = getattr(
+                coordinator, "get_current_telemetry", lambda: None
+            )()
+        except RuntimeError:
+            previous_telemetry = None
         telemetry = (
             run_service.collect(_coordinator, _publish_replay_telemetry)
             if paced
-            else _coordinator.update()
+            else coordinator.update()
         )
         if not paced:
             _publish_pop_observation(telemetry)
         update_count += 1
 
-        if telemetry is None:
-            from app.core.metrics import update_metrics_from_telemetry
-
-            update_metrics_from_telemetry(None)
+        # A graceful-degradation fallback is the same acquisition, not another
+        # accepted observation. Lifecycle-only refresh belongs to Task 4.
+        if telemetry is not None and telemetry is previous_telemetry and not paced:
+            return update_count
 
         # Only update metrics if telemetry is available
         # In live mode, telemetry will be None when disconnected
@@ -973,58 +1045,69 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
 
             scrape_start = time.time()
             try:
-                # Both live and simulation metrics use the application's
-                # current route, independent of coordinator capabilities.
-                active_route = None
-                if _route_manager is not None:
-                    active_route = _route_manager.get_active_route()
+                with get_active_leg_lock():
+                    # Both live and simulation metrics use the application's
+                    # current route, independent of coordinator capabilities.
+                    active_route = None
+                    if _route_manager is not None:
+                        active_route = _route_manager.get_active_route()
 
-                flight_events_managed = False
-                runtime = getattr(app.state, "flight_event_runtime", None)
-                if runtime is not None and current_config.mode == "live":
-                    from app.mission.active_context import (
-                        resolve_active_mission_leg_context,
-                    )
-                    from app.services.flight_state import get_flight_state_manager
-
-                    resolution = resolve_active_mission_leg_context(_route_manager)
-                    flight_events_managed = True
-                    try:
-                        runtime.record_live(telemetry)
-                        if resolution.context is not None:
-                            runtime.observe_live(telemetry, resolution.context)
-                            runtime.sync_legacy_phase(
-                                get_flight_state_manager(),
-                                resolution.context.parent_mission_id,
-                                resolution.context.leg.id,
-                            )
-                    except (OSError, sqlite3.Error, ValueError) as archive_error:
-                        logger.warning_json(
-                            "Live recording pending recovery",
-                            extra_fields={"error": type(archive_error).__name__},
+                    if not source_is_current():
+                        FRAME_STORE.fail(
+                            source_expected, "source changed during collection"
                         )
-                # Carry producer-owned progress with this observation, never
-                # through standalone coupled Gauge writes in the coordinator.
-                route_progress = None
-                position_sim = getattr(_coordinator, "position_sim", None)
-                follower = getattr(position_sim, "route_follower", None)
-                if current_config.mode == "simulation" and follower is not None:
-                    progress = position_sim.progress
-                    count = follower.get_point_count()
+                        return update_count
+
+                    flight_events_managed = False
+                    runtime = getattr(app.state, "flight_event_runtime", None)
+                    if runtime is not None and current_config.mode == "live":
+                        from app.mission.active_context import (
+                            resolve_active_mission_leg_context,
+                        )
+                        from app.services.flight_state import get_flight_state_manager
+
+                        resolution = resolve_active_mission_leg_context(_route_manager)
+                        if resolution.context is not None:
+                            from app.core.metrics.source_admission import model_identity
+
+                            source_mission = (
+                                resolution.context.parent_mission_id,
+                                model_identity(resolution.context.parent_mission),
+                            )
+                        flight_events_managed = True
+                        try:
+                            runtime.record_live(telemetry)
+                            if resolution.context is not None:
+                                runtime.observe_live(telemetry, resolution.context)
+                                runtime.sync_legacy_phase(
+                                    get_flight_state_manager(),
+                                    resolution.context.parent_mission_id,
+                                    resolution.context.leg.id,
+                                )
+                        except (OSError, sqlite3.Error, ValueError) as archive_error:
+                            logger.warning_json(
+                                "Live recording pending recovery",
+                                extra_fields={"error": type(archive_error).__name__},
+                            )
+                    # Carry producer-owned progress with this observation, never
+                    # through standalone coupled Gauge writes in the coordinator.
                     route_progress = (
-                        progress * 100,
-                        min(int(progress * (count - 1)), count - 1),
+                        getattr(coordinator, "route_progress_snapshot", lambda: None)()
+                        if current_config.mode == "simulation"
+                        else None
                     )
-                update_metrics_from_telemetry(
-                    telemetry,
-                    current_config,
-                    active_route,
-                    poi_manager,
-                    flight_events_managed=flight_events_managed,
-                    route_progress=route_progress,
-                )
-                scrape_duration = time.time() - scrape_start
-                starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
+                    update_metrics_from_telemetry(
+                        telemetry,
+                        current_config,
+                        active_route,
+                        poi_manager,
+                        flight_events_managed=flight_events_managed,
+                        route_progress=route_progress,
+                        coordinator_id=source_lifecycle,
+                        source_is_current=source_is_current,
+                    )
+                    scrape_duration = time.time() - scrape_start
+                    starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
             except Exception as metric_error:  # noqa: BLE001
                 starlink_metrics_generation_errors_total.inc()
                 logger.warning_json(
@@ -1052,7 +1135,24 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             # This sets all telemetry metrics to NaN, which Prometheus won't store
             from app.core.metrics import clear_telemetry_metrics
 
-            clear_telemetry_metrics()
+            with get_active_leg_lock():
+                active_route = (
+                    _route_manager.get_active_route() if _route_manager else None
+                )
+                if source_is_current():
+                    from app.core.metrics import update_metrics_from_telemetry
+
+                    update_metrics_from_telemetry(None)
+                    clear_telemetry_metrics(
+                        config=current_config,
+                        active_route=active_route,
+                        poi_manager=poi_manager,
+                        coordinator_id=source_lifecycle,
+                    )
+                else:
+                    FRAME_STORE.fail(
+                        source_expected, "source changed during disconnect"
+                    )
 
             # Log when disconnected (less frequently to avoid spam)
             if update_count % 600 == 0:

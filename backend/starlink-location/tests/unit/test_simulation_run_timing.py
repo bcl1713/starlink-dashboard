@@ -3,6 +3,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
 from app.models.flight_status import FlightPhase
 from app.models.poi import POICreate
 from app.services.flight_state import get_flight_state_manager
@@ -10,7 +11,6 @@ from app.services.position_freshness import position_observation
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_timing import mission_time_context, planned_poi_eta
-
 from tests.unit.simulation_run_fixtures import Clocks, timed_plan_sources
 from tests.unit.test_simulation_run_plan import multiplier_input
 
@@ -40,9 +40,9 @@ def timing(tmp_path, coordinator, monkeypatch):
     old = flight.checkpoint()
 
     def publish(telemetry, tick):
-        metrics.update_metrics_from_telemetry(
+        return metrics.prepare_metrics_from_telemetry(
             telemetry,
-            active_route=tick.plan.artifacts.route,
+            active_route=tick.plan.artifacts.route.model_copy(deep=True),
             poi_manager=pois,
             mission_context=mission_time_context(tick.status),
             simulation_plan=tick.plan,
