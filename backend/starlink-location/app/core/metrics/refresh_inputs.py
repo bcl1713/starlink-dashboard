@@ -47,12 +47,12 @@ def refresh_current_metrics(sources, *, initial=False, now=None):
             expected = FRAME_STORE.read()
             previous = expected.frame
             telemetry = getattr(coordinator, "_last_valid_telemetry", None)
+            observation_key = frame_builder.model_identity(telemetry)
             if not initial and not (
                 previous is not None
                 and previous.identity.coordinator_id == identity
                 and telemetry is not None
-                and previous.identity.observation_id
-                == frame_builder.model_identity(telemetry)
+                and previous.identity.observation_id == observation_key
                 and bool(previous.identity.replay_runtime_id) == bool(context)
                 and (
                     context is None
@@ -132,6 +132,10 @@ def refresh_current_metrics(sources, *, initial=False, now=None):
                 or current[4] is not service
                 or frame_builder.coordinator_identity(coordinator) != identity
                 or config.model_dump_json() != config_key
+                or frame_builder.model_identity(
+                    getattr(coordinator, "_last_valid_telemetry", None)
+                )
+                != observation_key
                 or route_source_identity(routes.get_active_route() if routes else None)
                 != route_key
                 or not frame_inputs_are_current(frame, route, manager)

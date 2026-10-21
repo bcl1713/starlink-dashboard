@@ -106,7 +106,9 @@ async def test_nested_rollback_never_publishes_intermediate_state(background_run
 
 
 @pytest.mark.parametrize("background_runtime", ["simulation"], indirect=True)
-@pytest.mark.parametrize("change", ["config", "route", "mission", "poi", "phase"])
+@pytest.mark.parametrize(
+    "change", ["config", "route", "mission", "poi", "phase", "source"]
+)
 @pytest.mark.parametrize("newer", [False, True])
 async def test_refresh_rejects_superseded_inputs_and_preserves_newer_head(
     background_runtime, monkeypatch, change, newer
@@ -124,7 +126,9 @@ async def test_refresh_rejects_superseded_inputs_and_preserves_newer_head(
         frame = prepare(*args, **kwargs)
         if not changed:
             changed = True
-            if change == "config":
+            if change == "source":
+                main._coordinator.update()
+            elif change == "config":
                 main._coordinator.update_config(
                     main._coordinator.get_config().model_copy()
                 )
@@ -150,7 +154,11 @@ async def test_refresh_rejects_superseded_inputs_and_preserves_newer_head(
         assert newer_head.status == "ready"
         assert metrics.FRAME_STORE.read() is newer_head
     else:
-        assert metrics.FRAME_STORE.read().status == "pending"
+        if change == "source":
+            assert metrics.FRAME_STORE.read().status == "failed"
+            owner.mark_dirty("next source lifecycle")
+        else:
+            assert metrics.FRAME_STORE.read().status == "pending"
         await owner.refresh_without_collection()
         assert metrics.FRAME_STORE.read().status == "ready"
 
