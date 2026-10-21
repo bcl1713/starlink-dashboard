@@ -1,0 +1,979 @@
+{
+  "scope": "Task 1 foundation only; not frozen-app comparison or 60-minute acceptance",
+  "focused_tests": {
+    "0.19.0": 72,
+    "0.26.0": 72
+  },
+  "baseline_verification": [
+    {
+      "source": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence",
+      "files": 2072,
+      "mismatches": [],
+      "inventory_sha256": "0764879764432196349b6f03fcdbbce0b3d38f12f283518aeaf46f4d943cd577"
+    },
+    {
+      "source": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf391/evidence",
+      "files": 128,
+      "mismatches": [],
+      "inventory_sha256": "99a833a16df7394bcfd23bff89b8920f79369bed7146ab0ed1b7f49aac1e1198"
+    }
+  ],
+  "runs": [
+    {
+      "client": "0.19.0",
+      "python": "3.11.16 (main, Sep 24 2026, 17:56:40) [Clang 22.1.3 ]",
+      "pid": 4041549,
+      "pgid": 4041548,
+      "script_sha256": "5721b6d456efd99676624a8d224ba91f013001c12690831db2dad0980509389b",
+      "frame_module_sha256": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368",
+      "schema_fixture_sha256": "ed5667e4d4f3c8d09761911496f1632890a2287709a49149934f073538cf7c31",
+      "iterations": 200,
+      "rows": [
+        {
+          "pois": 0,
+          "samples": 30,
+          "frame_reachable_bytes": 5192,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 13068.5,
+                "p95": 14511,
+                "p99": 17773
+              },
+              "wall_ns": {
+                "p50": 13408.0,
+                "p95": 14978,
+                "p99": 18146
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 61522.0,
+                "p95": 64182,
+                "p99": 65464
+              },
+              "wall_ns": {
+                "p50": 61991.0,
+                "p95": 64717,
+                "p99": 65925
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 5449.5,
+                "p95": 5584,
+                "p99": 5831
+              },
+              "wall_ns": {
+                "p50": 5754.0,
+                "p95": 5943,
+                "p99": 6460
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 369.5,
+                "p95": 419,
+                "p99": 493
+              },
+              "wall_ns": {
+                "p50": 643.0,
+                "p95": 731,
+                "p99": 831
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 32303.5,
+                "p95": 34015,
+                "p99": 40124
+              },
+              "wall_ns": {
+                "p50": 32671.5,
+                "p95": 34376,
+                "p99": 40511
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 94511.5,
+                "p95": 101069,
+                "p99": 117751
+              },
+              "wall_ns": {
+                "p50": 94968.0,
+                "p95": 101693,
+                "p99": 118533
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 3912,
+              "peak_bytes": 5232,
+              "retained_result_blocks": 74
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 9482,
+              "peak_bytes": 16962,
+              "retained_result_blocks": 172
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 824,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 13384,
+              "peak_bytes": 14086,
+              "retained_result_blocks": 206
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 8795,
+              "peak_bytes": 25626,
+              "retained_result_blocks": 53
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        },
+        {
+          "pois": 10,
+          "samples": 50,
+          "frame_reachable_bytes": 11892,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 19618.5,
+                "p95": 21616,
+                "p99": 24166
+              },
+              "wall_ns": {
+                "p50": 19955.5,
+                "p95": 22320,
+                "p99": 24517
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 92178.0,
+                "p95": 95263,
+                "p99": 98027
+              },
+              "wall_ns": {
+                "p50": 92630.5,
+                "p95": 95727,
+                "p99": 98591
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 11428.5,
+                "p95": 13919,
+                "p99": 16049
+              },
+              "wall_ns": {
+                "p50": 11963.5,
+                "p95": 14491,
+                "p99": 16551
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 389.0,
+                "p95": 430,
+                "p99": 475
+              },
+              "wall_ns": {
+                "p50": 676.0,
+                "p95": 777,
+                "p99": 964
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 43282.0,
+                "p95": 43991,
+                "p99": 46714
+              },
+              "wall_ns": {
+                "p50": 43643.0,
+                "p95": 44406,
+                "p99": 47093
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 144343.5,
+                "p95": 265253,
+                "p99": 270661
+              },
+              "wall_ns": {
+                "p50": 144920.5,
+                "p95": 266536,
+                "p99": 271736
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 6552,
+              "peak_bytes": 7872,
+              "retained_result_blocks": 116
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 14762,
+              "peak_bytes": 22818,
+              "retained_result_blocks": 256
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 1336,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 19080,
+              "peak_bytes": 19782,
+              "retained_result_blocks": 268
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 14121,
+              "peak_bytes": 36120,
+              "retained_result_blocks": 91
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        },
+        {
+          "pois": 100,
+          "samples": 230,
+          "frame_reachable_bytes": 72012,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 73462.5,
+                "p95": 89272,
+                "p99": 122808
+              },
+              "wall_ns": {
+                "p50": 73848.0,
+                "p95": 89883,
+                "p99": 123748
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 352413.0,
+                "p95": 405231,
+                "p99": 653030
+              },
+              "wall_ns": {
+                "p50": 353062.0,
+                "p95": 406023,
+                "p99": 654009
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 22614.0,
+                "p95": 22972,
+                "p99": 25261
+              },
+              "wall_ns": {
+                "p50": 22940.5,
+                "p95": 23447,
+                "p99": 25590
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 378.0,
+                "p95": 422,
+                "p99": 455
+              },
+              "wall_ns": {
+                "p50": 643.0,
+                "p95": 718,
+                "p99": 870
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 128031.0,
+                "p95": 131222,
+                "p99": 133415
+              },
+              "wall_ns": {
+                "p50": 128449.0,
+                "p95": 131597,
+                "p99": 133884
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 575602.0,
+                "p95": 604060,
+                "p99": 696912
+              },
+              "wall_ns": {
+                "p50": 576141.5,
+                "p95": 604933,
+                "p99": 697399
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 29592,
+              "peak_bytes": 30912,
+              "retained_result_blocks": 476
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 59162,
+              "peak_bytes": 84962,
+              "retained_result_blocks": 974
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 10896,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 69512,
+              "peak_bytes": 70214,
+              "retained_result_blocks": 808
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 41139,
+              "peak_bytes": 109834,
+              "retained_result_blocks": 178
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        },
+        {
+          "pois": 1100,
+          "samples": 2230,
+          "frame_reachable_bytes": 746612,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 859565.0,
+                "p95": 963930,
+                "p99": 6541693
+              },
+              "wall_ns": {
+                "p50": 860035.5,
+                "p95": 964788,
+                "p99": 6542546
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 3507045.5,
+                "p95": 3964813,
+                "p99": 9029448
+              },
+              "wall_ns": {
+                "p50": 3507755.0,
+                "p95": 3965822,
+                "p99": 9031423
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 184697.0,
+                "p95": 188883,
+                "p99": 290209
+              },
+              "wall_ns": {
+                "p50": 185127.0,
+                "p95": 189333,
+                "p99": 290602
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 387.0,
+                "p95": 428,
+                "p99": 525
+              },
+              "wall_ns": {
+                "p50": 678.0,
+                "p95": 790,
+                "p99": 870
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 1158341.0,
+                "p95": 1704528,
+                "p99": 7997318
+              },
+              "wall_ns": {
+                "p50": 1158987.5,
+                "p95": 1706373,
+                "p99": 7998459
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 5428225.5,
+                "p95": 7762211,
+                "p99": 12135967
+              },
+              "wall_ns": {
+                "p50": 5430905.0,
+                "p95": 7764643,
+                "p99": 12137481
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 285592,
+              "peak_bytes": 286912,
+              "retained_result_blocks": 4476
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 529354,
+              "peak_bytes": 663442,
+              "retained_result_blocks": 8542
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 41616,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 629384,
+              "peak_bytes": 630086,
+              "retained_result_blocks": 6808
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 248739,
+              "peak_bytes": 848650,
+              "retained_result_blocks": 178
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        }
+      ],
+      "contention": {
+        "seconds": 30,
+        "writer_and_reader_operations": [30, 30, 30, 30],
+        "mixed_frames": 0,
+        "wall_ns": {
+          "publish": {
+            "p50": 211067.5,
+            "p95": 229566,
+            "p99": 1102531
+          },
+          "capture_head": {
+            "p50": 2422.5,
+            "p95": 5389,
+            "p99": 10496
+          }
+        },
+        "remaining_owned_threads": 0
+      }
+    },
+    {
+      "client": "0.26.0",
+      "python": "3.11.16 (main, Sep 24 2026, 17:56:40) [Clang 22.1.3 ]",
+      "pid": 4037368,
+      "pgid": 4037367,
+      "script_sha256": "5721b6d456efd99676624a8d224ba91f013001c12690831db2dad0980509389b",
+      "frame_module_sha256": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368",
+      "schema_fixture_sha256": "ed5667e4d4f3c8d09761911496f1632890a2287709a49149934f073538cf7c31",
+      "iterations": 200,
+      "rows": [
+        {
+          "pois": 0,
+          "samples": 30,
+          "frame_reachable_bytes": 5192,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 12618.5,
+                "p95": 14056,
+                "p99": 16216
+              },
+              "wall_ns": {
+                "p50": 12922.5,
+                "p95": 14365,
+                "p99": 16638
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 59928.5,
+                "p95": 71001,
+                "p99": 104274
+              },
+              "wall_ns": {
+                "p50": 60374.0,
+                "p95": 71694,
+                "p99": 105375
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 5393.5,
+                "p95": 5532,
+                "p99": 5864
+              },
+              "wall_ns": {
+                "p50": 5698.0,
+                "p95": 6017,
+                "p99": 6541
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 379.5,
+                "p95": 431,
+                "p99": 479
+              },
+              "wall_ns": {
+                "p50": 652.0,
+                "p95": 721,
+                "p99": 823
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 29929.0,
+                "p95": 30582,
+                "p99": 32644
+              },
+              "wall_ns": {
+                "p50": 30284.5,
+                "p95": 31038,
+                "p99": 33046
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 200808.5,
+                "p95": 285091,
+                "p99": 288484
+              },
+              "wall_ns": {
+                "p50": 202077.0,
+                "p95": 286142,
+                "p99": 289780
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 3912,
+              "peak_bytes": 5232,
+              "retained_result_blocks": 74
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 9482,
+              "peak_bytes": 16962,
+              "retained_result_blocks": 172
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 824,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 13632,
+              "peak_bytes": 14024,
+              "retained_result_blocks": 206
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 8851,
+              "peak_bytes": 25746,
+              "retained_result_blocks": 54
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        },
+        {
+          "pois": 10,
+          "samples": 50,
+          "frame_reachable_bytes": 11892,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 18504.0,
+                "p95": 20252,
+                "p99": 22621
+              },
+              "wall_ns": {
+                "p50": 18827.0,
+                "p95": 20602,
+                "p99": 22986
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 90148.0,
+                "p95": 96730,
+                "p99": 137381
+              },
+              "wall_ns": {
+                "p50": 90588.5,
+                "p95": 97204,
+                "p99": 138128
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 7114.0,
+                "p95": 7259,
+                "p99": 7407
+              },
+              "wall_ns": {
+                "p50": 7425.0,
+                "p95": 7654,
+                "p99": 8019
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 386.0,
+                "p95": 437,
+                "p99": 493
+              },
+              "wall_ns": {
+                "p50": 652.0,
+                "p95": 748,
+                "p99": 855
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 39903.0,
+                "p95": 42357,
+                "p99": 44174
+              },
+              "wall_ns": {
+                "p50": 40268.0,
+                "p95": 42715,
+                "p99": 44952
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 213901.0,
+                "p95": 239031,
+                "p99": 391812
+              },
+              "wall_ns": {
+                "p50": 214418.0,
+                "p95": 241422,
+                "p99": 392704
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 6552,
+              "peak_bytes": 7872,
+              "retained_result_blocks": 116
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 14762,
+              "peak_bytes": 22818,
+              "retained_result_blocks": 256
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 1336,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 19488,
+              "peak_bytes": 19880,
+              "retained_result_blocks": 268
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 14177,
+              "peak_bytes": 36240,
+              "retained_result_blocks": 92
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        },
+        {
+          "pois": 100,
+          "samples": 230,
+          "frame_reachable_bytes": 72012,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 73019.0,
+                "p95": 75835,
+                "p99": 90061
+              },
+              "wall_ns": {
+                "p50": 73384.0,
+                "p95": 76416,
+                "p99": 90626
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 350361.0,
+                "p95": 362105,
+                "p99": 385759
+              },
+              "wall_ns": {
+                "p50": 350892.5,
+                "p95": 362592,
+                "p99": 386657
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 22839.5,
+                "p95": 23357,
+                "p99": 25090
+              },
+              "wall_ns": {
+                "p50": 23201.5,
+                "p95": 23735,
+                "p99": 25446
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 392.0,
+                "p95": 439,
+                "p99": 507
+              },
+              "wall_ns": {
+                "p50": 668.0,
+                "p95": 750,
+                "p99": 860
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 128495.0,
+                "p95": 134920,
+                "p99": 139864
+              },
+              "wall_ns": {
+                "p50": 128889.0,
+                "p95": 135312,
+                "p99": 140436
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 951592.5,
+                "p95": 986567,
+                "p99": 1424040
+              },
+              "wall_ns": {
+                "p50": 952221.0,
+                "p95": 996876,
+                "p99": 1425015
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 29592,
+              "peak_bytes": 30912,
+              "retained_result_blocks": 476
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 59162,
+              "peak_bytes": 84962,
+              "retained_result_blocks": 974
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 10896,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 71360,
+              "peak_bytes": 71752,
+              "retained_result_blocks": 808
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 41195,
+              "peak_bytes": 109954,
+              "retained_result_blocks": 179
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        },
+        {
+          "pois": 1100,
+          "samples": 2230,
+          "frame_reachable_bytes": 746612,
+          "timings": {
+            "freeze_detached_samples": {
+              "thread_cpu_ns": {
+                "p50": 828040.0,
+                "p95": 894936,
+                "p99": 7141876
+              },
+              "wall_ns": {
+                "p50": 828760.5,
+                "p95": 895398,
+                "p99": 7142810
+              }
+            },
+            "stage_and_seal": {
+              "thread_cpu_ns": {
+                "p50": 3540976.0,
+                "p95": 3966319,
+                "p99": 10137075
+              },
+              "wall_ns": {
+                "p50": 3542406.5,
+                "p95": 3968030,
+                "p99": 10138662
+              }
+            },
+            "validated_publish": {
+              "thread_cpu_ns": {
+                "p50": 184617.5,
+                "p95": 193558,
+                "p99": 233759
+              },
+              "wall_ns": {
+                "p50": 185089.5,
+                "p95": 195020,
+                "p99": 234467
+              }
+            },
+            "capture_head": {
+              "thread_cpu_ns": {
+                "p50": 391.5,
+                "p95": 446,
+                "p99": 550
+              },
+              "wall_ns": {
+                "p50": 676.0,
+                "p95": 792,
+                "p99": 1044
+              }
+            },
+            "collect": {
+              "thread_cpu_ns": {
+                "p50": 1198334.5,
+                "p95": 1515695,
+                "p99": 9130894
+              },
+              "wall_ns": {
+                "p50": 1198861.5,
+                "p95": 1517040,
+                "p99": 9132854
+              }
+            },
+            "serialize_registry": {
+              "thread_cpu_ns": {
+                "p50": 9478647.5,
+                "p95": 11022146,
+                "p99": 17119492
+              },
+              "wall_ns": {
+                "p50": 9479817.0,
+                "p95": 11023616,
+                "p99": 17135363
+              }
+            }
+          },
+          "allocation": {
+            "freeze_detached_samples": {
+              "retained_result_bytes": 285592,
+              "peak_bytes": 286912,
+              "retained_result_blocks": 4476
+            },
+            "stage_and_seal": {
+              "retained_result_bytes": 529354,
+              "peak_bytes": 663442,
+              "retained_result_blocks": 8542
+            },
+            "validated_publish": {
+              "retained_result_bytes": 528,
+              "peak_bytes": 41616,
+              "retained_result_blocks": 12
+            },
+            "capture_head": {
+              "retained_result_bytes": 64,
+              "peak_bytes": 144,
+              "retained_result_blocks": 4
+            },
+            "collect": {
+              "retained_result_bytes": 647232,
+              "peak_bytes": 647624,
+              "retained_result_blocks": 6808
+            },
+            "serialize_registry": {
+              "retained_result_bytes": 248795,
+              "peak_bytes": 848770,
+              "retained_result_blocks": 179
+            }
+          },
+          "live_frames_after_100_replacements": 1
+        }
+      ],
+      "contention": {
+        "seconds": 30,
+        "writer_and_reader_operations": [30, 30, 30, 30],
+        "mixed_frames": 0,
+        "wall_ns": {
+          "publish": {
+            "p50": 210303.5,
+            "p95": 226922,
+            "p99": 238108
+          },
+          "capture_head": {
+            "p50": 2395.5,
+            "p95": 4722,
+            "p99": 7042
+          }
+        },
+        "remaining_owned_threads": 0
+      }
+    }
+  ]
+}

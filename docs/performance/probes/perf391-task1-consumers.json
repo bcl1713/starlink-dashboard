@@ -1,0 +1,3046 @@
+{
+  "base": "c7792320",
+  "method": "Existing c7792320 consumer audit: AST family/import aliases plus rg/manual inspection, including dynamic ETA/distance lookup. New Task 1 test references excluded. Includes all existing static references and generic fixture/private accesses.",
+  "families": {
+    "starlink_dish_latitude_degrees": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 79,
+          "source": "starlink_dish_latitude_degrees = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 126,
+          "source": "starlink_dish_latitude_degrees.set(telemetry.position.latitude)",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 545,
+          "source": "starlink_dish_latitude_degrees.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 29,
+          "source": "ExportMetric(\"starlink_dish_latitude_degrees\", \"latitude\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 120,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 126,
+          "source": "starlink_dish_latitude_degrees.set(telemetry.position.latitude)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 545,
+          "source": "starlink_dish_latitude_degrees.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 79,
+          "source": "starlink_dish_latitude_degrees = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 80,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 106,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 95,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 16,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 11,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 56,
+          "source": "assert \"starlink_dish_latitude_degrees\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_overview_history_api.py",
+          "line": 31,
+          "source": "\"starlink_dish_latitude_degrees\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_overview_history_api.py",
+          "line": 59,
+          "source": "\"starlink_dish_latitude_degrees\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_simulation_e2e.py",
+          "line": 75,
+          "source": "assert \"starlink_dish_latitude_degrees\" in metrics_text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_csv_export.py",
+          "line": 68,
+          "source": "if metric == \"starlink_dish_latitude_degrees\":"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 33,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 86,
+          "source": "assert gauges[\"starlink_dish_latitude_degrees\"] == telemetry.position.latitude"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 217,
+          "source": "assert \"starlink_dish_latitude_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 236,
+          "source": "assert \"starlink_dish_latitude_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 281,
+          "source": "assert \"starlink_dish_latitude_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 245,
+          "source": ")[\"starlink_dish_latitude_degrees\"]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 56,
+          "source": "\"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 184,
+          "source": "\"starlink_dish_latitude_degrees\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 197,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", [[1782000000, \"10\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 198,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", [[1782000000, \"41.2566\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 228,
+          "source": "\"starlink_dish_latitude_degrees\": [[1782000000.0, 41.2566]],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 280,
+          "source": "\"starlink_dish_latitude_degrees\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 409,
+          "source": "assert bundle[\"series\"][\"starlink_dish_latitude_degrees\"] == [[1781999998.0, 41.0]]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 616,
+          "source": "\"starlink_dish_latitude_degrees\": [[1782000000.0, 41.2566]],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 730,
+          "source": "\"starlink_dish_latitude_degrees\": [[1782000000.0, 41.2566]],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 560,
+          "source": "\"starlink_dish_latitude_degrees\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 697,
+          "source": "assert bundle[\"series\"][\"starlink_dish_latitude_degrees\"][0] == ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 222,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", [[1782000000, \"nan\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 223,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", [[1782000000, \"41.2566\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 224,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", [[1781998199, \"10\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 242,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", values),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 164,
+          "source": "\"__name__\": \"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 260,
+          "source": "\"__name__\": \"starlink_dish_latitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 385,
+          "source": "raw_entry(\"starlink_dish_latitude_degrees\", [[1781999998, \"41\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 594,
+          "source": "\"starlink_dish_latitude_degrees\", [[1782000000, \"41.2566\"]]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 712,
+          "source": "\"starlink_dish_latitude_degrees\", [[1782000000, \"41.2566\"]]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 533,
+          "source": "\"__name__\": \"starlink_dish_latitude_degrees\","
+        }
+      ]
+    },
+    "starlink_dish_longitude_degrees": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 85,
+          "source": "starlink_dish_longitude_degrees = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 127,
+          "source": "starlink_dish_longitude_degrees.set(telemetry.position.longitude)",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 546,
+          "source": "starlink_dish_longitude_degrees.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 30,
+          "source": "ExportMetric(\"starlink_dish_longitude_degrees\", \"longitude\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 121,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 127,
+          "source": "starlink_dish_longitude_degrees.set(telemetry.position.longitude)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 546,
+          "source": "starlink_dish_longitude_degrees.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 85,
+          "source": "starlink_dish_longitude_degrees = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 86,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 107,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 100,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 17,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 12,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 57,
+          "source": "assert \"starlink_dish_longitude_degrees\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 34,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 218,
+          "source": "assert \"starlink_dish_longitude_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 237,
+          "source": "assert \"starlink_dish_longitude_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 282,
+          "source": "assert \"starlink_dish_longitude_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 57,
+          "source": "\"starlink_dish_longitude_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 212,
+          "source": "\"starlink_dish_longitude_degrees\": [[1782000000.0, -95.9345]],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 617,
+          "source": "\"starlink_dish_longitude_degrees\": [[1782000000.0, -95.9345]],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 731,
+          "source": "\"starlink_dish_longitude_degrees\": [[1782000000.0, -95.9345]],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 355,
+          "source": "\"starlink_dish_longitude_degrees\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 208,
+          "source": "raw_entry(\"starlink_dish_longitude_degrees\", [[1782000000, \"-95.9345\"]]),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 597,
+          "source": "\"starlink_dish_longitude_degrees\", [[1782000000, \"-95.9345\"]]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 715,
+          "source": "\"starlink_dish_longitude_degrees\", [[1782000000, \"-95.9345\"]]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 329,
+          "source": "\"__name__\": \"starlink_dish_longitude_degrees\","
+        }
+      ]
+    },
+    "starlink_dish_altitude_feet": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 91,
+          "source": "starlink_dish_altitude_feet = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 128,
+          "source": "starlink_dish_altitude_feet.set(telemetry.position.altitude)",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 547,
+          "source": "starlink_dish_altitude_feet.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 31,
+          "source": "ExportMetric(\"starlink_dish_altitude_feet\", \"altitude_feet\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 118,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 128,
+          "source": "starlink_dish_altitude_feet.set(telemetry.position.altitude)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 547,
+          "source": "starlink_dish_altitude_feet.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 91,
+          "source": "starlink_dish_altitude_feet = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 92,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 104,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 114,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 18,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 13,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 58,
+          "source": "assert \"starlink_dish_altitude_feet\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 31,
+          "source": "\"starlink_dish_altitude_feet\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 283,
+          "source": "assert \"starlink_dish_altitude_feet\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 58,
+          "source": "\"starlink_dish_altitude_feet\","
+        }
+      ]
+    },
+    "starlink_dish_speed_knots": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 97,
+          "source": "starlink_dish_speed_knots = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 129,
+          "source": "starlink_dish_speed_knots.set(telemetry.position.speed)",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 548,
+          "source": "starlink_dish_speed_knots.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 32,
+          "source": "ExportMetric(\"starlink_dish_speed_knots\", \"speed_knots\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 125,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 129,
+          "source": "starlink_dish_speed_knots.set(telemetry.position.speed)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 548,
+          "source": "starlink_dish_speed_knots.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 97,
+          "source": "starlink_dish_speed_knots = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 98,
+          "source": "\"starlink_dish_speed_knots\", \"Dish speed in knots\", registry=REGISTRY"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 110,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 105,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 19,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 14,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 59,
+          "source": "assert \"starlink_dish_speed_knots\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_mission_telemetry_archive.py",
+          "line": 22,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 37,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 284,
+          "source": "assert \"starlink_dish_speed_knots\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 59,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive.py",
+          "line": 96,
+          "source": "archive.append(START, \"starlink_dish_speed_knots\", {}, 99, \"simulation\")"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive.py",
+          "line": 19,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive.py",
+          "line": 155,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive.py",
+          "line": 128,
+          "source": "\"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive_reader.py",
+          "line": 32,
+          "source": "\"__name__\": \"starlink_dish_speed_knots\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive_reader.py",
+          "line": 40,
+          "source": "\"__name__\": \"starlink_dish_speed_knots\","
+        }
+      ]
+    },
+    "starlink_dish_heading_degrees": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 101,
+          "source": "starlink_dish_heading_degrees = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 130,
+          "source": "starlink_dish_heading_degrees.set(telemetry.position.heading)",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 549,
+          "source": "starlink_dish_heading_degrees.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 33,
+          "source": "ExportMetric(\"starlink_dish_heading_degrees\", \"heading_degrees\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 119,
+          "source": "\"starlink_dish_heading_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 130,
+          "source": "starlink_dish_heading_degrees.set(telemetry.position.heading)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 549,
+          "source": "starlink_dish_heading_degrees.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 101,
+          "source": "starlink_dish_heading_degrees = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 102,
+          "source": "\"starlink_dish_heading_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 105,
+          "source": "\"starlink_dish_heading_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 20,
+          "source": "\"starlink_dish_heading_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 15,
+          "source": "\"starlink_dish_heading_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 60,
+          "source": "assert \"starlink_dish_heading_degrees\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 32,
+          "source": "\"starlink_dish_heading_degrees\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 285,
+          "source": "assert \"starlink_dish_heading_degrees\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 60,
+          "source": "\"starlink_dish_heading_degrees\","
+        }
+      ]
+    },
+    "starlink_network_latency_ms_current": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 110,
+          "source": "starlink_network_latency_ms_current = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 552,
+          "source": "starlink_network_latency_ms_current.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 34,
+          "source": "ExportMetric(\"starlink_network_latency_ms_current\", \"latency_ms\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 150,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 138,
+          "source": "starlink_network_latency_ms_current,"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 552,
+          "source": "starlink_network_latency_ms_current.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 110,
+          "source": "starlink_network_latency_ms_current = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 111,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 130,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 125,
+          "source": "(\"latency_ms\", \"starlink_network_latency_ms_current\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 21,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_rollups.py",
+          "line": 14,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 16,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_overview_history_api.py",
+          "line": 36,
+          "source": "\"starlink_network_latency_ms_current\": {"
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_overview_history_api.py",
+          "line": 64,
+          "source": "\"starlink_network_latency_ms_current\": {"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 57,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 21,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 444,
+          "source": "metric = \"starlink_network_latency_ms_current\""
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 61,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 188,
+          "source": "\"starlink_network_latency_ms_current\": ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 733,
+          "source": "assert bundle[\"rolling_5m\"][\"starlink_network_latency_ms_current\"] == {"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 620,
+          "source": "assert bundle[\"rolling_5m\"][\"starlink_network_latency_ms_current\"][\"min\"] == ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 623,
+          "source": "assert bundle[\"rolling_5m\"][\"starlink_network_latency_ms_current\"][\"avg\"] == ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 626,
+          "source": "assert bundle[\"rolling_5m\"][\"starlink_network_latency_ms_current\"][\"max\"] == ["
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 742,
+          "source": "if metric != \"starlink_network_latency_ms_current\""
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 173,
+          "source": "\"__name__\": \"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 26,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 63,
+          "source": "\"starlink_network_latency_ms_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 39,
+          "source": "[(\"untrusted_metric\", \"min\"), (\"starlink_network_latency_ms_current\", \"sum\")],"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive.py",
+          "line": 55,
+          "source": "archive.append(START, \"starlink_network_latency_ms_current\", {}, None, \"live\")"
+        }
+      ]
+    },
+    "starlink_network_throughput_down_mbps_current": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 116,
+          "source": "starlink_network_throughput_down_mbps_current = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 553,
+          "source": "starlink_network_throughput_down_mbps_current.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 36,
+          "source": "\"starlink_network_throughput_down_mbps_current\", \"throughput_down_mbps\""
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 153,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 144,
+          "source": "starlink_network_throughput_down_mbps_current,"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 553,
+          "source": "starlink_network_throughput_down_mbps_current.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 116,
+          "source": "starlink_network_throughput_down_mbps_current = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 117,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 133,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 126,
+          "source": "(\"throughput_down_mbps\", \"starlink_network_throughput_down_mbps_current\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 22,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_rollups.py",
+          "line": 15,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 17,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 60,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 26,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 62,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 27,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 64,
+          "source": "\"starlink_network_throughput_down_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive.py",
+          "line": 57,
+          "source": "START, \"starlink_network_throughput_down_mbps_current\", {}, 0, \"live\""
+        }
+      ]
+    },
+    "starlink_network_throughput_up_mbps_current": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 122,
+          "source": "starlink_network_throughput_up_mbps_current = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 554,
+          "source": "starlink_network_throughput_up_mbps_current.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 38,
+          "source": "ExportMetric(\"starlink_network_throughput_up_mbps_current\", \"throughput_up_mbps\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 155,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 150,
+          "source": "starlink_network_throughput_up_mbps_current,"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 554,
+          "source": "starlink_network_throughput_up_mbps_current.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 122,
+          "source": "starlink_network_throughput_up_mbps_current = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 123,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 135,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 127,
+          "source": "(\"throughput_up_mbps\", \"starlink_network_throughput_up_mbps_current\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 23,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_rollups.py",
+          "line": 16,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 18,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 62,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 31,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 63,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 28,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 65,
+          "source": "\"starlink_network_throughput_up_mbps_current\","
+        }
+      ]
+    },
+    "starlink_network_packet_loss_percent": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 128,
+          "source": "starlink_network_packet_loss_percent = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 555,
+          "source": "starlink_network_packet_loss_percent.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 39,
+          "source": "ExportMetric(\"starlink_network_packet_loss_percent\", \"packet_loss_percent\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 151,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 156,
+          "source": "starlink_network_packet_loss_percent,"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 555,
+          "source": "starlink_network_packet_loss_percent.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 128,
+          "source": "starlink_network_packet_loss_percent = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 129,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 131,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 128,
+          "source": "(\"packet_loss_percent\", \"starlink_network_packet_loss_percent\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 24,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_rollups.py",
+          "line": 17,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 19,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 74,
+          "source": "assert \"starlink_network_packet_loss_percent\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 58,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 34,
+          "source": "(\"packet_loss_percent\", \"starlink_network_packet_loss_percent\", None),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 298,
+          "source": "assert \"starlink_network_packet_loss_percent\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 64,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 29,
+          "source": "\"starlink_network_packet_loss_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 66,
+          "source": "\"starlink_network_packet_loss_percent\","
+        }
+      ]
+    },
+    "starlink_dish_obstruction_percent": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 199,
+          "source": "starlink_dish_obstruction_percent = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 558,
+          "source": "starlink_dish_obstruction_percent.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 40,
+          "source": "ExportMetric(\"starlink_dish_obstruction_percent\", \"obstruction_percent\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 123,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 162,
+          "source": "starlink_dish_obstruction_percent,"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 558,
+          "source": "starlink_dish_obstruction_percent.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 199,
+          "source": "starlink_dish_obstruction_percent = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 200,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 108,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/flight_events/live_adapter.py",
+          "line": 143,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 25,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_rollups.py",
+          "line": 18,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 20,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 85,
+          "source": "assert \"starlink_dish_obstruction_percent\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 35,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 35,
+          "source": "(\"obstruction_percent\", \"starlink_dish_obstruction_percent\", None),"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 308,
+          "source": "assert \"starlink_dish_obstruction_percent\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 65,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 30,
+          "source": "\"starlink_dish_obstruction_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_rollups.py",
+          "line": 67,
+          "source": "\"starlink_dish_obstruction_percent\","
+        }
+      ]
+    },
+    "starlink_signal_quality_percent": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 205,
+          "source": "starlink_signal_quality_percent = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 172,
+          "source": "starlink_signal_quality_percent.set(telemetry.environmental.signal_quality_percent)",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 559,
+          "source": "starlink_signal_quality_percent.set(math.nan)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/export/prometheus.py",
+          "line": 41,
+          "source": "ExportMetric(\"starlink_signal_quality_percent\", \"signal_quality_percent\"),"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 168,
+          "source": "\"starlink_signal_quality_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 172,
+          "source": "starlink_signal_quality_percent.set(telemetry.environmental.signal_quality_percent)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 559,
+          "source": "starlink_signal_quality_percent.set(math.nan)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 205,
+          "source": "starlink_signal_quality_percent = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 206,
+          "source": "\"starlink_signal_quality_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 145,
+          "source": "\"starlink_signal_quality_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/overview_history_prometheus.py",
+          "line": 26,
+          "source": "\"starlink_signal_quality_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/store.py",
+          "line": 21,
+          "source": "\"starlink_signal_quality_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 86,
+          "source": "assert \"starlink_signal_quality_percent\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 72,
+          "source": "\"starlink_signal_quality_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 88,
+          "source": "gauges[\"starlink_signal_quality_percent\"]"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 309,
+          "source": "assert \"starlink_signal_quality_percent\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_overview_history_prometheus.py",
+          "line": 66,
+          "source": "\"starlink_signal_quality_percent\","
+        }
+      ]
+    },
+    "starlink_uptime_seconds": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 228,
+          "source": "starlink_uptime_seconds = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 175,
+          "source": "starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 171,
+          "source": "\"starlink_uptime_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 175,
+          "source": "starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 228,
+          "source": "starlink_uptime_seconds = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 229,
+          "source": "\"starlink_uptime_seconds\", \"Service uptime in seconds\", registry=REGISTRY"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 148,
+          "source": "\"starlink_uptime_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 98,
+          "source": "assert \"starlink_uptime_seconds\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 75,
+          "source": "\"starlink_uptime_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 91,
+          "source": "assert gauges[\"starlink_uptime_seconds\"] == telemetry.environmental.uptime_seconds"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 319,
+          "source": "assert \"starlink_uptime_seconds\" in output"
+        }
+      ]
+    },
+    "starlink_eta_poi_seconds": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 276,
+          "source": "starlink_eta_poi_seconds = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_simulation_run_time_apis.py",
+          "line": 48,
+          "source": "from app.core.metrics.prometheus_metrics import starlink_eta_poi_seconds"
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 493,
+          "source": "starlink_eta_poi_seconds.labels(",
+          "operations": ["labels", "set"]
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_simulation_run_time_apis.py",
+          "line": 80,
+          "source": "starlink_eta_poi_seconds.labels(",
+          "operations": ["get", "labels"]
+        },
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 174,
+          "operations": ["labels", "set"],
+          "source": "dynamic registry lookup -> starlink_eta_poi_seconds; labels(**label_kwargs).set(...)"
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 158,
+          "source": "\"starlink_eta_poi_seconds\""
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 132,
+          "source": "\"starlink_eta_poi_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 493,
+          "source": "starlink_eta_poi_seconds.labels("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 276,
+          "source": "starlink_eta_poi_seconds = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 277,
+          "source": "\"starlink_eta_poi_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 116,
+          "source": "\"starlink_eta_poi_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_eta_modes.py",
+          "line": 113,
+          "source": "assert \"starlink_eta_poi_seconds\" in body"
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_simulation_run_time_apis.py",
+          "line": 80,
+          "source": "starlink_eta_poi_seconds.labels("
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 43,
+          "source": "\"starlink_eta_poi_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 148,
+          "source": "assert \"starlink_eta_poi_seconds\" in output"
+        },
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 157,
+          "source": "REGISTRY._names_to_collectors.get(\"starlink_eta_poi_seconds\") returns actual Gauge today; will return full collector after Task 2"
+        }
+      ]
+    },
+    "starlink_distance_to_poi_meters": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 283,
+          "source": "starlink_distance_to_poi_meters = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 496,
+          "source": "starlink_distance_to_poi_meters.labels(",
+          "operations": ["labels", "set"]
+        },
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 167,
+          "operations": ["labels", "set"],
+          "source": "dynamic registry lookup -> starlink_distance_to_poi_meters; labels(**label_kwargs).set(...)"
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 155,
+          "source": "\"starlink_distance_to_poi_meters\""
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 128,
+          "source": "\"starlink_distance_to_poi_meters\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 496,
+          "source": "starlink_distance_to_poi_meters.labels("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 283,
+          "source": "starlink_distance_to_poi_meters = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 284,
+          "source": "\"starlink_distance_to_poi_meters\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 113,
+          "source": "\"starlink_distance_to_poi_meters\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_eta_modes.py",
+          "line": 115,
+          "source": "assert \"starlink_distance_to_poi_meters\" in body"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 40,
+          "source": "\"starlink_distance_to_poi_meters\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 150,
+          "source": "assert \"starlink_distance_to_poi_meters\" in output"
+        },
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 154,
+          "source": "REGISTRY._names_to_collectors.get(\"starlink_distance_to_poi_meters\") returns actual Gauge today; will return full collector after Task 2"
+        }
+      ]
+    },
+    "starlink_flight_phase": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 293,
+          "source": "starlink_flight_phase = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 340,
+          "source": "starlink_flight_phase.set(phase_value)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 137,
+          "source": "\"starlink_flight_phase\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 340,
+          "source": "starlink_flight_phase.set(phase_value)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 293,
+          "source": "starlink_flight_phase = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 294,
+          "source": "\"starlink_flight_phase\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 120,
+          "source": "\"starlink_flight_phase\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 47,
+          "source": "\"starlink_flight_phase\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_simulation_run_timing.py",
+          "line": 210,
+          "source": "metric_updater, \"starlink_flight_phase\", type(\"Broken\", (), {\"set\": fail})()"
+        }
+      ]
+    },
+    "starlink_eta_mode": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 299,
+          "source": "starlink_eta_mode = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 341,
+          "source": "starlink_eta_mode.set(mode_value)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 130,
+          "source": "\"starlink_eta_mode\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 341,
+          "source": "starlink_eta_mode.set(mode_value)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 299,
+          "source": "starlink_eta_mode = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 300,
+          "source": "\"starlink_eta_mode\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 115,
+          "source": "\"starlink_eta_mode\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 42,
+          "source": "\"starlink_eta_mode\","
+        }
+      ]
+    },
+    "starlink_flight_departure_time_unix": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 305,
+          "source": "starlink_flight_departure_time_unix = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 345,
+          "source": "starlink_flight_departure_time_unix.set(",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 349,
+          "source": "starlink_flight_departure_time_unix.set(0)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 135,
+          "source": "\"starlink_flight_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 345,
+          "source": "starlink_flight_departure_time_unix.set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 349,
+          "source": "starlink_flight_departure_time_unix.set(0)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 305,
+          "source": "starlink_flight_departure_time_unix = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 306,
+          "source": "\"starlink_flight_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 119,
+          "source": "\"starlink_flight_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 46,
+          "source": "\"starlink_flight_departure_time_unix\","
+        }
+      ]
+    },
+    "starlink_flight_arrival_time_unix": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 311,
+          "source": "starlink_flight_arrival_time_unix = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 352,
+          "source": "starlink_flight_arrival_time_unix.set(",
+          "operations": ["set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 356,
+          "source": "starlink_flight_arrival_time_unix.set(0)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 134,
+          "source": "\"starlink_flight_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 352,
+          "source": "starlink_flight_arrival_time_unix.set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 356,
+          "source": "starlink_flight_arrival_time_unix.set(0)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 311,
+          "source": "starlink_flight_arrival_time_unix = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 312,
+          "source": "\"starlink_flight_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 118,
+          "source": "\"starlink_flight_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 45,
+          "source": "\"starlink_flight_arrival_time_unix\","
+        }
+      ]
+    },
+    "starlink_time_until_departure_seconds": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 317,
+          "source": "starlink_time_until_departure_seconds = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 423,
+          "source": "starlink_time_until_departure_seconds.set(time_until_departure)",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 170,
+          "source": "\"starlink_time_until_departure_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 423,
+          "source": "starlink_time_until_departure_seconds.set(time_until_departure)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 317,
+          "source": "starlink_time_until_departure_seconds = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 318,
+          "source": "\"starlink_time_until_departure_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 147,
+          "source": "\"starlink_time_until_departure_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 74,
+          "source": "\"starlink_time_until_departure_seconds\","
+        }
+      ]
+    },
+    "starlink_route_progress_percent": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 326,
+          "source": "starlink_route_progress_percent = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/simulation/coordinator.py",
+          "line": 10,
+          "source": "from app.core.metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_simulation_run_timing.py",
+          "line": 244,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 181,
+          "source": "starlink_route_progress_percent.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        },
+        {
+          "file": "backend/starlink-location/app/simulation/coordinator.py",
+          "line": 155,
+          "source": "starlink_route_progress_percent.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_simulation_run_timing.py",
+          "line": 252,
+          "source": "assert starlink_route_progress_percent.labels(",
+          "operations": ["get", "labels"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 162,
+          "source": "\"starlink_route_progress_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 181,
+          "source": "starlink_route_progress_percent.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 326,
+          "source": "starlink_route_progress_percent = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 327,
+          "source": "\"starlink_route_progress_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 140,
+          "source": "\"starlink_route_progress_percent\","
+        },
+        {
+          "file": "backend/starlink-location/app/simulation/coordinator.py",
+          "line": 155,
+          "source": "starlink_route_progress_percent.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 67,
+          "source": "\"starlink_route_progress_percent\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_simulation_run_timing.py",
+          "line": 252,
+          "source": "assert starlink_route_progress_percent.labels("
+        }
+      ]
+    },
+    "starlink_current_waypoint_index": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 333,
+          "source": "starlink_current_waypoint_index = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/simulation/coordinator.py",
+          "line": 10,
+          "source": "from app.core.metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 184,
+          "source": "starlink_current_waypoint_index.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        },
+        {
+          "file": "backend/starlink-location/app/simulation/coordinator.py",
+          "line": 163,
+          "source": "starlink_current_waypoint_index.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 115,
+          "source": "\"starlink_current_waypoint_index\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 184,
+          "source": "starlink_current_waypoint_index.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 333,
+          "source": "starlink_current_waypoint_index = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 334,
+          "source": "\"starlink_current_waypoint_index\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 102,
+          "source": "\"starlink_current_waypoint_index\","
+        },
+        {
+          "file": "backend/starlink-location/app/simulation/coordinator.py",
+          "line": 163,
+          "source": "starlink_current_waypoint_index.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 29,
+          "source": "\"starlink_current_waypoint_index\","
+        }
+      ]
+    },
+    "starlink_route_has_timing_data": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 343,
+          "source": "starlink_route_has_timing_data = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 9,
+          "source": "from app.core.metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 64,
+          "source": "starlink_route_has_timing_data.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 64,
+          "source": "starlink_route_has_timing_data.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 160,
+          "source": "\"starlink_route_has_timing_data\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 343,
+          "source": "starlink_route_has_timing_data = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 344,
+          "source": "\"starlink_route_has_timing_data\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 139,
+          "source": "\"starlink_route_has_timing_data\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 66,
+          "source": "\"starlink_route_has_timing_data\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 188,
+          "source": "assert \"starlink_route_has_timing_data\" in output"
+        }
+      ]
+    },
+    "starlink_route_total_duration_seconds": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 350,
+          "source": "starlink_route_total_duration_seconds = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 9,
+          "source": "from app.core.metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 70,
+          "source": "starlink_route_total_duration_seconds.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 70,
+          "source": "starlink_route_total_duration_seconds.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 165,
+          "source": "\"starlink_route_total_duration_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 350,
+          "source": "starlink_route_total_duration_seconds = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 351,
+          "source": "\"starlink_route_total_duration_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 143,
+          "source": "\"starlink_route_total_duration_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 70,
+          "source": "\"starlink_route_total_duration_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 189,
+          "source": "assert \"starlink_route_total_duration_seconds\" in output"
+        }
+      ]
+    },
+    "starlink_route_departure_time_unix": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 357,
+          "source": "starlink_route_departure_time_unix = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 9,
+          "source": "from app.core.metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 80,
+          "source": "starlink_route_departure_time_unix.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 80,
+          "source": "starlink_route_departure_time_unix.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 158,
+          "source": "\"starlink_route_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 357,
+          "source": "starlink_route_departure_time_unix = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 358,
+          "source": "\"starlink_route_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 138,
+          "source": "\"starlink_route_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 65,
+          "source": "\"starlink_route_departure_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 190,
+          "source": "assert \"starlink_route_departure_time_unix\" in output"
+        }
+      ]
+    },
+    "starlink_route_arrival_time_unix": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 364,
+          "source": "starlink_route_arrival_time_unix = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 9,
+          "source": "from app.core.metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 90,
+          "source": "starlink_route_arrival_time_unix.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 90,
+          "source": "starlink_route_arrival_time_unix.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 157,
+          "source": "\"starlink_route_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 364,
+          "source": "starlink_route_arrival_time_unix = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 365,
+          "source": "\"starlink_route_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 137,
+          "source": "\"starlink_route_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 64,
+          "source": "\"starlink_route_arrival_time_unix\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 191,
+          "source": "assert \"starlink_route_arrival_time_unix\" in output"
+        }
+      ]
+    },
+    "starlink_route_segment_count_with_timing": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 371,
+          "source": "starlink_route_segment_count_with_timing = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 9,
+          "source": "from app.core.metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 95,
+          "source": "starlink_route_segment_count_with_timing.labels(route_name=route_name).set(",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/api/metrics_export.py",
+          "line": 95,
+          "source": "starlink_route_segment_count_with_timing.labels(route_name=route_name).set("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 163,
+          "source": "\"starlink_route_segment_count_with_timing\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 371,
+          "source": "starlink_route_segment_count_with_timing = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 372,
+          "source": "\"starlink_route_segment_count_with_timing\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 141,
+          "source": "\"starlink_route_segment_count_with_timing\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 68,
+          "source": "\"starlink_route_segment_count_with_timing\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics_export.py",
+          "line": 192,
+          "source": "assert \"starlink_route_segment_count_with_timing\" in output"
+        }
+      ]
+    },
+    "starlink_service_info": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 214,
+          "source": "starlink_service_info = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 600,
+          "source": "starlink_service_info.labels(version=version, mode=mode).set(1)",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 167,
+          "source": "\"starlink_service_info\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 600,
+          "source": "starlink_service_info.labels(version=version, mode=mode).set(1)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 214,
+          "source": "starlink_service_info = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 215,
+          "source": "\"starlink_service_info\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 144,
+          "source": "\"starlink_service_info\","
+        },
+        {
+          "file": "backend/starlink-location/tests/integration/test_metrics_endpoint.py",
+          "line": 97,
+          "source": "assert \"starlink_service_info\" in text"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 71,
+          "source": "\"starlink_service_info\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 246,
+          "source": "assert \"starlink_service_info\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 334,
+          "source": "assert \"starlink_service_info\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 345,
+          "source": "assert \"starlink_service_info\" in output"
+        }
+      ]
+    },
+    "starlink_mode_info": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 221,
+          "source": "starlink_mode_info = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 24,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 606,
+          "source": "starlink_mode_info.labels(mode=possible_mode).set(1)",
+          "operations": ["labels", "set"]
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 608,
+          "source": "starlink_mode_info.labels(mode=possible_mode).set(0)",
+          "operations": ["labels", "set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 146,
+          "source": "\"starlink_mode_info\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 606,
+          "source": "starlink_mode_info.labels(mode=possible_mode).set(1)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/metric_updater.py",
+          "line": 608,
+          "source": "starlink_mode_info.labels(mode=possible_mode).set(0)"
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 221,
+          "source": "starlink_mode_info = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 222,
+          "source": "\"starlink_mode_info\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 128,
+          "source": "\"starlink_mode_info\","
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/reader.py",
+          "line": 33,
+          "source": "names = \"|\".join((*METRICS, \"starlink_mode_info\"))"
+        },
+        {
+          "file": "backend/starlink-location/app/services/telemetry_archive/reader.py",
+          "line": 58,
+          "source": "if labels.get(\"__name__\") == \"starlink_mode_info\":"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 55,
+          "source": "\"starlink_mode_info\","
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 325,
+          "source": "assert \"starlink_mode_info\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 336,
+          "source": "assert \"starlink_mode_info\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 347,
+          "source": "assert \"starlink_mode_info\" in output"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_metrics.py",
+          "line": 362,
+          "source": "if \"starlink_mode_info\" in line and not line.startswith(\"#\")"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_telemetry_archive_reader.py",
+          "line": 23,
+          "source": "\"__name__\": \"starlink_mode_info\","
+        }
+      ]
+    },
+    "starlink_metrics_last_update_timestamp_seconds": {
+      "definition": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 415,
+          "source": "starlink_metrics_last_update_timestamp_seconds = Gauge("
+        }
+      ],
+      "imports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 19,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 22,
+          "source": "from app.core.metrics.prometheus_metrics import ("
+        },
+        {
+          "file": "backend/starlink-location/main.py",
+          "line": 968,
+          "source": "from app.core.metrics import ("
+        }
+      ],
+      "calls": [
+        {
+          "file": "backend/starlink-location/main.py",
+          "line": 1016,
+          "source": "starlink_metrics_last_update_timestamp_seconds.set(time.time())",
+          "operations": ["set"]
+        }
+      ],
+      "reads_or_reexports": [
+        {
+          "file": "backend/starlink-location/app/core/metrics/__init__.py",
+          "line": 143,
+          "source": "\"starlink_metrics_last_update_timestamp_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 415,
+          "source": "starlink_metrics_last_update_timestamp_seconds = Gauge("
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+          "line": 416,
+          "source": "\"starlink_metrics_last_update_timestamp_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/app/core/metrics.py",
+          "line": 126,
+          "source": "\"starlink_metrics_last_update_timestamp_seconds\","
+        },
+        {
+          "file": "backend/starlink-location/main.py",
+          "line": 1016,
+          "source": "starlink_metrics_last_update_timestamp_seconds.set(time.time())"
+        },
+        {
+          "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+          "line": 53,
+          "source": "\"starlink_metrics_last_update_timestamp_seconds\","
+        }
+      ]
+    }
+  },
+  "generic_consumers": [
+    {
+      "file": "backend/starlink-location/tests/conftest.py",
+      "lines": "232-275",
+      "dependency": "isinstance(Gauge), REGISTRY._collector_to_names, Gauge._metrics, direct _current_position writes; migrate fixture Task 2; preserve independent resets"
+    },
+    {
+      "file": "backend/starlink-location/app/api/metrics.py",
+      "lines": "129-131",
+      "dependency": "three dictionary reads of position; capture once Task 5"
+    },
+    {
+      "file": "backend/starlink-location/app/core/metrics/prometheus_metrics.py",
+      "lines": "25-64",
+      "dependency": "PositionCollector reads mutable position; replace via same captured full-frame alias Task 2"
+    },
+    {
+      "file": "backend/starlink-location/tests/unit/test_metrics.py",
+      "dependency": "queries through registry.collect() sample names/values"
+    },
+    {
+      "file": "backend/starlink-location/tests/unit/test_legacy_compatibility_exports.py",
+      "dependency": "same-object exports, all 70 names"
+    },
+    {
+      "file": "backend/starlink-location/app/core/metrics.py",
+      "dependency": "legacy shim reexports same objects"
+    },
+    {
+      "file": "backend/starlink-location/app/core/metrics/__init__.py",
+      "dependency": "package reexports same objects"
+    },
+    {
+      "file": "tools/acceptance/overview_history/seed.py",
+      "dependency": "wire metric-name inventory for synthetic Prometheus history seeding; no Python Gauge imports or mutations"
+    },
+    {
+      "file": "tools/tests/test_profile_overview_history.py",
+      "dependency": "literal expected wire metric inventory; unchanged"
+    },
+    {
+      "file": "backend/starlink-location/app/api/metrics_export.py",
+      "lines": "154-175",
+      "dependency": "Existing scrape dynamically fetches two coupled Gauge objects through private REGISTRY._names_to_collectors and calls labels/set. Must be removed with scrape preparation before integrated candidate acceptance; cannot proxy full collector as Gauge. No new private dependency in Task 1."
+    }
+  ]
+}

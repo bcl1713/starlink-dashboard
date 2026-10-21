@@ -1,8 +1,10 @@
 # Gauge snapshot implementation tasks
 
 Part of the [revised plan](2026-10-21-perf-391-metrics-publication.md). All
-application tasks are unstarted. Written approval and the Task 1 stop/go review
-are required before production integration.
+Tasks 2–6 are unstarted. Written approval was given at `c7792320`; Task 1
+results are at the
+[mandatory checkpoint](../../performance/perf-391-task-1-checkpoint.md).
+Checkpoint review is required before production integration.
 
 ## Task 1: Snapshot foundation and compatibility checkpoint
 

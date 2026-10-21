@@ -1,0 +1,147 @@
+[
+  {
+    "name": "starlink_dish_latitude_degrees",
+    "documentation": "Dish latitude in decimal degrees",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_dish_longitude_degrees",
+    "documentation": "Dish longitude in decimal degrees",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_dish_altitude_feet",
+    "documentation": "Dish altitude in feet above sea level",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_dish_speed_knots",
+    "documentation": "Dish speed in knots",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_dish_heading_degrees",
+    "documentation": "Dish heading in degrees (0=North, 90=East)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_network_latency_ms_current",
+    "documentation": "Network round-trip latency in milliseconds (current value)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_network_throughput_down_mbps_current",
+    "documentation": "Download throughput in Megabits per second (current value)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_network_throughput_up_mbps_current",
+    "documentation": "Upload throughput in Megabits per second (current value)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_network_packet_loss_percent",
+    "documentation": "Packet loss as percentage (0-100)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_dish_obstruction_percent",
+    "documentation": "Dish obstruction as percentage (0-100)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_signal_quality_percent",
+    "documentation": "Signal quality as percentage (0-100)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_service_info",
+    "documentation": "Starlink service information",
+    "labelnames": ["version", "mode"]
+  },
+  {
+    "name": "starlink_mode_info",
+    "documentation": "Starlink operating mode indicator",
+    "labelnames": ["mode"]
+  },
+  {
+    "name": "starlink_uptime_seconds",
+    "documentation": "Service uptime in seconds",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_eta_poi_seconds",
+    "documentation": "Estimated time of arrival to point of interest in seconds (anticipated or estimated)",
+    "labelnames": ["name", "category", "eta_type"]
+  },
+  {
+    "name": "starlink_distance_to_poi_meters",
+    "documentation": "Distance to point of interest in meters",
+    "labelnames": ["name", "category", "eta_type"]
+  },
+  {
+    "name": "starlink_flight_phase",
+    "documentation": "Current flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_eta_mode",
+    "documentation": "Current ETA calculation mode (0=anticipated, 1=estimated)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_flight_departure_time_unix",
+    "documentation": "Detected departure time (Unix timestamp), 0 if not yet departed",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_flight_arrival_time_unix",
+    "documentation": "Detected arrival time (Unix timestamp), 0 if not yet arrived",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_time_until_departure_seconds",
+    "documentation": "Seconds remaining until scheduled or detected departure (0 once departed, negative if scheduled time is in the past and departure not detected)",
+    "labelnames": []
+  },
+  {
+    "name": "starlink_route_progress_percent",
+    "documentation": "Current progress along active KML route (0-100%)",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_current_waypoint_index",
+    "documentation": "Index of current waypoint in active route (0-indexed)",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_route_has_timing_data",
+    "documentation": "Binary flag indicating if route has embedded timing data (1=has timing, 0=no timing)",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_route_total_duration_seconds",
+    "documentation": "Expected total flight duration for active route in seconds",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_route_departure_time_unix",
+    "documentation": "Expected departure time for active route (Unix timestamp)",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_route_arrival_time_unix",
+    "documentation": "Expected arrival time for active route (Unix timestamp)",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_route_segment_count_with_timing",
+    "documentation": "Number of route segments with calculated expected speeds",
+    "labelnames": ["route_name"]
+  },
+  {
+    "name": "starlink_metrics_last_update_timestamp_seconds",
+    "documentation": "Timestamp of last successful metric update (Unix epoch)",
+    "labelnames": []
+  }
+]

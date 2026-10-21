@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > for native execution; use subagent-driven execution only if the user later
-> requests it. No implementation is authorized yet.
+> requests it. Task 1 only is authorized by approval at `c7792320`.
 
 **Goal:** Eliminate scrape-time simulation/ETA/storage work with one bounded,
 consistent snapshot for coupled gauges and unchanged independent instruments.
@@ -22,8 +22,9 @@ the frozen #390 Docker/Playwright harness. No dependency/deployment change.
 and
 [architecture decision and probe](../specs/2026-10-21-perf-391-metrics-publication-decision.md).
 
-**Status:** Revised for PR #403 review; specification and plan still need
-separate approval. Only an isolated disposable design probe has executed.
+**Status:** Approved at `c7792320`; Task 1 foundation is at its mandatory
+[stop/go checkpoint](../../performance/perf-391-task-1-checkpoint.md). Tasks 2–6
+remain unstarted and require checkpoint review before proceeding.
 
 ## Global constraints
 
@@ -98,7 +99,8 @@ Record their existing behavior in regression tests instead.
 
 The [six task definitions](2026-10-21-perf-391-metrics-publication-tasks.md) are
 part of this plan. They pin frame/store/view interfaces, file changes, failing
-tests, verification and commit boundaries. All tasks remain unstarted.
+tests, verification and commit boundaries. Task 1 is at checkpoint review; Tasks
+2–6 remain unstarted.
 
 After written-artifact approval, Task 1 establishes the actual 29-family schema
 and compatibility/concurrency component tests. Stop and present its evidence for
@@ -209,7 +211,7 @@ retrying and retain partial evidence; do not restart into occupied projects.
 
 ## Approval and handoff
 
-Both revised written artifacts await separate approval. Native execution is
+Both revised written artifacts were approved at `c7792320`. Native execution is
 recommended because the store/view/builder interfaces are tightly related.
 Approval does not remove the Task 1 stop/go review, the 60-minute acceptance
 gate, or separate deployment/merge/closure authorizations. Keep PR #403 draft.
