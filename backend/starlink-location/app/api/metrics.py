@@ -1,5 +1,6 @@
 """Prometheus metrics endpoint handler."""
 
+import math
 import time
 
 from fastapi import APIRouter, HTTPException
@@ -104,7 +105,10 @@ async def position_table():
     }
     ```
     """
-    position = _current_position.snapshot()
+    position = {
+        dimension: value if math.isfinite(value) else None
+        for dimension, value in _current_position.snapshot().items()
+    }
     return JSONResponse(
         {
             "columns": [
