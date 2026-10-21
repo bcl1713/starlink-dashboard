@@ -1,17 +1,16 @@
 """Prometheus metrics endpoint handler."""
 
 import time
-from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse, Response
-from prometheus_client import generate_latest
 
 from app.api import metrics_export
-from app.core.metrics import REGISTRY, _current_position
-from app.mission.dependencies import get_poi_manager, get_route_manager
-from app.services.poi_manager import POIManager
-from app.services.route_manager import RouteManager
+from app.core.metrics import (
+    _current_position,
+    starlink_metrics_generation_errors_total,
+    starlink_metrics_scrape_duration_seconds,
+)
 
 router = APIRouter()
 
@@ -32,8 +31,8 @@ def set_last_scrape_time(timestamp):
 
 @router.get("/metrics")
 async def metrics(
-    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
-    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    route_manager=None,
+    poi_manager=None,
 ):
     """
     Prometheus metrics endpoint.
@@ -60,26 +59,16 @@ async def metrics(
     set_last_scrape_time(time.time())
 
     try:
-        # Serialize the frame committed by its producer.
-        metrics_output = await metrics_export.get_metrics(route_manager, poi_manager)
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ):
-        # Fall back to direct registry scrape if export helper fails
-        raw_output = generate_latest(REGISTRY)
-        if not raw_output.endswith(b"# EOF\n"):
-            raw_output = raw_output.rstrip() + b"\n# EOF\n"
-        metrics_output = raw_output.decode("utf-8")
+        with starlink_metrics_scrape_duration_seconds.time():
+            metrics_output = await metrics_export.get_metrics(
+                route_manager, poi_manager
+            )
+    except Exception as exc:
+        # Exporter faults must not be hidden by a second, unvalidated scrape.
+        starlink_metrics_generation_errors_total.inc()
+        raise HTTPException(
+            status_code=503, detail="Metrics exposition failed"
+        ) from exc
 
     return Response(
         content=metrics_output,
