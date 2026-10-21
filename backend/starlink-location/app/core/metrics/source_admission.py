@@ -15,6 +15,32 @@ def model_identity(value):
     )
 
 
+def route_source_identity(route):
+    if route is None:
+        return None
+    # Accepted phase detection updates these actuals itself. Geometry and planned
+    # timing must remain the inputs associated with source collection/progress.
+    from app.models.route import RouteTimingProfile
+
+    # The legacy observation owner materializes an empty timing profile for an
+    # untimed route. That is not a planned-input change.
+    source = (
+        route
+        if route.timing_profile is not None
+        else route.model_copy(update={"timing_profile": RouteTimingProfile()})
+    )
+    record = source.model_dump_json(
+        exclude={
+            "timing_profile": {
+                "flight_status",
+                "actual_departure_time",
+                "actual_arrival_time",
+            }
+        }
+    )
+    return sha256(record.encode()).hexdigest()
+
+
 def poi_identity(pois):
     return sha256("".join(poi.model_dump_json() for poi in pois).encode()).hexdigest()
 

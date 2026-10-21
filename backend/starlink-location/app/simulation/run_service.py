@@ -1,5 +1,6 @@
 """Serialize replay planning, collection, and lifecycle with leg activation."""
 
+import logging
 from collections.abc import Callable
 
 from fastapi import HTTPException
@@ -22,6 +23,8 @@ from app.simulation.run_plan import (
 )
 from app.simulation.run_runtime import RunTick, SimulationRunRuntime
 from app.simulation.run_wakeup import ReplayWakeup
+
+logger = logging.getLogger(__name__)
 
 
 class SimulationRunService:
@@ -171,32 +174,40 @@ class SimulationRunService:
         from app.core.metrics.frame_builder import coordinator_identity
         from app.core.metrics.prometheus_metrics import FRAME_STORE
 
-        status = self.status()
-        identity = frame.identity
-        if (
-            self.runtime.selected_plan() is not tick.plan
-            or self.runtime.frame() is not tick.frame
-            or identity.replay_runtime_id != status.runtime_id
-            or identity.replay_revision != str(status.revision)
-            or status.run is None
-            or identity.replay_run_id != status.run.run_id
-            or identity.replay_mission_time != status.run.simulation_time.timestamp()
-            or (
-                coordinator_identity(coordinator),
-                coordinator.get_config().model_dump_json(),
-            )
-            != config
-            or coordinator.get_current_telemetry() is not telemetry
-            or telemetry.timestamp.timestamp() != identity.observation_timestamp
-            or replay_input_identity(self, tick) != inputs
-            or (
-                identity.coordinator_id is not None
-                and identity.coordinator_id != coordinator_identity(coordinator)
-            )
-        ):
-            FRAME_STORE.fail(expected, "replay source superseded")
+        try:
+            status = self.status()
+            identity = frame.identity
+            if (
+                self.runtime.selected_plan() is not tick.plan
+                or self.runtime.frame() is not tick.frame
+                or identity.replay_runtime_id != status.runtime_id
+                or identity.replay_revision != str(status.revision)
+                or status.run is None
+                or identity.replay_run_id != status.run.run_id
+                or identity.replay_mission_time
+                != status.run.simulation_time.timestamp()
+                or (
+                    coordinator_identity(coordinator),
+                    coordinator.get_config().model_dump_json(),
+                )
+                != config
+                or coordinator.get_current_telemetry() is not telemetry
+                or telemetry.timestamp.timestamp() != identity.observation_timestamp
+                or replay_input_identity(self, tick) != inputs
+                or (
+                    identity.coordinator_id is not None
+                    and identity.coordinator_id != coordinator_identity(coordinator)
+                )
+            ):
+                FRAME_STORE.fail(expected, "replay source superseded")
+                return False
+            return FRAME_STORE.publish(expected, frame)
+        except Exception:
+            # Runtime and domain state are already committed. Optional metric
+            # failure must not enter their pre-commit compensation paths.
+            FRAME_STORE.fail(expected, "committed replay metric publication failed")
+            logger.exception("Committed replay metric publication failed")
             return False
-        return FRAME_STORE.publish(expected, frame)
 
     def cancel_owned(self, mission_id: str, leg_id: str | None, reason: str) -> None:
         with get_active_leg_lock():

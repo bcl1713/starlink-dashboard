@@ -79,3 +79,49 @@ def test_failure_inside_real_runtime_commit_never_publishes(timing, monkeypatch)
     assert metrics.FRAME_STORE.read().frame is not staged[0]
     assert service.status().run.simulation_time == previous_clock
     assert service.status().state == "failed"
+
+
+@pytest.mark.parametrize("initial", [True, False])
+@pytest.mark.parametrize("complete", [False, True])
+def test_postcommit_metric_failure_keeps_successful_runtime_and_domain_state(
+    timed_api, monkeypatch, initial, complete
+):
+    import app.core.metrics.source_admission as admission
+    from app.mission.storage import load_mission_v2
+    from app.simulation import run_service
+
+    client, service, clocks = timed_api
+    if not initial:
+        assert start(client).status_code == 200
+        clocks.advance(120 if complete else 12)
+    old = metrics.FRAME_STORE.read()
+    original = admission.replay_input_identity
+    calls = 0
+
+    def source_check(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("postcommit identity read failed")
+        return original(*args)
+
+    monkeypatch.setattr(admission, "replay_input_identity", source_check)
+    monkeypatch.setattr(run_service, "replay_input_identity", source_check)
+    if initial:
+        response = start(client)
+        assert response.status_code == 200
+    else:
+        telemetry = service.collect(service.coordinator, service.publish)
+        assert service.coordinator.get_current_telemetry() is telemetry
+    assert service.status().state == (
+        "completed" if complete and not initial else "running"
+    )
+    assert load_mission_v2("mission-1").legs[0].is_active
+    assert service.route_manager.get_active_route_id() == "replay"
+    position = service.runtime.frame().position
+    assert (
+        service.coordinator.get_current_telemetry().position.longitude
+        == position.longitude
+    )
+    assert metrics.FRAME_STORE.read().status == "failed"
+    assert metrics.FRAME_STORE.read().frame is old.frame

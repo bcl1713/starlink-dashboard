@@ -933,12 +933,17 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
     # that happen while live transport is blocked outside repository admission.
     from app.core.metrics.frame_builder import coordinator_identity
     from app.core.metrics.prometheus_metrics import FRAME_STORE
+    from app.core.metrics.source_admission import route_source_identity
     from app.mission.storage import get_active_leg_lock
 
     with get_active_leg_lock():
         source_expected = FRAME_STORE.read()
         coordinator = _coordinator
         source_lifecycle = coordinator_identity(coordinator)
+        source_routes = _route_manager
+        source_route = source_routes.get_active_route() if source_routes else None
+        source_route_id = source_routes.get_active_route_id() if source_routes else None
+        source_route_revision = route_source_identity(source_route)
         current_config = _current_runtime_config()
         source_config = (
             current_config.model_dump_json()
@@ -977,6 +982,11 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 or current_config.model_dump_json() == source_config
             )
             and current_service is source_service
+            and _route_manager is source_routes
+            and active_route is source_route
+            and route_source_identity(active_route) == source_route_revision
+            and (source_routes.get_active_route_id() if source_routes else None)
+            == source_route_id
             and revision == source_revision
             and (
                 source_mission is None
