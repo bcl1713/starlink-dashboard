@@ -167,20 +167,20 @@ callbacks and drains its task handle. The existing loop responds to dirty events
 without moving its source collection deadline; disabled background mode owns one
 coalesced one-shot task, no timer.
 
-- [ ] Write failing parametrized tests for every lifecycle row in the ownership
+- [x] Write failing parametrized tests for every lifecycle row in the ownership
       contract, including timing-only corrections, active-route parse failure,
       POI bulk/projection/restore, config reset, transaction rollback, replay
       cancel/failure, source expiry, unchanged source and shutdown.
-- [ ] Implement the bounded notifications and complete startup frame. Refresh
+- [x] Implement the bounded notifications and complete startup frame. Refresh
       waits for repository admission after nested changes commit/restore.
       Existing periodic checks still run when telemetry is None or unchanged.
-- [ ] Prove external POI/route reload without telemetry updates planned/derived
+- [x] Prove external POI/route reload without telemetry updates planned/derived
       values. In disabled mode require explicit reload for unannounced disk
       edits; neither mode discovers files through scraping.
-- [ ] Prove dirty wakes and one-shot tasks never collect a source, advance
+- [x] Prove dirty wakes and one-shot tasks never collect a source, advance
       replay, add speed/passage history, write evidence or add observations.
       Test producer/config/mission barriers and stale-failure rejection.
-- [ ] Verify at most one one-shot task, no busy retry queue, callback detachment
+- [x] Verify at most one one-shot task, no busy retry queue, callback detachment
       and repeated-cancellation drain; run lifecycle/regression tests and
       commit.
 

@@ -1,0 +1,436 @@
+{
+  "task": 4,
+  "stop_before_task": 5,
+  "source_commit": "2ff89c83f1746c53b1f7ecfc5dfcd46c95b69a54",
+  "approved_task3_comment": "https://github.com/bcl1713/starlink-dashboard/pull/403#issuecomment-6313005132",
+  "new_task4_cases": 71,
+  "full_backend": {
+    "status": "passed",
+    "passed": 4460,
+    "skipped": 20,
+    "warning": 1,
+    "seconds": 587.12,
+    "exit_code": 0,
+    "source_commit": "2ff89c83f1746c53b1f7ecfc5dfcd46c95b69a54",
+    "log": "full-suite.log",
+    "limit": "20m, kill grace 10s",
+    "interrupted_runs": [
+      {
+        "source_commit": "cd48879a",
+        "percent": 21,
+        "reason": "cancellation handoff spin",
+        "log": "full-suite-interrupted-cancellation.log"
+      },
+      {
+        "source_commit": "e9ac3650",
+        "percent": 29,
+        "reason": "complete teardown and failed-startup cleanup",
+        "log": "full-suite-interrupted-lifespan.log"
+      },
+      {
+        "source_commit": "beaab84e",
+        "percent": 38,
+        "reason": "POI transient read recovery",
+        "log": "full-suite-interrupted-poi-recovery.log"
+      }
+    ]
+  },
+  "client_matrix": {
+    "0.19.0": {
+      "passed": 574,
+      "skipped": 18,
+      "seconds": 34.29,
+      "log": "matrix-019-verified.log",
+      "limit": "8m, kill grace 10s"
+    },
+    "0.26.0": {
+      "passed": 574,
+      "skipped": 18,
+      "seconds": 34.18,
+      "log": "matrix-026-verified.log",
+      "limit": "8m, kill grace 10s"
+    }
+  },
+  "compatibility": {
+    "unchanged_files_sha256": {
+      "app/core/metrics/frames.py": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368",
+      "app/core/metrics/prometheus_metrics.py": "ede1d60be11283ddc63fa95e766cf1db3c98f822fd553b13f16ea48cc307b8d1",
+      "app/core/metrics.py": "cd1995ac2e2913b71eaa0290ad5e6b5f5e829161a64990195e869f79c610f118",
+      "app/core/metrics/__init__.py": "084e4a76e273069fe95017d4f2d17b394fc44d9fa94ca6675a9118de3f19ffd0",
+      "app/api/metrics_export.py": "197214b2ab44ca6a472a2c5fce6adcf482f92b65475076d75528e64d4405e339",
+      "app/api/metrics.py": "3908c6a42578ab0fd1617f9a0df1d536c4d21e8163712c0641cb951afda4e5b4",
+      "app/api/health.py": "d21146a7ddb58bfc8949f50910419ec3a508ae7316ecf190bedb86609524171e"
+    },
+    "coupled_families": 29,
+    "compatibility_exports": 70,
+    "independent_standard_instruments": 29,
+    "unchanged_replay_algorithms": [
+      "prepare_start",
+      "prepare_tick",
+      "commit_tick",
+      "seconds_until_next_tick"
+    ],
+    "private_prometheus_client_dependencies_added": false,
+    "public_http_api_or_dependency_change": false
+  },
+  "component_diagnostics": {
+    "scope": "Component diagnostics only; not frozen-baseline application comparison or soak",
+    "pid": 2468069,
+    "pgid": 2468068,
+    "client": "0.26.0",
+    "python": "3.11.16 (main, Sep 24 2026, 17:56:40) [Clang 22.1.3 ]",
+    "gate_roundtrip": {
+      "iterations": 1000,
+      "wall_us": {
+        "p50": 102.86699999999999,
+        "p95": 175.643
+      },
+      "thread_cpu_us": {
+        "p50": 103.587,
+        "p95": 176.406
+      }
+    },
+    "rows": [
+      {
+        "pois": 0,
+        "prepare_with_admission": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 573.4955,
+            "p95": 610.964
+          },
+          "thread_cpu_us": {
+            "p50": 574.2225000000001,
+            "p95": 611.699
+          }
+        },
+        "validate_publication": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 149.4735,
+            "p95": 181.711
+          },
+          "thread_cpu_us": {
+            "p50": 150.186,
+            "p95": 182.539
+          }
+        },
+        "publish_complete_frame": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 5.1835,
+            "p95": 5.347
+          },
+          "thread_cpu_us": {
+            "p50": 5.266,
+            "p95": 5.473
+          }
+        },
+        "accepted_update_including_validation": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 752.5705,
+            "p95": 815.784
+          },
+          "thread_cpu_us": {
+            "p50": 753.335,
+            "p95": 816.651
+          }
+        },
+        "registry_collection": {
+          "iterations": 300,
+          "wall_us": {
+            "p50": 150.22750000000002,
+            "p95": 154.407
+          },
+          "thread_cpu_us": {
+            "p50": 150.558,
+            "p95": 154.896
+          }
+        },
+        "single_update_traced_bytes": {
+          "retained": 13386,
+          "peak": 29877
+        },
+        "retained_of_last_20_frames": 1
+      },
+      {
+        "pois": 100,
+        "prepare_with_admission": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 7453.4395,
+            "p95": 8343.136
+          },
+          "thread_cpu_us": {
+            "p50": 7454.912,
+            "p95": 8344.896
+          }
+        },
+        "validate_publication": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 474.9035,
+            "p95": 513.92
+          },
+          "thread_cpu_us": {
+            "p50": 475.5985,
+            "p95": 514.884
+          }
+        },
+        "publish_complete_frame": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 21.747500000000002,
+            "p95": 22.552
+          },
+          "thread_cpu_us": {
+            "p50": 21.861,
+            "p95": 22.729
+          }
+        },
+        "accepted_update_including_validation": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 7968.9585,
+            "p95": 9067.892
+          },
+          "thread_cpu_us": {
+            "p50": 7970.2970000000005,
+            "p95": 9069.908
+          }
+        },
+        "registry_collection": {
+          "iterations": 100,
+          "wall_us": {
+            "p50": 249.71800000000002,
+            "p95": 269.733
+          },
+          "thread_cpu_us": {
+            "p50": 250.08100000000002,
+            "p95": 270.474
+          }
+        },
+        "single_update_traced_bytes": {
+          "retained": 145496,
+          "peak": 693683
+        },
+        "retained_of_last_20_frames": 1
+      },
+      {
+        "pois": 1100,
+        "prepare_with_admission": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 77439.7235,
+            "p95": 95277.385
+          },
+          "thread_cpu_us": {
+            "p50": 77441.9335,
+            "p95": 95277.347
+          }
+        },
+        "validate_publication": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 3617.5420000000004,
+            "p95": 4134.191
+          },
+          "thread_cpu_us": {
+            "p50": 3618.5805,
+            "p95": 4135.827
+          }
+        },
+        "publish_complete_frame": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 194.3655,
+            "p95": 200.765
+          },
+          "thread_cpu_us": {
+            "p50": 194.7125,
+            "p95": 201.055
+          }
+        },
+        "accepted_update_including_validation": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 82605.449,
+            "p95": 99469.367
+          },
+          "thread_cpu_us": {
+            "p50": 82604.41,
+            "p95": 99465.067
+          }
+        },
+        "registry_collection": {
+          "iterations": 30,
+          "wall_us": {
+            "p50": 1309.5774999999999,
+            "p95": 1454.975
+          },
+          "thread_cpu_us": {
+            "p50": 1310.0995,
+            "p95": 1455.832
+          }
+        },
+        "single_update_traced_bytes": {
+          "retained": 690796,
+          "peak": 6968007
+        },
+        "retained_of_last_20_frames": 1
+      }
+    ],
+    "source_sha256": {
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/.superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task4/source-cost-probe.py": "15867db299f5115e5fffec97d44a1723b2f2c833a50512c0a7dc95a7d480f702",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/backend/starlink-location/app/core/metrics/source_admission.py": "9046408feec9f3d0e80ddf46f24cf80bc3d5e13c386455acf00d66605ef5d640",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/backend/starlink-location/app/core/metrics/metric_updater.py": "90fabbd4cbeb514b4cddaec18d4765b2f5e96ff5b23a46b54870938d65a08460",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/backend/starlink-location/app/core/metrics/frames.py": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368"
+    }
+  },
+  "warm_lifecycle_diagnostics": {
+    "scope": "Warm component diagnostics only; no application CPU/RSS or soak claim",
+    "client": "0.26.0",
+    "rows": [
+      {
+        "pois": 0,
+        "iterations": 100,
+        "accepted_with_callbacks_wall_us": {
+          "p50": 782.864,
+          "p95": 1328.762
+        },
+        "refresh_api_wall_us": {
+          "p50": 743.9285,
+          "p95": 828.925
+        },
+        "refresh_worker_cpu_us": {
+          "p50": 662.953,
+          "p95": 761.829
+        },
+        "dirty_signal_wall_us": {
+          "p50": 1.12,
+          "p95": 6.522
+        },
+        "preparations_per_10_notification_burst": [1],
+        "retained_of_last_20_frames": 1,
+        "single_refresh_traced_bytes": {
+          "retained": 14555,
+          "peak": 35397
+        }
+      },
+      {
+        "pois": 100,
+        "iterations": 50,
+        "accepted_with_callbacks_wall_us": {
+          "p50": 8259.9655,
+          "p95": 8633.242
+        },
+        "refresh_api_wall_us": {
+          "p50": 8242.1785,
+          "p95": 9101.509
+        },
+        "refresh_worker_cpu_us": {
+          "p50": 8015.277,
+          "p95": 8871.254
+        },
+        "dirty_signal_wall_us": {
+          "p50": 1.086,
+          "p95": 9.524
+        },
+        "preparations_per_10_notification_burst": [1],
+        "retained_of_last_20_frames": 1,
+        "single_refresh_traced_bytes": {
+          "retained": 146920,
+          "peak": 701170
+        }
+      },
+      {
+        "pois": 1100,
+        "iterations": 25,
+        "accepted_with_callbacks_wall_us": {
+          "p50": 85056.545,
+          "p95": 100933.337
+        },
+        "refresh_api_wall_us": {
+          "p50": 83117.399,
+          "p95": 97885.081
+        },
+        "refresh_worker_cpu_us": {
+          "p50": 83119.261,
+          "p95": 104867.343
+        },
+        "dirty_signal_wall_us": {
+          "p50": 1.099,
+          "p95": 10.539
+        },
+        "preparations_per_10_notification_burst": [1],
+        "retained_of_last_20_frames": 1,
+        "single_refresh_traced_bytes": {
+          "retained": 695057,
+          "peak": 6976509
+        }
+      }
+    ]
+  },
+  "component_source_commit": "2ff89c83f1746c53b1f7ecfc5dfcd46c95b69a54",
+  "component_files_identical_at_source_commit": true,
+  "component_source_sha256": {
+    "app/core/metrics/frames.py": "c214cdcdd063d5b5fe5072a607faa0d71374f26f1c94bc364774e44adca24368",
+    "app/core/metrics/frame_builder.py": "1e61545c026e9d293f4f328d4c4ff2ba35378460993908b72d730d3bc00b3fb7",
+    "app/core/metrics/metric_updater.py": "90fabbd4cbeb514b4cddaec18d4765b2f5e96ff5b23a46b54870938d65a08460",
+    "app/core/metrics/source_admission.py": "9046408feec9f3d0e80ddf46f24cf80bc3d5e13c386455acf00d66605ef5d640",
+    "app/core/metrics/refresh_inputs.py": "5e88917487e1ba3a4c7284d6f910a3c73b80e8cc244218c5d9e7efb28dcd9829",
+    "app/core/metrics/lifecycle.py": "3d6d20d5afd50ed50bf2e2edda78bc61cdf336ba88360692b4c9c0fc76624b34",
+    "app/services/poi/manager.py": "f4b4dd0c818fbdec91c47e0d4e46b138c85cd989f7d911e98df70198008f1b34"
+  },
+  "baseline_verification": [
+    {
+      "directory": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf390-baseline/evidence",
+      "files": 2072,
+      "mismatches": [],
+      "inventory_sha256": "0764879764432196349b6f03fcdbbce0b3d38f12f283518aeaf46f4d943cd577"
+    },
+    {
+      "directory": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-20-perf391/evidence",
+      "files": 128,
+      "mismatches": [],
+      "inventory_sha256": "99a833a16df7394bcfd23bff89b8920f79369bed7146ab0ed1b7f49aac1e1198"
+    },
+    {
+      "directory": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/.superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence",
+      "files": 26,
+      "mismatches": [],
+      "inventory_sha256": "a463de6fdfafbd04c9926c9d7b43a5136125710335a73e9bd088753d234fe473"
+    },
+    {
+      "directory": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/.superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task2",
+      "files": 28,
+      "mismatches": [],
+      "inventory_sha256": "e80fd48d989875a0984e3bbb8e822c862e20b003f3f9c9f61efe6a0a0ba69d50"
+    },
+    {
+      "directory": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/.superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task3",
+      "files": 86,
+      "mismatches": [],
+      "inventory_sha256": "f38f5d41b5b001e08e283128d9e32c05c6c2de50ae34407b65e5aec32e5dacac"
+    }
+  ],
+  "frozen_application": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+  "frozen_harness": "13cbf1d54b526307747578ecd4fc691562846834",
+  "instrumented_base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+  "application_performance_or_soak_acceptance_established": false,
+  "minimum_60_minute_soak_required_in_task": 6,
+  "cleanup": {
+    "evidence": "evidence/task4/cleanup.json at handoff",
+    "compose_or_server_started": false
+  },
+  "raw_evidence": ".superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task4/",
+  "lint": {
+    "black_files": 423,
+    "ruff_backend_cwd": "passed",
+    "ruff_explicit_backend_src": "passed",
+    "exploratory_root_ruff": "35 import-classification diagnostics; retained, resolved by explicit backend source root",
+    "docs_internal_links": "passed",
+    "docs_external_links": "private GitHub URL advisory network/certificate warning"
+  }
+}
