@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/verify_frontend.py", line 47, in <module>
+    print(json.dumps(verify(args.repo,args.output),indent=2))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/verify_frontend.py", line 29, in verify
+    final = build.apply_patch(effective, patches[role], specs[role])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/build.py", line 339, in apply_patch
+    before = tree_manifest(root)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/build.py", line 126, in tree_manifest
+    require(not (Path(parent) / name).is_symlink(), "symlink directory")
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/build.py", line 43, in require
+    raise GuardError(message)
+build.GuardError: symlink directory

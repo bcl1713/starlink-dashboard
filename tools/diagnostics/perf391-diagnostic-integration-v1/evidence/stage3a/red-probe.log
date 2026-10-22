@@ -1,0 +1,20 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/probe.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/probe.test.ts [ tests/frontend/probe.test.ts ]
+Error: Cannot find module '../../browser-probe' imported from /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/probe.test.ts
+ ❯ tests/frontend/probe.test.ts:2:1
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:04:06
+   Duration  126ms (transform 25ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)
+

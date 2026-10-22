@@ -1,0 +1,4 @@
+markdownlint-cli2 v0.19.1 (markdownlint v0.39.0)
+Finding: tools/diagnostics/perf391-diagnostic-integration-v1/STAGE3A.md tools/diagnostics/perf391-diagnostic-integration-v1/CAPTURE-FEASIBILITY.md tools/diagnostics/perf391-diagnostic-integration-v1/README.md tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/execution-notes.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 4 file(s)
+Summary: 0 error(s)

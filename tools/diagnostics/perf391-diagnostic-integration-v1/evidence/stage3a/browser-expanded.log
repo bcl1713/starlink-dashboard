@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 2.19999
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.551165
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.03881
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.200356
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.487635
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 4.476424
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.121977
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.217171
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19.515074

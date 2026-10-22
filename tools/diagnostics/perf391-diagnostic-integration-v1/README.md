@@ -1,4 +1,4 @@
-# Perf391 diagnostic integration v1 — Stages 1–2
+# Perf391 diagnostic integration v1 — Stages 1–3A
 
 Stage 1 implements offline contracts and source/build guards only, authorized by
 [the #408 orchestrator review](https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6350554670).
@@ -6,8 +6,12 @@ The approved design is at `8aa7791bb03f0573cf602bdbfe8e43c085ee2325` in
 [the integration plan](../../../docs/superpowers/plans/2026-10-22-perf391-diagnostic-integration.md).
 Stage 2 backend integration is now implemented under the later checkpoint
 authorization; see [Stage 2 evidence and limits](STAGE2.md). Image builds and
-runtime collection still require separate authorization. The exporter never
-imports application modules; offline tests execute guarded source slices.
+runtime collection still require separate authorization. Stage 3A adds the
+diagnostic-only frontend/browser adapters and offline tests; see
+[Stage 3A evidence, reproduction and limits](STAGE3A.md) and
+[passive capture feasibility](CAPTURE-FEASIBILITY.md). Stage 3B and Stage 4
+remain gated. The exporter never imports application modules; offline tests
+execute guarded source slices.
 
 ## Contract
 

@@ -1,0 +1,44 @@
+{
+  "independent_review": true,
+  "reviewer": "stage3a_review (gpt-6-astra, high)",
+  "second_review": false,
+  "critical": [],
+  "important_fixed": [
+    {
+      "finding": "total deadlines did not abort sink signals; job slots could recycle",
+      "fix": "per-operation cancellation, fail-closed admission, await owned wrappers at close",
+      "regressions": [
+        "a total sink deadline aborts its signal and never replaces it with more jobs",
+        "close settles all owned capture wrappers and releases the shared screenshot slot"
+      ]
+    },
+    {
+      "finding": "document-local ID reuse could falsely qualify a navigation screenshot",
+      "fix": "document ID in metadata and stable screenshot comparison",
+      "regressions": [
+        "navigation with identical local plot IDs cannot qualify a screenshot from a different document"
+      ]
+    },
+    {
+      "finding": "invented removeExposedBinding API masked pinned Playwright cleanup failure",
+      "fix": "retain and dispose actual 1.63.0 binding and init-script handles; faithful fake API",
+      "regressions": [
+        "cleanup disposes the pinned Playwright binding and init-script handles exactly once"
+      ]
+    }
+  ],
+  "coverage_ruling": "Raw/rollup-absent, explicit null, log floor and abandoned-render evidence were added under the original verification scope. Other review coverage suggestions stay unverified.",
+  "deferred_minors": [
+    "enabled timestamp-shift/resize diagnostic fixture matrix",
+    "duplicate callback and diagnostic-ID-collision fixtures"
+  ],
+  "declined_rulings": {
+    "runtime Page behavior and real pixels": "Unavailable by user restriction. Static API compatibility checked against installed pinned types; no runtime claim.",
+    "capture permission and actual task topology": "Read-only feasibility evidence only; permission/topology remain unavailable, Stage3B separate.",
+    "parse timing, cross-clock, physical display": "Explicit unavailable matrix; no inferred duration or scanout.",
+    "deployed parity, overhead, sustained boundedness": "No build/browser/runtime authorized. Offline bounds and source contracts only.",
+    "Stage4 projection, sinks, owner, ASGI joins": "Deferred per approved checkpoint. Required sink cancellation/bounds and run screenshot sharing are documented interfaces.",
+    "final hashes and cleanup": "Executor-owned strict derivation and host checks follow review; reviewer did not verify them."
+  },
+  "executor_followup": "All Important issues reproduced red then passed green; no second independent review claimed."
+}

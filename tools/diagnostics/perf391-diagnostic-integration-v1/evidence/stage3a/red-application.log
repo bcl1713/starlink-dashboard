@@ -1,0 +1,46 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/application.test.tsx (4 tests | 2 failed) 53ms
+   × captures real panel retained left margin and actual null breaks without extra uploads 35ms
+   × StrictMode remount/unmount produces real commits only and cancels panel identities 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/application.test.tsx > captures real panel retained left margin and actual null breaks without extra uploads
+AssertionError: expected undefined to be defined
+ ❯ tests/frontend/application.test.tsx:30:47
+     28|  const a=bundle(); a.series[metric.metric].unshift([85,9]); diagnostic…
+     29|  const view=render(panel(a)); const b=bundle(125); diagnostic!.respons…
+     30|  const c=diagnostic!.metadata()[0]; expect(c).toBeDefined();
+       |                                               ^
+     31|  await act(async()=>{for(let i=0;i<40;i++)await Promise.resolve();});
+     32|  const commits=(globalThis as any).__stage3Rows.filter((r:any)=>r.phas…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/frontend/application.test.tsx > StrictMode remount/unmount produces real commits only and cancels panel identities
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/frontend/application.test.tsx:47:105
+     45| });
+     46| it('StrictMode remount/unmount produces real commits only and cancels …
+     47|  const h=bundle();const view=render(<StrictMode>{panel(h)}</StrictMode…
+       |                                                                                                         ^
+     48|  view.unmount();expect(diagnostic!.metadata()).toHaveLength(0); const …
+     49| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 7 passed (9)
+   Start at  22:08:10
+   Duration  967ms (transform 133ms, setup 28ms, import 205ms, tests 65ms, environment 492ms)
+

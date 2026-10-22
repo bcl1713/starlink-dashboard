@@ -1,0 +1,16 @@
+Using Python 3.11.16 environment at: .stage3a-work/venv
+Resolved 8 packages in 281ms
+Downloading ruff (10.7MiB)
+Downloading black (1.7MiB)
+ Downloaded black
+ Downloaded ruff
+Prepared 8 packages in 281ms
+Installed 8 packages in 2ms
+ + black==26.1.0
+ + click==8.5.0
+ + mypy-extensions==1.1.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + platformdirs==4.13.5
+ + pytokens==0.4.1
+ + ruff==0.8.2

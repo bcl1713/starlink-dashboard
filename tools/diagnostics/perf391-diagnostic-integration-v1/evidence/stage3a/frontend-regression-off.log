@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work/verified-clean/A-effective/frontend/mission-planner
+
+
+ Test Files  308 passed (308)
+      Tests  2102 passed (2102)
+   Start at  22:16:18
+   Duration  101.26s (transform 5.15s, setup 1.09s, import 34.20s, tests 53.34s, environment 85.97s)
+

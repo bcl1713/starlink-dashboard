@@ -2,3 +2,4 @@ __pycache__/
 /artifacts/
 
 /evidence/stage2/**/coverage.data
+/node_modules

@@ -1,0 +1,15 @@
+[
+  {
+    "pid": 4046608,
+    "pgid": 4046608,
+    "command": [
+      "timeout",
+      "--kill-after=10s",
+      "2m",
+      ".stage3a-work/venv/bin/black",
+      "tools/diagnostics/perf391-diagnostic-integration-v1/verify_frontend.py",
+      "tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_frontend_guards.py"
+    ],
+    "action": "SIGTERM stalled task-owned Black group"
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "owner": "perf391-integration-stage3a",
+  "host_visible": true,
+  "status": "clean",
+  "owned_pid_survivors": [],
+  "runtime_processes": [],
+  "task_listeners": [],
+  "docker_checks": {
+    "containers": {
+      "returncode": 0,
+      "resources": []
+    },
+    "networks": {
+      "returncode": 0,
+      "resources": []
+    },
+    "volumes": {
+      "returncode": 0,
+      "resources": []
+    },
+    "docker_context": {
+      "returncode": 0,
+      "resources": ["default"]
+    },
+    "listener_visibility": {
+      "returncode": 0,
+      "resources": "host listeners readable; no task process survives"
+    }
+  },
+  "removed_paths": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/node_modules",
+    "/tmp/perf391-stage2-slices-6j9ot2vp"
+  ],
+  "application_services_started": false,
+  "browser_started": false,
+  "packets_captured": false,
+  "worktree_retained_for_open_PR": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a",
+  "unrelated_rank1_tmp_preserved": true
+}

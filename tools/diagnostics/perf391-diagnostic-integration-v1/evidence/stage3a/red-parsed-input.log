@@ -1,0 +1,26 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/probe.test.ts (8 tests | 1 failed) 15ms
+   × records parsed network response samples even when no panel ever accepts that response 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/probe.test.ts > records parsed network response samples even when no panel ever accepts that response
+TypeError: Cannot read properties of undefined (reading 'series')
+ ❯ tests/frontend/probe.test.ts:198:93
+    196| it('records parsed network response samples even when no panel ever ac…
+    197|  const {probe,records}=fixture();const h=bundle();probe.response('reje…
+    198|  const parsed=records.find(r=>r.phase==='app.parse_available');expect(…
+       |                                                                                             ^
+    199|  expect(records.some(r=>r.phase==='plot.commit')).toBe(false);
+    200| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 15 passed (16)
+   Start at  22:18:46
+   Duration  1.90s (transform 155ms, setup 35ms, import 362ms, tests 229ms, environment 1.01s)
+

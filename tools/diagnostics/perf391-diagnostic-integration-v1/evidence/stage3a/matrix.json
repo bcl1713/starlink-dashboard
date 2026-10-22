@@ -1,0 +1,34 @@
+{
+  "stage": "3A",
+  "runtime_qualified": false,
+  "available_offline": [
+    "existing queryFn identity, success/error/cancel delivery",
+    "existing Axios call signal/config and parsed object WeakMap association",
+    "structural sharing remains old-object identity, unknown clones stay unknown",
+    "actual retained left margin, per-sample response provenance, projection and plot arrays",
+    "uPlot boundary calls observed via deterministic test double; layout commit generation",
+    "StrictMode mount/unmount and stale/window-mismatched render candidates",
+    "hidden/error/reduced-motion upload/reuse and CSS behavior",
+    "passive Page Request-object lifecycle with fake Page ordering",
+    "bounded chunk transport, saturation, loss, cancellation and listener cleanup",
+    "compositor screenshot orchestration with stable generation and geometry brackets"
+  ],
+  "unavailable": {
+    "native_parse_start_duration": "Axios resolution is parsed availability only",
+    "browser_wire_send_receive": "Page callback observation is not physical transmission",
+    "encoded_decoded_network_body": "Stage 3B not implemented; no browser body API fallback",
+    "backend_header_join": "ASGI/header owner integration remains Stage 4",
+    "unknown_structural_sharing_provenance": "no numerical/timestamp inference",
+    "actual_canvas_raster_pixels": "no runtime browser allowed; uPlot boundary uses test double",
+    "deployed_rendering_or_overhead_parity": "no builds, browsers or calibration",
+    "physical_scanout_continuous_gap_absence": "sampled compositor brackets cannot establish either",
+    "cross_clock_durations": "browser document and host clocks remain separate",
+    "v1_chart_projection": "raw Stage 3A adapter records await Stage 4 owner/contract projection; actual retained and plot snapshots are required",
+    "A_frame_final_CAS": "unavailable by design; unchanged Stage 2 semantics"
+  },
+  "unverified_offline_fixtures": [
+    "enabled timestamp-shift/resize diagnostics",
+    "duplicate Page callbacks",
+    "diagnostic request-ID collisions"
+  ]
+}

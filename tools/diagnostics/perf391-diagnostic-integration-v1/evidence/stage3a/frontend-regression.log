@@ -1,0 +1,120 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work/verified-clean/A-effective/frontend/mission-planner
+
+ ❯ src/pages/OperatorHelpAssets.test.ts (3 tests | 3 failed) 8ms
+   × packages every curriculum guide section and resolves local links without an external service 3ms
+   × packages unchanged synthetic screenshots with capture identity and readable descriptions 0ms
+   × resolves every parity matrix guide reference to the packaged manual 3ms
+ ❯ src/hooks/api/useOverviewRefresh.test.tsx (31 tests | 1 failed) 87ms
+     × refreshes 'history bundle' at its default cadence without focus, then releases its timer 11ms
+ ❯ src/services/overview-history.test.ts (3 tests | 1 failed) 9ms
+     × gets the shared overview telemetry-history bundle 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/overview-history.test.ts > overviewHistoryApi > gets the shared overview telemetry-history bundle
+AssertionError: expected "vi.fn()" to be called with arguments: [ '/api/overview-history', …(1) ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+    "/api/overview-history",
+    {
++     "headers": {
++       "x-diagnostic-id": "synthetic-test/p/undefined/r1",
++     },
+      "signal": undefined,
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/services/overview-history.test.ts:28:27
+     26|     } as never);
+     27|     await expect(overviewHistoryApi.get()).resolves.toEqual(bundle);
+     28|     expect(apiClient.get).toHaveBeenCalledWith('/api/overview-history'…
+       |                           ^
+     29|       signal: undefined,
+     30|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/pages/OperatorHelpAssets.test.ts > packages every curriculum guide section and resolves local links without an external service
+Error: ENOENT: no such file or directory, open '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/public/operator-help/guide.html'
+ ❯ read src/pages/OperatorHelpAssets.test.ts:8:32
+      6| import { trainingSteps } from '@/components/operator/training/training…
+      7| const root = resolve('public/operator-help');
+      8| const read = (name: string) => readFileSync(join(root, name), 'utf8');
+       |                                ^
+      9| const parse = (name: string) =>
+     10|   new DOMParser().parseFromString(read(name), 'text/html');
+ ❯ parse src/pages/OperatorHelpAssets.test.ts:10:35
+ ❯ src/pages/OperatorHelpAssets.test.ts:12:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/pages/OperatorHelpAssets.test.ts > packages unchanged synthetic screenshots with capture identity and readable descriptions
+Error: ENOENT: no such file or directory, open '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/public/operator-help/images/provenance.json'
+ ❯ read src/pages/OperatorHelpAssets.test.ts:8:32
+      6| import { trainingSteps } from '@/components/operator/training/training…
+      7| const root = resolve('public/operator-help');
+      8| const read = (name: string) => readFileSync(join(root, name), 'utf8');
+       |                                ^
+      9| const parse = (name: string) =>
+     10|   new DOMParser().parseFromString(read(name), 'text/html');
+ ❯ src/pages/OperatorHelpAssets.test.ts:30:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/pages/OperatorHelpAssets.test.ts > resolves every parity matrix guide reference to the packaged manual
+Error: ENOENT: no such file or directory, open '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/public/operator-help/guide.html'
+ ❯ read src/pages/OperatorHelpAssets.test.ts:8:32
+      6| import { trainingSteps } from '@/components/operator/training/training…
+      7| const root = resolve('public/operator-help');
+      8| const read = (name: string) => readFileSync(join(root, name), 'utf8');
+       |                                ^
+      9| const parse = (name: string) =>
+     10|   new DOMParser().parseFromString(read(name), 'text/html');
+ ❯ parse src/pages/OperatorHelpAssets.test.ts:10:35
+ ❯ src/pages/OperatorHelpAssets.test.ts:61:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/hooks/api/useOverviewRefresh.test.tsx > Overview saved-state refresh > refreshes 'history bundle' at its default cadence without focus, then releases its timer
+AssertionError: expected last "vi.fn()" call to have been called with [ '/api/overview-history', …(1) ]
+
+- Expected
++ Received
+
+@@ -1,8 +1,11 @@
+  [
+    "/api/overview-history",
+    {
++     "headers": {
++       "x-diagnostic-id": "synthetic-test/p/r2",
++     },
+      "signal": AbortSignal {
+        Symbol(kEvents): Map {},
+        Symbol(events.maxEventTargetListeners): 10,
+        Symbol(events.maxEventTargetListenersWarned): false,
+        Symbol(kHandlers): Map {},
+
+ ❯ src/hooks/api/useOverviewRefresh.test.tsx:157:29
+    155|       await tick(2);
+    156|       expect(apiClient.get).toHaveBeenCalledTimes(2);
+    157|       expect(apiClient.get).toHaveBeenLastCalledWith(endpoint, {
+       |                             ^
+    158|         signal: expect.any(AbortSignal),
+    159|       });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  3 failed | 305 passed (308)
+      Tests  5 failed | 2097 passed (2102)
+   Start at  22:13:53
+   Duration  100.02s (transform 5.60s, setup 1.09s, import 34.21s, tests 52.27s, environment 84.98s)
+

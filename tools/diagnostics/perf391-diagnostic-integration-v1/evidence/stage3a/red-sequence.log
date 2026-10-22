@@ -1,0 +1,93 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 2.639162
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.651791
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.360437
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.618449
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.280382
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 4.505511
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.196528
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.259574
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.45344
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 1.096411
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+not ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 1.701836
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:288:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    -   1,
+        2,
+        3,
+    +   4
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 1
+    1: 2
+    2: 3
+  actual:
+    0: 2
+    1: 3
+    2: 4
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:289:213)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 10
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 26.344285

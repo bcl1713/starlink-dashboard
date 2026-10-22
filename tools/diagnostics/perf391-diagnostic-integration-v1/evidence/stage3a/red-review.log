@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 2.596245
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.485912
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.310972
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.567322
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.305605
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 4.645477
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.430224
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.36739
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.493641
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 1.139732
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 0.937583
+  ...
+# Subtest: a total sink deadline aborts its signal and never replaces it with more jobs
+not ok 12 - a total sink deadline aborts its signal and never replaces it with more jobs
+  ---
+  duration_ms: 26.14713
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:291:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:294:9)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: navigation with identical local plot IDs cannot qualify a screenshot from a different document
+not ok 13 - navigation with identical local plot IDs cannot qualify a screenshot from a different document
+  ---
+  duration_ms: 0.609573
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:296:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'ok'
+    - 'unavailable'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'unavailable'
+  actual: 'ok'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:298:9)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: cleanup disposes the pinned Playwright binding and init-script handles exactly once
+not ok 14 - cleanup disposes the pinned Playwright binding and init-script handles exactly once
+  ---
+  duration_ms: 0.244492
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:300:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs:301:93)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 11
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2025.732893

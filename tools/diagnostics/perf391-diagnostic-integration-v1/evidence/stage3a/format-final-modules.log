@@ -1,0 +1,4 @@
+tools/diagnostics/perf391-diagnostic-integration-v1/browser-probe.ts 114ms
+tools/diagnostics/perf391-diagnostic-integration-v1/browser.mjs 57ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/probe.test.ts 33ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs 25ms

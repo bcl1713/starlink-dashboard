@@ -1,0 +1,85 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 2.794952
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.683356
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.501819
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.837297
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.308196
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 4.453254
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.688263
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.370505
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.549347
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 1.162868
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 0.887062
+  ...
+# Subtest: a total sink deadline aborts its signal and never replaces it with more jobs
+ok 12 - a total sink deadline aborts its signal and never replaces it with more jobs
+  ---
+  duration_ms: 25.931812
+  ...
+# Subtest: navigation with identical local plot IDs cannot qualify a screenshot from a different document
+ok 13 - navigation with identical local plot IDs cannot qualify a screenshot from a different document
+  ---
+  duration_ms: 0.663728
+  ...
+# Subtest: cleanup disposes the pinned Playwright binding and init-script handles exactly once
+ok 14 - cleanup disposes the pinned Playwright binding and init-script handles exactly once
+  ---
+  duration_ms: 0.152546
+  ...
+# Subtest: close settles all owned capture wrappers and releases the shared screenshot slot
+ok 15 - close settles all owned capture wrappers and releases the shared screenshot slot
+  ---
+  duration_ms: 0.399824
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53.992465

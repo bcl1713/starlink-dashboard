@@ -1,0 +1,77 @@
+{
+  "owner": "perf391-integration-stage3a",
+  "processes": [
+    {
+      "pid": 4058659,
+      "pgid": 4058659,
+      "start": "210989426",
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a",
+      "command": ["timeout", "--kill-after=10s", "6m", "bash", "-c"]
+    },
+    {
+      "pid": 4058660,
+      "pgid": 4058659,
+      "start": "210989426",
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work/final/A-effective/frontend/mission-planner",
+      "command": [
+        "node",
+        "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/.bin/vitest",
+        "run",
+        "--config",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/regression.config.mjs"
+      ]
+    },
+    {
+      "pid": 4061419,
+      "pgid": 4061419,
+      "start": "210992439",
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a",
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "2m",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/node_modules/.bin/tsc",
+        "-p"
+      ]
+    },
+    {
+      "pid": 4061420,
+      "pgid": 4061419,
+      "start": "210992440",
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a",
+      "command": [
+        "node",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/node_modules/.bin/tsc",
+        "-p",
+        ".stage3a-work/frontend-typecheck.json",
+        "--noEmit"
+      ]
+    },
+    {
+      "pid": 4061572,
+      "pgid": 4058659,
+      "start": "210992628",
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work/final/A-effective/frontend/mission-planner",
+      "command": [
+        "/home/oracle-worker/.local/node-v22.12.0-linux-x64/bin/node",
+        "--experimental-import-meta-resolve",
+        "--require",
+        "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/vitest/suppress-warnings.cjs",
+        "--conditions"
+      ]
+    },
+    {
+      "pid": 4061643,
+      "pgid": 4058659,
+      "start": "210992676",
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work/final/A-effective/frontend/mission-planner",
+      "command": [
+        "/home/oracle-worker/.local/node-v22.12.0-linux-x64/bin/node",
+        "--experimental-import-meta-resolve",
+        "--require",
+        "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/vitest/suppress-warnings.cjs",
+        "--conditions"
+      ]
+    }
+  ]
+}

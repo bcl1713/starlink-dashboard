@@ -1,0 +1,33 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/probe.test.ts (5 tests | 1 failed) 16ms
+     × captures actual retained/projection/plot arrays and invalidates unmount evidence 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/probe.test.ts > bounded browser origin probe > captures actual retained/projection/plot arrays and invalidates unmount evidence
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/frontend/probe.test.ts:52:75
+     50|     expect(commit.detail.plot.data).toEqual(data); expect(commit.detai…
+     51|     expect(commit.detail.provenance.observed).toEqual(['r','r']);
+     52|     expect(commit.detail.layoutOnly).toBe(true); expect(probe.metadata…
+       |                                                                           ^
+     53|     probe.unmount(panel); expect(probe.metadata()).toHaveLength(0);
+     54|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  22:05:19
+   Duration  168ms (transform 50ms, setup 0ms, import 60ms, tests 16ms, environment 0ms)
+

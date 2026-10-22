@@ -1,0 +1,92 @@
+{
+  "stage": "3A",
+  "starting_commit": "e880c4d9e6b2b9c7c46bcf7985ab028efe98e5cd",
+  "image_built": false,
+  "application_started": false,
+  "runtime_authorized": false,
+  "roles": {
+    "A": {
+      "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "archive_sha256": "cebfb7254994f0c6e31e0fd8cc06319430efcd32b4457787673c70ab21795153",
+      "stage2_effective_source_sha256": "f7db276a6fe53ca0128cf30e304eef02b094fb72eb2ba765b12b3eb589d6ba3c",
+      "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+      "frontend_spec_sha256": "0cfbd239c427b1f309d9d7a6e8ad0345b5f425ce63f517cc065c42872c7381dd",
+      "effective_source_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+      "frontend_tree_sha256": "1127ba9fd2b5febb1626c6889ca69963c07db5863a0e29f68c2550fa456476cb",
+      "frontend_closure_sha256": "86855b14e3f59c4646f60e74bbfb8e83e595fd8f2e130834de6257419c203949",
+      "frontend_files": {
+        "frontend/mission-planner/src/hooks/api/useOverviewHistory.ts": {
+          "before": "f8e71710eb33d33c33776cfd54d3ab3878fe519d47835f928557a490cf0750d2",
+          "after": "b3e7e920651cd1dfb3e8f4088e89ee4383c2de29ac30e1cd14f7b7e9dc723473"
+        },
+        "frontend/mission-planner/src/services/overview-history.ts": {
+          "before": "306ed1180aa6508004c32f0a94bf3ed0c00ae84f2d958a12599beb1d6e6224cf",
+          "after": "d0018969b749208454a58f5cd179d6e9dd4865176772e1da0ca7336bbe0f5574"
+        },
+        "frontend/mission-planner/src/pages/OverviewMetricHistoryPanel.tsx": {
+          "before": "82ff980d5ad4908ea905169e2b6504dc53407d082657be41cb367dd7f8085c7a",
+          "after": "69be7dea964b54244018192c3247fabc7ee72264f765ccb93fc6a159be6a40f2"
+        }
+      },
+      "projection_module_hashes": {
+        "frontend/mission-planner/src/pages/OverviewMetricHistoryPanel.css": "c76824d693fa7a7503ff24de1a5ff1f5b510ebbb68033682864bb8ccb8ada067",
+        "frontend/mission-planner/src/pages/overview-metric-history.ts": "979fdd480fd3814c0467c64a6e9ff28b8fd0a3297793777a25bc9d1e9f73477f",
+        "frontend/mission-planner/src/pages/overview-metric-motion.ts": "b6eb2864e98bb83005868a4dff9fb3d6627ff005e1b3a44020470e29a406c6ee",
+        "frontend/mission-planner/src/pages/overview-metric-plot-options.ts": "5d37c87d36562427423f90fd319312daa3d7948d5e7249c62d038e5dab024c81",
+        "frontend/mission-planner/src/pages/overview-metric-retention.ts": "1ed1a499db38c82e048899158f176d25185d8ad8f6d5feccdd76dcf2650fe0ee",
+        "frontend/mission-planner/src/pages/overview-metric-scale.ts": "d01e53734193a3441a65957e91f19d3bd541de2d42305e4e3ace5214e90f55bb"
+      },
+      "inventory_sha256": "a1439299a06a580c64fb38e53c8e5f746157e0521ac8e5f4ec861ee0de8c4231"
+    },
+    "C": {
+      "base_application_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "archive_sha256": "279c1717f3b186a9780096d8fcce2fe925ac489c2ff3b6db3fd613f54d8acdf5",
+      "stage2_effective_source_sha256": "b058bf866762d4a5bb0e405fbf06ecf91c201c137ea6d2ead30da2f08e7998e8",
+      "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+      "frontend_spec_sha256": "467d99910f11025e7d0b378b12753d2082987df935b86e483c3aaebc0dbd1ca7",
+      "effective_source_sha256": "4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a",
+      "frontend_tree_sha256": "1127ba9fd2b5febb1626c6889ca69963c07db5863a0e29f68c2550fa456476cb",
+      "frontend_closure_sha256": "86855b14e3f59c4646f60e74bbfb8e83e595fd8f2e130834de6257419c203949",
+      "frontend_files": {
+        "frontend/mission-planner/src/hooks/api/useOverviewHistory.ts": {
+          "before": "f8e71710eb33d33c33776cfd54d3ab3878fe519d47835f928557a490cf0750d2",
+          "after": "b3e7e920651cd1dfb3e8f4088e89ee4383c2de29ac30e1cd14f7b7e9dc723473"
+        },
+        "frontend/mission-planner/src/services/overview-history.ts": {
+          "before": "306ed1180aa6508004c32f0a94bf3ed0c00ae84f2d958a12599beb1d6e6224cf",
+          "after": "d0018969b749208454a58f5cd179d6e9dd4865176772e1da0ca7336bbe0f5574"
+        },
+        "frontend/mission-planner/src/pages/OverviewMetricHistoryPanel.tsx": {
+          "before": "82ff980d5ad4908ea905169e2b6504dc53407d082657be41cb367dd7f8085c7a",
+          "after": "69be7dea964b54244018192c3247fabc7ee72264f765ccb93fc6a159be6a40f2"
+        }
+      },
+      "projection_module_hashes": {
+        "frontend/mission-planner/src/pages/OverviewMetricHistoryPanel.css": "c76824d693fa7a7503ff24de1a5ff1f5b510ebbb68033682864bb8ccb8ada067",
+        "frontend/mission-planner/src/pages/overview-metric-history.ts": "979fdd480fd3814c0467c64a6e9ff28b8fd0a3297793777a25bc9d1e9f73477f",
+        "frontend/mission-planner/src/pages/overview-metric-motion.ts": "b6eb2864e98bb83005868a4dff9fb3d6627ff005e1b3a44020470e29a406c6ee",
+        "frontend/mission-planner/src/pages/overview-metric-plot-options.ts": "5d37c87d36562427423f90fd319312daa3d7948d5e7249c62d038e5dab024c81",
+        "frontend/mission-planner/src/pages/overview-metric-retention.ts": "1ed1a499db38c82e048899158f176d25185d8ad8f6d5feccdd76dcf2650fe0ee",
+        "frontend/mission-planner/src/pages/overview-metric-scale.ts": "d01e53734193a3441a65957e91f19d3bd541de2d42305e4e3ace5214e90f55bb"
+      },
+      "inventory_sha256": "49f73f69b759e00f9c10976e2b81d38af8a5a4cf9ff5088413ec65176d4a3273"
+    }
+  },
+  "modules": {
+    "browser-probe.ts": "7ed1e6293a699c27c94857b57daf1edef4d1884d182a2d1e8580537c9d3dfe83",
+    "browser.mjs": "585f82b8793f3c5cfa76047f735293906038d0bc6779c1cc24510afac4f56d9e",
+    "frontend-config.mjs": "3ff325493171a0493259e97bbe0690f5fa2264ffba1833653133b912b6228219"
+  },
+  "equivalence": {
+    "frontend_equal": true,
+    "corrected_runtime_equal": true,
+    "runtime_paths": [
+      "backend",
+      "frontend",
+      "tools",
+      "monitoring",
+      "scripts",
+      "docker-compose*"
+    ]
+  }
+}

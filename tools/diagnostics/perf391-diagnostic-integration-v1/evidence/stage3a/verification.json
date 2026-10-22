@@ -1,0 +1,43 @@
+{
+  "stage": "3A",
+  "starting_commit": "e880c4d9e6b2b9c7c46bcf7985ab028efe98e5cd",
+  "python": {
+    "passed": 68,
+    "failed": 0,
+    "evidence": "backend-final-tests.log",
+    "owner": "backend-final-owner.json"
+  },
+  "frontend_active": {
+    "A": 18,
+    "C": 18,
+    "failed": 0,
+    "evidence": ["frontend-final-A.log", "frontend-final-C.log"]
+  },
+  "fake_Page": {
+    "passed": 15,
+    "failed": 0,
+    "evidence": "browser-final.log"
+  },
+  "frontend_regression_attachment_off": {
+    "passed": 2102,
+    "files": 308,
+    "failed": 0,
+    "evidence": "frontend-final-regression.log"
+  },
+  "typecheck": {
+    "noEmit": true,
+    "passed": true,
+    "evidence": "typecheck-final.log"
+  },
+  "static_checks": [
+    "black-api-check.log",
+    "ruff-final.log",
+    "prettier-final-check.log",
+    "markdownlint-final.log"
+  ],
+  "independent_review": "review.json",
+  "cleanup": "cleanup.json",
+  "prior_failed_discovery_runs_retained": true,
+  "runtime_qualification": false,
+  "stop_before": ["Stage3B", "Stage4"]
+}

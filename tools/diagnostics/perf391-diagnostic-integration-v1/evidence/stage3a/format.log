@@ -1,0 +1,10 @@
+tools/diagnostics/perf391-diagnostic-integration-v1/browser-probe.ts 116ms
+tools/diagnostics/perf391-diagnostic-integration-v1/browser.mjs 65ms
+tools/diagnostics/perf391-diagnostic-integration-v1/frontend-config.mjs 2ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/application.test.tsx 31ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/probe.test.ts 24ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/regression.config.mjs 3ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/request.test.tsx 17ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/setup.ts 3ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/vitest.config.mjs 2ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs 20ms

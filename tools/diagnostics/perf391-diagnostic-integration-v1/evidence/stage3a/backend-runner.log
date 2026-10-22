@@ -1,0 +1,43 @@
+{
+  "purpose": "Stage 2 offline tests only",
+  "command": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/.stage3a-work/venv/bin/python",
+    "-B",
+    "-m",
+    "coverage",
+    "run",
+    "--branch",
+    "--source=backend_probe,workers,build,contract",
+    "-m",
+    "unittest",
+    "discover",
+    "-v",
+    "-s",
+    "tests",
+    "-p",
+    "test_*.py"
+  ],
+  "owner_pid": 13,
+  "owner_pgid": 12,
+  "owner_start": "210873394",
+  "child": {
+    "pid": 14,
+    "pgid": 14,
+    "start": "210873396"
+  },
+  "deadline_seconds": 180,
+  "services": [],
+  "listeners": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "status": "clean",
+  "returncode": -15,
+  "descendant_cleanup": {
+    "term": [],
+    "kill": [],
+    "reaped": [],
+    "survivors": []
+  },
+  "live_group_survivors": []
+}

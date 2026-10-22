@@ -1,2 +1,6 @@
 # A unified diff must retain its single-space blank context lines.
 patches/*.patch whitespace=-blank-at-eol
+
+patches/frontend/*.patch whitespace=-blank-at-eol
+# Preserve byte-for-byte native test reporter output, including final blank lines.
+evidence/stage3a/*.log whitespace=-blank-at-eol,-blank-at-eof

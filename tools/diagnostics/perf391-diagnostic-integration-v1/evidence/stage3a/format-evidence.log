@@ -1,0 +1,13 @@
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/regression.config.mjs 35ms
+tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/vitest.config.mjs 5ms
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/backend-final-owner.json 3ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/backend-owner.json 2ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/execution-notes.md 23ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/feasibility-host.json 3ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/final-process-ownership.json 3ms
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/formatter-stop.json 1ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/identity.json 3ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/matrix.json 1ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/resources.json 1ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage3a/review.json 1ms (unchanged)
+tools/diagnostics/perf391-diagnostic-integration-v1/STAGE3A.md 27ms

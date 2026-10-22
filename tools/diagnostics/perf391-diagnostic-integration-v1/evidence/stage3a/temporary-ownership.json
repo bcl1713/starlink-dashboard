@@ -1,0 +1,7 @@
+{
+  "path": "/tmp/perf391-stage2-slices-6j9ot2vp",
+  "failed_child_start": "2026-10-22T22:12:33.960000+00:00",
+  "birth": "2026-10-22 22:12:34.987308506 +0000",
+  "initial_baseline_absent": true,
+  "purpose": "failed sandbox backend_support exact-source slices"
+}

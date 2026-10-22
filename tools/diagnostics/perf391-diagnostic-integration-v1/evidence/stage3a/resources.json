@@ -1,0 +1,22 @@
+{
+  "owner": "perf391-integration-stage3a",
+  "worktree": ".worktrees/perf391-integration-stage3a",
+  "temporary_paths": [
+    ".stage3a-work",
+    "/tmp/perf391-stage2-slices-6j9ot2vp",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/node_modules",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/artifacts"
+  ],
+  "process_policy": "Only bounded offline commands under timeout --kill-after=10s; no detached processes",
+  "compose_projects": [],
+  "private_volumes": [],
+  "servers": [],
+  "browsers": [],
+  "capture": false,
+  "tool_sessions": {
+    "final_frontend": 81070,
+    "active_frontend_and_page": 14681,
+    "backend_final": 12953,
+    "typecheck": 46236
+  }
+}

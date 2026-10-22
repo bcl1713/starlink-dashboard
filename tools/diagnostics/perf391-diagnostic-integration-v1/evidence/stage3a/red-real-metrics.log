@@ -1,0 +1,33 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/probe.test.ts (7 tests | 1 failed) 18ms
+   × accepts the full eleven-metric application response without confusing the five-panel cap 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/probe.test.ts > accepts the full eleven-metric application response without confusing the five-panel cap
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/frontend/probe.test.ts:70:100
+     68| it('accepts the full eleven-metric application response without confus…
+     69|  const {probe}=fixture();const h=bundle();for(let i=0;i<10;i++)h.serie…
+     70|  probe.response('full',h);expect(probe.association(h)).toBe('full');ex…
+       |                                                                                                    ^
+     71| });
+     72|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 14 passed (15)
+   Start at  22:17:05
+   Duration  1.95s (transform 168ms, setup 38ms, import 369ms, tests 258ms, environment 1.01s)
+

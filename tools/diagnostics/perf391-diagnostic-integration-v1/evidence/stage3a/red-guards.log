@@ -1,0 +1,20 @@
+E
+======================================================================
+ERROR: test_frontend_guards (unittest.loader._FailedTest.test_frontend_guards)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_frontend_guards
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/loader.py", line 419, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/loader.py", line 362, in _get_module_from_name
+    __import__(name)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage3a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_frontend_guards.py", line 7, in <module>
+    from verify_frontend import verify
+ModuleNotFoundError: No module named 'verify_frontend'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
