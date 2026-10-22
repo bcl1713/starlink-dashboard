@@ -10,9 +10,9 @@ This is the current Task 3 report for
 [draft PR #406](https://github.com/bcl1713/starlink-dashboard/pull/406), under
 the
 [continuation review](https://github.com/bcl1713/starlink-dashboard/pull/406#issuecomment-6339790818).
-The [fixed schedule](perf-391-rank-1-continuation-schedule.md) was committed and
-pushed at `eef47f41` before measurements.
-[Results](probes/perf391-rank1-continuation-results.json) and the
+The [fixed schedule](perf-391-rank-1-continuation-schedule.md) was committed at
+`eef47f41` before measurements and pushed unchanged while the fixed runs were
+underway. [Results](probes/perf391-rank1-continuation-results.json) and the
 [raw-evidence manifest](probes/perf391-rank1-continuation-manifest.json) retain
 every run and comparison.
 
