@@ -233,6 +233,40 @@ def prepare_metrics_from_telemetry(
     The producer owns repository admission and publication. Replay owners defer
     publication until runtime commit. No retry or derived refresh calls this API.
     """
+    return _prepare_metrics_from_telemetry_admitted(
+        telemetry,
+        config,
+        active_route,
+        poi_manager,
+        flight_events_managed=flight_events_managed,
+        mission_context=mission_context,
+        simulation_plan=simulation_plan,
+        simulation_frame=simulation_frame,
+        route_progress=route_progress,
+        coordinator_id=coordinator_id,
+        _captured_head=_captured_head,
+    )
+
+
+def _prepare_metrics_from_telemetry_admitted(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    _captured_head=None,
+) -> "GaugeFrame | None":
+    """Account for one accepted observation and return a private complete frame.
+
+    The producer owns repository admission and publication. Replay owners defer
+    publication until runtime commit. No retry or derived refresh calls this API.
+    """
     from app.core import eta_service
     from app.core.metrics.frame_builder import FrameInputs, prepare_frame
     from app.core.metrics.prometheus_metrics import FRAME_STORE
@@ -314,47 +348,82 @@ def update_metrics_from_telemetry(
     Repository admission serializes accepted calculation with model/source writes;
     Prometheus readers never enter it. Independent observations are not rolled back.
     """
-    from app.core.metrics.prometheus_metrics import FRAME_STORE
     from app.core.metrics.source_admission import frame_inputs_are_current
     from app.mission.storage import get_active_leg_lock
 
     with get_active_leg_lock():
         if source_is_current is not None and not source_is_current():
             return
-        expected = FRAME_STORE.read()
 
-        def captured(head):
-            nonlocal expected
-            expected = head
+        def final_validation(frame):
+            return (
+                source_is_current is None or source_is_current()
+            ) and frame_inputs_are_current(frame, active_route, poi_manager)
 
-        try:
-            frame = prepare_metrics_from_telemetry(
-                telemetry,
-                config,
-                active_route,
-                poi_manager,
-                flight_events_managed=flight_events_managed,
-                mission_context=mission_context,
-                simulation_plan=simulation_plan,
-                simulation_frame=simulation_frame,
-                route_progress=route_progress,
-                coordinator_id=coordinator_id,
-                _captured_head=captured,
-            )
-            if frame is None:
-                return
-            # Recheck immediately before the CAS, under repository admission.
-            if (
-                source_is_current is not None and not source_is_current()
-            ) or not frame_inputs_are_current(frame, active_route, poi_manager):
-                FRAME_STORE.fail(expected, "telemetry source superseded")
-                return
-            FRAME_STORE.publish(expected, frame)
-        except Exception:
-            FRAME_STORE.fail(expected, "telemetry preparation failed")
-            if mission_context is not None:
-                raise
-            logger.exception("Complete metric frame preparation failed")
+        _update_metrics_from_telemetry_admitted(
+            telemetry,
+            config,
+            active_route,
+            poi_manager,
+            flight_events_managed=flight_events_managed,
+            mission_context=mission_context,
+            simulation_plan=simulation_plan,
+            simulation_frame=simulation_frame,
+            route_progress=route_progress,
+            coordinator_id=coordinator_id,
+            final_validation=final_validation,
+        )
+
+
+def _update_metrics_from_telemetry_admitted(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    final_validation: Callable[["GaugeFrame"], bool],
+) -> None:
+    """Update under caller-held canonical admission after immediate entry validation."""
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
+
+    expected = FRAME_STORE.read()
+
+    def captured(head):
+        nonlocal expected
+        expected = head
+
+    try:
+        frame = _prepare_metrics_from_telemetry_admitted(
+            telemetry,
+            config,
+            active_route,
+            poi_manager,
+            flight_events_managed=flight_events_managed,
+            mission_context=mission_context,
+            simulation_plan=simulation_plan,
+            simulation_frame=simulation_frame,
+            route_progress=route_progress,
+            coordinator_id=coordinator_id,
+            _captured_head=captured,
+        )
+        if frame is None:
+            return
+        # Recheck immediately before the CAS, under repository admission.
+        if not final_validation(frame):
+            FRAME_STORE.fail(expected, "telemetry source superseded")
+            return
+        FRAME_STORE.publish(expected, frame)
+    except Exception:
+        FRAME_STORE.fail(expected, "telemetry preparation failed")
+        if mission_context is not None:
+            raise
+        logger.exception("Complete metric frame preparation failed")
 
 
 @model_input_write
