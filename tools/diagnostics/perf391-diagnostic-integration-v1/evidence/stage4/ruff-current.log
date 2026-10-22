@@ -1,0 +1,42 @@
+BLE001 Do not catch blind exception: `Exception`
+   --> owner.py:150:21
+    |
+148 |                 if inspect.isawaitable(value):
+149 |                     await asyncio.wait_for(value, timeout=5)
+150 |             except (Exception, asyncio.CancelledError) as error:
+    |                     ^^^^^^^^^
+151 |                 self.manifest["errors"].append(name + ":" + type(error).__name__)
+152 |         for child, row in self.children:
+    |
+
+ASYNC222 Async functions should not wait on processes with blocking methods
+   --> owner.py:182:31
+    |
+180 |                 while time.monotonic() < until:
+181 |                     try:
+182 |                         while os.waitpid(-child.pid, os.WNOHANG)[
+    |                               ^^^^^^^^^^
+183 |                             0
+184 |                         ]:  # noqa: ASYNC222 - WNOHANG never blocks
+    |
+
+RUF100 [*] Unused `noqa` directive (unused: `ASYNC222`)
+   --> owner.py:184:29
+    |
+182 |                         while os.waitpid(-child.pid, os.WNOHANG)[
+183 |                             0
+184 |                         ]:  # noqa: ASYNC222 - WNOHANG never blocks
+    |                             ^^^^^^^^^^^^^^^^
+185 |                             pass
+186 |                     except ChildProcessError:
+    |
+help: Remove unused `noqa` directive
+    |
+183 |                             0
+    -                         ]:  # noqa: ASYNC222 - WNOHANG never blocks
+184 +                         ]:
+185 |                             pass
+    |
+
+Found 3 errors.
+[*] 1 fixable with `--fix`.

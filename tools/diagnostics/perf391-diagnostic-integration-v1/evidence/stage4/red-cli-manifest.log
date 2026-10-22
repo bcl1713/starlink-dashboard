@@ -1,0 +1,30 @@
+F
+======================================================================
+FAIL: test_import_manifest_run_matches_its_evidence_and_child_is_reaped (test_offline_cli.OfflineImportTests.test_import_manifest_run_matches_its_evidence_and_child_is_reaped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_offline_cli.py", line 27, in test_import_manifest_run_matches_its_evidence_and_child_is_reaped
+    self.assertEqual(manifest['run_id'],'synthetic-test')
+AssertionError: 'synthetic-stage4' != 'synthetic-test'
+- synthetic-stage4
+?             ----
++ synthetic-test
+?           ++
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.290s
+
+FAILED (failures=1)

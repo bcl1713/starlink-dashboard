@@ -1,0 +1,18 @@
+F821 Undefined name `os`
+   --> tests/test_stage4.py:480:21
+    |
+478 |                     import signal
+479 |
+480 |                     os.kill(nested, signal.SIGKILL)
+    |                     ^^
+481 |                     os.waitpid(nested, 0)
+    |
+
+F821 Undefined name `os`
+   --> tests/test_stage4.py:481:21
+    |
+480 |                     os.kill(nested, signal.SIGKILL)
+481 |                     os.waitpid(nested, 0)
+    |                     ^^
+
+Found 2 errors.

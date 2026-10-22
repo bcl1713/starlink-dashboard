@@ -1,0 +1,46 @@
+{
+  "starting_commit": "8faeac62601720cec711d0a6ddc97f18a497cb09",
+  "tested_source_commit": "c99329f58f99d1e915fa1db034d97e8912a9d03f",
+  "python": {
+    "tests": 108,
+    "passed": 108,
+    "seconds": 61.679,
+    "coverage": {
+      "covered_lines": 1378,
+      "num_statements": 1633,
+      "percent_covered": 81.57028678890455,
+      "percent_covered_display": "82",
+      "missing_lines": 255,
+      "excluded_lines": 0,
+      "percent_statements_covered": 84.38456827924067,
+      "percent_statements_covered_display": "84",
+      "num_branches": 494,
+      "num_partial_branches": 93,
+      "covered_branches": 357,
+      "missing_branches": 137,
+      "percent_branches_covered": 72.2672064777328,
+      "percent_branches_covered_display": "72"
+    },
+    "command": "timeout --kill-after=5s 140s python -B run.py tests --output artifacts/stage4/delivery"
+  },
+  "node": {
+    "tests": 34,
+    "passed": 34,
+    "seconds": 0.108,
+    "coverage_note": "Production modules: browser 96.99% lines/89.25% branches; collect 85.54%/66.07%; observer 93.92%/79.78%. All-files 96.21%/87.71% includes test code.",
+    "command": "timeout --kill-after=5s 30s node --experimental-test-coverage --test tests/*.test.mjs"
+  },
+  "schema_validation": true,
+  "pinned_407_analyzer_verified": true,
+  "all_claimed_duration_pairs_verified": true,
+  "fixed_fixture_byte_identical": true,
+  "guarded_derivatives_verified": true,
+  "patches_unchanged": true,
+  "production_and_frozen_paths_unchanged": true,
+  "scope": "Offline only; no services, images, real browsers, real HTTP, pcap, calibration or sustained tests",
+  "limitations": [
+    "Offline CLI import has a separate owned-child test; child integration code is not covered by the parent coverage collector.",
+    "Existing Stage 3A frontend source/patches are unchanged; frontend component/regression suites were not repeated.",
+    "No second independent review after the fix pass; all Important findings have deterministic regressions."
+  ]
+}

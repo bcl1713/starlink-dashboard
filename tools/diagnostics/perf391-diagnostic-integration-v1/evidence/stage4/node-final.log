@@ -1,0 +1,196 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 4.077185
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.823125
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 2.231862
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.571242
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.534672
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 6.423155
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.870926
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.400732
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.567534
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 0.997776
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 1.224681
+  ...
+# Subtest: a total sink deadline aborts its signal and never replaces it with more jobs
+ok 12 - a total sink deadline aborts its signal and never replaces it with more jobs
+  ---
+  duration_ms: 25.968181
+  ...
+# Subtest: navigation with identical local plot IDs cannot qualify a screenshot from a different document
+ok 13 - navigation with identical local plot IDs cannot qualify a screenshot from a different document
+  ---
+  duration_ms: 0.752287
+  ...
+# Subtest: cleanup disposes the pinned Playwright binding and init-script handles exactly once
+ok 14 - cleanup disposes the pinned Playwright binding and init-script handles exactly once
+  ---
+  duration_ms: 0.278894
+  ...
+# Subtest: close settles all owned capture wrappers and releases the shared screenshot slot
+ok 15 - close settles all owned capture wrappers and releases the shared screenshot slot
+  ---
+  duration_ms: 0.530561
+  ...
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 16 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 5.276249
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 17 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 1.290187
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 18 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 1.335218
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 19 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 1.037708
+  ...
+# Subtest: HTTP failures remain failed evidence in final source and collection summaries
+ok 20 - HTTP failures remain failed evidence in final source and collection summaries
+  ---
+  duration_ms: 0.822152
+  ...
+# Subtest: Page close during binding setup leaves no eventual binding or init handle
+ok 21 - Page close during binding setup leaves no eventual binding or init handle
+  ---
+  duration_ms: 0.911284
+  ...
+# Subtest: late wake and slow completion skip absolute deadlines without bursts
+ok 22 - late wake and slow completion skip absolute deadlines without bursts
+  ---
+  duration_ms: 2.126926
+  ...
+# Subtest: bounded response accepts JSON and identity request header
+ok 23 - bounded response accepts JSON and identity request header
+  ---
+  duration_ms: 1.127383
+  ...
+# Subtest: malformed destroys owned transport and reports unavailable
+ok 24 - malformed destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.308444
+  ...
+# Subtest: invalid UTF8 destroys owned transport and reports unavailable
+ok 25 - invalid UTF8 destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.148448
+  ...
+# Subtest: redirect destroys owned transport and reports unavailable
+ok 26 - redirect destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.124487
+  ...
+# Subtest: unsupported encoding destroys owned transport and reports unavailable
+ok 27 - unsupported encoding destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.115305
+  ...
+# Subtest: socket reset destroys owned transport and reports unavailable
+ok 28 - socket reset destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.130715
+  ...
+# Subtest: oversize identity destroys owned transport and reports unavailable
+ok 29 - oversize identity destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.10835
+  ...
+# Subtest: zip bomb destroys owned transport and reports unavailable
+ok 30 - zip bomb destroys owned transport and reports unavailable
+  ---
+  duration_ms: 11.497458
+  ...
+# Subtest: gzip response is decoded within cap
+ok 31 - gzip response is decoded within cap
+  ---
+  duration_ms: 1.194178
+  ...
+# Subtest: total deadline and cancellation destroy stalled requests and clear timers
+ok 32 - total deadline and cancellation destroy stalled requests and clear timers
+  ---
+  duration_ms: 0.430674
+  ...
+# Subtest: writer failure stops scheduling and cancellation produces final accounting
+ok 33 - writer failure stops scheduling and cancellation produces final accounting
+  ---
+  duration_ms: 0.267471
+  ...
+# Subtest: only dedicated loopback endpoint is accepted before transport
+ok 34 - only dedicated loopback endpoint is accepted before transport
+  ---
+  duration_ms: 0.572508
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 107.942571
+# start of coverage report
+# -----------------------------------------------------------------------------------------------------
+# file                 | line % | branch % | funcs % | uncovered lines
+# -----------------------------------------------------------------------------------------------------
+# browser.mjs          |  96.99 |    89.25 |   94.44 | 114-116 134-135 156-157 324-325 351-355 507-508
+# collect.mjs          |  85.54 |    66.07 |  100.00 | 81-83 88-90 93-95 107 112-124 178-180 224-233
+# frontend-config.mjs  | 100.00 |   100.00 |  100.00 | 
+# observer.mjs         |  93.92 |    79.78 |   80.00 | 103-105 143-144 157-161 184-186 250-252
+# tests                |        |          |         | 
+#  browser.test.mjs    |  99.73 |   100.00 |   90.77 | 98
+#  collection.test.mjs | 100.00 |    96.77 |  100.00 | 
+#  observer.test.mjs   |  99.49 |   100.00 |   91.18 | 192
+# -----------------------------------------------------------------------------------------------------
+# all files            |  96.21 |    87.71 |   92.44 | 
+# -----------------------------------------------------------------------------------------------------
+# end of coverage report

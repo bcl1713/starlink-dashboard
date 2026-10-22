@@ -4,3 +4,6 @@ patches/*.patch whitespace=-blank-at-eol
 patches/frontend/*.patch whitespace=-blank-at-eol
 # Preserve byte-for-byte native test reporter output, including final blank lines.
 evidence/stage3a/*.log whitespace=-blank-at-eol,-blank-at-eof
+# Stage 4 preserves exact reporter bytes and the independently hashed source diff.
+evidence/stage4/*.log whitespace=-blank-at-eol,-blank-at-eof
+evidence/stage4/stage4-source.patch whitespace=-blank-at-eol

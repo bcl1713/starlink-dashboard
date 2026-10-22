@@ -1,0 +1,18 @@
+Aborted!
+reformatted tests/owned_suite.py
+reformatted collector.py
+reformatted tests/test_evidence_verification.py
+reformatted diagnostic_app.py
+reformatted verify_evidence.py
+reformatted tests/test_diagnostic_app.py
+reformatted run.py
+reformatted owner.py
+reformatted analyze.py
+reformatted tests/test_stage4_integration.py
+reformatted integration.py
+reformatted host.py
+reformatted evidence.py
+reformatted tests/test_stage4.py
+
+All done! ✨ 🍰 ✨
+14 files reformatted, 1 file left unchanged.

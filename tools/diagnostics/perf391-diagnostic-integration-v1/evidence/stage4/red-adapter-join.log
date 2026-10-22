@@ -1,0 +1,16 @@
+test_history_and_actual_committed_chart_have_independent_hashed_inputs (test_stage4_integration.AdapterJoinTests.test_history_and_actual_committed_chart_have_independent_hashed_inputs) ... ok
+test_restart_new_stream_is_visible_and_never_pairs_across_processes (test_stage4_integration.AdapterJoinTests.test_restart_new_stream_is_visible_and_never_pairs_across_processes) ... FAIL
+test_wrong_artifact_and_incomplete_browser_summary_never_qualify (test_stage4_integration.AdapterJoinTests.test_wrong_artifact_and_incomplete_browser_summary_never_qualify) ... ok
+
+======================================================================
+FAIL: test_restart_new_stream_is_visible_and_never_pairs_across_processes (test_stage4_integration.AdapterJoinTests.test_restart_new_stream_is_visible_and_never_pairs_across_processes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage4_integration.py", line 63, in test_restart_new_stream_is_visible_and_never_pairs_across_processes
+    self.assertTrue(all(d['ns'] is None for d in result['durations']))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.008s
+
+FAILED (failures=1)

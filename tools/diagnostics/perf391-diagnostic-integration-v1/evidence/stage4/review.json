@@ -1,0 +1,26 @@
+{
+  "base": "8faeac62601720cec711d0a6ddc97f18a497cb09",
+  "reviewed_commit": "722699b7f61d2746fcf2153ac3c1ac68c6a20502",
+  "reviewer": "independent stage4_review agent; one read-only whole-branch review",
+  "critical": [],
+  "important": [
+    "Full collection summary/loss must gate analyzer claims",
+    "Incremental sequence/identity validation must gate sink completeness",
+    "Source HTTP failure must fail and stop source collection",
+    "Importer must accept actual paint.request and app.response_error records",
+    "PNG references must be verified and retained",
+    "Snapshot references must always be verified and retained",
+    "Page close/setup cancellation must dispose eventual handles",
+    "Duration verifier must require unique source pair and exact claim identity",
+    "Exclusive test owner must detect/reap adopted descendants in nested sessions",
+    "Analyzer must report existing in-place, refresh, history and replay brackets"
+  ],
+  "resolution": "All ten Important findings have deterministic regressions and were corrected in one fix pass. 108/108 Python and 34/34 Node tests passed on delivery source. An additional offline CLI manifest run-identity regression was reproduced and fixed. No second independent review claimed.",
+  "deferred_minors": [],
+  "declined_to_judge": [
+    "Live Playwright compatibility, real pixels and HTTP transport runtime behavior",
+    "Docker/host mappings, live service wiring, capture permissions and Stage 3B",
+    "Compiled bundles/images, calibration overhead, performance savings, production acceptance and sustained boundedness"
+  ],
+  "ruling": "All declined runtime subjects remain explicitly unavailable under the user\u2019s offline-only authorization; no runtime claims are made. Cost: Stage 5 and real-browser qualification still require review and separate authorization."
+}

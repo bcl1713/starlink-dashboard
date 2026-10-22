@@ -1,0 +1,28 @@
+Using Python 3.11.16 environment at: /tmp/perf391-stage4-env
+Resolved 20 packages in 321ms
+Downloading black (1.9MiB)
+Downloading ruff (10.0MiB)
+ Downloaded black
+ Downloaded ruff
+Prepared 20 packages in 278ms
+Installed 20 packages in 2ms
+ + anyio==4.15.1
+ + attrs==26.1.0
+ + black==26.10.1
+ + click==8.5.0
+ + coverage==7.17.0
+ + filelock==4.2.4
+ + idna==3.20
+ + jsonschema==4.19.2
+ + jsonschema-specifications==2025.9.1
+ + mypy-extensions==1.1.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + platformdirs==4.13.5
+ + prometheus-client==0.26.0
+ + pytokens==0.4.1
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + ruff==0.17.2
+ + starlette==1.9.0
+ + typing-extensions==4.16.0

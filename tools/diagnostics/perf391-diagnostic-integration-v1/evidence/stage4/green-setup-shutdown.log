@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 1 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 4.068623
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 2 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 1.31719
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 3 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 1.277243
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 4 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 0.842075
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13.938121

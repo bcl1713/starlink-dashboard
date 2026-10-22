@@ -1,0 +1,28 @@
+{
+  "schema": "perf391-stage4-cleanup-v1",
+  "clean": true,
+  "host_process_scan": true,
+  "remaining_processes": [],
+  "remaining_paths": [],
+  "removed_paths": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage4",
+    "/tmp/perf391-stage4-env",
+    "/tmp/perf391-stage4-cache",
+    "/tmp/perf391-stage4-python",
+    "/tmp/perf391-stage2-slices-wdpb38e4",
+    "/tmp/perf391-stage4-collector-l32ejfwh"
+  ],
+  "containers_created": [],
+  "networks_created": [],
+  "volumes_created": [],
+  "listeners_created": [],
+  "application_services_started": false,
+  "browsers_launched": false,
+  "packet_capture_started": false,
+  "retained": [
+    "open-PR worktree",
+    "committed source and evidence"
+  ],
+  "shared_docker_context_and_credentials": "preserved; no Docker runtime used",
+  "diagnostic_http_requests_executed": false
+}

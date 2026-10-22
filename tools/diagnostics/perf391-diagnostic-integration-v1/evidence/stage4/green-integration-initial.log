@@ -1,0 +1,21 @@
+test_a_publication_unavailable_and_c_cas_lost_is_no_success (test_stage4.AnalyzerTests.test_a_publication_unavailable_and_c_cas_lost_is_no_success) ... ok
+test_every_claim_has_unique_complete_same_clock_boundaries (test_stage4.AnalyzerTests.test_every_claim_has_unique_complete_same_clock_boundaries) ... ok
+test_explicit_request_join_survives_clock_offset_but_never_subtracts_it (test_stage4.AnalyzerTests.test_explicit_request_join_survives_clock_offset_but_never_subtracts_it) ... ok
+test_missing_summaries_and_failed_workers_do_not_become_zero (test_stage4.AnalyzerTests.test_missing_summaries_and_failed_workers_do_not_become_zero) ... ok
+test_browser_origin_clock_documents_and_tid_are_not_node_values (test_stage4.EvidenceTests.test_browser_origin_clock_documents_and_tid_are_not_node_values) ... ok
+test_missing_artifact_and_unsupported_browser_phase_do_not_invent_chart (test_stage4.EvidenceTests.test_missing_artifact_and_unsupported_browser_phase_do_not_invent_chart) ... ok
+test_queue_and_disk_exhaustion_record_loss_never_complete (test_stage4.EvidenceTests.test_queue_and_disk_exhaustion_record_loss_never_complete) ... FAIL
+/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/case.py:622: ResourceWarning: unclosed file <_io.BufferedWriter name='/tmp/perf391-stage4-loss-fh3uyey8/run/v1/events.jsonl'>
+  with outcome.testPartExecutor(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/case.py:622: ResourceWarning: unclosed file <_io.BufferedWriter name='/tmp/perf391-stage4-loss-fh3uyey8/run/integration.jsonl'>
+  with outcome.testPartExecutor(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_real_backend_and_browser_events_project_through_pinned_collector (test_stage4.EvidenceTests.test_real_backend_and_browser_events_project_through_pinned_collector) ... ok
+test_bracketed_wall_clock_step_only_invalidates_approximate_alignment (test_stage4.HostTests.test_bracketed_wall_clock_step_only_invalidates_approximate_alignment) ... ok
+test_counter_reset_pid_reuse_clock_and_missing_are_unavailable (test_stage4.HostTests.test_counter_reset_pid_reuse_clock_and_missing_are_unavailable) ... ok
+test_fixed_proc_cgroup_and_inaccessible_files_preserve_identity (test_stage4.HostTests.test_fixed_proc_cgroup_and_inaccessible_files_preserve_identity) ... ok
+test_host_file_thread_and_total_sample_bounds (test_stage4.HostTests.test_host_file_thread_and_total_sample_bounds) ... ok
+test_failed_cleanup_is_reported_and_remaining_owners_still_close (test_stage4.OwnerTests.test_failed_cleanup_is_reported_and_remaining_owners_still_close) ... ok
+test_repeated_cancel_drains_binding_before_closing_evidence (test_stage4.OwnerTests.test_repeated_cancel_drains_binding_before_closing_evidence) ... ok
+test_shutdown_terminates_and_reaps_only_owned_workers (test_stage4.OwnerTests.test_shutdown_terminates_and_reaps_only_owned_workers) ... ok

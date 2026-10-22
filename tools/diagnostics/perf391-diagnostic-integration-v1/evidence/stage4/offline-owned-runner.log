@@ -1,0 +1,120 @@
+{
+  "schema": "perf391-collection-owner-v1",
+  "version": 1,
+  "run_id": "synthetic-stage4",
+  "owner": {
+    "pid": 36537,
+    "pgid": 36536,
+    "start_id": "211221524",
+    "pid_namespace": "pid:[4026531836]"
+  },
+  "sources": {
+    "starting_commit": "8faeac62601720cec711d0a6ddc97f18a497cb09",
+    "integration_commit": "8faeac62601720cec711d0a6ddc97f18a497cb09",
+    "pins": {
+      "A": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "C": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "implementation": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+      "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+      "release": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+      "harness": "f3029024b5950a267645195476da5cbca326f16a",
+      "base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+      "plan": "8aa7791bb03f0573cf602bdbfe8e43c085ee2325"
+    },
+    "modules": {
+      "analyze.py": "eaeb84e18aaa4400c54e2ad985a758dc1de05189089874cfc7ab63537c5aab88",
+      "collector.py": "eb2060e4610f35af684fb6830faed4206530d6e545bf3b59b0549b70fe0766f5",
+      "collect.mjs": "e15e89ca0457821531e9317d1e54676afe844250e0cf4503cfacdb89557284de",
+      "diagnostic_app.py": "4093621b7ed77eafd000d16f7d07333a09c3d878fdf2c802bb86316acaf7eb92",
+      "evidence.py": "7acafe5cdb6a9e2d25bc57f853ecb6489592a612e4c4d74f86c1c077b9f0e9e6",
+      "host.py": "b614c032fccf1acccf393a28f9c2a4403fc91a26013fce279ce38b4273e3fc85",
+      "integration.py": "4327e756ad986f87964bf1ccc2799603ff9531bd2b090354f7a8293005c56c5b",
+      "observer.mjs": "c68d994e99c01ad147ff48f94686ebae25d3363d5ee94d7bc6c2c1a261379dc7",
+      "owner.py": "fde232d814a39ca0b19823c813dc619c03a0f1347eb3b5c8e2dc21809219f541",
+      "run.py": "f95cceeec6907ced59ce0822292b6b6e44356a6825e3835eb77a82ea610bdeb8",
+      "backend_probe.py": "1ee7a83ac13e1fac85ff021d8c483eb15365ead66106e82dcb93e9aedb44cb4a",
+      "workers.py": "7bd60d87524554e1579f59a972016d11e14249cf9ce9200e5ef489437bfcce9e",
+      "browser.mjs": "8c8a2926556a4b474d098ff00073ce85e4a9773ad78e28b79dcaac127a83f1af",
+      "browser-probe.ts": "7ed1e6293a699c27c94857b57daf1edef4d1884d182a2d1e8580537c9d3dfe83",
+      "contract.py": "e5939aeb45b1e0f46d1aad22821154b1d9aeb80b064f24a377fe3ec3b1c43ef7",
+      "contract.json": "c176f38e0f4f4ca43d7f698fa185ea27932ec81343b440332e9b1896a6f4fbd5",
+      "integration-event-schema.json": "25a4dff01de5d4a12c5447012770cfb86b1d46365830ed10ba8478c811501e43",
+      "verify_evidence.py": "243cdd4ae10f8b7df0c1706969d1629c2964f26157cdb2d1b00e1c5c56e85cdc",
+      "analysis-schema.json": "7ac15be4903eaa15b454571fede4d3dc67a2af2ce03a04eb63c753171ff36c64",
+      "summary-schema.json": "6bcc479c52cbfb8def565a03216a5fc8c9d03ecc67ada1fba8e49fd6c22e2ea1"
+    },
+    "patches": {
+      "A.patch": "c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c",
+      "A.json": "a249aa3e427652bbc6e6cb5a2506783f72f92fa04545176fcb45cc688fd13569",
+      "C.patch": "b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c",
+      "C.json": "72ec9885c7ed2842cec509073667faa3b4c29ada72eebe5ab96f2fde6886d794",
+      "frontend/A.patch": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+      "frontend/A.json": "0cfbd239c427b1f309d9d7a6e8ad0345b5f425ce63f517cc065c42872c7381dd",
+      "frontend/C.patch": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+      "frontend/C.json": "467d99910f11025e7d0b378b12753d2082987df935b86e483c3aaebc0dbd1ca7"
+    }
+  },
+  "processes": [
+    {
+      "command": [
+        "/tmp/perf391-stage4-env/bin/python",
+        "-B",
+        "-m",
+        "coverage",
+        "run",
+        "--branch",
+        "--source=backend_probe,workers,build,contract,collector,diagnostic_app,evidence,host,integration,owner,analyze,verify_evidence",
+        "tests/owned_suite.py",
+        "test_*.py"
+      ],
+      "pid": 36559,
+      "pgid": 36559,
+      "start_id": "211221563",
+      "status": "stopped",
+      "reaped": true,
+      "returncode": 0,
+      "actions": [
+        {
+          "pid": 36559,
+          "start_id": "211221563",
+          "signal": "SIGTERM"
+        }
+      ],
+      "survivors": []
+    }
+  ],
+  "streams": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage4/offline-owned"
+  ],
+  "budgets": {
+    "processes": 16,
+    "callbacks": 16,
+    "streams": 4096,
+    "queue_events": 4096,
+    "queue_bytes": 8388608,
+    "body_bytes": 2097152,
+    "disk_bytes": 268435456,
+    "shutdown_seconds": 5
+  },
+  "compose_project": null,
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "listeners": [],
+  "cleanup_commands": [
+    {
+      "pid": 36559,
+      "start_id": "211221563",
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "36559"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner"
+    }
+  ],
+  "status": "clean",
+  "errors": []
+}

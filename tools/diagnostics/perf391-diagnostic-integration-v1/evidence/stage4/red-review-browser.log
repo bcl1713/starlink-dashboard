@@ -1,0 +1,72 @@
+TAP version 13
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 1 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 3.90771
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 2 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 1.259327
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 3 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 1.215837
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 4 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 0.797648
+  ...
+# Subtest: HTTP failures remain failed evidence in final source and collection summaries
+not ok 5 - HTTP failures remain failed evidence in final source and collection summaries
+  ---
+  duration_ms: 1.443187
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs:164:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs:171:12)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: Page close during binding setup leaves no eventual binding or init handle
+not ok 6 - Page close during binding setup leaves no eventual binding or init handle
+  ---
+  duration_ms: 0.829644
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs:174:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs:185:12)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 4
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16.640801

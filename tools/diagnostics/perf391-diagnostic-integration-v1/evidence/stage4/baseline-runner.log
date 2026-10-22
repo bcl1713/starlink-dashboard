@@ -1,0 +1,43 @@
+{
+  "purpose": "Stage 2 offline tests only",
+  "command": [
+    "/tmp/perf391-stage4-env/bin/python",
+    "-B",
+    "-m",
+    "coverage",
+    "run",
+    "--branch",
+    "--source=backend_probe,workers,build,contract",
+    "-m",
+    "unittest",
+    "discover",
+    "-v",
+    "-s",
+    "tests",
+    "-p",
+    "test_*.py"
+  ],
+  "owner_pid": 13,
+  "owner_pgid": 12,
+  "owner_start": "211139934",
+  "child": {
+    "pid": 14,
+    "pgid": 14,
+    "start": "211139944"
+  },
+  "deadline_seconds": 180,
+  "services": [],
+  "listeners": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "status": "clean",
+  "returncode": -15,
+  "descendant_cleanup": {
+    "term": [],
+    "kill": [],
+    "reaped": [],
+    "survivors": []
+  },
+  "live_group_survivors": []
+}

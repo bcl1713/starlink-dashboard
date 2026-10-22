@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: late wake and slow completion skip absolute deadlines without bursts
+not ok 1 - late wake and slow completion skip absolute deadlines without bursts
+  ---
+  duration_ms: 2.405744
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/observer.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'observer.skipped_deadline'
+    - 'observer.record_complete'
+                ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'observer.record_complete'
+  actual: 'observer.skipped_deadline'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/observer.test.mjs:37:10)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: bounded response accepts JSON and identity request header
+ok 2 - bounded response accepts JSON and identity request header
+  ---
+  duration_ms: 0.834041
+  ...
+# Subtest: malformed destroys owned transport and reports unavailable
+ok 3 - malformed destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.271535
+  ...
+# Subtest: invalid UTF8 destroys owned transport and reports unavailable
+ok 4 - invalid UTF8 destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.234662
+  ...
+# Subtest: redirect destroys owned transport and reports unavailable
+ok 5 - redirect destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.171725
+  ...
+# Subtest: unsupported encoding destroys owned transport and reports unavailable
+ok 6 - unsupported encoding destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.199622
+  ...
+# Subtest: socket reset destroys owned transport and reports unavailable
+ok 7 - socket reset destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.158374
+  ...
+# Subtest: oversize identity destroys owned transport and reports unavailable
+ok 8 - oversize identity destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.129165
+  ...
+# Subtest: zip bomb destroys owned transport and reports unavailable
+ok 9 - zip bomb destroys owned transport and reports unavailable
+  ---
+  duration_ms: 10.047333
+  ...
+# Subtest: gzip response is decoded within cap
+ok 10 - gzip response is decoded within cap
+  ---
+  duration_ms: 1.426853
+  ...
+# Subtest: total deadline and cancellation destroy stalled requests and clear timers
+ok 11 - total deadline and cancellation destroy stalled requests and clear timers
+  ---
+  duration_ms: 0.540106
+  ...
+# Subtest: writer failure stops scheduling and cancellation produces final accounting
+ok 12 - writer failure stops scheduling and cancellation produces final accounting
+  ---
+  duration_ms: 0.255653
+  ...
+# Subtest: only dedicated loopback endpoint is accepted before transport
+ok 13 - only dedicated loopback endpoint is accepted before transport
+  ---
+  duration_ms: 0.52231
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 12
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28.242359

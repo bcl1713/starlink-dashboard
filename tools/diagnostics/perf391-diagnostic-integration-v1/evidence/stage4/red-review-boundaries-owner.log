@@ -1,0 +1,35 @@
+E....E..............
+======================================================================
+ERROR: test_shutdown_reaps_nested_new_session_after_its_leader_is_terminated (test_stage4.AdoptedSessionTests.test_shutdown_reaps_nested_new_session_after_its_leader_is_terminated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/perf391-stage4-python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage4.py", line 432, in test_shutdown_reaps_nested_new_session_after_its_leader_is_terminated
+    owner=Owner(Path(tmp)/'run',run='synthetic-test',sources={},adopt_descendants=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Owner.__init__() got an unexpected keyword argument 'adopt_descendants'
+
+======================================================================
+ERROR: test_existing_inplace_refresh_history_and_replay_brackets_are_reported (test_stage4.CompleteBoundaryTests.test_existing_inplace_refresh_history_and_replay_brackets_are_reported)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage4.py", line 424, in test_existing_inplace_refresh_history_and_replay_brackets_are_reported
+    self.assertEqual(next(d for d in report['durations'] if d['boundary']==boundary)['ns'],10)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.057s
+
+FAILED (errors=2)

@@ -1,0 +1,547 @@
+I001 [*] Import block is un-sorted or un-formatted
+ --> analyze.py:2:1
+  |
+1 |   """Conservative integration analyzer, independent of frozen #407 duration tables."""
+2 | / from collections import defaultdict
+3 | | import contract
+  | |_______________^
+4 |
+5 |   PAIRS={
+  |
+help: Organize imports
+  |
+2 | from collections import defaultdict
+3 +
+4 | import contract
+  |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+  --> analyze.py:70:13
+   |
+68 |           for e in rows:phases[e['phase']].append(e)
+69 |           for boundary,(begin,end) in PAIRS.items():
+70 | /             if begin not in phases and end not in phases:
+71 | |                 if not(boundary=='producer.publication' and any(e['operation_type'] in ('tick','replay') for e in rows)):continue
+   | |_________________________________________________________________________________________________________________________^
+72 |               starts,ends=phases[begin],phases[end]
+73 |               ns=cpu=None;reason=None;pair=[]
+   |
+help: Combine `if` statements using `and`
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> collector.py:2:1
+  |
+1 |   """Load the exact #407 dependency from immutable Git, never from a mutable PR tree."""
+2 | / import importlib
+3 | | import sys
+4 | | from types import SimpleNamespace
+5 | | from pathlib import Path
+6 | | import build
+  | |____________^
+help: Organize imports
+  |
+3 | import sys
+4 + from pathlib import Path
+5 | from types import SimpleNamespace
+  - from pathlib import Path
+6 +
+7 | import build
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> diagnostic_app.py:7:1
+   |
+ 5 |   retains the original Starlette/AnyIO pool. No globals are monkey patched.
+ 6 |   """
+ 7 | / import asyncio
+ 8 | | import re
+ 9 | | import threading
+10 | | import time
+11 | | from contextlib import nullcontext
+12 | | from starlette.concurrency import run_in_threadpool
+13 | | from starlette.responses import JSONResponse
+14 | | import backend_probe as probe
+15 | | from workers import await_pool
+   | |______________________________^
+help: Organize imports
+   |
+11 | from contextlib import nullcontext
+12 +
+13 | from starlette.concurrency import run_in_threadpool
+14 | from starlette.responses import JSONResponse
+15 +
+16 | import backend_probe as probe
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> evidence.py:7:1
+   |
+ 5 |   v1's generic emit() would stamp the collector's own PID/TID/CPU on source rows.
+ 6 |   """
+ 7 | / import hashlib
+ 8 | | import json
+ 9 | | import math
+10 | | import threading
+11 | | import uuid
+12 | | from collections import deque
+13 | | from pathlib import Path
+14 | | import contract
+15 | | import build
+   | |____________^
+help: Organize imports
+   |
+13 | from pathlib import Path
+   - import contract
+14 +
+15 | import build
+16 + import contract
+17 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> host.py:7:1
+   |
+ 5 |   No process-local application timestamps are converted into host time.
+ 6 |   """
+ 7 | / import os
+ 8 | | import time
+ 9 | | import itertools
+10 | | from pathlib import Path
+   | |________________________^
+11 |
+12 |   FILE_LIMIT=65536
+   |
+help: Organize imports
+   |
+6  | """
+7  + import itertools
+8  | import os
+9  | import time
+   - import itertools
+10 | from pathlib import Path
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> integration.py:6:1
+   |
+ 4 |   bytes. Projection never infers an association from equal timestamps or values.
+ 5 |   """
+ 6 | / import json
+ 7 | | import hashlib
+ 8 | | import os
+ 9 | | import uuid
+10 | | from pathlib import Path
+11 | | from evidence import BrowserProjection,canonical
+12 | | from host import anchor
+13 | | import build
+14 | | import contract
+   | |_______________^
+help: Organize imports
+   |
+5  | """
+6  + import hashlib
+7  | import json
+   - import hashlib
+8  | import os
+9  | import uuid
+10 | from pathlib import Path
+   - from evidence import BrowserProjection,canonical
+   - from host import anchor
+11 +
+12 | import build
+13 | import contract
+14 + from evidence import BrowserProjection, canonical
+15 + from host import anchor
+16 |
+   |
+
+F401 [*] `os` imported but unused
+  --> integration.py:8:8
+   |
+ 6 | import json
+ 7 | import hashlib
+ 8 | import os
+   |        ^^
+ 9 | import uuid
+10 | from pathlib import Path
+   |
+help: Remove unused import: `os`
+  |
+7 | import hashlib
+  - import os
+8 | import uuid
+  |
+
+F401 [*] `pathlib.Path` imported but unused
+  --> integration.py:10:21
+   |
+ 8 | import os
+ 9 | import uuid
+10 | from pathlib import Path
+   |                     ^^^^
+11 | from evidence import BrowserProjection,canonical
+12 | from host import anchor
+   |
+help: Remove unused import: `pathlib.Path`
+   |
+9  | import uuid
+   - from pathlib import Path
+10 | from evidence import BrowserProjection,canonical
+   |
+
+F401 [*] `contract` imported but unused
+  --> integration.py:14:8
+   |
+12 | from host import anchor
+13 | import build
+14 | import contract
+   |        ^^^^^^^^
+help: Remove unused import: `contract`
+   |
+13 | import build
+   - import contract
+14 |
+   |
+
+BLE001 Do not catch blind exception: `BaseException`
+  --> owner.py:78:20
+   |
+76 |                 value=callback()
+77 |                 if inspect.isawaitable(value):await asyncio.wait_for(value,timeout=5)
+78 |             except BaseException as error:self.manifest['errors'].append(name+':'+type(error).__name__)
+   |                    ^^^^^^^^^^^^^
+79 |         for child,row in self.children:
+80 |             # A unique session's group remains reserved while any descendants survive.
+   |
+
+UP041 [*] Replace aliased errors with `TimeoutError`
+  --> owner.py:93:24
+   |
+91 |                     except ProcessLookupError:pass
+92 |                 try:await asyncio.wait_for(asyncio.to_thread(child.wait,timeout=1),timeout=2)
+93 |                 except (subprocess.TimeoutExpired,asyncio.TimeoutError):pass
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+94 |                 # Reap descendants adopted by the offline runner's subreaper, when present.
+95 |                 until=time.monotonic()+1
+   |
+help: Replace with builtin `TimeoutError`
+   |
+92 |                 try:await asyncio.wait_for(asyncio.to_thread(child.wait,timeout=1),timeout=2)
+   -                 except (subprocess.TimeoutExpired,asyncio.TimeoutError):pass
+93 +                 except (TimeoutError, subprocess.TimeoutExpired):pass
+94 |                 # Reap descendants adopted by the offline runner's subreaper, when present.
+   |
+
+ASYNC222 Async functions should not wait on processes with blocking methods
+   --> owner.py:98:31
+    |
+ 96 |                 while time.monotonic()<until:
+ 97 |                     try:
+ 98 |                         while os.waitpid(-child.pid,os.WNOHANG)[0]:pass
+    |                               ^^^^^^^^^^
+ 99 |                     except ChildProcessError:pass
+100 |                     if not members(child.pid):break
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> run.py:7:1
+   |
+ 5 |   is a child subreaper so terminated test descendants are joined, never orphaned.
+ 6 |   """
+ 7 | / import argparse
+ 8 | | import asyncio
+ 9 | | import ctypes
+10 | | import json
+11 | | import os
+12 | | import signal
+13 | | import sys
+14 | | from pathlib import Path
+15 | | import build
+16 | | from owner import Owner
+17 | | from analyze import analyze
+18 | | from evidence import canonical
+   | |______________________________^
+19 |
+20 |   PACKAGE=Path(__file__).resolve().parent
+   |
+help: Organize imports
+   |
+14 | from pathlib import Path
+15 +
+16 | import build
+   - from owner import Owner
+17 | from analyze import analyze
+18 | from evidence import canonical
+19 + from owner import Owner
+20 |
+   |
+
+ASYNC222 Async functions should not wait on processes with blocking methods
+  --> run.py:61:24
+   |
+59 |             deadline=loop.time()+120
+60 |             while loop.time()<deadline and not interrupted.is_set():
+61 |                 status=os.waitid(os.P_PID,child.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)
+   |                        ^^^^^^^^^
+62 |                 if status is not None:
+63 |                     result=status.si_status if status.si_code==os.CLD_EXITED else 128+status.si_status
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> run.py:75:5
+   |
+74 |   def integrate_offline(output,*,role,backend_file,stats_file,node_root=None):
+75 | /     from collector import prepare_collector
+76 | |     from evidence import Evidence
+77 | |     from integration import Integration
+78 | |     from verify_evidence import verify_analysis,verify_artifacts,validate_document
+   | |__________________________________________________________________________________^
+79 |       repo=PACKAGE.parents[2]
+80 |       owner=Owner(output,run='synthetic-stage4',sources=source_identity(repo))
+   |
+help: Organize imports
+   |
+77 |     from integration import Integration
+   -     from verify_evidence import verify_analysis,verify_artifacts,validate_document
+78 +     from verify_evidence import validate_document, verify_analysis, verify_artifacts
+79 |     repo=PACKAGE.parents[2]
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/test_diagnostic_app.py:1:1
+  |
+1 | / import asyncio
+2 | | from contextlib import contextmanager
+3 | | import unittest
+4 | | from test_stage4 import backend
+5 | | import backend_probe as probe
+6 | | import contract
+7 | | from diagnostic_app import Boundary
+  | |___________________________________^
+help: Organize imports
+  |
+1 | import asyncio
+2 + import unittest
+3 | from contextlib import contextmanager
+  - import unittest
+4 +
+5 | from test_stage4 import backend
+6 +
+7 | import backend_probe as probe
+  |
+
+F401 [*] `test_stage4.backend` imported but unused
+ --> tests/test_diagnostic_app.py:4:25
+  |
+2 | from contextlib import contextmanager
+3 | import unittest
+4 | from test_stage4 import backend
+  |                         ^^^^^^^
+5 | import backend_probe as probe
+6 | import contract
+  |
+help: Remove unused import: `test_stage4.backend`
+  |
+3 | import unittest
+  - from test_stage4 import backend
+4 | import backend_probe as probe
+  |
+
+PIE807 [*] Prefer `dict` over useless lambda
+  --> tests/test_diagnostic_app.py:51:74
+   |
+49 |         async def pool(fn):started.set();await release.wait();return fn()
+50 |         probe.configure('C','synthetic-test')
+51 |         boundary=Boundary(lambda *args:None,run='synthetic-test',capture=lambda:{},pool=pool)
+   |                                                                          ^^^^^^^^^
+52 |         async def send(message):pass
+53 |         task=asyncio.create_task(boundary({'type':'http','path':'/api/_diagnostic/state','method':'GET','headers':[]},None,send))
+   |
+help: Replace with `lambda` with `dict`
+   |
+50 |         probe.configure('C','synthetic-test')
+   -         boundary=Boundary(lambda *args:None,run='synthetic-test',capture=lambda:{},pool=pool)
+51 +         boundary=Boundary(lambda *args:None,run='synthetic-test',capture=dict,pool=pool)
+52 |         async def send(message):pass
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/test_evidence_verification.py:1:1
+  |
+1 | / import copy
+2 | | import json
+3 | | import tempfile
+4 | | from pathlib import Path
+5 | | import unittest
+6 | | from test_stage4 import COLLECTOR,backend,summaries
+7 | | from analyze import analyze
+8 | | from evidence import Evidence
+9 | | from verify_evidence import verify_analysis,verify_artifacts,validate_document
+  | |______________________________________________________________________________^
+help: Organize imports
+   |
+3  | import tempfile
+4  + import unittest
+5  | from pathlib import Path
+   - import unittest
+   - from test_stage4 import COLLECTOR,backend,summaries
+6  +
+7  + from test_stage4 import COLLECTOR, backend, summaries
+8  +
+9  | from analyze import analyze
+10 | from evidence import Evidence
+   - from verify_evidence import verify_analysis,verify_artifacts,validate_document
+11 + from verify_evidence import validate_document, verify_analysis, verify_artifacts
+12 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_stage4.py:2:1
+   |
+ 1 |   """Stage 4 offline contracts: false completeness, identity reuse and unsafe cleanup."""
+ 2 | / import asyncio
+ 3 | | import copy
+ 4 | | import errno
+ 5 | | import json
+ 6 | | import os
+ 7 | | from pathlib import Path
+ 8 | | import sys
+ 9 | | import tempfile
+10 | | import unittest
+11 | | from unittest.mock import patch
+   | |_______________________________^
+12 |
+13 |   PACKAGE=Path(__file__).resolve().parents[1]
+   |
+help: Organize imports
+   |
+6  | import os
+   - from pathlib import Path
+7  | import sys
+8  | import tempfile
+9  | import unittest
+10 + from pathlib import Path
+11 | from unittest.mock import patch
+   |
+
+F401 [*] `os` imported but unused
+ --> tests/test_stage4.py:6:8
+  |
+4 | import errno
+5 | import json
+6 | import os
+  |        ^^
+7 | from pathlib import Path
+8 | import sys
+  |
+help: Remove unused import: `os`
+  |
+5 | import json
+  - import os
+6 | from pathlib import Path
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_stage4.py:15:1
+   |
+13 |   PACKAGE=Path(__file__).resolve().parents[1]
+14 |   sys.path.insert(0,str(PACKAGE))
+15 | / import backend_probe as probe
+16 | | import contract
+17 | | from collector import prepare_collector
+18 | | from evidence import Evidence, BrowserProjection
+19 | | from host import sample, counter_delta, anchor, alignment
+20 | | from owner import Owner
+21 | | from analyze import analyze
+   | |___________________________^
+22 |
+23 |   _TEMP=tempfile.TemporaryDirectory(prefix='perf391-stage4-collector-')
+   |
+help: Organize imports
+   |
+16 | import contract
+17 + from analyze import analyze
+18 | from collector import prepare_collector
+   - from evidence import Evidence, BrowserProjection
+   - from host import sample, counter_delta, anchor, alignment
+19 + from evidence import BrowserProjection, Evidence
+20 + from host import alignment, anchor, counter_delta, sample
+21 | from owner import Owner
+   - from analyze import analyze
+22 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_stage4.py:24:1
+   |
+23 | _TEMP=tempfile.TemporaryDirectory(prefix='perf391-stage4-collector-')
+24 | import atexit
+   | ^^^^^^^^^^^^^
+25 | atexit.register(_TEMP.cleanup)
+26 | COLLECTOR=prepare_collector(Path(_TEMP.name)/'collector',PACKAGE.parents[2])
+   |
+help: Organize imports
+   |
+24 | import atexit
+25 +
+26 | atexit.register(_TEMP.cleanup)
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_stage4_integration.py:2:1
+   |
+ 1 |   """Real adapter-shaped artifact joins and loss accounting, including schema closure."""
+ 2 | / import hashlib
+ 3 | | import json
+ 4 | | import tempfile
+ 5 | | from pathlib import Path
+ 6 | | import unittest
+ 7 | | from test_stage4 import COLLECTOR,backend,summaries
+ 8 | | from evidence import Evidence
+ 9 | | from integration import Integration
+10 | | from analyze import analyze
+   | |___________________________^
+help: Organize imports
+   |
+4  | import tempfile
+5  + import unittest
+6  | from pathlib import Path
+   - import unittest
+   - from test_stage4 import COLLECTOR,backend,summaries
+7  +
+8  + from test_stage4 import COLLECTOR, backend, summaries
+9  +
+10 + from analyze import analyze
+11 | from evidence import Evidence
+12 | from integration import Integration
+   - from analyze import analyze
+13 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> verify_evidence.py:2:1
+  |
+1 |   """Independent offline schema, pair and content verification; no collection."""
+2 | / import json
+3 | | from pathlib import Path
+4 | | from jsonschema import Draft202012Validator
+5 | | from evidence import file_hash
+6 | | from analyze import PAIRS
+  | |_________________________^
+7 |
+8 |   PACKAGE=Path(__file__).resolve().parent
+  |
+help: Organize imports
+  |
+3 | from pathlib import Path
+4 +
+5 | from jsonschema import Draft202012Validator
+6 +
+7 + from analyze import PAIRS
+8 | from evidence import file_hash
+  - from analyze import PAIRS
+9 |
+  |
+
+Found 26 errors.
+[*] 22 fixable with `--fix`.

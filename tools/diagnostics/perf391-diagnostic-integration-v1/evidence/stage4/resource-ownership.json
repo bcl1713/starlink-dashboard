@@ -1,0 +1,24 @@
+{
+  "task": "perf391-stage4",
+  "temporary_paths": [
+    "/tmp/perf391-stage4-env",
+    "/tmp/perf391-stage4-cache",
+    "/tmp/perf391-stage4-python"
+  ],
+  "compose_projects": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "services": [],
+  "browsers": [],
+  "listeners": [],
+  "purpose": "offline deterministic tests only",
+  "recovered_failure_paths": [
+    "/tmp/perf391-stage2-slices-wdpb38e4",
+    "/tmp/perf391-stage4-collector-l32ejfwh"
+  ],
+  "retained_paths": [
+    ".worktrees/perf391-integration-stage4"
+  ],
+  "temporary_export_root": "artifacts/stage4"
+}

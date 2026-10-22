@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: late wake and slow completion skip absolute deadlines without bursts
+ok 1 - late wake and slow completion skip absolute deadlines without bursts
+  ---
+  duration_ms: 1.86245
+  ...
+# Subtest: bounded response accepts JSON and identity request header
+ok 2 - bounded response accepts JSON and identity request header
+  ---
+  duration_ms: 0.78201
+  ...
+# Subtest: malformed destroys owned transport and reports unavailable
+ok 3 - malformed destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.266646
+  ...
+# Subtest: invalid UTF8 destroys owned transport and reports unavailable
+ok 4 - invalid UTF8 destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.228242
+  ...
+# Subtest: redirect destroys owned transport and reports unavailable
+ok 5 - redirect destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.155246
+  ...
+# Subtest: unsupported encoding destroys owned transport and reports unavailable
+ok 6 - unsupported encoding destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.184271
+  ...
+# Subtest: socket reset destroys owned transport and reports unavailable
+ok 7 - socket reset destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.146823
+  ...
+# Subtest: oversize identity destroys owned transport and reports unavailable
+ok 8 - oversize identity destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.122587
+  ...
+# Subtest: zip bomb destroys owned transport and reports unavailable
+ok 9 - zip bomb destroys owned transport and reports unavailable
+  ---
+  duration_ms: 10.157709
+  ...
+# Subtest: gzip response is decoded within cap
+ok 10 - gzip response is decoded within cap
+  ---
+  duration_ms: 1.421436
+  ...
+# Subtest: total deadline and cancellation destroy stalled requests and clear timers
+ok 11 - total deadline and cancellation destroy stalled requests and clear timers
+  ---
+  duration_ms: 0.53689
+  ...
+# Subtest: writer failure stops scheduling and cancellation produces final accounting
+ok 12 - writer failure stops scheduling and cancellation produces final accounting
+  ---
+  duration_ms: 0.255142
+  ...
+# Subtest: only dedicated loopback endpoint is accepted before transport
+ok 13 - only dedicated loopback endpoint is accepted before transport
+  ---
+  duration_ms: 0.500123
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27.598707

@@ -1,0 +1,123 @@
+{
+  "budgets": {
+    "body_bytes": 2097152,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 5,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "26463"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 26463,
+      "start_id": "211207796"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage4/offline-initial"
+  ],
+  "owner": {
+    "pgid": 26446,
+    "pid": 26447,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "211207758"
+  },
+  "processes": [
+    {
+      "actions": [
+        {
+          "pid": 26463,
+          "signal": "SIGTERM",
+          "start_id": "211207796"
+        }
+      ],
+      "command": [
+        "/tmp/perf391-stage4-env/bin/python",
+        "-B",
+        "-m",
+        "coverage",
+        "run",
+        "--branch",
+        "--source=backend_probe,workers,build,contract,collector,diagnostic_app,evidence,host,integration,owner,analyze,run",
+        "-m",
+        "unittest",
+        "discover",
+        "-v",
+        "-s",
+        "tests",
+        "-p",
+        "test_*.py"
+      ],
+      "pgid": 26463,
+      "pid": 26463,
+      "reaped": true,
+      "returncode": 1,
+      "start_id": "211207796",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-stage4",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "integration_commit": "8faeac62601720cec711d0a6ddc97f18a497cb09",
+    "modules": {
+      "analyze.py": "0bfd3bb67d5e4e92eb33a08ce1ee1b93b70c24c7f049d51c1a36c082b3eeb2bb",
+      "backend_probe.py": "1ee7a83ac13e1fac85ff021d8c483eb15365ead66106e82dcb93e9aedb44cb4a",
+      "browser-probe.ts": "7ed1e6293a699c27c94857b57daf1edef4d1884d182a2d1e8580537c9d3dfe83",
+      "browser.mjs": "8c8a2926556a4b474d098ff00073ce85e4a9773ad78e28b79dcaac127a83f1af",
+      "collect.mjs": "e15e89ca0457821531e9317d1e54676afe844250e0cf4503cfacdb89557284de",
+      "collector.py": "eb2060e4610f35af684fb6830faed4206530d6e545bf3b59b0549b70fe0766f5",
+      "contract.json": "c176f38e0f4f4ca43d7f698fa185ea27932ec81343b440332e9b1896a6f4fbd5",
+      "contract.py": "4cf992a0957b496777ca42279f9575a53c24e775529b7901f6f8d991170691db",
+      "diagnostic_app.py": "4093621b7ed77eafd000d16f7d07333a09c3d878fdf2c802bb86316acaf7eb92",
+      "evidence.py": "7acafe5cdb6a9e2d25bc57f853ecb6489592a612e4c4d74f86c1c077b9f0e9e6",
+      "host.py": "b614c032fccf1acccf393a28f9c2a4403fc91a26013fce279ce38b4273e3fc85",
+      "integration-event-schema.json": "25a4dff01de5d4a12c5447012770cfb86b1d46365830ed10ba8478c811501e43",
+      "integration.py": "637b685e8d3c9160ac4b94b8ee78e180d237402bcf41dbafb1f5b6bd62f9487c",
+      "observer.mjs": "c68d994e99c01ad147ff48f94686ebae25d3363d5ee94d7bc6c2c1a261379dc7",
+      "owner.py": "fde232d814a39ca0b19823c813dc619c03a0f1347eb3b5c8e2dc21809219f541",
+      "run.py": "721f92c96dfdcfb9c76205f7b2163e05398312c8ecf47072ca38c2cdcae0588f",
+      "workers.py": "7bd60d87524554e1579f59a972016d11e14249cf9ce9200e5ef489437bfcce9e"
+    },
+    "patches": {
+      "A.json": "a249aa3e427652bbc6e6cb5a2506783f72f92fa04545176fcb45cc688fd13569",
+      "A.patch": "c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c",
+      "C.json": "72ec9885c7ed2842cec509073667faa3b4c29ada72eebe5ab96f2fde6886d794",
+      "C.patch": "b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c",
+      "frontend/A.json": "0cfbd239c427b1f309d9d7a6e8ad0345b5f425ce63f517cc065c42872c7381dd",
+      "frontend/A.patch": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+      "frontend/C.json": "467d99910f11025e7d0b378b12753d2082987df935b86e483c3aaebc0dbd1ca7",
+      "frontend/C.patch": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551"
+    },
+    "pins": {
+      "A": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "C": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+      "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+      "harness": "f3029024b5950a267645195476da5cbca326f16a",
+      "implementation": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+      "plan": "8aa7791bb03f0573cf602bdbfe8e43c085ee2325",
+      "release": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b"
+    },
+    "starting_commit": "8faeac62601720cec711d0a6ddc97f18a497cb09"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

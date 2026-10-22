@@ -183,3 +183,35 @@ cleartext topology or a separately reviewed bounded alternative. No gzip/Nginx/
 fetch-path/privilege changes or whole-browser-body fallback are permitted.
 Primary unpatched A/C runs and the historical 1.5 second rule remain
 independent. Keep #403/#405/#406/#407/#408 draft and unmerged; #390/#391 open.
+
+## Delivered offline evidence
+
+The tested source is `c99329f58f99d1e915fa1db034d97e8912a9d03f`.
+[Exact source, module and patch hashes](evidence/stage4/identity.json),
+[guarded A/C derivative identity](evidence/stage4/derivative-identity.json),
+[verification and coverage](evidence/stage4/verification.json),
+[full Python coverage](evidence/stage4/coverage.txt),
+[Node coverage](evidence/stage4/node-final.log), and
+[the independent review and fixes](evidence/stage4/review.json) are retained.
+
+The complete delivery run passed **108/108 Python tests in 61.679 seconds** and
+**34/34 Node tests**. Python statement-plus-branch coverage is **81.57%**,
+including the CLI module (33% measured in the parent; its import command also
+has a separate owned-child end-to-end test). Node production-module line/branch
+coverage is browser 96.99/89.25%, observer 93.92/79.78%, and collection
+85.54/66.07%. The 96.21/87.71% Node aggregate includes test code. Ruff,
+synchronous Black, Prettier, strict source guards, closed evidence schemas,
+artifact hashing and independent same-clock pair verification pass.
+
+One independent review found ten Important issues and no Critical issues. Each
+was reproduced and corrected; the complete suites passed after the fixes. The
+subsequent offline import check also corrected a manifest run-token mismatch. No
+second independent review is claimed. Earlier failures/timeouts are retained as
+failed evidence. Frontend component/regression suites were not repeated because
+their source and diagnostic application patches are unchanged. The browser
+adapter lifecycle repair has its own Node regression tests.
+
+[The delivery owner](evidence/stage4/delivery-owner.json) and
+[host cleanup](evidence/stage4/cleanup.json) record ownership and final cleanup.
+The preserved worktree and evidence are the only task resources retained. Stage
+5 and runtime/browser qualification remain stopped for review.

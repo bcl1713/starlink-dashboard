@@ -1,0 +1,23 @@
+...EF..
+======================================================================
+ERROR: test_real_paint_request_is_accepted_and_png_is_copied_and_hashed (test_stage4_integration.ArtifactIntegrityTests.test_real_paint_request_is_accepted_and_png_is_copied_and_hashed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage4_integration.py", line 249, in test_real_paint_request_is_accepted_and_png_is_copied_and_hashed
+    owner.browser_record({'phase':'paint.request','panel':'o1','commit':'p/c1','started_ns':'100','host_received_ns':'110','host_identity':node})
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/integration.py", line 211, in browser_record
+    raise ValueError("unsupported host browser event")
+ValueError: unsupported host browser event
+
+======================================================================
+FAIL: test_snapshot_reference_is_verified_even_if_canonical_value_hash_matches (test_stage4_integration.ArtifactIntegrityTests.test_snapshot_reference_is_verified_even_if_canonical_value_hash_matches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage4/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage4_integration.py", line 270, in test_snapshot_reference_is_verified_even_if_canonical_value_hash_matches
+    with self.assertRaises((ValueError,KeyError)):owner.browser_record(row,load=artifacts.__getitem__)
+AssertionError: (<class 'ValueError'>, <class 'KeyError'>) not raised
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.016s
+
+FAILED (failures=1, errors=1)

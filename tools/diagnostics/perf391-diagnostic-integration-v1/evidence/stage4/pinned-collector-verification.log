@@ -1,0 +1,9 @@
+{
+  "v1_schema_valid": 7,
+  "sidecar_schema_valid": 9,
+  "summary_complete": true,
+  "artifact_hashes_verified": true,
+  "all_claimed_same_clock_pairs_verified": true,
+  "pinned_analyzer_executed": true,
+  "numeric_claims": 6
+}
