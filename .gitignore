@@ -66,3 +66,6 @@ frontend/mission-planner/dist-mission-export/
 
 /test-results/gfs-wind-synthetic/
 /test-results/gfs-presentation/
+
+# Retained private evidence for the opt-in #391 diagnostic
+.superpowers/diag391/

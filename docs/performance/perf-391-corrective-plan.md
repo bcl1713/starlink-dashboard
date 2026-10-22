@@ -5,6 +5,11 @@ of PR #403 at `e1f65798`. No application implementation is authorized by this
 plan. Preserve the frozen harnesses, 1.5-second threshold, source provenance,
 observation clocks, replay ordering and atomic publication.
 
+The user subsequently authorized the diagnostic prerequisite only. Its
+[implementation and short matched results](perf-391-diagnostic-phase.md) are now
+submitted for review. Optimization ranks below remain unimplemented; historical
+cadence attribution is unresolved and #403 remains NO-GO.
+
 ## Ranked remediation options
 
 Expected benefits below are hypotheses grounded in measured work, not promised
