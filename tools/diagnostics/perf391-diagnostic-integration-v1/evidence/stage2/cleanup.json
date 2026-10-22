@@ -8,7 +8,8 @@
   "temporary_paths_removed": [
     "tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage2",
     ".superpowers/sdd/2026-10-22-perf391-diagnostic-integration",
-    "/tmp/perf391-stage2-slices-po8qt54e"
+    "/tmp/perf391-stage2-slices-po8qt54e",
+    "/tmp/perf391-stage2-prettier-cleanup.log"
   ],
   "host_processes_remaining": [],
   "owned_listeners_remaining": [],
