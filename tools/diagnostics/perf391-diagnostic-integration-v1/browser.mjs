@@ -39,7 +39,8 @@ export async function createBrowserObserver(
     deadlineMs > BOUNDS.deadline
   )
     throw Error("invalid total deadline");
-  let bindingHandle, initHandle;
+  let bindingHandle, initHandle, closePromise;
+  let initialized = false;
   const target = new URL("/api/overview-history", origin);
   let closed = false,
     failed = false,
@@ -188,6 +189,7 @@ export async function createBrowserObserver(
       active.delete(request);
     },
     close() {
+      if (!initialized) fail();
       void close();
     },
   };
@@ -326,18 +328,38 @@ export async function createBrowserObserver(
   );
   for (const [name, fn] of Object.entries(handlers)) page.on(name, fn);
   try {
-    bindingHandle = await page.exposeBinding("__perf391Binding", binding);
-    initHandle = await page.addInitScript(
-      ({ run, page }) => {
-        globalThis.__perf391Host = {
-          run,
-          page,
-          document: crypto.randomUUID().replaceAll("-", "").slice(0, 16),
-        };
-      },
-      { run, page: pageId },
+    async function setupHandle(fn) {
+      const work = Promise.resolve()
+        .then(fn)
+        .then(async (handle) => {
+          if (closed) {
+            if (handle) await handle.dispose();
+            throw Error("closed during setup");
+          }
+          return handle;
+        });
+      // Page API completion can arrive after cancellation; dispose that handle.
+      work.catch(() => {});
+      return bounded(() => work);
+    }
+    bindingHandle = await setupHandle(() =>
+      page.exposeBinding("__perf391Binding", binding),
     );
+    initHandle = await setupHandle(() =>
+      page.addInitScript(
+        ({ run, page }) => {
+          globalThis.__perf391Host = {
+            run,
+            page,
+            document: crypto.randomUUID().replaceAll("-", "").slice(0, 16),
+          };
+        },
+        { run, page: pageId },
+      ),
+    );
+    initialized = true;
   } catch (error) {
+    fail();
     await close();
     throw error;
   }
@@ -464,28 +486,31 @@ export async function createBrowserObserver(
     emit(result);
     return result;
   }
-  async function close() {
-    if (closed) return;
+  function close() {
+    if (closePromise) return closePromise;
     closed = true;
-    if (active.size || assemblies.size || queue.length) fail();
-    controller.abort();
-    for (const [name, fn] of Object.entries(handlers)) page.off(name, fn);
-    active.clear();
-    assemblies.clear();
-    known = new WeakMap();
-    queue.length = 0;
-    await Promise.allSettled([...writes, ...operations]);
-    bytes = 0;
-    for (const handle of [initHandle, bindingHandle])
-      if (handle) {
-        try {
-          await bounded(() => handle.dispose(), deadlineMs, null);
-        } catch {
-          fail();
+    closePromise = (async () => {
+      if (active.size || assemblies.size || queue.length) fail();
+      controller.abort();
+      for (const [name, fn] of Object.entries(handlers)) page.off(name, fn);
+      active.clear();
+      assemblies.clear();
+      known = new WeakMap();
+      queue.length = 0;
+      await Promise.allSettled([...writes, ...operations]);
+      bytes = 0;
+      for (const handle of [initHandle, bindingHandle])
+        if (handle) {
+          try {
+            await bounded(() => handle.dispose(), deadlineMs, null);
+          } catch {
+            fail();
+          }
         }
-      }
-    initHandle = null;
-    bindingHandle = null;
+      initHandle = null;
+      bindingHandle = null;
+    })();
+    return closePromise;
   }
   return {
     screenshot,

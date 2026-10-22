@@ -41,6 +41,13 @@ MODULES = (
     "verify_evidence.py",
     "analysis-schema.json",
     "summary-schema.json",
+    "build.py",
+    "verify.py",
+    "verify_backend.py",
+    "verify_frontend.py",
+    "frontend-config.mjs",
+    "build-manifest-schema.json",
+    "requirements-test.txt",
 )
 
 
@@ -88,7 +95,10 @@ async def run_tests(output, *, pattern="test_*.py"):
     if libc.prctl(36, 1, 0, 0, 0) != 0:
         raise OSError(ctypes.get_errno(), "child subreaper unavailable")
     owner = Owner(
-        output, run="synthetic-stage4", sources=source_identity(PACKAGE.parents[2])
+        output,
+        run="synthetic-stage4",
+        sources=source_identity(PACKAGE.parents[2]),
+        adopt_descendants=True,
     )
     command = [
         sys.executable,
@@ -213,7 +223,7 @@ def integrate_offline(output, *, role, backend_file, stats_file, node_root=None)
         validate_document(result, "summary")
         verify_artifacts(sink.root)
         rows = read_jsonl(sink.root / "integration.jsonl")
-        report = analyze(rows, result["streams"])
+        report = analyze(rows, result)
         verify_analysis(report, rows)
         (owner.root / "analysis.json").write_bytes(canonical(report) + b"\n")
         owner.manifest["streams"] = result["streams"]
@@ -267,7 +277,7 @@ def main():
     if args.summary.stat().st_size > 1048576:
         raise ValueError("summary budget")
     summary = json.loads(args.summary.read_bytes())
-    result = analyze(rows, summary["streams"])
+    result = analyze(rows, summary)
     with args.output.open("xb") as f:
         f.write(canonical(result) + b"\n")
     return 0 if result["integrity"]["complete"] else 1

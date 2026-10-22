@@ -148,6 +148,7 @@ export function createCollection(
         closed,
         complete:
           !dropped &&
+          sourceSummaries.every((s) => s.closed && !s.failed && !s.cancelled) &&
           summaries.every(
             (s) => !s.failed && !s.lost && !s.ownedOperations && !s.bindingJobs,
           ),

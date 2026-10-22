@@ -161,3 +161,54 @@ test("close during browser binding setup disposes the eventual handles", async (
     rmSync(root, { recursive: true, force: true });
   }
 });
+test("HTTP failures remain failed evidence in final source and collection summaries", async () => {
+  const root = mkdtempSync(join(tmpdir(), "perf391-stage4-http-failure-"));
+  try {
+    const collection = createCollection(join(root, "owned"), {
+      run: "synthetic-test",
+    });
+    const source = await collection.source({
+      url: "http://127.0.0.1:18000/api/_diagnostic/state",
+      samples: 2,
+      wait: async () => {},
+      read: async () => ({ ok: false, reason: "http_status" }),
+    });
+    const result = await collection.close();
+    assert.equal(source.failed, true);
+    assert.equal(result.complete, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+test("Page close during binding setup leaves no eventual binding or init handle", async () => {
+  const root = mkdtempSync(join(tmpdir(), "perf391-stage4-page-close-"));
+  try {
+    const page = new Page();
+    let release, entered;
+    const ready = new Promise((resolve) => (entered = resolve)),
+      original = page.exposeBinding.bind(page);
+    page.exposeBinding = async (...args) => {
+      entered();
+      await new Promise((resolve) => (release = resolve));
+      return original(...args);
+    };
+    const collection = createCollection(join(root, "owned"), {
+      run: "synthetic-test",
+    });
+    const setup = collection.browser(page, {
+      pageId: "p",
+      origin: "http://127.0.0.1:18080",
+    });
+    await ready;
+    page.emit("close");
+    release();
+    try {
+      await setup;
+    } catch {}
+    const summary = await collection.close();
+    assert.equal(page.bindings.size, 0);
+    assert.equal(summary.complete, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -5,6 +5,12 @@ from collections import defaultdict
 import contract
 
 PAIRS = {
+    "metrics.inplace": ("metrics.inplace.begin", "metrics.inplace.end"),
+    "refresh.queue": ("refresh.dispatch", "refresh.start"),
+    "refresh.execution": ("refresh.start", "refresh.end"),
+    "refresh.delivery": ("refresh.end", "refresh.returned"),
+    "history.elapsed": ("history.begin", "history.end"),
+    "replay.callback": ("replay.callback.begin", "replay.callback.end"),
     "producer.queue": ("producer.dispatch", "producer.start"),
     "producer.execution": ("producer.start", "producer.end"),
     "producer.delivery": ("producer.end", "producer.returned"),
@@ -58,6 +64,27 @@ def analyze(events, summaries):
     for e in events:
         streams[e["stream_id"]].append(e)
     finals = {}
+    if isinstance(summaries, dict):
+        import json
+
+        from jsonschema import Draft202012Validator
+
+        schema = json.loads((contract.PACKAGE / "summary-schema.json").read_text())
+        validation = list(Draft202012Validator(schema).iter_errors(summaries))
+        if validation:
+            errors.append("invalid collection summary")
+        if not summaries.get("complete") or any(
+            summaries.get(k)
+            for k in (
+                "dropped",
+                "v1_dropped",
+                "dropped_artifacts",
+                "missing_summaries",
+                "finalization_unavailable",
+            )
+        ):
+            errors.append("collection integrity unavailable")
+        summaries = summaries.get("streams", [])
     for s in summaries:
         if s["stream_id"] in finals:
             errors.append("duplicate summary")

@@ -206,7 +206,8 @@
         "history.begin",
         "history.end",
         "replay.callback.begin",
-        "replay.callback.end"
+        "replay.callback.end",
+        "app.response_error"
       ]
     },
     "outcome": {

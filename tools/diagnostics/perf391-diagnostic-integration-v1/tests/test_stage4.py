@@ -4,6 +4,7 @@ import asyncio
 import copy
 import errno
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -414,3 +415,68 @@ class ScopedOwnerTests(unittest.IsolatedAsyncioTestCase):
             child = owner.children[0][0]
             self.assertIsNotNone(child.returncode)
             await owner.close()
+
+
+class CompleteBoundaryTests(unittest.TestCase):
+    def test_existing_inplace_refresh_history_and_replay_brackets_are_reported(self):
+        phases = [
+            "metrics.inplace.begin",
+            "metrics.inplace.end",
+            "refresh.dispatch",
+            "refresh.start",
+            "refresh.end",
+            "refresh.returned",
+            "history.begin",
+            "history.end",
+            "replay.callback.begin",
+            "replay.callback.end",
+        ]
+        rows = backend(phases, kind="tick")
+        report = analyze(rows, summaries(rows))
+        for boundary in (
+            "metrics.inplace",
+            "refresh.queue",
+            "refresh.execution",
+            "refresh.delivery",
+            "history.elapsed",
+            "replay.callback",
+        ):
+            self.assertEqual(
+                next(d for d in report["durations"] if d["boundary"] == boundary)["ns"],
+                10,
+            )
+
+
+class AdoptedSessionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_shutdown_reaps_nested_new_session_after_its_leader_is_terminated(
+        self,
+    ):
+        import ctypes
+        import subprocess
+
+        libc = ctypes.CDLL(None)
+        self.assertEqual(libc.prctl(36, 1, 0, 0, 0), 0)
+        with tempfile.TemporaryDirectory(
+            prefix="perf391-stage4-nested-session-"
+        ) as tmp:
+            owner = Owner(
+                Path(tmp) / "run",
+                run="synthetic-test",
+                sources={},
+                adopt_descendants=True,
+            )
+            script = "import subprocess,sys,json,signal; p=subprocess.Popen([sys.executable,'-c','import signal; signal.pause()'],start_new_session=True); print(json.dumps({'pid':p.pid}),flush=True); signal.pause()"
+            child = owner.spawn([sys.executable, "-c", script], stdout=subprocess.PIPE)
+            nested = json.loads(child.stdout.readline())["pid"]
+            try:
+                await owner.close()
+                self.assertFalse(Path(f"/proc/{nested}").exists())
+                self.assertEqual(owner.manifest["status"], "clean")
+            finally:
+                child.stdout.close()
+                path = Path(f"/proc/{nested}")
+                if path.exists():
+                    import signal
+
+                    os.kill(nested, signal.SIGKILL)
+                    await asyncio.to_thread(os.waitpid, nested, 0)

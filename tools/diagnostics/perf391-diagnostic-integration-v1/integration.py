@@ -44,6 +44,8 @@ class Integration:
         self.backend_streams = {}
         self.observer_streams = {}
         self.paint_streams = {}
+        self.paint_requests = {}
+        self.paint_serial = 0
         self.closed = False
 
     def backend(self, rows):
@@ -151,21 +153,23 @@ class Integration:
                     return
                 for name in ("retained", "projection", "plot"):
                     snap = row.get("snapshots", {}).get(name)
-                    if (
-                        not snap
-                        or hashlib.sha256(canonical(detail[name])).hexdigest()
-                        != snap["sha256"]
-                    ):
-                        # Stage 3A hashes literal JSON.stringify bytes, not Python canonical JSON.
-                        if not snap or load is None:
-                            raise ValueError("snapshot unavailable")
+                    if not snap or load is None:
+                        self.sink.failed = True
+                        raise ValueError("snapshot unavailable")
+                    try:
                         data = load(snap["artifact"])
-                        if (
-                            len(data) > 2097152
-                            or hashlib.sha256(data).hexdigest() != snap["sha256"]
-                            or json.loads(data) != detail[name]
-                        ):
-                            raise ValueError("snapshot hash mismatch")
+                    except (OSError, KeyError, ValueError):
+                        self.sink.failed = True
+                        raise ValueError("snapshot reference unavailable") from None
+                    if (
+                        len(data) > 2097152
+                        or hashlib.sha256(data).hexdigest() != snap["sha256"]
+                        or json.loads(data) != detail[name]
+                    ):
+                        self.sink.failed = True
+                        raise ValueError("snapshot hash/content mismatch")
+                    if self.sink.artifact(data)["state"] != "available":
+                        raise ValueError("snapshot storage unavailable")
                 data = detail["plot"]["data"]
                 scales = detail["plot"]["scales"]["x"]
                 projection = normalize_history(
@@ -206,6 +210,7 @@ class Integration:
             "browser.headers",
             "browser.end",
             "browser.failed",
+            "paint.request",
             "paint.artifact",
         ):
             raise ValueError("unsupported host browser event")
@@ -218,11 +223,28 @@ class Integration:
         self.node_identity = supplied
         self.node_stream = supplied["process_uuid"] + "/node"
         self.node_seq += 1
-        identity = {"viewer_id": self.page}
+        identity = {"viewer_id": page}
         if row.get("requestId"):
             identity["request_id"] = row["requestId"]
-        if phase == "paint.artifact" and row.get("sha256"):
-            identity["artifact_sha256"] = row["sha256"]
+        if phase == "paint.artifact":
+            reference = None
+            if row.get("sha256") and row.get("artifact") and load is not None:
+                try:
+                    body = load(row["artifact"])
+                except (OSError, KeyError, ValueError):
+                    self.sink.failed = True
+                    raise ValueError("PNG reference unavailable") from None
+                if (
+                    len(body) > 2097152
+                    or hashlib.sha256(body).hexdigest() != row["sha256"]
+                ):
+                    self.sink.failed = True
+                    raise ValueError("PNG hash/body budget")
+                reference = self.sink.artifact(body)
+            if reference and reference["state"] == "available":
+                identity["artifact_sha256"] = reference["sha256"]
+            else:
+                identity["artifact_sha256"] = None
         event = {
             "schema": build.SCHEMA,
             "version": 1,
@@ -250,25 +272,48 @@ class Integration:
             "identity": identity,
             "unavailable": {},
         }
-        if phase == "paint.artifact" and row.get("started_ns"):
-            paint_stream = (
-                self.node_stream + "/paint" + str(len(self.paint_streams) + 1)
-            )
-            event.update(
-                stream_id=paint_stream,
-                seq=2,
-                mono_ns=row["received_ns"],
-                op_id=f"{self.page}/paint/{len(self.paint_streams)+1}",
-            )
-            self.sink.accept(
-                {
-                    **event,
-                    "seq": 1,
-                    "phase": "paint.request",
-                    "mono_ns": row["started_ns"],
-                }
-            )
-            self.paint_streams[paint_stream] = 2
+        if phase.startswith("paint."):
+            key = (page, row.get("panel"), row.get("commit"), row.get("started_ns"))
+            if phase == "paint.request":
+                if key in self.paint_requests or len(self.paint_requests) >= 8:
+                    self.sink.failed = True
+                    raise ValueError("paint request identity/budget")
+                self.paint_serial += 1
+                stream = self.node_stream + "/paint" + str(self.paint_serial)
+                self.paint_requests[key] = stream
+                event.update(
+                    stream_id=stream,
+                    seq=1,
+                    mono_ns=row["started_ns"],
+                    op_id=f"{page}/paint/{self.paint_serial}",
+                )
+                self.paint_streams[stream] = 1
+            else:
+                stream = self.paint_requests.pop(key, None)
+                if stream:
+                    event.update(
+                        stream_id=stream,
+                        seq=2,
+                        mono_ns=row["received_ns"],
+                        op_id=f'{page}/paint/{stream.rsplit("paint",1)[1]}',
+                    )
+                    self.paint_streams[stream] = 2
+                else:
+                    self.paint_serial += 1
+                    stream = self.node_stream + "/paint" + str(self.paint_serial)
+                    event.update(
+                        stream_id=stream,
+                        seq=1,
+                        mono_ns=row["received_ns"],
+                        op_id=f"{page}/paint/{self.paint_serial}",
+                        outcome="unavailable",
+                    )
+                    self.paint_streams[stream] = 1
+                if identity.get("artifact_sha256") is None:
+                    event["outcome"] = "unavailable"
+                    event["unavailable"] = {
+                        "artifact_sha256": "missing verified compositor artifact"
+                    }
             self.node_seq -= 1
         self.sink.accept(event)
 
@@ -290,8 +335,9 @@ class Integration:
                 )
             )
         )
-        if lost or not complete:
+        if lost or not complete or self.paint_requests:
             self.sink.failed = True
+            complete = False
         for stream, seq in self.browser_streams.items():
             self.sink.summary(stream, last_seq=seq, dropped=lost, complete=complete)
         if self.node_seq:

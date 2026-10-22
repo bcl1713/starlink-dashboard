@@ -5,6 +5,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+import contract
 from analyze import PAIRS
 from evidence import file_hash
 
@@ -23,6 +24,8 @@ def validate_document(document, kind):
 
 def verify_analysis(report, events):
     validate_document(report, "analysis")
+    if report["integrity"]["complete"]:
+        contract.validate_stream(events)
     lookup = {}
     for event in events:
         key = (event["stream_id"], event["seq"])
@@ -45,6 +48,26 @@ def verify_analysis(report, events):
                 raise ValueError("missing or altered boundary reference")
             pair.append(event)
         a, b = pair
+        for key in ("run_id", "process_uuid", "op_id", "span_id"):
+            if claim[key] != a[key]:
+                raise ValueError("claim identity differs from source")
+        group = [
+            e
+            for e in events
+            if all(e[k] == a[k] for k in ("run_id", "process_uuid", "op_id", "span_id"))
+        ]
+        if claim["boundary"] == "chart_input.commit":
+            group = [
+                e
+                for e in group
+                if e["identity"].get("plot_token") == a["identity"].get("plot_token")
+            ]
+        begin, end = PAIRS[claim["boundary"]]
+        if (
+            len([e for e in group if e["phase"] == begin]) != 1
+            or len([e for e in group if e["phase"] == end]) != 1
+        ):
+            raise ValueError("ambiguous original boundary pair")
         if tuple(e["phase"] for e in pair) != PAIRS.get(claim["boundary"]):
             raise ValueError("wrong boundary phases")
         for key in (

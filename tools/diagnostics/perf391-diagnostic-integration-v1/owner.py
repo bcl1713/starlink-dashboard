@@ -32,8 +32,25 @@ def members(group):
     return result
 
 
+def direct_children():
+    result = []
+    for path in Path("/proc").iterdir():
+        if not path.name.isdecimal():
+            continue
+        try:
+            fields = (path / "stat").read_text().rsplit(")", 1)[1].split()
+            if int(fields[1]) == os.getpid():
+                result.append({"pid": int(path.name), "start_id": fields[19]})
+        except (OSError, IndexError):
+            pass
+    return result
+
+
+_DIRECT_OWNERS = {}
+
+
 class Owner:
-    def __init__(self, root, *, run, sources):
+    def __init__(self, root, *, run, sources, adopt_descendants=False):
         if not run.startswith("synthetic-") or len(run) > 96:
             raise ValueError("synthetic owner required")
         self.root = Path(root).absolute()
@@ -41,6 +58,8 @@ class Owner:
         self.children = []
         self.callbacks = []
         self.closing = None
+        self.adopt_descendants = adopt_descendants
+        self.baseline_children = {(r["pid"], r["start_id"]) for r in direct_children()}
         self.manifest = {
             "schema": "perf391-collection-owner-v1",
             "version": 1,
@@ -53,6 +72,8 @@ class Owner:
             },
             "sources": sources,
             "processes": [],
+            "adopted_processes": [],
+            "exclusive_subreaper": adopt_descendants,
             "streams": [],
             "output_directories": [str(self.root)],
             "budgets": {
@@ -63,7 +84,9 @@ class Owner:
                 "queue_bytes": 8388608,
                 "body_bytes": 2097152,
                 "disk_bytes": 268435456,
-                "shutdown_seconds": 5,
+                "shutdown_seconds": 240,
+                "callback_seconds": 5,
+                "adopted_processes": 256,
             },
             "compose_project": None,
             "containers": [],
@@ -113,6 +136,7 @@ class Owner:
         )
         # Register immediately after successful fork; failure to persist still leaves owned handle.
         self.children.append((child, row))
+        _DIRECT_OWNERS[child.pid] = self
         row.update(
             pid=child.pid,
             pgid=child.pid,
@@ -139,6 +163,62 @@ class Owner:
         if self.closing is not None or len(self.callbacks) >= 16:
             raise ValueError("close registry budget")
         self.callbacks.append((name, callback))
+
+    async def _reap_adopted(self):
+        """Exclusive runner only: newly adopted direct children descend from its worker.
+
+        Existing direct children and handles registered to another Owner are
+        excluded. Ordinary Owners never adopt this exclusive-process scope.
+        """
+        known = {}
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            deadline = time.monotonic() + 1
+            signalled = set()
+            while time.monotonic() < deadline:
+                candidates = [
+                    r
+                    for r in direct_children()
+                    if (r["pid"], r["start_id"]) not in self.baseline_children
+                    and (
+                        _DIRECT_OWNERS.get(r["pid"]) is None
+                        or _DIRECT_OWNERS.get(r["pid"]) is self
+                    )
+                ]
+                if not candidates:
+                    break
+                for entry in candidates:
+                    key = (entry["pid"], entry["start_id"])
+                    if key not in known:
+                        if len(known) >= 256:
+                            self.manifest["errors"].append("adopted_process_budget")
+                            return
+                        known[key] = {
+                            **entry,
+                            "pgid": os.getpgid(entry["pid"]),
+                            "reaped": False,
+                            "signals": [],
+                        }
+                        self.manifest["adopted_processes"].append(known[key])
+                    row = known[key]
+                    try:
+                        pid, _ = os.waitpid(entry["pid"], os.WNOHANG)  # noqa: ASYNC222
+                        if pid:
+                            row["reaped"] = True
+                            continue
+                        if (
+                            key not in signalled
+                            and start_id(entry["pid"]) == entry["start_id"]
+                        ):
+                            os.kill(entry["pid"], sig)
+                            row["signals"].append(sig.name)
+                            signalled.add(key)
+                    except (ProcessLookupError, ChildProcessError):
+                        pass
+                await asyncio.sleep(0.01)
+        survivors = [r for r in direct_children() if (r["pid"], r["start_id"]) in known]
+        self.manifest["adopted_survivors"] = survivors
+        if survivors:
+            self.manifest["errors"].append("adopted_process_cleanup_failed")
 
     async def _shutdown(self):
         self.manifest["status"] = "closing"
@@ -206,6 +286,10 @@ class Owner:
             )
             if row["survivors"] or not row["reaped"]:
                 self.manifest["errors"].append("process_cleanup_failed")
+            elif _DIRECT_OWNERS.get(child.pid) is self:
+                _DIRECT_OWNERS.pop(child.pid, None)
+        if self.adopt_descendants:
+            await self._reap_adopted()
         self.manifest["status"] = (
             "cleanup_failed" if self.manifest["errors"] else "clean"
         )

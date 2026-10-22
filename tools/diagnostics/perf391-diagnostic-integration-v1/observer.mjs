@@ -220,11 +220,14 @@ export async function observe({
       });
       const failures = await Promise.all(pending);
       if (failures.some(Boolean)) throw failures.find(Boolean);
-      if (!result.ok)
+      if (!result.ok) {
+        summary.failed = true;
+        summary.reason = result.reason;
         await mark("probe.failure", {
           outcome: result.reason === "cancelled" ? "cancelled" : "unavailable",
           reason: result.reason,
         });
+      }
       await drain();
       await mark("observer.written");
       summary.completed++;
@@ -242,6 +245,7 @@ export async function observe({
         outcome: result.ok ? "ok" : "unavailable",
       });
       await drain();
+      if (summary.failed) break;
       if (signal?.aborted) {
         summary.cancelled = true;
         break;

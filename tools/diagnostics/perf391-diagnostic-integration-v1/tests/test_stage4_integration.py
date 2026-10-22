@@ -100,7 +100,7 @@ class AdapterJoinTests(unittest.TestCase):
             self.assertEqual(chart["traces"]["observed"], [2, 3, 4])
             self.assertIsNone(chart["visible_gaps"])
             self.assertEqual(chart["projection_input"]["series"], history["series"])
-            self.assertEqual(len(list((Path(tmp) / "run/v1/bodies").glob("*"))), 2)
+            self.assertEqual(len(list((Path(tmp) / "run/v1/bodies").glob("*"))), 5)
 
     def test_wrong_artifact_and_incomplete_browser_summary_never_qualify(self):
         with tempfile.TemporaryDirectory(prefix="perf391-stage4-badjoin-") as tmp:
@@ -199,6 +199,18 @@ class EmitterIdentityTests(unittest.TestCase):
                     }
                 )
             owner.finish_source({"closed": True, "failed": False})
+            png = b"fixture PNG"
+            digest = hashlib.sha256(png).hexdigest()
+            owner.browser_record(
+                {
+                    "phase": "paint.request",
+                    "host_identity": node,
+                    "host_received_ns": "210",
+                    "started_ns": "200",
+                    "panel": "p",
+                    "commit": "c",
+                }
+            )
             owner.browser_record(
                 {
                     "phase": "paint.artifact",
@@ -206,8 +218,13 @@ class EmitterIdentityTests(unittest.TestCase):
                     "host_received_ns": "300",
                     "started_ns": "200",
                     "received_ns": "250",
+                    "panel": "p",
+                    "commit": "c",
                     "outcome": "ok",
-                }
+                    "sha256": digest,
+                    "artifact": "png",
+                },
+                load=lambda _: png,
             )
             owner.finish_browser({"closed": True, "failed": False, "lost": 0})
             sink.close()
@@ -238,3 +255,127 @@ class EmitterIdentityTests(unittest.TestCase):
                 )["ns"],
                 50,
             )
+
+
+class ArtifactIntegrityTests(unittest.TestCase):
+    def test_real_paint_request_is_accepted_and_png_is_copied_and_hashed(self):
+        node = {
+            "process_uuid": "33333333-3333-4333-8333-333333333333",
+            "pid": 1234,
+            "process_start_id": "node-start",
+            "clock_id": "node-clock",
+        }
+        png = b"fixed compositor fixture bytes"
+        digest = hashlib.sha256(png).hexdigest()
+        with tempfile.TemporaryDirectory(prefix="perf391-stage4-paint-") as tmp:
+            sink = Evidence(Path(tmp) / "run", COLLECTOR, run="synthetic-test")
+            owner = Integration(sink, role="C", run="synthetic-test")
+            try:
+                owner.browser_record(
+                    {
+                        "phase": "paint.request",
+                        "panel": "o1",
+                        "commit": "p/c1",
+                        "started_ns": "100",
+                        "host_received_ns": "110",
+                        "host_identity": node,
+                    }
+                )
+                owner.browser_record(
+                    {
+                        "phase": "paint.artifact",
+                        "panel": "o1",
+                        "commit": "p/c1",
+                        "started_ns": "100",
+                        "received_ns": "180",
+                        "host_received_ns": "190",
+                        "host_identity": node,
+                        "outcome": "ok",
+                        "sha256": digest,
+                        "artifact": {"path": "png"},
+                    },
+                    load=lambda ref: png,
+                )
+                owner.finish_browser({"closed": True, "failed": False, "lost": 0})
+                sink.close()
+                self.assertTrue(
+                    (Path(tmp) / "run/v1/bodies" / f"{digest}.bin").exists()
+                )
+                rows = [
+                    json.loads(line)
+                    for line in (Path(tmp) / "run/integration.jsonl")
+                    .read_text()
+                    .splitlines()
+                ]
+                report = analyze(
+                    rows,
+                    json.loads((Path(tmp) / "run/summary.json").read_bytes())[
+                        "streams"
+                    ],
+                )
+                self.assertEqual(
+                    next(
+                        d
+                        for d in report["durations"]
+                        if d["boundary"] == "presentation.capture"
+                    )["ns"],
+                    80,
+                )
+            finally:
+                if not sink.closed:
+                    sink.close()
+
+    def test_snapshot_reference_is_verified_even_if_canonical_value_hash_matches(self):
+        from evidence import canonical
+
+        history = {
+            "start_timestamp_seconds": 1,
+            "end_timestamp_seconds": 2,
+            "step_seconds": 1,
+            "series": {"m": [[1, 2], [2, 3]]},
+        }
+        detail = {
+            "accepted": "o1",
+            "acceptedRequest": "synthetic-test/p/doc/r1",
+            "metric": "m",
+            "commit": "p/c1",
+            "retained": history,
+            "projection": {"times": [1, 2]},
+            "plot": {
+                "data": [[1, 2], [None, None], [None, None], [None, None], [2, 3]],
+                "scales": {"x": {"min": 1, "max": 2}},
+            },
+        }
+        row, artifacts = wrapped("plot.commit", detail)
+        row["snapshots"]["retained"] = {
+            "sha256": hashlib.sha256(canonical(history)).hexdigest(),
+            "artifact": "does-not-exist",
+        }
+        with tempfile.TemporaryDirectory(prefix="perf391-stage4-snapshot-") as tmp:
+            sink = Evidence(Path(tmp) / "run", COLLECTOR, run="synthetic-test")
+            owner = Integration(
+                sink, role="C", run="synthetic-test", module_hashes={"m": "a" * 64}
+            )
+            try:
+                with self.assertRaises((ValueError, KeyError)):
+                    owner.browser_record(row, load=artifacts.__getitem__)
+            finally:
+                sink.close()
+
+    def test_actual_page_response_error_phase_preserves_failure_outcome(self):
+        from evidence import BrowserProjection
+
+        raw = {
+            "run": "synthetic-test",
+            "stream": "synthetic-test/p/doc",
+            "clock": "browser/p/doc",
+            "seq": 1,
+            "monotonic_ms": 1,
+            "phase": "app.response_error",
+            "op": "synthetic-test/p/doc/r1",
+            "outcome": "cancelled",
+            "detail": {},
+        }
+        event = BrowserProjection("C", "synthetic-test", "p").event(raw)
+        self.assertEqual(event["phase"], "app.response_error")
+        self.assertEqual(event["outcome"], "cancelled")

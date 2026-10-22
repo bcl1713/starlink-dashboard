@@ -1,7 +1,7 @@
 {
   "schema": "perf391-diagnostic-integration-v1",
   "version": 1,
-  "stage": 2,
+  "stage": 4,
   "runtime_authorized": false,
   "phases": [
     "producer.dispatch",
@@ -74,7 +74,8 @@
     "history.begin",
     "history.end",
     "replay.callback.begin",
-    "replay.callback.end"
+    "replay.callback.end",
+    "app.response_error"
   ],
   "v1_boundary_phases": [
     "producer.dispatch",

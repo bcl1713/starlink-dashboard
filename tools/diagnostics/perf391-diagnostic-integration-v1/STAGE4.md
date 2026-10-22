@@ -22,11 +22,15 @@ completed drain and is persisted without recursively timing its own write.
 the existing `browser.mjs` adapter. It records actual Node process/clock
 identity separately from browser document clocks, admits two Pages with shared
 screenshot budget, tracks pending attachment and source jobs, and closes
-bindings/jobs before its file. It never launches or navigates a browser. Disk
-budget is at most 256 MiB, artifacts at most 2 MiB each/64 total, streams at
-most 32, and metadata has a separate reserve. Large compositor PNGs are
-unavailable rather than copied outside this cap. Final summaries and SHA-256
-inventories remain separate from the raw adapter records.
+bindings/jobs before its file. HTTP failures stop observation and prevent
+complete evidence. Stage 4 also repairs Page closure during asynchronous binding
+setup in `browser.mjs`, disposes late handles and bounds setup waits. This
+changes the external browser-adapter hash while preserving application patches.
+It never launches or navigates a browser. Disk budget is at most 256 MiB,
+artifacts at most 2 MiB each/64 total, streams at most 32, and metadata has a
+separate reserve. Large compositor PNGs are unavailable rather than copied
+outside this cap. Final summaries and SHA-256 inventories remain separate from
+the raw adapter records.
 
 `diagnostic_app.py::Boundary` wraps an explicitly supplied diagnostic ASGI app.
 It accepts only a run-scoped request header, retains actual send/receive/error
@@ -60,9 +64,12 @@ proceeding. Only handles created by that owner enter its shutdown registry.
 Signals check group membership and start identity; unrelated owners survive
 shutdown. Callback failure does not bypass remaining cleanup. Repeated caller
 cancellation waits for the shared shutdown task. Each owned child is waited and
-descendant survivors are reported. No Compose, Docker or shared service cleanup
-command is generated. Future runtime owners must register external resources
-before starting them; this stage owns only short offline test children.
+descendant survivors are reported. The exclusive offline runner additionally
+registers and reaps newly adopted descendants in nested process sessions,
+excluding pre-existing children and other registered owners. No Compose, Docker
+or shared service cleanup command is generated. Future runtime owners must
+register external resources before starting them; this stage owns only short
+offline test children.
 
 `run.py tests` installs Linux child-subreaper behavior in the runner; the test
 entrypoint also adopts nested test descendants. This is process-local adoption,
@@ -79,29 +86,33 @@ replacing backend PID/TID/CPU/clock with collector metadata. The v1 schema
 requires integer native TID: browser and Node boundary events with unknown TID
 stay in the sidecar, rather than acquiring a fabricated collector TID.
 Compatible backend boundaries and collector-owned history/chart/resource/body
-records pass through #407. Missing summaries, loss, disk errors and oversize
-artifacts prevent a complete-evidence result. ENOSPC can prevent final summary
+records pass through #407. Incremental sequence/clock/identity validation,
+missing summaries, collection-level loss, disk errors and oversize artifacts
+prevent a complete-evidence result. ENOSPC can prevent final summary
 persistence; returned failure and missing summary/hash files both fail review.
 
 ## Joins and analyzer
 
 `integration.py` consumes real Stage 2 drains/stats and Stage 3A sink records.
 It verifies full browser artifacts and separate retained/projection/plot hashes,
-then projects actual parsed histories and committed arrays into v1. A chart
-requires explicit accepted request/object provenance, retained input, actual
-plot data and module hashes. Array equality or equal time endpoints never create
-a request association. v1 visible-gap and paint claims stay null. The in-memory
-API accepts reviewed module hashes; offline CLI input without those hashes
+always verifies and retains referenced snapshots and compositor PNG bytes, then
+projects actual parsed histories and committed arrays into v1. A chart requires
+explicit accepted request/object provenance, retained input, actual plot data
+and module hashes. Array equality or equal time endpoints never create a request
+association. v1 visible-gap and paint claims stay null. The in-memory API
+accepts reviewed module hashes; offline CLI input without those hashes
 deliberately reports chart input unavailable.
 
 `analyze.py` reports producer collection/publication/final-authority, repository
 admission, worker queue/execution/delivery, ASGI, observer, polling, chart-input
-and compositor-capture brackets. Every duration requires a unique successful
-same-clock pair and intact stream/final-summary evidence. CPU also requires same
-process/TID/start identity. Missing, duplicate, failed, restarted or
-inconsistent events yield null with a reason. Source/process/document restarts
-require new streams; non-browser streams can share an explicitly identical
-process clock. Thread identity must remain stable within each stream.
+and compositor-capture brackets. The matrix includes A in-place mutation,
+refresh queue/execution/delivery, history and replay callback brackets. Every
+duration requires a unique successful same-clock pair and intact
+stream/final-summary evidence. CPU also requires same process/TID/start
+identity. Missing, duplicate, failed, restarted or inconsistent events yield
+null with a reason. Source/process/document restarts require new streams;
+non-browser streams can share an explicitly identical process clock. Thread
+identity must remain stable within each stream.
 
 Explicit request IDs join browser requests to ASGI; explicit parent IDs join
 worker operations. No browser/backend/host clock origins are subtracted. C

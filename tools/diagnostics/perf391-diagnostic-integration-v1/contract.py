@@ -44,14 +44,28 @@ def validate_event(event):
             )
 
 
-def validate_stream(events):
-    """Reject gaps/reuse explicitly; never silently close or repair a stream.
+class StreamValidator:
+    """Incremental bounded state, shared by collection and offline validation."""
 
-    Final summary/loss accounting belongs to Stage 4, not this boundary schema.
-    A new process/document must choose a new stream and clock ID.
-    """
-    streams = {}
-    clocks = {}
+    def __init__(self, max_streams=4096):
+        self.streams = {}
+        self.clocks = {}
+        self.max_streams = max_streams
+
+    def accept(self, event):
+        key = (event["run_id"], event["stream_id"])
+        if key not in self.streams and len(self.streams) >= self.max_streams:
+            raise ContractError("stream budget")
+        _validate_events([event], self.streams, self.clocks)
+
+
+def validate_stream(events):
+    state = StreamValidator()
+    for event in events:
+        state.accept(event)
+
+
+def _validate_events(events, streams, clocks):
     for event in events:
         validate_event(event)
         key = (event["run_id"], event["stream_id"])

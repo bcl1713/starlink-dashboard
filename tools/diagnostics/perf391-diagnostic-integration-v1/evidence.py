@@ -77,13 +77,14 @@ class Evidence:
         self.lock = threading.RLock()
         self.max_streams = min(4096, max_disk // 4096)
         self.artifacts = 0
+        self.validator = contract.StreamValidator(self.max_streams)
 
     def accept(self, row):
         with self.lock:
             if self.closed:
                 raise RuntimeError("closed evidence")
             try:
-                contract.validate_event(row)
+                self.validator.accept(row)
                 if row["run_id"] != self.run:
                     raise ValueError("run identity")
                 raw = canonical(row) + b"\n"
@@ -216,6 +217,14 @@ class Evidence:
                 }
 
     def summary(self, stream_id, *, last_seq, dropped, complete):
+        if (
+            type(last_seq) is not int
+            or last_seq < 0
+            or type(dropped) is not int
+            or dropped < 0
+            or type(complete) is not bool
+        ):
+            raise ValueError("invalid stream summary")
         if len(self.summaries) >= self.max_streams and stream_id not in self.summaries:
             raise ValueError("summary budget")
         if stream_id in self.summaries:
@@ -240,6 +249,8 @@ class Evidence:
                 or not self.summaries[s]["complete"]
                 or self.summaries[s]["dropped"]
             ]
+            if set(self.summaries) != set(self.streams):
+                self.failed = True
             try:
                 self.v1.close(
                     "integration_failed"
