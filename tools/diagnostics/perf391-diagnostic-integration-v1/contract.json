@@ -1,0 +1,259 @@
+{
+  "schema": "perf391-diagnostic-integration-v1",
+  "version": 1,
+  "stage": 1,
+  "runtime_authorized": false,
+  "phases": [
+    "producer.dispatch",
+    "producer.start",
+    "producer.collected",
+    "producer.validated",
+    "producer.published",
+    "producer.end",
+    "producer.returned",
+    "refresh.start",
+    "refresh.end",
+    "repo.wait",
+    "repo.acquired",
+    "repo.released",
+    "worker.dispatch",
+    "worker.start",
+    "worker.end",
+    "worker.returned",
+    "asgi.entry",
+    "asgi.end",
+    "observer.scheduled",
+    "observer.wake",
+    "observer.send",
+    "observer.headers",
+    "observer.received",
+    "observer.parsed",
+    "observer.written",
+    "browser.request",
+    "browser.headers",
+    "browser.end",
+    "browser.body",
+    "browser.failed",
+    "browser.commit",
+    "collection.enter",
+    "collection.return",
+    "source.final.begin",
+    "source.final.end",
+    "publication.attempt",
+    "publication.result",
+    "publication.swap",
+    "replay.commit",
+    "repo.local_grant",
+    "repo.acquire_failed",
+    "asgi.headers",
+    "asgi.send.begin",
+    "asgi.send.end",
+    "asgi.disconnect",
+    "observer.record_complete",
+    "observer.skipped_deadline",
+    "app.request",
+    "app.response",
+    "app.parse_available",
+    "query.success",
+    "query.error",
+    "react.render_candidate",
+    "react.commit",
+    "history.retained",
+    "plot.upload",
+    "plot.commit",
+    "paint.request",
+    "paint.artifact",
+    "probe.failure"
+  ],
+  "v1_boundary_phases": [
+    "producer.dispatch",
+    "producer.start",
+    "producer.collected",
+    "producer.validated",
+    "producer.published",
+    "producer.end",
+    "producer.returned",
+    "refresh.start",
+    "refresh.end",
+    "repo.wait",
+    "repo.acquired",
+    "repo.released",
+    "worker.dispatch",
+    "worker.start",
+    "worker.end",
+    "worker.returned",
+    "asgi.entry",
+    "asgi.end",
+    "observer.scheduled",
+    "observer.wake",
+    "observer.send",
+    "observer.headers",
+    "observer.received",
+    "observer.parsed",
+    "observer.written",
+    "browser.request",
+    "browser.headers",
+    "browser.end",
+    "browser.body",
+    "browser.failed",
+    "browser.commit"
+  ],
+  "outcomes": [
+    "ok",
+    "error",
+    "cancelled",
+    "rejected",
+    "cas_lost",
+    "unchanged",
+    "unavailable"
+  ],
+  "capabilities": {
+    "A": {
+      "collection": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "worker": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "repository_admission": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "browser_retained_input": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "plot_commit": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "immutable_frame": {
+        "available": false,
+        "reason": "unavailable by design in A; no backport"
+      },
+      "final_authority": {
+        "available": false,
+        "reason": "unavailable by design in A; no backport"
+      },
+      "ready_frame_cas": {
+        "available": false,
+        "reason": "unavailable by design in A; no backport"
+      },
+      "physical_acquisition": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "physical_scanout": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "axios_parse_start": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "cross_clock_one_way": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "passive_http_capture": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      }
+    },
+    "C": {
+      "collection": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "worker": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "repository_admission": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "browser_retained_input": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "plot_commit": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "immutable_frame": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "final_authority": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "ready_frame_cas": {
+        "available": true,
+        "reason": "exposed by existing role; emission requires later implementation"
+      },
+      "physical_acquisition": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "physical_scanout": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "axios_parse_start": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "cross_clock_one_way": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      },
+      "passive_http_capture": {
+        "available": false,
+        "reason": "unavailable; conditional adapter or unexposed boundary"
+      }
+    }
+  },
+  "missing_capability": {
+    "available": false,
+    "reason": "undeclared capability"
+  },
+  "capability_semantics": "Availability describes existing source semantics, not installed instrumentation or runtime qualification.",
+  "identity_fields": [
+    "source_mode",
+    "source_lifecycle",
+    "observation_id",
+    "observation_timestamp",
+    "route_revision",
+    "config_revision",
+    "input_revision",
+    "replay_runtime",
+    "replay_run",
+    "replay_revision",
+    "replay_mission_time",
+    "expected_head",
+    "publication_token",
+    "frame_id",
+    "object_token",
+    "request_id",
+    "viewer_id",
+    "document_id",
+    "history_token",
+    "query_token",
+    "retained_token",
+    "plot_token",
+    "artifact_sha256",
+    "publication_kind",
+    "cas_success"
+  ],
+  "identity_limit_characters": 256,
+  "operation_id_limit_ascii": 96,
+  "publication_projection": "Only C successful ready-frame CAS can project producer.published; failure heads, invalidation, stale CAS, derived refresh and A in-place completion cannot.",
+  "clock_policy": "Same clock for durations; CPU requires same process/TID/start. No cross-origin subtraction. Navigation/restart requires a new stream/clock. Sequence gaps remain failures, not inferred events.",
+  "identity_policy": "Caller-exposed scalars only. No new reads/serialization/telemetry advancement. Null requires an unavailable reason. No timestamp/numeric-equality identity synthesis.",
+  "v1_policy": "Immutable collector schema/analyzer; compatible projections only, sidecar analyzed separately. Non-boundary v1 records remain in their original stream.",
+  "capture_policy": "Conditional adapter only; TLS/H2/unsupported encoding unavailable. No root/broad capture, compression changes, interception or silent transport fallback."
+}

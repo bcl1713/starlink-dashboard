@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:perf391:diagnostic-integration:build:1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "perf391-diagnostic-integration-v1"
+    },
+    "version": {
+      "const": 1
+    },
+    "role": {
+      "enum": ["A", "C"]
+    },
+    "base_application_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "ancestry_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "implementation_reference_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "integration_source_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "collector_source_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "collector_release_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "frozen_harness_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "archive_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "patch_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "effective_source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "image_built": {
+      "const": false
+    },
+    "image_digest": {
+      "type": "null"
+    },
+    "compiled_assets": {
+      "type": "null"
+    },
+    "labels": {
+      "type": "object",
+      "properties": {
+        "diagnostic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "org.opencontainers.image.revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "base_application_sha": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "integration_source_sha": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "collector_source_sha": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "patch_sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "effective_source_sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "diagnostic",
+        "org.opencontainers.image.revision",
+        "base_application_sha",
+        "integration_source_sha",
+        "collector_source_sha",
+        "patch_sha256",
+        "effective_source_sha256"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema",
+    "version",
+    "role",
+    "base_application_sha",
+    "ancestry_sha",
+    "implementation_reference_sha",
+    "integration_source_sha",
+    "collector_source_sha",
+    "collector_release_sha",
+    "frozen_harness_sha",
+    "archive_sha256",
+    "patch_sha256",
+    "effective_source_sha256",
+    "image_built",
+    "image_digest",
+    "compiled_assets",
+    "labels"
+  ],
+  "additionalProperties": false
+}

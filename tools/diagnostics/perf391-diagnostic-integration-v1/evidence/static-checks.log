@@ -1,0 +1,7 @@
+All checks passed!
+markdownlint-cli2 v0.19.1 (markdownlint v0.39.0)
+Finding: tools/diagnostics/perf391-diagnostic-integration-v1/README.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 1 file(s)
+Summary: 0 error(s)
+Checking formatting...
+All matched files use Prettier code style!

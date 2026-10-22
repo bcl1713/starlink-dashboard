@@ -1,0 +1,46 @@
+.........E.........FFFF...
+======================================================================
+ERROR: test_frontend_patch_agreement (test_build_identity.PatchTests.test_frontend_patch_agreement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage1/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_build_identity.py", line 183, in test_frontend_patch_agreement
+    build.verify_frontend_patch_agreement(common, copy.deepcopy(common))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'build' has no attribute 'verify_frontend_patch_agreement'
+
+======================================================================
+FAIL: test_derived_refresh_cannot_publish (test_contract.ContractTests.test_derived_refresh_cannot_publish)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage1/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_contract.py", line 127, in test_derived_refresh_cannot_publish
+    with self.assertRaises(contract.ContractError):
+AssertionError: ContractError not raised
+
+======================================================================
+FAIL: test_document_and_cross_stream_clock_reuse (test_contract.ContractTests.test_document_and_cross_stream_clock_reuse) (second={'schema': 'perf391-diagnostic-integration-v1', 'version': 1, 'role': 'C', 'emitter': 'browser', 'run_id': 'fixture', 'stream_id': 'backend-1', 'seq': 2, 'process_uuid': '11111111-1111-4111-8111-111111111111', 'pid': 100, 'tid': None, 'process_start_id': 'proc-start-1', 'thread_start_id': None, 'clock_id': 'backend-clock-1', 'mono_ns': '100', 'thread_cpu_ns': None, 'op_id': 'tick-1', 'parent_op_id': None, 'span_id': 'span-1', 'operation_type': 'tick', 'phase': 'collection.enter', 'outcome': 'ok', 'identity': {'document_id': 'doc2'}, 'unavailable': {}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage1/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_contract.py", line 141, in test_document_and_cross_stream_clock_reuse
+    with self.subTest(second=second), self.assertRaises(contract.ContractError):
+AssertionError: ContractError not raised
+
+======================================================================
+FAIL: test_document_and_cross_stream_clock_reuse (test_contract.ContractTests.test_document_and_cross_stream_clock_reuse) (second={'schema': 'perf391-diagnostic-integration-v1', 'version': 1, 'role': 'C', 'emitter': 'browser', 'run_id': 'fixture', 'stream_id': 'navigation', 'seq': 1, 'process_uuid': '11111111-1111-4111-8111-111111111111', 'pid': 100, 'tid': None, 'process_start_id': 'proc-start-1', 'thread_start_id': None, 'clock_id': 'backend-clock-1', 'mono_ns': '100', 'thread_cpu_ns': None, 'op_id': 'tick-1', 'parent_op_id': None, 'span_id': 'span-1', 'operation_type': 'tick', 'phase': 'collection.enter', 'outcome': 'ok', 'identity': {'document_id': 'doc2'}, 'unavailable': {}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage1/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_contract.py", line 141, in test_document_and_cross_stream_clock_reuse
+    with self.subTest(second=second), self.assertRaises(contract.ContractError):
+AssertionError: ContractError not raised
+
+======================================================================
+FAIL: test_document_and_cross_stream_clock_reuse (test_contract.ContractTests.test_document_and_cross_stream_clock_reuse) (second={'schema': 'perf391-diagnostic-integration-v1', 'version': 1, 'role': 'C', 'emitter': 'backend', 'run_id': 'fixture', 'stream_id': 'restart', 'seq': 1, 'process_uuid': '22222222-2222-4222-8222-222222222222', 'pid': 100, 'tid': 101, 'process_start_id': 'proc-start-1', 'thread_start_id': 'thread-start-1', 'clock_id': 'backend-clock-1', 'mono_ns': '100', 'thread_cpu_ns': '10', 'op_id': 'tick-1', 'parent_op_id': None, 'span_id': 'span-1', 'operation_type': 'tick', 'phase': 'collection.enter', 'outcome': 'ok', 'identity': {}, 'unavailable': {}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage1/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_contract.py", line 141, in test_document_and_cross_stream_clock_reuse
+    with self.subTest(second=second), self.assertRaises(contract.ContractError):
+AssertionError: ContractError not raised
+
+----------------------------------------------------------------------
+Ran 24 tests in 19.706s
+
+FAILED (failures=4, errors=1)

@@ -1,0 +1,780 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:perf391:diagnostic-integration:event:1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "perf391-diagnostic-integration-v1"
+    },
+    "version": {
+      "const": 1
+    },
+    "role": {
+      "enum": ["A", "C"]
+    },
+    "emitter": {
+      "enum": ["backend", "browser", "node", "observer", "capture", "host"]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[\\x21-\\x7e]+$"
+    },
+    "stream_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[\\x21-\\x7e]+$"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "process_uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "pid": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tid": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "process_start_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[\\x21-\\x7e]+$"
+    },
+    "thread_start_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[\\x21-\\x7e]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "clock_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[\\x21-\\x7e]+$"
+    },
+    "mono_ns": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,29})$"
+    },
+    "thread_cpu_ns": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,29})$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "op_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[\\x21-\\x7e]+$"
+    },
+    "parent_op_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[\\x21-\\x7e]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "span_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[\\x21-\\x7e]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "operation_type": {
+      "enum": [
+        "tick",
+        "replay",
+        "derived_refresh",
+        "scrape",
+        "source_observer",
+        "history",
+        "presentation",
+        "lifecycle"
+      ]
+    },
+    "phase": {
+      "enum": [
+        "producer.dispatch",
+        "producer.start",
+        "producer.collected",
+        "producer.validated",
+        "producer.published",
+        "producer.end",
+        "producer.returned",
+        "refresh.start",
+        "refresh.end",
+        "repo.wait",
+        "repo.acquired",
+        "repo.released",
+        "worker.dispatch",
+        "worker.start",
+        "worker.end",
+        "worker.returned",
+        "asgi.entry",
+        "asgi.end",
+        "observer.scheduled",
+        "observer.wake",
+        "observer.send",
+        "observer.headers",
+        "observer.received",
+        "observer.parsed",
+        "observer.written",
+        "browser.request",
+        "browser.headers",
+        "browser.end",
+        "browser.body",
+        "browser.failed",
+        "browser.commit",
+        "collection.enter",
+        "collection.return",
+        "source.final.begin",
+        "source.final.end",
+        "publication.attempt",
+        "publication.result",
+        "publication.swap",
+        "replay.commit",
+        "repo.local_grant",
+        "repo.acquire_failed",
+        "asgi.headers",
+        "asgi.send.begin",
+        "asgi.send.end",
+        "asgi.disconnect",
+        "observer.record_complete",
+        "observer.skipped_deadline",
+        "app.request",
+        "app.response",
+        "app.parse_available",
+        "query.success",
+        "query.error",
+        "react.render_candidate",
+        "react.commit",
+        "history.retained",
+        "plot.upload",
+        "plot.commit",
+        "paint.request",
+        "paint.artifact",
+        "probe.failure"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "ok",
+        "error",
+        "cancelled",
+        "rejected",
+        "cas_lost",
+        "unchanged",
+        "unavailable"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "source_mode": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_lifecycle": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observation_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observation_timestamp": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "route_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "config_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "input_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "replay_runtime": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "replay_run": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "replay_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "replay_mission_time": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_head": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "publication_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "frame_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "object_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "viewer_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "document_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "history_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retained_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plot_token": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifact_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "publication_kind": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cas_success": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "unavailable": {
+      "type": "object",
+      "properties": {
+        "source_mode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "source_lifecycle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "observation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "observation_timestamp": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "route_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "config_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "input_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "replay_runtime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "replay_run": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "replay_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "replay_mission_time": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expected_head": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "publication_token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "frame_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "object_token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "viewer_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "document_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "history_token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "query_token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "retained_token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "plot_token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "publication_kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "cas_success": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema",
+    "version",
+    "role",
+    "emitter",
+    "run_id",
+    "stream_id",
+    "seq",
+    "process_uuid",
+    "pid",
+    "tid",
+    "process_start_id",
+    "thread_start_id",
+    "clock_id",
+    "mono_ns",
+    "thread_cpu_ns",
+    "op_id",
+    "parent_op_id",
+    "span_id",
+    "operation_type",
+    "phase",
+    "outcome",
+    "identity",
+    "unavailable"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "emitter": {
+            "const": "browser"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "tid": {
+            "type": "null"
+          },
+          "thread_start_id": {
+            "type": "null"
+          },
+          "thread_cpu_ns": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "A"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "phase": {
+            "not": {
+              "enum": [
+                "producer.published",
+                "producer.validated",
+                "source.final.begin",
+                "source.final.end",
+                "publication.attempt",
+                "publication.result",
+                "publication.swap"
+              ]
+            }
+          },
+          "identity": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["expected_head"]
+                },
+                {
+                  "required": ["publication_token"]
+                },
+                {
+                  "required": ["frame_id"]
+                },
+                {
+                  "required": ["cas_success"]
+                },
+                {
+                  "required": ["publication_kind"]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "producer.published"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "role": {
+            "const": "C"
+          },
+          "outcome": {
+            "const": "ok"
+          },
+          "identity": {
+            "required": ["publication_kind", "cas_success"],
+            "properties": {
+              "publication_kind": {
+                "const": "ready"
+              },
+              "cas_success": {
+                "const": true
+              }
+            }
+          },
+          "operation_type": {
+            "enum": ["tick", "replay"]
+          }
+        }
+      }
+    }
+  ]
+}

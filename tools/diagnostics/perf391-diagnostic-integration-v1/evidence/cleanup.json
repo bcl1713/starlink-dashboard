@@ -1,0 +1,21 @@
+{
+  "task": "perf391-integration-stage1",
+  "verification": "Approved host-visible ps and actor-configured Docker listings",
+  "task_processes_remaining": [],
+  "task_listeners_remaining": [],
+  "containers_remaining": [],
+  "networks_remaining": [],
+  "disposable_volumes_remaining": [],
+  "runtime_resources_started": false,
+  "test_sessions_completed": [88228, 45366, 61885, 30815, 76897, 53544],
+  "formatter_sessions_completed": [19068, 78616],
+  "formatter_cleanup": "Initial sandbox Black workers stalled; exact host parent 3547911 was terminated gracefully and all 20 recorded children exited. Second bounded sandbox attempt aborted; bounded host formatting/lint succeeded. Host ps verified all recorded formatter PIDs gone and no task Python/Black/Ruff/Node/timeout processes remain.",
+  "listeners": "No test or verifier creates a network listener; no task-owned host process remains to own one.",
+  "docker": "Inherited DOCKER_HOST/context preserved; all three reserved project-label listings were empty. No Docker resources were created.",
+  "retained": [
+    "open-PR Stage 1 worktree",
+    "hashed evidence",
+    "isolated exact-source archives and inventories under ignored artifacts/identity"
+  ],
+  "temporary_paths": "TemporaryDirectory fixtures cleaned; task-private dependency/cache environment and schema generator removed after final checks."
+}
