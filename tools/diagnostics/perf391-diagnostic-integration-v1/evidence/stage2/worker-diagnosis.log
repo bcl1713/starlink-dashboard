@@ -1,0 +1,29 @@
+test_actual_limiter_queue_and_completion_delivery (test_worker_delivery.WorkerTests.test_actual_limiter_queue_and_completion_delivery) ... ok
+test_cancellation_matches_pool_before_admission_and_during_work (test_worker_delivery.WorkerTests.test_cancellation_matches_pool_before_admission_and_during_work) ... ok
+test_return_kwargs_and_error_identity (test_worker_delivery.WorkerTests.test_return_kwargs_and_error_identity) ... Timeout (0:00:05)!
+Thread 0x00007c9db28986c0 (most recent call first):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage2/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1089 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+
+Thread 0x00007c9db4161740 (most recent call first):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/selectors.py", line 468 in select
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 1898 in _run_once
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 608 in run_forever
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 641 in run_until_complete
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 112 in _callMaybeAsync
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 90 in _callTestMethod
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/case.py", line 623 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 131 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/case.py", line 678 in __call__
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/suite.py", line 122 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/suite.py", line 84 in __call__
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/suite.py", line 122 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/suite.py", line 84 in __call__
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/suite.py", line 122 in run
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/suite.py", line 84 in __call__
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/runner.py", line 217 in run
+  File "<string>", line 1 in <module>

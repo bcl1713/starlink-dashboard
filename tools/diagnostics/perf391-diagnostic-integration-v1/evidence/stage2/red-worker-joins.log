@@ -1,0 +1,26 @@
+F
+======================================================================
+FAIL: test_all_worker_boundaries_share_child_and_parent_ids (test_worker_delivery.WorkerTests.test_all_worker_boundaries_share_child_and_parent_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_worker_delivery.py", line 140, in test_all_worker_boundaries_share_child_and_parent_ids
+    self.assertEqual({e["parent_op_id"] for e in events}, {"request"})
+AssertionError: Items in the first set but not the second:
+None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)

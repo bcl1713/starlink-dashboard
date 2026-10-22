@@ -1,0 +1,563 @@
+diff --git a/backend/starlink-location/app/api/metrics_export.py b/backend/starlink-location/app/api/metrics_export.py
+--- a/backend/starlink-location/app/api/metrics_export.py
++++ b/backend/starlink-location/app/api/metrics_export.py
+@@ -1,4 +1,7 @@
+ """Read-only metrics exposition through the existing registry and serializer."""
++
++import backend_probe as probe
++from workers import await_pool
+ 
+ from threading import Lock
+ 
+@@ -29,7 +32,7 @@
+ async def get_metrics(route_manager=None, poi_manager=None) -> str:
+     """Serialize published metrics; legacy manager arguments are ignored."""
+     try:
+-        output = await run_in_threadpool(_prepare_metrics, route_manager, poi_manager)
++        output = await await_pool("scrape", probe.new_operation("metrics"), run_in_threadpool, _prepare_metrics, route_manager, poi_manager)
+     except Exception as exc:
+         _record_exposition(type(exc).__name__)
+         raise
+diff --git a/backend/starlink-location/app/api/overview_history.py b/backend/starlink-location/app/api/overview_history.py
+--- a/backend/starlink-location/app/api/overview_history.py
++++ b/backend/starlink-location/app/api/overview_history.py
+@@ -1,4 +1,6 @@
+ """Overview telemetry-history API."""
++
++import backend_probe as probe
+ 
+ from collections.abc import Awaitable, Callable
+ 
+@@ -47,6 +49,7 @@
+ 
+ 
+ @router.get("/api/overview-history")
++@probe.async_bracket("history.begin", "history.end")
+ async def get_overview_history():
+     """Return the shared bounded overview telemetry-history bundle."""
+     if _overview_history_reader is None:
+diff --git a/backend/starlink-location/app/api/status.py b/backend/starlink-location/app/api/status.py
+--- a/backend/starlink-location/app/api/status.py
++++ b/backend/starlink-location/app/api/status.py
+@@ -1,4 +1,7 @@
+ """JSON status endpoint handler."""
++
++import backend_probe as probe
++from workers import await_pool
+ 
+ from fastapi import APIRouter, HTTPException
+ from pydantic import BaseModel, ConfigDict
+@@ -86,7 +89,7 @@
+     }
+     ```
+     """
+-    return await run_in_threadpool(_status_payload)
++    return await await_pool("status", probe.new_operation("status"), run_in_threadpool, _status_payload)
+ 
+ 
+ def _status_payload():
+diff --git a/backend/starlink-location/app/core/metrics/frames.py b/backend/starlink-location/app/core/metrics/frames.py
+--- a/backend/starlink-location/app/core/metrics/frames.py
++++ b/backend/starlink-location/app/core/metrics/frames.py
+@@ -4,6 +4,8 @@
+ publish with an expected head after their own authoritative source admission.
+ Independent instruments are deliberately outside this consistency domain.
+ """
++
++import backend_probe as probe
+ 
+ from asyncio import current_task
+ from contextvars import ContextVar
+@@ -109,20 +111,29 @@
+         with self._lock:
+             return self._head
+ 
++    @probe.publication_attempt
+     def publish(self, expected: PublicationState, frame: GaugeFrame) -> bool:
+         # All traversal/conversion and allocation precedes the pointer mutex.
+         self._validate(frame)
+         if frame.identity.input_revision != expected.input_revision:
+             raise ValueError("Frame does not match expected input revision")
+         state = PublicationState(frame, "ready", input_revision=expected.input_revision)
+-        return self._swap(expected, state)
++        diagnostic_published = self._swap(expected, state)
++        probe.publication(diagnostic_published, frame, expected=expected, published_state=state)
++        return diagnostic_published
+ 
+     def _swap(self, expected, state):
++        diagnostic_kind = probe.swap_kind(state.status)
+         with self._lock:
+             if self._head is not expected:
+                 return False
+             self._head = state
+-            return True
++            diagnostic_swapped = probe.stamp()
++        probe.mark("publication.swap", at=diagnostic_swapped, identity={
++            "publication_kind": diagnostic_kind, "expected_head": probe.token(expected),
++            "publication_token": probe.token(state),
++        })
++        return True
+ 
+     def invalidate(self, reason: str) -> PublicationState:
+         reason = str(reason)
+diff --git a/backend/starlink-location/app/core/metrics/lifecycle.py b/backend/starlink-location/app/core/metrics/lifecycle.py
+--- a/backend/starlink-location/app/core/metrics/lifecycle.py
++++ b/backend/starlink-location/app/core/metrics/lifecycle.py
+@@ -1,4 +1,7 @@
+ """Coalesced refresh work owned by the existing loop or one bounded task."""
++
++import backend_probe as probe
++from workers import await_pool
+ 
+ import asyncio
+ import logging
+@@ -93,7 +96,7 @@
+ 
+     async def _run_refresh(self, expected):
+         try:
+-            return await asyncio.to_thread(self._refresh)
++            return await await_pool("refresh", probe.new_operation("refresh"), asyncio.to_thread, self._refresh)
+         except Exception:
+             self._store.fail(expected, "refresh owner failed")
+             logger.exception("Metric refresh owner failed")
+diff --git a/backend/starlink-location/app/core/metrics/metric_updater.py b/backend/starlink-location/app/core/metrics/metric_updater.py
+--- a/backend/starlink-location/app/core/metrics/metric_updater.py
++++ b/backend/starlink-location/app/core/metrics/metric_updater.py
+@@ -1,4 +1,6 @@
+ """Metric update functions for telemetry and mission data."""
++
++import backend_probe as probe
+ 
+ # FR-004: File exceeds 300 lines (604 lines) because metric updates coordinate
+ # across telemetry calculations, mission timeline state, flight phase logic, and
+@@ -415,7 +417,10 @@
+         if frame is None:
+             return
+         # Recheck immediately before the CAS, under repository admission.
+-        if not final_validation(frame):
++        with probe.validation(frame) as diagnostic_check:
++            diagnostic_valid = final_validation(frame)
++            diagnostic_check(diagnostic_valid)
++        if not diagnostic_valid:
+             FRAME_STORE.fail(expected, "telemetry source superseded")
+             return
+         FRAME_STORE.publish(expected, frame)
+@@ -427,6 +432,7 @@
+ 
+ 
+ @model_input_write
++@probe.publication_scope("unavailable")
+ def clear_telemetry_metrics(
+     *,
+     config=None,
+@@ -509,6 +515,7 @@
+         gauge.set(math.nan)
+ 
+ 
++@probe.publication_scope("service")
+ def set_service_info(version: str, mode: str) -> None:
+     """Source configuration producer; never reuse observations from an old mode."""
+     from types import SimpleNamespace
+diff --git a/backend/starlink-location/app/core/metrics/refresh_inputs.py b/backend/starlink-location/app/core/metrics/refresh_inputs.py
+--- a/backend/starlink-location/app/core/metrics/refresh_inputs.py
++++ b/backend/starlink-location/app/core/metrics/refresh_inputs.py
+@@ -1,4 +1,6 @@
+ """Derived-only capture and admission, without source collection or detection."""
++
++import backend_probe as probe
+ 
+ import logging
+ from datetime import UTC, datetime
+@@ -17,6 +19,7 @@
+ logger = logging.getLogger(__name__)
+ 
+ 
++@probe.refresh
+ def refresh_current_metrics(sources, *, initial=False, now=None):
+     """The callback returns current (coordinator, config, routes, POIs, replay).
+ 
+@@ -124,32 +127,36 @@
+             )
+             frame = frame_builder.prepare_frame(inputs, admit_observation=False)
+             current = sources()
+-            if (
+-                current[0] is not coordinator
+-                or current[1] is not config
+-                or current[2] is not routes
+-                or current[3] is not manager
+-                or current[4] is not service
+-                or frame_builder.coordinator_identity(coordinator) != identity
+-                or config.model_dump_json() != config_key
+-                or frame_builder.model_identity(
+-                    getattr(coordinator, "_last_valid_telemetry", None)
++            with probe.validation(frame) as diagnostic_check:
++                diagnostic_rejected = (
++                    current[0] is not coordinator
++                    or current[1] is not config
++                    or current[2] is not routes
++                    or current[3] is not manager
++                    or current[4] is not service
++                    or frame_builder.coordinator_identity(coordinator) != identity
++                    or config.model_dump_json() != config_key
++                    or frame_builder.model_identity(
++                        getattr(coordinator, "_last_valid_telemetry", None)
++                    )
++                    != observation_key
++                    or route_source_identity(routes.get_active_route() if routes else None)
++                    != route_key
++                    or not frame_inputs_are_current(frame, route, manager)
++                    or (
++                        service is not None and service.status().revision != status.revision
++                    )
++                    or (
++                        replay_key is not None
++                        and replay_input_identity(service, tick) != replay_key
++                    )
+                 )
+-                != observation_key
+-                or route_source_identity(routes.get_active_route() if routes else None)
+-                != route_key
+-                or not frame_inputs_are_current(frame, route, manager)
+-                or (
+-                    service is not None and service.status().revision != status.revision
+-                )
+-                or (
+-                    replay_key is not None
+-                    and replay_input_identity(service, tick) != replay_key
+-                )
+-            ):
++                diagnostic_check(not diagnostic_rejected)
++            if diagnostic_rejected:
+                 FRAME_STORE.fail(expected, "derived source superseded")
+                 return False
+             if expected.status == "ready" and frame == expected.frame:
++                probe.mark("publication.result", outcome="unchanged", identity={"publication_kind": "derived_refresh", "frame_id": probe.token(frame)})
+                 return True
+             return FRAME_STORE.publish(expected, frame)
+         except Exception:
+diff --git a/backend/starlink-location/app/mission/repository_gate.py b/backend/starlink-location/app/mission/repository_gate.py
+--- a/backend/starlink-location/app/mission/repository_gate.py
++++ b/backend/starlink-location/app/mission/repository_gate.py
+@@ -1,4 +1,6 @@
+ """Fair local admission before the canonical cross-process file lock."""
++
++import backend_probe as probe
+ 
+ import math
+ import os
+@@ -45,33 +47,42 @@
+         deadline = None if timeout < 0 else time.monotonic() + timeout
+         owner = threading.get_ident()
+         ticket = object()
+-        with self._condition:
+-            nested = self._owner == owner
+-            if not nested:
+-                self._waiters.append(ticket)
+-                try:
+-                    while self._owner is not None or self._waiters[0] is not ticket:
+-                        remaining = (
+-                            None if deadline is None else deadline - time.monotonic()
+-                        )
+-                        cancel = kwargs.get("cancel_check")
+-                        if (
+-                            not blocking
+-                            or (remaining is not None and remaining <= 0)
+-                            or (cancel is not None and cancel())
+-                        ):
+-                            raise Timeout(self.lock_file)
+-                        self._condition.wait(
+-                            min(remaining, poll_interval)
+-                            if remaining is not None
+-                            else poll_interval
+-                        )
+-                except BaseException:
+-                    self._waiters.remove(ticket)
+-                    self._condition.notify_all()
+-                    raise
+-                self._waiters.popleft()
+-                self._owner = owner
++        diagnostic_entry = probe.stamp()
++        diagnostic_span = probe.new_span()
++        try:
++            with self._condition:
++                nested = self._owner == owner
++                if not nested:
++                    self._waiters.append(ticket)
++                    try:
++                        while self._owner is not None or self._waiters[0] is not ticket:
++                            remaining = (
++                                None if deadline is None else deadline - time.monotonic()
++                            )
++                            cancel = kwargs.get("cancel_check")
++                            if (
++                                not blocking
++                                or (remaining is not None and remaining <= 0)
++                                or (cancel is not None and cancel())
++                            ):
++                                raise Timeout(self.lock_file)
++                            self._condition.wait(
++                                min(remaining, poll_interval)
++                                if remaining is not None
++                                else poll_interval
++                            )
++                    except BaseException:
++                        self._waiters.remove(ticket)
++                        self._condition.notify_all()
++                        raise
++                    self._waiters.popleft()
++                    self._owner = owner
++                    diagnostic_granted = probe.stamp()
++        except BaseException:
++            probe.repository_failed(self, diagnostic_span, diagnostic_entry, local=True)
++            raise
++        if not nested:
++            probe.repository_granted(self, diagnostic_span, diagnostic_entry, diagnostic_granted)
+         try:
+             remaining = (
+                 timeout if deadline is None else max(0, deadline - time.monotonic())
+@@ -84,10 +95,15 @@
+                 with self._condition:
+                     self._owner = None
+                     self._condition.notify_all()
++                probe.repository_failed(self, diagnostic_span, diagnostic_entry)
+             raise
++        if not nested:
++            probe.repository_acquired(self)
+         return _Acquired(self)
+ 
+     def release(self, force=False):
++        diagnostic_entry = probe.stamp()
++        diagnostic_released = None
+         try:
+             self._file_lock.release(force=force)
+         finally:
+@@ -97,7 +113,10 @@
+                     and not self._file_lock.is_locked
+                 ):
+                     self._owner = None
++                    diagnostic_released = probe.stamp()
+                     self._condition.notify_all()
++            if diagnostic_released is not None:
++                probe.repository_released(self, diagnostic_entry, diagnostic_released)
+ 
+     def __enter__(self):
+         self.acquire()
+diff --git a/backend/starlink-location/app/simulation/coordinator.py b/backend/starlink-location/app/simulation/coordinator.py
+--- a/backend/starlink-location/app/simulation/coordinator.py
++++ b/backend/starlink-location/app/simulation/coordinator.py
+@@ -1,4 +1,6 @@
+ """Simulation coordinator for orchestrating all simulators."""
++
++import backend_probe as probe
+ 
+ # FR-004: File exceeds 300 lines (307 lines) because coordinator orchestrates
+ # position, telemetry, and environmental simulators with shared state and timing.
+@@ -59,6 +61,7 @@
+         self._last_valid_telemetry = self._generate_telemetry()
+ 
+     @model_input_write
++    @probe.source_collection
+     def update(self, replay_frame: ReplayFrame | None = None) -> TelemetryData:
+         """
+         Update all simulators and return current telemetry.
+diff --git a/backend/starlink-location/app/simulation/run_service.py b/backend/starlink-location/app/simulation/run_service.py
+--- a/backend/starlink-location/app/simulation/run_service.py
++++ b/backend/starlink-location/app/simulation/run_service.py
+@@ -1,4 +1,6 @@
+ """Serialize replay planning, collection, and lifecycle with leg activation."""
++
++import backend_probe as probe
+ 
+ import logging
+ from collections.abc import Callable
+@@ -102,6 +104,7 @@
+             )
+         return self.runtime.prepare_start(plan)
+ 
++    @probe.replay_collect
+     def collect(
+         self,
+         coordinator: SimulationCoordinator,
+@@ -136,7 +139,7 @@
+                 expected = FRAME_STORE.read()
+                 frame = publish(telemetry, tick)
+                 if advancing:
+-                    self.runtime.commit_tick(tick)
++                    probe.commit(self.runtime.commit_tick, tick)
+                 self.publish_committed_metrics(
+                     expected, frame, tick, coordinator, config, telemetry, inputs
+                 )
+@@ -182,28 +185,31 @@
+         try:
+             status = self.status()
+             identity = frame.identity
+-            if (
+-                self.runtime.selected_plan() is not tick.plan
+-                or self.runtime.frame() is not tick.frame
+-                or identity.replay_runtime_id != status.runtime_id
+-                or identity.replay_revision != str(status.revision)
+-                or status.run is None
+-                or identity.replay_run_id != status.run.run_id
+-                or identity.replay_mission_time
+-                != status.run.simulation_time.timestamp()
+-                or (
+-                    coordinator_identity(coordinator),
+-                    coordinator.get_config().model_dump_json(),
+-                )
+-                != config
+-                or coordinator.get_current_telemetry() is not telemetry
+-                or telemetry.timestamp.timestamp() != identity.observation_timestamp
+-                or replay_input_identity(self, tick) != inputs
+-                or (
+-                    identity.coordinator_id is not None
+-                    and identity.coordinator_id != coordinator_identity(coordinator)
+-                )
+-            ):
++            with probe.validation(frame) as diagnostic_check:
++                diagnostic_rejected = (
++                    self.runtime.selected_plan() is not tick.plan
++                    or self.runtime.frame() is not tick.frame
++                    or identity.replay_runtime_id != status.runtime_id
++                    or identity.replay_revision != str(status.revision)
++                    or status.run is None
++                    or identity.replay_run_id != status.run.run_id
++                    or identity.replay_mission_time
++                    != status.run.simulation_time.timestamp()
++                    or (
++                        coordinator_identity(coordinator),
++                        coordinator.get_config().model_dump_json(),
++                    )
++                    != config
++                    or coordinator.get_current_telemetry() is not telemetry
++                    or telemetry.timestamp.timestamp() != identity.observation_timestamp
++                    or replay_input_identity(self, tick) != inputs
++                    or (
++                        identity.coordinator_id is not None
++                        and identity.coordinator_id != coordinator_identity(coordinator)
++                    )
++                )
++                diagnostic_check(not diagnostic_rejected)
++            if diagnostic_rejected:
+                 FRAME_STORE.fail(expected, "replay source superseded")
+                 return False
+             return FRAME_STORE.publish(expected, frame)
+diff --git a/backend/starlink-location/main.py b/backend/starlink-location/main.py
+--- a/backend/starlink-location/main.py
++++ b/backend/starlink-location/main.py
+@@ -1,4 +1,7 @@
+ """Starlink Location Backend - FastAPI Application."""
++
++import backend_probe as probe
++from workers import invoke_sync
+ 
+ import asyncio
+ import os
+@@ -950,6 +953,7 @@
+     publish_ground_entry_point_metrics(observation.entry)
+ 
+ 
++@probe.bracket("replay.callback.begin", "replay.callback.end")
+ def _publish_replay_telemetry(telemetry, tick):
+     from app.core.metrics.frame_builder import coordinator_identity
+     from app.core.metrics.metric_updater import prepare_metrics_from_telemetry
+@@ -1101,6 +1105,7 @@
+                 extra_fields={"error": type(archive_error).__name__},
+             )
+     if _coordinator:
++        probe.branch("coordinator")
+         run_service = getattr(app.state, "simulation_run_service", None)
+         paced = (
+             run_service is not None and run_service.runtime.selected_plan() is not None
+@@ -1114,15 +1119,19 @@
+         telemetry = (
+             run_service.collect(_coordinator, _publish_replay_telemetry)
+             if paced
+-            else coordinator.update()
++            else probe.collect_update(coordinator.update)
+         )
+         if not paced:
++            probe.mark("producer.collected", identity=probe.telemetry_identity(telemetry))
+             _publish_pop_observation(telemetry)
++        else:
++            probe.branch("replay")
+         update_count += 1
+ 
+         # Retained acquisition: refresh planned values and freshness without
+         # observation accounting, source generation, or detection side effects.
+         if telemetry is not None and telemetry is previous_telemetry and not paced:
++            probe.branch("retained")
+             with get_active_leg_lock():
+                 active_route = (
+                     _route_manager.get_active_route() if _route_manager else None
+@@ -1136,6 +1145,7 @@
+         # Only update metrics if telemetry is available
+         # In live mode, telemetry will be None when disconnected
+         if telemetry is not None and not paced:
++            probe.branch("telemetry")
+             # Track metric collection duration
+             from app.core.metrics import (
+                 starlink_metrics_generation_errors_total,
+@@ -1163,6 +1173,7 @@
+                     runtime = getattr(app.state, "flight_event_runtime", None)
+                     live_events = runtime is not None and current_config.mode == "live"
+                     if not source_is_current():
++                        probe.branch("entry_rejected")
+                         FRAME_STORE.fail(
+                             source_expected, "source changed during collection"
+                         )
+@@ -1200,6 +1211,7 @@
+                         # Event handling (including caught recording failures)
+                         # may replace inputs. Keep its distinct entry boundary.
+                         if not source_is_current():
++                            probe.branch("post_event_rejected")
+                             return update_count
+                     _update_metrics_from_telemetry_admitted(
+                         telemetry,
+@@ -1236,6 +1248,7 @@
+                     },
+                 )
+         elif telemetry is None:
++            probe.branch("disconnected")
+             # Clear metrics when disconnected to prevent stale data
+             # This sets all telemetry metrics to NaN, which Prometheus won't store
+             from app.core.metrics import clear_telemetry_metrics
+@@ -1269,6 +1282,8 @@
+                     },
+                 )
+ 
++    else:
++        probe.branch("no_coordinator")
+     return update_count
+ 
+ 
+@@ -1292,8 +1307,11 @@
+ 
+         while True:
+             try:
++                diagnostic_op = probe.new_operation("tick")
++                probe.producer_mark("producer.dispatch", diagnostic_op)
+                 work = asyncio.create_task(
+                     asyncio.to_thread(
++                        invoke_sync, "producer", diagnostic_op,
+                         _background_update_tick,
+                         poi_manager,
+                         ground_entry_refresh_interval_seconds,
+@@ -1303,6 +1321,7 @@
+                 )
+                 try:
+                     update_count = await asyncio.shield(work)
++                    probe.producer_mark("producer.returned", diagnostic_op)
+                 except asyncio.CancelledError:
+                     # Shield keeps the worker owned; drain before shutting down managers.
+                     while not work.done():
+@@ -1312,6 +1331,10 @@
+                             )
+                         except asyncio.CancelledError:
+                             continue
++                    probe.producer_mark("producer.returned", diagnostic_op, outcome="cancelled")
++                    raise
++                except BaseException as diagnostic_error:
++                    probe.producer_mark("producer.returned", diagnostic_op, outcome=probe.outcome(diagnostic_error))
+                     raise
+ 
+                 # Sleep for configured update interval

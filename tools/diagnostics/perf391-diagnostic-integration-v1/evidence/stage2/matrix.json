@@ -1,0 +1,28 @@
+{
+  "scope": "Stage 2 offline per-role source-slice equivalence only",
+  "control": "Exact pinned uninstrumented Git archives; identical deterministic fixture schedules per role",
+  "results": "62 unittest methods passed; application behavior differences from instrumentation: none observed in covered cases",
+  "coverage": {
+    "Stage 1": "24 contract/source/patch/frozen-identity tests",
+    "producer": "Normal, no coordinator, collection error, retained telemetry, disconnect, optional metric failure, event handling, repeated cancellation drain; each role's complete tick and coordinator bodies",
+    "authority": "Coordinator/config/route/POI/mission/replay changes between collection and final predicate; post-event rejection; identical source-read counts and order",
+    "publication": "Captured-head callback, final accepted/rejected/error, stale CAS/newer head, schema failure, failed/invalidation/service/unavailable swaps; successful ready CAS only",
+    "replay": "Advancing/paused/no plan; callback, commit and collection errors; compensation; A in-place before commit, C publication after commit; complete post-commit short-circuit predicates",
+    "refresh": "Unchanged frame (no CAS), derived publication/rejection/error, no acquisition projection, real owner delivery and repeated cancellation drain",
+    "admission": "Real A/C gate and FileLock, nested admission, exception, force/repeated release, local timeout/cancel check, separate-process FileLock holder, FIFO competing threads, sink fault and no emission under condition",
+    "worker": "Actual Starlette/AnyIO limiter queue, worker execution and loop delivery; keyword arguments, exact exception object, queued/running/completed task cancellation, AnyIO CancelScope default shielding, parent/child/clock joins, sink faults",
+    "history": "Direct async JSONResponse, uninitialized/reader 503, cancellation; no worker fabricated",
+    "boundedness": "Buffer overflow, concurrent overflow with barrier, 256 global gate-span permits, 256 per-thread object tokens and eviction, invalid identity/context, unavailable captured timestamp, sink failures, no emission/token allocation under pointer mutex",
+    "determinism": "Fixed clock/process/thread/operation fixture reproduces identical canonical bytes and SHA-256 twice"
+  },
+  "unavailable": {
+    "A_frames_final_authority_CAS_refresh_owner": "Unavailable by design, never backported",
+    "state_endpoint_ASGI_request_header_wire_send_export_owner": "Deferred to the later owner/integration stage",
+    "other_FastAPI_Operator_pools": "No exact explicit dispatch coverage",
+    "frontend_browser_packet_capture": "Stage 3 not implemented",
+    "physical_acquisition_cross_process_clock_provenance": "No inference from timing or equal numeric values",
+    "full_import_deployment_overhead": "Not established by offline source slices; no image/service/HTTP/browser/performance work performed"
+  },
+  "application_validation_limit": "External sensor/managers and detached numerical preparation are deterministic fixtures; production module import/startup and deployed dependency equivalence are not claimed",
+  "stage_3": "STOP for checkpoint review"
+}

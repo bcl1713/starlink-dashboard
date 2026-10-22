@@ -195,7 +195,18 @@
         "plot.commit",
         "paint.request",
         "paint.artifact",
-        "probe.failure"
+        "probe.failure",
+        "repo.release_enter",
+        "metrics.inplace.begin",
+        "metrics.inplace.end",
+        "producer.branch",
+        "replay.return",
+        "refresh.dispatch",
+        "refresh.returned",
+        "history.begin",
+        "history.end",
+        "replay.callback.begin",
+        "replay.callback.end"
       ]
     },
     "outcome": {
@@ -509,6 +520,11 @@
               "type": "null"
             }
           ]
+        },
+        "branch": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
         }
       },
       "required": [],
@@ -638,6 +654,11 @@
           "maxLength": 256
         },
         "cas_success": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "branch": {
           "type": "string",
           "minLength": 1,
           "maxLength": 256

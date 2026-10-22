@@ -1,0 +1,13 @@
+...F
+======================================================================
+FAIL: test_no_emission_or_tokens_inside_pointer_mutex (test_probe_bounds.BoundsTests.test_no_emission_or_tokens_inside_pointer_mutex)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_probe_bounds.py", line 73, in test_no_emission_or_tokens_inside_pointer_mutex
+    self.assertEqual(sum(e['phase']=='publication.swap' for e in probe.drain()),3)
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.740s
+
+FAILED (failures=1)

@@ -1,0 +1,45 @@
+E402 Module level import not at top of file
+  --> tests/backend_support.py:23:1
+   |
+21 | PACKAGE = Path(__file__).resolve().parents[1]
+22 | sys.path.insert(0, str(PACKAGE))
+23 | import backend_probe as probe
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | import build
+25 | import workers
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> tests/backend_support.py:24:1
+   |
+22 | sys.path.insert(0, str(PACKAGE))
+23 | import backend_probe as probe
+24 | import build
+   | ^^^^^^^^^^^^
+25 | import workers
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> tests/backend_support.py:25:1
+   |
+23 | import backend_probe as probe
+24 | import build
+25 | import workers
+   | ^^^^^^^^^^^^^^
+26 |
+27 | REPO = PACKAGE.parents[2]
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> tests/test_backend_probe.py:12:1
+   |
+10 | PACKAGE = Path(__file__).resolve().parents[1]
+11 | sys.path.insert(0, str(PACKAGE))
+12 | import contract
+   | ^^^^^^^^^^^^^^^
+help: Move module level imports to top of file
+
+Found 24 errors (20 fixed, 4 remaining).

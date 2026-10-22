@@ -1,11 +1,13 @@
-# Perf391 diagnostic integration v1 — Stage 1
+# Perf391 diagnostic integration v1 — Stages 1–2
 
 Stage 1 implements offline contracts and source/build guards only, authorized by
 [the #408 orchestrator review](https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6350554670).
 The approved design is at `8aa7791bb03f0573cf602bdbfe8e43c085ee2325` in
 [the integration plan](../../../docs/superpowers/plans/2026-10-22-perf391-diagnostic-integration.md).
-Backend probes, real application patches, image builds and runtime collection
-require later authorization. No application module is imported by these tools.
+Stage 2 backend integration is now implemented under the later checkpoint
+authorization; see [Stage 2 evidence and limits](STAGE2.md). Image builds and
+runtime collection still require separate authorization. The exporter never
+imports application modules; offline tests execute guarded source slices.
 
 ## Contract
 
@@ -52,8 +54,9 @@ and the frozen harness. All Git subprocesses have a 60-second timeout.
   at their stated lines with full context. Drift, offsets, fuzz, binary changes,
   rename/delete/create, mode changes and no-newline patches fail closed. It
   validates all hunks before writing, then checks the complete effective tree.
-  Only backend application Python and frontend `src` TypeScript are eligible;
-  Dockerfiles, lockfiles, configuration, collector and comparator paths fail.
+  Only backend application Python, the exact approved backend `main.py`, and
+  frontend `src` TypeScript are eligible; Dockerfiles, lockfiles, configuration,
+  collector and comparator paths fail.
 - `verify_frontend_patch_agreement` compares reviewed A/C frontend target and
   preimage/postimage hashes, allowing their backend patches to differ.
 - `verify_primary` rejects diagnostic imports in primary application inputs;
@@ -62,8 +65,9 @@ and the frozen harness. All Git subprocesses have a 60-second timeout.
 Future derivative preparation must verify the base export, frozen dependencies
 and reviewed patch pair before applying either patch, then retain the complete
 returned file inventory and tree hash. Patch specifications are review inputs,
-not hashes generated from an unreviewed patch immediately before use. No actual
-A/C patch specifications or application patches ship in Stage 1.
+not hashes generated from an unreviewed patch immediately before use. Stage 1
+ships no actual A/C patches. Stage 2 adds backend-only A/C patches and
+reviewable hash specifications without widening frontend scope.
 
 `build-manifest-schema.json` and `validate_manifest` define an offline build
 input record. It identifies ancestry and effective base independently, source,
@@ -100,11 +104,11 @@ and patches, and leave no service or process owner alive.
 
 ## Next checkpoint
 
-Stop for Stage 1 review. Stage 2 requires authorization for backend call-site
-patches, bounded nonthrowing emission, real worker/admission/cancellation and
-final-validation/CAS tests, with per-role equivalence and explicit A omissions.
-Conditional capture privilege/topology is a later adapter gate, not a backend
-prerequisite. Browser/capture, owner/host integration and offline integration
-verification remain subsequent stages. Runtime/calibration needs a separate
-decision. Frozen acceptance gates, the 1.5-second threshold, draft PR states and
-open #390/#391 remain unchanged.
+Stage 1 was accepted. Stage 2 now supplies the authorized backend hooks and
+offline per-role equivalence tests. Stop for Stage 2 checkpoint review before
+Stage 3; see [the Stage 2 report](STAGE2.md). Conditional capture
+privilege/topology is a later adapter gate, not a backend prerequisite.
+Browser/capture, owner/host integration and offline integration verification
+remain subsequent stages. Runtime/calibration needs a separate decision. Frozen
+acceptance gates, the 1.5-second threshold, draft PR states and open #390/#391
+remain unchanged.

@@ -3,3 +3,9 @@ jsonschema==4.19.2
 jsonschema-specifications==2025.9.1
 referencing==0.37.0
 rpds-py==2026.9.1
+# Stage 2 offline source-slice and actual worker dependencies, not app manifests.
+anyio==4.15.1
+starlette==1.9.0
+filelock==4.2.4
+prometheus-client==0.26.0
+coverage==7.17.0

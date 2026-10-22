@@ -1,0 +1,86 @@
+test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) ... ok
+test_sink_failure_cannot_keep_lock_or_suppress_notify (test_admission.AdmissionTests.test_sink_failure_cannot_keep_lock_or_suppress_notify) ... ok
+test_a_never_projects_atomic_publication (test_backend_probe.ProbeTests.test_a_never_projects_atomic_publication) ... ok
+test_bounded_overflow_invalid_identity_and_faults_are_counted (test_backend_probe.ProbeTests.test_bounded_overflow_invalid_identity_and_faults_are_counted) ... ok
+test_closed_records_parent_context_and_unavailable_nonfinite (test_backend_probe.ProbeTests.test_closed_records_parent_context_and_unavailable_nonfinite) ... ok
+test_numeric_scalars_follow_closed_string_identity_contract (test_backend_probe.ProbeTests.test_numeric_scalars_follow_closed_string_identity_contract) ... ok
+test_swap_timestamp_is_captured_before_emission (test_backend_probe.ProbeTests.test_swap_timestamp_is_captured_before_emission) ... ok
+test_sync_bracket_preserves_result_and_baseexception (test_backend_probe.ProbeTests.test_sync_bracket_preserves_result_and_baseexception) ... ok
+test_dirty_worktree_and_wrong_head (test_build_identity.IdentityTests.test_dirty_worktree_and_wrong_head) ... ok
+test_exact_exports_and_dirty_export (test_build_identity.IdentityTests.test_exact_exports_and_dirty_export) ... ok
+test_frozen_collector_and_release (test_build_identity.IdentityTests.test_frozen_collector_and_release) ... ok
+test_full_pins_resolve (test_build_identity.IdentityTests.test_full_pins_resolve) ... ok
+test_runtime_equivalence_and_frontend_identity (test_build_identity.IdentityTests.test_runtime_equivalence_and_frontend_identity) ... ok
+test_wrong_role_sha_and_short_sha (test_build_identity.IdentityTests.test_wrong_role_sha_and_short_sha) ... ok
+test_identity_and_closed_manifest (test_build_identity.ManifestTests.test_identity_and_closed_manifest) ... ok
+test_valid_manifest_and_missing_or_wrong_labels (test_build_identity.ManifestTests.test_valid_manifest_and_missing_or_wrong_labels) ... ok
+test_exact_patch_and_tree_hashes (test_build_identity.PatchTests.test_exact_patch_and_tree_hashes) ... ok
+test_frontend_patch_agreement (test_build_identity.PatchTests.test_frontend_patch_agreement) ... ok
+test_offset_fuzz_and_no_partial_mutation (test_build_identity.PatchTests.test_offset_fuzz_and_no_partial_mutation) ... ok
+test_patch_drift (test_build_identity.PatchTests.test_patch_drift) ... ok
+test_primary_import_contamination (test_build_identity.PatchTests.test_primary_import_contamination) ... ok
+test_protected_paths_and_symlinks (test_build_identity.PatchTests.test_protected_paths_and_symlinks) ... ok
+test_unexpected_file_and_wrong_postimage (test_build_identity.PatchTests.test_unexpected_file_and_wrong_postimage) ... ok
+test_unexpected_source_tree_change (test_build_identity.PatchTests.test_unexpected_source_tree_change) ... ok
+test_a_cas_and_browser_thread_unavailable (test_contract.ContractTests.test_a_cas_and_browser_thread_unavailable) ... ok
+test_closed_event_and_bounded_identity (test_contract.ContractTests.test_closed_event_and_bounded_identity) ... ok
+test_contract_phase_outcome_and_capability_agreement (test_contract.ContractTests.test_contract_phase_outcome_and_capability_agreement) ... ok
+test_derived_refresh_cannot_publish (test_contract.ContractTests.test_derived_refresh_cannot_publish) ... ok
+test_document_and_cross_stream_clock_reuse (test_contract.ContractTests.test_document_and_cross_stream_clock_reuse) ... ok
+test_only_successful_ready_cas_publishes (test_contract.ContractTests.test_only_successful_ready_cas_publishes) ... ok
+test_sequence_gap_restart_and_clock_mismatch_visible (test_contract.ContractTests.test_sequence_gap_restart_and_clock_mismatch_visible) ... ok
+test_valid_fixture_and_contract (test_contract.ContractTests.test_valid_fixture_and_contract) ... ok
+test_final_predicate_exactly_once_and_captured_head_survives (test_final_publication.PublicationTests.test_final_predicate_exactly_once_and_captured_head_survives) ... Complete metric frame preparation failed
+Traceback (most recent call last):
+  File "/tmp/perf391-stage2-slices-cky6r357/C/control/backend/starlink-location/app/core/metrics/metric_updater.py", line 418, in _update_metrics_from_telemetry_admitted
+    if not final_validation(frame):
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_final_publication.py", line 70, in validate
+    raise ValueError('predicate')
+ValueError: predicate
+Complete metric frame preparation failed
+Traceback (most recent call last):
+  File "/tmp/perf391-stage2-slices-cky6r357/C/patched/backend/starlink-location/app/core/metrics/metric_updater.py", line 421, in _update_metrics_from_telemetry_admitted
+    diagnostic_valid = final_validation(frame)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_final_publication.py", line 70, in validate
+    raise ValueError('predicate')
+ValueError: predicate
+Complete metric frame preparation failed
+Traceback (most recent call last):
+  File "/tmp/perf391-stage2-slices-cky6r357/C/control/backend/starlink-location/app/core/metrics/metric_updater.py", line 402, in _update_metrics_from_telemetry_admitted
+    frame = _prepare_metrics_from_telemetry_admitted(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_final_publication.py", line 63, in prepare
+    raise ValueError('prepare')
+ValueError: prepare
+Complete metric frame preparation failed
+Traceback (most recent call last):
+  File "/tmp/perf391-stage2-slices-cky6r357/C/patched/backend/starlink-location/app/core/metrics/metric_updater.py", line 404, in _update_metrics_from_telemetry_admitted
+    frame = _prepare_metrics_from_telemetry_admitted(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_final_publication.py", line 63, in prepare
+    raise ValueError('prepare')
+ValueError: prepare
+ok
+test_sink_failure_preserves_cas (test_final_publication.PublicationTests.test_sink_failure_preserves_cas) ... ok
+test_stale_cas_schema_failure_and_nonready_swaps (test_final_publication.PublicationTests.test_stale_cas_schema_failure_and_nonready_swaps) ... ok
+test_normal_error_and_repeated_cancellation_keep_worker_owned (test_producer_integration.ProducerLoopTests.test_normal_error_and_repeated_cancellation_keep_worker_owned) ... ok
+test_a_real_inplace_metrics_and_caught_optional_errors (test_producer_integration.ProducerTests.test_a_real_inplace_metrics_and_caught_optional_errors) ... ok
+test_actual_coordinator_success_retained_and_error (test_producer_integration.ProducerTests.test_actual_coordinator_success_retained_and_error) ... ok
+test_replay_commit_order_compensation_and_paused (test_producer_integration.ProducerTests.test_replay_commit_order_compensation_and_paused) ... ok
+test_complete_post_commit_predicate_and_error_paths (test_refresh_replay_authority.AuthorityTests.test_complete_post_commit_predicate_and_error_paths) ... ok
+test_derived_same_frame_is_not_cas_or_acquisition (test_refresh_replay_authority.AuthorityTests.test_derived_same_frame_is_not_cas_or_acquisition) ... ok
+test_exact_main_entrypoint_only (test_stage2_guards.Stage2Guards.test_exact_main_entrypoint_only) ... ok
+test_sink_faults_preserve_tick_branches_and_outputs (test_tick_boundaries.TickTests.test_sink_faults_preserve_tick_branches_and_outputs) ... ok
+test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) ... ok
+test_actual_limiter_queue_and_completion_delivery (test_worker_delivery.WorkerTests.test_actual_limiter_queue_and_completion_delivery) ... ok
+test_all_worker_boundaries_share_child_and_parent_ids (test_worker_delivery.WorkerTests.test_all_worker_boundaries_share_child_and_parent_ids) ... ok
+test_cancellation_matches_pool_before_admission_and_during_work (test_worker_delivery.WorkerTests.test_cancellation_matches_pool_before_admission_and_during_work) ... ok
+test_return_kwargs_and_error_identity (test_worker_delivery.WorkerTests.test_return_kwargs_and_error_identity) ... ok
+test_sink_faults_do_not_change_worker_semantics (test_worker_delivery.WorkerTests.test_sink_faults_do_not_change_worker_semantics) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 31.018s
+
+OK

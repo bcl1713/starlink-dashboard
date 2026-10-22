@@ -1,0 +1,17 @@
+Aborted!
+reformatted tests/test_stage2_guards.py
+reformatted workers.py
+reformatted tests/backend_support.py
+reformatted tests/test_admission.py
+reformatted tests/test_backend_probe.py
+reformatted tests/test_probe_bounds.py
+reformatted tests/test_final_publication.py
+reformatted tests/test_worker_delivery.py
+reformatted tests/test_backend_endpoints.py
+reformatted tests/test_refresh_replay_authority.py
+reformatted tests/test_tick_boundaries.py
+reformatted tests/test_producer_integration.py
+reformatted backend_probe.py
+
+All done! ✨ 🍰 ✨
+13 files reformatted.

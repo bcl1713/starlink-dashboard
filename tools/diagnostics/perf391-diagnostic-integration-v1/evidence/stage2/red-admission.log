@@ -1,0 +1,117 @@
+FFFFFFFFFFFFFF.
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='nested')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='exception')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='force')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='cancel')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='file_timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 3
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='nested')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='exception')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='force')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='cancel')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='file_timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 127, in test_per_role_control_equivalence_and_exact_outer_pairs
+    self.assertEqual(sum(e['phase']=='repo.acquired' for e in events), holds)
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 2 tests in 8.011s
+
+FAILED (failures=14)

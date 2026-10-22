@@ -1,0 +1,17 @@
+E
+======================================================================
+ERROR: test_exact_main_entrypoint_only (test_stage2_guards.Stage2Guards.test_exact_main_entrypoint_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage2_guards.py", line 13, in test_exact_main_entrypoint_only
+    build.check_patch_path("backend/starlink-location/main.py")
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/build.py", line 276, in check_patch_path
+    require(allowed, "patch targets protected or nonapplication path")
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/build.py", line 43, in require
+    raise GuardError(message)
+build.GuardError: patch targets protected or nonapplication path
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

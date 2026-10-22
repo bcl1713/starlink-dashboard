@@ -1,0 +1,19 @@
+F
+======================================================================
+FAIL: test_missing_captured_clock_is_not_replaced_by_emission_time (test_backend_probe.ProbeTests.test_missing_captured_clock_is_not_replaced_by_emission_time)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_backend_probe.py", line 84, in test_missing_captured_clock_is_not_replaced_by_emission_time
+    self.assertEqual(self.p.drain(), [])
+AssertionError: Lists differ: [{'schema': 'perf391-diagnostic-integratio[601 chars] {}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'schema': 'perf391-diagnostic-integration-v1', 'version': 1, 'role': 'C', 'emitter': 'backend', 'run_id': 'offline', 'stream_id': '41af2ed6-4118-48a8-896d-abe8df53207c-thread-1', 'seq': 1, 'process_uuid': '41af2ed6-4118-48a8-896d-abe8df53207c', 'pid': 3729248, 'tid': 3729248, 'process_start_id': '2105448619783134', 'thread_start_id': 'thread-1', 'clock_id': '41af2ed6-4118-48a8-896d-abe8df53207c-thread-1', 'mono_ns': '2105448619823595', 'thread_cpu_ns': '84035271', 'op_id': 'backend-local', 'parent_op_id': None, 'span_id': None, 'operation_type': 'lifecycle', 'phase': 'publication.swap', 'outcome': 'ok', 'identity': {}, 'unavailable': {}}
+
+Diff is 744 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

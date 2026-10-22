@@ -1,0 +1,10 @@
+Exception ignored in thread started by: <bound method Thread._bootstrap of <Thread(Thread-1 (mark), initial 127590351984320)>>
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002, in _bootstrap
+    self._bootstrap_inner()
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/threading.py", line 1049, in _bootstrap_inner
+    self._delete()
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/threading.py", line 1081, in _delete
+    del _active[get_ident()]
+        ~~~~~~~^^^^^^^^^^^^^
+KeyError: 127590351984320

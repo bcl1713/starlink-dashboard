@@ -1,0 +1,395 @@
+.FFFFFFFFFFFFFFFFFFFFFFFFFF
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='normal')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='retained')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='disconnect')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='collection_error')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='metric_error')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='post_event')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='coordinator')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='config')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='route')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='poi')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='mission')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='replay_revision')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='A', case='stale')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='normal')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='retained')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='disconnect')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='collection_error')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='metric_error')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='post_event')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='coordinator')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='config')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='route')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='poi')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='mission')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='replay_revision')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+======================================================================
+FAIL: test_tick_branches_and_final_source_transitions (test_tick_boundaries.TickTests.test_tick_branches_and_final_source_transitions) (role='C', case='stale')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_tick_boundaries.py", line 260, in test_tick_branches_and_final_source_transitions
+    self.assertEqual([e["phase"] for e in boundaries], [] if case == "no_coordinator" else ["collection.enter", "collection.return"])
+AssertionError: Lists differ: [] != ['collection.enter', 'collection.return']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'collection.enter'
+
+- []
++ ['collection.enter', 'collection.return']
+
+----------------------------------------------------------------------
+Ran 2 tests in 10.914s
+
+FAILED (failures=26)

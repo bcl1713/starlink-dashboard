@@ -268,10 +268,12 @@ def verify_frontend_patch_agreement(spec_a, spec_c):
 def check_patch_path(name):
     safe_path(name)
     allowed = (
-        name.startswith("backend/starlink-location/app/") and name.endswith(".py")
-    ) or (
-        name.startswith("frontend/mission-planner/src/")
-        and name.endswith((".ts", ".tsx"))
+        name == "backend/starlink-location/main.py"
+        or (name.startswith("backend/starlink-location/app/") and name.endswith(".py"))
+        or (
+            name.startswith("frontend/mission-planner/src/")
+            and name.endswith((".ts", ".tsx"))
+        )
     )
     require(allowed, "patch targets protected or nonapplication path")
 

@@ -1,2 +1,4 @@
 __pycache__/
 /artifacts/
+
+/evidence/stage2/**/coverage.data

@@ -1,7 +1,7 @@
 {
   "schema": "perf391-diagnostic-integration-v1",
   "version": 1,
-  "stage": 1,
+  "stage": 2,
   "runtime_authorized": false,
   "phases": [
     "producer.dispatch",
@@ -63,7 +63,18 @@
     "plot.commit",
     "paint.request",
     "paint.artifact",
-    "probe.failure"
+    "probe.failure",
+    "repo.release_enter",
+    "metrics.inplace.begin",
+    "metrics.inplace.end",
+    "producer.branch",
+    "replay.return",
+    "refresh.dispatch",
+    "refresh.returned",
+    "history.begin",
+    "history.end",
+    "replay.callback.begin",
+    "replay.callback.end"
   ],
   "v1_boundary_phases": [
     "producer.dispatch",
@@ -247,7 +258,8 @@
     "plot_token",
     "artifact_sha256",
     "publication_kind",
-    "cas_success"
+    "cas_success",
+    "branch"
   ],
   "identity_limit_characters": 256,
   "operation_id_limit_ascii": 96,

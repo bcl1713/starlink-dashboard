@@ -1,0 +1,17 @@
+...F..
+======================================================================
+FAIL: test_numeric_scalars_follow_closed_string_identity_contract (test_backend_probe.ProbeTests.test_numeric_scalars_follow_closed_string_identity_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_backend_probe.py", line 72, in test_numeric_scalars_follow_closed_string_identity_contract
+    self.assertEqual(record["identity"], {"observation_timestamp": "100.5", "input_revision": "3"})
+AssertionError: {'observation_timestamp': 100.5, 'input_revision': 3} != {'observation_timestamp': '100.5', 'input_revision': '3'}
+- {'input_revision': 3, 'observation_timestamp': 100.5}
++ {'input_revision': '3', 'observation_timestamp': '100.5'}
+?                    + +                           +     +
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.002s
+
+FAILED (failures=1)

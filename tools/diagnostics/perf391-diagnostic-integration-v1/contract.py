@@ -73,7 +73,14 @@ def validate_stream(events):
         )
         identity += (document,)
         clock_key = (event["run_id"], event["clock_id"])
-        clock_owner = (event["stream_id"], identity)
+        # Backend streams are per native thread to preserve sequence order
+        # without an emission mutex. time.monotonic_ns has one process clock;
+        # sharing it across threads does not join different process origins.
+        clock_owner = (
+            identity[:5]
+            if event["emitter"] == "backend"
+            else (event["stream_id"], identity)
+        )
         if clock_key in clocks and clocks[clock_key] != clock_owner:
             raise ContractError(
                 "clock reused across process/document/stream identities"

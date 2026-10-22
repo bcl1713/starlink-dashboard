@@ -1,0 +1,45 @@
+FFFF
+======================================================================
+FAIL: test_actual_limiter_queue_and_completion_delivery (test_worker_delivery.WorkerTests.test_actual_limiter_queue_and_completion_delivery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 86, in _callSetUp
+    self._asyncioTestContext.run(self.setUp)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_worker_delivery.py", line 19, in setUp
+    self.assertTrue((PACKAGE / 'workers.py').is_file(), 'worker adapter missing')
+AssertionError: False is not true : worker adapter missing
+
+======================================================================
+FAIL: test_cancellation_matches_pool_before_admission_and_during_work (test_worker_delivery.WorkerTests.test_cancellation_matches_pool_before_admission_and_during_work)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 86, in _callSetUp
+    self._asyncioTestContext.run(self.setUp)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_worker_delivery.py", line 19, in setUp
+    self.assertTrue((PACKAGE / 'workers.py').is_file(), 'worker adapter missing')
+AssertionError: False is not true : worker adapter missing
+
+======================================================================
+FAIL: test_return_kwargs_and_error_identity (test_worker_delivery.WorkerTests.test_return_kwargs_and_error_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 86, in _callSetUp
+    self._asyncioTestContext.run(self.setUp)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_worker_delivery.py", line 19, in setUp
+    self.assertTrue((PACKAGE / 'workers.py').is_file(), 'worker adapter missing')
+AssertionError: False is not true : worker adapter missing
+
+======================================================================
+FAIL: test_sink_faults_do_not_change_worker_semantics (test_worker_delivery.WorkerTests.test_sink_faults_do_not_change_worker_semantics)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 86, in _callSetUp
+    self._asyncioTestContext.run(self.setUp)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_worker_delivery.py", line 19, in setUp
+    self.assertTrue((PACKAGE / 'workers.py').is_file(), 'worker adapter missing')
+AssertionError: False is not true : worker adapter missing
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.039s
+
+FAILED (failures=4)

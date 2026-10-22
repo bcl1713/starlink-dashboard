@@ -1,0 +1,88 @@
+{
+  "stage": 2,
+  "starting_commit": "a4e707e96226400051bbd05e28d831d8fbae6899",
+  "ancestry_base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+  "pins": {
+    "A": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+    "C": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+    "implementation": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+    "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+    "release": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+    "harness": "f3029024b5950a267645195476da5cbca326f16a",
+    "base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+    "plan": "8aa7791bb03f0573cf602bdbfe8e43c085ee2325"
+  },
+  "roles": {
+    "A": {
+      "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "archive_sha256": "cebfb7254994f0c6e31e0fd8cc06319430efcd32b4457787673c70ab21795153",
+      "base_tree_sha256": "6566d9b8e14fa9dc261f4b8bc23b68390f5d1995e8e9af84cf2ff05670bd4685",
+      "patch_sha256": "5183e5e98316e6c05723e5e4b57f30ea4eaee8235353216ec8558758d2871da4",
+      "patch_spec_sha256": "9f0fa5bd4b6ab04894e16b2c771e1f730c3561dd6f01173035935fd9d5283ed2",
+      "effective_source_sha256": "4d20cbb73fdc48801378d990c6c361849b0dfd4722dcab54a7153d4e53484afd",
+      "file_count": 3536,
+      "changed_files": [
+        "backend/starlink-location/app/api/metrics_export.py",
+        "backend/starlink-location/app/api/overview_history.py",
+        "backend/starlink-location/app/api/status.py",
+        "backend/starlink-location/app/core/metrics/metric_updater.py",
+        "backend/starlink-location/app/mission/repository_gate.py",
+        "backend/starlink-location/app/simulation/coordinator.py",
+        "backend/starlink-location/app/simulation/run_service.py",
+        "backend/starlink-location/main.py"
+      ],
+      "inventory_sha256": "f5d90f0dbf7941d99cb84d1a4c0fdb92c7eabd3f9c038be42108295698dfb81f"
+    },
+    "C": {
+      "base_application_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "archive_sha256": "279c1717f3b186a9780096d8fcce2fe925ac489c2ff3b6db3fd613f54d8acdf5",
+      "base_tree_sha256": "b1a05645415fa0c60d4b6433a678073e2e877fca9e26d69532e5082608957d17",
+      "patch_sha256": "5a3d145480ab3d769ac459ddd5c2817cfaa4771e7a16195e0961adfed08adad3",
+      "patch_spec_sha256": "cb39e0f1e87f24e2137e84b81dfb41d1f20bcd961909d54e78a8cef2dcaecf10",
+      "effective_source_sha256": "93ce47505f8a2fc41fb0e8711b534f176f877b031c5d4870ba79367c28906c12",
+      "file_count": 3660,
+      "changed_files": [
+        "backend/starlink-location/app/api/metrics_export.py",
+        "backend/starlink-location/app/api/overview_history.py",
+        "backend/starlink-location/app/api/status.py",
+        "backend/starlink-location/app/core/metrics/frames.py",
+        "backend/starlink-location/app/core/metrics/lifecycle.py",
+        "backend/starlink-location/app/core/metrics/metric_updater.py",
+        "backend/starlink-location/app/core/metrics/refresh_inputs.py",
+        "backend/starlink-location/app/mission/repository_gate.py",
+        "backend/starlink-location/app/simulation/coordinator.py",
+        "backend/starlink-location/app/simulation/run_service.py",
+        "backend/starlink-location/main.py"
+      ],
+      "inventory_sha256": "1aacf24f2d756fcca9e36d9046953482f6b31e3e9a46d9b2d56f6c9bbcaf5956"
+    }
+  },
+  "image_built": false,
+  "application_started": false,
+  "performance_measured": false,
+  "equivalence": {
+    "frontend_equal": true,
+    "corrected_runtime_equal": true,
+    "runtime_paths": [
+      "backend",
+      "frontend",
+      "tools",
+      "monitoring",
+      "scripts",
+      "docker-compose*"
+    ]
+  },
+  "collector_release": {
+    "source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+    "release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+    "manifest_sha256": "d84e7b62cb56ef9e44c1e63b0b3a933e4c0a73a55254f614b8785098c1090f44"
+  },
+  "modules": {
+    "backend_probe.py": "90262a5279262ef9152c2399816c66f40efcd55b9626b6e92ad25e928a1d3900",
+    "workers.py": "7bd60d87524554e1579f59a972016d11e14249cf9ce9200e5ef489437bfcce9e",
+    "contract.json": "c176f38e0f4f4ca43d7f698fa185ea27932ec81343b440332e9b1896a6f4fbd5",
+    "integration-event-schema.json": "f29cc55ec0567eb886d0977ca138c850f735b51a2d4d18ca0a7bd07825c2edd2",
+    "build.py": "50e11fe523d61238d68dfe428680bcf6ddb5b8a1b5f6e233e29b6aa3df5d0782",
+    "contract.py": "4cf992a0957b496777ca42279f9575a53c24e775529b7901f6f8d991170691db"
+  }
+}

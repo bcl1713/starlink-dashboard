@@ -1,0 +1,37 @@
+{
+  "purpose": "Stage 2 offline tests only",
+  "command": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage2/venv/bin/python",
+    "-B",
+    "-m",
+    "coverage",
+    "run",
+    "--branch",
+    "--source=backend_probe,workers,build,contract",
+    "-m",
+    "unittest",
+    "discover",
+    "-v",
+    "-s",
+    "tests",
+    "-p",
+    "test_*.py"
+  ],
+  "owner_pid": 3754069,
+  "owner_pgid": 3754068,
+  "owner_start": "210579227",
+  "child": {
+    "pid": 3754070,
+    "pgid": 3754070,
+    "start": "210579229"
+  },
+  "deadline_seconds": 180,
+  "services": [],
+  "listeners": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "status": "clean",
+  "returncode": 0,
+  "live_group_survivors": []
+}
