@@ -1,0 +1,76 @@
+{
+  "status": "blocked-preflight",
+  "application_sha": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+  "approved_protocol_sha": "f7253c687041342ee080b0197f0b98f20eaefdfe",
+  "private_evidence_root": "/workspace/perf391-rank1-task3-evidence",
+  "measurement_runs": [],
+  "accepted_pairs": {
+    "component": 0,
+    "off": 0,
+    "counters": 0,
+    "diagnostic_trace": 0,
+    "diagnostic_off": 0
+  },
+  "rejected_measurement_runs": [],
+  "failed_prerequisites": [
+    "Playwright installed 1.56.1; expected 1.63.0",
+    "Chromium executable absent",
+    "Node installed v24.19.0; required ^22.22.2"
+  ],
+  "cleanup": {
+    "baseline_files_checked": 132,
+    "baseline_mismatches": [],
+    "task_owned_runtime_resources_started": [],
+    "private_venv_removed": true,
+    "downloaded_python_removed": true,
+    "all_task_processes_reaped": false,
+    "possible_task_owned_zombies": [
+      {
+        "pid": 628,
+        "pgid": 624,
+        "ppid": 1
+      },
+      {
+        "pid": 658,
+        "pgid": 658,
+        "ppid": 1
+      },
+      {
+        "pid": 724,
+        "pgid": 724,
+        "ppid": 1
+      }
+    ],
+    "limitation": "Defunct Git children adopted by PID 1; already exited, cannot be reaped by this process. No live runtime was started."
+  },
+  "files": {
+    "attempts.md": {
+      "sha256": "41df18155f719cf228a169445baa16e159a1d51b5257959be45961e5aaabece5",
+      "bytes": 1533
+    },
+    "ci.json": {
+      "sha256": "1604cfd4b15df3bad94dfbd9c0ef4fc1d122d9f37e5fe2d601db8c16487345da",
+      "bytes": 610
+    },
+    "cleanup.json": {
+      "sha256": "85f69f5d27188b5272152f027c64f1a79b4e3e4bbf6ed4920ac30a56cf496f6f",
+      "bytes": 17490
+    },
+    "dependency-setup.log": {
+      "sha256": "8fe79e694c4deebb4ba54d5dd827db646356c22938c0e6356fd30db1c94f36b9",
+      "bytes": 3043
+    },
+    "preflight.json": {
+      "sha256": "44137c2e27d2f943cf23e060b970bdf5745f97c92e4a20039e075b13d3295eab",
+      "bytes": 38319
+    },
+    "preflight.py": {
+      "sha256": "27bc082d58566beb09b341e5730f2728c297335a199c10fcd58fc96c37c35ef5",
+      "bytes": 3489
+    },
+    "report-filenames.log": {
+      "sha256": "f25cf0c48ccbd6ba02ae4506a3eaa5b661d6a286fbbb22aab2900617ef41f61f",
+      "bytes": 90
+    }
+  }
+}
