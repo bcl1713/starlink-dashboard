@@ -107,7 +107,7 @@ async def run_tests(output, *, pattern="test_*.py"):
         "coverage",
         "run",
         "--branch",
-        "--source=backend_probe,workers,build,contract,collector,diagnostic_app,evidence,host,integration,owner,analyze,verify_evidence",
+        "--source=backend_probe,workers,build,contract,collector,diagnostic_app,evidence,host,integration,owner,analyze,verify_evidence,run",
         "tests/owned_suite.py",
         pattern,
     ]
@@ -159,10 +159,10 @@ def integrate_offline(output, *, role, backend_file, stats_file, node_root=None)
     from verify_evidence import validate_document, verify_analysis, verify_artifacts
 
     repo = PACKAGE.parents[2]
-    owner = Owner(output, run="synthetic-stage4", sources=source_identity(repo))
-    collector = prepare_collector(owner.root / "collector", repo)
     backend = read_jsonl(backend_file)
     run = backend[0]["run_id"] if backend else "synthetic-stage4"
+    owner = Owner(output, run=run, sources=source_identity(repo))
+    collector = prepare_collector(owner.root / "collector", repo)
     sink = Evidence(owner.root / "evidence", collector, run=run)
     adapter = Integration(sink, role=role, run=run)
     try:
