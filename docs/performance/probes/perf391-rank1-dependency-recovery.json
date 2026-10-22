@@ -1,0 +1,629 @@
+{
+  "component": {
+    "python": "3.11.16 (main, Sep 24 2026, 17:56:40) [Clang 22.1.3 ]",
+    "expected": {
+      "adjusttext": "1.4.0",
+      "annotated-doc": "0.0.5",
+      "annotated-types": "0.8.0",
+      "anyio": "4.15.1",
+      "arrow": "1.4.0",
+      "black": "26.10.1",
+      "cartopy": "0.26.0",
+      "certifi": "2026.10.19",
+      "cffi": "2.1.1",
+      "click": "8.5.0",
+      "contourpy": "1.3.3",
+      "coverage": "7.16.2",
+      "cycler": "0.12.1",
+      "deprecated": "1.3.1",
+      "dnspython": "2.9.0",
+      "et-xmlfile": "2.0.0",
+      "fastapi": "0.158.1",
+      "fastkml": "1.4.0",
+      "filelock": "4.2.4",
+      "flatbuffers": "25.12.19",
+      "fonttools": "4.67.0",
+      "geojson": "3.3.0",
+      "grpcio": "1.84.0",
+      "grpcio-reflection": "1.84.0",
+      "grpcio-tools": "1.84.0",
+      "h11": "0.16.0",
+      "h3": "4.5.0",
+      "httpcore": "1.0.9",
+      "httpcore2": "2.16.0",
+      "httptools": "0.9.0",
+      "httpx": "0.28.1",
+      "httpx2": "2.16.0",
+      "idna": "3.20",
+      "iniconfig": "2.3.1",
+      "kiwisolver": "1.5.1",
+      "limits": "5.8.0",
+      "lxml": "6.1.3",
+      "matplotlib": "3.11.2",
+      "mypy-extensions": "1.1.0",
+      "numpy": "2.4.6",
+      "openpyxl": "3.1.5",
+      "opentelemetry-api": "1.45.1",
+      "packaging": "26.3",
+      "pandas": "3.0.6",
+      "pathspec": "1.1.1",
+      "pillow": "13.0.0",
+      "platformdirs": "4.13.5",
+      "pluggy": "1.7.0",
+      "prometheus-client": "0.26.0",
+      "protobuf": "7.36.2",
+      "psutil": "7.2.2",
+      "pycparser": "3.11",
+      "pydantic": "2.14.1",
+      "pydantic-core": "2.50.1",
+      "pydantic-settings": "2.16.1",
+      "pygeoif": "1.6.0",
+      "pygments": "2.21.0",
+      "pyparsing": "3.3.3",
+      "pypdf": "6.21.2",
+      "pyproj": "3.7.2",
+      "pyshp": "3.1.6",
+      "pytest": "9.1.1",
+      "pytest-asyncio": "1.4.0",
+      "pytest-cov": "7.1.0",
+      "python-dateutil": "2.9.0.post0",
+      "python-dotenv": "1.2.4",
+      "python-multipart": "0.0.32",
+      "python-pptx": "1.0.2",
+      "pytokens": "0.4.1",
+      "pyyaml": "6.0.3",
+      "reverse-geocoder": "1.5.1",
+      "ruff": "0.17.1",
+      "scipy": "1.17.1",
+      "setuptools": "84.2.1",
+      "shapely": "2.2.0",
+      "six": "1.17.0",
+      "slowapi": "0.1.10",
+      "starlette": "1.9.0",
+      "starlink-grpc-core": "1.2.5",
+      "timezonefinder": "9.0.0",
+      "timezonefinder-data": "3.2026.3.post1",
+      "truststore": "0.10.5",
+      "typing-extensions": "4.16.0",
+      "typing-inspection": "0.4.4",
+      "tzdata": "2026.5",
+      "uvicorn": "0.54.0",
+      "uvloop": "0.23.0",
+      "watchdog": "6.0.0",
+      "watchfiles": "1.3.0",
+      "websockets": "17.3",
+      "wrapt": "2.5.1",
+      "xlsxwriter": "3.2.9",
+      "yagrc": "1.1.3"
+    },
+    "actual": {
+      "slowapi": "0.1.10",
+      "iniconfig": "2.3.1",
+      "fonttools": "4.67.0",
+      "protobuf": "7.36.2",
+      "pydantic": "2.14.1",
+      "yagrc": "1.1.3",
+      "openpyxl": "3.1.5",
+      "watchdog": "6.0.0",
+      "click": "8.5.0",
+      "ruff": "0.17.1",
+      "fastapi": "0.158.1",
+      "pypdf": "6.21.2",
+      "uvicorn": "0.54.0",
+      "pandas": "3.0.6",
+      "anyio": "4.15.1",
+      "pygeoif": "1.6.0",
+      "pluggy": "1.7.0",
+      "shapely": "2.2.0",
+      "starlink-grpc-core": "1.2.5",
+      "xlsxwriter": "3.2.9",
+      "pydantic-settings": "2.16.1",
+      "pytest-asyncio": "1.4.0",
+      "cycler": "0.12.1",
+      "lxml": "6.1.3",
+      "pytest": "9.1.1",
+      "platformdirs": "4.13.5",
+      "arrow": "1.4.0",
+      "matplotlib": "3.11.2",
+      "pytest-cov": "7.1.0",
+      "wrapt": "2.5.1",
+      "httpcore2": "2.16.0",
+      "watchfiles": "1.3.0",
+      "black": "26.10.1",
+      "pycparser": "3.11",
+      "pygments": "2.21.0",
+      "packaging": "26.3",
+      "pytokens": "0.4.1",
+      "uvloop": "0.23.0",
+      "et-xmlfile": "2.0.0",
+      "grpcio-reflection": "1.84.0",
+      "numpy": "2.4.6",
+      "annotated-doc": "0.0.5",
+      "python-multipart": "0.0.32",
+      "tzdata": "2026.5",
+      "h3": "4.5.0",
+      "geojson": "3.3.0",
+      "starlette": "1.9.0",
+      "annotated-types": "0.8.0",
+      "contourpy": "1.3.3",
+      "httpx": "0.28.1",
+      "six": "1.17.0",
+      "cffi": "2.1.1",
+      "kiwisolver": "1.5.1",
+      "grpcio": "1.84.0",
+      "cartopy": "0.26.0",
+      "python-dateutil": "2.9.0.post0",
+      "pillow": "13.0.0",
+      "coverage": "7.16.2",
+      "h11": "0.16.0",
+      "adjusttext": "1.4.0",
+      "httpcore": "1.0.9",
+      "flatbuffers": "25.12.19",
+      "typing-extensions": "4.16.0",
+      "websockets": "17.3",
+      "httptools": "0.9.0",
+      "scipy": "1.17.1",
+      "pydantic-core": "2.50.1",
+      "pyparsing": "3.3.3",
+      "timezonefinder-data": "3.2026.3.post1",
+      "filelock": "4.2.4",
+      "timezonefinder": "9.0.0",
+      "mypy-extensions": "1.1.0",
+      "prometheus-client": "0.26.0",
+      "opentelemetry-api": "1.45.1",
+      "pyshp": "3.1.6",
+      "psutil": "7.2.2",
+      "truststore": "0.10.5",
+      "typing-inspection": "0.4.4",
+      "certifi": "2026.10.19",
+      "python-dotenv": "1.2.4",
+      "pyyaml": "6.0.3",
+      "limits": "5.8.0",
+      "grpcio-tools": "1.84.0",
+      "idna": "3.20",
+      "setuptools": "84.2.1",
+      "python-pptx": "1.0.2",
+      "httpx2": "2.16.0",
+      "pyproj": "3.7.2",
+      "pathspec": "1.1.1",
+      "fastkml": "1.4.0",
+      "reverse-geocoder": "1.5.1",
+      "dnspython": "2.9.0",
+      "deprecated": "1.3.1"
+    },
+    "missing": [],
+    "extra": [],
+    "changed": [],
+    "imports": [
+      "fastapi",
+      "pydantic",
+      "prometheus_client",
+      "filelock",
+      "starlette",
+      "numpy",
+      "scipy",
+      "cartopy",
+      "grpc",
+      "pytest"
+    ]
+  },
+  "component_constraint_sources": [
+    {
+      "path": "../perf391-independent/.superpowers/perf391-independent/install.log",
+      "sha256": "c9e424b0c51d1de5eb73a53a96ebb9be4de0b9b9e5446fd2ff054da987d4ee86"
+    },
+    {
+      "path": "../perf391-independent/.superpowers/perf391-independent/format-install.log",
+      "sha256": "4cf48a0e7fee7b37c4cb82549396151e0936080adef136043ec61453b448abac"
+    }
+  ],
+  "production": {
+    "reference": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf-391-readonly-metrics/.superpowers/sdd/2026-10-21-perf-391-metrics-publication-tasks/evidence/task6/runs/v2-off-r1-original/appuser-packages.json",
+    "reference_sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+    "roles": {
+      "dev-appuser-packages": {
+        "count": 89,
+        "sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+        "diff": {}
+      },
+      "uncorrected-appuser-packages": {
+        "count": 89,
+        "sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+        "diff": {}
+      },
+      "original-appuser-packages": {
+        "count": 89,
+        "sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+        "diff": {}
+      },
+      "corrected-appuser-packages": {
+        "count": 89,
+        "sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+        "diff": {}
+      }
+    }
+  },
+  "production_reference_inventory": [
+    {
+      "name": "adjustText",
+      "version": "1.4.0"
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.5"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "name": "arrow",
+      "version": "1.4.0"
+    },
+    {
+      "name": "Cartopy",
+      "version": "0.26.0"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.19"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0"
+    },
+    {
+      "name": "contourpy",
+      "version": "1.3.3"
+    },
+    {
+      "name": "coverage",
+      "version": "7.16.2"
+    },
+    {
+      "name": "cycler",
+      "version": "0.12.1"
+    },
+    {
+      "name": "Deprecated",
+      "version": "1.3.1"
+    },
+    {
+      "name": "dnspython",
+      "version": "2.9.0"
+    },
+    {
+      "name": "et_xmlfile",
+      "version": "2.0.0"
+    },
+    {
+      "name": "fastapi",
+      "version": "0.156.8"
+    },
+    {
+      "name": "fastkml",
+      "version": "1.4.0"
+    },
+    {
+      "name": "filelock",
+      "version": "4.2.4"
+    },
+    {
+      "name": "flatbuffers",
+      "version": "25.12.19"
+    },
+    {
+      "name": "fonttools",
+      "version": "4.67.0"
+    },
+    {
+      "name": "geojson",
+      "version": "3.3.0"
+    },
+    {
+      "name": "grpcio",
+      "version": "1.84.0"
+    },
+    {
+      "name": "grpcio-reflection",
+      "version": "1.84.0"
+    },
+    {
+      "name": "grpcio-tools",
+      "version": "1.84.0"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "h3",
+      "version": "4.5.0"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpcore2",
+      "version": "2.16.0"
+    },
+    {
+      "name": "httptools",
+      "version": "0.9.0"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "httpx2",
+      "version": "2.16.0"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.1"
+    },
+    {
+      "name": "kiwisolver",
+      "version": "1.5.1"
+    },
+    {
+      "name": "limits",
+      "version": "5.8.0"
+    },
+    {
+      "name": "lxml",
+      "version": "6.1.3"
+    },
+    {
+      "name": "matplotlib",
+      "version": "3.11.2"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.6"
+    },
+    {
+      "name": "openpyxl",
+      "version": "3.1.5"
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.45.1"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "pandas",
+      "version": "3.0.6"
+    },
+    {
+      "name": "pillow",
+      "version": "13.0.0"
+    },
+    {
+      "name": "pip",
+      "version": "24.0"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.7.0"
+    },
+    {
+      "name": "prometheus_client",
+      "version": "0.26.0"
+    },
+    {
+      "name": "protobuf",
+      "version": "7.36.2"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.11"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.1"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.50.1"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.1"
+    },
+    {
+      "name": "pygeoif",
+      "version": "1.6.0"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "pyparsing",
+      "version": "3.3.3"
+    },
+    {
+      "name": "pypdf",
+      "version": "6.21.1"
+    },
+    {
+      "name": "pyproj",
+      "version": "3.7.2"
+    },
+    {
+      "name": "pyshp",
+      "version": "3.1.6"
+    },
+    {
+      "name": "pytest",
+      "version": "9.1.1"
+    },
+    {
+      "name": "pytest-asyncio",
+      "version": "1.4.0"
+    },
+    {
+      "name": "pytest-cov",
+      "version": "7.1.0"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "2.9.0.post0"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4"
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "name": "python-pptx",
+      "version": "1.0.2"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "name": "reverse_geocoder",
+      "version": "1.5.1"
+    },
+    {
+      "name": "scipy",
+      "version": "1.17.1"
+    },
+    {
+      "name": "setuptools",
+      "version": "79.0.1"
+    },
+    {
+      "name": "shapely",
+      "version": "2.2.0"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0"
+    },
+    {
+      "name": "slowapi",
+      "version": "0.1.10"
+    },
+    {
+      "name": "starlette",
+      "version": "1.9.0"
+    },
+    {
+      "name": "starlink-grpc-core",
+      "version": "1.2.5"
+    },
+    {
+      "name": "timezonefinder",
+      "version": "9.0.0"
+    },
+    {
+      "name": "timezonefinder-data",
+      "version": "3.2026.3.post1"
+    },
+    {
+      "name": "truststore",
+      "version": "0.10.5"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.5"
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0"
+    },
+    {
+      "name": "uvloop",
+      "version": "0.23.0"
+    },
+    {
+      "name": "watchdog",
+      "version": "6.0.0"
+    },
+    {
+      "name": "watchfiles",
+      "version": "1.3.0"
+    },
+    {
+      "name": "websockets",
+      "version": "17.3"
+    },
+    {
+      "name": "wheel",
+      "version": "0.46.3"
+    },
+    {
+      "name": "wrapt",
+      "version": "2.5.1"
+    },
+    {
+      "name": "xlsxwriter",
+      "version": "3.2.9"
+    },
+    {
+      "name": "yagrc",
+      "version": "1.1.3"
+    }
+  ],
+  "browser": {
+    "node": "v22.12.0",
+    "playwright": "1.63.0",
+    "version": "153.0.8010.12",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "executable": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+    "sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+    "actual_executable": "/home/oracle-worker/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell",
+    "actual_sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+  },
+  "superseded_component_attempts": {
+    "missing_packages": [
+      "black",
+      "mypy-extensions",
+      "pathspec",
+      "platformdirs",
+      "pytokens",
+      "ruff"
+    ],
+    "started": 3,
+    "completed_but_rejected": 2,
+    "cancelled": 1,
+    "accepted": 0
+  },
+  "no_application_or_dependency_manifest_changes": true
+}
