@@ -136,24 +136,13 @@ class Integration:
                     "metric",
                     "commit",
                 )
-                if (
-                    not all(k in detail for k in required)
-                    or not artifact
-                    or detail["acceptedRequest"] != request
-                    or not self.module_hashes
-                ):
-                    self._v1(
-                        "coverage",
-                        {
-                            "boundary": "chart.input",
-                            "available": False,
-                            "reason": "missing actual retained/plot/provenance/module hashes",
-                        },
-                    )
-                    return
-                for name in ("retained", "projection", "plot"):
-                    snap = row.get("snapshots", {}).get(name)
-                    if not snap or load is None:
+                for name, snap in row.get("snapshots", {}).items():
+                    if (
+                        name not in ("retained", "projection", "plot")
+                        or name not in detail
+                        or not snap
+                        or load is None
+                    ):
                         self.sink.failed = True
                         raise ValueError("snapshot unavailable")
                     try:
@@ -170,6 +159,27 @@ class Integration:
                         raise ValueError("snapshot hash/content mismatch")
                     if self.sink.artifact(data)["state"] != "available":
                         raise ValueError("snapshot storage unavailable")
+                if (
+                    not all(k in detail for k in required)
+                    or not artifact
+                    or detail["acceptedRequest"] != request
+                    or not self.module_hashes
+                ):
+                    self._v1(
+                        "coverage",
+                        {
+                            "boundary": "chart.input",
+                            "available": False,
+                            "reason": "missing actual retained/plot/provenance/module hashes",
+                        },
+                    )
+                    return
+                if not all(
+                    name in row.get("snapshots", {})
+                    for name in ("retained", "projection", "plot")
+                ):
+                    self.sink.failed = True
+                    raise ValueError("snapshot unavailable")
                 data = detail["plot"]["data"]
                 scales = detail["plot"]["scales"]["x"]
                 projection = normalize_history(

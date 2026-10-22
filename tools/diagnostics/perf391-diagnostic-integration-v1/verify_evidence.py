@@ -62,6 +62,8 @@ def verify_analysis(report, events):
                 for e in group
                 if e["identity"].get("plot_token") == a["identity"].get("plot_token")
             ]
+        if a not in group or b not in group:
+            raise ValueError("referenced pair differs from unique source group")
         begin, end = PAIRS[claim["boundary"]]
         if (
             len([e for e in group if e["phase"] == begin]) != 1
