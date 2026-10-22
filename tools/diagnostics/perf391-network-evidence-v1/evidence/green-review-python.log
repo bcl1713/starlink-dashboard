@@ -1,0 +1,10 @@
+test_actual_plot_without_retained_input_is_unknown (test_review_regressions.ReviewRegressions.test_actual_plot_without_retained_input_is_unknown) ... ok
+test_incomplete_store_and_stale_sample_provenance_are_unknown (test_review_regressions.ReviewRegressions.test_incomplete_store_and_stale_sample_provenance_are_unknown) ... ok
+test_segment_mismatch_never_joins (test_review_regressions.ReviewRegressions.test_segment_mismatch_never_joins) ... ok
+test_summaries_are_required_for_every_stream (test_review_regressions.ReviewRegressions.test_summaries_are_required_for_every_stream) ... ok
+test_unrelated_evaluation_cannot_prove_api_defect (test_review_regressions.ReviewRegressions.test_unrelated_evaluation_cannot_prove_api_defect) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.012s
+
+OK

@@ -1,0 +1,26 @@
+test_adapters (unittest.loader._FailedTest.test_adapters) ... ERROR
+test_bounded_recorder_drop_summary_artifacts_cleanup (test_core.CoreTests.test_bounded_recorder_drop_summary_artifacts_cleanup) ... ok
+test_clock_step_no_cross_origin_subtraction (test_core.CoreTests.test_clock_step_no_cross_origin_subtraction) ... ok
+test_fixture_classifications_and_hashes (test_core.CoreTests.test_fixture_classifications_and_hashes) ... ok
+test_ids_clocks_missing_and_duplicate_boundaries (test_core.CoreTests.test_ids_clocks_missing_and_duplicate_boundaries) ... ok
+test_schema_compatibility_and_intentional_missing (test_core.CoreTests.test_schema_compatibility_and_intentional_missing) ... ok
+
+======================================================================
+ERROR: test_adapters (unittest.loader._FailedTest.test_adapters)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_adapters
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/unittest/loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/usr/lib/python3.14/unittest/loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_adapters.py", line 8, in <module>
+    from perf391_network_evidence.adapters import sample_resources, import_legacy, observe_once, diagnostic_worker, admission
+ModuleNotFoundError: No module named 'perf391_network_evidence.adapters'
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.036s
+
+FAILED (errors=1)

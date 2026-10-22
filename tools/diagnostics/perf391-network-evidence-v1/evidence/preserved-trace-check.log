@@ -1,0 +1,174 @@
+{
+  "input_path": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-rank1-task3-forge/.superpowers/forge-task3-continuation/diagnostic-runs/unloaded-trace-r1-corrected/trace/backend.json",
+  "input_sha256": "f088fd7669443ff86b3aa1a55be9711f004d46bec8b5c919da5128d11f7620b2",
+  "input_bytes": 1055423,
+  "input_events": 7882,
+  "input_dropped": 0,
+  "imported_events": 483,
+  "imported_operations": 134,
+  "timing_distributions_ns": {
+    "producer_queue": {
+      "count": 41,
+      "p50": 82381,
+      "p95": 109829,
+      "p99": 115984,
+      "max": 115984
+    },
+    "producer_acquisition": {
+      "count": 41,
+      "p50": 1143861,
+      "p95": 1818867,
+      "p99": 7593748,
+      "max": 7593748
+    },
+    "producer_publication": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "producer_tick": {
+      "count": 41,
+      "p50": 3982458,
+      "p95": 7040980,
+      "p99": 541389989,
+      "max": 541389989
+    },
+    "producer_completion": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "worker_queue": {
+      "count": 31,
+      "p50": 137545,
+      "p95": 239752,
+      "p99": 277768,
+      "max": 277768
+    },
+    "worker_service": {
+      "count": 31,
+      "p50": 449784,
+      "p95": 733134,
+      "p99": 808238,
+      "max": 808238
+    },
+    "worker_completion": {
+      "count": 31,
+      "p50": 66901,
+      "p95": 86878,
+      "p99": 122951,
+      "max": 122951
+    },
+    "asgi": {
+      "count": 93,
+      "p50": 1555863,
+      "p95": 17843306,
+      "p99": 677634754,
+      "max": 677634754
+    },
+    "observer_wake": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "observer_send": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "observer_http": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "observer_parse": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "observer_write": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "refresh": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "browser_http": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "browser_body_delivery": {
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    }
+  },
+  "missing_coverage": [
+    {
+      "boundary": "producer.returned",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "producer.validated",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "producer.published",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "repo.wait",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "repo.hold",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "observer.wire_send",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "plot.input",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    },
+    {
+      "boundary": "paint",
+      "available": false,
+      "reason": "legacy trace lacks unambiguous dedicated boundary/ID; never reconstructed"
+    }
+  ],
+  "observed_dropped": 0,
+  "issues": []
+}

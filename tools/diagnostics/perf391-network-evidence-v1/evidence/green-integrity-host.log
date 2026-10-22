@@ -1,0 +1,19 @@
+test_diagnostic_worker_and_admission_cleanup (test_adapters.AdapterTests.test_diagnostic_worker_and_admission_cleanup) ... ok
+test_legacy_import_preserves_missing_and_op_ids (test_adapters.AdapterTests.test_legacy_import_preserves_missing_and_op_ids) ... ok
+test_observer_fake_response_body_parse_and_error_cleanup (test_adapters.AdapterTests.test_observer_fake_response_body_parse_and_error_cleanup) ... ok
+test_resource_missing_and_ancestor_coverage (test_adapters.AdapterTests.test_resource_missing_and_ancestor_coverage) ... ok
+test_bounded_recorder_drop_summary_artifacts_cleanup (test_core.CoreTests.test_bounded_recorder_drop_summary_artifacts_cleanup) ... ok
+test_clock_step_no_cross_origin_subtraction (test_core.CoreTests.test_clock_step_no_cross_origin_subtraction) ... ok
+test_fixture_classifications_and_hashes (test_core.CoreTests.test_fixture_classifications_and_hashes) ... ok
+test_ids_clocks_missing_and_duplicate_boundaries (test_core.CoreTests.test_ids_clocks_missing_and_duplicate_boundaries) ... ok
+test_schema_compatibility_and_intentional_missing (test_core.CoreTests.test_schema_compatibility_and_intentional_missing) ... ok
+test_admission_fixture_and_unique_gap_dedup (test_integrity.IntegrityTests.test_admission_fixture_and_unique_gap_dedup) ... ok
+test_bad_chart_lengths_and_scrape_state_are_rejected (test_integrity.IntegrityTests.test_bad_chart_lengths_and_scrape_state_are_rejected) ... ok
+test_drop_or_absent_summary_never_claims_complete_evidence (test_integrity.IntegrityTests.test_drop_or_absent_summary_never_claims_complete_evidence) ... ok
+test_store_export_separates_nan_missing_family_and_failed_scrape (test_integrity.IntegrityTests.test_store_export_separates_nan_missing_family_and_failed_scrape) ... ok
+test_worker_cancellation_drains_owned_worker (test_integrity.IntegrityTests.test_worker_cancellation_drains_owned_worker) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.063s
+
+OK

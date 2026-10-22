@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: passive response capture joins IDs and detaches cleanly
+ok 1 - passive response capture joins IDs and detaches cleanly
+  ---
+  duration_ms: 3.029129
+  ...
+# Subtest: missing length never triggers unbounded body read; drops are counted
+ok 2 - missing length never triggers unbounded body read; drops are counted
+  ---
+  duration_ms: 0.674014
+  ...
+# Subtest: schema rejects unknown fields and nonfinite numbers before writing
+not ok 3 - schema rejects unknown fields and nonfinite numbers before writing
+  ---
+  duration_ms: 0.725021
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/browser.test.mjs:53:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/browser.test.mjs:57:12)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:934:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:633:18)
+    Test.postRun (node:internal/test_runner/test:1045:19)
+    Test.run (node:internal/test_runner/test:973:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: pending body rejection after close never writes to closed sink
+not ok 4 - pending body rejection after close never writes to closed sink
+  ---
+  duration_ms: 1001.894385
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/browser.test.mjs:63:1'
+  failureType: 'unhandledRejection'
+  error: 'closed sink'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    Object.emit (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/browser.mjs:24:25)
+    coverage (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/browser.mjs:60:47)
+    file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/browser.mjs:94:9
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 2
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1049.276244

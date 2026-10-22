@@ -1,0 +1,886 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:perf391:network-evidence:event:1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "perf391-network-evidence-v1"
+    },
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "boundary",
+        "anchor",
+        "coverage",
+        "resource",
+        "scrape",
+        "history",
+        "chart",
+        "body",
+        "summary",
+        "evaluation"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stream_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "clock_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mono_ns": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "pid": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tid": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "thread_cpu_ns": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "op_id": {
+      "type": ["string", "null"]
+    },
+    "span_id": {
+      "type": ["string", "null"]
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema",
+    "version",
+    "kind",
+    "run_id",
+    "stream_id",
+    "seq",
+    "clock_id",
+    "mono_ns",
+    "pid",
+    "tid",
+    "thread_cpu_ns",
+    "op_id",
+    "span_id",
+    "data"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "boundary"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "enum": [
+                  "producer.dispatch",
+                  "producer.start",
+                  "producer.collected",
+                  "producer.validated",
+                  "producer.published",
+                  "producer.end",
+                  "producer.returned",
+                  "refresh.start",
+                  "refresh.end",
+                  "repo.wait",
+                  "repo.acquired",
+                  "repo.released",
+                  "worker.dispatch",
+                  "worker.start",
+                  "worker.end",
+                  "worker.returned",
+                  "asgi.entry",
+                  "asgi.end",
+                  "observer.scheduled",
+                  "observer.wake",
+                  "observer.send",
+                  "observer.headers",
+                  "observer.received",
+                  "observer.parsed",
+                  "observer.written",
+                  "browser.request",
+                  "browser.headers",
+                  "browser.end",
+                  "browser.body",
+                  "browser.failed",
+                  "browser.commit"
+                ]
+              },
+              "identity": {
+                "type": ["object", "null"]
+              },
+              "outcome": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["name"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "anchor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "utc_ns": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              "uncertainty_ns": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              }
+            },
+            "required": ["utc_ns"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "coverage"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "boundary": {
+                "type": "string",
+                "minLength": 1
+              },
+              "available": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["boundary", "available", "reason"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "resource"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "files": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": ["string", "null"]
+                    },
+                    "reason": {
+                      "type": ["string", "null"]
+                    }
+                  },
+                  "required": ["value", "reason"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["files"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "scrape"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "series": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timestamp": {
+                "type": "number"
+              },
+              "value": {
+                "type": ["number", "null"]
+              },
+              "state": {
+                "enum": ["finite", "nan", "missing", "failed"]
+              },
+              "segment": {
+                "enum": ["seeded", "measured"]
+              },
+              "up": {
+                "type": ["number", "null"]
+              },
+              "sample_count": {
+                "type": ["number", "null"]
+              },
+              "scrape_duration_seconds": {
+                "type": ["number", "null"]
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["series", "timestamp", "value", "state", "segment"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "history"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "viewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "request_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bundle_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              },
+              "series": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                }
+              },
+              "rolling_5m": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "state": {
+                      "enum": ["available", "unavailable"]
+                    },
+                    "min": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    },
+                    "avg": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    },
+                    "max": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    }
+                  },
+                  "required": ["state", "min", "avg", "max"],
+                  "additionalProperties": false
+                }
+              },
+              "segment": {
+                "enum": ["seeded", "measured"]
+              },
+              "artifact": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["available", "unavailable"]
+                  },
+                  "path": {
+                    "type": ["string", "null"]
+                  },
+                  "sha256": {
+                    "type": ["string", "null"]
+                  },
+                  "bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": ["state", "path", "sha256", "bytes", "reason"],
+                "additionalProperties": false
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evaluation_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "viewer",
+              "request_id",
+              "bundle_id",
+              "start",
+              "end",
+              "step",
+              "series",
+              "segment"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "chart"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "viewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "request_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bundle_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "series": {
+                "type": "string",
+                "minLength": 1
+              },
+              "segment": {
+                "enum": ["seeded", "measured"]
+              },
+              "times": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "traces": {
+                "type": "object",
+                "properties": {
+                  "observed": {
+                    "type": "array",
+                    "items": {
+                      "type": ["number", "null"]
+                    }
+                  },
+                  "min": {
+                    "type": "array",
+                    "items": {
+                      "type": ["number", "null"]
+                    }
+                  },
+                  "avg": {
+                    "type": "array",
+                    "items": {
+                      "type": ["number", "null"]
+                    }
+                  },
+                  "max": {
+                    "type": "array",
+                    "items": {
+                      "type": ["number", "null"]
+                    }
+                  }
+                },
+                "required": ["observed", "min", "avg", "max"],
+                "additionalProperties": false
+              },
+              "viewport": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "visible_gaps": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                ]
+              },
+              "module_hashes": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "paint_evidence": {
+                "type": ["string", "null"]
+              },
+              "input_stage": {
+                "enum": ["projection", "plot"]
+              },
+              "log_floor": {
+                "type": ["number", "null"]
+              },
+              "projection_input": {
+                "type": "object",
+                "properties": {
+                  "viewer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "request_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "bundle_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "start": {
+                    "type": "number"
+                  },
+                  "end": {
+                    "type": "number"
+                  },
+                  "step": {
+                    "type": "number"
+                  },
+                  "series": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    }
+                  },
+                  "rolling_5m": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "enum": ["available", "unavailable"]
+                        },
+                        "min": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
+                          }
+                        },
+                        "avg": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
+                          }
+                        },
+                        "max": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
+                          }
+                        }
+                      },
+                      "required": ["state", "min", "avg", "max"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "segment": {
+                    "enum": ["seeded", "measured"]
+                  },
+                  "artifact": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "enum": ["available", "unavailable"]
+                      },
+                      "path": {
+                        "type": ["string", "null"]
+                      },
+                      "sha256": {
+                        "type": ["string", "null"]
+                      },
+                      "bytes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "reason": {
+                        "type": ["string", "null"]
+                      }
+                    },
+                    "required": ["state", "path", "sha256", "bytes", "reason"],
+                    "additionalProperties": false
+                  },
+                  "source_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evaluation_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "viewer",
+                  "request_id",
+                  "bundle_id",
+                  "start",
+                  "end",
+                  "step",
+                  "series",
+                  "segment"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "viewer",
+              "request_id",
+              "bundle_id",
+              "series",
+              "segment",
+              "times",
+              "traces",
+              "viewport",
+              "visible_gaps",
+              "module_hashes",
+              "paint_evidence"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "body"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "viewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "request_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "integer"
+              },
+              "artifact": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["available", "unavailable"]
+                  },
+                  "path": {
+                    "type": ["string", "null"]
+                  },
+                  "sha256": {
+                    "type": ["string", "null"]
+                  },
+                  "bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": ["state", "path", "sha256", "bytes", "reason"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["viewer", "request_id", "status", "artifact"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "summary"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "dropped_events": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "dropped_bodies": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "written_bytes": {
+                "type": ["integer", "null"],
+                "minimum": 0
+              },
+              "write_wall_ns": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "dropped_events",
+              "dropped_bodies",
+              "written_bytes",
+              "write_wall_ns",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "evaluation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "series": {
+                "type": "string"
+              },
+              "segment": {
+                "enum": ["seeded", "measured"]
+              },
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              },
+              "times": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": ["number", "null"]
+                }
+              },
+              "sample_timestamps": {
+                "type": "array",
+                "items": {
+                  "type": ["number", "null"]
+                }
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evaluation_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "viewer": {
+                "type": "string"
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "bundle_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "series",
+              "segment",
+              "start",
+              "end",
+              "step",
+              "times",
+              "values",
+              "sample_timestamps"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ]
+}
