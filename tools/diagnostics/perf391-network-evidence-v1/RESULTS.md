@@ -1,11 +1,13 @@
 # Offline delivery and checkpoint record
 
 Delivery is tooling implementation and offline validation only. No performance
-acceptance, overhead measurement or runtime qualification is claimed. The exact
-source commit and immutable file hashes are recorded in the release manifest
-published with this checkpoint; its PR description also records the full source
-and final delivery SHAs. `RESULTS.md` and the manifest are release metadata and
-excluded from the source-hash set to avoid circular hashes.
+acceptance, overhead measurement or runtime qualification is claimed.
+
+Exact collector source commit: `a48837b99d87366c6e3fc24ba2915f0b739cddad`.
+Immutable source/schema/fixture/evidence hashes are in `release-manifest.json`.
+The PR description records the final metadata delivery SHA separately.
+`RESULTS.md` and the manifest are excluded release metadata to avoid circular
+hashes. No implementation files changed after that source commit.
 
 ## Verification
 
