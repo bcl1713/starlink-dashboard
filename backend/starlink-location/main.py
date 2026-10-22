@@ -991,8 +991,12 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
     # Capture the producer binding before collection, including replacements
     # that happen while live transport is blocked outside repository admission.
     from app.core.metrics.frame_builder import coordinator_identity
+    from app.core.metrics.frames import GaugeFrame
     from app.core.metrics.prometheus_metrics import FRAME_STORE
-    from app.core.metrics.source_admission import route_source_identity
+    from app.core.metrics.source_admission import (
+        frame_inputs_are_current,
+        route_source_identity,
+    )
     from app.mission.storage import get_active_leg_lock
 
     with get_active_leg_lock():
@@ -1024,7 +1028,7 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
 
     source_mission = None
 
-    def source_is_current():
+    def source_is_current(frame: GaugeFrame | None = None) -> bool:
         # Legacy adapters use the application fallback configuration and may not
         # expose domain-model/source readers. Runnable sources have a validated
         # SimulationConfig and use all admission checks below.
@@ -1032,8 +1036,15 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             return (
                 _coordinator is coordinator
                 and _current_runtime_config() is current_config
+                and (
+                    frame is None
+                    or frame_inputs_are_current(frame, active_route, poi_manager)
+                )
             )
         from app.core.metrics.source_admission import model_identity
+
+        checked_routes = _route_manager
+        checked_route = checked_routes.get_active_route() if checked_routes else None
 
         current_service = getattr(app.state, "simulation_run_service", None)
         status = current_service.status() if current_service is not None else None
@@ -1051,10 +1062,10 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 or current_config.model_dump_json() == source_config
             )
             and current_service is source_service
-            and _route_manager is source_routes
-            and active_route is source_route
-            and route_source_identity(active_route) == source_route_revision
-            and (source_routes.get_active_route_id() if source_routes else None)
+            and checked_routes is source_routes
+            and checked_route is source_route
+            and route_source_identity(checked_route) == source_route_revision
+            and (checked_routes.get_active_route_id() if checked_routes else None)
             == source_route_id
             and revision == source_revision
             and (
@@ -1067,8 +1078,10 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 if telemetry is not None
                 else not getattr(coordinator, "is_connected", lambda: False)()
             )
-            and (_route_manager.get_active_route() if _route_manager else None)
-            is active_route
+            and (
+                frame is None
+                or frame_inputs_are_current(frame, checked_route, poi_manager)
+            )
         )
 
     if should_automatically_refresh_ground_entry_point(current_config):
@@ -1127,7 +1140,9 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             from app.core.metrics import (
                 starlink_metrics_generation_errors_total,
                 starlink_metrics_scrape_duration_seconds,
-                update_metrics_from_telemetry,
+            )
+            from app.core.metrics.metric_updater import (
+                _update_metrics_from_telemetry_admitted,
             )
 
             scrape_start = time.time()
@@ -1135,19 +1150,25 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 with get_active_leg_lock():
                     # Both live and simulation metrics use the application's
                     # current route, independent of coordinator capabilities.
-                    active_route = None
-                    if _route_manager is not None:
-                        active_route = _route_manager.get_active_route()
+                    active_route = source_route
+                    # Snapshot progress before immediate admission validation;
+                    # its reader may change the source binding.
+                    route_progress = (
+                        getattr(coordinator, "route_progress_snapshot", lambda: None)()
+                        if current_config.mode == "simulation"
+                        else None
+                    )
 
+                    flight_events_managed = False
+                    runtime = getattr(app.state, "flight_event_runtime", None)
+                    live_events = runtime is not None and current_config.mode == "live"
                     if not source_is_current():
                         FRAME_STORE.fail(
                             source_expected, "source changed during collection"
                         )
                         return update_count
 
-                    flight_events_managed = False
-                    runtime = getattr(app.state, "flight_event_runtime", None)
-                    if runtime is not None and current_config.mode == "live":
+                    if live_events:
                         from app.mission.active_context import (
                             resolve_active_mission_leg_context,
                         )
@@ -1176,14 +1197,11 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                                 "Live recording pending recovery",
                                 extra_fields={"error": type(archive_error).__name__},
                             )
-                    # Carry producer-owned progress with this observation, never
-                    # through standalone coupled Gauge writes in the coordinator.
-                    route_progress = (
-                        getattr(coordinator, "route_progress_snapshot", lambda: None)()
-                        if current_config.mode == "simulation"
-                        else None
-                    )
-                    update_metrics_from_telemetry(
+                        # Event handling (including caught recording failures)
+                        # may replace inputs. Keep its distinct entry boundary.
+                        if not source_is_current():
+                            return update_count
+                    _update_metrics_from_telemetry_admitted(
                         telemetry,
                         current_config,
                         active_route,
@@ -1191,7 +1209,7 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                         flight_events_managed=flight_events_managed,
                         route_progress=route_progress,
                         coordinator_id=source_lifecycle,
-                        source_is_current=source_is_current,
+                        final_validation=source_is_current,
                     )
                     scrape_duration = time.time() - scrape_start
                     starlink_metrics_scrape_duration_seconds.observe(scrape_duration)

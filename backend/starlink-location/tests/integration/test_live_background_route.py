@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 import main
-from app.core import metrics
+from app.core.metrics import metric_updater
 from app.live.client import StarlinkClient
 from app.live.coordinator import LiveCoordinator
 from app.models.config import SimulationConfig
@@ -154,7 +154,9 @@ async def test_background_loop_uses_current_application_route(
 ):
     runtime = background_runtime
     update_metrics = MagicMock()
-    monkeypatch.setattr(metrics, "update_metrics_from_telemetry", update_metrics)
+    monkeypatch.setattr(
+        metric_updater, "_update_metrics_from_telemetry_admitted", update_metrics
+    )
     expected_routes = [None, runtime.route, runtime.other_route, None]
     completed = 0
     delays = []
@@ -190,7 +192,9 @@ async def test_live_background_loop_without_route_manager(
 ):
     monkeypatch.setattr(main, "_route_manager", None)
     update_metrics = MagicMock()
-    monkeypatch.setattr(metrics, "update_metrics_from_telemetry", update_metrics)
+    monkeypatch.setattr(
+        metric_updater, "_update_metrics_from_telemetry_admitted", update_metrics
+    )
 
     async def stop_after_update(_delay):
         raise asyncio.CancelledError
@@ -221,7 +225,9 @@ async def test_telemetry_updates_remain_ordered(background_runtime, monkeypatch)
             raise asyncio.CancelledError()
         background_runtime.clock[0] += timedelta(seconds=1)
 
-    monkeypatch.setattr(metrics, "update_metrics_from_telemetry", update)
+    monkeypatch.setattr(
+        metric_updater, "_update_metrics_from_telemetry_admitted", update
+    )
     monkeypatch.setattr(main.asyncio, "sleep", next_tick)
     with pytest.raises(asyncio.CancelledError):
         await main._background_update_loop(main.app.state.poi_manager)

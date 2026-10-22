@@ -29,7 +29,10 @@ def test_recording_failure_keeps_live_metrics(monkeypatch, adapter_config):
         lambda _: SimpleNamespace(context=None),
     )
     publish = Mock()
-    monkeypatch.setattr("app.core.metrics.update_metrics_from_telemetry", publish)
+    monkeypatch.setattr(
+        "app.core.metrics.metric_updater._update_metrics_from_telemetry_admitted",
+        publish,
+    )
     main._background_update_tick(Mock(), 1, 1, 0)
     assert publish.call_count == 1
     assert publish.call_args.kwargs["flight_events_managed"] is True
