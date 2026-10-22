@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:perf391:integration:analysis:1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "perf391-integration-analysis-v1"
+    },
+    "version": {
+      "const": 1
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["complete", "errors"],
+      "additionalProperties": false
+    },
+    "durations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "boundary": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "process_uuid": {
+            "type": "string"
+          },
+          "op_id": {
+            "type": "string"
+          },
+          "span_id": {
+            "type": ["string", "null"]
+          },
+          "ns": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "thread_cpu_ns": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "reason": {
+            "type": ["string", "null"]
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stream_id": {
+                  "type": "string"
+                },
+                "seq": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "phase": {
+                  "type": "string"
+                },
+                "clock_id": {
+                  "type": "string"
+                },
+                "mono_ns": {
+                  "type": "string"
+                }
+              },
+              "required": ["stream_id", "seq", "phase", "clock_id", "mono_ns"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "boundary",
+          "run_id",
+          "process_uuid",
+          "op_id",
+          "span_id",
+          "ns",
+          "thread_cpu_ns",
+          "reason",
+          "events"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "request_joins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "state": {
+            "enum": ["joined", "unavailable"]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stream_id": {
+                  "type": "string"
+                },
+                "seq": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "phase": {
+                  "type": "string"
+                }
+              },
+              "required": ["stream_id", "seq", "phase"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["run_id", "request_id", "state", "reason", "events"],
+        "additionalProperties": false
+      }
+    },
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["available", "reason"],
+        "additionalProperties": false
+      }
+    },
+    "successful_publications": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "policy": {
+      "type": "string"
+    },
+    "operation_joins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "process_uuid": {
+            "type": "string"
+          },
+          "op_id": {
+            "type": "string"
+          },
+          "parent_op_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "process_uuid",
+          "op_id",
+          "parent_op_id",
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["available", "reason"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "version",
+    "integrity",
+    "durations",
+    "request_joins",
+    "unavailable",
+    "successful_publications",
+    "policy",
+    "operation_joins",
+    "boundaries"
+  ],
+  "additionalProperties": false
+}

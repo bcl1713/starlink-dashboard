@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:perf391:integration:summary:1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "perf391-integration-summary-v1"
+    },
+    "version": {
+      "const": 1
+    },
+    "complete": {
+      "type": "boolean"
+    },
+    "dropped": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "v1_dropped": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "dropped_artifacts": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "missing_summaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "streams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stream_id": {
+            "type": "string"
+          },
+          "last_seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "dropped": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": ["stream_id", "last_seq", "dropped", "complete"],
+        "additionalProperties": false
+      }
+    },
+    "high_water": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sidecar_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "v1_bytes": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schema",
+    "version",
+    "complete",
+    "dropped",
+    "v1_dropped",
+    "dropped_artifacts",
+    "missing_summaries",
+    "streams",
+    "high_water",
+    "sidecar_bytes",
+    "v1_bytes"
+  ],
+  "additionalProperties": false
+}

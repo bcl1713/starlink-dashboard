@@ -71,14 +71,14 @@ def validate_stream(events):
             if event["emitter"] == "browser"
             else None
         )
-        identity += (document,)
+        identity += (document, event["tid"], event["thread_start_id"])
         clock_key = (event["run_id"], event["clock_id"])
         # Backend streams are per native thread to preserve sequence order
         # without an emission mutex. time.monotonic_ns has one process clock;
         # sharing it across threads does not join different process origins.
         clock_owner = (
-            identity[:5]
-            if event["emitter"] == "backend"
+            tuple(event[k] for k in ("role", "process_uuid", "pid", "process_start_id"))
+            if event["emitter"] != "browser"
             else (event["stream_id"], identity)
         )
         if clock_key in clocks and clocks[clock_key] != clock_owner:
