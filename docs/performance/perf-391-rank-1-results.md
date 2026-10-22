@@ -17,18 +17,18 @@ AGENTS.md was read. Application code and acceptance methodology are unchanged.
 
 ## Exact sources and isolation
 
-| Role | Commit |
-| --- | --- |
-| Original | `25e34168f0e2cecb149b0323f1f5a795cb28cae0` |
+| Role                                    | Commit                                     |
+| --------------------------------------- | ------------------------------------------ |
+| Original                                | `25e34168f0e2cecb149b0323f1f5a795cb28cae0` |
 | Current dev, matching approved baseline | `33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96` |
-| Uncorrected candidate | `e1f657986f7b988a967ddd2bef8ca4626e30b5de` |
-| Corrected Task 2 candidate | `3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc` |
+| Uncorrected candidate                   | `e1f657986f7b988a967ddd2bef8ca4626e30b5de` |
+| Corrected Task 2 candidate              | `3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc` |
 | Approved documents and diagnostic tools | `f7253c687041342ee080b0197f0b98f20eaefdfe` |
-| Frozen availability-v2 harness | `f3029024b5950a267645195476da5cbca326f16a` |
-| Frozen strict harness | `13cbf1d54b526307747578ecd4fc691562846834` |
+| Frozen availability-v2 harness          | `f3029024b5950a267645195476da5cbca326f16a` |
+| Frozen strict harness                   | `13cbf1d54b526307747578ecd4fc691562846834` |
 
 Git resolved these commits. The GitHub connector independently confirmed #403,
-#405 and #406 heads and their draft/open/unmerged states. The fetched dev ref
+\#405 and #406 heads and their draft/open/unmerged states. The fetched dev ref
 matches the approved baseline. A fresh isolated branch `perf/391-rank1-task3`
 starts at the approved Task 2 commit in
 `/workspace/starlink-dashboard/.worktrees/perf391-rank1-task3`. Supporting clean
@@ -39,15 +39,15 @@ agent worktrees were present in this environment's initial Git worktree list.
 
 ## Failed prerequisites and stop decision
 
-| Check | Observed result |
-| --- | --- |
-| Installed shared Playwright | `1.56.1` |
-| Application Playwright pin | `@playwright/test` `1.63.0` |
+| Check                                    | Observed result                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| Installed shared Playwright              | `1.56.1`                                                                     |
+| Application Playwright pin               | `@playwright/test` `1.63.0`                                                  |
 | Browser executable for installed package | `/home/agent/.cache/ms-playwright/chromium-1194/chrome-linux/chrome`, absent |
-| Installed Node | `v24.19.0` |
-| Application Node requirement | `^22.22.2` |
-| Docker readiness | `28.4.0`, `vfs`, 5 CPUs, 18,882,674,688 bytes daemon-visible memory |
-| Private Python setup | Python `3.11.16`; requirements-dev installation succeeded |
+| Installed Node                           | `v24.19.0`                                                                   |
+| Application Node requirement             | `^22.22.2`                                                                   |
+| Docker readiness                         | `28.4.0`, `vfs`, 5 CPUs, 18,882,674,688 bytes daemon-visible memory          |
+| Private Python setup                     | Python `3.11.16`; requirements-dev installation succeeded                    |
 
 The browser package came from the existing primary checkout's node_modules;
 no candidate dependency link was installed. Its browser identity cannot qualify
@@ -78,16 +78,16 @@ validator. There are zero rejected measurement runs; the failed prerequisite is
 recorded separately and must not be counted as a benchmark rejection. There are
 no raw timing samples, outliers or performance distributions from this session.
 
-| Required result | Task 3 evidence |
-| --- | --- |
-| Component tick CPU at 0/2/10/100/1,100 POIs | Unavailable; candidate pair not measured |
-| Whole-backend CPU and run-to-run variability | Unavailable; four-role off/counters controls not run |
-| Producer tick CPU before/after consolidation | Unavailable; no whole-tick samples |
-| Repository admission wait/hold wall and thread CPU | Unavailable; unloaded/loaded diagnostics not run |
-| Actual capture intervals and acquisition freshness | Unavailable |
-| Scrape preparation and history-request latency | Unavailable |
-| Observer scheduling and completion-delivery delay | Unavailable |
-| CPU regression, event-loop contention, source correctness | Not evaluated by new measurements |
+| Required result                                           | Task 3 evidence                                      |
+| --------------------------------------------------------- | ---------------------------------------------------- |
+| Component tick CPU at 0/2/10/100/1,100 POIs               | Unavailable; candidate pair not measured             |
+| Whole-backend CPU and run-to-run variability              | Unavailable; four-role off/counters controls not run |
+| Producer tick CPU before/after consolidation              | Unavailable; no whole-tick samples                   |
+| Repository admission wait/hold wall and thread CPU        | Unavailable; unloaded/loaded diagnostics not run     |
+| Actual capture intervals and acquisition freshness        | Unavailable                                          |
+| Scrape preparation and history-request latency            | Unavailable                                          |
+| Observer scheduling and completion-delivery delay         | Unavailable                                          |
+| CPU regression, event-loop contention, source correctness | Not evaluated by new measurements                    |
 
 Instrumentation-off, counter-instrumented, and trace cohorts remain separate and
 empty. Main's private admitted path bypasses public `producer_prepare` and

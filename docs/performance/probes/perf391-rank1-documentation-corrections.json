@@ -1,0 +1,20 @@
+{
+  "original_commit": "91eb49e5f5cc50d0d002fcd145f0f0b3f2315561",
+  "scope": "Documentation formatting/link correction only; original manifests and raw evidence remain immutable. Historical failures and results describe their original runs. The approved plan is on the pinned PR #405 commit, absent from this tree.",
+  "reports": [
+    {
+      "path": "docs/performance/perf-391-rank-1-results.md",
+      "original_sha256": "2d14ffc060c18316e78c59048a3c4e21680d60a4989d18442658067c2c258425",
+      "corrected_sha256": "0480a7a7db3381868cd863152e46d64b9f0fa53731da4d37b75f540dfbca536d",
+      "original_bytes": 9018,
+      "corrected_bytes": 10277
+    },
+    {
+      "path": "docs/performance/perf-391-rank-1-forge-results.md",
+      "original_sha256": "fbf0562429ad2389b4fdd9487bafff16d52ed098918475ccd6e9ff0f0880e970",
+      "corrected_sha256": "7fb02aa685240a3871c07bee489761557a88e0c005f23ca79f1bc57be3220fe6",
+      "original_bytes": 7001,
+      "corrected_bytes": 7110
+    }
+  ]
+}

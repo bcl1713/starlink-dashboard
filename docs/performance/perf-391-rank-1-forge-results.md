@@ -5,9 +5,10 @@ started, and Task 3 remains incomplete.** This is a dependency comparability
 failure, not an application failure. The unchanged requirements installed
 FastAPI 0.159.1; the original component benchmark recorded 0.158.1.
 
-The approved [measurement protocol](perf-391-rank-1-measurement.md) requires
-identical package inventories, says “do not substitute software versions”, and
-requires stopping on a workload/package mismatch. No version substitution,
+The approved
+[measurement protocol](https://github.com/bcl1713/starlink-dashboard/blob/f7253c687041342ee080b0197f0b98f20eaefdfe/docs/performance/perf-391-rank-1-measurement.md)
+requires identical package inventories, says “do not substitute software
+versions”, and requires stopping on a workload/package mismatch. No version substitution,
 application edit, threshold change, soak or retry was attempted. Restoring an
 approved dependency inventory requires review before another Task 3 attempt.
 
