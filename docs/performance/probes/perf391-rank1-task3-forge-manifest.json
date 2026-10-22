@@ -1,0 +1,71 @@
+{
+  "disposition": "STOP: Forge preflight package mismatch; no performance verdict",
+  "evidence_root": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-rank1-task3-forge/.superpowers/forge-task3",
+  "application_sha": "3cd79e2a",
+  "preserved_cloud_report_commit": "4ec1e7f13b56623c8f83f1ae05f768d736325b32",
+  "benchmark_runs_started": 0,
+  "accepted_pairs": 0,
+  "rejected_measurement_runs": 0,
+  "files": {
+    "attempts.md": {
+      "sha256": "afbb4adad9fd341e88caf4fb3a33c7e5a1394371d5810bcb95d05a9b376ccb3c",
+      "bytes": 928
+    },
+    "component-package-comparison.json": {
+      "sha256": "64b2a392693d492a5334ad635ef8f56f154ce68a0a6830e8daf12b53ec19a044",
+      "bytes": 654
+    },
+    "finalize-preflight.log": {
+      "sha256": "2a6939f86f4ad96ca04d9f3336efe436cbd2f0e148e331e8ec2235d330eaa129",
+      "bytes": 746
+    },
+    "finalize-preflight.py": {
+      "sha256": "8557edced4ec06e992d3b519543226a242c103223a6360b5166a6d95288a8305",
+      "bytes": 1888
+    },
+    "historical-hash-verification.json": {
+      "sha256": "28df9961cf45d1504e735b589b2cb618c93951a88152e9e85805f2c4f00d7546",
+      "bytes": 543
+    },
+    "identity-and-cleanup.json": {
+      "sha256": "db901c5c6162987ddc3f6c827bb7fe8bc8710ff78e45e8eec21ad822ceaa83f0",
+      "bytes": 53061
+    },
+    "ownership.json": {
+      "sha256": "0662d161c8e310eb718fd73dc49cfef5257d417703dce4667dc2b425e15f6683",
+      "bytes": 277
+    },
+    "preflight.json": {
+      "sha256": "c25f909c9f28fb22278e75c2e176041cf3d22c7a17e2b980b1836727a8ec2fe2",
+      "bytes": 8971
+    },
+    "preflight.log": {
+      "sha256": "3fe300fea0ca4df4bc7215196fd1bd338f3ff799b07ff74ba5cc03596e928d71",
+      "bytes": 825
+    },
+    "preflight.py": {
+      "sha256": "0f4c44d1de4094854d5afee4655f6d2ec9c9f61635300db7a31224953c27d79c",
+      "bytes": 2162
+    },
+    "python-packages.json": {
+      "sha256": "a16d946c901d9643d716aaaac52bc30e8d4279dd40907203a347a712a47e87e1",
+      "bytes": 2276
+    },
+    "python-setup.log": {
+      "sha256": "b2d62184e1d10240ba957478890044c1ffbc238f96a069e4e332b51a14a87574",
+      "bytes": 2114
+    },
+    "spec-read.txt": {
+      "sha256": "94f88258f6a5833af357bcd443b0e31597c0535b6e7139811517efc9cea15203",
+      "bytes": 19111
+    },
+    "temporary-cleanup.json": {
+      "sha256": "cfd3921c4784e5c2367f7c2d45e47cbc46369f694bf1ef11541a7a5b44d7554c",
+      "bytes": 252
+    },
+    "tests-read.txt": {
+      "sha256": "40a741a76b6333067c31459849b926bc2c7873f9f285624f0486404af77fa249",
+      "bytes": 20981
+    }
+  }
+}
