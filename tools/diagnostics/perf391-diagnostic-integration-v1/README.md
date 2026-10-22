@@ -96,11 +96,13 @@ JSON; tree hashes hash canonical file records. Archive hashes hash literal Git
 tar bytes, independently compared a second time to the pinned Git archive.
 
 `evidence/` contains initial red runs, review failure reproductions, final green
-results and export identity evidence. `evidence/SHA256SUMS.json` hashes all
-package review inputs/evidence except itself and ignored caches/artifacts.
-Private outputs are isolated; no application build/browser/capture/benchmark
-command is present. Tests use `TemporaryDirectory` for synthetic dirty sources
-and patches, and leave no service or process owner alive.
+results and export identity evidence. Stage 1’s `evidence/SHA256SUMS.json`
+describes the starting commit’s inputs. Stage 2’s
+`evidence/stage2/SHA256SUMS.json` inventories the current package, excluding
+itself and ignored caches/artifacts. Private outputs are isolated; no
+application build/browser/capture/benchmark command is present. Tests use
+`TemporaryDirectory` for synthetic dirty sources and patches, and leave no
+service or process owner alive.
 
 ## Next checkpoint
 

@@ -56,11 +56,21 @@ class AdmissionTests(unittest.TestCase):
                     thread.start()
                     try:
                         self.assertTrue(entered.wait(5))
+                        cancellations = []
+
+                        def cancel_check():
+                            cancellations.append("checked")
+                            return True
+
                         kwargs = (
-                            {"cancel_check": lambda: True} if case == "cancel" else {}
+                            {"cancel_check": cancel_check} if case == "cancel" else {}
                         )
                         with self.assertRaises(Timeout):
-                            gate.acquire(timeout=0, **kwargs)
+                            gate.acquire(
+                                timeout=-1 if case == "cancel" else 0, **kwargs
+                            )
+                        if case == "cancel":
+                            self.assertEqual(cancellations, ["checked"])
                         values.append(len(gate._waiters))
                     finally:
                         release.set()
@@ -185,3 +195,37 @@ class AdmissionTests(unittest.TestCase):
                     control, _ = self.exercise(role, False, case)
                     actual, _ = self.exercise(role, True, case, fault=True)
                     self.assertEqual(actual, control)
+
+    def test_release_clock_failure_retires_span_and_restores_permit(self):
+        from unittest.mock import patch
+
+        for role in ("A", "C"):
+            root = roots(role)[True]
+            gate_type = module_at(root, "app/mission/repository_gate.py").RepositoryGate
+            probe.configure(role, "offline")
+            with tempfile.TemporaryDirectory(
+                prefix="perf391-stage2-release-clock-"
+            ) as tmp:
+                gate = gate_type(str(Path(tmp) / "gate"))
+                gate.acquire()
+                original_stamp = probe.stamp
+
+                def failing_transition_stamp():
+                    return None if gate._condition._is_owned() else original_stamp()
+
+                with patch.object(probe, "stamp", failing_transition_stamp):
+                    gate.release()
+                self.assertFalse(gate.is_locked)
+                self.assertEqual(probe._thread().holds, {})
+                self.assertEqual(len(probe._free_hold_slots), 256)
+                with gate:
+                    self.assertTrue(gate.is_locked)
+                self.assertEqual(len(probe._free_hold_slots), 256)
+                events = probe.drain()
+                self.assertEqual(sum(e["phase"] == "repo.released" for e in events), 1)
+                self.assertTrue(
+                    any(
+                        e["phase"] == "probe.failure" and e["outcome"] == "unavailable"
+                        for e in events
+                    )
+                )

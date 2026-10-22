@@ -1,0 +1,51 @@
+FFF.
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='A', case='cancel')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 159, in test_per_role_control_equivalence_and_exact_outer_pairs
+    control, _ = self.exercise(role, False, case)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 67, in exercise
+    self.assertEqual(cancellations, ["checked"])
+AssertionError: Lists differ: [] != ['checked']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'checked'
+
+- []
++ ['checked']
+
+======================================================================
+FAIL: test_per_role_control_equivalence_and_exact_outer_pairs (test_admission.AdmissionTests.test_per_role_control_equivalence_and_exact_outer_pairs) (role='C', case='cancel')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 159, in test_per_role_control_equivalence_and_exact_outer_pairs
+    control, _ = self.exercise(role, False, case)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 67, in exercise
+    self.assertEqual(cancellations, ["checked"])
+AssertionError: Lists differ: [] != ['checked']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'checked'
+
+- []
++ ['checked']
+
+======================================================================
+FAIL: test_release_clock_failure_retires_span_and_restores_permit (test_admission.AdmissionTests.test_release_clock_failure_retires_span_and_restores_permit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_admission.py", line 208, in test_release_clock_failure_retires_span_and_restores_permit
+    self.assertEqual(probe._thread().holds, {})
+AssertionError: {136493723489616: ('span-45', 'backend-local', 255)} != {}
+- {136493723489616: ('span-45', 'backend-local', 255)}
++ {}
+
+----------------------------------------------------------------------
+Ran 3 tests in 10.314s
+
+FAILED (failures=3)

@@ -154,7 +154,7 @@ diff --git a/backend/starlink-location/app/mission/repository_gate.py b/backend/
          try:
              remaining = (
                  timeout if deadline is None else max(0, deadline - time.monotonic())
-@@ -84,10 +95,15 @@
+@@ -84,10 +95,16 @@
                  with self._condition:
                      self._owner = None
                      self._condition.notify_all()
@@ -167,16 +167,18 @@ diff --git a/backend/starlink-location/app/mission/repository_gate.py b/backend/
      def release(self, force=False):
 +        diagnostic_entry = probe.stamp()
 +        diagnostic_released = None
++        diagnostic_did_release = False
          try:
              self._file_lock.release(force=force)
          finally:
-@@ -97,7 +113,10 @@
+@@ -97,7 +114,11 @@
                      and not self._file_lock.is_locked
                  ):
                      self._owner = None
 +                    diagnostic_released = probe.stamp()
++                    diagnostic_did_release = True
                      self._condition.notify_all()
-+            if diagnostic_released is not None:
++            if diagnostic_did_release:
 +                probe.repository_released(self, diagnostic_entry, diagnostic_released)
  
      def __enter__(self):

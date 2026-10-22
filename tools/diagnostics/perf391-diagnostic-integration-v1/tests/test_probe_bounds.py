@@ -76,6 +76,29 @@ class BoundsTests(unittest.TestCase):
         self.assertEqual(probe.stats()["dropped"], 8)
         self.assertEqual(probe.stats()["failures"], 0)
 
+    def test_concurrent_lookup_canonicalizes_one_process_token(self):
+        probe.configure("C", "offline")
+        target = object()
+        barrier = threading.Barrier(12)
+        results = []
+
+        def lookup():
+            barrier.wait(timeout=5)
+            results.append(probe.token(target))
+
+        threads = [threading.Thread(target=lookup) for _ in range(12)]
+        try:
+            for thread in threads:
+                thread.start()
+        finally:
+            for thread in threads:
+                if thread.ident is not None:
+                    thread.join(6)
+        self.assertFalse(any(t.is_alive() for t in threads))
+        self.assertEqual(len(results), 12)
+        self.assertNotIn(None, results)
+        self.assertEqual(len(set(results)), 1)
+
     def test_global_admission_span_cap_and_token_reuse(self):
         probe.configure("C", "offline")
         gates = [object() for _ in range(257)]
@@ -95,7 +118,9 @@ class BoundsTests(unittest.TestCase):
         for _ in range(256):
             probe.token(object())
         self.assertNotEqual(probe.token(first), old)
-        self.assertLessEqual(len(probe._thread().tokens), 256)
+        self.assertLessEqual(len(probe._tokens), 256)
+        self.assertEqual(len(probe._tokens) + len(probe._free_token_slots), 256)
+        self.assertGreater(probe.stats()["token_evictions"], 0)
 
     def test_no_emission_or_tokens_inside_pointer_mutex(self):
         root = roots("C")[True]

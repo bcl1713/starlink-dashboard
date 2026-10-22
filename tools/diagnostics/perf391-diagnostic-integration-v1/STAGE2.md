@@ -37,7 +37,8 @@ comparator bytes are untouched.
   FileLock acquisition, failed acquisition and actual outer release. Inner
   release does not close the hold. Release entry and unlock-transition stamps
   are distinct. Only fixed timestamp/scalar capture occurs under the condition;
-  emission occurs outside it. Force release closes the real hold once.
+  emission occurs outside it. Force release closes the real hold once. A missing
+  unlock timestamp still retires the span permit and emits unavailable evidence.
 - Metrics and status use the original imported Starlette pool/AnyIO limiter,
   callable arguments and cancellation defaults. Worker start/end execute there;
   dispatch/returned occur on the original event loop. C refresh uses the same
@@ -49,10 +50,13 @@ comparator bytes are untouched.
 `backend_probe.py` keeps at most 8,192 records, with bounded allowlisted scalar
 identity fields and explicit invalid/failure/loss/high-water counters. Atomic
 CPython deque reservations prevent concurrent overflow from silently evicting
-retained records. The global gate-span permit pool has 256 slots; each thread's
-object-token cache has 256 entries. Object tokens are process-local diagnostic
-identifiers, never source identity. Evicted objects get fresh tokens on reuse.
-Clock/sink faults do not escape hooks; missing captured stamps stay unavailable.
+retained records. The global gate-span permit pool has 256 slots; the
+process-wide object-token cache has 256 entries. Object tokens are process-local
+diagnostic identifiers, never source identity. Concurrent lookups canonicalize
+the same object across worker threads. Evicted objects get fresh tokens on
+reuse; joins across eviction are unavailable, with eviction/unavailable counters
+retained. Clock/sink faults do not escape hooks; missing captured stamps stay
+unavailable.
 
 No hook calls a sink, performs schema validation or serializes a model/JSON. No
 new application lock or executor is introduced. `drain` and `configure` are
@@ -81,12 +85,15 @@ timeout --kill-after=10s 2m python -B verify_backend.py \
 Both output directories must be new. The test runner records its owner and child
 PID/PGID/start identity before and immediately after child creation, traps
 INT/TERM, enforces a 180-second inner deadline, terminates/reaps its owned test
-group, and checks for live survivors. No service, listener or container starts.
-The restricted sandbox stalled even uninstrumented AnyIO completion; the async
-suite therefore uses approved host execution. This establishes no application
-runtime/network readiness. The first concurrency-test fixture incorrectly
-patched Python's global threading function; its corrected fixture patches only
-the probe's view and reproduces the buffer race without altering thread startup.
+group, and checks for survivors. If the test leader exits before a child, it
+validates each remaining PID/start identity in the owned group, uses TERM then
+scoped KILL after grace, and verifies reaping, including a TERM-ignoring
+fixture. No service, listener or container starts. The restricted sandbox
+stalled even uninstrumented AnyIO completion; the async suite therefore uses
+approved host execution. This establishes no application runtime/network
+readiness. The first concurrency-test fixture incorrectly patched Python's
+global threading function; its corrected fixture patches only the probe's view
+and reproduces the buffer race without altering thread startup.
 
 Tests compile unchanged function/method bodies directly from guarded control and
 derivative files. Main startup is not imported. Real RepositoryGate, FileLock,
@@ -119,6 +126,7 @@ recorded independently. No image was built or labeled.
 | Browser, frontend, packet capture   | Stage 3 deferred                   |
 | Host, scheduler, cross-process time | Deferred or unavailable            |
 | Unmatched gate, loss, clock failure | Missing evidence; no guessed times |
+| Object IDs after cache eviction     | Unavailable; fresh tokens only     |
 | Full deployment and overhead        | Unverified by offline tests        |
 
 No performance run, calibration, image build, service, HTTP request, browser or
@@ -126,3 +134,12 @@ capture is authorized here. Keep #403/#405/#406/#407/#408 draft/unmerged. Issues
 [#390](https://github.com/bcl1713/starlink-dashboard/issues/390) and
 [#391](https://github.com/bcl1713/starlink-dashboard/issues/391) stay open. The
 historical 1.5-second gate remains unchanged.
+
+## Handoff cleanup
+
+The final cleanup record is [cleanup.json](evidence/stage2/cleanup.json).
+Disposable A/C source exports and the private test environment are removed after
+recording complete inventories, archive hashes and test evidence. The open-PR
+worktree and committed evidence remain available; reproduction creates new
+isolated exports. No task service, browser, listener, container, network or
+disposable volume is retained.

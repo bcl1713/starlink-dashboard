@@ -18,6 +18,72 @@ def start_id(pid):
     return Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19]
 
 
+def group_members(pgid):
+    rows = subprocess.check_output(["ps", "-eo", "pid=,pgid=,stat="], text=True)
+    members = []
+    for line in rows.splitlines():
+        pid, group, state = line.split()
+        if int(group) != pgid:
+            continue
+        try:
+            members.append(
+                {
+                    "pid": int(pid),
+                    "pgid": pgid,
+                    "start": start_id(int(pid)),
+                    "state": state,
+                }
+            )
+        except FileNotFoundError:
+            pass
+    return members
+
+
+def cleanup_group(pgid):
+    """An existing group ID remains reserved while descendants belong to it."""
+    actions = {"term": [], "kill": [], "reaped": []}
+
+    def reap():
+        while True:
+            try:
+                pid, _ = os.waitpid(-pgid, os.WNOHANG)
+            except ChildProcessError:
+                return
+            if not pid:
+                return
+            actions["reaped"].append(pid)
+
+    for signum, name, grace in (
+        (signal.SIGTERM, "term", 1),
+        (signal.SIGKILL, "kill", 2),
+    ):
+        reap()
+        members = group_members(pgid)
+        if not members:
+            break
+        for member in members:
+            if member["state"].startswith("Z"):
+                continue
+            try:
+                if (
+                    os.getpgid(member["pid"]) == pgid
+                    and start_id(member["pid"]) == member["start"]
+                ):
+                    os.kill(member["pid"], signum)
+                    actions[name].append(member)
+            except ProcessLookupError:
+                pass
+        deadline = time.monotonic() + grace
+        while time.monotonic() < deadline:
+            reap()
+            if not group_members(pgid):
+                break
+            time.sleep(0.01)
+    reap()
+    actions["survivors"] = group_members(pgid)
+    return actions
+
+
 def run(output):
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
@@ -118,17 +184,12 @@ def run(output):
                     os.killpg(child.pid, signal.SIGKILL)
                     child.wait(timeout=2)
             if child is not None:
-                rows = subprocess.check_output(
-                    ["ps", "-eo", "pid=,pgid=,stat="], text=True
+                cleanup = cleanup_group(child.pid)
+                owner["descendant_cleanup"] = cleanup
+                owner["live_group_survivors"] = cleanup["survivors"]
+                owner["status"] = (
+                    "clean" if not cleanup["survivors"] else "cleanup_failed"
                 )
-                survivors = [
-                    line.strip()
-                    for line in rows.splitlines()
-                    if int(line.split()[1]) == child.pid
-                    and not line.split()[2].startswith("Z")
-                ]
-                owner["live_group_survivors"] = survivors
-                owner["status"] = "clean" if not survivors else "cleanup_failed"
             persist()
     print(json.dumps(owner, indent=2))
     return returncode if owner["status"] == "clean" else 1

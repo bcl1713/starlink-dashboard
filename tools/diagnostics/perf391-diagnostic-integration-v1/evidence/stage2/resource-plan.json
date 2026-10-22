@@ -1,0 +1,11 @@
+{
+  "task": "perf391-stage2",
+  "worktree": ".worktrees/perf391-integration-stage2",
+  "resources": "offline bounded test children only; no services/listeners/containers/networks/volumes",
+  "paths": [
+    "artifacts/stage2",
+    ".superpowers/sdd/2026-10-22-perf391-diagnostic-integration"
+  ],
+  "test_timeout": "10m; TERM then KILL after 10s",
+  "cleanup": "test children joined by subprocess.run; thread barriers released in finally; temporary dirs scoped"
+}

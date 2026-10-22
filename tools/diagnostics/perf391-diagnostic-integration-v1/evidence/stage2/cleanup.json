@@ -1,0 +1,50 @@
+{
+  "task": "perf391-stage2",
+  "checked_on": "2026-10-22",
+  "application_started": false,
+  "images_built": false,
+  "performance_measured": false,
+  "worktree_retained": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2",
+  "temporary_paths_removed": [
+    "tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage2",
+    ".superpowers/sdd/2026-10-22-perf391-diagnostic-integration",
+    "/tmp/perf391-stage2-slices-po8qt54e"
+  ],
+  "host_processes_remaining": [],
+  "owned_listeners_remaining": [],
+  "listener_basis": "No task process remains and no listener/service was ever created; task owner registries declare no ports.",
+  "temporary_fixture_paths_remaining": [],
+  "test_group_records": [
+    {
+      "file": "evidence/stage2/final/owner.json",
+      "status": "clean",
+      "survivors": []
+    },
+    {
+      "file": "evidence/stage2/review-fixed/owner.json",
+      "status": "clean",
+      "survivors": []
+    },
+    {
+      "file": "evidence/stage2/verified/owner.json",
+      "status": "clean",
+      "survivors": []
+    },
+    {
+      "file": "evidence/stage2/verified-complete/owner.json",
+      "status": "clean",
+      "survivors": []
+    }
+  ],
+  "docker_host": "unix:///run/user/1002/docker.sock",
+  "docker_context": "default",
+  "docker_info": "29.8.1 overlayfs",
+  "compose_project_checked_never_started": "starlink-diag391-integration-stage2",
+  "containers_remaining": [],
+  "networks_remaining": [],
+  "volumes_remaining": [],
+  "shared_resources_preserved": true,
+  "clean": true,
+  "residual_cleanup_note": "Removed one verified empty task-named source-slice directory left by the earlier interrupted concurrency-test fixture.",
+  "checked_at_utc": "2026-10-22T21:50:36.180723+00:00"
+}

@@ -2,7 +2,7 @@
   "meta": {
     "format": 3,
     "version": "7.17.0",
-    "timestamp": "2026-10-22T21:33:22.788497",
+    "timestamp": "2026-10-22T21:46:59.684485",
     "branch_coverage": true,
     "show_contexts": false
   },
@@ -10,125 +10,130 @@
     "backend_probe.py": {
       "executed_lines": [
         9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27,
-        39, 50, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
-        78, 81, 83, 84, 85, 86, 87, 88, 91, 92, 99, 100, 101, 102, 103, 104,
-        105, 106, 109, 110, 111, 116, 117, 120, 121, 122, 125, 126, 127, 128,
-        139, 140, 142, 145, 146, 147, 148, 149, 151, 154, 155, 158, 159, 160,
-        162, 165, 166, 167, 173, 175, 176, 177, 178, 179, 180, 181, 182, 183,
-        184, 185, 186, 187, 192, 194, 195, 196, 213, 214, 215, 216, 217, 218,
-        219, 224, 225, 228, 230, 231, 232, 233, 234, 235, 236, 237, 238, 242,
-        243, 244, 245, 246, 247, 250, 255, 256, 257, 258, 259, 260, 261, 262,
-        263, 264, 269, 270, 271, 275, 276, 277, 278, 279, 280, 281, 282, 283,
-        284, 311, 312, 313, 314, 315, 316, 317, 321, 322, 323, 326, 328, 329,
-        330, 331, 332, 335, 336, 339, 340, 341, 342, 343, 344, 345, 346, 347,
-        348, 349, 350, 352, 354, 357, 358, 359, 360, 361, 362, 363, 369, 374,
-        375, 382, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 402,
-        403, 404, 405, 410, 411, 412, 413, 415, 416, 417, 418, 423, 424, 425,
-        426, 429, 430, 435, 436, 438, 439, 441, 442, 444, 445, 446, 447, 448,
-        450, 459, 460, 466, 469, 470, 471, 474, 477, 478, 479, 480, 481, 482,
-        483, 484, 485, 486, 487, 490, 491, 492, 496, 498, 501, 507, 510, 511,
-        512, 514, 515, 518, 519, 520, 521, 522, 523, 525, 528, 529, 530, 531,
-        532, 533, 534, 535, 536, 537, 538, 540, 543, 544, 545, 546, 547, 548,
-        549, 550, 553, 554, 555, 556, 563, 564, 567, 568, 569, 570, 571, 572,
-        574, 576, 579, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590,
-        592, 594, 597, 598, 601, 602, 603, 604, 612, 613, 614, 615, 623, 625,
-        628, 629, 634, 635, 636, 637, 638, 641, 644, 646, 649, 650, 651, 654,
-        655, 656
+        39, 50, 60, 61, 62, 63, 64, 65, 66, 67, 75, 76, 77, 78, 79, 80, 81, 82,
+        83, 84, 87, 90, 92, 93, 94, 95, 103, 104, 105, 106, 109, 110, 117, 118,
+        119, 120, 121, 122, 123, 126, 127, 128, 133, 134, 137, 138, 139, 142,
+        143, 144, 145, 156, 157, 159, 162, 163, 164, 165, 166, 168, 171, 172,
+        175, 176, 177, 179, 182, 183, 184, 190, 197, 198, 199, 200, 201, 202,
+        203, 204, 205, 206, 207, 208, 209, 214, 215, 216, 217, 218, 220, 221,
+        229, 231, 232, 233, 250, 251, 252, 253, 254, 255, 256, 261, 262, 265,
+        267, 268, 269, 270, 271, 272, 273, 274, 275, 279, 280, 281, 282, 283,
+        284, 287, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 306, 307,
+        308, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 348, 349, 350,
+        351, 352, 353, 354, 358, 359, 360, 363, 365, 366, 367, 368, 369, 372,
+        373, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 389,
+        391, 394, 395, 396, 397, 398, 399, 400, 406, 411, 412, 419, 424, 425,
+        426, 427, 428, 429, 430, 431, 432, 433, 434, 439, 440, 441, 442, 447,
+        448, 449, 450, 452, 453, 454, 455, 460, 461, 462, 463, 466, 467, 468,
+        476, 481, 482, 484, 485, 487, 488, 490, 491, 492, 493, 494, 496, 505,
+        506, 512, 515, 516, 517, 520, 523, 524, 525, 526, 527, 528, 529, 530,
+        531, 532, 533, 536, 537, 538, 542, 544, 547, 553, 556, 557, 558, 560,
+        561, 564, 565, 566, 567, 568, 569, 571, 574, 575, 576, 577, 578, 579,
+        580, 581, 582, 583, 584, 586, 589, 590, 591, 592, 593, 594, 595, 596,
+        599, 600, 601, 602, 609, 610, 613, 614, 615, 616, 617, 618, 620, 622,
+        625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 638, 640,
+        643, 644, 647, 648, 649, 650, 658, 659, 660, 661, 669, 671, 674, 675,
+        680, 681, 682, 683, 684, 687, 690, 692, 695, 696, 697, 700, 701, 702
       ],
       "summary": {
-        "covered_lines": 348,
-        "num_statements": 385,
-        "percent_covered": 90.02267573696145,
-        "percent_covered_display": "90",
-        "missing_lines": 37,
+        "covered_lines": 360,
+        "num_statements": 404,
+        "percent_covered": 88.36206896551724,
+        "percent_covered_display": "88",
+        "missing_lines": 44,
         "excluded_lines": 0,
-        "percent_statements_covered": 90.3896103896104,
-        "percent_statements_covered_display": "90",
-        "num_branches": 56,
-        "num_partial_branches": 7,
-        "covered_branches": 49,
-        "missing_branches": 7,
-        "percent_branches_covered": 87.5,
-        "percent_branches_covered_display": "88"
+        "percent_statements_covered": 89.10891089108911,
+        "percent_statements_covered_display": "89",
+        "num_branches": 60,
+        "num_partial_branches": 8,
+        "covered_branches": 50,
+        "missing_branches": 10,
+        "percent_branches_covered": 83.33333333333333,
+        "percent_branches_covered_display": "83"
       },
       "missing_lines": [
-        82, 112, 113, 168, 169, 170, 188, 189, 209, 210, 220, 221, 248, 249,
-        253, 254, 273, 274, 318, 319, 320, 383, 384, 398, 399, 406, 407, 419,
-        420, 431, 432, 495, 516, 517, 557, 639, 640
+        91, 129, 130, 185, 186, 187, 210, 212, 213, 219, 222, 223, 224, 225,
+        226, 246, 247, 257, 258, 285, 286, 290, 291, 310, 311, 355, 356, 357,
+        420, 421, 435, 436, 443, 444, 456, 457, 477, 478, 541, 562, 563, 603,
+        685, 686
       ],
       "excluded_lines": [],
       "executed_branches": [
-        [81, 83],
-        [100, 101],
-        [100, 106],
-        [176, 177],
-        [176, 178],
-        [181, 182],
-        [181, 183],
-        [184, 185],
-        [184, 186],
-        [217, 218],
-        [217, 219],
-        [231, 232],
-        [231, 233],
-        [235, 236],
-        [235, 238],
-        [238, 242],
-        [238, 244],
-        [244, 245],
-        [244, 247],
-        [247, 250],
-        [250, 255],
-        [256, 257],
-        [256, 275],
-        [257, 258],
-        [257, 260],
-        [260, 261],
-        [260, 262],
-        [262, 263],
-        [262, 264],
-        [264, 269],
-        [264, 270],
-        [270, 271],
-        [275, 276],
-        [275, 278],
-        [279, 280],
-        [279, 282],
-        [359, 360],
-        [359, 361],
-        [375, -357],
-        [375, 382],
-        [412, 413],
-        [412, 415],
-        [416, 417],
-        [460, -435],
-        [460, 466],
-        [492, 496],
-        [519, 520],
-        [519, 521],
-        [638, 641]
+        [90, 92],
+        [118, 119],
+        [118, 123],
+        [199, 200],
+        [199, 201],
+        [203, 204],
+        [203, 205],
+        [218, 220],
+        [254, 255],
+        [254, 256],
+        [268, 269],
+        [268, 270],
+        [272, 273],
+        [272, 275],
+        [275, 279],
+        [275, 281],
+        [281, 282],
+        [281, 284],
+        [284, 287],
+        [287, 292],
+        [293, 294],
+        [293, 312],
+        [294, 295],
+        [294, 297],
+        [297, 298],
+        [297, 299],
+        [299, 300],
+        [299, 301],
+        [301, 306],
+        [301, 307],
+        [307, 308],
+        [312, 313],
+        [312, 315],
+        [316, 317],
+        [316, 319],
+        [396, 397],
+        [396, 398],
+        [412, -394],
+        [412, 419],
+        [449, 450],
+        [449, 452],
+        [453, 454],
+        [467, 468],
+        [467, 476],
+        [506, -481],
+        [506, 512],
+        [538, 542],
+        [565, 566],
+        [565, 567],
+        [684, 687]
       ],
       "missing_branches": [
-        [81, 82],
-        [247, 248],
-        [250, 253],
-        [270, 273],
-        [416, 418],
-        [492, 495],
-        [638, 639]
+        [90, 91],
+        [218, 219],
+        [223, 224],
+        [223, 225],
+        [284, 285],
+        [287, 290],
+        [307, 310],
+        [453, 455],
+        [538, 541],
+        [684, 685]
       ],
       "functions": {
         "configure": {
-          "executed_lines": [81, 83, 84, 85, 86, 87, 88],
+          "executed_lines": [90, 92, 93, 94, 95, 103, 104, 105, 106],
           "summary": {
-            "covered_lines": 7,
-            "num_statements": 8,
-            "percent_covered": 80.0,
-            "percent_covered_display": "80",
+            "covered_lines": 9,
+            "num_statements": 10,
+            "percent_covered": 83.33333333333333,
+            "percent_covered_display": "83",
             "missing_lines": 1,
             "excluded_lines": 0,
-            "percent_statements_covered": 87.5,
-            "percent_statements_covered_display": "88",
+            "percent_statements_covered": 90.0,
+            "percent_statements_covered_display": "90",
             "num_branches": 2,
             "num_partial_branches": 1,
             "covered_branches": 1,
@@ -136,14 +141,14 @@
             "percent_branches_covered": 50.0,
             "percent_branches_covered_display": "50"
           },
-          "missing_lines": [82],
+          "missing_lines": [91],
           "excluded_lines": [],
-          "start_line": 78,
-          "executed_branches": [[81, 83]],
-          "missing_branches": [[81, 82]]
+          "start_line": 87,
+          "executed_branches": [[90, 92]],
+          "missing_branches": [[90, 91]]
         },
         "_ascii": {
-          "executed_lines": [92],
+          "executed_lines": [110],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -162,15 +167,15 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 91,
+          "start_line": 109,
           "executed_branches": [],
           "missing_branches": []
         },
         "_thread": {
-          "executed_lines": [100, 101, 102, 103, 104, 105, 106],
+          "executed_lines": [118, 119, 120, 121, 122, 123],
           "summary": {
-            "covered_lines": 7,
-            "num_statements": 7,
+            "covered_lines": 6,
+            "num_statements": 6,
             "percent_covered": 100.0,
             "percent_covered_display": "100",
             "missing_lines": 0,
@@ -186,15 +191,15 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 99,
+          "start_line": 117,
           "executed_branches": [
-            [100, 101],
-            [100, 106]
+            [118, 119],
+            [118, 123]
           ],
           "missing_branches": []
         },
         "new_operation": {
-          "executed_lines": [110, 111],
+          "executed_lines": [127, 128],
           "summary": {
             "covered_lines": 2,
             "num_statements": 4,
@@ -211,14 +216,14 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [112, 113],
+          "missing_lines": [129, 130],
           "excluded_lines": [],
-          "start_line": 109,
+          "start_line": 126,
           "executed_branches": [],
           "missing_branches": []
         },
         "new_span": {
-          "executed_lines": [117],
+          "executed_lines": [134],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -237,12 +242,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 116,
+          "start_line": 133,
           "executed_branches": [],
           "missing_branches": []
         },
         "current_id": {
-          "executed_lines": [121, 122],
+          "executed_lines": [138, 139],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -261,12 +266,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 120,
+          "start_line": 137,
           "executed_branches": [],
           "missing_branches": []
         },
         "operation": {
-          "executed_lines": [127, 128, 139, 140, 142],
+          "executed_lines": [144, 145, 156, 157, 159],
           "summary": {
             "covered_lines": 5,
             "num_statements": 5,
@@ -285,12 +290,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 126,
+          "start_line": 143,
           "executed_branches": [],
           "missing_branches": []
         },
         "publication_kind": {
-          "executed_lines": [147, 148, 149, 151],
+          "executed_lines": [164, 165, 166, 168],
           "summary": {
             "covered_lines": 4,
             "num_statements": 4,
@@ -309,12 +314,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 146,
+          "start_line": 163,
           "executed_branches": [],
           "missing_branches": []
         },
         "faults": {
-          "executed_lines": [158, 159, 160, 162],
+          "executed_lines": [175, 176, 177, 179],
           "summary": {
             "covered_lines": 4,
             "num_statements": 4,
@@ -333,12 +338,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 155,
+          "start_line": 172,
           "executed_branches": [],
           "missing_branches": []
         },
         "stamp": {
-          "executed_lines": [166, 167],
+          "executed_lines": [183, 184],
           "summary": {
             "covered_lines": 2,
             "num_statements": 5,
@@ -355,47 +360,51 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [168, 169, 170],
+          "missing_lines": [185, 186, 187],
           "excluded_lines": [],
-          "start_line": 165,
+          "start_line": 182,
           "executed_branches": [],
           "missing_branches": []
         },
         "token": {
           "executed_lines": [
-            175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187
+            197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+            214, 215, 216, 217, 218, 220, 221
           ],
           "summary": {
-            "covered_lines": 13,
-            "num_statements": 15,
-            "percent_covered": 90.47619047619048,
-            "percent_covered_display": "90",
-            "missing_lines": 2,
+            "covered_lines": 20,
+            "num_statements": 29,
+            "percent_covered": 67.56756756756756,
+            "percent_covered_display": "68",
+            "missing_lines": 9,
             "excluded_lines": 0,
-            "percent_statements_covered": 86.66666666666667,
-            "percent_statements_covered_display": "87",
-            "num_branches": 6,
-            "num_partial_branches": 0,
-            "covered_branches": 6,
-            "missing_branches": 0,
-            "percent_branches_covered": 100.0,
-            "percent_branches_covered_display": "100"
+            "percent_statements_covered": 68.96551724137932,
+            "percent_statements_covered_display": "69",
+            "num_branches": 8,
+            "num_partial_branches": 1,
+            "covered_branches": 5,
+            "missing_branches": 3,
+            "percent_branches_covered": 62.5,
+            "percent_branches_covered_display": "62"
           },
-          "missing_lines": [188, 189],
+          "missing_lines": [210, 212, 213, 219, 222, 223, 224, 225, 226],
           "excluded_lines": [],
-          "start_line": 173,
+          "start_line": 190,
           "executed_branches": [
-            [176, 177],
-            [176, 178],
-            [181, 182],
-            [181, 183],
-            [184, 185],
-            [184, 186]
+            [199, 200],
+            [199, 201],
+            [203, 204],
+            [203, 205],
+            [218, 220]
           ],
-          "missing_branches": []
+          "missing_branches": [
+            [218, 219],
+            [223, 224],
+            [223, 225]
+          ]
         },
         "frame_identity": {
-          "executed_lines": [194, 195, 196],
+          "executed_lines": [231, 232, 233],
           "summary": {
             "covered_lines": 3,
             "num_statements": 5,
@@ -412,14 +421,14 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [209, 210],
+          "missing_lines": [246, 247],
           "excluded_lines": [],
-          "start_line": 192,
+          "start_line": 229,
           "executed_branches": [],
           "missing_branches": []
         },
         "telemetry_identity": {
-          "executed_lines": [214, 215, 216, 217, 218, 219],
+          "executed_lines": [251, 252, 253, 254, 255, 256],
           "summary": {
             "covered_lines": 6,
             "num_statements": 8,
@@ -436,17 +445,17 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [220, 221],
+          "missing_lines": [257, 258],
           "excluded_lines": [],
-          "start_line": 213,
+          "start_line": 250,
           "executed_branches": [
-            [217, 218],
-            [217, 219]
+            [254, 255],
+            [254, 256]
           ],
           "missing_branches": []
         },
         "outcome": {
-          "executed_lines": [225],
+          "executed_lines": [262],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -465,16 +474,16 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 224,
+          "start_line": 261,
           "executed_branches": [],
           "missing_branches": []
         },
         "mark": {
           "executed_lines": [
-            230, 231, 232, 233, 234, 235, 236, 237, 238, 242, 243, 244, 245,
-            246, 247, 250, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264,
-            269, 270, 271, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284,
-            311, 312, 313, 314, 315, 316, 317, 321, 322, 323
+            267, 268, 269, 270, 271, 272, 273, 274, 275, 279, 280, 281, 282,
+            283, 284, 287, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301,
+            306, 307, 308, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321,
+            348, 349, 350, 351, 352, 353, 354, 358, 359, 360
           ],
           "summary": {
             "covered_lines": 49,
@@ -492,44 +501,44 @@
             "percent_branches_covered": 89.28571428571429,
             "percent_branches_covered_display": "89"
           },
-          "missing_lines": [248, 249, 253, 254, 273, 274, 318, 319, 320],
+          "missing_lines": [285, 286, 290, 291, 310, 311, 355, 356, 357],
           "excluded_lines": [],
-          "start_line": 228,
+          "start_line": 265,
           "executed_branches": [
-            [231, 232],
-            [231, 233],
-            [235, 236],
-            [235, 238],
-            [238, 242],
-            [238, 244],
-            [244, 245],
-            [244, 247],
-            [247, 250],
-            [250, 255],
-            [256, 257],
-            [256, 275],
-            [257, 258],
-            [257, 260],
-            [260, 261],
-            [260, 262],
-            [262, 263],
-            [262, 264],
-            [264, 269],
-            [264, 270],
-            [270, 271],
-            [275, 276],
-            [275, 278],
-            [279, 280],
-            [279, 282]
+            [268, 269],
+            [268, 270],
+            [272, 273],
+            [272, 275],
+            [275, 279],
+            [275, 281],
+            [281, 282],
+            [281, 284],
+            [284, 287],
+            [287, 292],
+            [293, 294],
+            [293, 312],
+            [294, 295],
+            [294, 297],
+            [297, 298],
+            [297, 299],
+            [299, 300],
+            [299, 301],
+            [301, 306],
+            [301, 307],
+            [307, 308],
+            [312, 313],
+            [312, 315],
+            [316, 317],
+            [316, 319]
           ],
           "missing_branches": [
-            [247, 248],
-            [250, 253],
-            [270, 273]
+            [284, 285],
+            [287, 290],
+            [307, 310]
           ]
         },
         "drain": {
-          "executed_lines": [328, 329, 330, 331, 332],
+          "executed_lines": [365, 366, 367, 368, 369],
           "summary": {
             "covered_lines": 5,
             "num_statements": 5,
@@ -548,12 +557,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 326,
+          "start_line": 363,
           "executed_branches": [],
           "missing_branches": []
         },
         "stats": {
-          "executed_lines": [336],
+          "executed_lines": [373],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -572,12 +581,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 335,
+          "start_line": 372,
           "executed_branches": [],
           "missing_branches": []
         },
         "bracket": {
-          "executed_lines": [340, 341, 354],
+          "executed_lines": [377, 378, 391],
           "summary": {
             "covered_lines": 3,
             "num_statements": 3,
@@ -596,12 +605,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 339,
+          "start_line": 376,
           "executed_branches": [],
           "missing_branches": []
         },
         "bracket.decorate": {
-          "executed_lines": [342, 352],
+          "executed_lines": [379, 389],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -620,12 +629,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 340,
+          "start_line": 377,
           "executed_branches": [],
           "missing_branches": []
         },
         "bracket.decorate.invoke": {
-          "executed_lines": [343, 344, 345, 346, 347, 348, 349, 350],
+          "executed_lines": [380, 381, 382, 383, 384, 385, 386, 387],
           "summary": {
             "covered_lines": 8,
             "num_statements": 8,
@@ -644,12 +653,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 342,
+          "start_line": 379,
           "executed_branches": [],
           "missing_branches": []
         },
         "publication": {
-          "executed_lines": [358, 359, 360, 361, 362, 363, 369, 374, 375, 382],
+          "executed_lines": [395, 396, 397, 398, 399, 400, 406, 411, 412, 419],
           "summary": {
             "covered_lines": 10,
             "num_statements": 12,
@@ -666,19 +675,19 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [383, 384],
+          "missing_lines": [420, 421],
           "excluded_lines": [],
-          "start_line": 357,
+          "start_line": 394,
           "executed_branches": [
-            [359, 360],
-            [359, 361],
-            [375, -357],
-            [375, 382]
+            [396, 397],
+            [396, 398],
+            [412, -394],
+            [412, 419]
           ],
           "missing_branches": []
         },
         "repository_granted": {
-          "executed_lines": [388, 389, 390, 391, 392, 393, 394, 395, 396, 397],
+          "executed_lines": [425, 426, 427, 428, 429, 430, 431, 432, 433, 434],
           "summary": {
             "covered_lines": 10,
             "num_statements": 12,
@@ -695,14 +704,14 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [398, 399],
+          "missing_lines": [435, 436],
           "excluded_lines": [],
-          "start_line": 387,
+          "start_line": 424,
           "executed_branches": [],
           "missing_branches": []
         },
         "repository_acquired": {
-          "executed_lines": [403, 404, 405],
+          "executed_lines": [440, 441, 442],
           "summary": {
             "covered_lines": 3,
             "num_statements": 5,
@@ -719,14 +728,14 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [406, 407],
+          "missing_lines": [443, 444],
           "excluded_lines": [],
-          "start_line": 402,
+          "start_line": 439,
           "executed_branches": [],
           "missing_branches": []
         },
         "repository_failed": {
-          "executed_lines": [411, 412, 413, 415, 416, 417, 418],
+          "executed_lines": [448, 449, 450, 452, 453, 454, 455],
           "summary": {
             "covered_lines": 7,
             "num_statements": 9,
@@ -743,43 +752,46 @@
             "percent_branches_covered": 75.0,
             "percent_branches_covered_display": "75"
           },
-          "missing_lines": [419, 420],
+          "missing_lines": [456, 457],
           "excluded_lines": [],
-          "start_line": 410,
+          "start_line": 447,
           "executed_branches": [
-            [412, 413],
-            [412, 415],
-            [416, 417]
+            [449, 450],
+            [449, 452],
+            [453, 454]
           ],
-          "missing_branches": [[416, 418]]
+          "missing_branches": [[453, 455]]
         },
         "repository_released": {
-          "executed_lines": [424, 425, 426, 429, 430],
+          "executed_lines": [461, 462, 463, 466, 467, 468, 476],
           "summary": {
-            "covered_lines": 5,
-            "num_statements": 7,
-            "percent_covered": 71.42857142857143,
-            "percent_covered_display": "71",
+            "covered_lines": 7,
+            "num_statements": 9,
+            "percent_covered": 81.81818181818181,
+            "percent_covered_display": "82",
             "missing_lines": 2,
             "excluded_lines": 0,
-            "percent_statements_covered": 71.42857142857143,
-            "percent_statements_covered_display": "71",
-            "num_branches": 0,
+            "percent_statements_covered": 77.77777777777777,
+            "percent_statements_covered_display": "78",
+            "num_branches": 2,
             "num_partial_branches": 0,
-            "covered_branches": 0,
+            "covered_branches": 2,
             "missing_branches": 0,
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [431, 432],
+          "missing_lines": [477, 478],
           "excluded_lines": [],
-          "start_line": 423,
-          "executed_branches": [],
+          "start_line": 460,
+          "executed_branches": [
+            [467, 468],
+            [467, 476]
+          ],
           "missing_branches": []
         },
         "validation": {
           "executed_lines": [
-            438, 439, 441, 444, 445, 446, 447, 448, 450, 459, 460, 466
+            484, 485, 487, 490, 491, 492, 493, 494, 496, 505, 506, 512
           ],
           "summary": {
             "covered_lines": 12,
@@ -799,15 +811,15 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 436,
+          "start_line": 482,
           "executed_branches": [
-            [460, -435],
-            [460, 466]
+            [506, -481],
+            [506, 512]
           ],
           "missing_branches": []
         },
         "validation.completed": {
-          "executed_lines": [442],
+          "executed_lines": [488],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -826,12 +838,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 441,
+          "start_line": 487,
           "executed_branches": [],
           "missing_branches": []
         },
         "_collected_identity": {
-          "executed_lines": [470, 471, 474],
+          "executed_lines": [516, 517, 520],
           "summary": {
             "covered_lines": 3,
             "num_statements": 3,
@@ -850,14 +862,14 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 469,
+          "start_line": 515,
           "executed_branches": [],
           "missing_branches": []
         },
         "_collect_call": {
           "executed_lines": [
-            478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 490, 491, 492,
-            496, 498
+            524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 536, 537, 538,
+            542, 544
           ],
           "summary": {
             "covered_lines": 15,
@@ -875,14 +887,14 @@
             "percent_branches_covered": 50.0,
             "percent_branches_covered_display": "50"
           },
-          "missing_lines": [495],
+          "missing_lines": [541],
           "excluded_lines": [],
-          "start_line": 477,
-          "executed_branches": [[492, 496]],
-          "missing_branches": [[492, 495]]
+          "start_line": 523,
+          "executed_branches": [[538, 542]],
+          "missing_branches": [[538, 541]]
         },
         "collect_update": {
-          "executed_lines": [507],
+          "executed_lines": [553],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -901,12 +913,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 501,
+          "start_line": 547,
           "executed_branches": [],
           "missing_branches": []
         },
         "source_collection": {
-          "executed_lines": [512, 525],
+          "executed_lines": [558, 571],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -925,12 +937,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 510,
+          "start_line": 556,
           "executed_branches": [],
           "missing_branches": []
         },
         "source_collection.invoke": {
-          "executed_lines": [514, 515, 518, 519, 520, 521, 522, 523],
+          "executed_lines": [560, 561, 564, 565, 566, 567, 568, 569],
           "summary": {
             "covered_lines": 8,
             "num_statements": 10,
@@ -947,17 +959,17 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [516, 517],
+          "missing_lines": [562, 563],
           "excluded_lines": [],
-          "start_line": 512,
+          "start_line": 558,
           "executed_branches": [
-            [519, 520],
-            [519, 521]
+            [565, 566],
+            [565, 567]
           ],
           "missing_branches": []
         },
         "replay_collect": {
-          "executed_lines": [530, 540],
+          "executed_lines": [576, 586],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -976,12 +988,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 528,
+          "start_line": 574,
           "executed_branches": [],
           "missing_branches": []
         },
         "replay_collect.invoke": {
-          "executed_lines": [531, 532, 533, 534, 535, 536, 537, 538],
+          "executed_lines": [577, 578, 579, 580, 581, 582, 583, 584],
           "summary": {
             "covered_lines": 8,
             "num_statements": 8,
@@ -1000,12 +1012,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 530,
+          "start_line": 576,
           "executed_branches": [],
           "missing_branches": []
         },
         "commit": {
-          "executed_lines": [544, 545, 546, 547, 548, 549, 550],
+          "executed_lines": [590, 591, 592, 593, 594, 595, 596],
           "summary": {
             "covered_lines": 7,
             "num_statements": 7,
@@ -1024,12 +1036,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 543,
+          "start_line": 589,
           "executed_branches": [],
           "missing_branches": []
         },
         "replay_identity": {
-          "executed_lines": [554, 555, 556, 563, 564],
+          "executed_lines": [600, 601, 602, 609, 610],
           "summary": {
             "covered_lines": 5,
             "num_statements": 6,
@@ -1046,14 +1058,14 @@
             "percent_branches_covered": 100.0,
             "percent_branches_covered_display": "100"
           },
-          "missing_lines": [557],
+          "missing_lines": [603],
           "excluded_lines": [],
-          "start_line": 553,
+          "start_line": 599,
           "executed_branches": [],
           "missing_branches": []
         },
         "publication_scope": {
-          "executed_lines": [568, 569, 576],
+          "executed_lines": [614, 615, 622],
           "summary": {
             "covered_lines": 3,
             "num_statements": 3,
@@ -1072,12 +1084,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 567,
+          "start_line": 613,
           "executed_branches": [],
           "missing_branches": []
         },
         "publication_scope.decorate": {
-          "executed_lines": [570, 574],
+          "executed_lines": [616, 620],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -1096,12 +1108,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 568,
+          "start_line": 614,
           "executed_branches": [],
           "missing_branches": []
         },
         "publication_scope.decorate.invoke": {
-          "executed_lines": [571, 572],
+          "executed_lines": [617, 618],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -1120,12 +1132,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 570,
+          "start_line": 616,
           "executed_branches": [],
           "missing_branches": []
         },
         "async_bracket": {
-          "executed_lines": [580, 581, 594],
+          "executed_lines": [626, 627, 640],
           "summary": {
             "covered_lines": 3,
             "num_statements": 3,
@@ -1144,12 +1156,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 579,
+          "start_line": 625,
           "executed_branches": [],
           "missing_branches": []
         },
         "async_bracket.decorate": {
-          "executed_lines": [582, 592],
+          "executed_lines": [628, 638],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -1168,111 +1180,15 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 580,
+          "start_line": 626,
           "executed_branches": [],
           "missing_branches": []
         },
         "async_bracket.decorate.invoke": {
-          "executed_lines": [583, 584, 585, 586, 587, 588, 589, 590],
+          "executed_lines": [629, 630, 631, 632, 633, 634, 635, 636],
           "summary": {
             "covered_lines": 8,
             "num_statements": 8,
-            "percent_covered": 100.0,
-            "percent_covered_display": "100",
-            "missing_lines": 0,
-            "excluded_lines": 0,
-            "percent_statements_covered": 100.0,
-            "percent_statements_covered_display": "100",
-            "num_branches": 0,
-            "num_partial_branches": 0,
-            "covered_branches": 0,
-            "missing_branches": 0,
-            "percent_branches_covered": 100.0,
-            "percent_branches_covered_display": "100"
-          },
-          "missing_lines": [],
-          "excluded_lines": [],
-          "start_line": 582,
-          "executed_branches": [],
-          "missing_branches": []
-        },
-        "branch": {
-          "executed_lines": [598],
-          "summary": {
-            "covered_lines": 1,
-            "num_statements": 1,
-            "percent_covered": 100.0,
-            "percent_covered_display": "100",
-            "missing_lines": 0,
-            "excluded_lines": 0,
-            "percent_statements_covered": 100.0,
-            "percent_statements_covered_display": "100",
-            "num_branches": 0,
-            "num_partial_branches": 0,
-            "covered_branches": 0,
-            "missing_branches": 0,
-            "percent_branches_covered": 100.0,
-            "percent_branches_covered_display": "100"
-          },
-          "missing_lines": [],
-          "excluded_lines": [],
-          "start_line": 597,
-          "executed_branches": [],
-          "missing_branches": []
-        },
-        "publication_attempt": {
-          "executed_lines": [603, 625],
-          "summary": {
-            "covered_lines": 2,
-            "num_statements": 2,
-            "percent_covered": 100.0,
-            "percent_covered_display": "100",
-            "missing_lines": 0,
-            "excluded_lines": 0,
-            "percent_statements_covered": 100.0,
-            "percent_statements_covered_display": "100",
-            "num_branches": 0,
-            "num_partial_branches": 0,
-            "covered_branches": 0,
-            "missing_branches": 0,
-            "percent_branches_covered": 100.0,
-            "percent_branches_covered_display": "100"
-          },
-          "missing_lines": [],
-          "excluded_lines": [],
-          "start_line": 601,
-          "executed_branches": [],
-          "missing_branches": []
-        },
-        "publication_attempt.invoke": {
-          "executed_lines": [604, 612, 613, 614, 615, 623],
-          "summary": {
-            "covered_lines": 6,
-            "num_statements": 6,
-            "percent_covered": 100.0,
-            "percent_covered_display": "100",
-            "missing_lines": 0,
-            "excluded_lines": 0,
-            "percent_statements_covered": 100.0,
-            "percent_statements_covered_display": "100",
-            "num_branches": 0,
-            "num_partial_branches": 0,
-            "covered_branches": 0,
-            "missing_branches": 0,
-            "percent_branches_covered": 100.0,
-            "percent_branches_covered_display": "100"
-          },
-          "missing_lines": [],
-          "excluded_lines": [],
-          "start_line": 603,
-          "executed_branches": [],
-          "missing_branches": []
-        },
-        "swap_kind": {
-          "executed_lines": [629],
-          "summary": {
-            "covered_lines": 1,
-            "num_statements": 1,
             "percent_covered": 100.0,
             "percent_covered_display": "100",
             "missing_lines": 0,
@@ -1292,8 +1208,32 @@
           "executed_branches": [],
           "missing_branches": []
         },
-        "refresh": {
-          "executed_lines": [636, 646],
+        "branch": {
+          "executed_lines": [644],
+          "summary": {
+            "covered_lines": 1,
+            "num_statements": 1,
+            "percent_covered": 100.0,
+            "percent_covered_display": "100",
+            "missing_lines": 0,
+            "excluded_lines": 0,
+            "percent_statements_covered": 100.0,
+            "percent_statements_covered_display": "100",
+            "num_branches": 0,
+            "num_partial_branches": 0,
+            "covered_branches": 0,
+            "missing_branches": 0,
+            "percent_branches_covered": 100.0,
+            "percent_branches_covered_display": "100"
+          },
+          "missing_lines": [],
+          "excluded_lines": [],
+          "start_line": 643,
+          "executed_branches": [],
+          "missing_branches": []
+        },
+        "publication_attempt": {
+          "executed_lines": [649, 671],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -1312,39 +1252,15 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 634,
+          "start_line": 647,
           "executed_branches": [],
           "missing_branches": []
         },
-        "refresh.invoke": {
-          "executed_lines": [637, 638, 641, 644],
+        "publication_attempt.invoke": {
+          "executed_lines": [650, 658, 659, 660, 661, 669],
           "summary": {
-            "covered_lines": 4,
+            "covered_lines": 6,
             "num_statements": 6,
-            "percent_covered": 62.5,
-            "percent_covered_display": "62",
-            "missing_lines": 2,
-            "excluded_lines": 0,
-            "percent_statements_covered": 66.66666666666667,
-            "percent_statements_covered_display": "67",
-            "num_branches": 2,
-            "num_partial_branches": 1,
-            "covered_branches": 1,
-            "missing_branches": 1,
-            "percent_branches_covered": 50.0,
-            "percent_branches_covered_display": "50"
-          },
-          "missing_lines": [639, 640],
-          "excluded_lines": [],
-          "start_line": 636,
-          "executed_branches": [[638, 641]],
-          "missing_branches": [[638, 639]]
-        },
-        "producer_mark": {
-          "executed_lines": [650, 651],
-          "summary": {
-            "covered_lines": 2,
-            "num_statements": 2,
             "percent_covered": 100.0,
             "percent_covered_display": "100",
             "missing_lines": 0,
@@ -1364,8 +1280,32 @@
           "executed_branches": [],
           "missing_branches": []
         },
-        "operation_type": {
-          "executed_lines": [655, 656],
+        "swap_kind": {
+          "executed_lines": [675],
+          "summary": {
+            "covered_lines": 1,
+            "num_statements": 1,
+            "percent_covered": 100.0,
+            "percent_covered_display": "100",
+            "missing_lines": 0,
+            "excluded_lines": 0,
+            "percent_statements_covered": 100.0,
+            "percent_statements_covered_display": "100",
+            "num_branches": 0,
+            "num_partial_branches": 0,
+            "covered_branches": 0,
+            "missing_branches": 0,
+            "percent_branches_covered": 100.0,
+            "percent_branches_covered_display": "100"
+          },
+          "missing_lines": [],
+          "excluded_lines": [],
+          "start_line": 674,
+          "executed_branches": [],
+          "missing_branches": []
+        },
+        "refresh": {
+          "executed_lines": [682, 692],
           "summary": {
             "covered_lines": 2,
             "num_statements": 2,
@@ -1384,22 +1324,94 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 654,
+          "start_line": 680,
+          "executed_branches": [],
+          "missing_branches": []
+        },
+        "refresh.invoke": {
+          "executed_lines": [683, 684, 687, 690],
+          "summary": {
+            "covered_lines": 4,
+            "num_statements": 6,
+            "percent_covered": 62.5,
+            "percent_covered_display": "62",
+            "missing_lines": 2,
+            "excluded_lines": 0,
+            "percent_statements_covered": 66.66666666666667,
+            "percent_statements_covered_display": "67",
+            "num_branches": 2,
+            "num_partial_branches": 1,
+            "covered_branches": 1,
+            "missing_branches": 1,
+            "percent_branches_covered": 50.0,
+            "percent_branches_covered_display": "50"
+          },
+          "missing_lines": [685, 686],
+          "excluded_lines": [],
+          "start_line": 682,
+          "executed_branches": [[684, 687]],
+          "missing_branches": [[684, 685]]
+        },
+        "producer_mark": {
+          "executed_lines": [696, 697],
+          "summary": {
+            "covered_lines": 2,
+            "num_statements": 2,
+            "percent_covered": 100.0,
+            "percent_covered_display": "100",
+            "missing_lines": 0,
+            "excluded_lines": 0,
+            "percent_statements_covered": 100.0,
+            "percent_statements_covered_display": "100",
+            "num_branches": 0,
+            "num_partial_branches": 0,
+            "covered_branches": 0,
+            "missing_branches": 0,
+            "percent_branches_covered": 100.0,
+            "percent_branches_covered_display": "100"
+          },
+          "missing_lines": [],
+          "excluded_lines": [],
+          "start_line": 695,
+          "executed_branches": [],
+          "missing_branches": []
+        },
+        "operation_type": {
+          "executed_lines": [701, 702],
+          "summary": {
+            "covered_lines": 2,
+            "num_statements": 2,
+            "percent_covered": 100.0,
+            "percent_covered_display": "100",
+            "missing_lines": 0,
+            "excluded_lines": 0,
+            "percent_statements_covered": 100.0,
+            "percent_statements_covered_display": "100",
+            "num_branches": 0,
+            "num_partial_branches": 0,
+            "covered_branches": 0,
+            "missing_branches": 0,
+            "percent_branches_covered": 100.0,
+            "percent_branches_covered_display": "100"
+          },
+          "missing_lines": [],
+          "excluded_lines": [],
+          "start_line": 700,
           "executed_branches": [],
           "missing_branches": []
         },
         "": {
           "executed_lines": [
             9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
-            27, 39, 50, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
-            74, 75, 78, 91, 99, 109, 116, 120, 125, 126, 145, 146, 154, 155,
-            165, 173, 192, 213, 224, 228, 326, 335, 339, 357, 387, 402, 410,
-            423, 435, 436, 469, 477, 501, 510, 511, 528, 529, 543, 553, 567,
-            579, 597, 601, 602, 628, 634, 635, 649, 654
+            27, 39, 50, 60, 61, 62, 63, 64, 65, 66, 67, 75, 76, 77, 78, 79, 80,
+            81, 82, 83, 84, 87, 109, 117, 126, 133, 137, 142, 143, 162, 163,
+            171, 172, 182, 190, 229, 250, 261, 265, 363, 372, 376, 394, 424,
+            439, 447, 460, 481, 482, 515, 523, 547, 556, 557, 574, 575, 589,
+            599, 613, 625, 643, 647, 648, 674, 680, 681, 695, 700
           ],
           "summary": {
-            "covered_lines": 83,
-            "num_statements": 83,
+            "covered_lines": 85,
+            "num_statements": 85,
             "percent_covered": 100.0,
             "percent_covered_display": "100",
             "missing_lines": 0,
@@ -1424,114 +1436,120 @@
         "": {
           "executed_lines": [
             9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26,
-            27, 39, 50, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
-            74, 75, 78, 81, 83, 84, 85, 86, 87, 88, 91, 92, 99, 100, 101, 102,
-            103, 104, 105, 106, 109, 110, 111, 116, 117, 120, 121, 122, 125,
-            126, 127, 128, 139, 140, 142, 145, 146, 147, 148, 149, 151, 154,
-            155, 158, 159, 160, 162, 165, 166, 167, 173, 175, 176, 177, 178,
-            179, 180, 181, 182, 183, 184, 185, 186, 187, 192, 194, 195, 196,
-            213, 214, 215, 216, 217, 218, 219, 224, 225, 228, 230, 231, 232,
-            233, 234, 235, 236, 237, 238, 242, 243, 244, 245, 246, 247, 250,
-            255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 269, 270, 271,
-            275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 311, 312, 313,
-            314, 315, 316, 317, 321, 322, 323, 326, 328, 329, 330, 331, 332,
-            335, 336, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349,
-            350, 352, 354, 357, 358, 359, 360, 361, 362, 363, 369, 374, 375,
-            382, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 402,
-            403, 404, 405, 410, 411, 412, 413, 415, 416, 417, 418, 423, 424,
-            425, 426, 429, 430, 435, 436, 438, 439, 441, 442, 444, 445, 446,
-            447, 448, 450, 459, 460, 466, 469, 470, 471, 474, 477, 478, 479,
-            480, 481, 482, 483, 484, 485, 486, 487, 490, 491, 492, 496, 498,
-            501, 507, 510, 511, 512, 514, 515, 518, 519, 520, 521, 522, 523,
-            525, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538, 540,
-            543, 544, 545, 546, 547, 548, 549, 550, 553, 554, 555, 556, 563,
-            564, 567, 568, 569, 570, 571, 572, 574, 576, 579, 580, 581, 582,
-            583, 584, 585, 586, 587, 588, 589, 590, 592, 594, 597, 598, 601,
-            602, 603, 604, 612, 613, 614, 615, 623, 625, 628, 629, 634, 635,
-            636, 637, 638, 641, 644, 646, 649, 650, 651, 654, 655, 656
+            27, 39, 50, 60, 61, 62, 63, 64, 65, 66, 67, 75, 76, 77, 78, 79, 80,
+            81, 82, 83, 84, 87, 90, 92, 93, 94, 95, 103, 104, 105, 106, 109,
+            110, 117, 118, 119, 120, 121, 122, 123, 126, 127, 128, 133, 134,
+            137, 138, 139, 142, 143, 144, 145, 156, 157, 159, 162, 163, 164,
+            165, 166, 168, 171, 172, 175, 176, 177, 179, 182, 183, 184, 190,
+            197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+            214, 215, 216, 217, 218, 220, 221, 229, 231, 232, 233, 250, 251,
+            252, 253, 254, 255, 256, 261, 262, 265, 267, 268, 269, 270, 271,
+            272, 273, 274, 275, 279, 280, 281, 282, 283, 284, 287, 292, 293,
+            294, 295, 296, 297, 298, 299, 300, 301, 306, 307, 308, 312, 313,
+            314, 315, 316, 317, 318, 319, 320, 321, 348, 349, 350, 351, 352,
+            353, 354, 358, 359, 360, 363, 365, 366, 367, 368, 369, 372, 373,
+            376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 389,
+            391, 394, 395, 396, 397, 398, 399, 400, 406, 411, 412, 419, 424,
+            425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 439, 440, 441,
+            442, 447, 448, 449, 450, 452, 453, 454, 455, 460, 461, 462, 463,
+            466, 467, 468, 476, 481, 482, 484, 485, 487, 488, 490, 491, 492,
+            493, 494, 496, 505, 506, 512, 515, 516, 517, 520, 523, 524, 525,
+            526, 527, 528, 529, 530, 531, 532, 533, 536, 537, 538, 542, 544,
+            547, 553, 556, 557, 558, 560, 561, 564, 565, 566, 567, 568, 569,
+            571, 574, 575, 576, 577, 578, 579, 580, 581, 582, 583, 584, 586,
+            589, 590, 591, 592, 593, 594, 595, 596, 599, 600, 601, 602, 609,
+            610, 613, 614, 615, 616, 617, 618, 620, 622, 625, 626, 627, 628,
+            629, 630, 631, 632, 633, 634, 635, 636, 638, 640, 643, 644, 647,
+            648, 649, 650, 658, 659, 660, 661, 669, 671, 674, 675, 680, 681,
+            682, 683, 684, 687, 690, 692, 695, 696, 697, 700, 701, 702
           ],
           "summary": {
-            "covered_lines": 348,
-            "num_statements": 385,
-            "percent_covered": 90.02267573696145,
-            "percent_covered_display": "90",
-            "missing_lines": 37,
+            "covered_lines": 360,
+            "num_statements": 404,
+            "percent_covered": 88.36206896551724,
+            "percent_covered_display": "88",
+            "missing_lines": 44,
             "excluded_lines": 0,
-            "percent_statements_covered": 90.3896103896104,
-            "percent_statements_covered_display": "90",
-            "num_branches": 56,
-            "num_partial_branches": 7,
-            "covered_branches": 49,
-            "missing_branches": 7,
-            "percent_branches_covered": 87.5,
-            "percent_branches_covered_display": "88"
+            "percent_statements_covered": 89.10891089108911,
+            "percent_statements_covered_display": "89",
+            "num_branches": 60,
+            "num_partial_branches": 8,
+            "covered_branches": 50,
+            "missing_branches": 10,
+            "percent_branches_covered": 83.33333333333333,
+            "percent_branches_covered_display": "83"
           },
           "missing_lines": [
-            82, 112, 113, 168, 169, 170, 188, 189, 209, 210, 220, 221, 248, 249,
-            253, 254, 273, 274, 318, 319, 320, 383, 384, 398, 399, 406, 407,
-            419, 420, 431, 432, 495, 516, 517, 557, 639, 640
+            91, 129, 130, 185, 186, 187, 210, 212, 213, 219, 222, 223, 224, 225,
+            226, 246, 247, 257, 258, 285, 286, 290, 291, 310, 311, 355, 356,
+            357, 420, 421, 435, 436, 443, 444, 456, 457, 477, 478, 541, 562,
+            563, 603, 685, 686
           ],
           "excluded_lines": [],
           "start_line": 1,
           "executed_branches": [
-            [81, 83],
-            [100, 101],
-            [100, 106],
-            [176, 177],
-            [176, 178],
-            [181, 182],
-            [181, 183],
-            [184, 185],
-            [184, 186],
-            [217, 218],
-            [217, 219],
-            [231, 232],
-            [231, 233],
-            [235, 236],
-            [235, 238],
-            [238, 242],
-            [238, 244],
-            [244, 245],
-            [244, 247],
-            [247, 250],
-            [250, 255],
-            [256, 257],
-            [256, 275],
-            [257, 258],
-            [257, 260],
-            [260, 261],
-            [260, 262],
-            [262, 263],
-            [262, 264],
-            [264, 269],
-            [264, 270],
-            [270, 271],
-            [275, 276],
-            [275, 278],
-            [279, 280],
-            [279, 282],
-            [359, 360],
-            [359, 361],
-            [375, -357],
-            [375, 382],
-            [412, 413],
-            [412, 415],
-            [416, 417],
-            [460, -435],
-            [460, 466],
-            [492, 496],
-            [519, 520],
-            [519, 521],
-            [638, 641]
+            [90, 92],
+            [118, 119],
+            [118, 123],
+            [199, 200],
+            [199, 201],
+            [203, 204],
+            [203, 205],
+            [218, 220],
+            [254, 255],
+            [254, 256],
+            [268, 269],
+            [268, 270],
+            [272, 273],
+            [272, 275],
+            [275, 279],
+            [275, 281],
+            [281, 282],
+            [281, 284],
+            [284, 287],
+            [287, 292],
+            [293, 294],
+            [293, 312],
+            [294, 295],
+            [294, 297],
+            [297, 298],
+            [297, 299],
+            [299, 300],
+            [299, 301],
+            [301, 306],
+            [301, 307],
+            [307, 308],
+            [312, 313],
+            [312, 315],
+            [316, 317],
+            [316, 319],
+            [396, 397],
+            [396, 398],
+            [412, -394],
+            [412, 419],
+            [449, 450],
+            [449, 452],
+            [453, 454],
+            [467, 468],
+            [467, 476],
+            [506, -481],
+            [506, 512],
+            [538, 542],
+            [565, 566],
+            [565, 567],
+            [684, 687]
           ],
           "missing_branches": [
-            [81, 82],
-            [247, 248],
-            [250, 253],
-            [270, 273],
-            [416, 418],
-            [492, 495],
-            [638, 639]
+            [90, 91],
+            [218, 219],
+            [223, 224],
+            [223, 225],
+            [284, 285],
+            [287, 290],
+            [307, 310],
+            [453, 455],
+            [538, 541],
+            [684, 685]
           ]
         }
       }
@@ -1546,13 +1564,13 @@
         155, 156, 157, 158, 159, 167, 168, 169, 172, 173, 177, 180, 181, 182,
         183, 184, 187, 188, 192, 198, 199, 202, 206, 207, 212, 213, 217, 224,
         225, 230, 231, 233, 234, 241, 242, 246, 253, 256, 257, 263, 268, 269,
-        270, 276, 279, 281, 282, 283, 284, 285, 286, 289, 290, 291, 292, 293,
-        294, 295, 296, 300, 301, 302, 303, 304, 305, 309, 310, 314, 315, 316,
-        317, 318, 319, 320, 321, 322, 325, 332, 337, 338, 342, 343, 344, 345,
-        346, 347, 350, 351, 352, 356, 357, 366, 371, 372, 373, 374, 375, 376,
-        377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 390, 391, 392, 393,
-        394, 395, 396, 397, 400, 401, 402, 409, 410, 413, 414, 420, 423, 424,
-        443, 444, 445, 448, 449, 465, 466, 468, 471, 472, 475, 479, 485, 486
+        270, 278, 281, 283, 284, 285, 286, 287, 288, 291, 292, 293, 294, 295,
+        296, 297, 298, 302, 303, 304, 305, 306, 307, 311, 312, 316, 317, 318,
+        319, 320, 321, 322, 323, 324, 327, 334, 339, 340, 344, 345, 346, 347,
+        348, 349, 352, 353, 354, 358, 359, 368, 373, 374, 375, 376, 377, 378,
+        379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 392, 393, 394, 395,
+        396, 397, 398, 399, 402, 403, 404, 411, 412, 415, 416, 422, 425, 426,
+        445, 446, 447, 450, 451, 467, 468, 470, 473, 474, 477, 481, 487, 488
       ],
       "summary": {
         "covered_lines": 220,
@@ -1570,7 +1588,7 @@
         "percent_branches_covered": 94.73684210526316,
         "percent_branches_covered_display": "95"
       },
-      "missing_lines": [358, 365],
+      "missing_lines": [360, 367],
       "excluded_lines": [],
       "executed_branches": [
         [42, -41],
@@ -1587,32 +1605,32 @@
         [127, 128],
         [153, 154],
         [153, 158],
-        [285, 286],
-        [285, 321],
-        [303, 304],
-        [303, 320],
-        [309, 310],
-        [309, 316],
-        [316, 317],
-        [316, 319],
-        [345, 346],
-        [345, 386],
-        [357, 366],
-        [373, 374],
-        [373, 375],
-        [390, 391],
-        [390, 392],
-        [393, 394],
-        [393, 395],
-        [409, -400],
-        [409, 410],
-        [410, 413],
-        [479, 485],
-        [479, 486]
+        [287, 288],
+        [287, 323],
+        [305, 306],
+        [305, 322],
+        [311, 312],
+        [311, 318],
+        [318, 319],
+        [318, 321],
+        [347, 348],
+        [347, 388],
+        [359, 368],
+        [375, 376],
+        [375, 377],
+        [392, 393],
+        [392, 394],
+        [395, 396],
+        [395, 397],
+        [411, -402],
+        [411, 412],
+        [412, 415],
+        [481, 487],
+        [481, 488]
       ],
       "missing_branches": [
-        [357, 358],
-        [410, 409]
+        [359, 360],
+        [412, 411]
       ],
       "functions": {
         "require": {
@@ -2119,7 +2137,7 @@
           "missing_branches": []
         },
         "check_patch_path": {
-          "executed_lines": [269, 270, 276],
+          "executed_lines": [269, 270, 278],
           "summary": {
             "covered_lines": 3,
             "num_statements": 3,
@@ -2144,9 +2162,9 @@
         },
         "patched_bytes": {
           "executed_lines": [
-            281, 282, 283, 284, 285, 286, 289, 290, 291, 292, 293, 294, 295,
-            296, 300, 301, 302, 303, 304, 305, 309, 310, 314, 315, 316, 317,
-            318, 319, 320, 321, 322
+            283, 284, 285, 286, 287, 288, 291, 292, 293, 294, 295, 296, 297,
+            298, 302, 303, 304, 305, 306, 307, 311, 312, 316, 317, 318, 319,
+            320, 321, 322, 323, 324
           ],
           "summary": {
             "covered_lines": 31,
@@ -2166,24 +2184,24 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 279,
+          "start_line": 281,
           "executed_branches": [
-            [285, 286],
-            [285, 321],
-            [303, 304],
-            [303, 320],
-            [309, 310],
-            [309, 316],
-            [316, 317],
-            [316, 319]
+            [287, 288],
+            [287, 323],
+            [305, 306],
+            [305, 322],
+            [311, 312],
+            [311, 318],
+            [318, 319],
+            [318, 321]
           ],
           "missing_branches": []
         },
         "apply_patch": {
           "executed_lines": [
-            332, 337, 338, 342, 343, 344, 345, 346, 347, 350, 351, 352, 356,
-            357, 366, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381,
-            382, 383, 384, 385, 386, 390, 391, 392, 393, 394, 395, 396, 397
+            334, 339, 340, 344, 345, 346, 347, 348, 349, 352, 353, 354, 358,
+            359, 368, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383,
+            384, 385, 386, 387, 388, 392, 393, 394, 395, 396, 397, 398, 399
           ],
           "summary": {
             "covered_lines": 39,
@@ -2201,24 +2219,24 @@
             "percent_branches_covered": 90.0,
             "percent_branches_covered_display": "90"
           },
-          "missing_lines": [358, 365],
+          "missing_lines": [360, 367],
           "excluded_lines": [],
-          "start_line": 325,
+          "start_line": 327,
           "executed_branches": [
-            [345, 346],
-            [345, 386],
-            [357, 366],
-            [373, 374],
-            [373, 375],
-            [390, 391],
-            [390, 392],
-            [393, 394],
-            [393, 395]
+            [347, 348],
+            [347, 388],
+            [359, 368],
+            [375, 376],
+            [375, 377],
+            [392, 393],
+            [392, 394],
+            [395, 396],
+            [395, 397]
           ],
-          "missing_branches": [[357, 358]]
+          "missing_branches": [[359, 360]]
         },
         "verify_primary": {
-          "executed_lines": [401, 402, 409, 410, 413, 414],
+          "executed_lines": [403, 404, 411, 412, 415, 416],
           "summary": {
             "covered_lines": 6,
             "num_statements": 6,
@@ -2237,16 +2255,16 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 400,
+          "start_line": 402,
           "executed_branches": [
-            [409, -400],
-            [409, 410],
-            [410, 413]
+            [411, -402],
+            [411, 412],
+            [412, 415]
           ],
-          "missing_branches": [[410, 409]]
+          "missing_branches": [[412, 411]]
         },
         "manifest_template": {
-          "executed_lines": [423, 424, 443, 444, 445],
+          "executed_lines": [425, 426, 445, 446, 447],
           "summary": {
             "covered_lines": 5,
             "num_statements": 5,
@@ -2265,12 +2283,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 420,
+          "start_line": 422,
           "executed_branches": [],
           "missing_branches": []
         },
         "required_labels": {
-          "executed_lines": [449],
+          "executed_lines": [451],
           "summary": {
             "covered_lines": 1,
             "num_statements": 1,
@@ -2289,12 +2307,12 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 448,
+          "start_line": 450,
           "executed_branches": [],
           "missing_branches": []
         },
         "validate_manifest": {
-          "executed_lines": [466, 468, 471, 472, 475, 479, 485, 486],
+          "executed_lines": [468, 470, 473, 474, 477, 481, 487, 488],
           "summary": {
             "covered_lines": 8,
             "num_statements": 8,
@@ -2313,10 +2331,10 @@
           },
           "missing_lines": [],
           "excluded_lines": [],
-          "start_line": 465,
+          "start_line": 467,
           "executed_branches": [
-            [479, 485],
-            [479, 486]
+            [481, 487],
+            [481, 488]
           ],
           "missing_branches": []
         },
@@ -2324,7 +2342,7 @@
           "executed_lines": [
             8, 10, 11, 12, 13, 14, 15, 16, 17, 19, 29, 30, 31, 32, 33, 34, 37,
             41, 46, 50, 56, 64, 73, 83, 93, 111, 118, 140, 167, 180, 187, 198,
-            224, 253, 268, 279, 325, 400, 420, 448, 465
+            224, 253, 268, 281, 327, 402, 422, 450, 467
           ],
           "summary": {
             "covered_lines": 41,
@@ -2384,14 +2402,14 @@
             151, 152, 153, 154, 155, 156, 157, 158, 159, 167, 168, 169, 172,
             173, 177, 180, 181, 182, 183, 184, 187, 188, 192, 198, 199, 202,
             206, 207, 212, 213, 217, 224, 225, 230, 231, 233, 234, 241, 242,
-            246, 253, 256, 257, 263, 268, 269, 270, 276, 279, 281, 282, 283,
-            284, 285, 286, 289, 290, 291, 292, 293, 294, 295, 296, 300, 301,
-            302, 303, 304, 305, 309, 310, 314, 315, 316, 317, 318, 319, 320,
-            321, 322, 325, 332, 337, 338, 342, 343, 344, 345, 346, 347, 350,
-            351, 352, 356, 357, 366, 371, 372, 373, 374, 375, 376, 377, 378,
-            379, 380, 381, 382, 383, 384, 385, 386, 390, 391, 392, 393, 394,
-            395, 396, 397, 400, 401, 402, 409, 410, 413, 414, 420, 423, 424,
-            443, 444, 445, 448, 449, 465, 466, 468, 471, 472, 475, 479, 485, 486
+            246, 253, 256, 257, 263, 268, 269, 270, 278, 281, 283, 284, 285,
+            286, 287, 288, 291, 292, 293, 294, 295, 296, 297, 298, 302, 303,
+            304, 305, 306, 307, 311, 312, 316, 317, 318, 319, 320, 321, 322,
+            323, 324, 327, 334, 339, 340, 344, 345, 346, 347, 348, 349, 352,
+            353, 354, 358, 359, 368, 373, 374, 375, 376, 377, 378, 379, 380,
+            381, 382, 383, 384, 385, 386, 387, 388, 392, 393, 394, 395, 396,
+            397, 398, 399, 402, 403, 404, 411, 412, 415, 416, 422, 425, 426,
+            445, 446, 447, 450, 451, 467, 468, 470, 473, 474, 477, 481, 487, 488
           ],
           "summary": {
             "covered_lines": 220,
@@ -2409,7 +2427,7 @@
             "percent_branches_covered": 94.73684210526316,
             "percent_branches_covered_display": "95"
           },
-          "missing_lines": [358, 365],
+          "missing_lines": [360, 367],
           "excluded_lines": [],
           "start_line": 1,
           "executed_branches": [
@@ -2427,32 +2445,32 @@
             [127, 128],
             [153, 154],
             [153, 158],
-            [285, 286],
-            [285, 321],
-            [303, 304],
-            [303, 320],
-            [309, 310],
-            [309, 316],
-            [316, 317],
-            [316, 319],
-            [345, 346],
-            [345, 386],
-            [357, 366],
-            [373, 374],
-            [373, 375],
-            [390, 391],
-            [390, 392],
-            [393, 394],
-            [393, 395],
-            [409, -400],
-            [409, 410],
-            [410, 413],
-            [479, 485],
-            [479, 486]
+            [287, 288],
+            [287, 323],
+            [305, 306],
+            [305, 322],
+            [311, 312],
+            [311, 318],
+            [318, 319],
+            [318, 321],
+            [347, 348],
+            [347, 388],
+            [359, 368],
+            [375, 376],
+            [375, 377],
+            [392, 393],
+            [392, 394],
+            [395, 396],
+            [395, 397],
+            [411, -402],
+            [411, 412],
+            [412, 415],
+            [481, 487],
+            [481, 488]
           ],
           "missing_branches": [
-            [357, 358],
-            [410, 409]
+            [359, 360],
+            [412, 411]
           ]
         }
       }
@@ -2834,19 +2852,19 @@
     }
   },
   "totals": {
-    "covered_lines": 635,
-    "num_statements": 676,
-    "percent_covered": 93.41772151898734,
-    "percent_covered_display": "93",
-    "missing_lines": 41,
+    "covered_lines": 647,
+    "num_statements": 695,
+    "percent_covered": 92.3739237392374,
+    "percent_covered_display": "92",
+    "missing_lines": 48,
     "excluded_lines": 0,
-    "percent_statements_covered": 93.93491124260355,
-    "percent_statements_covered_display": "94",
-    "num_branches": 114,
-    "num_partial_branches": 11,
-    "covered_branches": 103,
-    "missing_branches": 11,
-    "percent_branches_covered": 90.35087719298245,
-    "percent_branches_covered_display": "90"
+    "percent_statements_covered": 93.09352517985612,
+    "percent_statements_covered_display": "93",
+    "num_branches": 118,
+    "num_partial_branches": 12,
+    "covered_branches": 104,
+    "missing_branches": 14,
+    "percent_branches_covered": 88.13559322033899,
+    "percent_branches_covered_display": "88"
   }
 }

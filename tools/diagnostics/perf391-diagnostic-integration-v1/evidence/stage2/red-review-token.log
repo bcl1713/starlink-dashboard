@@ -1,0 +1,18 @@
+F
+======================================================================
+FAIL: test_shared_head_token_joins_publication_in_another_thread (test_final_publication.PublicationTests.test_shared_head_token_joins_publication_in_another_thread)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_final_publication.py", line 299, in test_shared_head_token_joins_publication_in_another_thread
+    self.assertEqual(results[0]['identity']['publication_token'], results[1]['identity']['expected_head'])
+AssertionError: 'object-4' != 'object-7'
+- object-4
+?        ^
++ object-7
+?        ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 5.146s
+
+FAILED (failures=1)

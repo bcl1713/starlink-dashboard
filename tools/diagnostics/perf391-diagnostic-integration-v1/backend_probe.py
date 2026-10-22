@@ -64,28 +64,46 @@ _serial = count(1)
 _local = threading.local()
 _records = deque(maxlen=8192)
 _free_record_slots = deque(range(8192))
-_counts = {"dropped": 0, "invalid": 0, "failures": 0, "high_water": 0}
+_counts = {
+    "dropped": 0,
+    "invalid": 0,
+    "failures": 0,
+    "high_water": 0,
+    "token_evictions": 0,
+    "token_unavailable": 0,
+}
 _role, _run = "C", "unconfigured"
 _process = str(uuid.uuid4())
 _pid = os.getpid()
 _process_start = str(time.monotonic_ns())
 _generation = 0
 _free_hold_slots = deque(range(256))
+_tokens = OrderedDict()
+_free_token_slots = deque(range(256))
 _fault = False
 _NOW = object()
 
 
 def configure(role, run_id, *, capacity=8192):
     """Offline/owner setup, before starting workers; never changes application pools."""
-    global _role, _run, _records, _counts, _generation, _free_hold_slots, _free_record_slots
+    global _role, _run, _records, _counts, _generation, _free_hold_slots, _free_record_slots, _tokens, _free_token_slots
     if role not in ("A", "C") or not _ascii(run_id) or not 1 <= capacity <= 8192:
         raise ValueError("invalid probe configuration")
     _role, _run = role, run_id
     _records = deque(maxlen=capacity)
     _free_record_slots = deque(range(capacity))
-    _counts = {"dropped": 0, "invalid": 0, "failures": 0, "high_water": 0}
+    _counts = {
+        "dropped": 0,
+        "invalid": 0,
+        "failures": 0,
+        "high_water": 0,
+        "token_evictions": 0,
+        "token_unavailable": 0,
+    }
     _generation += 1
     _free_hold_slots = deque(range(256))
+    _tokens = OrderedDict()
+    _free_token_slots = deque(range(256))
 
 
 def _ascii(value):
@@ -101,7 +119,6 @@ def _thread():
         _local.generation = _generation
         _local.start = "thread-" + str(next(_serial))
         _local.seq = 0
-        _local.tokens = OrderedDict()
         _local.holds = {}
     return _local
 
@@ -171,21 +188,41 @@ def stamp():
 
 
 def token(value):
-    """Bounded strong-reference tokens prevent id reuse; evictions get fresh IDs."""
+    """One bounded process-wide identity map, using CPython atomic operations.
+
+    Strong references prevent address reuse while cached. Atomic permit pop,
+    popitem and setdefault canonicalize concurrent lookups without a new lock.
+    Eviction deliberately ends that token's availability; reinsertion is fresh.
+    """
+    reserved = None
     try:
         if value is None:
             return None
-        cache = _thread().tokens
         key = id(value)
-        entry = cache.get(key)
+        entry = _tokens.get(key)
         if entry is not None and entry[0] is value:
             return entry[1]
-        result = "object-" + str(next(_serial))
-        if len(cache) >= 256:
-            cache.popitem(last=False)
-        cache[key] = value, result
-        return result
+        try:
+            reserved = _free_token_slots.pop()
+        except IndexError:
+            try:
+                _, evicted = _tokens.popitem(last=False)
+            except KeyError:
+                # All permits can temporarily be owned by in-flight insertions.
+                _counts["token_unavailable"] += 1
+                return None
+            _counts["token_evictions"] += 1
+            reserved = evicted[2]
+        candidate = (value, "object-" + str(next(_serial)), reserved)
+        entry = _tokens.setdefault(key, candidate)
+        if entry is not candidate:
+            _free_token_slots.append(reserved)
+        reserved = None
+        return entry[1]
     except BaseException:
+        if reserved is not None:
+            _free_token_slots.append(reserved)
+        _counts["failures"] += 1
         return None
 
 
@@ -427,7 +464,16 @@ def repository_released(gate, entry, released):
         # release-entry is a separate same-span marker; swap the phase via the
         # closed sidecar addition rather than inventing hold time from return.
         mark("repo.release_enter", op_id=op, span_id=span, at=entry)
-        mark("repo.released", op_id=op, span_id=span, at=released)
+        if released is None:
+            mark(
+                "probe.failure",
+                op_id=op,
+                span_id=span,
+                outcome="unavailable",
+                identity={"branch": "repo_release_timestamp"},
+            )
+        else:
+            mark("repo.released", op_id=op, span_id=span, at=released)
     except BaseException:
         mark("probe.failure", outcome="unavailable")
 

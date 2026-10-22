@@ -275,3 +275,47 @@ class PublicationTests(unittest.TestCase):
                     )
                     contract.validate_stream(events)
             self.assertEqual(outputs[0], outputs[1], case)
+
+    def test_shared_head_token_joins_publication_in_another_thread(self):
+        import threading
+
+        root = roots("C")[True]
+        frames = module_at(root, "app/core/metrics/frames.py")
+        store = frames.FrameStore(())
+        probe.configure("C", "offline")
+        errors = []
+
+        def publish_first():
+            try:
+                with probe.operation("first", "tick"):
+                    self.assertTrue(
+                        store.publish(
+                            store.read(),
+                            frames.GaugeFrame(
+                                frames.FrameIdentity(observation_id="one"), (), 1.0
+                            ),
+                        )
+                    )
+            except BaseException as error:
+                errors.append(error)
+
+        worker = threading.Thread(target=publish_first)
+        worker.start()
+        worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        with probe.operation("second", "tick"):
+            self.assertTrue(
+                store.publish(
+                    store.read(),
+                    frames.GaugeFrame(
+                        frames.FrameIdentity(observation_id="two"), (), 2.0
+                    ),
+                )
+            )
+        results = [e for e in probe.drain() if e["phase"] == "publication.result"]
+        self.assertEqual(len(results), 2)
+        self.assertEqual(
+            results[0]["identity"]["publication_token"],
+            results[1]["identity"]["expected_head"],
+        )

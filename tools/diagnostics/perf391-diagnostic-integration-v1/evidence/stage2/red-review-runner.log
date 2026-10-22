@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_exited_leader_with_term_ignoring_descendant_is_cleaned (test_runner_cleanup.RunnerCleanupTests.test_exited_leader_with_term_ignoring_descendant_is_cleaned)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage2/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_runner_cleanup.py", line 40, in test_exited_leader_with_term_ignoring_descendant_is_cleaned
+    self.assertEqual(result,0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.053s
+
+FAILED (failures=1)

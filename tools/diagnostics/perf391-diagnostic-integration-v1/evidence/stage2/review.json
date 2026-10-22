@@ -1,0 +1,37 @@
+{
+  "reviewed_commit": "45deab7fc846c3f75c0a91d59b411bb4be888bda",
+  "reviewer": "independent gpt-6-astra, high effort, read-only",
+  "critical": [],
+  "findings": [
+    {
+      "severity": "important",
+      "finding": "Per-thread object tokens cannot join shared heads",
+      "resolution": "256-entry process-wide canonical map with atomic permits/popitem/setdefault, no new locks; two-thread real FrameStore and concurrent lookup regressions RED-to-GREEN"
+    },
+    {
+      "severity": "important",
+      "finding": "Missing release stamp leaks a global gate-span permit",
+      "resolution": "Actual release transition flag is separate from timestamp availability; span is always retired with unavailable evidence; release-clock failure/reacquisition regression RED-to-GREEN"
+    },
+    {
+      "severity": "important",
+      "finding": "Cancellation test short-circuits before cancel_check",
+      "resolution": "Unlimited wait in cancellation case and asserted callback invocation; original and instrumented gates compared; RED-to-GREEN"
+    },
+    {
+      "reviewer_severity": "minor",
+      "executor_severity": "important",
+      "finding": "Offline runner reports but does not stop descendants after leader exit",
+      "reason": "Workspace resource ownership requires scoped cleanup even on test failure",
+      "resolution": "Verify PID/start/owned group, TERM then KILL only survivors, verify reaping; exited-leader/TERM-ignoring child fixture RED-to-GREEN"
+    }
+  ],
+  "verification": "66/66 full offline tests passed after one fix pass; no second review claimed",
+  "declined_to_judge": [
+    "Full application startup and deployed dependency compatibility: explicitly excluded source-slice scope",
+    "Frontend/browser/capture/ASGI/header/state observer/export owner/host collection: later stages",
+    "Performance/calibration/soak/acceptance cadence: no runtime authorization",
+    "Cross-process object/clock joins and physical acquisition provenance: unavailable"
+  ],
+  "disposition": "Stage 2 checkpoint requested; no merge/runtime/Stage 3 approval"
+}
