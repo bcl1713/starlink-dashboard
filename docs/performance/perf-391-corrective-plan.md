@@ -10,6 +10,12 @@ The user subsequently authorized the diagnostic prerequisite only. Its
 submitted for review. Optimization ranks below remain unimplemented; historical
 cadence attribution is unresolved and #403 remains NO-GO.
 
+Rank 1 now has a [prescriptive specification](perf-391-rank-1-specification.md)
+and
+[small-task implementation plan](../superpowers/plans/2026-10-22-perf-391-rank-1.md)
+submitted as an **approved-plan candidate**, including exact APIs, race tests
+and measurement commands. Application implementation remains unauthorized.
+
 ## Ranked remediation options
 
 Expected benefits below are hypotheses grounded in measured work, not promised
