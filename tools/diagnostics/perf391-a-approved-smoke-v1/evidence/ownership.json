@@ -1,0 +1,12 @@
+{
+  "task": "perf391-a-approved-smoke",
+  "paths": [
+    "/tmp/perf391-a-approved-smoke",
+    "/tmp/perf391-smoke-408-a",
+    "/tmp/perf391-smoke-408.lock"
+  ],
+  "project": "perf391-smoke-408-a",
+  "runtime_attempts": 0,
+  "starting_commit": "2dcad461f6dd74958ec2f2e88f85c8c71c6d4b92",
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6362494281"
+}

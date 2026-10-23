@@ -1,0 +1,135 @@
+{
+  "actor_uid": 1002,
+  "checked_process_identities": [
+    {
+      "pid": 2802567,
+      "start_id": "215187572"
+    },
+    {
+      "pid": 2802944,
+      "start_id": "215187971"
+    },
+    {
+      "pid": 2802945,
+      "start_id": "215187973"
+    },
+    {
+      "pid": 2802961,
+      "start_id": "215187978"
+    },
+    {
+      "pid": 2802975,
+      "start_id": "215187982"
+    },
+    {
+      "pid": 2803008,
+      "start_id": "215187988"
+    },
+    {
+      "pid": 2803051,
+      "start_id": "215187999"
+    },
+    {
+      "pid": 2803067,
+      "start_id": "215188011"
+    },
+    {
+      "pid": 2803076,
+      "start_id": "215188019"
+    },
+    {
+      "pid": 2803289,
+      "start_id": "215188089"
+    },
+    {
+      "pid": 2803376,
+      "start_id": "215188103"
+    },
+    {
+      "pid": 2803479,
+      "start_id": "215188114"
+    },
+    {
+      "pid": 2804039,
+      "start_id": "215188673"
+    },
+    {
+      "pid": 2804122,
+      "start_id": "215188686"
+    },
+    {
+      "pid": 2804226,
+      "start_id": "215188699"
+    },
+    {
+      "pid": 2804272,
+      "start_id": "215188705"
+    },
+    {
+      "pid": 2804292,
+      "start_id": "215188707"
+    },
+    {
+      "pid": 2804366,
+      "start_id": "215188713"
+    },
+    {
+      "pid": 2804388,
+      "start_id": "215188715"
+    },
+    {
+      "pid": 2804428,
+      "start_id": "215188722"
+    },
+    {
+      "pid": 2804442,
+      "start_id": "215188724"
+    },
+    {
+      "pid": 2804491,
+      "start_id": "215188761"
+    },
+    {
+      "pid": 2804507,
+      "start_id": "215188762"
+    }
+  ],
+  "clean": true,
+  "docker": {
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "images": {
+    "A-backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "A-frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "C-backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "C-frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+  },
+  "listeners": [],
+  "pid_namespace": "pid:[4026531836]",
+  "ports_checked": [
+    38080,
+    38081,
+    38082,
+    38083,
+    38180,
+    38181,
+    38182,
+    38183
+  ],
+  "process_survivors": [],
+  "removed_paths": [
+    "/tmp/perf391-smoke-408-a",
+    "/tmp/perf391-a-approved-smoke",
+    "/tmp/perf391-smoke-408.lock"
+  ],
+  "utc": "2026-10-23T10:13:21Z"
+}

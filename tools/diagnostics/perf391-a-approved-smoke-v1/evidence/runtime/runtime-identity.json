@@ -1,0 +1,25 @@
+{
+  "api_imported_without_launch": true,
+  "browser_launched": false,
+  "browsers_json_sha256": "545d52f8382c391e605562c330e9c1c534a16045898203037a49bb8bd769a946",
+  "chromium_revision": "1243",
+  "chromium_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+  "historical_node_sha256": "177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9",
+  "historical_node_version": "22.12.0",
+  "lane": "diagnostic-functionality-only",
+  "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+  "node_version": "22.22.2",
+  "packages": {
+    "playwright": {
+      "node_engine": ">=20",
+      "sha256": "8bc2ddebe8d9b051b9ecb87d62c6c63877e59d08617f32c3215681ca8bb70998",
+      "version": "1.63.0"
+    },
+    "playwright-core": {
+      "node_engine": ">=20",
+      "sha256": "f061c58427e47e843e26d201f0a57076c734e57c734ecbbd87d4a23b7a20db9b",
+      "version": "1.63.0"
+    }
+  },
+  "runtime_compatibility_qualified": false
+}

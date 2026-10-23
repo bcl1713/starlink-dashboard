@@ -1,0 +1,473 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2803067"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2803067,
+      "start_id": "215188011"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2803076"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2803076,
+      "start_id": "215188019"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2803289"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2803289,
+      "start_id": "215188089"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804039"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804039,
+      "start_id": "215188673"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804226"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804226,
+      "start_id": "215188699"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804272"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804272,
+      "start_id": "215188705"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804292"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804292,
+      "start_id": "215188707"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804366"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804366,
+      "start_id": "215188713"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804388"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804388,
+      "start_id": "215188715"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804428"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804428,
+      "start_id": "215188722"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "2804442"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 2804442,
+      "start_id": "215188724"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1002.slice/user@1002.service/user.slice/docker-807397f570b79a81cb17d5cd8d0cad4ff65f21b11eaf1819ec59ef9106915301.scope",
+      "container": "807397f570b79a81cb17d5cd8d0cad4ff65f21b11eaf1819ec59ef9106915301",
+      "host_pid": 2803376,
+      "host_start_id": "215188103",
+      "pid_namespace": "pid:[4026533892]",
+      "status": "Name:\tdocker-init\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t2803376\nNgid:\t0\nPid:\t2803376\nPPid:\t2803351\nTracerPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t64\nGroups:\t1002 \nNStgid:\t2803376\t1\nNSpid:\t2803376\t1\nNSpgid:\t2803376\t1\nNSsid:\t2803376\t1\nKthread:\t0\nVmPeak:\t    1108 kB\nVmSize:\t    1108 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t     772 kB\nVmRSS:\t     772 kB\nRssAnon:\t      48 kB\nRssFile:\t     724 kB\nRssShmem:\t       0 kB\nVmData:\t     168 kB\nVmStk:\t     132 kB\nVmExe:\t     588 kB\nVmLib:\t       8 kB\nVmPTE:\t      40 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t0/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000300000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t00000000a80425fb\nCapEff:\t00000000a80425fb\nCapBnd:\t00000000a80425fb\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t30\nnonvoluntary_ctxt_switches:\t3\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1002.slice/user@1002.service/user.slice/docker-2f7dbdf25d8d3e0c9fa5bbac12c5670dbc567c8315fb91b3f61b5cecc21e4126.scope",
+      "container": "2f7dbdf25d8d3e0c9fa5bbac12c5670dbc567c8315fb91b3f61b5cecc21e4126",
+      "host_pid": 2803479,
+      "host_start_id": "215188114",
+      "pid_namespace": "pid:[4026533977]",
+      "status": "Name:\tdocker-init\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t2803479\nNgid:\t0\nPid:\t2803479\nPPid:\t2803425\nTracerPid:\t0\nUid:\t296605\t296605\t296605\t296605\nGid:\t296605\t296605\t296605\t296605\nFDSize:\t64\nGroups:\t296605 \nNStgid:\t2803479\t1\nNSpid:\t2803479\t1\nNSpgid:\t2803479\t1\nNSsid:\t2803479\t1\nKthread:\t0\nVmPeak:\t    1108 kB\nVmSize:\t    1108 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t     772 kB\nVmRSS:\t     772 kB\nRssAnon:\t      48 kB\nRssFile:\t     724 kB\nRssShmem:\t       0 kB\nVmData:\t     168 kB\nVmStk:\t     132 kB\nVmExe:\t     588 kB\nVmLib:\t       8 kB\nVmPTE:\t      36 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t0/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000300000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t00000000a80425fb\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t24\nnonvoluntary_ctxt_switches:\t1\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1002.slice/user@1002.service/user.slice/docker-ef4c009feb79f4ad257f6b4ac33e70d1f2091298582bca1a18c1bc225963c95f.scope",
+      "container": "ef4c009feb79f4ad257f6b4ac33e70d1f2091298582bca1a18c1bc225963c95f",
+      "host_pid": 2804122,
+      "host_start_id": "215188686",
+      "pid_namespace": "pid:[4026534060]",
+      "status": "Name:\tdocker-init\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t2804122\nNgid:\t0\nPid:\t2804122\nPPid:\t2804097\nTracerPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t64\nGroups:\t1002 1002 231072 231073 231074 231075 231077 231081 231082 231091 231097 231098 \nNStgid:\t2804122\t1\nNSpid:\t2804122\t1\nNSpgid:\t2804122\t1\nNSsid:\t2804122\t1\nKthread:\t0\nVmPeak:\t    1108 kB\nVmSize:\t    1108 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t     768 kB\nVmRSS:\t     768 kB\nRssAnon:\t      44 kB\nRssFile:\t     724 kB\nRssShmem:\t       0 kB\nVmData:\t     168 kB\nVmStk:\t     132 kB\nVmExe:\t     588 kB\nVmLib:\t       8 kB\nVmPTE:\t      40 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t0/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000300000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t00000000a80425fb\nCapEff:\t00000000a80425fb\nCapBnd:\t00000000a80425fb\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t18\nnonvoluntary_ctxt_switches:\t1\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n"
+    }
+  ],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "networks": [
+    "perf391-smoke-408-a_default"
+  ],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-a"
+  ],
+  "owner": {
+    "pgid": 2802566,
+    "pid": 2802567,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "215187572"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/tmp/perf391-a-approved-smoke/python/bin/python",
+        "/tmp/perf391-a-approved-smoke/context/A/tools/acceptance/overview_history/seed.py",
+        "--output",
+        "/tmp/perf391-smoke-408-a/history.openmetrics",
+        "--end",
+        "1792750280"
+      ],
+      "pgid": 2803067,
+      "pid": 2803067,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188011",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "run",
+        "--rm",
+        "--no-deps",
+        "--name",
+        "perf391-smoke-408-a-seed",
+        "--entrypoint",
+        "/bin/promtool",
+        "prometheus",
+        "tsdb",
+        "create-blocks-from",
+        "openmetrics",
+        "/seed/history.openmetrics",
+        "/prometheus"
+      ],
+      "pgid": 2803076,
+      "pid": 2803076,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188019",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "up",
+        "-d",
+        "--no-build",
+        "--pull",
+        "never",
+        "--wait",
+        "--wait-timeout",
+        "16",
+        "prometheus",
+        "starlink-location"
+      ],
+      "pgid": 2803289,
+      "pid": 2803289,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188089",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "up",
+        "-d",
+        "--no-build",
+        "--pull",
+        "never",
+        "--no-deps",
+        "mission-planner"
+      ],
+      "pgid": 2804039,
+      "pid": 2804039,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188673",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "ps",
+        "-q",
+        "starlink-location"
+      ],
+      "pgid": 2804226,
+      "pid": 2804226,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188699",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "inspect",
+        "807397f570b79a81cb17d5cd8d0cad4ff65f21b11eaf1819ec59ef9106915301",
+        "--format",
+        "{{json .State}}"
+      ],
+      "pgid": 2804272,
+      "pid": 2804272,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188705",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "ps",
+        "-q",
+        "prometheus"
+      ],
+      "pgid": 2804292,
+      "pid": 2804292,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188707",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "inspect",
+        "2f7dbdf25d8d3e0c9fa5bbac12c5670dbc567c8315fb91b3f61b5cecc21e4126",
+        "--format",
+        "{{json .State}}"
+      ],
+      "pgid": 2804366,
+      "pid": 2804366,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188713",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "ps",
+        "-q",
+        "mission-planner"
+      ],
+      "pgid": 2804388,
+      "pid": 2804388,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188715",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "inspect",
+        "ef4c009feb79f4ad257f6b4ac33e70d1f2091298582bca1a18c1bc225963c95f",
+        "--format",
+        "{{json .State}}"
+      ],
+      "pgid": 2804428,
+      "pid": 2804428,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215188722",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/tmp/perf391-a-approved-smoke/node-22.22.2",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-approved-smoke/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+        "/tmp/perf391-smoke-408-a/browser-options.json"
+      ],
+      "pgid": 2804442,
+      "pid": 2804442,
+      "reaped": true,
+      "returncode": 1,
+      "start_id": "215188724",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "resource_intent": {
+    "docker_containers": [
+      "perf391-smoke-408-a-seed",
+      "perf391-smoke-408-a-starlink-location-1",
+      "perf391-smoke-408-a-mission-planner-1",
+      "perf391-smoke-408-a-prometheus-1"
+    ],
+    "intent_before_spawn": true,
+    "networks": [
+      "perf391-smoke-408-a_default"
+    ],
+    "paths": [
+      "/tmp/perf391-smoke-408-a"
+    ],
+    "pid_pgid_start_id_and_command_required": true,
+    "ports": [
+      38080,
+      38081,
+      38082,
+      38083
+    ],
+    "volumes": [
+      "perf391-smoke-408-a_data",
+      "perf391-smoke-408-a_routes",
+      "perf391-smoke-408-a_metrics"
+    ]
+  },
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6362494281",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ]
+}

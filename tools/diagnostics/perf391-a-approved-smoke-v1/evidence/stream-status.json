@@ -1,0 +1,58 @@
+{
+  "outcome": "STOP_RUNTIME_BROWSER_SETUP",
+  "runtime_attempts": 1,
+  "C_executions": 0,
+  "executor_exit": 1,
+  "failure": {
+    "reason": "connect ECONNREFUSED 127.0.0.1:38080"
+  },
+  "host": {
+    "observations": 1,
+    "final_summaries": [
+      {
+        "kind": "summary",
+        "completed": 1,
+        "skipped": 0,
+        "complete": false
+      }
+    ],
+    "limitations": "Cancelled after browser setup failure; five scheduled samples not completed. skipped=0 refers only to emitted partial host summary, not zero loss across the run."
+  },
+  "source": {
+    "observations": 0,
+    "final_summary": null,
+    "dropped": null,
+    "reason": "Observer collection not created; browser setup settings connection failed first."
+  },
+  "backend": {
+    "records": null,
+    "final_summary": null,
+    "dropped": null,
+    "reason": "Backend was started but stop-backend/drain/copy phases were not reached after browser failure; teardown removed private volume; no producer/admission/worker events retained."
+  },
+  "browser": {
+    "launched": false,
+    "chart_visible": false,
+    "request_joins": null,
+    "final_summary": null,
+    "dropped": null,
+    "reason": "Failure at first settings PUT before chromium.launchServer or collector creation. browser-intent is intent, not launch evidence."
+  },
+  "screenshot_attempts": 0,
+  "cadence_requirement_seconds": 1.5,
+  "cadence_exercised": false,
+  "unavailable_by_design": [
+    "passive raw wire bytes",
+    "native Axios parse-start",
+    "physical scanout",
+    "original-A frame/final-authority/CAS"
+  ],
+  "failed_gates": [
+    "five source samples and unchanged cadence qualification",
+    "five host samples and complete final host summary",
+    "producer/admission/worker final stream evidence",
+    "browser/observer final summaries and loss accounting",
+    "history response to retained data to projection to actual uPlot commit joins"
+  ],
+  "success_analyzer_run": false
+}

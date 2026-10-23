@@ -1,0 +1,7 @@
+{
+  "kind": "Playwright launchServer then connect",
+  "host": "127.0.0.1",
+  "port": 38083,
+  "executable": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+  "temporaryRoot": "/tmp/perf391-smoke-408-a/tmp"
+}

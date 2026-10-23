@@ -1,0 +1,112 @@
+{
+  "services": {
+    "mission-planner": {
+      "cpus": 0.5,
+      "depends_on": {
+        "starlink-location": {
+          "condition": "service_healthy"
+        }
+      },
+      "init": true,
+      "logging": {
+        "driver": "local",
+        "options": {
+          "compress": "false",
+          "max-file": "1",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "256m",
+      "pids_limit": 64,
+      "ports": [
+        "127.0.0.1:${PERF391_FRONTEND_PORT}:80"
+      ],
+      "restart": "no",
+      "stop_grace_period": "8s"
+    },
+    "prometheus": {
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.retention.time=12h",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "cpus": 1,
+      "init": true,
+      "logging": {
+        "driver": "local",
+        "options": {
+          "compress": "false",
+          "max-file": "1",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1g",
+      "pids_limit": 256,
+      "ports": [
+        "127.0.0.1:${PERF391_PROMETHEUS_PORT}:9090"
+      ],
+      "restart": "no",
+      "stop_grace_period": "8s",
+      "volumes": [
+        "metrics:/prometheus",
+        "${PERF391_CONTEXT}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+        "${PERF391_CONTEXT}/monitoring/prometheus/rules:/etc/prometheus/rules:ro",
+        "${PERF391_OUTPUT}/history.openmetrics:/seed/history.openmetrics:ro"
+      ]
+    },
+    "starlink-location": {
+      "cpus": 2,
+      "environment": {
+        "NO_PROXY": "prometheus,localhost,127.0.0.1",
+        "OPERATOR_ENABLED": "true",
+        "OPERATOR_SIMULATION_RUN_ID": "default",
+        "PERF391_ROLE": "C",
+        "PERF391_RUN": "${PERF391_RUN}",
+        "PERF_SYNTHETIC": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "/diagnostic:/acceptance:/app",
+        "SIMULATION_MODE": "true",
+        "STARLINK_GROUND_ENTRY_LATITUDE": "0",
+        "STARLINK_GROUND_ENTRY_LONGITUDE": "0",
+        "STARLINK_MODE": "simulation",
+        "STARLINK_PROMETHEUS_URL": "http://prometheus:9090",
+        "STARLINK_ROUTE_LATITUDE_START": "0",
+        "STARLINK_ROUTE_LONGITUDE_START": "-10"
+      },
+      "healthcheck": {
+        "interval": "2s",
+        "retries": 15,
+        "start_period": "1s",
+        "test": [
+          "CMD",
+          "curl",
+          "--max-time",
+          "1",
+          "-f",
+          "http://localhost:8000/health"
+        ],
+        "timeout": "2s"
+      },
+      "init": true,
+      "logging": {
+        "driver": "local",
+        "options": {
+          "compress": "false",
+          "max-file": "1",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2g",
+      "pids_limit": 256,
+      "ports": [
+        "127.0.0.1:${PERF391_BACKEND_PORT}:8000"
+      ],
+      "restart": "no",
+      "stop_grace_period": "8s",
+      "volumes": [
+        "data:/app/data",
+        "routes:/data"
+      ]
+    }
+  }
+}

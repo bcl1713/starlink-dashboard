@@ -1,0 +1,17 @@
+{
+  "C_executions": 0,
+  "deadlines": {
+    "cleanup_by_seconds": 90,
+    "kill_grace_seconds": 10,
+    "outer_timeout_seconds": 90,
+    "work_seconds": 78
+  },
+  "executor_sha256": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
+  "launch_sha256": "26bcc96656550768d74498ea3dd795d6ef0d17a43ad9ef6505e31d838272b6d6",
+  "launcher_sha256": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4",
+  "note": "Executor receives exact unchanged launcher output; two-layer comparison provenance is preserved separately in preflight launch and checks.",
+  "runtime_attempts": 1,
+  "supervisor_pgid": 2802551,
+  "supervisor_pid": 2802561,
+  "utc": "2026-10-23T10:11:36Z"
+}

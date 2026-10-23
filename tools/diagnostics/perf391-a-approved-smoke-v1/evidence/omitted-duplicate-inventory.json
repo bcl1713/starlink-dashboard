@@ -1,0 +1,357 @@
+{
+  "files": {
+    "history.openmetrics": {
+      "bytes": 5184608,
+      "sha256": "e5cfa7104b51cb36a05891178951801f4292feda532c32c8d29ca78fca1c5592"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/DESIGN.md": {
+      "bytes": 2692,
+      "sha256": "cd77176ee1ab32b9ff0426d86f7d098fe16471e736924be635721386dbe7e9e3"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/QUALIFICATION.md": {
+      "bytes": 7527,
+      "sha256": "2a10e45108b1c6bbb68e9cdb3b6d691a763c18ef614f908e88f5d25baf2444d8"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/README.md": {
+      "bytes": 13670,
+      "sha256": "6d48a3a35ba52963c146f92823c7bb0bfaa62a8ec5a372fb681d70dce2996485"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/RESULTS.md": {
+      "bytes": 5673,
+      "sha256": "a90f8c8beeeacf0bfc2571c73507a9832f16439fd3178c782bc9175cc8c29d82"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/browser-schema.mjs": {
+      "bytes": 3882,
+      "sha256": "76b914a8e5c1044a6bab893292f2dd315f9d2913e6fbf2ebf9b0dfe77681af84"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/browser.mjs": {
+      "bytes": 9714,
+      "sha256": "6652f3e661932aa3bf0ed695bf95b3b20b7f6e5fa9bc42d34a7b65a190ce8765"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/adapter-timeout-debug.log": {
+      "bytes": 1625,
+      "sha256": "21018b787c4c881ba987b0864e28ba9978af67cfacc854272d48a9292a87df08"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/black-format.log": {
+      "bytes": 617,
+      "sha256": "59f9ee6573df9e8862e5c238706a8daf74594b6afae6c5c635bbf41184f41864"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/cleanup.log": {
+      "bytes": 1049,
+      "sha256": "5f1290f672639fc9361aa746c6082c976f3f1eeaed19444c0d21d16bbca55335"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/cli.log": {
+      "bytes": 637,
+      "sha256": "8330c9ed8f4b1b4720136e3c0d7ea9f167bf0cf48b732fccabd3b984b27414ac"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/documentation-links.log": {
+      "bytes": 2526,
+      "sha256": "786dc23c45e697157c642cd98b792e5d5cd51ea1c69be4599ec9d3d9ea37e634"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-adapters-host.log": {
+      "bytes": 1247,
+      "sha256": "0860204ddfcba4c7a0fdf3f3e252c5d0eb45c8f7785499a3d14a72b3bfd36d52"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-adapters.log": {
+      "bytes": 123,
+      "sha256": "8569a23416fe7fb77a29381e300c45cd93bdc7d00d99a492c38666ad5eda8a4c"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-browser-host.log": {
+      "bytes": 474,
+      "sha256": "c0efbdfbd6df30b1dbcfc90a18dc2cb2dd985950fc26f71e47090a73f5f942fd"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-browser.log": {
+      "bytes": 219,
+      "sha256": "3c6d547bb975109a332634348619091ef400fb9fc6bed065dcf08cda749ea185"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-core.log": {
+      "bytes": 715,
+      "sha256": "3b5aceee60889bec2311a13c33aaee319b069395e2a5c8adc3571a8365b7b008"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-integrity-host.log": {
+      "bytes": 1975,
+      "sha256": "9bed69a7d97a84e7136f477c0e743f5854d4792560174cc5ee5deedae8977b90"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-review-browser.log": {
+      "bytes": 847,
+      "sha256": "4db5688914c209b6797cc42e60ccdb4b8b3dade5200704139f3011da8f2b4a42"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-review-python.log": {
+      "bytes": 837,
+      "sha256": "3562c4a77992549972d60724fa425b07019ef5bcb15b43c3f27e10dd27f1b8b2"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-sequence-integrity.log": {
+      "bytes": 996,
+      "sha256": "2945d2f79a0816f05cf7a9f7c89ef01393b249d66b60c0fd21b9066f74bcc239"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/green-statistics.log": {
+      "bytes": 517,
+      "sha256": "36ce34568ac7275ccc6117488ee9db59e2fc0817a9fe5b0582fa58b332824579"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/offline-results.json": {
+      "bytes": 95279,
+      "sha256": "599080360e0914ee9a69e669276317d252fa76ec9b5f321a75b57c7189a05b91"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/offline-results.log": {
+      "bytes": 917,
+      "sha256": "d60c043d5f1125c2a238bb39a34f16f362b6ade586b35a9f482bc5ca8b14029a"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/preserved-trace-check.log": {
+      "bytes": 4041,
+      "sha256": "f93222599de3ceba501160b1f1b11f0eb34add98fdf25a31c12c82ab9bee2b1b"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/preserved-trace-result.json": {
+      "bytes": 4041,
+      "sha256": "f93222599de3ceba501160b1f1b11f0eb34add98fdf25a31c12c82ab9bee2b1b"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-adapters.log": {
+      "bytes": 1730,
+      "sha256": "2fc4e8e3c0fcfa91b3069444c608d73add5bb9d70bfed7f556ab0756338c5dfc"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-browser.log": {
+      "bytes": 1759,
+      "sha256": "e5fc510054585aac1bc68f9dd06fee599f4bebf3d7fd48bd3ee100fb9ddf6a4d"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-core.log": {
+      "bytes": 1022,
+      "sha256": "1e7f8dd11969f75cb50b6288b01ffcdb7668a0f562736d053dc16d2c69b35ec3"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-integrity-semantics.log": {
+      "bytes": 726,
+      "sha256": "ef1bebf1c5ea5ecbaa5be5e00213709ac46dfae516bab161e34d72975d5d1661"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-integrity.log": {
+      "bytes": 1059,
+      "sha256": "ddf0ddddb5e0be51f5b3872922c5efc1835cd844cfd0b2ad2ecdce28fe24b377"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-review-browser.log": {
+      "bytes": 2508,
+      "sha256": "911005d6ec1239d356e1bbf2976e784ad7dc2290e2f1d9bad3ed33e35fd797ce"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-review-python.log": {
+      "bytes": 8215,
+      "sha256": "11d05d487d39f4250fd77589496ddaadb81bff73125eda153cc0377a589f599d"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-sequence-integrity.log": {
+      "bytes": 1774,
+      "sha256": "0e9f272e340f55fd520bb0e008651c2c275b322a17bda158f241aac7c1264d99"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/red-statistics.log": {
+      "bytes": 10799,
+      "sha256": "ded6457ffcba2a2c10c4860a7d1c333d422f05c097fb794e10344163e4eb5353"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/regression-browser.log": {
+      "bytes": 1359,
+      "sha256": "d1a1afadfa5a3c79d59bae1597fa7bf59d841689c71b48e267e3bf7639932e01"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/regression-python.log": {
+      "bytes": 4083,
+      "sha256": "b2282aad9b7246e1c76891bc11ffb0771409a25fbdcde6875269b4f83b222698"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/ruff-fix.log": {
+      "bytes": 900,
+      "sha256": "d48263d22afa6cceb456b796f586939dcbaddb1072addcb9733b69679809771e"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/evidence/static-checks.log": {
+      "bytes": 597,
+      "sha256": "9a763d69495cd187391a7626591ad1e3957e2a94752d32d71468b3f4f341741d"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/fixtures/SHA256SUMS.json": {
+      "bytes": 87,
+      "sha256": "2bcb92d8beb735bce53215d5662aa2c2acddec440c0093337bd3dc682cbee964"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/fixtures/build.py": {
+      "bytes": 8061,
+      "sha256": "c56c257253c1c8855151fc6eda81f731d761623050a06b3d3d511dd3a31b14a5"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/fixtures/cases.json": {
+      "bytes": 78616,
+      "sha256": "7f7963ef767471e81a96165ad2c1f50349c54d3b668c552368c1197ae52a3517"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/__init__.py": {
+      "bytes": 114,
+      "sha256": "d8661083d0b3cf9b6d5596c8f4342f043fecf28477e6cf904964d66c50db1f96"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/__main__.py": {
+      "bytes": 48,
+      "sha256": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/adapters.py": {
+      "bytes": 7964,
+      "sha256": "9eb30ff8997f6a00821765ae9eb44bb144304644e8f560856183221d5e582d73"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/analyze.py": {
+      "bytes": 19624,
+      "sha256": "04d88602913dd773ae0f406fa4b3e7b1f51e1b9fb81dbd4f76782d0b60dcf6f4"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/cli.py": {
+      "bytes": 8426,
+      "sha256": "815b3fb8be41a11bcf492c97ecf38fa0dd03b34f5f93b090a6de9628e47a7bd8"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/event-schema.json": {
+      "bytes": 23660,
+      "sha256": "c7ed98eaeb7d7aa36c3677712b2964b2a0c26fe5a51f31deeff383e7cb9b9a5e"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/ingestion.py": {
+      "bytes": 3850,
+      "sha256": "3846b3ea864f0bd0b4aa289b952c644c54947918f94fe724c5d6f483f897ec34"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/model.py": {
+      "bytes": 2523,
+      "sha256": "cebc42917315dd6ce20ba186b869e306dd17a59f088340762ef36c32f2fd1fc9"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/record.py": {
+      "bytes": 5706,
+      "sha256": "1b1875a8ee94de80976696181f627867880aa2df409eaa34d99a3f9c1203470f"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/pyproject.toml": {
+      "bytes": 455,
+      "sha256": "8dfe50dbde5c173fc5acd52559068b7e2fa0e4fe828a60a6017e57bf73629a92"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/browser.test.mjs": {
+      "bytes": 6855,
+      "sha256": "a25475cf8fd3e7238ceaf678226f596244517086689ebe190ed5018c310a4042"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/test_adapters.py": {
+      "bytes": 4730,
+      "sha256": "6b86d8ad79796470737dd24cbfabb495a27375c86a4a155c6b356a287cdc3f27"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/test_cli.py": {
+      "bytes": 3273,
+      "sha256": "cfdceae12aded00165d6a6f7c8f5cb2a68543df50165e25d8a671be266076a6a"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/test_core.py": {
+      "bytes": 7282,
+      "sha256": "1518245b512bbce1a1c5d5dd6d4e2af8825ff86764091c9b01398a92e30bd11b"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/test_integrity.py": {
+      "bytes": 4748,
+      "sha256": "f5141f3e7934b0f1af169bb4d9f48c70123903722fe7fca5d79fd0ab93904e4b"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/test_review_regressions.py": {
+      "bytes": 3385,
+      "sha256": "48df3a09fb758879554dd71099d6c48bb9d79a9aff35f9e6048671748a1f1e7c"
+    },
+    "host-collector/tools/diagnostics/perf391-network-evidence-v1/tests/test_statistics.py": {
+      "bytes": 2289,
+      "sha256": "45974030b75911f0f8fc228aa0dc07766ca20cabcb20cd8389bc43666e08ba4a"
+    },
+    "image-assets/.vite/manifest.json": {
+      "bytes": 185,
+      "sha256": "0a34791639c9e9f463f6ed9a87cf2324a1d7083cb7e333621bddee2fb0f2e02b"
+    },
+    "image-assets/50x.html": {
+      "bytes": 497,
+      "sha256": "876766b4e80133fd490603e073d3567425b88794828a9292104244c9e40875ed"
+    },
+    "image-assets/assets/index-BMKTAuCA.css": {
+      "bytes": 122497,
+      "sha256": "5b05126eed41746850a50886700ddf833f05d7e677ac73b6f30961d3127ed4f6"
+    },
+    "image-assets/assets/index-Ct3JqmpR.js": {
+      "bytes": 2638566,
+      "sha256": "4a828683baacab77ce4464acd0cf3c5bcc85ebdab13e7526301ca9eff9443bfa"
+    },
+    "image-assets/assets/index-D2_VGdr5.js": {
+      "bytes": 308062,
+      "sha256": "9e5f6f1157f59ddcdffddb42ab7b179b7d5b0cc88bcd23d08bdb0516f1ef76b9"
+    },
+    "image-assets/assets/orbital.worker-CMk1Mfgi.js": {
+      "bytes": 29173,
+      "sha256": "8ec35ac3bf11f928c79bffb0d174f75fe6914e416b0af1398dfae3c8fddb055e"
+    },
+    "image-assets/assets/overview-label-layout.worker-_XMzcRrn.js": {
+      "bytes": 4173,
+      "sha256": "8c693ef08da2ea59689d1fc39364a80e59691923b1d79288383d52b4e5a838e7"
+    },
+    "image-assets/boundaries/ATTRIBUTION.md": {
+      "bytes": 4368,
+      "sha256": "ca63c51e156fbcdb767a832159f3a401a738f08f436de53791fc043ab9f15668"
+    },
+    "image-assets/boundaries/countries.json": {
+      "bytes": 2533975,
+      "sha256": "5ee7d03dd3cb5e43b4ec107b3a17a2d11b9ff648296fd1b4e0b0afa1c9f52de8"
+    },
+    "image-assets/boundaries/subdivisions.json": {
+      "bytes": 3646141,
+      "sha256": "ab70211879488900cba43f9e6263f93cafab74f84c1fc22bf44311c6f10afa7c"
+    },
+    "image-assets/city-lights-mask.ATTRIBUTION.md": {
+      "bytes": 718,
+      "sha256": "cb83c13e727613177fa4ef1b58636bdfdfd458ac8557f85339760f5177c1e32c"
+    },
+    "image-assets/city-lights-mask.png": {
+      "bytes": 421924,
+      "sha256": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f"
+    },
+    "image-assets/earth-day-hi.ATTRIBUTION.md": {
+      "bytes": 734,
+      "sha256": "a61b001a182618f97ff93b3f7accc5121b124f66bf918b1391a3f9c4e92a453d"
+    },
+    "image-assets/earth-day-hi.jpg": {
+      "bytes": 10073196,
+      "sha256": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3"
+    },
+    "image-assets/earth-day.ATTRIBUTION.md": {
+      "bytes": 445,
+      "sha256": "633bddd7d06ee165c9a5b696b096f159ff082f0b1a291a11681e565c9c305810"
+    },
+    "image-assets/earth-day.jpg": {
+      "bytes": 1668788,
+      "sha256": "9874a6fd2776897c71ac041814f9bf599a1f95be69609c1c69b1c0b2410ce65e"
+    },
+    "image-assets/index.html": {
+      "bytes": 462,
+      "sha256": "f2e5285b17665ab359351e4ce66a46bb94c56f9f870161d76ff9c1df99f79de9"
+    },
+    "image-assets/operator-help/field-branches.html": {
+      "bytes": 40416,
+      "sha256": "a29d770ad22da2ba00853d768b5fa16bc0685cedc78e381f514e5ac105915b3c"
+    },
+    "image-assets/operator-help/guide.html": {
+      "bytes": 69090,
+      "sha256": "ed8c3c31a7c5c60ce977744069bc8cf4ea30eece7eb2349b1f5e34780c011d16"
+    },
+    "image-assets/operator-help/images/issue-followup-b31b5113d832.png": {
+      "bytes": 76743,
+      "sha256": "b31b5113d83274a3796df4de15081f928d2c8e44cb5452b87277b79e6c7e1008"
+    },
+    "image-assets/operator-help/images/provenance.json": {
+      "bytes": 1624,
+      "sha256": "a18f0d07078c595e0561ee22f72cfdd7ceca7c8519dbe36da03f16401aa01e35"
+    },
+    "image-assets/operator-help/images/simulation-network-0cd98752d979.png": {
+      "bytes": 467953,
+      "sha256": "0cd98752d979a5618260a30f2cc4f8f93517d19646ea46b98b1761bfeab44fed"
+    },
+    "image-assets/operator-help/images/training-evidence-32d8acfce238.png": {
+      "bytes": 124118,
+      "sha256": "32d8acfce2388c729777016b61dea948b88ac899308f0606f5b4c533038abf5b"
+    },
+    "image-assets/operator-help/images/transport-check-c4a20ed4a8a4.png": {
+      "bytes": 70760,
+      "sha256": "c4a20ed4a8a4ade982d10916fdc4c033a4476cb4e699a0612a9a7f00187bca94"
+    },
+    "image-assets/operator-help/images/workspace-mobile-f7e7c0540e64.png": {
+      "bytes": 68006,
+      "sha256": "f7e7c0540e644eb4318d3ef183fe1887738b3dc591a27e217f38464c3eaa6eb1"
+    },
+    "image-assets/operator-help/quick-reference.html": {
+      "bytes": 14924,
+      "sha256": "4b0a93515c67a04918af5a4e2b69788804d9cd21734648da7930f1bf8cd4ba53"
+    },
+    "image-assets/operator-help/setup.html": {
+      "bytes": 7231,
+      "sha256": "ba4b960dace635e632a9ebfba9db3e81a35c7bef03d0578e089385bf84dfa0ff"
+    },
+    "image-assets/perf391-module-closure.json": {
+      "bytes": 1312006,
+      "sha256": "65d3242be697b31509335368702179041ea6a3a9c6e476e641425174c77011cf"
+    },
+    "image-assets/vite.svg": {
+      "bytes": 1497,
+      "sha256": "4a748afd443918bb16591c834c401dae33e87861ab5dbad0811c3a3b4a9214fb"
+    }
+  },
+  "reason": "Image assets duplicate closed receipt canonical built-assets; host collector duplicates pinned release export; generated synthetic OpenMetrics seed is reproducible from unchanged frozen seed.py and retained launch end time. All raw runtime logs and host observations retained."
+}

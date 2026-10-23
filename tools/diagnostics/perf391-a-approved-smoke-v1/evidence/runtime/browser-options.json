@@ -1,0 +1,10 @@
+{
+  "browserPort": 38083,
+  "chromiumExecutable": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+  "nodeRoot": "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner",
+  "origin": "http://127.0.0.1:38080",
+  "output": "/tmp/perf391-smoke-408-a/browser",
+  "run": "synthetic-408a",
+  "samples": 5,
+  "source": "http://127.0.0.1:38081/api/_diagnostic/state"
+}
