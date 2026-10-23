@@ -7,7 +7,7 @@
     "execute.proposed.py": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
     "frontend.Dockerfile": "ebc2a4bab91bb7ba03804b9d5c5ab66ca88292c8e564e24cdea9a195ea2bc725",
     "launcher.py": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4",
-    "prepare.py": "3a080a9275d4fa118e39ca7ccf2383921891d2b3abd5c0fcc49bf567b1b7eb22",
+    "prepare.py": "8d52a986514fefbec833b45f2a4b64b4e86a004983588116ec389ba3a467b001",
     "runtime-receipt-schema.json": "fae140e62cb2816918cea4a6faf1d085cbf3410b94426b7fa5a8af0225b795c5",
     "runtime_backend.proposed.py": "6caca1d4e858231be0e49dd4f2742c1e1329b4274a2f9bf740fc7396df3689aa",
     "runtime_identity.py": "d14d4af9df9bcaceb5ab0545be35554ec09ed4f05558bd0e6000b4c1936ddf26",

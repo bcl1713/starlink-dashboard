@@ -1,0 +1,24 @@
+=== RUN   TestCompressionCompatibility
+=== RUN   TestCompressionCompatibility/A/mission-planner
+    logging_test.go:62: corrected config accepted; omitted/default and explicit true rejected; invalid boolean rejected
+=== RUN   TestCompressionCompatibility/A/prometheus
+    logging_test.go:62: corrected config accepted; omitted/default and explicit true rejected; invalid boolean rejected
+=== RUN   TestCompressionCompatibility/A/starlink-location
+    logging_test.go:62: corrected config accepted; omitted/default and explicit true rejected; invalid boolean rejected
+=== RUN   TestCompressionCompatibility/C/starlink-location
+    logging_test.go:62: corrected config accepted; omitted/default and explicit true rejected; invalid boolean rejected
+=== RUN   TestCompressionCompatibility/C/mission-planner
+    logging_test.go:62: corrected config accepted; omitted/default and explicit true rejected; invalid boolean rejected
+=== RUN   TestCompressionCompatibility/C/prometheus
+    logging_test.go:62: corrected config accepted; omitted/default and explicit true rejected; invalid boolean rejected
+--- PASS: TestCompressionCompatibility (0.00s)
+    --- PASS: TestCompressionCompatibility/A/mission-planner (0.00s)
+    --- PASS: TestCompressionCompatibility/A/prometheus (0.00s)
+    --- PASS: TestCompressionCompatibility/A/starlink-location (0.00s)
+    --- PASS: TestCompressionCompatibility/C/starlink-location (0.00s)
+    --- PASS: TestCompressionCompatibility/C/mission-planner (0.00s)
+    --- PASS: TestCompressionCompatibility/C/prometheus (0.00s)
+PASS
+ok  	perf391-logging-compat	0.002s
+Both closed receipts, image/asset/dependency identities, approved recipes, frozen release and cleanup validate.
+Verified 37 retained artifact hashes and exact closure; expected startup failure, unavailable runtime streams, immutable receipt/assets, owner reaping and independent cleanup evidence confirmed.

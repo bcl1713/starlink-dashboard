@@ -1,0 +1,36 @@
+=== RUN   TestCompressionCompatibility
+=== RUN   TestCompressionCompatibility/A/mission-planner
+    logging_test.go:41: unbounded or compressed config: &{DisableCompression:true MaxFileSize:10000000 MaxFileCount:1}
+=== RUN   TestCompressionCompatibility/A/prometheus
+    logging_test.go:41: unbounded or compressed config: &{DisableCompression:true MaxFileSize:10000000 MaxFileCount:1}
+=== RUN   TestCompressionCompatibility/A/starlink-location
+    logging_test.go:41: unbounded or compressed config: &{DisableCompression:true MaxFileSize:10000000 MaxFileCount:1}
+=== RUN   TestCompressionCompatibility/C/prometheus
+    logging_test.go:41: unbounded or compressed config: &{DisableCompression:true MaxFileSize:10000000 MaxFileCount:1}
+=== RUN   TestCompressionCompatibility/C/starlink-location
+    logging_test.go:41: unbounded or compressed config: &{DisableCompression:true MaxFileSize:10000000 MaxFileCount:1}
+=== RUN   TestCompressionCompatibility/C/mission-planner
+    logging_test.go:41: unbounded or compressed config: &{DisableCompression:true MaxFileSize:10000000 MaxFileCount:1}
+--- FAIL: TestCompressionCompatibility (0.00s)
+    --- FAIL: TestCompressionCompatibility/A/mission-planner (0.00s)
+    --- FAIL: TestCompressionCompatibility/A/prometheus (0.00s)
+    --- FAIL: TestCompressionCompatibility/A/starlink-location (0.00s)
+    --- FAIL: TestCompressionCompatibility/C/prometheus (0.00s)
+    --- FAIL: TestCompressionCompatibility/C/starlink-location (0.00s)
+    --- FAIL: TestCompressionCompatibility/C/mission-planner (0.00s)
+FAIL
+FAIL	perf391-logging-compat	0.002s
+FAIL
+Both closed receipts, image/asset/dependency identities, approved recipes, frozen release and cleanup validate.
+Verified 37 retained artifact hashes and exact closure; expected startup failure, unavailable runtime streams, immutable receipt/assets, owner reaping and independent cleanup evidence confirmed.
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-logging-fix/tools/diagnostics/perf391-logging-compat-v1/check.py", line 70, in <module>
+    main()
+    ~~~~^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-logging-fix/tools/diagnostics/perf391-logging-compat-v1/check.py", line 65, in main
+    subprocess.run([args.go, "test", "-count=1", "-timeout=30s", "-v", "."], cwd=root, env={**os.environ, "GOPROXY":"off", "GOSUMDB":"off", "PERF391_LOGGING_CONFIGS":str(args.output.resolve())}, check=True, timeout=60)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/tmp/perf391-logging-fix/go/bin/go', 'test', '-count=1', '-timeout=30s', '-v', '.']' returned non-zero exit status 1.

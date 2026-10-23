@@ -1,0 +1,29 @@
+{
+  "clean": true,
+  "docker": {
+    "perf391-logging-fix": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "images": {
+    "A-backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "A-frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "C-backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "C-frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+  },
+  "listeners": [],
+  "process_survivors": [],
+  "temporary_root_removed": "/tmp/perf391-logging-fix"
+}

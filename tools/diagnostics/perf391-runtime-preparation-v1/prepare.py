@@ -176,7 +176,7 @@ def compose(role):
         "restart": "no",
         "init": True,
         "pids_limit": 256,
-        "logging": {"driver": "local", "options": {"max-size": "10m", "max-file": "1"}},
+        "logging": {"driver": "local", "options": {"max-size": "10m", "max-file": "1", "compress": "false"}},
         "stop_grace_period": "8s",
     }
     services = {

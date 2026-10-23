@@ -1,0 +1,8 @@
+{
+  "task": "perf391-logging-fix",
+  "temporary_root": "/tmp/perf391-logging-fix",
+  "worktree": ".worktrees/perf391-logging-fix",
+  "compose_project": "perf391-logging-fix",
+  "resources_created": [],
+  "commands": "All tests/downloads bounded by timeout with forced termination grace; no service, browser, container, network, volume or listener started."
+}

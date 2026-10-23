@@ -1,0 +1,17 @@
+{
+  "corrected_overlay_sha256": "19b1414453e101dc9bbbb93046c48ab553b22dfdcda4201eef5f5ac14427abae",
+  "overlay_manifest_sha256": "9e58db98dfaeb47fc617b6b0c7a98e6459ee8e1ad0e5c57fd69d1d665467cb02",
+  "prepare_py_sha256": "8d52a986514fefbec833b45f2a4b64b4e86a004983588116ec389ba3a467b001",
+  "roles": {
+    "A": {
+      "compose_base_sha256": "faf72548f5979833b0db1e5e9dd99c022b3b00e24fc789af8da1f5597fa5f91c",
+      "compose_override_sha256": "dab1035fd61762f6feb203c0a12210f362e0a7fbfaf8881e78e6ab3770b522f7",
+      "rendered_config_sha256": "a7add4de0d0c8a2a652fecb5f41e302d450e01cfd5e80704529dbea82d1542c8"
+    },
+    "C": {
+      "compose_base_sha256": "faf72548f5979833b0db1e5e9dd99c022b3b00e24fc789af8da1f5597fa5f91c",
+      "compose_override_sha256": "96bdf2d8aed75b2180baaf60fea4e0a1b9fe7df5edf788e5da9b0e370bf0fcd5",
+      "rendered_config_sha256": "bacbd35eeaeaa9a7c5784679c3e199af4119a5d91907ceac92367ecb79696035"
+    }
+  }
+}
