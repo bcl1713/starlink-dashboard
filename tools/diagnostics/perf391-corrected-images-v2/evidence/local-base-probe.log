@@ -1,0 +1,26 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from local-base-probe.Dockerfile
+#1 transferring dockerfile: 95B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/perf391-diag-408-a-backend:f9cf80bd
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 861B done
+#3 DONE 0.0s
+
+#4 [1/1] FROM docker.io/library/perf391-diag-408-a-backend:f9cf80bd@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd
+#4 resolve docker.io/library/perf391-diag-408-a-backend:f9cf80bd@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd done
+#4 DONE 0.2s
+
+#5 exporting to image
+#5 exporting layers done
+#5 exporting manifest sha256:cf16a2f7f46c4aa7662ca2c1d070344355707412d55fa4e2ceeda1d1f82cbf3c done
+#5 exporting config sha256:1d8789e6d8ea34f750aaa7bb8ae606362dc3200c8cef6834b9e6eb22a12be055 done
+#5 exporting attestation manifest sha256:b706e695a7a6a793cb43732fd2f293854c9297704e0a79afba9010fc4caa6475 done
+#5 exporting manifest list sha256:6cc26e5bf667ed510f3a883ea538ae81ebe2b44ca05b027ba76c613a18ce6dff done
+#5 naming to moby-dangling@sha256:6cc26e5bf667ed510f3a883ea538ae81ebe2b44ca05b027ba76c613a18ce6dff done
+#5 unpacking to moby-dangling@sha256:6cc26e5bf667ed510f3a883ea538ae81ebe2b44ca05b027ba76c613a18ce6dff done
+#5 DONE 0.0s

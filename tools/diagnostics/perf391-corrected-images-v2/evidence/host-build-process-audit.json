@@ -1,0 +1,8 @@
+{
+  "actor_node_npm_processes": [],
+  "temporary_base_probe_absent": true,
+  "dangling_image_ids_preserved": [
+    "sha256:28a898719c18a33f4e8000685287fa36fd0dd9560c6440227d3a732d79bb41d8"
+  ],
+  "qualified": true
+}

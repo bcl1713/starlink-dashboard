@@ -1,0 +1,296 @@
+{
+  "source_sha256": "b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45",
+  "points_per_trace": 1801,
+  "traces": 4,
+  "provenance_id": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+  "exact_retained_projection_plot_and_provenance": true,
+  "commits": [
+    {
+      "commit": "p/c2",
+      "request": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+      "artifact": {
+        "path": "artifacts/dc7c8740fb7d486df0d138dcd2c1f7a9232185556c7ea216fa2c790f32294ce2.bin",
+        "sha256": "dc7c8740fb7d486df0d138dcd2c1f7a9232185556c7ea216fa2c790f32294ce2",
+        "bytes": 628798
+      },
+      "snapshots": {
+        "retained": {
+          "sha256": "7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400",
+          "artifact": {
+            "path": "artifacts/7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400.bin",
+            "sha256": "7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400",
+            "bytes": 165051
+          }
+        },
+        "projection": {
+          "sha256": "24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499",
+          "artifact": {
+            "path": "artifacts/24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499.bin",
+            "sha256": "24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499",
+            "bytes": 90996
+          }
+        },
+        "plot": {
+          "sha256": "5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8",
+          "artifact": {
+            "path": "artifacts/5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8.bin",
+            "sha256": "5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8",
+            "bytes": 91077
+          }
+        }
+      }
+    },
+    {
+      "commit": "p/c3",
+      "request": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+      "artifact": {
+        "path": "artifacts/ed3c72aa7fb6784280bc531e3905f442865843ffa674c2ffa274b9c8a6ee5837.bin",
+        "sha256": "ed3c72aa7fb6784280bc531e3905f442865843ffa674c2ffa274b9c8a6ee5837",
+        "bytes": 628800
+      },
+      "snapshots": {
+        "retained": {
+          "sha256": "7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400",
+          "artifact": {
+            "path": "artifacts/7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400.bin",
+            "sha256": "7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400",
+            "bytes": 165051
+          }
+        },
+        "projection": {
+          "sha256": "24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499",
+          "artifact": {
+            "path": "artifacts/24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499.bin",
+            "sha256": "24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499",
+            "bytes": 90996
+          }
+        },
+        "plot": {
+          "sha256": "5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8",
+          "artifact": {
+            "path": "artifacts/5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8.bin",
+            "sha256": "5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8",
+            "bytes": 91077
+          }
+        }
+      }
+    }
+  ],
+  "frontend": {
+    "panel-selection.json": {
+      "metadata": {
+        "commits": [
+          {
+            "panel": "o2",
+            "document": "b34655ed4a2b4e82",
+            "commit": "p/c3",
+            "generation": 3,
+            "metric": "starlink_network_latency_ms_current",
+            "mounted": true,
+            "width": 400,
+            "height": 80,
+            "hidden": false,
+            "error": false,
+            "reducedMotion": false,
+            "accepted": "o1",
+            "retained": "o1",
+            "rect": null,
+            "transform": null,
+            "visibility": "unknown",
+            "dpr": null
+          }
+        ],
+        "summary": {
+          "seq": 11,
+          "lost": 0,
+          "failed": false,
+          "closed": false,
+          "pending": 0,
+          "bytes": 0,
+          "inflight": 0,
+          "panels": 1
+        }
+      },
+      "selected": {
+        "panel": "o2",
+        "document": "b34655ed4a2b4e82",
+        "commit": "p/c3",
+        "generation": 3,
+        "metric": "starlink_network_latency_ms_current",
+        "mounted": true,
+        "width": 400,
+        "height": 80,
+        "hidden": false,
+        "error": false,
+        "reducedMotion": false,
+        "accepted": "o1",
+        "retained": "o1",
+        "rect": null,
+        "transform": null,
+        "visibility": "unknown",
+        "dpr": null
+      }
+    },
+    "frontend-final.json": {
+      "before": {
+        "seq": 11,
+        "lost": 0,
+        "failed": false,
+        "closed": false,
+        "pending": 0,
+        "bytes": 0,
+        "inflight": 0,
+        "panels": 1
+      },
+      "after": {
+        "seq": 11,
+        "lost": 0,
+        "failed": false,
+        "closed": true,
+        "pending": 0,
+        "bytes": 0,
+        "inflight": 0,
+        "panels": 0
+      }
+    },
+    "frontend-finalization.json": {
+      "finishAdmitted": true,
+      "last": {
+        "frontend": {
+          "commits": [
+            {
+              "panel": "o2",
+              "document": "b34655ed4a2b4e82",
+              "commit": "p/c3",
+              "generation": 3,
+              "metric": "starlink_network_latency_ms_current",
+              "mounted": true,
+              "width": 400,
+              "height": 80,
+              "hidden": false,
+              "error": false,
+              "reducedMotion": false,
+              "accepted": "o1",
+              "retained": "o1",
+              "rect": null,
+              "transform": null,
+              "visibility": "unknown",
+              "dpr": null
+            }
+          ],
+          "summary": {
+            "seq": 11,
+            "lost": 0,
+            "failed": false,
+            "closed": false,
+            "pending": 0,
+            "bytes": 0,
+            "inflight": 0,
+            "panels": 1
+          }
+        },
+        "observer": {
+          "closed": false,
+          "failed": false,
+          "lost": 0,
+          "active": 0,
+          "pending": 0,
+          "bytes": 0,
+          "jobs": 0,
+          "bindingJobs": 0,
+          "ownedOperations": 0,
+          "assemblies": 0,
+          "failures": [],
+          "failureOverflow": 0,
+          "preClose": null
+        }
+      },
+      "final": {
+        "before": {
+          "seq": 11,
+          "lost": 0,
+          "failed": false,
+          "closed": false,
+          "pending": 0,
+          "bytes": 0,
+          "inflight": 0,
+          "panels": 1
+        },
+        "after": {
+          "seq": 11,
+          "lost": 0,
+          "failed": false,
+          "closed": true,
+          "pending": 0,
+          "bytes": 0,
+          "inflight": 0,
+          "panels": 0
+        }
+      },
+      "reason": null
+    }
+  },
+  "summary": {
+    "schema": "perf391-node-collection-v1",
+    "version": 1,
+    "run": "synthetic-408a",
+    "host_identity": {
+      "process_uuid": "c323eaaf-f196-4d8a-a6f6-4f97756abe79",
+      "pid": 37,
+      "process_start_id": "2180921161110670",
+      "clock_id": "bd12c159-f627-4a1c-90e3-435b91b80567"
+    },
+    "closed": true,
+    "complete": true,
+    "dropped": 0,
+    "optionalArtifacts": {
+      "dropped": 0,
+      "bytes": 0,
+      "limit_bytes": 2097152
+    },
+    "written_bytes": 1778633,
+    "browsers": [
+      {
+        "closed": true,
+        "failed": false,
+        "lost": 0,
+        "active": 0,
+        "pending": 0,
+        "bytes": 0,
+        "jobs": 0,
+        "bindingJobs": 0,
+        "ownedOperations": 0,
+        "assemblies": 0,
+        "failures": [],
+        "failureOverflow": 0,
+        "preClose": {
+          "closed": false,
+          "failed": false,
+          "lost": 0,
+          "active": 0,
+          "pending": 0,
+          "bytes": 0,
+          "jobs": 0,
+          "bindingJobs": 0,
+          "ownedOperations": 0,
+          "assemblies": 0
+        }
+      }
+    ],
+    "sources": [],
+    "streams": [
+      {
+        "stream_id": "synthetic-408a/p/b34655ed4a2b4e82",
+        "last_seq": 10
+      }
+    ],
+    "artifacts": {
+      "artifacts/cbae8a274907dc1e37e7cc690f566cda912ab9c5e81c939cea8be39fa28178bc.bin": "cbae8a274907dc1e37e7cc690f566cda912ab9c5e81c939cea8be39fa28178bc",
+      "artifacts/dc7c8740fb7d486df0d138dcd2c1f7a9232185556c7ea216fa2c790f32294ce2.bin": "dc7c8740fb7d486df0d138dcd2c1f7a9232185556c7ea216fa2c790f32294ce2",
+      "artifacts/7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400.bin": "7b793c610b58702467e28785d0af99164176e7707279cda7b7156ec2eaaad400",
+      "artifacts/24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499.bin": "24cb72b6272682d76385991ab9831c1ced1fdcfd2194ba90b24efd10243b3499",
+      "artifacts/5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8.bin": "5871c33eb30b879e21ac4ce7836d93fd7b3d67116f473296a9832aaa993695f8",
+      "artifacts/ed3c72aa7fb6784280bc531e3905f442865843ffa674c2ffa274b9c8a6ee5837.bin": "ed3c72aa7fb6784280bc531e3905f442865843ffa674c2ffa274b9c8a6ee5837"
+    }
+  }
+}

@@ -1,0 +1,3 @@
+Filesystem        1B-blocks         Used    Available Use% Mounted on
+tmpfs           32957763584  11602526208  21355237376  36% /tmp
+/dev/nvme0n1p1 983350071296 112916561920 820406542336  13% /srv/forge-nvme

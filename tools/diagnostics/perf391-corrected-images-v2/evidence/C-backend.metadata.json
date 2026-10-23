@@ -1,0 +1,58 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/perf391-diag-408-c-backend@f9cf80bd?platform=linux%2Famd64",
+        "digest": {
+          "sha256": "91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "C.backend.Dockerfile"
+      },
+      "parameters": {
+        "frontend": "dockerfile.v0",
+        "args": {
+          "force-network-mode": "none"
+        },
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "root": {
+          "configSource": {
+            "path": "C.backend.Dockerfile"
+          },
+          "request": {
+            "args": {
+              "force-network-mode": "none"
+            }
+          }
+        },
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "dockerfileVersion": "1.27.0",
+        "platform": "linux/amd64"
+      }
+    }
+  },
+  "buildx.build.ref": "default/default/k0d923977a70k1l7rwc1808ms",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:a703a9660e84b151e3e2ffa86c09c5b6d17c490bb4a34003d121c97e6fad5046",
+    "size": 856
+  },
+  "containerimage.digest": "sha256:a703a9660e84b151e3e2ffa86c09c5b6d17c490bb4a34003d121c97e6fad5046",
+  "image.name": "docker.io/library/perf391-diag-408-corrected-c-backend:31b1fbbf"
+}

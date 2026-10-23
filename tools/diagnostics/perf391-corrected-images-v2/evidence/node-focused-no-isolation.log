@@ -1,0 +1,262 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 3.529412
+  type: 'test'
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.992573
+  type: 'test'
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.52369
+  type: 'test'
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.496203
+  type: 'test'
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.417866
+  type: 'test'
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 0.916149
+  type: 'test'
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 2.7872
+  type: 'test'
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.42585
+  type: 'test'
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.462201
+  type: 'test'
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 1.15626
+  type: 'test'
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 0.927112
+  type: 'test'
+  ...
+# Subtest: a total sink deadline aborts its signal and never replaces it with more jobs
+ok 12 - a total sink deadline aborts its signal and never replaces it with more jobs
+  ---
+  duration_ms: 26.285203
+  type: 'test'
+  ...
+# Subtest: navigation with identical local plot IDs cannot qualify a screenshot from a different document
+ok 13 - navigation with identical local plot IDs cannot qualify a screenshot from a different document
+  ---
+  duration_ms: 0.801845
+  type: 'test'
+  ...
+# Subtest: cleanup disposes the pinned Playwright binding and init-script handles exactly once
+ok 14 - cleanup disposes the pinned Playwright binding and init-script handles exactly once
+  ---
+  duration_ms: 0.388066
+  type: 'test'
+  ...
+# Subtest: close settles all owned capture wrappers and releases the shared screenshot slot
+ok 15 - close settles all owned capture wrappers and releases the shared screenshot slot
+  ---
+  duration_ms: 1.598821
+  type: 'test'
+  ...
+# Subtest: interrupted assembly retains its pre-close counters and exact loss reason
+ok 16 - interrupted assembly retains its pre-close counters and exact loss reason
+  ---
+  duration_ms: 0.444134
+  type: 'test'
+  ...
+# Subtest: binding, write, listener and disposal failures retain bounded reason codes
+ok 17 - binding, write, listener and disposal failures retain bounded reason codes
+  ---
+  duration_ms: 1.912511
+  type: 'test'
+  ...
+# Subtest: screenshot distinguishes metadata deadline, native deadline and native failure without chart loss
+ok 18 - screenshot distinguishes metadata deadline, native deadline and native failure without chart loss
+  ---
+  duration_ms: 32.504876
+  type: 'test'
+  ...
+# Subtest: duplicate, stale, oversized and malformed browser chunks fail closed with reasons
+ok 19 - duplicate, stale, oversized and malformed browser chunks fail closed with reasons
+  ---
+  duration_ms: 2.779719
+  type: 'test'
+  ...
+# Subtest: owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish
+ok 20 - owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish
+  ---
+  duration_ms: 23.617019
+  type: 'test'
+  ...
+# Subtest: artifact failure remains optional and the screenshot uses the remaining total budget
+ok 21 - artifact failure remains optional and the screenshot uses the remaining total budget
+  ---
+  duration_ms: 61.371881
+  type: 'test'
+  ...
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 22 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 2.675868
+  type: 'test'
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 23 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 0.834238
+  type: 'test'
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 24 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 1.058476
+  type: 'test'
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 25 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 0.813178
+  type: 'test'
+  ...
+# Subtest: HTTP failures remain failed evidence in final source and collection summaries
+ok 26 - HTTP failures remain failed evidence in final source and collection summaries
+  ---
+  duration_ms: 0.805713
+  type: 'test'
+  ...
+# Subtest: Page close during binding setup leaves no eventual binding or init handle
+ok 27 - Page close during binding setup leaves no eventual binding or init handle
+  ---
+  duration_ms: 0.709012
+  type: 'test'
+  ...
+# Subtest: optional PNG artifact failure never becomes mandatory chart loss
+ok 28 - optional PNG artifact failure never becomes mandatory chart loss
+  ---
+  duration_ms: 0.644178
+  type: 'test'
+  ...
+# Subtest: PNG above the frozen importer's 2 MiB limit stays unavailable without an import reference
+ok 29 - PNG above the frozen importer's 2 MiB limit stays unavailable without an import reference
+  ---
+  duration_ms: 5.174885
+  type: 'test'
+  ...
+# Subtest: late wake and slow completion skip absolute deadlines without bursts
+ok 30 - late wake and slow completion skip absolute deadlines without bursts
+  ---
+  duration_ms: 0.454672
+  type: 'test'
+  ...
+# Subtest: bounded response accepts JSON and identity request header
+ok 31 - bounded response accepts JSON and identity request header
+  ---
+  duration_ms: 0.822936
+  type: 'test'
+  ...
+# Subtest: malformed destroys owned transport and reports unavailable
+ok 32 - malformed destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.26211
+  type: 'test'
+  ...
+# Subtest: invalid UTF8 destroys owned transport and reports unavailable
+ok 33 - invalid UTF8 destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.138771
+  type: 'test'
+  ...
+# Subtest: redirect destroys owned transport and reports unavailable
+ok 34 - redirect destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.121652
+  type: 'test'
+  ...
+# Subtest: unsupported encoding destroys owned transport and reports unavailable
+ok 35 - unsupported encoding destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.092554
+  type: 'test'
+  ...
+# Subtest: socket reset destroys owned transport and reports unavailable
+ok 36 - socket reset destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.122936
+  type: 'test'
+  ...
+# Subtest: oversize identity destroys owned transport and reports unavailable
+ok 37 - oversize identity destroys owned transport and reports unavailable
+  ---
+  duration_ms: 0.109937
+  type: 'test'
+  ...
+# Subtest: zip bomb destroys owned transport and reports unavailable
+ok 38 - zip bomb destroys owned transport and reports unavailable
+  ---
+  duration_ms: 7.189151
+  type: 'test'
+  ...
+# Subtest: gzip response is decoded within cap
+ok 39 - gzip response is decoded within cap
+  ---
+  duration_ms: 0.893652
+  type: 'test'
+  ...
+# Subtest: total deadline and cancellation destroy stalled requests and clear timers
+ok 40 - total deadline and cancellation destroy stalled requests and clear timers
+  ---
+  duration_ms: 0.359378
+  type: 'test'
+  ...
+# Subtest: writer failure stops scheduling and cancellation produces final accounting
+ok 41 - writer failure stops scheduling and cancellation produces final accounting
+  ---
+  duration_ms: 0.161646
+  type: 'test'
+  ...
+# Subtest: only dedicated loopback endpoint is accepted before transport
+ok 42 - only dedicated loopback endpoint is accepted before transport
+  ---
+  duration_ms: 0.196318
+  type: 'test'
+  ...
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 231.806357

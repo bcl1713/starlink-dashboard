@@ -1,0 +1,23 @@
+FROM sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd
+COPY .perf391/diagnostic/browser-probe.ts /diagnostic/browser-probe.ts
+COPY .perf391/diagnostic/browser.mjs /diagnostic/browser.mjs
+COPY .perf391/diagnostic/collect.mjs /diagnostic/collect.mjs
+LABEL perf391.lineage.parent="sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+LABEL base_application_sha="25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+LABEL collector_release_sha="c47d21e3c5bbf92189afbf291b73b9da7a035a4b"
+LABEL collector_source_sha="a48837b99d87366c6e3fc24ba2915f0b739cddad"
+LABEL diagnostic="true"
+LABEL effective_source_sha256="015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa"
+LABEL frontend_patch_sha256="e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551"
+LABEL frozen_harness_sha="f3029024b5950a267645195476da5cbca326f16a"
+LABEL integration_source_sha="051870c738d9ab72338852ea848918a35a663094"
+LABEL org.opencontainers.image.revision="25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+LABEL patch_sha256="c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c"
+LABEL perf391.role="A"
+LABEL runtime_frontend_closure_sha256="d479f7148c3ae0efea9749cd61d2ea1f87d1ad2d1129e7cb57b7fde6b8ede140"
+LABEL runtime_overlay_sha256="5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c"
+LABEL perf391.correction.source="31b1fbbfded503344e9df653ba148850a2e69f95"
+LABEL perf391.correction.delivery="e40b9ff240ce97af0c03ac254b52a8af084634bd"
+LABEL perf391.correction.overlay.sha256="43a28519858ed545e5fe2ed8720a1437985b40e4dd49f8d3675b5ea5f954a970"
+LABEL perf391.qualification="diagnostic-build-only"
+LABEL perf391.owner="perf391-corrected-forge"

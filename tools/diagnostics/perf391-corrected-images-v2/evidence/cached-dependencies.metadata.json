@@ -1,0 +1,60 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/docker/dockerfile@1",
+        "digest": {
+          "sha256": "4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e"
+        }
+      },
+      {
+        "uri": "pkg:docker/node@22.22.2-trixie-slim?digest=sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903\u0026platform=linux%2Famd64",
+        "digest": {
+          "sha256": "961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "cached-dependencies.Dockerfile"
+      },
+      "parameters": {
+        "frontend": "gateway.v0",
+        "args": {
+          "cmdline": "docker/dockerfile:1",
+          "source": "docker/dockerfile:1"
+        },
+        "secrets": [
+          {
+            "id": "proxy_ca",
+            "optional": true
+          }
+        ],
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "platform": "linux/amd64"
+      }
+    }
+  },
+  "buildx.build.ref": "default/default/neomaxq4zpg7hneyt31k32iqa",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:fbd74391b8bc2816673a0458194c312b47c7315669c41ea3e514ceaf61a22fd6",
+    "size": 856
+  },
+  "containerimage.digest": "sha256:fbd74391b8bc2816673a0458194c312b47c7315669c41ea3e514ceaf61a22fd6",
+  "image.name": "docker.io/library/perf391-diag-408-corrected-dependencies:31b1fbbf"
+}

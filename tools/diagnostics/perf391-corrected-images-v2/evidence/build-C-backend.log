@@ -1,0 +1,42 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from C.backend.Dockerfile
+#1 transferring dockerfile: 1.70kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/perf391-diag-408-c-backend:f9cf80bd
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 861B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 41.03kB 0.0s done
+#4 DONE 0.0s
+
+#5 [1/4] FROM docker.io/library/perf391-diag-408-c-backend:f9cf80bd@sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9
+#5 resolve docker.io/library/perf391-diag-408-c-backend:f9cf80bd@sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9 done
+#5 DONE 0.2s
+
+#6 [2/4] COPY .perf391/diagnostic/browser-probe.ts /diagnostic/browser-probe.ts
+#6 DONE 0.0s
+
+#7 [3/4] COPY .perf391/diagnostic/browser.mjs /diagnostic/browser.mjs
+#7 DONE 0.0s
+
+#8 [4/4] COPY .perf391/diagnostic/collect.mjs /diagnostic/collect.mjs
+#8 DONE 0.0s
+
+#9 exporting to image
+#9 exporting layers 0.1s done
+#9 exporting manifest sha256:94cc26c2aed161023f3f369d78aa30972abec7571d379e014abfc07aeaa36e79 done
+#9 exporting config sha256:adc55443ba50f4615e017b4eef46345838ff8e30b2299e94cff68b97eda3867d done
+#9 exporting attestation manifest sha256:c6b3ea147fb0d9a5d49348ca53ec2c8e7ef59114d4dee7775308f23523461470 done
+#9 exporting manifest list sha256:a703a9660e84b151e3e2ffa86c09c5b6d17c490bb4a34003d121c97e6fad5046 done
+#9 naming to docker.io/library/perf391-diag-408-corrected-c-backend:31b1fbbf done
+#9 unpacking to docker.io/library/perf391-diag-408-corrected-c-backend:31b1fbbf 0.0s done
+#9 DONE 0.1s
+
+#10 resolving provenance for metadata file
+#10 DONE 0.0s

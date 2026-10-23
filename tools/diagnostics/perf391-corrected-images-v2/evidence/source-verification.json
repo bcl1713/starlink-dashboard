@@ -1,0 +1,14 @@
+{
+  "correction": {
+    "baseline": "09095e263d3d1c237309b9f2359fa879b91353d2",
+    "runtime_qualified": false,
+    "verified_immutable_files": 16,
+    "verified_source_files": 15
+  },
+  "correction_evidence_files": 223,
+  "correction_sha256": "43a28519858ed545e5fe2ed8720a1437985b40e4dd49f8d3675b5ea5f954a970",
+  "delivery_commit": "e40b9ff240ce97af0c03ac254b52a8af084634bd",
+  "historical_evidence_files": 187,
+  "historical_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+  "source_commit": "31b1fbbfded503344e9df653ba148850a2e69f95"
+}

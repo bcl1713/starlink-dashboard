@@ -1,0 +1,1 @@
+PASS: host process identities, listeners and Docker resources clean; eight immutable diagnostic images retained; task paths/tags removed.

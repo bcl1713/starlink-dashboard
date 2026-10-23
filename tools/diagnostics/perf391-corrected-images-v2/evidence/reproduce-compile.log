@@ -1,0 +1,77 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from reproduce.frontend.Dockerfile
+#1 transferring dockerfile: 2.51kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/perf391-diag-408-corrected-dependencies:31b1fbbf
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 861B done
+#3 DONE 0.0s
+
+#4 [builder 1/7] FROM docker.io/library/perf391-diag-408-corrected-dependencies:31b1fbbf@sha256:fbd74391b8bc2816673a0458194c312b47c7315669c41ea3e514ceaf61a22fd6
+#4 resolve docker.io/library/perf391-diag-408-corrected-dependencies:31b1fbbf@sha256:fbd74391b8bc2816673a0458194c312b47c7315669c41ea3e514ceaf61a22fd6 done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 88.96kB 0.0s done
+#5 DONE 0.0s
+
+#6 [builder 2/7] COPY frontend/mission-planner/ ./
+#6 CACHED
+
+#7 [builder 3/7] COPY .perf391/diagnostic/ /diagnostic/
+#7 CACHED
+
+#8 [builder 4/7] COPY .perf391/vite.perf391.mjs ./vite.perf391.mjs
+#8 CACHED
+
+#9 [builder 5/7] COPY .perf391/tsconfig.perf391.json ./tsconfig.perf391.json
+#9 CACHED
+
+#10 [builder 6/7] RUN ./node_modules/.bin/tsc --noEmit --incremental false -p tsconfig.perf391.json &&     ./node_modules/.bin/vite build --config vite.perf391.mjs
+#10 CACHED
+
+#11 [builder 7/7] RUN cp -a dist /tmp/repro-dist && rm -rf dist && ./node_modules/.bin/tsc --noEmit --incremental false -p tsconfig.perf391.json && ./node_modules/.bin/vite build --config vite.perf391.mjs && diff -qr /tmp/repro-dist dist
+#11 13.72 vite v7.3.6 building client environment for production...
+#11 13.76 transforming...
+#11 17.72 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 17.75 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 17.75 [plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 17.85 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 17.85 [plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 17.99 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 18.00 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 18.00 [plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#11 22.90 ✓ 3056 modules transformed.
+#11 23.67 rendering chunks...
+#11 23.72 computing gzip size...
+#11 23.78 dist/.vite/manifest.json                                  0.19 kB │ gzip:   0.14 kB
+#11 23.78 dist/index.html                                           0.46 kB │ gzip:   0.30 kB
+#11 23.78 dist/assets/overview-label-layout.worker-_XMzcRrn.js      4.17 kB
+#11 23.78 dist/assets/orbital.worker-CMk1Mfgi.js                   29.17 kB
+#11 23.78 dist/assets/index-D2_VGdr5.js                           308.06 kB
+#11 23.78 dist/perf391-module-closure.json                      1,312.01 kB │ gzip:  74.70 kB
+#11 23.78 dist/assets/index-BMKTAuCA.css                          122.50 kB │ gzip:  25.92 kB
+#11 23.78 dist/assets/index-HWZdjwZf.js                         2,638.74 kB │ gzip: 778.65 kB
+#11 23.78 
+#11 23.78 (!) Some chunks are larger than 500 kB after minification. Consider:
+#11 23.78 - Using dynamic import() to code-split the application
+#11 23.78 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+#11 23.78 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+#11 23.78 ✓ built in 10.04s
+#11 DONE 23.9s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 1.4s done
+#12 exporting manifest sha256:9b3849b3060c71475b520303edaf6f087b52698ad2f985653d6b5b9fe9835280 done
+#12 exporting config sha256:8525098775ca2b9c61fa5cb4e9f70be31420908fccc38fef0148d133dc6493d5 done
+#12 exporting attestation manifest sha256:370664d2a2090dbee9c205778d29c703045646f2ffd6c1068a8e0c01de3a2ba3 done
+#12 exporting manifest list sha256:620aac91cc069b85fea864a24b44a0617406592d4d25c8c3449cf79c25754b37 done
+#12 naming to docker.io/library/perf391-diag-408-corrected-builder:31b1fbbf done
+#12 unpacking to docker.io/library/perf391-diag-408-corrected-builder:31b1fbbf
+#12 unpacking to docker.io/library/perf391-diag-408-corrected-builder:31b1fbbf 0.4s done
+#12 DONE 1.8s

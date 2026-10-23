@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/forge.py", line 288, in <module>
+    main()
+    ~~~~^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/forge.py", line 197, in main
+    run(['docker','build','--pull=false','--network=none','--platform','linux/amd64','--progress','plain','--metadata-file',E/f'{role}-{kind}.metadata.json','-f',E/f'{role}.{kind}.Dockerfile','-t',tag,contexts/role], 'build-'+role+'-'+kind,600)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/forge.py", line 69, in run
+    assert rc == 0, (name, rc, log)
+           ^^^^^^^
+AssertionError: ('build-A-backend', 1, PosixPath('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/evidence/build-A-backend.log'))

@@ -1,0 +1,34 @@
+{
+  "argv": [
+    "/tmp/perf391-corrected-forge/builder/node",
+    "/tmp/perf391-corrected-forge/builder/node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "/tmp/perf391-corrected-forge/compiled-vitest.config.mjs"
+  ],
+  "authentic_output_sha256": "b5641da42e56b574aa3647a6ad5fa996c0bd142df290565470217ada69a262b9",
+  "compiled_fixture_module_sha256": "5bfcb79451bb1a5b9665de47d9cbb04c13adaed7331ed803c6ef941db7abe756",
+  "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge",
+  "environment": {
+    "PERF391_CORRECTION_EVIDENCE": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/evidence/compiled-authentic",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "executed_config_path": "/tmp/perf391-corrected-forge/compiled-vitest.config.mjs",
+  "fixture_source_path": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/probe.test.ts",
+  "fixture_source_sha256": "af097979e5d9fdeb65565950b8fe0a7c085222e2a30febfe715cb4a77ab4cc44",
+  "forced_grace_seconds": 10,
+  "log_sha256": "6cc4f9ac240b80966a52f10efc18db59ea24a0e3f5f4c2f067a263648ea1f725",
+  "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+  "node_version": "22.22.2",
+  "record_origin": "Exact command and generated config reconstructed from the executed tool-call transcript; this is not a contemporaneous commands.json row. Compiled module reconstructed from retained AST UTF-16 byte slices and verified against its pre-fixture extraction hash.",
+  "retained_config_sha256": "e17127dd3ae2581a5401fc92ddd80ebdf64e02d0e1f26bc6e6e5f0a5a2bf65c5",
+  "schema": "perf391-compiled-fixture-invocation-v1",
+  "source_import_substitution": {
+    "../../browser-probe": "exact extracted compiled fixture module"
+  },
+  "timeout_seconds": 180,
+  "tool_result": {
+    "chunk_id": "90a750",
+    "exit_code": 0
+  }
+}

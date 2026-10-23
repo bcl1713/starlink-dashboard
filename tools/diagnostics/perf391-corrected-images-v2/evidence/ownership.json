@@ -1,0 +1,71 @@
+{
+  "command_limit_seconds": 600,
+  "compose_projects": [],
+  "containers_prefix": "perf391-corrected-forge-",
+  "dependency_network": "disabled; cached only",
+  "forced_grace_seconds": 10,
+  "labels": {
+    "perf391.owner": "perf391-corrected-forge"
+  },
+  "networks": [],
+  "retain_images": [
+    "perf391-diag-408-corrected-{a,c}-{backend,frontend}:31b1fbbf"
+  ],
+  "scope": "build/inspect only; no application services or browsers",
+  "task": "perf391-corrected-forge",
+  "temporary_image_ids": [
+    "sha256:6cc26e5bf667ed510f3a883ea538ae81ebe2b44ca05b027ba76c613a18ce6dff"
+  ],
+  "temporary_links": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-diagnostic-integration-v1/node_modules"
+  ],
+  "temporary_root": "/tmp/perf391-corrected-forge",
+  "temporary_tags": [
+    "perf391-diag-408-corrected-dependencies:31b1fbbf",
+    "perf391-diag-408-corrected-builder:31b1fbbf"
+  ],
+  "tool_sessions": [
+    {
+      "disposition": "exited/reaped",
+      "purpose": "fetch and isolated worktree creation",
+      "session_id": 68953
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "initial forge",
+      "session_id": 22614
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "digest-reference forge",
+      "session_id": 18576
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "interrupted offline install cache miss; wrapper force-stopped",
+      "session_id": 58527
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "cached dependency stage export",
+      "session_id": 62660
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "corrected builds and repeat compile",
+      "session_id": 26215
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "final receipt qualification",
+      "session_id": 56077
+    },
+    {
+      "disposition": "exited/reaped",
+      "purpose": "independent cleanup",
+      "session_id": 9653
+    }
+  ],
+  "volumes": [],
+  "wall_limit_seconds": 1800
+}

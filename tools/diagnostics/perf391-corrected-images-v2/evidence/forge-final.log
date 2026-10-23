@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/forge.py", line 311, in <module>
+    build_stage()
+    ~~~~~~~~~~~^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/forge.py", line 242, in build_stage
+    assert files(ROOT/'builder/dist')==files(E/'A-assets')==files(E/'C-assets')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

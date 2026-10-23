@@ -1,0 +1,199 @@
+[
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-A-backend-inspect-image",
+    "pgid": 620962,
+    "pid": 620962,
+    "seconds": 120,
+    "start_identity": "620962 (timeout) R 620877 620962 620962 0 -1 4194304 14 0 0 0 0 0 0 0 20 0 1 0 218044585 12238848 90 18446744073709551615 110265078964224 110265084007405 140723318849664 0 0 0 0 0 0 0 0 0 17 14 0 0 0 0 0 110265088281072 110265089769336 110265531412480 140723318853165 140723318853288 140723318853288 140723318857703 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03261278523132205
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-A-frontend-inspect-image",
+    "pgid": 620978,
+    "pid": 620978,
+    "seconds": 120,
+    "start_identity": "620978 (timeout) R 620877 620978 620978 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218044588 12238848 41 18446744073709551615 104174034190336 104174039233517 140737471963248 0 0 0 0 0 0 0 0 0 17 5 0 0 0 0 0 104174043507184 104174044995448 104174519386112 140737471970861 140737471970984 140737471970984 140737471975399 0\n",
+    "state": "exited",
+    "wall_seconds": 0.022805235348641872
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-C-backend-inspect-image",
+    "pgid": 620993,
+    "pid": 620993,
+    "seconds": 120,
+    "start_identity": "620993 (timeout) R 620877 620993 620993 0 -1 4194304 19 0 0 0 0 0 0 0 20 0 1 0 218044596 12247040 83 18446744073709551615 107559491108864 107559496152045 140723896660992 0 0 0 0 0 0 0 0 0 17 11 0 0 0 0 0 107559500425712 107559501913976 107560285573120 140723896663597 140723896663720 140723896663720 140723896668135 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03388513717800379
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-C-frontend-inspect-image",
+    "pgid": 621008,
+    "pid": 621008,
+    "seconds": 120,
+    "start_identity": "621008 (timeout) R 620877 621008 621008 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218044599 12238848 42 18446744073709551615 109796991565824 109796996609005 140735064699968 0 0 0 0 0 0 0 0 0 17 4 0 0 0 0 0 109797000882672 109797002370936 109797037064192 140735064706605 140735064706728 140735064706728 140735064711143 0\n",
+    "state": "exited",
+    "wall_seconds": 0.026861621998250484
+  },
+  {
+    "argv": [
+      "python3",
+      "/tmp/perf391-corrected-forge/baseline/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py",
+      "--output",
+      "/tmp/perf391-corrected-forge/contexts"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "regenerate-original-plan",
+    "pgid": 621032,
+    "pid": 621032,
+    "seconds": 300,
+    "start_identity": "621032 (timeout) R 620877 621032 621032 0 -1 4194304 10 0 0 0 0 0 0 0 20 0 1 0 218044611 12238848 0 18446744073709551615 106933642473472 106933647516653 140731483017104 0 0 0 0 0 0 0 0 0 17 3 0 0 0 0 0 106933651790320 106933653278584 106934475476992 140731483024798 140731483024981 140731483024981 140731483029479 0\n",
+    "state": "exited",
+    "wall_seconds": 18.817860530223697
+  },
+  {
+    "argv": [
+      "docker",
+      "info",
+      "--format",
+      "{{.ID}} {{.Name}} {{.ServerVersion}} {{.Driver}} {{.CgroupVersion}}"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "daemon",
+    "pgid": 622612,
+    "pid": 622612,
+    "seconds": 120,
+    "start_identity": "622612 (timeout) R 620877 622612 622612 0 -1 4194304 20 0 0 0 0 0 0 0 20 0 1 0 218046778 12247040 85 18446744073709551615 98236092416000 98236097459181 140737227427056 0 0 0 0 0 0 0 0 0 17 1 0 0 0 0 0 98236101732848 98236103221112 98236511948800 140737227435569 140737227435688 140737227435688 140737227440103 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03699931874871254
+  },
+  {
+    "argv": [
+      "docker",
+      "buildx",
+      "du"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "cache-before",
+    "pgid": 622660,
+    "pid": 622660,
+    "seconds": 120,
+    "start_identity": "622660 (timeout) R 620877 622660 622660 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218046782 12238848 44 18446744073709551615 101332154142720 101332159185901 140723756171088 0 0 0 0 0 0 0 0 0 17 9 0 0 0 0 0 101332163459568 101332164947832 101332408754176 140723756174969 140723756175016 140723756175016 140723756179431 0\n",
+    "state": "exited",
+    "wall_seconds": 0.07405740674585104
+  },
+  {
+    "argv": [
+      "df",
+      "-B1",
+      "/tmp",
+      "/srv/forge-nvme/oracle/docker"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "disk-before",
+    "pgid": 622711,
+    "pid": 622711,
+    "seconds": 120,
+    "start_identity": "622711 (timeout) R 620877 622711 622711 0 -1 4194304 8 0 0 0 0 0 0 0 20 0 1 0 218046789 12238848 0 18446744073709551615 97785007398912 97785012442093 140730743125312 0 0 0 0 0 0 0 0 0 17 0 0 0 0 0 0 97785016715760 97785018204024 97785156841472 140730743131744 140730743131816 140730743131816 140730743136231 0\n",
+    "state": "exited",
+    "wall_seconds": 0.0031731841154396534
+  },
+  {
+    "argv": [
+      "sh",
+      "-c",
+      "cat /sys/fs/cgroup/user.slice/user-1002.slice/cpu.max /sys/fs/cgroup/user.slice/user-1002.slice/memory.max"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "actor-limits",
+    "pgid": 622713,
+    "pid": 622713,
+    "seconds": 120,
+    "start_identity": "622713 (timeout) R 620877 622713 622713 0 -1 4194304 14 0 0 0 0 0 0 0 20 0 1 0 218046790 12238848 44 18446744073709551615 102382989209600 102382994252781 140725902749248 0 0 0 0 0 0 0 0 0 17 17 0 0 0 0 0 102382998526448 102383000014712 102383637438464 140725902757401 140725902757544 140725902757544 140725902761959 0\n",
+    "state": "exited",
+    "wall_seconds": 0.004008256830275059
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "ls",
+      "-q",
+      "perf391-diag-408-corrected-a-backend:31b1fbbf"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "A-backend-tag-absent",
+    "pgid": 622716,
+    "pid": 622716,
+    "seconds": 120,
+    "start_identity": "622716 (timeout) R 620877 622716 622716 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218046790 12238848 44 18446744073709551615 105603970453504 105603975496685 140728332438576 0 0 0 0 0 0 0 0 0 17 13 0 0 0 0 0 105603979770352 105603981258616 105604924190720 140728332443209 140728332443304 140728332443304 140728332447719 0\n",
+    "state": "exited",
+    "wall_seconds": 0.013356756884604692
+  },
+  {
+    "argv": [
+      "docker",
+      "build",
+      "--pull=false",
+      "--network=none",
+      "--platform",
+      "linux/amd64",
+      "--progress",
+      "plain",
+      "--metadata-file",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/evidence/A-backend.metadata.json",
+      "-f",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-forge/tools/diagnostics/perf391-corrected-images-v2/evidence/A.backend.Dockerfile",
+      "-t",
+      "perf391-diag-408-corrected-a-backend:31b1fbbf",
+      "/tmp/perf391-corrected-forge/contexts/A"
+    ],
+    "exit": 1,
+    "grace_seconds": 10,
+    "name": "build-A-backend",
+    "pgid": 622731,
+    "pid": 622731,
+    "seconds": 600,
+    "start_identity": "622731 (timeout) R 620877 622731 622731 0 -1 4194304 10 0 0 0 0 0 0 0 20 0 1 0 218046791 12238848 44 18446744073709551615 100232914497536 100232919540717 140732772309024 0 0 0 0 0 0 0 0 0 17 7 0 0 0 0 0 100232923814384 100232925302648 100233726173184 140732772310164 140732772310696 140732772310696 140732772315111 0\n",
+    "state": "exited",
+    "wall_seconds": 0.6465139677748084
+  }
+]

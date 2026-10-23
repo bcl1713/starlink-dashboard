@@ -1,0 +1,17 @@
+{
+  "application_python_changed": false,
+  "backend_python_probes_changed": false,
+  "changed_image_files": [
+    "browser-probe.ts",
+    "browser.mjs",
+    "collect.mjs"
+  ],
+  "historical_plan_unchanged": true,
+  "host_preservation_changes": [
+    "backend_evidence.py",
+    "execute.proposed.py",
+    "analyze-runtime.py"
+  ],
+  "reason": "Host preservation code is not an image payload; both backend images nevertheless bundle the three corrected diagnostic modules. Re-layer those files over historical immutable backend IDs to qualify a consistent corrected module closure without dependency resolution.",
+  "rebuild": true
+}

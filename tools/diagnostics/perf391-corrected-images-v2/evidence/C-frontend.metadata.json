@@ -1,0 +1,64 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/nginx@alpine?digest=sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d\u0026platform=linux%2Famd64",
+        "digest": {
+          "sha256": "892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d"
+        }
+      },
+      {
+        "uri": "pkg:docker/perf391-diag-408-corrected-dependencies@31b1fbbf?platform=linux%2Famd64",
+        "digest": {
+          "sha256": "fbd74391b8bc2816673a0458194c312b47c7315669c41ea3e514ceaf61a22fd6"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "C.frontend.Dockerfile"
+      },
+      "parameters": {
+        "frontend": "dockerfile.v0",
+        "args": {
+          "force-network-mode": "none"
+        },
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "root": {
+          "configSource": {
+            "path": "C.frontend.Dockerfile"
+          },
+          "request": {
+            "args": {
+              "force-network-mode": "none"
+            }
+          }
+        },
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "dockerfileVersion": "1.27.0",
+        "platform": "linux/amd64"
+      }
+    }
+  },
+  "buildx.build.ref": "default/default/2re3qfyad07b1n8ls3vnhi7ct",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:ce18b80b76c60db365b77662317bac7c386f1173a97b3810839d41406dda8ed1",
+    "size": 856
+  },
+  "containerimage.digest": "sha256:ce18b80b76c60db365b77662317bac7c386f1173a97b3810839d41406dda8ed1",
+  "image.name": "docker.io/library/perf391-diag-408-corrected-c-frontend:31b1fbbf"
+}

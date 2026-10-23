@@ -1,0 +1,10 @@
+{
+  "network": "none",
+  "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+  "node_version": "22.22.2",
+  "npm_lock_sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+  "npm_version": "10.9.7",
+  "package_inventory_sha256": "c69bd8da14f9ecf09620bc3ef9f77133f2750a3fb1343d642e59099849648b16",
+  "packages": 453,
+  "sourcemaps": false
+}

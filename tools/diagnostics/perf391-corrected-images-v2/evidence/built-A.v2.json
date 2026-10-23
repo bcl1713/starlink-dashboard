@@ -1,0 +1,25 @@
+{
+  "assets_sha256": "9637a1b8a5a269e8a61090bbc1982a5f5578409536574fa45b66abce146ab80e",
+  "backend_module_inventory_sha256": "cfb46401b22a779ae074891e5ed465bc686abb3a82be57e564e9d66355f04f4c",
+  "compatible_receipt_sha256": "eba5c87d4e619a5468e96b6829d52c4ed0d24bff115ce043551cc6399a0281d4",
+  "corrected_plan_sha256": "7b96a51d675b9b9c26787dfa06c2fe8458816b0088b2568e6707d6b5a7de7ca7",
+  "correction_overlay_sha256": "43a28519858ed545e5fe2ed8720a1437985b40e4dd49f8d3675b5ea5f954a970",
+  "delivery_commit": "e40b9ff240ce97af0c03ac254b52a8af084634bd",
+  "historical_receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f",
+  "images": {
+    "backend": {
+      "corrected_id": "sha256:87a2379218610bd64b4e9e332a0d1bd70ed3fabe673c0dee8c865950d5fc9747",
+      "original_id": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+    },
+    "frontend": {
+      "corrected_id": "sha256:f3d62a630ea1c8be51a609b611a50d1e3725a7f2f8d83d530dea6ff78f3b9df5",
+      "original_id": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+    }
+  },
+  "original_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+  "qualification": "diagnostic-build-only",
+  "role": "A",
+  "runtime_authorized": false,
+  "schema": "perf391-corrected-image-receipt-v2",
+  "source_commit": "31b1fbbfded503344e9df653ba148850a2e69f95"
+}

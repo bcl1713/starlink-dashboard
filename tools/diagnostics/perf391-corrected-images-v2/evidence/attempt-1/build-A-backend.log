@@ -1,0 +1,18 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from A.backend.Dockerfile
+#1 transferring dockerfile: 1.74kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd
+#2 ERROR: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+------
+ > [internal] load metadata for docker.io/library/sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd:
+------
+A.backend.Dockerfile:1
+--------------------
+   1 | >>> FROM sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd
+   2 |     COPY .perf391/diagnostic/browser-probe.ts /diagnostic/browser-probe.ts
+   3 |     COPY .perf391/diagnostic/browser.mjs /diagnostic/browser.mjs
+--------------------
+ERROR: failed to build: failed to solve: sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd: failed to resolve source metadata for docker.io/library/sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed

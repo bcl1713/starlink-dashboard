@@ -1,0 +1,60 @@
+{
+  "chunk": "assets/index-HWZdjwZf.js",
+  "chunk_sha256": "fd5e2793093035c58fad9573267d7b99ee9cf234645601926f5e91d10a253da5",
+  "compiled_fixture_module_sha256": "5bfcb79451bb1a5b9665de47d9cbb04c13adaed7331ed803c6ef941db7abe756",
+  "method": "AST slices from emitted image chunk; declaration bytes unchanged; export names added for existing fixtures",
+  "declarations": [
+    {
+      "type": "FunctionDeclaration",
+      "start": 1002573,
+      "end": 1003680,
+      "sha256": "4375c763f982e348fbe2ba32ff8bd584216ebf247ececa5b4c5f895dec38a08c"
+    },
+    {
+      "type": "FunctionDeclaration",
+      "start": 1003680,
+      "end": 1009584,
+      "sha256": "8e34454d7b17597f2b78a82bd265f9dc443c1d12f797c021e903e09de59766f8"
+    },
+    {
+      "type": "FunctionDeclaration",
+      "start": 1009604,
+      "end": 1009821,
+      "sha256": "1bca8847218fa8e3db0e166cf5c929e13384a73a896967585d9a2caf706df2b9"
+    },
+    {
+      "type": "VariableDeclarator",
+      "start": 1002454,
+      "end": 1002572,
+      "sha256": "4a3824feb5c8e17ae9bfe95f2121023119b1e1fe8aa32a4ab7e9348c72c10766"
+    },
+    {
+      "type": "VariableDeclarator",
+      "start": 1009590,
+      "end": 1009603,
+      "sha256": "266e8e3e9a1897f3c411694fe60db040e48144e631be0ecf431a79bb013c49c4"
+    },
+    {
+      "type": "VariableDeclarator",
+      "start": 1009827,
+      "end": 1009835,
+      "sha256": "5a97172a3abfaaa48c28bda1e500893189906a7f143b94f786eb1b74ea1079c7"
+    },
+    {
+      "type": "ExpressionStatement",
+      "start": 1009836,
+      "end": 1009916,
+      "sha256": "e081c6770f6074dad837de63c8fae6efab198467715b00421687e1f78d138fcb"
+    },
+    {
+      "type": "ExpressionStatement",
+      "start": 1009916,
+      "end": 1010147,
+      "sha256": "c06cf66eb8c31e4703e92489f7fbc522e04e89f094e68ffbe5c094b673bc8578"
+    }
+  ],
+  "exact_json_byte_accounting": true,
+  "compiled_plot_and_react_commit": true,
+  "compiled_query_failure": true,
+  "compiled_finish_guard": true
+}
