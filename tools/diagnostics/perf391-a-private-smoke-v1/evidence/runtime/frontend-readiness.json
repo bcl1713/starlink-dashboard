@@ -1,0 +1,202 @@
+{
+  "attempts": [
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-13.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155649.178206905,
+      "monotonic": 2155648.884308388,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754069734992954
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-16.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155649.653450594,
+      "monotonic": 2155649.378676159,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754070229360389
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-19.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155650.136873901,
+      "monotonic": 2155649.853871618,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754070704556120
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-22.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155650.624769615,
+      "monotonic": 2155650.337325102,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754071188009630
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-25.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155651.101390031,
+      "monotonic": 2155650.825102476,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754071675786962
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-28.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155651.57488984,
+      "monotonic": 2155651.301863705,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754072152548199
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-31.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155652.048968733,
+      "monotonic": 2155651.77535817,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754072626042619
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-34.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155652.530478283,
+      "monotonic": 2155652.249449694,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754073100134147
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-37.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155653.007495001,
+      "monotonic": 2155652.730999669,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754073581684077
+    },
+    {
+      "error": "RuntimeError: command failure: /tmp/perf391-smoke-408-a/command-40.log: on3.11/http/client.py\", line 1010, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 863, in create_connection\n    raise exceptions[0]\n  File \"/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/socket.py\", line 848, in create_connection\n    sock.connect(s",
+      "finished_monotonic": 2155653.47872487,
+      "monotonic": 2155653.20804184,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3076514,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T11:14:29.623237559Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792754074058726331
+    },
+    {
+      "error": "TimeoutError: insufficient command/termination budget",
+      "finished_monotonic": 2155653.835158133,
+      "monotonic": 2155653.679348517,
+      "utc_ns": 1792754074530032939
+    }
+  ],
+  "deadline_monotonic": 2155653.884304332,
+  "status": "timeout"
+}

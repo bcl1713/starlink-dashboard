@@ -1,0 +1,7 @@
+{
+  "cleanup_error": null,
+  "diagnostic_error": null,
+  "external_host_audit_required": true,
+  "failure": "TimeoutError: insufficient command/termination budget",
+  "owner_status": "clean"
+}

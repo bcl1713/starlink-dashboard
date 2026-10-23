@@ -1,0 +1,22 @@
+{
+  "task": "perf391-a-private-smoke",
+  "scratch": "/tmp/perf391-a-private-smoke",
+  "pid": 3069995,
+  "pgid": 3069994,
+  "start_id": "215557719",
+  "utc": "2026-10-23T11:13:18Z",
+  "project": "perf391-smoke-408-a",
+  "runtime": "/tmp/perf391-smoke-408-a",
+  "lock": "/tmp/perf391-smoke-408.lock",
+  "ports": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "private_volumes": [
+    "perf391-smoke-408-a_prometheus_data",
+    "perf391-smoke-408-a_starlink_data"
+  ],
+  "cleanup": "approved executor finally, independent host audit, scoped recorded scratch removal"
+}

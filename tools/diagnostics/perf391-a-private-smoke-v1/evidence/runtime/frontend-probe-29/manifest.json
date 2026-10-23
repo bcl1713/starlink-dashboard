@@ -1,0 +1,77 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3077692"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3077692,
+      "start_id": "215565332"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-a/frontend-probe-29"
+  ],
+  "owner": {
+    "pgid": 3075028,
+    "pid": 3075029,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "215563789"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "timeout",
+        "--kill-after=0.05s",
+        "0.46700180331245067s",
+        "docker",
+        "inspect",
+        "0270598d2a27c52d54306cf2dde65181e957d675fb8799388ca62a31f15ebb18",
+        "--format",
+        "{{json .State}}"
+      ],
+      "pgid": 3077692,
+      "pid": 3077692,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "215565332",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6363470295",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

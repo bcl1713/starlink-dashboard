@@ -1,0 +1,70 @@
+{
+  "outcome": "FAIL_FRONTEND_READINESS",
+  "functional_pass": false,
+  "A_invocations": 1,
+  "C_invocations": 0,
+  "source_scheduled_observations": {
+    "required": 5,
+    "actual": 0,
+    "cadence_limit_seconds": 1.5,
+    "cadence_result": "unavailable: observer never started"
+  },
+  "host_scheduled_observations": {
+    "required": 5,
+    "actual": 0,
+    "cadence_result": "unavailable: observer never started"
+  },
+  "visible_network_charts": 0,
+  "history_retained_projection_uplot_joins": [],
+  "actual_event_joins": [],
+  "screenshot_attempts": 0,
+  "streams": {
+    "backend": {
+      "status": "unavailable",
+      "final_summary": null,
+      "dropped_events": null,
+      "reason": "Frontend readiness stopped execution before browser/source/host observation and backend stop/drain/export; missing evidence is not zero loss."
+    },
+    "source": {
+      "status": "unavailable",
+      "final_summary": null,
+      "dropped_events": null,
+      "reason": "Frontend readiness stopped execution before browser/source/host observation and backend stop/drain/export; missing evidence is not zero loss."
+    },
+    "host": {
+      "status": "unavailable",
+      "final_summary": null,
+      "dropped_events": null,
+      "reason": "Frontend readiness stopped execution before browser/source/host observation and backend stop/drain/export; missing evidence is not zero loss."
+    },
+    "node": {
+      "status": "unavailable",
+      "final_summary": null,
+      "dropped_events": null,
+      "reason": "Frontend readiness stopped execution before browser/source/host observation and backend stop/drain/export; missing evidence is not zero loss."
+    },
+    "frontend": {
+      "status": "unavailable",
+      "final_summary": null,
+      "dropped_events": null,
+      "reason": "Frontend readiness stopped execution before browser/source/host observation and backend stop/drain/export; missing evidence is not zero loss."
+    },
+    "browser": {
+      "status": "unavailable",
+      "final_summary": null,
+      "dropped_events": null,
+      "reason": "Frontend readiness stopped execution before browser/source/host observation and backend stop/drain/export; missing evidence is not zero loss."
+    }
+  },
+  "clock_domains": {
+    "retained": "readiness and diagnostic UTC wall nanoseconds and host monotonic seconds, same Forge host; retained process namespace/start identities",
+    "source_browser_backend": "unavailable: no collected events/anchors; no cross-clock subtraction"
+  },
+  "unavailable_by_design": [
+    "raw wire bytes",
+    "native parse-start",
+    "physical scanout",
+    "A final authority/CAS/frame"
+  ],
+  "stop_for_checkpoint_review": true
+}

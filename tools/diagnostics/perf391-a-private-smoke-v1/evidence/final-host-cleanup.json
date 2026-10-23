@@ -1,0 +1,423 @@
+{
+  "actor_uid": 1002,
+  "checked_process_identities": [
+    {
+      "pid": 3074996,
+      "start_id": "215563766"
+    },
+    {
+      "pid": 3075029,
+      "start_id": "215563789"
+    },
+    {
+      "pid": 3075366,
+      "start_id": "215564189"
+    },
+    {
+      "pid": 3075367,
+      "start_id": "215564191"
+    },
+    {
+      "pid": 3075379,
+      "start_id": "215564195"
+    },
+    {
+      "pid": 3075393,
+      "start_id": "215564199"
+    },
+    {
+      "pid": 3075411,
+      "start_id": "215564203"
+    },
+    {
+      "pid": 3075431,
+      "start_id": "215564212"
+    },
+    {
+      "pid": 3075447,
+      "start_id": "215564224"
+    },
+    {
+      "pid": 3075452,
+      "start_id": "215564232"
+    },
+    {
+      "pid": 3075635,
+      "start_id": "215564285"
+    },
+    {
+      "pid": 3076425,
+      "start_id": "215564868"
+    },
+    {
+      "pid": 3076588,
+      "start_id": "215564889"
+    },
+    {
+      "pid": 3076645,
+      "start_id": "215564900"
+    },
+    {
+      "pid": 3076694,
+      "start_id": "215564907"
+    },
+    {
+      "pid": 3076743,
+      "start_id": "215564939"
+    },
+    {
+      "pid": 3076796,
+      "start_id": "215564950"
+    },
+    {
+      "pid": 3076810,
+      "start_id": "215564957"
+    },
+    {
+      "pid": 3076843,
+      "start_id": "215564986"
+    },
+    {
+      "pid": 3076925,
+      "start_id": "215564998"
+    },
+    {
+      "pid": 3076950,
+      "start_id": "215565005"
+    },
+    {
+      "pid": 3076984,
+      "start_id": "215565035"
+    },
+    {
+      "pid": 3077031,
+      "start_id": "215565046"
+    },
+    {
+      "pid": 3077046,
+      "start_id": "215565054"
+    },
+    {
+      "pid": 3077065,
+      "start_id": "215565083"
+    },
+    {
+      "pid": 3077117,
+      "start_id": "215565094"
+    },
+    {
+      "pid": 3077131,
+      "start_id": "215565102"
+    },
+    {
+      "pid": 3077164,
+      "start_id": "215565131"
+    },
+    {
+      "pid": 3077216,
+      "start_id": "215565142"
+    },
+    {
+      "pid": 3077233,
+      "start_id": "215565149"
+    },
+    {
+      "pid": 3077268,
+      "start_id": "215565178"
+    },
+    {
+      "pid": 3077411,
+      "start_id": "215565190"
+    },
+    {
+      "pid": 3077427,
+      "start_id": "215565197"
+    },
+    {
+      "pid": 3077448,
+      "start_id": "215565226"
+    },
+    {
+      "pid": 3077497,
+      "start_id": "215565237"
+    },
+    {
+      "pid": 3077532,
+      "start_id": "215565245"
+    },
+    {
+      "pid": 3077547,
+      "start_id": "215565274"
+    },
+    {
+      "pid": 3077595,
+      "start_id": "215565285"
+    },
+    {
+      "pid": 3077610,
+      "start_id": "215565292"
+    },
+    {
+      "pid": 3077628,
+      "start_id": "215565321"
+    },
+    {
+      "pid": 3077692,
+      "start_id": "215565332"
+    },
+    {
+      "pid": 3077711,
+      "start_id": "215565340"
+    },
+    {
+      "pid": 3077745,
+      "start_id": "215565369"
+    },
+    {
+      "pid": 3077816,
+      "start_id": "215565390"
+    },
+    {
+      "pid": 3077867,
+      "start_id": "215565401"
+    },
+    {
+      "pid": 3077913,
+      "start_id": "215565412"
+    },
+    {
+      "pid": 3077927,
+      "start_id": "215565419"
+    },
+    {
+      "pid": 3077949,
+      "start_id": "215565426"
+    },
+    {
+      "pid": 3078003,
+      "start_id": "215565438"
+    },
+    {
+      "pid": 3078025,
+      "start_id": "215565448"
+    },
+    {
+      "pid": 3078052,
+      "start_id": "215565456"
+    },
+    {
+      "pid": 3078066,
+      "start_id": "215565457"
+    }
+  ],
+  "clean": true,
+  "docker": {
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "docker_host": "unix:///run/user/1002/docker.sock",
+  "images": {
+    "A-backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "A-frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "C-backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "C-frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+  },
+  "listeners": [],
+  "owner_manifests": [
+    {
+      "path": "/tmp/perf391-smoke-408-a/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-07/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-06/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-05/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-04/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-03/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-02/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-01/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/cleanup-owner/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-32/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-31/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-30/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-29/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-28/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-27/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-26/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-25/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-24/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-23/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-22/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-21/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-20/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-19/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-18/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-17/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-16/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-15/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-14/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-13/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-12/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-11/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-10/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-09/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-08/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-07/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-06/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-05/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-04/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-03/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-02/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-01/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/verification-owner/manifest.json",
+      "status": "clean"
+    }
+  ],
+  "pid_namespace": "pid:[4026531836]",
+  "ports_checked": [
+    38080,
+    38081,
+    38082,
+    38083,
+    38180,
+    38181,
+    38182,
+    38183
+  ],
+  "process_survivors": [],
+  "removed_paths": [
+    "/tmp/perf391-smoke-408-a",
+    "/tmp/perf391-a-private-smoke",
+    "/tmp/perf391-smoke-408.lock"
+  ],
+  "temporary_paths_absent": true,
+  "utc": "2026-10-23T11:15:39Z"
+}

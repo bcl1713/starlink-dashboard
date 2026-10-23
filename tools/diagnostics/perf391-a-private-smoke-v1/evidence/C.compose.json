@@ -1,0 +1,203 @@
+{
+  "name": "perf391-preflight-contract",
+  "networks": {
+    "default": {
+      "internal": true,
+      "ipam": {},
+      "name": "perf391-preflight-contract_default"
+    }
+  },
+  "services": {
+    "mission-planner": {
+      "command": null,
+      "cpus": 0.5,
+      "depends_on": {
+        "starlink-location": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "image": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+      "init": true,
+      "logging": {
+        "driver": "local",
+        "options": {
+          "compress": "false",
+          "max-file": "1",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "268435456",
+      "networks": {
+        "default": null
+      },
+      "pids_limit": 64,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38180",
+          "target": 80
+        }
+      ],
+      "pull_policy": "never",
+      "restart": "no",
+      "stop_grace_period": "8s"
+    },
+    "prometheus": {
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.retention.time=12h",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "cpus": 1,
+      "entrypoint": null,
+      "image": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+      "init": true,
+      "logging": {
+        "driver": "local",
+        "options": {
+          "compress": "false",
+          "max-file": "1",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "1073741824",
+      "networks": {
+        "default": null
+      },
+      "pids_limit": 256,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38182",
+          "target": 9090
+        }
+      ],
+      "pull_policy": "never",
+      "restart": "no",
+      "stop_grace_period": "8s",
+      "volumes": [
+        {
+          "source": "metrics",
+          "target": "/prometheus",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "bind": {},
+          "read_only": true,
+          "source": "/tmp/perf391-a-private-smoke/context/C/monitoring/prometheus/prometheus.yml",
+          "target": "/etc/prometheus/prometheus.yml",
+          "type": "bind"
+        },
+        {
+          "bind": {},
+          "read_only": true,
+          "source": "/tmp/perf391-a-private-smoke/context/C/monitoring/prometheus/rules",
+          "target": "/etc/prometheus/rules",
+          "type": "bind"
+        },
+        {
+          "bind": {},
+          "read_only": true,
+          "source": "/tmp/perf391-smoke-408-c/history.openmetrics",
+          "target": "/seed/history.openmetrics",
+          "type": "bind"
+        }
+      ]
+    },
+    "starlink-location": {
+      "command": null,
+      "cpus": 2,
+      "entrypoint": null,
+      "environment": {
+        "NO_PROXY": "prometheus,localhost,127.0.0.1",
+        "OPERATOR_ENABLED": "true",
+        "OPERATOR_SIMULATION_RUN_ID": "default",
+        "PERF391_ROLE": "C",
+        "PERF391_RUN": "synthetic-408c",
+        "PERF_SYNTHETIC": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "/diagnostic:/acceptance:/app",
+        "SIMULATION_MODE": "true",
+        "STARLINK_GROUND_ENTRY_LATITUDE": "0",
+        "STARLINK_GROUND_ENTRY_LONGITUDE": "0",
+        "STARLINK_MODE": "simulation",
+        "STARLINK_PROMETHEUS_URL": "http://prometheus:9090",
+        "STARLINK_ROUTE_LATITUDE_START": "0",
+        "STARLINK_ROUTE_LONGITUDE_START": "-10"
+      },
+      "healthcheck": {
+        "interval": "2s",
+        "retries": 15,
+        "start_period": "1s",
+        "test": [
+          "CMD",
+          "curl",
+          "--max-time",
+          "1",
+          "-f",
+          "http://localhost:8000/health"
+        ],
+        "timeout": "2s"
+      },
+      "image": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+      "init": true,
+      "logging": {
+        "driver": "local",
+        "options": {
+          "compress": "false",
+          "max-file": "1",
+          "max-size": "10m"
+        }
+      },
+      "mem_limit": "2147483648",
+      "networks": {
+        "default": null
+      },
+      "pids_limit": 256,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "mode": "ingress",
+          "protocol": "tcp",
+          "published": "38181",
+          "target": 8000
+        }
+      ],
+      "pull_policy": "never",
+      "restart": "no",
+      "stop_grace_period": "8s",
+      "volumes": [
+        {
+          "source": "data",
+          "target": "/app/data",
+          "type": "volume",
+          "volume": {}
+        },
+        {
+          "source": "routes",
+          "target": "/data",
+          "type": "volume",
+          "volume": {}
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "data": {
+      "name": "perf391-preflight-contract_data"
+    },
+    "metrics": {
+      "name": "perf391-preflight-contract_metrics"
+    },
+    "routes": {
+      "name": "perf391-preflight-contract_routes"
+    }
+  }
+}

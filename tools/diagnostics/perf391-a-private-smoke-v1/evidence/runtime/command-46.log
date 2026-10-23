@@ -1,0 +1,35 @@
+mission-planner-1  | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+mission-planner-1  | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+mission-planner-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+mission-planner-1  | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+mission-planner-1  | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+mission-planner-1  | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+mission-planner-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+mission-planner-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+mission-planner-1  | /docker-entrypoint.sh: Configuration complete; ready for start up
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: using the "epoll" event method
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: nginx/1.31.7
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: built by gcc 15.2.0 (Alpine 15.2.0) 
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: OS: Linux 7.0.0-34-generic
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: getrlimit(RLIMIT_NOFILE): 524288:524288
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker processes
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 30
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 31
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 32
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 33
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 34
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 35
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 36
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 37
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 38
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 39
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 40
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 41
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 42
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 43
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 44
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 45
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 46
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 47
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 48
+mission-planner-1  | 2026/10/23 11:14:29 [notice] 7#7: start worker process 49
