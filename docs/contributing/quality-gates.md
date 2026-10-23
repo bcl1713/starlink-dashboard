@@ -5,10 +5,16 @@ continuous integration. Run the commands from the repository root.
 
 ## Prerequisites
 
-- CI bootstraps Python 3.13 and `uv`. The backend context currently pins Python
-  3.11 in `.python-version`, matching its production Docker runtime; `uv run`
-  respects that tracked selection. The Python tiers load
-  `backend/starlink-location/requirements-dev.txt` through `uv run`.
+- CI bootstraps Python 3.11 from the backend's tracked `.python-version`,
+  matching production. Both Python jobs pass setup-python's executable to uv
+  and disable uv Python downloads, so uv reuses that installation. Locally,
+  `tools/verify` uses the tracked selection unless `UV_PYTHON` is supplied.
+- The backend uses one uv dependency environment with both
+  `requirements-dev.txt` (including application requirements) and
+  `requirements-gfs.txt`. Static retains its development dependency install
+  for root policy tests; Black and Ruff use uv with the same Python selection.
+  Existing requirement pins/ranges and setup-uv cache behavior are unchanged;
+  these manifests are not a fully locked dependency set.
 - Use Node 22.22.2 or a newer Node 22 patch. CI uses 22.22.2, and the frontend
   package declares that Node 22 range. Older patches do not satisfy the locked
   jsdom dependency requirements. Install locked frontend dependencies with
@@ -41,7 +47,13 @@ request is ready, run the applicable tier or `./tools/verify all`.
   formatting, and documentation link validation. Internal files and anchors are
   required; external HTTP/HTTPS failures are reported as nonblocking warnings.
 - `backend` runs the complete backend pytest suite from its established
-  `backend/starlink-location` context.
+  `backend/starlink-location` context. It first prints the actual Python
+  executable/version and installed distribution versions using the same uv
+  requirement inputs, then reports the 50 slowest pytest phases (including
+  setup/teardown). Each command prints elapsed seconds and its exit status.
+  CI bounds this tier to 20 minutes with a ten-second termination grace period.
+  Compare environment/inventory time separately from pytest time and the
+  GitHub job setup/post steps; pytest retains collection/pass/skip totals.
 - `frontend` runs Vitest with `npm run test:unit` and then the frontend
   production build.
 - `all` runs `static`, `backend`, and `frontend` in that order, stopping at the

@@ -8,12 +8,16 @@ import os
 import re
 import subprocess
 import sys
+import time
 import tokenize
 from collections.abc import Mapping
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend/starlink-location"
+PYTHON = (
+    os.environ.get("UV_PYTHON") or (BACKEND / ".python-version").read_text().strip()
+)
 Command = tuple[list[str], Path]
 HUNK_HEADER = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
@@ -22,6 +26,8 @@ STATIC: list[Command] = [
         [
             "uv",
             "run",
+            "--python",
+            PYTHON,
             "--with-requirements",
             "backend/starlink-location/requirements-dev.txt",
             "black",
@@ -36,6 +42,8 @@ STATIC: list[Command] = [
         [
             "uv",
             "run",
+            "--python",
+            PYTHON,
             "--with-requirements",
             "requirements-dev.txt",
             "ruff",
@@ -74,19 +82,34 @@ STATIC: list[Command] = [
         ROOT,
     ),
 ]
+# Both commands share uv's requirement-keyed cached environment. The first
+# separates dependency setup/inventory time from pytest execution.
+BACKEND_UV = [
+    "uv",
+    "run",
+    "--python",
+    PYTHON,
+    "--with-requirements",
+    str(BACKEND / "requirements-dev.txt"),
+    "--with-requirements",
+    str(BACKEND / "requirements-gfs.txt"),
+]
 BACKEND_COMMANDS: list[Command] = [
     (
         [
-            "uv",
-            "run",
-            "--with-requirements",
-            str(ROOT / "backend/starlink-location/requirements-dev.txt"),
-            "--with-requirements",
-            str(ROOT / "backend/starlink-location/requirements-gfs.txt"),
-            "pytest",
-            "tests/",
-            "-q",
+            *BACKEND_UV,
+            "python",
+            "-c",
+            "import sys; from importlib.metadata import distributions; "
+            "print('Python:', sys.version, 'executable:', sys.executable, flush=True); "
+            "assert sys.version_info[:2] == (3, 11), 'backend requires Python 3.11'; "
+            "print('Installed distributions:\\n' + '\\n'.join(sorted("
+            "d.metadata['Name'] + '==' + d.version for d in distributions())))",
         ],
+        BACKEND,
+    ),
+    (
+        [*BACKEND_UV, "pytest", "tests/", "-q", "--durations=50", "--durations-min=0"],
         BACKEND,
     ),
 ]
@@ -233,8 +256,14 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
     for command, cwd in tier_commands(args[1]):
-        print(f"({cwd}) $ {' '.join(command)}")
+        print(f"({cwd}) $ {' '.join(command)}", flush=True)
+        started = time.monotonic()
         result = subprocess.run(command, cwd=cwd, check=False)
+        print(
+            f"stage={command[0]} elapsed={time.monotonic() - started:.2f}s "
+            f"exit={result.returncode}",
+            flush=True,
+        )
         if result.returncode:
             return result.returncode
     return 0

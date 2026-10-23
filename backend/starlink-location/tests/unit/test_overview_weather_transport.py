@@ -93,18 +93,75 @@ async def test_rejects_unconstructed_urls(url):
     assert streams.dials == []
 
 
-async def test_deadline_covers_dns_and_body_without_reset():
-    streams = WeatherStreams()
+async def test_deadline_covers_dns_and_body_without_reset(monkeypatch):
+    real_timeout = asyncio.timeout
+    budgets = []
+    scopes = []
 
-    async def delayed_resolve(host, timeout):
-        await asyncio.sleep(0.015)
-        return ["1.1.1.1"]
+    def record_timeout(seconds):
+        budgets.append(seconds)
+        scope = real_timeout(seconds)
+        scopes.append(scope)
+        return scope
 
-    streams.resolve = delayed_resolve
-    with pytest.raises(WeatherUnavailable):
-        await fetch(streams, seconds=0.025)
-    assert streams.writers[0].close_calls == 1
-    assert streams.writers[0].wait_closed_calls == 1
+    monkeypatch.setattr(asyncio, "timeout", record_timeout)
+
+    # Keep the three paths in this existing case: collection counts stay stable.
+    async def check_phase(phase):
+        now = [0.0]
+        clock = WeatherClock(monotonic=lambda: now[0])
+        deadline = 0.025
+        streams = WeatherStreams()
+        attempts = []
+        budgets.clear()
+        scopes.clear()
+
+        async def resolve(host, timeout):
+            assert timeout == pytest.approx(0.025)
+            if phase == "dns":
+                await asyncio.Event().wait()
+            now[0] = 0.025 if phase == "before_open" else 0.015
+            return ["1.1.1.1"]
+
+        async def open_stream(ip, host, context, timeout):
+            assert timeout == pytest.approx(0.010)
+            reader, writer = await streams.open(ip, host, context, timeout)
+            # Supply complete headers, then stall the body without feeding EOF.
+            reader.feed_data(http_response()[:-2])
+            return reader, writer
+
+        transport = PinnedWeatherTransport(clock, resolve, open_stream)
+        with pytest.raises(WeatherUnavailable) as caught:
+            await transport.fetch(
+                URL,
+                131072,
+                "application/json",
+                deadline,
+                before_attempt=lambda: attempts.append(1),
+            )
+        assert isinstance(caught.value.__cause__, TimeoutError)
+        if phase == "body":
+            # DNS, connect, drain, headers, body all share the original deadline.
+            assert budgets == pytest.approx([0.025, 0.010, 0.010, 0.010, 0.010])
+            assert now[0] == 0.015
+            assert attempts == [1]
+            assert streams.dials == [("1.1.1.1", "api.rainviewer.com")]
+            assert len(streams.writers) == 1
+            assert streams.writers[0].close_calls == 1
+            assert streams.writers[0].wait_closed_calls == 1
+        else:
+            assert budgets == pytest.approx([0.025])
+            assert attempts == []
+            assert streams.dials == []
+            assert streams.writers == []
+        if phase == "before_open":
+            assert not any(scope.expired() for scope in scopes)
+        else:
+            assert scopes[-1].expired()
+            assert isinstance(caught.value.__cause__.__cause__, asyncio.CancelledError)
+
+    for phase in ("body", "before_open", "dns"):
+        await check_phase(phase)
 
 
 async def test_tls_failure_counts_attempt_and_never_disables_verification():
