@@ -3,7 +3,7 @@ import http from "node:http";
 import { createRequire } from "node:module";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
+import { selectPanel, finishFrontend } from "./browser-evidence.mjs";
 import { createCollection } from "../perf391-diagnostic-integration-v1/collect.mjs";
 
 const options = JSON.parse(readFileSync(process.argv[2], "utf8"));
@@ -40,6 +40,7 @@ async function close() {
   if (closing) return closing;
   closing = (async () => {
     try {
+      if (observer) save("observer-before-close.json", observer.summary());
       if (collection) save("collection-final.json", await collection.close());
     } finally {
       try {
@@ -186,55 +187,15 @@ try {
     waitUntil: "domcontentloaded",
     timeout: 10000,
   });
-  await page.waitForFunction(
-    () => globalThis.__perf391ReadCommit?.().commits?.some((c) => c.commit),
-    undefined,
-    { timeout: 10000 },
-  );
-  // One attempt only, early in the fixed sample window. Unstable pixels stay unavailable.
-  const metadata = await page.evaluate(() =>
-    globalThis.__perf391ReadCommit?.(),
-  );
-  const panel = metadata?.commits?.find(
-    (c) => c.commit && c.mounted && !c.hidden,
-  )?.panel;
+  const panel = await selectPanel(page, save);
+  // Optional compositor capability remains independent of mandatory chart evidence.
   save(
     "compositor-result.json",
     panel
       ? await observer.screenshot(panel)
       : { outcome: "unavailable", reason: "no visible committed panel" },
   );
-  // Poll read-only metadata for at most 2s; do not change polling/network/application state.
-  const deadline = Date.now() + 2000;
-  let final;
-  while (Date.now() < deadline) {
-    const state = await page.evaluate(() => globalThis.__perf391ReadCommit?.());
-    const s = state?.summary;
-    const b = observer.summary();
-    if (
-      s &&
-      !s.pending &&
-      !s.inflight &&
-      !s.failed &&
-      !s.lost &&
-      !b.active &&
-      !b.pending &&
-      !b.jobs &&
-      !b.bindingJobs &&
-      !b.ownedOperations
-    ) {
-      final = await page.evaluate(() => globalThis.__perf391Finish?.());
-      break;
-    }
-    await sleep(20);
-  }
-  if (
-    !final?.after?.closed ||
-    final.before.seq < 1 ||
-    final.before.seq !== final.after.seq
-  )
-    throw Error("frontend final summary absent or changed");
-  save("frontend-final.json", final);
+  await finishFrontend(page, observer, save);
   // End the browser evidence slice immediately, independently of source observation.
   await observer.close();
   if (observer.summary().failed || observer.summary().lost)

@@ -263,3 +263,47 @@ it("an initially abandoned Suspense render never supplies a committed chart", as
   expect(diagnostic!.metadata()).toHaveLength(0);
   view.unmount();
 });
+
+it("retains the authentic full-size history and captures the real panel's uPlot inputs", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { resolve } = await import("node:path");
+  const path = resolve(
+    import.meta.dirname,
+    "../../../perf391-a-network-smoke-v1/evidence/runtime/browser/node/artifacts/b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45.bin",
+  );
+  const h = JSON.parse(readFileSync(path, "utf8")).detail.history;
+  const id = "synthetic-408a/p/b34655ed4a2b4e82/r1";
+  const original = JSON.stringify(h);
+  vi.setSystemTime(h.end_timestamp_seconds * 1000);
+  diagnostic!.response(id, h);
+  const view = render(
+    <OverviewMetricHistoryPanel
+      descriptor={metric}
+      history={h}
+      error={false}
+      selectedWindowSeconds={1800}
+      nowMs={h.end_timestamp_seconds * 1000}
+    />,
+  );
+  await act(async () => {
+    for (let i = 0; i < 300; i++) await Promise.resolve();
+  });
+  expect(diagnostic!.summary().failed).toBe(false);
+  const commits = (globalThis as any).__stage3Rows.filter(
+    (r: any) => r.phase === "plot.commit",
+  );
+  expect(commits.length).toBeGreaterThan(0);
+  const captured = commits.at(-1);
+  expect(captured.op).toBe(id);
+  expect(captured.detail.retained.series[metric.metric]).toEqual(
+    h.series[metric.metric],
+  );
+  expect(captured.detail.retained.rolling_5m[metric.metric]).toEqual(
+    h.rolling_5m[metric.metric],
+  );
+  expect(captured.detail.plot.data).toEqual(plots.instances.at(-1).data);
+  for (const name of ["observed", "min", "avg", "max"])
+    expect(captured.detail.provenance[name]).toEqual(Array(1801).fill(id));
+  expect(JSON.stringify(h)).toBe(original);
+  view.unmount();
+});

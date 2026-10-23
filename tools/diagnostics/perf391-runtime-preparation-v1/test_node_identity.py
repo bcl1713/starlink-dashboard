@@ -16,6 +16,21 @@ NODE_HASH = "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90"
 
 
 class NodeIdentityTests(unittest.TestCase):
+    def test_correction_layer_rejects_uninventoried_or_changed_source(self):
+        from correction import verify_correction
+        from prepare import HERE
+
+        manifest = json.loads(
+            (HERE / "diagnostic-correction-overlay.json").read_bytes()
+        )
+        name = next(iter(manifest["source_files"]))
+        manifest["source_files"][name]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "source drift"):
+            verify_correction(manifest)
+        del manifest["source_files"][name]
+        with self.assertRaisesRegex(ValueError, "source inventory"):
+            verify_correction(manifest)
+
     def test_receipt_identity_pairs_fail_closed(self):
         plan = json.loads(PLAN_PATH.read_bytes())
         for role in ("A", "C"):
@@ -55,7 +70,12 @@ class NodeIdentityTests(unittest.TestCase):
 
     def test_corrected_overlay_and_original_plan_are_both_bound(self):
         plan = json.loads(PLAN_PATH.read_bytes())
-        verify_runtime_overlay(plan)
+        # Historical overlays intentionally reject source changed by this unbuilt layer.
+        with self.assertRaisesRegex(ValueError, "overlay drift"):
+            verify_runtime_overlay(plan)
+        from correction import verify_correction
+
+        verify_correction()
         with patch(
             "runtime_identity.sha", return_value="0" * 64
         ), self.assertRaisesRegex(ValueError, "overlay drift"):

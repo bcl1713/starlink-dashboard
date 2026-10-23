@@ -20,30 +20,38 @@ export const LIMITS = Object.freeze({
   chunk: 15000,
 });
 
-/** Bound traversal before JSON.stringify; application objects are never modified. */
+/** Bound traversal and exact UTF-8 JSON bytes while copying; never mutate app objects. */
 function snapshot(value: any): any {
   let nodes = 0,
     bytes = 0;
+  const encoder = new TextEncoder();
+  function charge(size: number) {
+    bytes += size;
+    if (bytes > LIMITS.artifact) throw Error("artifact cap");
+  }
+  const encodedSize = (v: any) => encoder.encode(JSON.stringify(v)).length;
   function copy(v: any, depth: number): any {
     if (++nodes > LIMITS.nodes || depth > 32)
       throw Error("snapshot traversal cap");
-    if (v === undefined) return null;
+    if (v === undefined) v = null;
     if (v === null || typeof v === "boolean") {
-      bytes += 5;
+      charge(encodedSize(v));
       return v;
     }
     if (typeof v === "number") {
-      bytes += 32;
-      return Number.isFinite(v) ? v : null;
+      const value = Number.isFinite(v) ? v : null;
+      charge(encodedSize(value));
+      return value;
     }
     if (typeof v === "string") {
       if (v.length > 256) throw Error("string cap");
-      bytes += v.length * 6 + 2;
+      charge(encodedSize(v));
       return v;
     }
     if (typeof v !== "object") throw Error("unsupported evidence");
     if (Array.isArray(v)) {
       if (v.length > LIMITS.points * 4) throw Error("array cap");
+      charge(2 + Math.max(0, v.length - 1)); // brackets and commas
       const out = [];
       for (const item of v) {
         out.push(copy(item, depth + 1));
@@ -56,6 +64,7 @@ function snapshot(value: any): any {
       Object.getPrototypeOf(v) !== null
     )
       throw Error("plain evidence required");
+    charge(2); // braces
     const out: Row = {};
     let keys = 0;
     for (const key in v)
@@ -66,7 +75,7 @@ function snapshot(value: any): any {
           ["__proto__", "constructor", "prototype"].includes(key)
         )
           throw Error("key cap");
-        bytes += key.length * 6 + 4;
+        charge(encodedSize(key) + 1 + (keys > 1 ? 1 : 0));
         out[key] = copy(v[key], depth + 1);
         if (bytes > LIMITS.artifact) throw Error("artifact cap");
       }

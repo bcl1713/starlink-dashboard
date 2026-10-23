@@ -55,6 +55,13 @@ export function createCollection(
   const screenshotBudget = { screenshots: 0, busy: false };
   const setups = new Set();
   const metadataBudget = Math.min(65536, Math.floor(diskBytes / 4));
+  // A finite optional partition cannot consume mandatory chart/source capacity.
+  const optionalBudget = Math.min(2 * 1024 * 1024, Math.floor(diskBytes / 8));
+  let optionalUsed = 0,
+    optionalDropped = 0;
+  const optionalPaths = new Set(),
+    mandatoryPaths = new Set();
+  const mandatoryLimit = diskBytes - metadataBudget - optionalBudget;
   const observers = [],
     sources = new Set(),
     sourceSummaries = [],
@@ -76,7 +83,7 @@ export function createCollection(
     );
     if (
       raw.length > 1024 * 1024 ||
-      used + raw.length > diskBytes - metadataBudget
+      used - optionalUsed + raw.length > mandatoryLimit
     ) {
       dropped++;
       throw Error("record budget");
@@ -96,18 +103,25 @@ export function createCollection(
       streams.set(row.event.stream, row.event.seq);
     }
   }
-  async function artifact(body, { signal } = {}) {
+  async function artifact(body, { signal, kind } = {}) {
+    const optional = kind === "compositor-png";
+    const drop = () => {
+      if (optional) optionalDropped++;
+      else dropped++;
+    };
     if (closed || signal?.aborted || controller.signal.aborted) {
-      dropped++;
+      drop();
       throw Error("cancelled artifact");
     }
     if (
       body.length > 2 * 1024 * 1024 ||
-      Object.keys(artifacts).length >= 64 ||
-      used + body.length > diskBytes - metadataBudget
+      (optional
+        ? optionalPaths.size >= 8 || optionalUsed + body.length > optionalBudget
+        : mandatoryPaths.size >= 64 ||
+          used - optionalUsed + body.length > mandatoryLimit)
     ) {
-      dropped++;
-      throw Error("artifact budget");
+      drop();
+      throw Error(optional ? "optional artifact budget" : "artifact budget");
     }
     const sha256 = hash(body),
       path = `artifacts/${sha256}.bin`;
@@ -115,11 +129,13 @@ export function createCollection(
       if (!artifacts[path]) {
         writeFileSync(join(root, path), body, { flag: "wx" });
         used += body.length;
+        if (optional) optionalUsed += body.length;
         artifacts[path] = sha256;
       }
+      (optional ? optionalPaths : mandatoryPaths).add(path);
       return { path, sha256, bytes: body.length };
     } catch (error) {
-      dropped++;
+      drop();
       throw error;
     }
   }
@@ -153,6 +169,11 @@ export function createCollection(
             (s) => !s.failed && !s.lost && !s.ownedOperations && !s.bindingJobs,
           ),
         dropped,
+        optionalArtifacts: {
+          dropped: optionalDropped,
+          bytes: optionalUsed,
+          limit_bytes: optionalBudget,
+        },
         written_bytes: used,
         browsers: summaries,
         sources: sourceSummaries,

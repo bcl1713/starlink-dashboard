@@ -212,3 +212,81 @@ test("Page close during binding setup leaves no eventual binding or init handle"
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("optional PNG artifact failure never becomes mandatory chart loss", async () => {
+  const root = mkdtempSync(join(tmpdir(), "perf391-optional-png-"));
+  const collection = createCollection(join(root, "collection"), {
+    run: "synthetic-test",
+    diskBytes: 65536,
+  });
+  try {
+    await assert.rejects(
+      collection.artifact(Buffer.alloc(65536), { kind: "compositor-png" }),
+    );
+    const chart = await collection.artifact(Buffer.from("exact chart"), {
+      kind: "actual-chart",
+    });
+    assert.equal(chart.bytes, 11);
+    const summary = await collection.close();
+    assert.equal(summary.complete, true);
+    assert.equal(summary.dropped, 0);
+    assert.equal(summary.optionalArtifacts.dropped, 1);
+    assert.ok(summary.optionalArtifacts.limit_bytes < 65536);
+  } finally {
+    await collection.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("PNG above the frozen importer's 2 MiB limit stays unavailable without an import reference", async () => {
+  const root = mkdtempSync(join(tmpdir(), "perf391-png-import-boundary-"));
+  const collection = createCollection(join(root, "collection"), {
+    run: "synthetic-test",
+  });
+  const page = new Page();
+  page.evaluate = async () => ({
+    summary: { failed: false, lost: 0 },
+    commits: [
+      {
+        panel: "p1",
+        document: "d1",
+        commit: "p/c1",
+        generation: 1,
+        mounted: true,
+        hidden: false,
+        dpr: 1,
+        visibility: "visible",
+        rect: { x: 0, y: 0, width: 400, height: 80 },
+      },
+    ],
+  });
+  page.viewportSize = () => ({ width: 1920, height: 1080 });
+  page.screenshot = async () => Buffer.alloc(2 * 1024 * 1024 + 1);
+  try {
+    const observer = await collection.browser(page, {
+      pageId: "p",
+      origin: "http://127.0.0.1",
+    });
+    const result = await observer.screenshot("p1");
+    assert.equal(result.outcome, "unavailable");
+    assert.equal(result.stage, "artifact");
+    assert.equal(result.artifact, undefined);
+    assert.equal(result.sha256, undefined);
+    for (let i = 0; i < 50; i++) await Promise.resolve();
+    const summary = await collection.close();
+    assert.equal(summary.complete, true);
+    assert.equal(summary.dropped, 0);
+    assert.equal(summary.optionalArtifacts.dropped, 1);
+    const rows = readFileSync(join(root, "collection/records.jsonl"), "utf8")
+      .trim()
+      .split("\n")
+      .map(JSON.parse);
+    assert.equal(
+      rows.find((r) => r.phase === "paint.artifact").artifact,
+      undefined,
+    );
+  } finally {
+    await collection.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});

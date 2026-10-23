@@ -20,11 +20,14 @@ from prepare import REPO, check_release, sha, write, browser_tree
 from launcher import launch_plan, validate_receipt
 from runtime_identity import verify_runtime_overlay, verify_runtime_identity
 from frontend_readiness import wait_ready, snapshot, bounded_argv
+from backend_evidence import preserve_backend
+from correction import require_runtime_assets
 
 LOCK_PATH = Path("/tmp/perf391-smoke-408.lock")
 
 
 async def execute(args):
+    require_runtime_assets()
     proposed = json.loads(args.launch_plan.read_bytes())
     receipt = json.loads(args.receipt.read_bytes())
     plan_path = args.build_plan.resolve()
@@ -160,6 +163,8 @@ async def execute(args):
         failed = None
         host_job = None
         frontend_attempted = False
+        backend_attempted = False
+        backend_preservation = None
         extraction_container = launch["project"] + "-assets"
         try:
             actual_node_version = (
@@ -342,6 +347,10 @@ async def execute(args):
                             raise RuntimeError("host final sample/loss gate")
                     finally:
                         log.close()
+                if step["phase"] in ("stop-backend", "copy-final-backend"):
+                    continue
+                if step["phase"] == "start-backend-prometheus":
+                    backend_attempted = True
                 argv = [
                     (
                         str(int(time.time()) - 20)
@@ -383,19 +392,6 @@ async def execute(args):
                         began + 78,
                         stop,
                     )
-            stats = json.loads((root / "backend/backend-stats.json").read_bytes())
-            if not stats.get("runtime_boundary_drained") or any(
-                stats.get(k)
-                for k in (
-                    "buffered",
-                    "dropped",
-                    "invalid",
-                    "failures",
-                    "token_evictions",
-                    "token_unavailable",
-                )
-            ):
-                raise RuntimeError("backend drain/loss gate")
         except BaseException as error:
             failed = type(error).__name__ + ": " + str(error)[:512]
         finally:
@@ -420,6 +416,47 @@ async def execute(args):
             cleanup_owner.persist()
             cleanup_error = None
             diagnostic_error = None
+            if backend_attempted:
+                preservation_count = 0
+
+                async def preservation_command(argv, cap):
+                    nonlocal process_owner, preservation_count
+                    preservation_count += 1
+                    preservation_owner = Owner(
+                        root / f"backend-preservation-owner-{preservation_count:02d}",
+                        run=launch["env"]["PERF391_RUN"],
+                        sources=owner.manifest["sources"],
+                        adopt_descendants=True,
+                    )
+                    process_owner = preservation_owner
+                    try:
+                        return await command(bounded_argv(argv, cap), cap, cleanup=True)
+                    finally:
+                        # A timed-out stop/copy is reaped before the next command.
+                        await preservation_owner.close()
+
+                try:
+                    backend_preservation = await preserve_backend(
+                        preservation_command,
+                        launch["commands"],
+                        root,
+                        min(began + 80, time.monotonic() + 11),
+                    )
+                except (
+                    Exception,  # noqa: BLE001 - teardown must continue
+                    asyncio.CancelledError,
+                ) as error:
+                    # Evidence/report faults must not bypass destructive-resource cleanup
+                    # or overwrite the original browser failure.
+                    backend_preservation = {
+                        "complete": False,
+                        "zero_loss": False,
+                        "stats": None,
+                        "error": type(error).__name__ + ": " + str(error)[:256],
+                    }
+                if not backend_preservation["complete"] and failed is None:
+                    failed = "backend final evidence unavailable or loss"
+
             if failed and frontend_attempted:
                 # Existing command groups are reaped, but containers still exist.
                 # Each diagnostic gets its own owner so a failed probe cannot leak
@@ -504,6 +541,7 @@ async def execute(args):
                     "failure": failed,
                     "cleanup_error": cleanup_error,
                     "diagnostic_error": diagnostic_error,
+                    "backend_preservation": backend_preservation,
                     "owner_status": owner.manifest["status"],
                     "external_host_audit_required": True,
                 },

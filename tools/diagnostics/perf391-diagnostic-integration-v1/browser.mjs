@@ -58,9 +58,32 @@ export async function createBrowserObserver(
     operations = new Set();
   setMaxListeners(BOUNDS.jobs * 2 + 4, controller.signal);
   let known = new WeakMap();
-  const fail = () => {
+  const failures = [];
+  let failureOverflow = 0,
+    preClose = null;
+  const stateSummary = () => ({
+    closed,
+    failed,
+    lost,
+    active: active.size,
+    pending: queue.length,
+    bytes,
+    jobs,
+    bindingJobs,
+    ownedOperations: operations.size,
+    assemblies: assemblies.size,
+  });
+  const fail = (code, error) => {
     failed = true;
     lost++;
+    if (failures.length < 16)
+      failures.push({
+        code,
+        reason: String(error?.message ?? error ?? code).slice(0, 256),
+        at_ns: now(),
+        state: stateSummary(),
+      });
+    else failureOverflow++;
   };
   async function bounded(fn, ms = deadlineMs, parent = controller.signal) {
     const operation = new AbortController();
@@ -93,7 +116,7 @@ export async function createBrowserObserver(
       const job = queue.shift();
       jobs++;
       const work = bounded((signal) => write(job.row, { signal }))
-        .catch(fail)
+        .catch((error) => fail("write-failure", error))
         .finally(() => {
           jobs--;
           bytes -= job.size;
@@ -111,7 +134,7 @@ export async function createBrowserObserver(
       queue.length >= BOUNDS.events ||
       bytes + size > BOUNDS.queue
     ) {
-      fail();
+      fail("event-budget");
       return false;
     }
     queue.push({
@@ -152,15 +175,15 @@ export async function createBrowserObserver(
     if (!selected(request)) return;
     try {
       emit({ phase, ...state(request), ...extra });
-    } catch {
-      fail();
+    } catch (error) {
+      fail("event-failure", error);
     }
   }
   const listeners = {
     request(request) {
       if (!selected(request)) return;
       if (active.size >= BOUNDS.requests) {
-        fail();
+        fail("request-cap");
         return;
       }
       active.set(request, state(request));
@@ -189,7 +212,7 @@ export async function createBrowserObserver(
       active.delete(request);
     },
     close() {
-      if (!initialized) fail();
+      if (!initialized) fail("closed-during-setup");
       void close();
     },
   };
@@ -208,7 +231,7 @@ export async function createBrowserObserver(
   async function bindingWork(source, message) {
     if (closed || failed) return false;
     if (bindingJobs >= BOUNDS.jobs) {
-      fail();
+      fail("binding-job-cap");
       return false;
     }
     bindingJobs++;
@@ -306,8 +329,8 @@ export async function createBrowserObserver(
         return emit({ origin: "browser", event: row });
       }
       return true;
-    } catch {
-      fail();
+    } catch (error) {
+      fail("binding-failure", error);
       assemblies.delete(`${message?.document}/${message?.seq}`);
       return false;
     } finally {
@@ -320,8 +343,8 @@ export async function createBrowserObserver(
       (...args) => {
         try {
           fn(...args);
-        } catch {
-          fail();
+        } catch (error) {
+          fail("listener-failure", error);
         }
       },
     ]),
@@ -359,13 +382,14 @@ export async function createBrowserObserver(
     );
     initialized = true;
   } catch (error) {
-    fail();
+    fail("setup-failure", error);
     await close();
     throw error;
   }
-  async function metadata() {
-    return bounded(() =>
-      page.evaluate(() => globalThis.__perf391ReadCommit?.() ?? null),
+  async function metadata(ms) {
+    return bounded(
+      () => page.evaluate(() => globalThis.__perf391ReadCommit?.() ?? null),
+      ms,
     );
   }
   function screenshot(panel) {
@@ -382,10 +406,19 @@ export async function createBrowserObserver(
     budget.busy = true;
     budget.screenshots++;
     const started = now();
-    let result;
+    let result,
+      before = null,
+      after = null;
+    let stage = "before-metadata";
+    const until = Date.now() + deadlineMs;
+    const remaining = () => {
+      const ms = until - Date.now();
+      if (ms <= 0) throw Error("deadline");
+      return ms;
+    };
     try {
-      const before = await metadata(),
-        view = page.viewportSize();
+      before = await metadata(remaining());
+      const view = page.viewportSize();
       const a = before?.commits.find((c) => c.panel === panel),
         r = a?.rect;
       if (
@@ -414,19 +447,24 @@ export async function createBrowserObserver(
         commit: a.commit,
         started_ns: started,
       });
-      const png = await bounded(() =>
-        page.screenshot({
-          type: "png",
-          clip: r,
-          timeout: deadlineMs,
-          animations: "allow",
-          caret: "initial",
-          scale: "css",
-        }),
+      stage = "native-screenshot";
+      const ms = remaining();
+      const png = await bounded(
+        () =>
+          page.screenshot({
+            type: "png",
+            clip: r,
+            timeout: ms,
+            animations: "allow",
+            caret: "initial",
+            scale: "css",
+          }),
+        ms,
       );
       if (png.length > BOUNDS.png) throw Error("png cap");
-      const after = await metadata(),
-        b = after?.commits.find((c) => c.panel === panel);
+      stage = "after-metadata";
+      after = await metadata(remaining());
+      const b = after?.commits.find((c) => c.panel === panel);
       const stable =
         b?.mounted &&
         a.document === b.document &&
@@ -445,12 +483,15 @@ export async function createBrowserObserver(
         !failed &&
         !closed;
       const sha256 = createHash("sha256").update(png).digest("hex");
-      const reference = await bounded((signal) =>
-        artifact(png, {
-          kind: "compositor-png",
-          sha256,
-          signal,
-        }),
+      stage = "artifact";
+      const reference = await bounded(
+        (signal) =>
+          artifact(png, {
+            kind: "compositor-png",
+            sha256,
+            signal,
+          }),
+        remaining(),
       );
       result = {
         phase: "paint.artifact",
@@ -476,7 +517,20 @@ export async function createBrowserObserver(
         phase: "paint.artifact",
         panel,
         outcome: "unavailable",
-        reason: String(error.message),
+        reason: String(error.message).slice(0, 256),
+        stage,
+        code:
+          error.message === "deadline" || error.name === "TimeoutError"
+            ? stage.includes("metadata")
+              ? "screenshot-metadata-timeout"
+              : stage === "native-screenshot"
+                ? "screenshot-native-timeout"
+                : "screenshot-artifact-timeout"
+            : stage === "native-screenshot"
+              ? "screenshot-native-failure"
+              : "screenshot-stage-failure",
+        before,
+        after,
         started_ns: started,
         received_ns: now(),
       };
@@ -488,9 +542,11 @@ export async function createBrowserObserver(
   }
   function close() {
     if (closePromise) return closePromise;
+    preClose = stateSummary();
     closed = true;
     closePromise = (async () => {
-      if (active.size || assemblies.size || queue.length) fail();
+      if (active.size || assemblies.size || queue.length)
+        fail("close-incomplete");
       controller.abort();
       for (const [name, fn] of Object.entries(handlers)) page.off(name, fn);
       active.clear();
@@ -503,8 +559,8 @@ export async function createBrowserObserver(
         if (handle) {
           try {
             await bounded(() => handle.dispose(), deadlineMs, null);
-          } catch {
-            fail();
+          } catch (error) {
+            fail("dispose-failure", error);
           }
         }
       initHandle = null;
@@ -516,16 +572,10 @@ export async function createBrowserObserver(
     screenshot,
     close,
     summary: () => ({
-      closed,
-      failed,
-      lost,
-      active: active.size,
-      pending: queue.length,
-      bytes,
-      jobs,
-      bindingJobs,
-      ownedOperations: operations.size,
-      assemblies: assemblies.size,
+      ...stateSummary(),
+      failures: structuredClone(failures),
+      failureOverflow,
+      preClose: preClose ? { ...preClose } : null,
     }),
   };
 }

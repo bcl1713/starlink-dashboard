@@ -373,3 +373,334 @@ test("close settles all owned capture wrappers and releases the shared screensho
   assert.equal(budget.busy, false);
   assert.equal((await capture).outcome, "unavailable");
 });
+
+test("interrupted assembly retains its pre-close counters and exact loss reason", async () => {
+  const { page, observer } = await fixture();
+  await page.bindings.get("__perf391Binding")(
+    { page },
+    {
+      run: "synthetic-test",
+      page: "p",
+      document: "d1",
+      seq: 1,
+      part: 0,
+      total: 2,
+      payload: "{",
+    },
+  );
+  await observer.close();
+  const s = observer.summary();
+  assert.equal(s.lost, 1);
+  assert.equal(s.preClose.assemblies, 1);
+  assert.equal(s.assemblies, 0);
+  assert.equal(s.failures[0].code, "close-incomplete");
+});
+
+test("binding, write, listener and disposal failures retain bounded reason codes", async () => {
+  const malformed = await fixture();
+  await malformed.page.bindings.get("__perf391Binding")(
+    { page: malformed.page },
+    {},
+  );
+  assert.equal(
+    malformed.observer.summary().failures[0].code,
+    "binding-failure",
+  );
+  assert.equal(
+    malformed.observer.summary().failures[0].reason,
+    "invalid chunk",
+  );
+  await malformed.observer.close();
+  const write = await fixture({
+    write: async () => {
+      throw Error("disk full");
+    },
+  });
+  write.page.emit("request", request("write"));
+  await drain();
+  assert.equal(write.observer.summary().failures[0].code, "write-failure");
+  assert.equal(write.observer.summary().failures[0].reason, "disk full");
+  await write.observer.close();
+  const listener = await fixture();
+  listener.page.emit("response", {
+    request: () => {
+      throw Error("callback fault");
+    },
+  });
+  assert.equal(
+    listener.observer.summary().failures[0].code,
+    "listener-failure",
+  );
+  await listener.observer.close();
+  const dispose = await fixture();
+  dispose.page.exposeBinding = async () => {};
+  // Existing handle closes over this Map method, simulating disposal rejection.
+  dispose.page.bindings.delete = () => {
+    throw Error("dispose fault");
+  };
+  await dispose.observer.close();
+  assert.equal(dispose.observer.summary().failures[0].code, "dispose-failure");
+  assert.equal(dispose.observer.summary().preClose.failed, false);
+  const cap = await fixture();
+  for (let i = 0; i < 100; i++)
+    cap.page.emit("response", {
+      request: () => {
+        throw Error("fault");
+      },
+    });
+  assert.equal(cap.observer.summary().failures.length, 16);
+  assert.equal(cap.observer.summary().failureOverflow, 84);
+  assert.equal(cap.observer.summary().lost, 100);
+  await cap.observer.close();
+});
+
+test("screenshot distinguishes metadata deadline, native deadline and native failure without chart loss", async () => {
+  for (const mode of [
+    "metadata",
+    "native-timeout",
+    "native-failure",
+    "after-metadata",
+  ]) {
+    const { page, observer, rows } = await fixture({ deadlineMs: 10 });
+    let evaluations = 0,
+      screenshots = 0;
+    const evaluate = page.evaluate.bind(page);
+    page.evaluate = () => {
+      evaluations++;
+      return mode === "metadata" ||
+        (mode === "after-metadata" && evaluations === 2)
+        ? new Promise(() => {})
+        : evaluate();
+    };
+    page.screenshot = async () => {
+      screenshots++;
+      if (mode === "native-timeout") return new Promise(() => {});
+      if (mode === "native-failure") throw Error("native capture failed");
+      return Buffer.from("png");
+    };
+    const result = await observer.screenshot("o1");
+    assert.equal(result.outcome, "unavailable");
+    assert.equal(
+      result.stage,
+      mode === "metadata"
+        ? "before-metadata"
+        : mode === "after-metadata"
+          ? "after-metadata"
+          : "native-screenshot",
+    );
+    assert.equal(
+      result.code,
+      mode === "native-failure"
+        ? "screenshot-native-failure"
+        : mode.startsWith("native")
+          ? "screenshot-native-timeout"
+          : "screenshot-metadata-timeout",
+    );
+    assert.equal(screenshots, mode === "metadata" ? 0 : 1);
+    assert.equal(
+      rows.some((r) => r.phase === "paint.request"),
+      mode !== "metadata",
+    );
+    assert.equal(observer.summary().lost, 0);
+    await observer.close();
+  }
+});
+
+test("duplicate, stale, oversized and malformed browser chunks fail closed with reasons", async () => {
+  for (const mode of ["duplicate", "stale", "oversized", "malformed"]) {
+    const { page, observer } = await fixture();
+    const binding = page.bindings.get("__perf391Binding");
+    const m = {
+      run: "synthetic-test",
+      page: "p",
+      document: "d1",
+      seq: 1,
+      total: mode === "oversized" ? 34 : 2,
+      part: 0,
+      payload: "{",
+    };
+    const realNow = Date.now;
+    try {
+      assert.equal(await binding({ page }, m), true);
+      if (mode === "stale") Date.now = () => realNow() + 2001;
+      if (mode === "oversized") {
+        for (let part = 1; part <= 33; part++)
+          await binding({ page }, { ...m, part, payload: "x".repeat(65536) });
+      } else
+        await binding(
+          { page },
+          { ...m, part: mode === "duplicate" ? 0 : 1, payload: "x" },
+        );
+      assert.equal(observer.summary().failed, true);
+      assert.equal(observer.summary().failures[0].code, "binding-failure");
+      assert.match(
+        observer.summary().failures[0].reason,
+        mode === "oversized"
+          ? /artifact cap/
+          : mode === "malformed"
+            ? /JSON/
+            : /duplicate\/stale chunk/,
+      );
+    } finally {
+      Date.now = realNow;
+      await observer.close();
+    }
+  }
+});
+
+test("owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish", async () => {
+  const { selectPanel, finishFrontend } = await import(
+    "../../perf391-runtime-preparation-v1/browser-evidence.mjs"
+  );
+  for (const mode of [
+    "ok",
+    "absent",
+    "invalid",
+    "incomplete",
+    "busy",
+    "metadata-timeout",
+  ]) {
+    const saved = {};
+    const state = {
+      commits: [
+        {
+          panel: "o1",
+          commit: mode === "incomplete" ? null : "p/c1",
+          mounted: true,
+          hidden: false,
+        },
+      ],
+      summary: {
+        seq: 10,
+        closed: false,
+        failed: false,
+        lost: 0,
+        pending: mode === "busy" ? 1 : 0,
+        inflight: 0,
+      },
+    };
+    let disposed = false;
+    const page = {
+      waitForFunction: async () => ({
+        jsonValue: async () => structuredClone(state),
+        dispose: async () => {
+          disposed = true;
+        },
+      }),
+      evaluate: async (fn) => {
+        if (mode === "metadata-timeout") return new Promise(() => {});
+        if (String(fn).includes("__perf391Finish"))
+          return {
+            available: mode !== "absent",
+            value:
+              mode === "invalid"
+                ? { before: {}, after: { closed: true } }
+                : {
+                    before: state.summary,
+                    after: { ...state.summary, closed: true },
+                  },
+          };
+        return structuredClone(state);
+      },
+    };
+    const save = (name, value) => {
+      saved[name] = structuredClone(value);
+    };
+    const observer = {
+      summary: () => ({
+        active: 0,
+        pending: 0,
+        jobs: 0,
+        bindingJobs: 0,
+        ownedOperations: 0,
+        assemblies: 0,
+        failed: false,
+        lost: 0,
+      }),
+    };
+    if (mode === "incomplete")
+      await assert.rejects(selectPanel(page, save), /incomplete-commits/);
+    else {
+      assert.equal(await selectPanel(page, save), "o1");
+      assert.deepEqual(saved["panel-selection.json"].metadata, state);
+    }
+    assert.equal(disposed, true);
+    if (mode === "ok")
+      assert.equal(
+        (await finishFrontend(page, observer, save, { deadlineMs: 10 })).after
+          .closed,
+        true,
+      );
+    else
+      await assert.rejects(
+        finishFrontend(page, observer, save, { deadlineMs: 10 }),
+        new RegExp(
+          {
+            absent: "finish-absent",
+            invalid: "finish-invalid",
+            incomplete: "incomplete-commits",
+            busy: "finish-not-admitted",
+            "metadata-timeout": "frontend-metadata-timeout",
+          }[mode],
+        ),
+      );
+    const trace = saved["frontend-finalization.json"];
+    assert.ok(trace);
+    assert.deepEqual(
+      trace.last?.frontend ?? null,
+      mode === "metadata-timeout" ? null : state,
+    );
+    assert.equal(
+      trace.finishAdmitted,
+      ["ok", "absent", "invalid"].includes(mode),
+    );
+    if (mode === "invalid")
+      assert.deepEqual(trace.final, { before: {}, after: { closed: true } });
+  }
+});
+
+test("artifact failure remains optional and the screenshot uses the remaining total budget", async () => {
+  for (const mode of [
+    "artifact-failure",
+    "artifact-timeout",
+    "remaining-budget",
+  ]) {
+    const f = await fixture({
+      deadlineMs: 30,
+      artifact: async () => {
+        if (mode === "artifact-failure") throw Error("PNG storage failure");
+        return new Promise(() => {});
+      },
+    });
+    try {
+      if (mode === "remaining-budget") {
+        const evaluate = f.page.evaluate.bind(f.page);
+        f.page.evaluate = async () => {
+          await new Promise((r) => setTimeout(r, 8));
+          return evaluate();
+        };
+        f.page.screenshot = async (options) => {
+          assert.ok(options.timeout < 30 && options.timeout > 0);
+          return new Promise(() => {});
+        };
+      }
+      const result = await f.observer.screenshot("o1");
+      assert.equal(result.outcome, "unavailable");
+      assert.equal(
+        result.stage,
+        mode === "remaining-budget" ? "native-screenshot" : "artifact",
+      );
+      assert.equal(
+        result.code,
+        mode === "remaining-budget"
+          ? "screenshot-native-timeout"
+          : mode === "artifact-timeout"
+            ? "screenshot-artifact-timeout"
+            : "screenshot-stage-failure",
+      );
+      assert.equal(f.observer.summary().lost, 0);
+    } finally {
+      await f.observer.close();
+    }
+  }
+});

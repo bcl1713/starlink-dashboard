@@ -71,18 +71,9 @@ def analyze_runtime(build_plan, receipt_path, runtime, output):
     if len(streams) != 1 or streams[0]["last_seq"] != final["seq"]:
         raise ValueError("frontend final sequence mismatch or unexpected document")
     stats = json.loads((runtime / "backend/backend-stats.json").read_bytes())
-    if not stats.get("runtime_boundary_drained") or any(
-        stats.get(k)
-        for k in (
-            "buffered",
-            "dropped",
-            "invalid",
-            "failures",
-            "token_evictions",
-            "token_unavailable",
-        )
-    ):
-        raise ValueError("backend final loss gate")
+    from backend_evidence import validate_stats
+
+    validate_stats(stats)
     host_rows = read_jsonl(runtime / "host.jsonl", max_bytes=67108864)
     host_final = [r for r in host_rows if r["kind"] == "summary"]
     if (
