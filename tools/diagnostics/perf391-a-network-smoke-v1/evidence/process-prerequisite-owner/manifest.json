@@ -1,0 +1,74 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3488723"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3488723,
+      "start_id": "216143302"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-network-smoke/tools/diagnostics/perf391-a-network-smoke-v1/evidence/process-prerequisite-owner"
+  ],
+  "owner": {
+    "pgid": 3488721,
+    "pid": 3488722,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "216143297"
+  },
+  "processes": [
+    {
+      "actions": [
+        {
+          "pid": 3488723,
+          "signal": "SIGTERM",
+          "start_id": "216143302"
+        }
+      ],
+      "command": [
+        "/tmp/perf391-a-network-smoke/venv/bin/python",
+        "-c",
+        "import time; time.sleep(30)"
+      ],
+      "pgid": 3488723,
+      "pid": 3488723,
+      "reaped": true,
+      "returncode": -15,
+      "start_id": "216143302",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-network-preflight",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {},
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

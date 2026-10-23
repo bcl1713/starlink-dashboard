@@ -1,0 +1,28 @@
+{
+  "attempts": [
+    {
+      "finished_monotonic": 2161517.460428234,
+      "monotonic": 2161517.164143792,
+      "response": {
+        "sha256": "f2e5285b17665ab359351e4ce66a46bb94c56f9f870161d76ff9c1df99f79de9",
+        "status": 200
+      },
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 3496615,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2026-10-23T12:52:17.864282612Z",
+        "Status": "running"
+      },
+      "utc_ns": 1792759938014828218
+    }
+  ],
+  "deadline_monotonic": 2161522.164139595,
+  "status": "ready"
+}

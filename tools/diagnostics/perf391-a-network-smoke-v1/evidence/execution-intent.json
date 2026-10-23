@@ -1,0 +1,38 @@
+{
+  "utc": "2026-10-23T12:52:06Z",
+  "runtime_attempts": 1,
+  "C_executions": 0,
+  "argv": [
+    "timeout",
+    "--kill-after=10s",
+    "90s",
+    "/tmp/perf391-a-network-smoke/venv/bin/python",
+    "-B",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-network-smoke/tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py",
+    "--launch-plan",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-network-smoke/tools/diagnostics/perf391-a-network-smoke-v1/evidence/executor-launch-A.json",
+    "--build-plan",
+    "/tmp/perf391-a-network-smoke/context/original-build-plan.json",
+    "--receipt",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-network-smoke/tools/diagnostics/perf391-built-images-v1/evidence/built-A.json",
+    "--node",
+    "/tmp/perf391-a-network-smoke/node-22.22.2",
+    "--authorization",
+    "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6365234957",
+    "--execute"
+  ],
+  "supervisor_pid": 3494967,
+  "supervisor_pgid": 3494967,
+  "supervisor_start_id": "216150580",
+  "executor_sha256": "65d23ba738bb32b333a6d660b334501219cf379a50858b4282bceaad36d039f9",
+  "launcher_sha256": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4",
+  "launch_sha256": "985be4ba4b07850df38fbf23d6ffd51cab48087a59a963af79b99e12304d6027",
+  "deadlines": {
+    "work_seconds": 78,
+    "outer_timeout_seconds": 90,
+    "kill_grace_seconds": 10
+  },
+  "note": "Exact unchanged launcher output; three-layer provenance retained separately in preflight.",
+  "timeout_pid": 3494990,
+  "timeout_pgid": 3494990
+}

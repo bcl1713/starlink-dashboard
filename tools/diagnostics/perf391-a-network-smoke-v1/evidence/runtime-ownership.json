@@ -1,0 +1,24 @@
+{
+  "task": "perf391-a-network-smoke",
+  "scratch": "/tmp/perf391-a-network-smoke",
+  "pid": 3487250,
+  "pgid": 3487249,
+  "start_id": "216141257",
+  "utc": "2026-10-23T12:50:33Z",
+  "project": "perf391-smoke-408-a",
+  "runtime": "/tmp/perf391-smoke-408-a",
+  "lock": "/tmp/perf391-smoke-408.lock",
+  "ports": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "private_volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ],
+  "cleanup": "approved executor finally, independent host audit, scoped recorded scratch removal",
+  "ownership_note": "Actual launcher/executor intent is authoritative; setup allocated only private environment paths."
+}

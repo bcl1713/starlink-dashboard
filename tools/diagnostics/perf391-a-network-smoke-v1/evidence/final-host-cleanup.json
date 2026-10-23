@@ -1,0 +1,259 @@
+{
+  "actor_uid": 1002,
+  "checked_process_identities": [
+    {
+      "pid": 3494967,
+      "start_id": "216150580"
+    },
+    {
+      "pid": 3494991,
+      "start_id": "216150605"
+    },
+    {
+      "pid": 3495317,
+      "start_id": "216151001"
+    },
+    {
+      "pid": 3495322,
+      "start_id": "216151003"
+    },
+    {
+      "pid": 3495339,
+      "start_id": "216151007"
+    },
+    {
+      "pid": 3495370,
+      "start_id": "216151011"
+    },
+    {
+      "pid": 3495402,
+      "start_id": "216151015"
+    },
+    {
+      "pid": 3495448,
+      "start_id": "216151027"
+    },
+    {
+      "pid": 3495465,
+      "start_id": "216151036"
+    },
+    {
+      "pid": 3495466,
+      "start_id": "216151044"
+    },
+    {
+      "pid": 3495671,
+      "start_id": "216151107"
+    },
+    {
+      "pid": 3495756,
+      "start_id": "216151120"
+    },
+    {
+      "pid": 3495852,
+      "start_id": "216151132"
+    },
+    {
+      "pid": 3496532,
+      "start_id": "216151692"
+    },
+    {
+      "pid": 3496615,
+      "start_id": "216151705"
+    },
+    {
+      "pid": 3496759,
+      "start_id": "216151717"
+    },
+    {
+      "pid": 3496825,
+      "start_id": "216151729"
+    },
+    {
+      "pid": 3496843,
+      "start_id": "216151737"
+    },
+    {
+      "pid": 3496857,
+      "start_id": "216151749"
+    },
+    {
+      "pid": 3496902,
+      "start_id": "216151755"
+    },
+    {
+      "pid": 3496915,
+      "start_id": "216151757"
+    },
+    {
+      "pid": 3496960,
+      "start_id": "216151764"
+    },
+    {
+      "pid": 3496975,
+      "start_id": "216151766"
+    },
+    {
+      "pid": 3497023,
+      "start_id": "216151772"
+    },
+    {
+      "pid": 3497038,
+      "start_id": "216151774"
+    },
+    {
+      "pid": 3497157,
+      "start_id": "216151890"
+    },
+    {
+      "pid": 3497163,
+      "start_id": "216151895"
+    },
+    {
+      "pid": 3497165,
+      "start_id": "216151895"
+    },
+    {
+      "pid": 3497168,
+      "start_id": "216151895"
+    },
+    {
+      "pid": 3497169,
+      "start_id": "216151895"
+    },
+    {
+      "pid": 3497193,
+      "start_id": "216151898"
+    },
+    {
+      "pid": 3498009,
+      "start_id": "216152594"
+    },
+    {
+      "pid": 3498062,
+      "start_id": "216152605"
+    },
+    {
+      "pid": 3498134,
+      "start_id": "216152618"
+    },
+    {
+      "pid": 3498148,
+      "start_id": "216152626"
+    },
+    {
+      "pid": 3498166,
+      "start_id": "216152633"
+    },
+    {
+      "pid": 3498217,
+      "start_id": "216152644"
+    },
+    {
+      "pid": 3498219,
+      "start_id": "216152654"
+    },
+    {
+      "pid": 3498228,
+      "start_id": "216152662"
+    },
+    {
+      "pid": 3498248,
+      "start_id": "216152663"
+    }
+  ],
+  "clean": true,
+  "docker": {
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "docker_host": "unix:///run/user/1002/docker.sock",
+  "images": {
+    "A-backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "A-frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "C-backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "C-frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+  },
+  "listeners": [],
+  "owner_manifests": [
+    {
+      "path": "/tmp/perf391-smoke-408-a/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-07/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-06/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-05/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-04/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-03/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-02/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-diagnostic-01/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/cleanup-owner/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-03/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-02/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/frontend-probe-01/manifest.json",
+      "status": "clean"
+    },
+    {
+      "path": "/tmp/perf391-smoke-408-a/verification-owner/manifest.json",
+      "status": "clean"
+    }
+  ],
+  "pid_namespace": "pid:[4026531836]",
+  "ports_checked": [
+    38080,
+    38081,
+    38082,
+    38083,
+    38180,
+    38181,
+    38182,
+    38183
+  ],
+  "process_survivors": [],
+  "removed_paths": [
+    "/tmp/perf391-smoke-408-a",
+    "/tmp/perf391-a-network-smoke",
+    "/tmp/perf391-smoke-408.lock"
+  ],
+  "temporary_paths_absent": true,
+  "utc": "2026-10-23T12:53:13Z"
+}

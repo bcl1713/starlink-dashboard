@@ -1,0 +1,9 @@
+{
+  "sandbox_probe": "Docker socket denied and PID 1 was sandbox wrapper; not classified as daemon failure. Approved escalated host command verified Forge/rootless/PID 1 systemd.",
+  "retention_first_attempt": "FileNotFoundError for cleanup-audit.json; stopped before copying or deletion. Traceback preserved in retain-cleanup.log. Ran approved independent audit.py, then retention succeeded; no runtime retry.",
+  "summary_first_attempt": "TypeError sorting phase_counts containing None and str; source-body phase key relabeled. Offline summary regenerated successfully; raw records untouched.",
+  "sessions": {"preflight":37995,"A_supervisor":65392},
+  "session_outcomes": {"preflight":0,"A_supervisor":1},
+  "runtime_invocations": {"A":1,"C":0},
+  "cleanup": "Successful independent audits and scratch removal; open-review evidence/worktree retained. No runtime resources remain."
+}

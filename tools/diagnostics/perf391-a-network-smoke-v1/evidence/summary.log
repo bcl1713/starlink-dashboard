@@ -1,0 +1,16 @@
+{
+  "status": "FAIL_BROWSER_FINALIZATION_STOP",
+  "source_observations": 5,
+  "source_cadence_pass": true,
+  "host_summary": [
+    {
+      "kind": "summary",
+      "completed": 5,
+      "skipped": 0,
+      "complete": true
+    }
+  ],
+  "actual_plot_commit_records": 0,
+  "screenshot_attempts": 1,
+  "cleanup": true
+}

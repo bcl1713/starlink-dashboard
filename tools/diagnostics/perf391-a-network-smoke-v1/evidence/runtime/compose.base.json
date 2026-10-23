@@ -1,0 +1,26 @@
+{
+  "networks": {
+    "default": {
+      "internal": false
+    }
+  },
+  "services": {
+    "mission-planner": {
+      "image": "${PERF391_FRONTEND_IMAGE:?reviewed immutable diagnostic image required}",
+      "pull_policy": "never"
+    },
+    "prometheus": {
+      "image": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+      "pull_policy": "never"
+    },
+    "starlink-location": {
+      "image": "${PERF391_BACKEND_IMAGE:?reviewed immutable diagnostic image required}",
+      "pull_policy": "never"
+    }
+  },
+  "volumes": {
+    "data": {},
+    "metrics": {},
+    "routes": {}
+  }
+}

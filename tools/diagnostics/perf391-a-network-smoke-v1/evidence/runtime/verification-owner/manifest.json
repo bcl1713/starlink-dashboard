@@ -1,0 +1,214 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3495317"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3495317,
+      "start_id": "216151001"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3495322"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3495322,
+      "start_id": "216151003"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3495339"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3495339,
+      "start_id": "216151007"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3495370"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3495370,
+      "start_id": "216151011"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3495402"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3495402,
+      "start_id": "216151015"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "3495448"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 3495448,
+      "start_id": "216151027"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [
+    "perf391-smoke-408-a-assets"
+  ],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-a/verification-owner"
+  ],
+  "owner": {
+    "pgid": 3494990,
+    "pid": 3494991,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "216150605"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/tmp/perf391-a-network-smoke/node-22.22.2",
+        "--version"
+      ],
+      "pgid": 3495317,
+      "pid": 3495317,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "216151001",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+        "--format",
+        "{{json .}}"
+      ],
+      "pgid": 3495322,
+      "pid": 3495322,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "216151003",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+        "--format",
+        "{{json .}}"
+      ],
+      "pgid": 3495339,
+      "pid": 3495339,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "216151007",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "create",
+        "--name",
+        "perf391-smoke-408-a-assets",
+        "--label",
+        "com.docker.compose.project=perf391-smoke-408-a",
+        "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+      ],
+      "pgid": 3495370,
+      "pid": 3495370,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "216151011",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "cp",
+        "perf391-smoke-408-a-assets:/usr/share/nginx/html/.",
+        "/tmp/perf391-smoke-408-a/image-assets"
+      ],
+      "pgid": 3495402,
+      "pid": 3495402,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "216151015",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "rm",
+        "perf391-smoke-408-a-assets"
+      ],
+      "pgid": 3495448,
+      "pid": 3495448,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "216151027",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6365234957",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

@@ -1,0 +1,828 @@
+{
+  "backend_join": "unavailable: backend stream was not exported after browser failure",
+  "complete_history_projection_actual_uplot_chain": false,
+  "input": "runtime/browser/node/records.jsonl",
+  "joins": [
+    {
+      "records": [
+        {
+          "line": 10,
+          "record": {
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161519546567703",
+            "host_seq": 1,
+            "page_id": "p",
+            "phase": "browser.request",
+            "requestId": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+            "requestToken": "p/n4"
+          }
+        },
+        {
+          "line": 21,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {},
+              "monotonic_ms": 256.59999990463257,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "query.begin",
+              "run": "synthetic-408a",
+              "seq": 11,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161519573985155",
+            "host_seq": 12,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 22,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "aborted": false
+              },
+              "monotonic_ms": 256.59999990463257,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.request",
+              "run": "synthetic-408a",
+              "seq": 12,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161519574284623",
+            "host_seq": 13,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 64,
+          "record": {
+            "encoding": "gzip",
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161519854155108",
+            "host_seq": 55,
+            "page_id": "p",
+            "phase": "browser.response",
+            "requestId": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+            "requestToken": "p/n4",
+            "response": true,
+            "status": 200
+          }
+        },
+        {
+          "line": 65,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "bundle": "o7"
+              },
+              "monotonic_ms": 595.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.response",
+              "run": "synthetic-408a",
+              "seq": 54,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161519888964010",
+            "host_seq": 56,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 66,
+          "record": {
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161519898503198",
+            "host_seq": 57,
+            "page_id": "p",
+            "phase": "browser.finished",
+            "requestId": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+            "requestToken": "p/n4",
+            "response": true
+          }
+        },
+        {
+          "line": 85,
+          "record": {
+            "artifact": {
+              "bytes": 165399,
+              "path": "artifacts/b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45.bin",
+              "sha256": "b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45"
+            },
+            "commit": null,
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "monotonic_ms": 595.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.parse_available",
+              "run": "synthetic-408a",
+              "seq": 55,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521295905283",
+            "host_seq": 58,
+            "metric": "starlink_network_latency_ms_current",
+            "origin": "browser",
+            "page_id": "p",
+            "sha256": "b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45",
+            "snapshots": {}
+          }
+        },
+        {
+          "line": 87,
+          "record": {
+            "artifact": {
+              "bytes": 178469,
+              "path": "artifacts/725c18dbae6b6d6a3a35b7da3784b663c965e638c0259c226de6ffe0ed46acdf.bin",
+              "sha256": "725c18dbae6b6d6a3a35b7da3784b663c965e638c0259c226de6ffe0ed46acdf"
+            },
+            "commit": null,
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "monotonic_ms": 595.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.parse_available",
+              "run": "synthetic-408a",
+              "seq": 56,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521320181764",
+            "host_seq": 60,
+            "metric": "starlink_network_throughput_down_mbps_current",
+            "origin": "browser",
+            "page_id": "p",
+            "sha256": "725c18dbae6b6d6a3a35b7da3784b663c965e638c0259c226de6ffe0ed46acdf",
+            "snapshots": {}
+          }
+        },
+        {
+          "line": 88,
+          "record": {
+            "artifact": {
+              "bytes": 178305,
+              "path": "artifacts/62fd12538a20c02bdfb2b1ea4319ed5cf1152a65ae085a5a6b46c5ccac3ffc54.bin",
+              "sha256": "62fd12538a20c02bdfb2b1ea4319ed5cf1152a65ae085a5a6b46c5ccac3ffc54"
+            },
+            "commit": null,
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "monotonic_ms": 595.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.parse_available",
+              "run": "synthetic-408a",
+              "seq": 57,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521338385085",
+            "host_seq": 61,
+            "metric": "starlink_network_throughput_up_mbps_current",
+            "origin": "browser",
+            "page_id": "p",
+            "sha256": "62fd12538a20c02bdfb2b1ea4319ed5cf1152a65ae085a5a6b46c5ccac3ffc54",
+            "snapshots": {}
+          }
+        },
+        {
+          "line": 89,
+          "record": {
+            "artifact": {
+              "bytes": 141208,
+              "path": "artifacts/d9d2d1ebc8242dbdb1bbd3addc450545f49b7b7c94066bf4b231a998fb4aedb4.bin",
+              "sha256": "d9d2d1ebc8242dbdb1bbd3addc450545f49b7b7c94066bf4b231a998fb4aedb4"
+            },
+            "commit": null,
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "monotonic_ms": 595.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.parse_available",
+              "run": "synthetic-408a",
+              "seq": 58,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521362087862",
+            "host_seq": 62,
+            "metric": "starlink_network_packet_loss_percent",
+            "origin": "browser",
+            "page_id": "p",
+            "sha256": "d9d2d1ebc8242dbdb1bbd3addc450545f49b7b7c94066bf4b231a998fb4aedb4",
+            "snapshots": {}
+          }
+        },
+        {
+          "line": 90,
+          "record": {
+            "artifact": {
+              "bytes": 125562,
+              "path": "artifacts/663760e08629c739089f69a4a2608a2575a046ca5e9ad15285a5263d1a65ac38.bin",
+              "sha256": "663760e08629c739089f69a4a2608a2575a046ca5e9ad15285a5263d1a65ac38"
+            },
+            "commit": null,
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "monotonic_ms": 595.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "app.parse_available",
+              "run": "synthetic-408a",
+              "seq": 59,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521429375538",
+            "host_seq": 63,
+            "metric": "starlink_dish_obstruction_percent",
+            "origin": "browser",
+            "page_id": "p",
+            "sha256": "663760e08629c739089f69a4a2608a2575a046ca5e9ad15285a5263d1a65ac38",
+            "snapshots": {}
+          }
+        },
+        {
+          "line": 91,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "bundle": "o7",
+                "responseRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1"
+              },
+              "monotonic_ms": 620.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "query.success",
+              "run": "synthetic-408a",
+              "seq": 60,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521429916621",
+            "host_seq": 64,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 92,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "accepted": "o7",
+                "acceptedRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "candidate": "o7",
+                "candidateRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "decision": "accepted",
+                "metric": "starlink_network_latency_ms_current",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 630.4000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "react.render_candidate",
+              "run": "synthetic-408a",
+              "seq": 61,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521430402319",
+            "host_seq": 65,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 93,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "commit": "p/c24",
+                "document": "b34655ed4a2b4e82",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 638,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "history.retained",
+              "run": "synthetic-408a",
+              "seq": 62,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521430664465",
+            "host_seq": 66,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 94,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "commit": "p/c24",
+                "document": "b34655ed4a2b4e82",
+                "panel": "o6",
+                "upload": "create"
+              },
+              "monotonic_ms": 638.0999999046326,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "plot.upload",
+              "run": "synthetic-408a",
+              "seq": 63,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521430895405",
+            "host_seq": 67,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 99,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "accepted": "o7",
+                "acceptedRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "candidate": "o7",
+                "candidateRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "decision": "accepted",
+                "metric": "starlink_network_latency_ms_current",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 2026.3000001907349,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "react.render_candidate",
+              "run": "synthetic-408a",
+              "seq": 67,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521525172434",
+            "host_seq": 72,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 100,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "commit": "p/c25",
+                "document": "b34655ed4a2b4e82",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 2028.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "history.retained",
+              "run": "synthetic-408a",
+              "seq": 68,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521525465737",
+            "host_seq": 73,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 101,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "commit": "p/c25",
+                "document": "b34655ed4a2b4e82",
+                "panel": "o6",
+                "upload": "setData"
+              },
+              "monotonic_ms": 2028.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "plot.upload",
+              "run": "synthetic-408a",
+              "seq": 69,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521525810764",
+            "host_seq": 74,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 102,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "accepted": "o7",
+                "acceptedRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "candidate": "o7",
+                "candidateRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "decision": "accepted",
+                "metric": "starlink_network_latency_ms_current",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 2038.9000000953674,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "react.render_candidate",
+              "run": "synthetic-408a",
+              "seq": 71,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521527034072",
+            "host_seq": 75,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 103,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "accepted": "o7",
+                "acceptedRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "candidate": "o7",
+                "candidateRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "decision": "accepted",
+                "metric": "starlink_network_latency_ms_current",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 2041.6999998092651,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "react.render_candidate",
+              "run": "synthetic-408a",
+              "seq": 72,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521527315360",
+            "host_seq": 76,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 104,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "accepted": "o7",
+                "acceptedRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "candidate": "o7",
+                "candidateRequest": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+                "decision": "accepted",
+                "metric": "starlink_network_latency_ms_current",
+                "panel": "o6",
+                "retained": "o8"
+              },
+              "monotonic_ms": 2065.5999999046326,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+              "outcome": "ok",
+              "phase": "react.render_candidate",
+              "run": "synthetic-408a",
+              "seq": 73,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521527564390",
+            "host_seq": 77,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        }
+      ],
+      "request_id": "synthetic-408a/p/b34655ed4a2b4e82/r1",
+      "request_token": "p/n4",
+      "state": "partial; no backend export or actual plot.commit snapshot"
+    },
+    {
+      "records": [
+        {
+          "line": 86,
+          "record": {
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521299604250",
+            "host_seq": 59,
+            "page_id": "p",
+            "phase": "browser.request",
+            "requestId": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+            "requestToken": "p/n21"
+          }
+        },
+        {
+          "line": 95,
+          "record": {
+            "encoding": "gzip",
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521431209326",
+            "host_seq": 68,
+            "page_id": "p",
+            "phase": "browser.response",
+            "requestId": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+            "requestToken": "p/n21",
+            "response": true,
+            "status": 200
+          }
+        },
+        {
+          "line": 96,
+          "record": {
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521517059716",
+            "host_seq": 69,
+            "page_id": "p",
+            "phase": "browser.finished",
+            "requestId": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+            "requestToken": "p/n21",
+            "response": true
+          }
+        },
+        {
+          "line": 97,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {},
+              "monotonic_ms": 2024.3000001907349,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+              "outcome": "ok",
+              "phase": "query.begin",
+              "run": "synthetic-408a",
+              "seq": 65,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521519146676",
+            "host_seq": 70,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 98,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "aborted": false
+              },
+              "monotonic_ms": 2024.3000001907349,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+              "outcome": "ok",
+              "phase": "app.request",
+              "run": "synthetic-408a",
+              "seq": 66,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521524019588",
+            "host_seq": 71,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 105,
+          "record": {
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "detail": {
+                "bundle": "o9"
+              },
+              "monotonic_ms": 2217.300000190735,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+              "outcome": "ok",
+              "phase": "app.response",
+              "run": "synthetic-408a",
+              "seq": 74,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521580103281",
+            "host_seq": 78,
+            "origin": "browser",
+            "page_id": "p"
+          }
+        },
+        {
+          "line": 106,
+          "record": {
+            "artifact": {
+              "bytes": 165416,
+              "path": "artifacts/898c6c3e39abf286c0f79264948a2a04d6596e6e1e5fe226fa1e648c288fcea7.bin",
+              "sha256": "898c6c3e39abf286c0f79264948a2a04d6596e6e1e5fe226fa1e648c288fcea7"
+            },
+            "commit": null,
+            "event": {
+              "clock": "browser/p/b34655ed4a2b4e82",
+              "monotonic_ms": 2217.300000190735,
+              "op": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+              "outcome": "ok",
+              "phase": "app.parse_available",
+              "run": "synthetic-408a",
+              "seq": 75,
+              "stream": "synthetic-408a/p/b34655ed4a2b4e82"
+            },
+            "host_identity": {
+              "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+              "pid": 3497038,
+              "process_start_id": "2161519257326900",
+              "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+            },
+            "host_received_ns": "2161521621947837",
+            "host_seq": 79,
+            "metric": "starlink_network_latency_ms_current",
+            "origin": "browser",
+            "page_id": "p",
+            "sha256": "898c6c3e39abf286c0f79264948a2a04d6596e6e1e5fe226fa1e648c288fcea7",
+            "snapshots": {}
+          }
+        }
+      ],
+      "request_id": "synthetic-408a/p/b34655ed4a2b4e82/r2",
+      "request_token": "p/n21",
+      "state": "partial; no backend export or actual plot.commit snapshot"
+    }
+  ],
+  "sha256": "6960bf04e51c115f17de5b535a89a42d3f12b653d2049c5095840a6baa398b13"
+}

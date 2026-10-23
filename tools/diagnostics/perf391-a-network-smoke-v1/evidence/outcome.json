@@ -1,0 +1,162 @@
+{
+  "A_invocations": 1,
+  "C_invocations": 0,
+  "actual_plot_commit_records": 0,
+  "backend_stream_and_final_drop_summary": "unavailable; browser failure preceded backend drain/export",
+  "browser_collection": {
+    "artifacts": {
+      "artifacts/16ca06ff6e22498f7f299877f9447c036df5b4a7c06ed559fb91b3f8ec76500a.bin": "16ca06ff6e22498f7f299877f9447c036df5b4a7c06ed559fb91b3f8ec76500a",
+      "artifacts/62fd12538a20c02bdfb2b1ea4319ed5cf1152a65ae085a5a6b46c5ccac3ffc54.bin": "62fd12538a20c02bdfb2b1ea4319ed5cf1152a65ae085a5a6b46c5ccac3ffc54",
+      "artifacts/663760e08629c739089f69a4a2608a2575a046ca5e9ad15285a5263d1a65ac38.bin": "663760e08629c739089f69a4a2608a2575a046ca5e9ad15285a5263d1a65ac38",
+      "artifacts/725c18dbae6b6d6a3a35b7da3784b663c965e638c0259c226de6ffe0ed46acdf.bin": "725c18dbae6b6d6a3a35b7da3784b663c965e638c0259c226de6ffe0ed46acdf",
+      "artifacts/792d71f000d57b0d29ede134dbaa11a7e648d37f2a3386164a34adb34c4959a1.bin": "792d71f000d57b0d29ede134dbaa11a7e648d37f2a3386164a34adb34c4959a1",
+      "artifacts/898c6c3e39abf286c0f79264948a2a04d6596e6e1e5fe226fa1e648c288fcea7.bin": "898c6c3e39abf286c0f79264948a2a04d6596e6e1e5fe226fa1e648c288fcea7",
+      "artifacts/9c565db09b84f6c89021d77da25abfcb2b03a05dd12ccd4e902a44754bf659c6.bin": "9c565db09b84f6c89021d77da25abfcb2b03a05dd12ccd4e902a44754bf659c6",
+      "artifacts/b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45.bin": "b0c67faf174567e9523d98a9f2a7a8dac6f86b1d88acb1efe41a4832301b3d45",
+      "artifacts/bfd29e3fd25cc31e30f06a794b979029ae0bea8bc6125fa0cbb4d55ab2e02cec.bin": "bfd29e3fd25cc31e30f06a794b979029ae0bea8bc6125fa0cbb4d55ab2e02cec",
+      "artifacts/d6c5a60dd07258546fed201f1735bbcf68c2da588f28e264c201c37272bd4c3b.bin": "d6c5a60dd07258546fed201f1735bbcf68c2da588f28e264c201c37272bd4c3b",
+      "artifacts/d9d2d1ebc8242dbdb1bbd3addc450545f49b7b7c94066bf4b231a998fb4aedb4.bin": "d9d2d1ebc8242dbdb1bbd3addc450545f49b7b7c94066bf4b231a998fb4aedb4"
+    },
+    "browsers": [
+      {
+        "active": 0,
+        "assemblies": 0,
+        "bindingJobs": 0,
+        "bytes": 0,
+        "closed": true,
+        "failed": true,
+        "jobs": 0,
+        "lost": 1,
+        "ownedOperations": 0,
+        "pending": 0
+      }
+    ],
+    "closed": true,
+    "complete": false,
+    "dropped": 0,
+    "host_identity": {
+      "clock_id": "eb4b0756-5355-4d68-9076-2624f4008555",
+      "pid": 3497038,
+      "process_start_id": "2161519257326900",
+      "process_uuid": "c26672bf-6eaa-46c1-bace-4b810f317d24"
+    },
+    "run": "synthetic-408a",
+    "schema": "perf391-node-collection-v1",
+    "sources": [
+      {
+        "cancelled": false,
+        "closed": true,
+        "completed": 5,
+        "failed": false,
+        "skipped": 0
+      }
+    ],
+    "streams": [
+      {
+        "last_seq": 75,
+        "stream_id": "synthetic-408a/p/b34655ed4a2b4e82"
+      }
+    ],
+    "version": 1,
+    "written_bytes": 1027168
+  },
+  "browser_failure": {
+    "reason": "frontend final summary absent or changed"
+  },
+  "chart_chain": "incomplete: raw retained/history and plot.upload create/setData associations exist, but actual plot.commit and retained/projection/plot snapshots were not retained",
+  "cleanup": true,
+  "complete_smoke_pass": false,
+  "executor_exit": {
+    "A_invocations": 1,
+    "C_invocations": 0,
+    "exit_code": 1,
+    "utc": "2026-10-23T12:52:30Z"
+  },
+  "frontend_final_summary": "unavailable; frontend-final.json absent",
+  "frontend_readiness": {
+    "attempts": [
+      {
+        "finished_monotonic": 2161517.460428234,
+        "monotonic": 2161517.164143792,
+        "response": {
+          "sha256": "f2e5285b17665ab359351e4ce66a46bb94c56f9f870161d76ff9c1df99f79de9",
+          "status": 200
+        },
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "0001-01-01T00:00:00Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 3496615,
+          "Restarting": false,
+          "Running": true,
+          "StartedAt": "2026-10-23T12:52:17.864282612Z",
+          "Status": "running"
+        },
+        "utc_ns": 1792759938014828218
+      }
+    ],
+    "deadline_monotonic": 2161522.164139595,
+    "status": "ready"
+  },
+  "historical_process_tests": "both timed out at 120s; not passing; no reruns",
+  "host_summary": [
+    {
+      "complete": true,
+      "completed": 5,
+      "kind": "summary",
+      "skipped": 0
+    }
+  ],
+  "no_retry": true,
+  "phase_counts": {
+    "app.parse_available": 6,
+    "app.request": 2,
+    "app.response": 2,
+    "browser.finished": 2,
+    "browser.request": 2,
+    "browser.response": 2,
+    "history.retained": 2,
+    "observer.headers": 5,
+    "observer.parsed": 5,
+    "observer.received": 5,
+    "observer.record_complete": 5,
+    "observer.scheduled": 5,
+    "observer.send": 5,
+    "observer.wake": 5,
+    "observer.written": 5,
+    "paint.artifact": 1,
+    "plot.upload": 2,
+    "query.begin": 2,
+    "query.success": 1,
+    "react.mount": 6,
+    "react.render_candidate": 45,
+    "react.unmount": 5,
+    "source-body": 5
+  },
+  "retained_projection_plot_snapshot_records": 0,
+  "runtime_result": {
+    "cleanup_error": null,
+    "diagnostic_error": null,
+    "external_host_audit_required": true,
+    "failure": "RuntimeError: browser smoke failure",
+    "owner_status": "clean"
+  },
+  "screenshot": {
+    "outcome": "unavailable",
+    "panel": "o6",
+    "phase": "paint.artifact",
+    "reason": "deadline",
+    "received_ns": "2161523625980304",
+    "started_ns": "2161521625694379"
+  },
+  "screenshot_attempts": 1,
+  "source_cadence_pass": true,
+  "source_observations": 5,
+  "status": "FAIL_BROWSER_FINALIZATION_STOP",
+  "stop": "checkpoint review on draft PR #408",
+  "visible_chart": "browser owner found a mounted, nonhidden committed panel o6; screenshot unavailable, no pixel proof",
+  "zero_loss_gate": false
+}
