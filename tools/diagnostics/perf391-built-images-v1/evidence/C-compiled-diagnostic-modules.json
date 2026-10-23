@@ -1,0 +1,41 @@
+[
+  {
+    "id": "diagnostic/browser-probe.ts",
+    "renderedExports": [
+      "LIMITS",
+      "createProbe",
+      "diagnostic"
+    ],
+    "renderedLength": 13481
+  },
+  {
+    "id": "diagnostic/browser-runtime.ts",
+    "renderedExports": [
+      "diagnostic"
+    ],
+    "renderedLength": 327
+  },
+  {
+    "id": "frontend/mission-planner/src/hooks/api/useOverviewHistory.ts",
+    "renderedExports": [
+      "historyPollInterval",
+      "useOverviewHistory"
+    ],
+    "renderedLength": 518
+  },
+  {
+    "id": "frontend/mission-planner/src/pages/OverviewMetricHistoryPanel.tsx",
+    "renderedExports": [
+      "OverviewMetricHistoryPanel"
+    ],
+    "renderedLength": 15674
+  },
+  {
+    "id": "frontend/mission-planner/src/services/overview-history.ts",
+    "renderedExports": [
+      "overviewHistoryApi",
+      "overviewHistorySettingsApi"
+    ],
+    "renderedLength": 1028
+  }
+]

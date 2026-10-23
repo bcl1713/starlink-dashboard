@@ -1,0 +1,37 @@
+{
+  "frozen_and_preparation_diff": "",
+  "primary_checkout": "## dev...origin/dev\n",
+  "private_node": {
+    "sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+    "version": "v22.22.2"
+  },
+  "release": {
+    "release_manifest_sha256": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200",
+    "source_files": 97,
+    "verified_files": 621
+  },
+  "roles": {
+    "A": {
+      "context_sha256": "9563d8f4396323fc2ba726605704fb41a14c56c89010d55a2b48cfa1d412f7ab",
+      "package_lock_sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+      "requirements_sha256": "bf0b6ee7901e0af37ad53870c44607ca67a9df1cc7b1157e7c5168bfe1e47e73"
+    },
+    "C": {
+      "context_sha256": "a13a56cd0ddf80059c6d3b2ae389f627700421a1060d530534c239f488e1dcd6",
+      "package_lock_sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+      "requirements_sha256": "bf0b6ee7901e0af37ad53870c44607ca67a9df1cc7b1157e7c5168bfe1e47e73"
+    }
+  },
+  "selectors": {
+    "DOCKER_CONTEXT": null,
+    "DOCKER_HOST": "unix:///run/user/1002/docker.sock",
+    "XDG_RUNTIME_DIR": "/run/user/1002"
+  },
+  "shared_frontend_manifests_unchanged": true,
+  "shared_node": {
+    "sha256": "177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9",
+    "version": "v22.12.0"
+  },
+  "shared_node_unchanged": true,
+  "temporary_root": "/tmp/perf391-build-408"
+}

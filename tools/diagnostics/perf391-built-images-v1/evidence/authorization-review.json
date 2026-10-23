@@ -1,0 +1,47 @@
+{
+  "url": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6354971626",
+  "body": "Orchestrator runtime-preparation review at `f9cf80bd4fe7915863cf7e0ed5a6bc52616c377b` on #408: **GO for preparation as delivered; NO-GO for application/browser execution or performance qualification.** Reviewed checkpoint report and build design. All 10 offline tests, deterministic contexts, manifest/schema/Compose validations and read-only Forge checks are reported passing. No built-image receipt exists, which is correctly a hard gate. The 10-CPU actor ancestor quota must be recorded (20 host threads is not an entitlement to 20 cores).\n\n**Key precondition:** host Node 22.12.0 does not meet the frontend's stated ^22.22.2 floor, despite matching historical browser benchmark Node. Keep browser benchmark identity and application build-tool identity as *separate lanes*. For diagnostic-only frontend builds, use a task-owned exact Node >=22.22.2 satisfying the project engine and locked dependencies, record binary hash/version and lockfile integrity; never modify shared Node installs or pretend this is the historical performance environment. The eventual real-browser lane must verify the exact runtime/browser identity separately. If resolution needs changing lockfiles/dependencies, STOP.\n\n**Next authorization, strictly bounded:** build/receipt qualification only on Forge: independently validate the prepared configs and reviewed source hash closure; pin and provision private build dependencies; build one diagnostic A and one diagnostic C image using the task-owned Compose/build contexts with correct immutable SHA labels; inspect actual image digests, Python appuser inventories, compiled asset maps, module wiring and source/output hashes. Verify 89-package production dependency identity and no primary application/frozen changes. Do NOT start containers/services, launch Playwright, issue HTTP, capture packets or perform benchmark/calibration. Report exact built receipts/identities, deviations, command/resources, ownership/cleanup and retained image handling for a later smoke review. Build output belongs to disposable diagnostic images, not uninstrumented comparison.\n\nOnly after a second checkpoint will a single short A/C real-browser smoke be considered. The proposed 5-sample/78s per role runtime is NOT yet authorized. Raw-wire capture remains unavailable; no elevated privileges, Nginx changes, or unbounded response.body fallback. All PRs #403–#408 remain draft/unmerged; #390/#391 open; frozen 1.5s rule unchanged.",
+  "reviewed_preparation_commit": "f9cf80bd4fe7915863cf7e0ed5a6bc52616c377b",
+  "pull_request_states": [
+    {
+      "number": 403,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "e1f657986f7b988a967ddd2bef8ca4626e30b5de",
+      "head": "perf/391-readonly-metrics"
+    },
+    {
+      "number": 405,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "f7253c687041342ee080b0197f0b98f20eaefdfe",
+      "head": "docs/perf391-independent"
+    },
+    {
+      "number": 406,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "head": "perf/391-rank1-consolidation"
+    },
+    {
+      "number": 407,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+      "head": "tooling/perf391-network-evidence-v1"
+    },
+    {
+      "number": 408,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "f9cf80bd4fe7915863cf7e0ed5a6bc52616c377b",
+      "head": "docs/perf391-integration-plan"
+    }
+  ]
+}

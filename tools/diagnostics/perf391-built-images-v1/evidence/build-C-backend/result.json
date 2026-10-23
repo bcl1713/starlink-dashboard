@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform",
+    "linux/amd64",
+    "--progress",
+    "plain",
+    "--metadata-file",
+    "/tmp/perf391-build-408/C-backend.metadata.json",
+    "--build-arg",
+    "ACCEPTANCE_CANDIDATE_SHA=ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+    "-f",
+    "/tmp/perf391-build-408/contexts/C/.perf391/backend.Dockerfile",
+    "-t",
+    "perf391-diag-408-c-backend:f9cf80bd",
+    "/tmp/perf391-build-408/contexts/C"
+  ],
+  "seconds_limit": 2700,
+  "utc": "2026-10-23T01:18:51Z",
+  "exit": 0,
+  "wall_seconds": 2.349117540754378,
+  "client_child_usage": {
+    "user_seconds": 0.339198,
+    "system_seconds": 0.15531599999999998,
+    "max_rss_kib": 74660
+  },
+  "accounting_limit": "Client child usage excludes Docker daemon/BuildKit work; not a performance measurement."
+}

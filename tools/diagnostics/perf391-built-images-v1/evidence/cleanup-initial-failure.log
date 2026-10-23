@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/cleanup.py", line 46, in <module>
+    assert not live, (path, row, live)
+           ^^^^^^^^
+AssertionError: (PosixPath('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/evidence/qualification-final/manifest.json'), {'pgid': 2, 'pid': 12, 'pid_namespace': 'pid:[4026533976]', 'start_id': '212044867'}, [645544])

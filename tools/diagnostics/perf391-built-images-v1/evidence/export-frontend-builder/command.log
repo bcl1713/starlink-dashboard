@@ -1,0 +1,66 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from frontend.Dockerfile
+#1 transferring dockerfile: 2.25kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 861B done
+#5 DONE 0.0s
+
+#6 [builder 1/9] FROM docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#6 resolve docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903 done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 88.96kB 0.0s done
+#7 DONE 0.0s
+
+#8 [builder 7/9] COPY .perf391/vite.perf391.mjs ./vite.perf391.mjs
+#8 CACHED
+
+#9 [builder 8/9] COPY .perf391/tsconfig.perf391.json ./tsconfig.perf391.json
+#9 CACHED
+
+#10 [builder 2/9] WORKDIR /workspace/frontend/mission-planner
+#10 CACHED
+
+#11 [builder 5/9] COPY frontend/mission-planner/ ./
+#11 CACHED
+
+#12 [builder 4/9] RUN --mount=type=secret,id=proxy_ca     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi;     npm ci --engine-strict --strict-ssl=true --no-audit --no-fund
+#12 CACHED
+
+#13 [builder 3/9] COPY frontend/mission-planner/package*.json ./
+#13 CACHED
+
+#14 [builder 6/9] COPY .perf391/diagnostic/ /diagnostic/
+#14 CACHED
+
+#15 [builder 9/9] RUN ./node_modules/.bin/tsc --noEmit --incremental false -p tsconfig.perf391.json &&     ./node_modules/.bin/vite build --config vite.perf391.mjs
+#15 CACHED
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 15.5s done
+#16 exporting manifest sha256:85949314c8a43d1bf53ad5be66de67ba79579c67bad8fd2426c7d48ac6aa5979 done
+#16 exporting config sha256:b326b10329f3726aa58630870205077cb19eaff0c2c27b42a65090a6bfcc64f8 done
+#16 exporting attestation manifest sha256:222413d9c803cc9746a20f313dfb0c27b888cbe9f0d6bd99bf8bedae8e5eca93 done
+#16 exporting manifest list sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862 done
+#16 naming to docker.io/library/perf391-diag-408-frontend-builder:f9cf80bd done
+#16 unpacking to docker.io/library/perf391-diag-408-frontend-builder:f9cf80bd
+#16 unpacking to docker.io/library/perf391-diag-408-frontend-builder:f9cf80bd 4.0s done
+#16 DONE 19.6s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s

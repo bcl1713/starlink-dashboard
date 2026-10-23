@@ -1,0 +1,112 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from frontend.Dockerfile
+#1 transferring dockerfile: 2.25kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/nginx:alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d
+#5 DONE 0.5s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 861B done
+#6 DONE 0.0s
+
+#7 [builder 1/9] FROM docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#7 resolve docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903 done
+#7 CACHED
+
+#8 [stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d
+#8 resolve docker.io/library/nginx:alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d 0.0s done
+#8 CACHED
+
+#9 [builder 2/9] WORKDIR /workspace/frontend/mission-planner
+#9 DONE 0.0s
+
+#10 [internal] load build context
+#10 transferring context: 1.40MB 0.0s done
+#10 DONE 0.0s
+
+#11 [builder 3/9] COPY frontend/mission-planner/package*.json ./
+#11 DONE 0.0s
+
+#12 [builder 4/9] RUN --mount=type=secret,id=proxy_ca     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi;     npm ci --engine-strict --strict-ssl=true --no-audit --no-fund
+#12 4.671 
+#12 4.671 added 453 packages in 4s
+#12 4.671 npm notice
+#12 4.671 npm notice New major version of npm available! 10.9.7 -> 12.2.1
+#12 4.671 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+#12 4.671 npm notice To update run: npm install -g npm@12.2.1
+#12 4.671 npm notice
+#12 DONE 5.0s
+
+#13 [builder 5/9] COPY frontend/mission-planner/ ./
+#13 DONE 0.2s
+
+#14 [builder 6/9] COPY .perf391/diagnostic/ /diagnostic/
+#14 DONE 0.0s
+
+#15 [builder 7/9] COPY .perf391/vite.perf391.mjs ./vite.perf391.mjs
+#15 DONE 0.0s
+
+#16 [builder 8/9] COPY .perf391/tsconfig.perf391.json ./tsconfig.perf391.json
+#16 DONE 0.0s
+
+#17 [builder 9/9] RUN ./node_modules/.bin/tsc --noEmit --incremental false -p tsconfig.perf391.json &&     ./node_modules/.bin/vite build --config vite.perf391.mjs
+#17 14.20 vite v7.3.6 building client environment for production...
+#17 14.28 transforming...
+#17 18.30 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.33 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.33 [plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.42 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.42 [plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.56 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/base-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.57 [plugin vite:resolve] Module "node:module" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 18.57 [plugin vite:resolve] Module "node:worker_threads" has been externalized for browser compatibility, imported by "/workspace/frontend/mission-planner/node_modules/satellite.js/wasm-build/pthreads-release/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+#17 23.13 ✓ 3056 modules transformed.
+#17 23.92 rendering chunks...
+#17 23.98 computing gzip size...
+#17 24.03 dist/.vite/manifest.json                                  0.19 kB │ gzip:   0.14 kB
+#17 24.03 dist/index.html                                           0.46 kB │ gzip:   0.30 kB
+#17 24.03 dist/assets/overview-label-layout.worker-_XMzcRrn.js      4.17 kB
+#17 24.03 dist/assets/orbital.worker-CMk1Mfgi.js                   29.17 kB
+#17 24.03 dist/assets/index-D2_VGdr5.js                           308.06 kB
+#17 24.03 dist/perf391-module-closure.json                      1,312.01 kB │ gzip:  74.70 kB
+#17 24.03 dist/assets/index-BMKTAuCA.css                          122.50 kB │ gzip:  25.92 kB
+#17 24.03 dist/assets/index-Ct3JqmpR.js                         2,638.57 kB │ gzip: 778.57 kB
+#17 24.03 
+#17 24.03 (!) Some chunks are larger than 500 kB after minification. Consider:
+#17 24.03 - Using dynamic import() to code-split the application
+#17 24.03 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+#17 24.03 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+#17 24.03 ✓ built in 9.80s
+#17 DONE 24.2s
+
+#18 [stage-1 2/3] COPY --from=builder /workspace/frontend/mission-planner/dist/ /usr/share/nginx/html/
+#18 DONE 0.0s
+
+#19 [stage-1 3/3] COPY frontend/mission-planner/nginx.conf /etc/nginx/conf.d/default.conf
+#19 DONE 0.0s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 0.7s done
+#20 exporting manifest sha256:dbf8b1a212426b81dc23b7fd5493829ea4acd3ea2f9feebd8c300009d6ee2467 done
+#20 exporting config sha256:660b0c09eadd2d8358cdeccaa34cc577b524694eb9eead3dad6f17d3a90659a6 done
+#20 exporting attestation manifest sha256:41de2a9688cb29e5bd67546ad73fd1c442f3c07a2c8d346c047331546bd2b354 done
+#20 exporting manifest list sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88 done
+#20 naming to docker.io/library/perf391-diag-408-a-frontend:f9cf80bd done
+#20 unpacking to docker.io/library/perf391-diag-408-a-frontend:f9cf80bd 0.1s done
+#20 DONE 0.8s
+
+#21 resolving provenance for metadata file
+#21 DONE 0.0s

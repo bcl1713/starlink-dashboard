@@ -1,0 +1,1660 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Operator user guide</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font:
+          18px/1.6 system-ui,
+          sans-serif;
+        color: #172638;
+        background: #fff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      a {
+        color: #075799;
+        text-underline-offset: 0.2em;
+      }
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #b45b00;
+        outline-offset: 4px;
+      }
+      header,
+      main,
+      footer {
+        max-width: 78rem;
+        margin: auto;
+        padding: 1.5rem;
+      }
+      header {
+        border-bottom: 2px solid #dae2ea;
+      }
+      h1 {
+        font-size: 2.4rem;
+        line-height: 1.15;
+      }
+      h2 {
+        font-size: 1.65rem;
+        margin-top: 0;
+      }
+      h3 {
+        font-size: 1.15rem;
+      }
+      section {
+        scroll-margin-top: 1rem;
+        border-bottom: 1px solid #dbe3ec;
+        padding: 1rem 0 2rem;
+        margin-bottom: 2rem;
+      }
+      nav ul {
+        columns: 2;
+        list-style: none;
+        padding: 0;
+      }
+      nav li {
+        padding: 0.35rem 0;
+      }
+      li {
+        margin: 0.5rem 0;
+      }
+      p,
+      li {
+        max-width: 74ch;
+      }
+      table {
+        border-collapse: collapse;
+        max-width: 100%;
+        font-size: 0.95rem;
+      }
+      th,
+      td {
+        border: 1px solid #b5c3d0;
+        padding: 0.65rem;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: #edf3f8;
+      }
+      code,
+      pre {
+        font-size: 0.9em;
+        background: #eef3f7;
+      }
+      pre {
+        padding: 1rem;
+        overflow: auto;
+      }
+      aside {
+        border-left: 4px solid #126798;
+        padding: 0.5rem 1rem;
+        background: #eef7fc;
+        margin: 1rem 0;
+      }
+      .table-scroll {
+        overflow: auto;
+      }
+      figure {
+        margin: 1.5rem 0;
+      }
+      .annotated {
+        position: relative;
+        max-width: 100%;
+        width: fit-content;
+      }
+      .annotated.mobile {
+        max-width: 390px;
+      }
+      .marker {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid white;
+        border-radius: 50%;
+        color: white;
+        background: #a84c00;
+        font-weight: 800;
+        box-shadow: 0 0 0 1px #172638;
+      }
+      .callouts {
+        max-width: 74ch;
+      }
+      .callouts li::marker {
+        font-weight: 800;
+        color: #a84c00;
+      }
+      figure img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #9aa9b8;
+      }
+      figcaption {
+        font-size: 0.9rem;
+        color: #42576b;
+      }
+      kbd {
+        border: 1px solid #8a9dae;
+        border-radius: 0.2rem;
+        padding: 0.05rem 0.3rem;
+      }
+      .skip {
+        display: block;
+        padding: 0.75rem 1.5rem;
+      }
+      footer {
+        font-size: 0.85rem;
+        color: #42576b;
+      }
+      @media (max-width: 600px) {
+        :root {
+          font-size: 17px;
+        }
+        header,
+        main,
+        footer {
+          padding: 1rem;
+        }
+        h1 {
+          font-size: 2rem;
+        }
+        nav ul {
+          columns: 1;
+        }
+        table {
+          font-size: 0.85rem;
+        }
+      }
+      @media print {
+        nav,
+        .skip,
+        .no-print {
+          display: none;
+        }
+        body {
+          font-size: 11pt;
+        }
+        header,
+        main,
+        footer {
+          max-width: none;
+          padding: 0;
+        }
+        section {
+          break-inside: auto;
+        }
+        h2,
+        h3 {
+          break-after: avoid;
+        }
+        tr,
+        figure,
+        aside {
+          break-inside: avoid;
+        }
+        a {
+          color: inherit;
+        }
+        pre {
+          white-space: pre-wrap;
+        }
+        h1 {
+          font-size: 24pt;
+        }
+        h2 {
+          font-size: 18pt;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#context">Skip contents</a>
+    <header>
+      <p>Mission operations · Packaged local reference</p>
+      <h1>Operator user guide</h1>
+      <p>
+        Use Operator to record requirements, communications, customer presence,
+        decisions and observations. Use Missions to plan an itinerary and
+        prepare its mission records. Use Configuration for installation
+        settings.
+      </p>
+      <p>
+        <a href="quick-reference.html">Print quick reference</a> ·
+        <a href="/operator?workspace=1" target="_top">Open Operator</a>
+      </p>
+      <p>
+        For the remaining evaluation, use a disposable two-leg fictional mission
+        in your normal nonproduction dashboard and its existing simulation. Work
+        through Transport, Issues and capability, Notes and history, alerts,
+        ground gap and archive transfer below. The private guided mission is
+        optional; no additional provider or training environment is required.
+      </p>
+      <nav aria-label="Guide contents">
+        <ul>
+          <li><a href="#context">1. Mission, leg and UTC context</a></li>
+          <li><a href="#first-use">2. First use and workspace controls</a></li>
+          <li><a href="#calls">3. Plan, complete and recover calls</a></li>
+          <li>
+            <a href="#conferences"
+              >4. Establish, verify and reuse a conference</a
+            >
+          </li>
+          <li>
+            <a href="#customers">5. Report independent customer intervals</a>
+          </li>
+          <li>
+            <a href="#display-alerts"
+              >6. Overview controls, presets and alerts</a
+            >
+          </li>
+          <li>
+            <a href="#flight-predictions"
+              >7. Flight predictions and advisories</a
+            >
+          </li>
+          <li>
+            <a href="#transport">8. Transport reports and service checks</a>
+          </li>
+          <li>
+            <a href="#issues-capability">9. Issues, follow-up and capability</a>
+          </li>
+          <li>
+            <a href="#notes-history"
+              >10. Notes, observations and immutable history</a
+            >
+          </li>
+          <li>
+            <a href="#drafts-recovery"
+              >11. Drafts, uncertain saves and conflicts</a
+            >
+          </li>
+          <li><a href="#ground-gap">12. Ground gap and the next leg</a></li>
+          <li>
+            <a href="#archive-transfer">13. One mission ZIP and import</a>
+          </li>
+          <li><a href="#training">14. Private guided mission</a></li>
+          <li>
+            <a href="#restart-reset">15. Restart, reset and maintenance</a>
+          </li>
+          <li>
+            <a href="#parity-recovery">16. Field and failure checklist</a>
+          </li>
+          <li><a href="#glossary">17. Terms</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <section id="context">
+        <h2>1. Mission, leg and UTC context</h2>
+        <p>
+          Operator follows the active mission and leg automatically in live and
+          simulation modes. Confirm the displayed names and phase. New entries
+          default to that context; parked drafts and existing records keep their
+          original associations. Choose another mission to browse history
+          without changing aircraft activation; Return to active mission resumes
+          following. When nothing is active, choose a mission or create one in
+          Missions.
+        </p>
+        <p>
+          Normal simulation keeps each mission's journal across legs, replay and
+          backend restart. Historical connections, bridge verification,
+          transport checks and capability reports do not establish current
+          replay readiness. Unfulfilled call requirements and unresolved issues
+          remain actionable. Prior replay reports remain in History. Reestablish
+          the same saved conference definition, then explicitly report
+          establishment and customer joins again. Existing per-run journals are
+          preserved separately and are not automatically merged. A deliberate
+          named evaluation setting starts a fresh journal namespace without
+          deleting the previous one.
+        </p>
+        <p>
+          The persistent Now area shows customers <em>reported connected</em>.
+          Next shows the next future preparation requirement. An overdue item
+          remains an attention item; it must not replace the future Next
+          requirement. Open the timeline or activity lists to inspect other
+          requirements.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <caption>
+              Scope and time mean different things
+            </caption>
+            <thead>
+              <tr>
+                <th>Control or label</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Mission</td>
+                <td>
+                  Applies across the itinerary. It is not silently tied to the
+                  currently displayed leg.
+                </td>
+              </tr>
+              <tr>
+                <td>Preflight</td>
+                <td>
+                  Preparation before departure. Keep that original scope when
+                  reviewing it later.
+                </td>
+              </tr>
+              <tr>
+                <td>Leg</td>
+                <td>
+                  Applies to the selected named leg. Confirm the leg, not just
+                  its list position.
+                </td>
+              </tr>
+              <tr>
+                <td>Between legs</td>
+                <td>
+                  A ground gap identified by its previous and next named legs.
+                </td>
+              </tr>
+              <tr>
+                <td>Planned UTC</td>
+                <td>
+                  A requirement or forecast, not evidence that an action
+                  occurred.
+                </td>
+              </tr>
+              <tr>
+                <td>Actual / reported occurrence UTC</td>
+                <td>
+                  The time being reported for an action. It can be unknown or
+                  approximate.
+                </td>
+              </tr>
+              <tr>
+                <td>Recorded time</td>
+                <td>
+                  When the backend received the report. It does not fill an
+                  unknown occurrence time.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Enter UTC using the field's displayed format. A field that says UTC
+          remains UTC even if the device uses another time zone. Leave genuinely
+          unknown times unknown; do not enter zero, the current time or a
+          planned time to make a form look complete. A zero preparation lead is
+          a valid deliberate value.
+        </p>
+        <figure>
+          <div class="annotated mobile">
+            <img
+              src="images/workspace-mobile-f7e7c0540e64.png"
+              width="390"
+              height="844"
+              alt="Private mobile Operator with Now, future Next, attention and advisory counts, Create call and Create conference, and a separate overdue coordination item."
+            /><span
+              class="marker"
+              style="left: 84%; top: 23%"
+              aria-hidden="true"
+              >1</span
+            ><span class="marker" style="left: 28%; top: 37%" aria-hidden="true"
+              >2</span
+            ><span class="marker" style="left: 73%; top: 53%" aria-hidden="true"
+              >3</span
+            >
+          </div>
+          <figcaption>
+            Fictional private replay, actual mobile controls.
+            <ol class="callouts">
+              <li>Next retains the future preparation requirement.</li>
+              <li>Attention carries overdue work separately.</li>
+              <li>
+                Create call and Create conference remain visible without opening
+                training instructions.
+              </li>
+            </ol>
+          </figcaption>
+        </figure>
+      </section>
+      <section id="first-use">
+        <h2>2. First use and workspace controls</h2>
+        <ol>
+          <li>
+            Open Operator from normal navigation. The active mission and leg are
+            selected automatically. If none is active, choose a mission; use
+            Missions to create one if needed.
+          </li>
+          <li>
+            If a new enabled installation offers journal initialization, confirm
+            its displayed live or simulation context and use its explicit setup
+            action. An existing or recovery-required store must be recovered
+            rather than reset.
+          </li>
+          <li>
+            Use Communications, Transport, Issues, Notes and History for
+            detailed work. Now retains the mission awareness area.
+          </li>
+          <li>
+            Open Help for this guide, the quick reference or the private Guided
+            mission walkthrough. Display tools and Local alerts are in the
+            header; on narrow screens expand Tools.
+          </li>
+        </ol>
+        <p>
+          Editors have their own scrolling body. Use their visible Save control,
+          or Keep draft and return to park work. The workspace retains distinct
+          drafts instead of replacing one unsent note with another. Reopen a
+          retained draft to inspect its pinned mission, scope and record version
+          before saving.
+        </p>
+        <p>
+          With a keyboard, use <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd
+            >Tab</kbd
+          >
+          through controls, <kbd>Enter</kbd> or <kbd>Space</kbd> to activate the
+          focused control, and the dialog's explicit close/keep action. Closing
+          an editor should return focus to the action that opened it when that
+          action is still available. Saving is a separate explicit action.
+        </p>
+      </section>
+      <section id="calls">
+        <h2>3. Plan, complete and recover calls</h2>
+        <h3>Create a scheduled requirement</h3>
+        <ol>
+          <li>In Communications choose Create call.</li>
+          <li>
+            Enter the party or participant if known, a planned start UTC and a
+            status. Scheduled calls require a planned start; a merely planned
+            call does not prove a completed call.
+          </li>
+          <li>
+            Expand Timing, association and optional details when needed. Set
+            communications type, planned duration/end, preparation lead,
+            coordinator, conference association and notes using known
+            information.
+          </li>
+          <li>
+            Save call. Wait for a confirmed receipt and the saved item before
+            treating it as recorded.
+          </li>
+        </ol>
+        <p>
+          Preparation is derived from the call's planned start and lead.
+          Rescheduling or applying a shift changes planned times; inspect the
+          result before saving. Preserve a deliberate zero lead. Planned
+          duration and actual duration are separate; do not invent an actual
+          start/end from a plan.
+        </p>
+        <h3>Record a completed or unscheduled call</h3>
+        <p>
+          Use Record completed call when reporting an event that already
+          occurred. Enter known actual times and precision; leave unknown actual
+          times unknown. Choose the correct party, scope, leg and optional
+          conference. A completed call can have an unknown actual end. Inspect
+          the saved report in Call history.
+        </p>
+        <h3>Reschedule, cancel, reinstate, remove or restore</h3>
+        <p>
+          Use Edit call to update its planned time or status. Canceled describes
+          the requirement's operational status. Reinstate it by deliberately
+          selecting an appropriate active status and plan; this appends a
+          revision. Remove call record hides the current record from ordinary
+          active lists without deleting its history. Restore record makes a
+          removed record visible again. These are different actions.
+        </p>
+        <p>
+          Call history shows immutable versions. Review the planned and actual
+          fields, zero lead and optional associations after each change. Loading
+          one page of calls or history does not imply that you have seen the
+          entire mission.
+        </p>
+      </section>
+      <section id="conferences">
+        <h2>4. Establish, verify and reuse a conference</h2>
+        <p>
+          Now and Communications keep Active Calls and Active Bridges prominent.
+          Finishing a call leaves its bridge session open. Use Close conference
+          on the bridge card when appropriate; its saved definition remains
+          reusable. Customer joins and departures remain independent reports.
+        </p>
+        <aside>
+          <p>
+            A conference record reports bridge operations. Create conference,
+            Establish and Verify do not provision, dial or test communications
+            hardware. Establish and test the actual bridge through the
+            operational communications procedure, then report what happened
+            here.
+          </p>
+        </aside>
+        <ol>
+          <li>
+            Choose Create conference. Give the reusable bridge a recognizable
+            name. Add platform, reference, coordinator and notes when known.
+          </li>
+          <li>
+            After the real bridge is available, choose Establish on its
+            conference card. Verify only after the real check has been made.
+          </li>
+          <li>
+            Associate calls or customer intervals with this conference. Reuse
+            the same conference when the actual bridge is reused for another
+            call; do not create a duplicate merely because a different customer
+            joins.
+          </li>
+          <li>
+            Report Interrupt conference when its connection is interrupted.
+            Restore conference connection reports restoration of the bridge's
+            connection.
+          </li>
+          <li>
+            Use Close conference when the actual bridge is closed. Review any
+            warning that a customer is still reported connected; closing a
+            bridge does not automatically report that customer's departure.
+          </li>
+        </ol>
+        <p>
+          Conference history preserves establishment, verification, interruption
+          and closure after its current state changes. Correct conference edits
+          a report; Remove conference record and Restore record affect the
+          record's visibility. A bridge's lifecycle is independent of each
+          customer's presence interval.
+        </p>
+      </section>
+      <section id="customers">
+        <h2>5. Report independent customer intervals</h2>
+        <ol>
+          <li>
+            Use Customer Joined or Reuse conference from the relevant
+            conference, or the Communications customer action.
+          </li>
+          <li>
+            Enter the participant if known. Select Customer call and Customer
+            conference by name when applicable; either association may be
+            unknown.
+          </li>
+          <li>
+            Use Report joined now using backend UTC only when intentionally
+            reporting a current join. For retrospective or unknown timing, leave
+            that choice off and enter known reported UTC information under
+            Retrospective timing and correction.
+          </li>
+          <li>
+            Save customer interval and check Now. Multiple customers can be
+            reported connected simultaneously; a bridge can serve overlapping
+            calls.
+          </li>
+          <li>
+            Report Customer Left for the relevant customer. Interrupt customer
+            reports an interrupted interval. Restore connection creates a
+            distinct resumed interval linked to the earlier one, preserving the
+            original report.
+          </li>
+        </ol>
+        <p>
+          Restoring the bridge does not automatically restore each customer's
+          connection. A resumed customer's new interval is not a rewrite of the
+          old interval. Inspect the call and conference names, participant,
+          state, reported join/leave UTCs and resume link. Keep unknown timing
+          unknown. Resolve discrepancies by recording the actual operations, not
+          by forcing all statuses to agree without evidence.
+        </p>
+      </section>
+      <section id="display-alerts">
+        <h2>6. Overview controls, presets and alerts</h2>
+        <p>
+          Overview is the customer-facing operational map. Keep detailed
+          diagnostics, planning and journal work in Operator, Missions or
+          Configuration. Open a separate Overview window when you need to verify
+          that a shared display change actually reaches the display.
+        </p>
+        <h3>Shared switches and a current-view preset</h3>
+        <ol>
+          <li>
+            Open Display tools, then Show display controls. Shared switches
+            apply to all Overview displays on the installation, including
+            another device. Recenter targets a selected connected window in this
+            browser.
+          </li>
+          <li>
+            Configure panel, map, aircraft, link and boundary visibility. Use
+            the shared history window control for the network history lookback.
+          </li>
+          <li>
+            In Configuration → Weather, choose radar, METAR, TAF, SIGMET and
+            route filtering, and either wind or temperature visibility. Wind and
+            temperature are mutually exclusive.
+          </li>
+          <li>
+            Return to Display presets and choose Save current as Normal,
+            Communications or Weather. Saving a preset does not apply another
+            preset or change the current view.
+          </li>
+          <li>
+            Change the view, then Apply the named preset. Verify both settings
+            and the actual connected Overview. A setting can be enabled while
+            its provider data is unavailable.
+          </li>
+        </ol>
+        <p>
+          Presets include weather <em>visibility</em>. They do not include
+          provider credentials/configuration, forecast level/horizon,
+          acknowledgment state, history window or camera position. Older presets
+          contain only panels and map switches; applying one says so. Save the
+          current view again to include weather.
+        </p>
+        <p>
+          Apply uses separate authoritative settings stores. On an incomplete
+          acknowledgment, read the Confirmed and Unconfirmed groups, review
+          refreshed settings and apply again. A conflicting revision is not
+          permission to overwrite another operator's change silently. An
+          unavailable settings read prevents the new coordinated application
+          from starting. Do not treat a partially acknowledged apply as
+          complete.
+        </p>
+        <p>
+          During simulation, configured network cards remain visible but
+          measured network values and history are Unavailable. Replay state does
+          not rewrite visibility preferences. Synthetic throughput, latency,
+          loss and obstruction are not presented as measured network
+          performance.
+        </p>
+        <h3>Foreground cues and acknowledgments</h3>
+        <p>
+          Local alerts belong to this browser. Enable supported sound or
+          notification controls using their explicit browser permission/user
+          gesture flow. Read unsupported or denied capability messages. Test an
+          actual cue; clicking enable alone does not prove delivery. There is no
+          promise of background or closed-browser delivery. Acknowledge the
+          current occurrence in the event feed; acknowledgment does not repair a
+          link or change a transport report.
+        </p>
+        <figure>
+          <div class="annotated">
+            <img
+              src="images/simulation-network-0cd98752d979.png"
+              width="1920"
+              height="1080"
+              alt="Private running replay Overview with the three selected network cards visible and Unavailable measurements."
+            /><span class="marker" style="left: 7%; top: 25%" aria-hidden="true"
+              >1</span
+            ><span class="marker" style="left: 28%; top: 5%" aria-hidden="true"
+              >2</span
+            >
+          </div>
+          <figcaption>
+            Actual private running-replay display.
+            <ol class="callouts">
+              <li>
+                Only the three configured network cards remain; measured values
+                and history are Unavailable. Two panels were deliberately
+                hidden.
+              </li>
+              <li>
+                The operational map and UTC clocks remain available. Replay does
+                not replace the visibility preference.
+              </li>
+            </ol>
+          </figcaption>
+        </figure>
+      </section>
+      <section id="flight-predictions">
+        <h2>7. Flight predictions and advisories</h2>
+        <p>
+          In Missions, preview the intended leg's simulation, choose its
+          supported rate and start it normally. Return to Operator and confirm
+          the current leg, actual replay run, future Next preparation and source
+          freshness. Keep overdue activity visible without losing the future
+          requirement.
+        </p>
+        <p>
+          X, Ka and PoP inputs are advisories or modeled estimates unless
+          specifically reported as observed. Unknown PoP/location or unknown
+          handover timing does not mean a service outage. Assume Starshield is
+          available unless it is explicitly disabled or deliberately marked
+          down. Transition windows stay map advisories; the agreed full-window
+          planning outage applies where Starshield is the sole usable transport,
+          with usable Ka or coordinated concurrency-only X fallback protecting
+          the plan.
+        </p>
+        <p>
+          Inspect Source status when data is missing, stale, unavailable or
+          misaligned with the current leg. Do not describe a partial source set
+          as all-clear. Mission outputs are best estimates: uncertainty is not
+          an extra acknowledgment required to save or use a plan. Keep genuine
+          invalid input separate from confidence wording.
+        </p>
+        <p>
+          During the first leg, open Help → Guided mission walkthrough and
+          choose Check current evidence. Repeat during the second leg, then
+          check again after restarting the private instance. These explicit
+          reads retain the earlier source and journal evidence. A browser reload
+          alone does not establish a backend restart, and a fresh second-leg
+          prediction does not establish first-leg source availability.
+        </p>
+      </section>
+      <section id="transport">
+        <h2>8. Transport reports and service checks</h2>
+        <ol>
+          <li>
+            Open Transport and create a transport report for the correct mission
+            scope and optional related call/conference.
+          </li>
+          <li>
+            For each service, record intended, requested, applied and checked
+            information only when known. These stages are independent. An
+            applied-only report is valid; do not invent earlier intention or
+            request stages.
+          </li>
+          <li>
+            Enter known transport, outcome, UTC timing, precision and
+            explanatory notes. Save and inspect the recorded report.
+          </li>
+          <li>
+            Report service checks independently. A check for one service does
+            not certify all services or establish which path carried another
+            service.
+          </li>
+          <li>
+            If the reported applied transport changes, inspect invalidated
+            earlier checks and record a fresh check against the replacement. A
+            historical correction records a correction to the earlier report; it
+            is not another routing action.
+          </li>
+        </ol>
+        <p>
+          Transport decisions are operator reports, not commands to hardware.
+          They do not prove actual routing. Relevant model advisories help the
+          operator assess a decision; unknown times and uncertainty are not
+          automatic blockers. Related call/conference selectors show loaded
+          same-mission records. Load more related records if the target is not
+          in the current page; preserve an unresolved saved association until it
+          is deliberately corrected.
+        </p>
+        <figure>
+          <div class="annotated">
+            <img
+              src="images/transport-check-c4a20ed4a8a4.png"
+              width="672"
+              height="1080"
+              alt="Actual fictional transport editor showing one applied Starshield service with an independent issue-reported check and unknown applied/check UTCs."
+            /><span class="marker" style="left: 8%; top: 44%" aria-hidden="true"
+              >1</span
+            ><span class="marker" style="left: 53%; top: 64%" aria-hidden="true"
+              >2</span
+            ><span class="marker" style="left: 74%; top: 82%" aria-hidden="true"
+              >3</span
+            >
+          </div>
+          <figcaption>
+            Fictional private training, actual controls. This is a scrolled
+            portion of the editor; review the remaining fields and save action
+            in the same form.
+            <ol class="callouts">
+              <li>
+                Reported Applied is independent of Intended and Requested; leave
+                unreported stages unchecked.
+              </li>
+              <li>
+                Operator Checked records this service's result. It does not
+                establish actual routing or certify another service.
+              </li>
+              <li>
+                Unknown timing remains Unknown. Changing Reported Applied clears
+                the prior check; record a replacement check after reviewing the
+                change.
+              </li>
+            </ol>
+          </figcaption>
+        </figure>
+      </section>
+      <section id="issues-capability">
+        <h2>9. Issues, follow-up and capability</h2>
+        <h3>Maintain an issue</h3>
+        <ol>
+          <li>
+            Choose New issue and describe the problem. Add known scope,
+            mitigation and follow-up under Optional issue details.
+          </li>
+          <li>
+            Use Add update / follow up to add a new issue message. A changed
+            follow-up or explicit clearing of follow-up must remain
+            distinguishable from leaving it untouched.
+          </li>
+          <li>
+            Use Monitor, Resolve or Reopen to report the actual lifecycle.
+            Inspect the resulting status and follow-up; reopening does not
+            invent a new follow-up deadline.
+          </li>
+          <li>
+            Open Issue activity to see the immutable messages and transitions.
+            Correct an earlier issue message using its historical correction
+            action and original version. Do not repeat an old lifecycle
+            transition just to fix its wording.
+          </li>
+        </ol>
+        <p>
+          Capability assessments are separate observations. Report functional
+          capability and redundancy independently, including unknown dimensions
+          or unknown observation UTCs. A capability report does not close an
+          issue, prove actual routing or replace a service check. Review the
+          saved dimension values and notes instead of assuming that one known
+          dimension makes the other known.
+        </p>
+        <figure>
+          <div class="annotated">
+            <img
+              src="images/issue-followup-b31b5113d832.png"
+              width="672"
+              height="1080"
+              alt="Actual fictional issue editor with mission scope, optional mitigation, follow-up UTC, explicit clear follow-up and independent related records."
+            /><span class="marker" style="left: 8%; top: 20%" aria-hidden="true"
+              >1</span
+            ><span class="marker" style="left: 51%; top: 58%" aria-hidden="true"
+              >2</span
+            ><span class="marker" style="left: 16%; top: 69%" aria-hidden="true"
+              >3</span
+            >
+          </div>
+          <figcaption>
+            Fictional private training, actual controls. This is a scrolled
+            portion of the editor; review the remaining fields and save action
+            in the same form.
+            <ol class="callouts">
+              <li>
+                Check the pinned scope before saving the issue. Optional details
+                include mitigation and follow-up.
+              </li>
+              <li>
+                Follow-up UTC is separate from action occurrence time and
+                backend save time. Enter it only when known.
+              </li>
+              <li>
+                Clear follow-up is deliberate. Later reopening does not recreate
+                a cleared deadline; inspect Issue activity for the immutable
+                changes.
+              </li>
+            </ol>
+          </figcaption>
+        </figure>
+      </section>
+      <section id="notes-history">
+        <h2>10. Notes, observations and immutable history</h2>
+        <p>
+          Use Note for free text and the supported observation type for the
+          thing observed. Confirm the pinned mission, preflight/leg/ground-gap
+          scope and UTC precision. Saving an observation preserves its original
+          context; it is not automatically reassigned when you select another
+          mission or leg.
+        </p>
+        <p>
+          In History, apply the available mission, record, type and scope
+          filters deliberately. Include removed records when auditing
+          removals/restores. Current records and immutable historical revisions
+          are different views. Load further pages until the interface indicates
+          completion; loaded rows are not the whole journal by default. Saved
+          versions retain their provenance and recorded time, including
+          corrections and remove/restore operations.
+        </p>
+        <p>
+          Author details retain the backend identity and any unverified operator
+          label supplied through the existing API. That optional label is
+          attribution, not a sign-in or authorization claim. Later edits do not
+          rewrite the author on an earlier immutable revision.
+        </p>
+        <p>
+          If a historical association can no longer be resolved, keep the
+          visible unresolved state until you can deliberately correct it. Do not
+          substitute another mission's record because its name looks similar.
+        </p>
+      </section>
+      <section id="drafts-recovery">
+        <h2>11. Drafts, uncertain saves and conflicts</h2>
+        <div class="table-scroll">
+          <table>
+            <caption>
+              Choose recovery from the observed save state
+            </caption>
+            <thead>
+              <tr>
+                <th>State</th>
+                <th>What to do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Unsent draft</td>
+                <td>
+                  Keep draft and return. Switch context and resume it; verify
+                  the original pinned target. Editing does not submit it.
+                </td>
+              </tr>
+              <tr>
+                <td>Saving</td>
+                <td>
+                  Wait for the server acknowledgment. Do not create a
+                  replacement just because the display takes time to refresh.
+                </td>
+              </tr>
+              <tr>
+                <td>Receipt uncertain</td>
+                <td>
+                  The write may have committed. Retain the original pending
+                  save. Retry same save replays its frozen body, idempotency key
+                  and store epoch.
+                </td>
+              </tr>
+              <tr>
+                <td>Accepted, current state unreadable</td>
+                <td>
+                  The receipt is evidence of acceptance. Reread the saved state;
+                  do not treat this as permission to submit another write.
+                </td>
+              </tr>
+              <tr>
+                <td>Version conflict / needs review</td>
+                <td>
+                  Reread the actual current version. Compare your retained draft
+                  and the counterpart change. Deliberately reconcile and submit
+                  a new reviewed revision.
+                </td>
+              </tr>
+              <tr>
+                <td>Quarantined / changed store</td>
+                <td>
+                  Keep the pending material for recovery. Confirm the
+                  installation, namespace and epoch. Never retarget a frozen
+                  pending command to a new store.
+                </td>
+              </tr>
+              <tr>
+                <td>Draft storage unavailable</td>
+                <td>
+                  Keep this tab open and preserve the visible text. Read the
+                  explicit storage error. Do not claim that a reload will
+                  recover material that could not be stored.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Offline saving is unavailable while the store cannot be reached.
+          Inputs remain editable so you can retain the draft. Reconnect, reread
+          health and current identity, then resume the original draft. Avoid
+          clearing browser storage or closing the only retained copy during a
+          storage error.
+        </p>
+        <h3>Private parked-draft and offline evidence</h3>
+        <ol>
+          <li>
+            Create a fictional note, keep its intended unknown or reported time,
+            choose Keep draft and return, and use Check current evidence in T08.
+          </li>
+          <li>
+            Create another unsent note in the other leg or a different scope.
+            Park it and check again. Resume the first draft and confirm its
+            original target and text. Neither parked draft is a saved record.
+          </li>
+          <li>
+            On this private instance only, use your browser developer tools'
+            Network Offline control. Edit the first draft, park it, and check
+            evidence while offline. The guide retains a browser observation but
+            explicitly leaves backend evidence unavailable.
+          </li>
+          <li>
+            Turn Offline off. Reload and reopen the guide, then check evidence
+            before further editing. Resume and save the same draft normally,
+            then check again. Credit requires the retained offline and online
+            input plus a later matching backend revision.
+          </li>
+        </ol>
+        <details>
+          <summary>Private storage-unavailable exercise</summary>
+          <p>
+            Keep this tab open. On the disposable private instance, this bounded
+            console command fills only the tab's session storage with named
+            exercise keys. It preserves existing drafts and installs its cleanup
+            command before adding keys. Do not run it on an operational
+            instance.
+          </p>
+          <pre><code>(() =&gt; {
+  const keys = [];
+  const prefix = 'operator-training-quota:' + crypto.randomUUID() + ':';
+  window.restorePrivateTrainingStorage = () =&gt; {
+    for (const key of keys) sessionStorage.removeItem(key);
+  };
+  for (const size of [65536, 256]) {
+    for (let i = 0; i &lt; 256; i++) {
+      const key = prefix + keys.length;
+      keys.push(key);
+      try { sessionStorage.setItem(key, 'x'.repeat(size)); }
+      catch (error) {
+        if (error.name !== 'QuotaExceededError') throw error;
+        break;
+      }
+    }
+  }
+})();</code></pre>
+          <p>
+            Create a fictional note and read its actual retention error. Park it
+            and check T11 evidence. Do not reload or close the tab. Remove only
+            the exercise filler by running:
+          </p>
+          <pre><code>restorePrivateTrainingStorage();
+delete window.restorePrivateTrainingStorage;</code></pre>
+          <p>
+            Resume the note. Make and undo a small text edit so its original
+            input is now retained durably. Park it and check again, then save
+            normally and check once more. The adapter requires the memory-only
+            and durable registry reads and a later matching saved revision. If
+            any read is missing, the outcome stays incomplete. The exercise does
+            not certify another browser's storage or replace a backup.
+          </p>
+        </details>
+        <p>
+          In the private lost-receipt exercise, check guide evidence while the
+          command is uncertain <em>before</em> retrying. Then use Retry same
+          save and check evidence again. The guide verifies the real committed
+          backend version observed before the retry, the identical request and
+          its accepted receipt. A network failure before any commit is a
+          different case.
+        </p>
+        <h3>Private counterpart conflict exercise</h3>
+        <ol>
+          <li>
+            Save a fictional note. Open it for editing in your learner window,
+            change its text, and keep that edit unsaved.
+          </li>
+          <li>
+            In a second browser profile on the same private instance, open the
+            saved note and save a different text change through Operator.
+          </li>
+          <li>
+            Return to the learner window and attempt its old-version save. Read
+            the actual version conflict. Choose Keep draft and return, then
+            Check current evidence in T08 before reconciling.
+          </li>
+          <li>
+            Use Reread and reconcile in Save status. Check guide evidence again
+            so the actual current revision is retained.
+          </li>
+          <li>
+            Resume the original draft and compare both versions. If its input is
+            the intended replacement, choose Keep my input using current version
+            as base. Save normally and check evidence again.
+          </li>
+        </ol>
+        <p>
+          The conflict outcome requires the real rejected attempt, structured
+          conflict reply, concurrent saved revision, explicit reread and a new
+          accepted replacement command based on that reread. The original and
+          counterpart revisions remain immutable. A conflict label alone, a new
+          key without review, or a different store does not complete it.
+        </p>
+        <p>
+          Never use a new command key merely to escape an uncertain response. A
+          successful exact retry returns the original result rather than adding
+          another journal version. A genuine second-client conflict requires
+          reading both versions; a fabricated conflict message is not proof of
+          recovery.
+        </p>
+      </section>
+      <section id="ground-gap">
+        <h2>12. Ground gap and the next leg</h2>
+        <ol>
+          <li>
+            After the first leg, record any ground-gap note using Between legs
+            and both named leg references.
+          </li>
+          <li>
+            In Missions preview and start the next leg normally. Do not assume a
+            completed segment automatically starts another.
+          </li>
+          <li>
+            Return to Operator. Verify current-leg source alignment, the new
+            replay segment and the same retained mission journal. Inspect
+            first-leg records without moving their original scope.
+          </li>
+          <li>
+            After a private-instance restart, reread journal identity and
+            records. An expired or stopped replay segment is not an exact
+            reconstructed flight frame; preview and start a segment again when
+            appropriate.
+          </li>
+        </ol>
+      </section>
+      <section id="archive-transfer">
+        <h2>13. One mission ZIP and import</h2>
+        <aside>
+          In the private course, replay remains simulation data. The operational
+          telemetry archive exercise uses the existing synthetic
+          operational-format input corpus, separately from replay measurements.
+          Supply it explicitly before exporting; its provenance is retained in
+          the mission metadata. These are fictional detector/capture inputs,
+          never aircraft observations. Do not use this command on an operational
+          installation.
+          <pre>
+scripts/operator-training.sh archive-inputs --root /tmp/operator-learner</pre
+          >
+        </aside>
+        <ol>
+          <li>
+            Open the mission's existing Export workflow in Missions. Review
+            itinerary, legs and mission records before preparation.
+          </li>
+          <li>
+            Prepare and download the single mission ZIP. Observe actual
+            preparation, cancellation or failure state; a canceled or failed
+            request is not a successful download.
+          </li>
+          <li>
+            Extract the original archive. Open the original briefing PDF and
+            inspect the itinerary, leg names, printed time zone and predicted
+            communications windows. Check the included journal/history,
+            telemetry and checksum information using the archive's manifest.
+          </li>
+          <li>
+            Use the existing Import workflow in a separate intended destination.
+            For training, create the disposable import destination with the
+            local launcher first. Verify its pre-existing Operator records
+            before and after import.
+          </li>
+          <li>
+            Inspect the imported mission and leg outputs. Keep the original ZIP
+            and original PDF as evidence; do not substitute a newly rendered
+            look-alike PDF for the downloaded artifact.
+          </li>
+        </ol>
+        <p>
+          The original customer briefing uses Eastern Time (ET), as printed on
+          its pages. Operator records remain UTC. Read each artifact's time-zone
+          label; the PDF's predicted posture does not replace the separate
+          reported journal or telemetry archive.
+        </p>
+        <p>
+          A download is not evidence that somebody reviewed its PDF. Mission
+          import is not Operator backup/restore, and it must not silently
+          replace an existing journal. Report an import validation failure or
+          missing dependency honestly and use the normal retry/cancel path.
+        </p>
+        <h3>Verify the private archive exercise</h3>
+        <p>
+          Cancel a preparation before its first completed download, then retry
+          through Missions and keep the original ZIP. In a managed cloud
+          environment, use the launcher's <code>--relay</code> option and
+          preserve the configured Docker daemon/context. The main training
+          instance and import destination must be the marked private instances.
+        </p>
+        <p>
+          Use your existing private root below. Replace
+          <code>SOURCE_PORT</code> with the printed source port, or replace the
+          whole origin with the source browser's actual scheme, host and port.
+          The checker uses the existing backend Python requirements, including
+          the PDF reader.
+        </p>
+        <pre>
+operator_training_root=/tmp/operator-learner
+operator_training_origin=http://127.0.0.1:SOURCE_PORT
+scripts/operator-training.sh import-start --root "$operator_training_root"</pre
+        >
+        <ol>
+          <li>
+            Open the printed import-destination address. Before importing
+            anything, capture its empty journal baseline:
+          </li>
+        </ol>
+        <pre>
+timeout --kill-after=10s 5m uv run --python 3.11 \
+  --with-requirements backend/starlink-location/requirements-dev.txt \
+  python tools/training/operator-mission/archive_evidence.py baseline \
+  --root "$operator_training_root" --label empty \
+  --browser-origin "$operator_training_origin"</pre
+        >
+        <ol start="2">
+          <li>
+            Use the destination's normal Missions → Import Mission controls to
+            import the unchanged original ZIP. Then compare it with the
+            baseline:
+          </li>
+        </ol>
+        <pre>
+timeout --kill-after=10s 5m uv run --python 3.11 \
+  --with-requirements backend/starlink-location/requirements-dev.txt \
+  python tools/training/operator-mission/archive_evidence.py check \
+  --root "$operator_training_root" --label empty \
+  --browser-origin "$operator_training_origin"</pre
+        >
+        <ol start="3">
+          <li>
+            In the destination's Operator workspace, save a clearly fictional
+            note. Capture a new baseline with <code>--label nonempty</code>,
+            re-import the same ZIP through Missions, then run
+            <code>check</code> with <code>--label nonempty</code>. Each check
+            prints its JSON report and original extracted PDF paths.
+          </li>
+          <li>
+            Back in the source's T10 guide, select the original browser download
+            and both generated <code>archive-evidence-empty.json</code> and
+            <code>archive-evidence-nonempty.json</code> files. Choose
+            <strong>Check selected archive evidence</strong>. If the browser is
+            on another computer, transfer the two JSON reports using your normal
+            file manager.
+          </li>
+          <li>
+            Review the four automatic outcomes labeled
+            <strong>Verified from imported tooling evidence</strong>. The guide
+            independently hashes the actual selected ZIP and compares the
+            archived source revisions with fresh backend history. Reload and use
+            Check current evidence to revalidate retained facts.
+          </li>
+          <li>
+            Open the actual extracted original PDF before recording its
+            human-review observation. Record a client-visible export failure
+            only after observing that failure and its recovery. Cancellation
+            alone does not establish a network failure. These two human
+            observations remain separate from automatic file/journal checks.
+          </li>
+          <li>
+            Stop the disposable destination as soon as its exercise finishes:
+          </li>
+        </ol>
+        <pre>
+scripts/operator-training.sh import-stop --root "$operator_training_root"</pre
+        >
+        <p>
+          The checker reads the existing ready server archive and does not
+          export again, replace a journal or generate a new PDF. The
+          browser-selected ZIP must have identical bytes. If checking on the
+          same computer, an optional
+          <code>--zip /path/to/original.zip</code> selects the original download
+          directly. Private checker limits are 64 MiB per ZIP and 4 MiB per
+          report; these do not change the normal Missions export/import
+          workflow.
+        </p>
+      </section>
+      <section id="training">
+        <h2>14. Private guided mission</h2>
+        <p>
+          Use a separate nonproduction computer/instance. The operational
+          instance has no training mode switch. From the repository create a new
+          empty private root:
+        </p>
+        <pre>
+scripts/operator-training.sh start --root /tmp/operator-learner</pre
+        >
+        <p>
+          Open the printed address, select Fictional Meridian 21, then choose
+          Help → Guided mission walkthrough. The marked fixture supplies two
+          planned legs and prerequisite calls; the learner must perform the
+          actual operations. It uses existing replay, source, journal and export
+          services.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>Work and evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>T01</td>
+                <td>
+                  Identify the private mission, both legs, scope and UTC. Record
+                  your own observation of context.
+                </td>
+              </tr>
+              <tr>
+                <td>T02</td>
+                <td>
+                  Create, reschedule, complete, cancel/reinstate and
+                  remove/restore calls. Exercise unknown actual times, zero lead
+                  and full history.
+                </td>
+              </tr>
+              <tr>
+                <td>T03</td>
+                <td>
+                  Establish/verify a bridge, overlap independent customers,
+                  interrupt/restore, reuse and close. Explain that the records
+                  do not provision hardware.
+                </td>
+              </tr>
+              <tr>
+                <td>T04</td>
+                <td>
+                  Verify a connected Overview, presets/weather, groups/history,
+                  recenter, supported foreground cues and a real acknowledgment.
+                </td>
+              </tr>
+              <tr>
+                <td>T05</td>
+                <td>
+                  Preview/start the first leg at 1×, advance documented
+                  checkpoints, inspect actual current-leg X/Ka/PoP inputs and
+                  future Next alongside overdue work.
+                </td>
+              </tr>
+              <tr>
+                <td>T06</td>
+                <td>
+                  Record applied-only transport, independent checks, a changed
+                  application and historical correction.
+                </td>
+              </tr>
+              <tr>
+                <td>T07</td>
+                <td>
+                  Maintain issue lifecycle/follow-up/correction and a separate
+                  capability assessment.
+                </td>
+              </tr>
+              <tr>
+                <td>T08</td>
+                <td>
+                  Retain drafts and original scopes; exercise actual offline,
+                  lost-receipt, counterpart conflict and private backup/restore
+                  recovery.
+                </td>
+              </tr>
+              <tr>
+                <td>T09</td>
+                <td>
+                  Record the ground gap, start the return leg, verify its model
+                  sources and restart continuity.
+                </td>
+              </tr>
+              <tr>
+                <td>T10</td>
+                <td>
+                  Download/extract the original mission ZIP/PDF and import into
+                  the separate destination without replacing its existing
+                  journal.
+                </td>
+              </tr>
+              <tr>
+                <td>T11</td>
+                <td>
+                  Finish remaining field, pagination, optional-provider,
+                  changed-store and storage-failure branches using this
+                  reference.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Next visits instructions; it does not pass a lesson. Back does not
+          undo saved work. Skip stays distinct from Passed. Check current
+          evidence reads authoritative records, complete histories, events and
+          replay state. Missing, stale or unavailable evidence is not all-clear.
+          Human observations are explicitly recorded as such and are separate
+          from machine-verified outcomes. Imported archive reports use a
+          separate “Verified from imported tooling evidence” label after a fresh
+          source-history check; they do not establish human PDF review or an
+          observed client failure.
+        </p>
+        <p>
+          A flight exercise can retain its original replay and source-read facts
+          after you start the next leg or restart the private instance. These
+          are labeled “Verified from retained source observation”; they describe
+          an earlier check, not current prediction availability. First-leg and
+          second-leg model checks are separate. Changed store/epoch, replaced
+          leg routes, inconsistent reads or a journal boundary older than the
+          recorded observation cannot establish those outcomes. Reset guide
+          progress also clears these local observations.
+        </p>
+        <p>
+          Open lesson controls takes you to the actual controls and compacts the
+          instructions. Resume guide instructions reopens them. Dismiss guide
+          does not discard drafts or writes. Resume retains the correct private
+          identity; changed store/epoch/mission data is not silently accepted.
+        </p>
+        <p>
+          Advance the fixture only using its local documented commands, after
+          starting the appropriate replay leg:
+        </p>
+        <pre>
+scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage leg-one
+scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage leg-one-restriction
+scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage between-legs
+# Preview and start the return leg in Missions before advancing it.
+scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage leg-two
+scripts/operator-training.sh checkpoint --root /tmp/operator-learner --stage postflight</pre
+        >
+        <p>
+          Checkpoints move forward; they do not simulate a learner's saved
+          actions or repair an invalid command. Unknown PoP remains an advisory
+          condition, not proof of an outage.
+        </p>
+        <figure>
+          <div class="annotated">
+            <img
+              src="images/training-evidence-32d8acfce238.png"
+              width="1280"
+              height="720"
+              alt="Private guide after conference closure and restart, showing retained historical milestones verified and bridge report semantics still needing a human observation."
+            /><span
+              class="marker"
+              style="left: 89%; top: 42%"
+              aria-hidden="true"
+              >1</span
+            ><span class="marker" style="left: 62%; top: 52%" aria-hidden="true"
+              >2</span
+            ><span class="marker" style="left: 16%; top: 29%" aria-hidden="true"
+              >3</span
+            >
+          </div>
+          <figcaption>
+            Actual guide evidence after closing the bridge, reloading and
+            restarting the private instance. The panel is scrolled to its
+            outcomes.
+            <ol class="callouts">
+              <li>
+                Historical connection and participation milestones remain
+                verified.
+              </li>
+              <li>
+                The bridge-report understanding outcome still needs a human
+                observation; the lesson remains incomplete.
+              </li>
+              <li>
+                Now independently retains a customer reported connected after
+                bridge closure.
+              </li>
+            </ol>
+          </figcaption>
+        </figure>
+      </section>
+      <section id="restart-reset">
+        <h2>15. Restart, reset and maintenance</h2>
+        <h3>Private backup and changed-epoch warmup</h3>
+        <p>
+          Do this before starting the first flight. Save a clearly named
+          training note, then make a native backup using the private root and
+          the exact browser origin (scheme, host and port, without a path).
+          Preserve the printed manifest path. Save a second note after the
+          backup. The private lost-receipt exercise can leave that second
+          command uncertain: in T08, choose Arm one note receipt loss, wait for
+          Armed, then create and save the second note within 60 seconds. Its
+          real successful response is withheld once from this tab's journal
+          owner. Keep draft and return; keep its frozen request for the
+          changed-epoch check and do not retry it before restoring. Cancel,
+          expiry or leaving the exercise removes the response interceptor. No
+          backend fault endpoint is installed.
+        </p>
+        <pre><code>scripts/operator-training.sh journal-check --root /tmp/operator-learner
+scripts/operator-training.sh journal-backup --root /tmp/operator-learner --browser-origin http://127.0.0.1:PORT
+# Use the exact manifest printed above, after the post-backup note.
+scripts/operator-training.sh journal-restore --root /tmp/operator-learner --manifest /app/data/operator/simulation/NAMESPACE/backups/BACKUP.json --browser-origin http://127.0.0.1:PORT</code></pre>
+        <p>
+          The wrapper stops only this private backend writer, invokes the
+          existing offline restore and integrity check, restarts the backend and
+          prints an evidence JSON path. Reload Operator. Confirm that the first
+          note remains, the later note is absent and the old uncertain request
+          is quarantined with Retry same save disabled. Do not retarget or
+          discard it. In the restored guide, select this JSON under Native
+          recovery report in T08 or T11. Check current evidence revalidates the
+          restored history and retained old request. The tool records
+          maintenance facts; it does not certify a human observation. Without an
+          old uncertain request, backup restoration can be verified while the
+          quarantine outcome remains incomplete.
+        </p>
+        <p>
+          Restore deliberately creates a new epoch. Earlier guide observations
+          remain associated with the old epoch and are not transferred. Return
+          to T01 after this warmup and conduct the flight lessons in the
+          restored epoch. Do not restore late in the mission to manufacture
+          completion.
+        </p>
+        <p>
+          <strong>Reset guide progress</strong> clears only local guide
+          navigation and observations for the current private identity. It does
+          not undo saved mission records.
+          <strong>Reset mission</strong> provides an explicit local command; the
+          browser does not pretend to reset the instance itself.
+        </p>
+        <pre>
+scripts/operator-training.sh restart --root /tmp/operator-learner
+scripts/operator-training.sh import-start --root /tmp/operator-learner
+scripts/operator-training.sh import-stop --root /tmp/operator-learner
+scripts/operator-training.sh reset --root /tmp/operator-learner
+scripts/operator-training.sh stop --root /tmp/operator-learner</pre
+        >
+        <p>
+          Read the reset command's printed successor root and address. Reset
+          retains the old private data and creates a distinct store/namespace
+          with prerequisites only. Open the successor and select its mission; do
+          not retarget old pending commands. Stopping/resetting the parent also
+          stops its owned disposable import destination.
+        </p>
+        <p>
+          For journal maintenance, use the installation's existing Operator CLI
+          and configured root/mode/namespace. Check integrity and create a
+          verified backup; preserve its manifest. Stop the relevant backend
+          writer before restoring the matching backup. Restore changes the store
+          epoch, so every browser must reread and reconcile retained commands.
+          Never restore into an operational root as a training shortcut. The
+          private fixture's maintenance adapter applies its namespace/clock to
+          that existing CLI; it adds no maintenance HTTP endpoint.
+        </p>
+        <p>
+          Do not delete a journal, configuration, credentials or a browser's
+          retained drafts to make a setup error disappear. Preserve the explicit
+          error and known store identity for the responsible administrator.
+        </p>
+      </section>
+      <section id="parity-recovery">
+        <h2>16. Field and failure checklist</h2>
+        <ul>
+          <li>
+            Confirm mission, leg/gap and original scope on every draft and
+            correction.
+          </li>
+          <li>
+            Exercise genuinely unknown and approximate occurrence times, valid
+            zero values and optional associations.
+          </li>
+          <li>
+            Distinguish a call requirement, bridge state, independent customer
+            presence, applied transport, service check, capability assessment
+            and issue lifecycle.
+          </li>
+          <li>
+            Review all immutable revisions, removed/restored records and history
+            pages. Loaded-only coverage remains partial.
+          </li>
+          <li>
+            Check source freshness/alignment and optional-provider
+            unavailability without inventing an outage or successful display
+            layer.
+          </li>
+          <li>
+            Verify actual connected Overview changes; keep partial preset
+            application visible and recover with current baselines.
+          </li>
+          <li>
+            Recover an actual offline draft, committed lost receipt, counterpart
+            version conflict and changed epoch/store. Preserve the original
+            pending request.
+          </li>
+          <li>
+            Handle inaccessible browser storage honestly; keep the only unsaved
+            copy open.
+          </li>
+          <li>
+            Keep the actual single ZIP, original PDF, checksums and import
+            outcome. Verify the destination's existing journal is unchanged.
+          </li>
+          <li>
+            Finish incomplete/skipped branches before treating a private lesson
+            as complete. Automated checks do not replace a first-time person's
+            understanding or device usability.
+          </li>
+        </ul>
+      </section>
+      <section id="glossary">
+        <h2>17. Terms</h2>
+        <dl>
+          <dt><strong>Reported connected</strong></dt>
+          <dd>
+            An operator report of customer presence; not a hardware presence
+            detector.
+          </dd>
+          <dt><strong>Conference</strong></dt>
+          <dd>
+            A reusable bridge record with its own establishment, verification,
+            interruption and closure.
+          </dd>
+          <dt><strong>Interval</strong></dt>
+          <dd>
+            A customer's reported period of participation, optionally linked to
+            a call, conference and earlier interrupted interval.
+          </dd>
+          <dt><strong>Receipt</strong></dt>
+          <dd>
+            The backend's accepted command result, including saved versions.
+          </dd>
+          <dt><strong>Exact retry</strong></dt>
+          <dd>
+            A replay of the same frozen command/key/epoch to learn its original
+            result safely.
+          </dd>
+          <dt><strong>Epoch</strong></dt>
+          <dd>
+            A store generation used to fence stale commands, including after
+            restore.
+          </dd>
+          <dt><strong>Immutable history</strong></dt>
+          <dd>
+            Saved record versions retained when later reports, corrections,
+            removals or restores occur.
+          </dd>
+          <dt><strong>Advisory / estimate</strong></dt>
+          <dd>
+            Context to assess a plan, distinct from a reported observed action
+            or a save-validation rule.
+          </dd>
+        </dl>
+      </section>
+    </main>
+    <footer>
+      <p>
+        All named people, missions and examples in the private course are
+        fictional. This guide is packaged with the application and needs no
+        external documentation service. Use the installed controls and explicit
+        server acknowledgments as the authority for current state.
+      </p>
+    </footer>
+  </body>
+</html>

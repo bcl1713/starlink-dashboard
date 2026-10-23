@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/qualify.py", line 115, in <module>
+    assert m['containerimage.config.digest']==image['Id']
+           ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'containerimage.config.digest'

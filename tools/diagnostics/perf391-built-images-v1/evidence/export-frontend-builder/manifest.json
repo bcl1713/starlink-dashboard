@@ -1,0 +1,85 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "607479"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 607479,
+      "start_id": "211994669"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/evidence/export-frontend-builder"
+  ],
+  "owner": {
+    "pgid": 607469,
+    "pid": 607470,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "211994662"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "2700s",
+        "docker",
+        "build",
+        "--platform",
+        "linux/amd64",
+        "--progress",
+        "plain",
+        "--target",
+        "builder",
+        "--metadata-file",
+        "/tmp/perf391-build-408/frontend-builder.metadata.json",
+        "-f",
+        "/tmp/perf391-build-408/contexts/A/.perf391/frontend.Dockerfile",
+        "-t",
+        "perf391-diag-408-frontend-builder:f9cf80bd",
+        "/tmp/perf391-build-408/contexts/A"
+      ],
+      "pgid": 607479,
+      "pid": 607479,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211994669",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-build408",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "scope": "build and stopped-image inspection"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

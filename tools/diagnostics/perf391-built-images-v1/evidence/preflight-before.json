@@ -1,0 +1,414 @@
+{
+  "chromium_binary": {
+    "path": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+    "sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
+  },
+  "commands": {
+    "addresses": {
+      "argv": [
+        "ip",
+        "-brief",
+        "address"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp5s0           UP             10.10.50.30/24 fe80::1ac0:4dff:fe29:32ab/64 \nwlo1             DOWN           \ncamera40@enp5s0  UP             10.10.40.30/24 fe80::1ac0:4dff:fe29:32ab/64 \ndocker0          UP             172.17.0.1/16 fe80::1434:f2ff:fe9b:abb6/64 \nbr-8ed5e20e658b  UP             172.18.0.1/16 fe80::b059:46ff:fe89:3fef/64 \nveth4a0861f@if2  UP             fe80::50c3:beff:fecd:73f9/64 \nbr-7320eaef007a  UP             172.19.0.1/16 fe80::dc45:75ff:fe81:53e0/64 \nvethe55e41e@if2  UP             fe80::6074:ffff:fe1a:93bf/64 \nvethb53b373@if2  UP             fe80::d8f4:4fff:fe46:a820/64 \nvethf010826@if2  UP             fe80::dc:e8ff:fede:bc0e/64 \nveth302e483@if2  UP             fe80::c00:44ff:feaf:e38d/64 \nveth374d8de@if2  UP             fe80::147f:14ff:fe16:3fbc/64 \n"
+    },
+    "buildx": {
+      "argv": [
+        "docker",
+        "buildx",
+        "version"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "github.com/docker/buildx v0.37.1 0b265a9f62db554fa9aba6dd19e1bd5704bc7d8a\n"
+    },
+    "capabilities": {
+      "argv": [
+        "capsh",
+        "--print"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Current: =\nBounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore\nAmbient set =\nCurrent IAB: \nSecurebits: 00/0x0/1'b0 (no-new-privs=0)\n secure-noroot: no (unlocked)\n secure-no-suid-fixup: no (unlocked)\n secure-keep-caps: no (unlocked)\n secure-no-ambient-raise: no (unlocked)\nuid=1002(oracle-worker) euid=1002(oracle-worker)\ngid=1002(oracle-worker)\ngroups=1002(oracle-worker)\nGuessed mode: HYBRID (4)\n"
+    },
+    "capture_file_caps": {
+      "argv": [
+        "getcap",
+        "/usr/bin/tcpdump"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    "chromium_libraries": {
+      "argv": [
+        "ldd",
+        "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "\tlinux-vdso.so.1 (0x0000732088cac000)\n\tlibdl.so.2 => /usr/lib/x86_64-linux-gnu/libdl.so.2 (0x0000732088c93000)\n\tlibpthread.so.0 => /usr/lib/x86_64-linux-gnu/libpthread.so.0 (0x0000732088c8e000)\n\tlibglib-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0 (0x00007320770a8000)\n\tlibgobject-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 (0x0000732077044000)\n\tlibnspr4.so => /usr/lib/x86_64-linux-gnu/libnspr4.so (0x0000732077004000)\n\tlibnss3.so => /usr/lib/x86_64-linux-gnu/libnss3.so (0x0000732076ec6000)\n\tlibnssutil3.so => /usr/lib/x86_64-linux-gnu/libnssutil3.so (0x0000732076e92000)\n\tlibsmime3.so => /usr/lib/x86_64-linux-gnu/libsmime3.so (0x0000732076e65000)\n\tlibgio-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libgio-2.0.so.0 (0x0000732076c88000)\n\tlibatk-1.0.so.0 => /usr/lib/x86_64-linux-gnu/libatk-1.0.so.0 (0x0000732076c5e000)\n\tlibatk-bridge-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libatk-bridge-2.0.so.0 (0x0000732076c20000)\n\tlibdbus-1.so.3 => /usr/lib/x86_64-linux-gnu/libdbus-1.so.3 (0x0000732076bd0000)\n\tlibcups.so.2 => /usr/lib/x86_64-linux-gnu/libcups.so.2 (0x0000732076b2d000)\n\tlibexpat.so.1 => /usr/lib/x86_64-linux-gnu/libexpat.so.1 (0x0000732076aff000)\n\tlibxcb.so.1 => /usr/lib/x86_64-linux-gnu/libxcb.so.1 (0x0000732076ad4000)\n\tlibxkbcommon.so.0 => /usr/lib/x86_64-linux-gnu/libxkbcommon.so.0 (0x0000732076a75000)\n\tlibasound.so.2 => /usr/lib/x86_64-linux-gnu/libasound.so.2 (0x0000732076956000)\n\tlibgbm.so.1 => /usr/lib/x86_64-linux-gnu/libgbm.so.1 (0x0000732088c81000)\n\tlibX11.so.6 => /usr/lib/x86_64-linux-gnu/libX11.so.6 (0x0000732076814000)\n\tlibXext.so.6 => /usr/lib/x86_64-linux-gnu/libXext.so.6 (0x0000732076800000)\n\tlibcairo.so.2 => /usr/lib/x86_64-linux-gnu/libcairo.so.2 (0x00007320766b1000)\n\tlibpango-1.0.so.0 => /usr/lib/x86_64-linux-gnu/libpango-1.0.so.0 (0x0000732076640000)\n\tlibudev.so.1 => /usr/lib/x86_64-linux-gnu/libudev.so.1 (0x00007320765f9000)\n\tlibm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x00007320764d3000)\n\tlibXcomposite.so.1 => /usr/lib/x86_64-linux-gnu/libXcomposite.so.1 (0x0000732088c7a000)\n\tlibXdamage.so.1 => /usr/lib/x86_64-linux-gnu/libXdamage.so.1 (0x0000732088c75000)\n\tlibXfixes.so.3 => /usr/lib/x86_64-linux-gnu/libXfixes.so.3 (0x00007320764cb000)\n\tlibXrandr.so.2 => /usr/lib/x86_64-linux-gnu/libXrandr.so.2 (0x00007320764be000)\n\tlibatspi.so.0 => /usr/lib/x86_64-linux-gnu/libatspi.so.0 (0x000073207647e000)\n\tlibgcc_s.so.1 => /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 (0x0000732076450000)\n\tlibc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x0000732076200000)\n\t/lib64/ld-linux-x86-64.so.2 (0x0000732088cae000)\n\tlibatomic.so.1 => /usr/lib/x86_64-linux-gnu/libatomic.so.1 (0x0000732076445000)\n\tlibpcre2-8.so.0 => /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0 (0x0000732076154000)\n\tlibffi.so.8 => /usr/lib/x86_64-linux-gnu/libffi.so.8 (0x0000732076434000)\n\tlibplc4.so => /usr/lib/x86_64-linux-gnu/libplc4.so (0x000073207642b000)\n\tlibplds4.so => /usr/lib/x86_64-linux-gnu/libplds4.so (0x0000732076426000)\n\tlibgmodule-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libgmodule-2.0.so.0 (0x000073207614d000)\n\tlibz.so.1 => /usr/lib/x86_64-linux-gnu/libz.so.1 (0x000073207612f000)\n\tlibmount.so.1 => /usr/lib/x86_64-linux-gnu/libmount.so.1 (0x00007320760dc000)\n\tlibselinux.so.1 => /usr/lib/x86_64-linux-gnu/libselinux.so.1 (0x00007320760a9000)\n\tlibsystemd.so.0 => /usr/lib/x86_64-linux-gnu/libsystemd.so.0 (0x0000732075f95000)\n\tlibgssapi_krb5.so.2 => /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so.2 (0x0000732075f3d000)\n\tlibavahi-common.so.3 => /usr/lib/x86_64-linux-gnu/libavahi-common.so.3 (0x0000732075f2e000)\n\tlibavahi-client.so.3 => /usr/lib/x86_64-linux-gnu/libavahi-client.so.3 (0x0000732075f1a000)\n\tlibgnutls.so.30 => /usr/lib/x86_64-linux-gnu/libgnutls.so.30 (0x0000732075c00000)\n\tlibXau.so.6 => /usr/lib/x86_64-linux-gnu/libXau.so.6 (0x0000732075f14000)\n\tlibXdmcp.so.6 => /usr/lib/x86_64-linux-gnu/libXdmcp.so.6 (0x0000732075f0c000)\n\tlibdrm.so.2 => /usr/lib/x86_64-linux-gnu/libdrm.so.2 (0x0000732075ef5000)\n\tlibpng16.so.16 => /usr/lib/x86_64-linux-gnu/libpng16.so.16 (0x0000732075ebb000)\n\tlibfontconfig.so.1 => /usr/lib/x86_64-linux-gnu/libfontconfig.so.1 (0x0000732075e66000)\n\tlibfreetype.so.6 => /usr/lib/x86_64-linux-gnu/libfreetype.so.6 (0x0000732075b2b000)\n\tlibXrender.so.1 => /usr/lib/x86_64-linux-gnu/libXrender.so.1 (0x0000732075e5a000)\n\tlibxcb-render.so.0 => /usr/lib/x86_64-linux-gnu/libxcb-render.so.0 (0x0000732075e4b000)\n\tlibxcb-shm.so.0 => /usr/lib/x86_64-linux-gnu/libxcb-shm.so.0 (0x0000732075e46000)\n\tlibpixman-1.so.0 => /usr/lib/x86_64-linux-gnu/libpixman-1.so.0 (0x0000732075a74000)\n\tlibfribidi.so.0 => /usr/lib/x86_64-linux-gnu/libfribidi.so.0 (0x0000732075e25000)\n\tlibthai.so.0 => /usr/lib/x86_64-linux-gnu/libthai.so.0 (0x0000732075e19000)\n\tlibharfbuzz.so.0 => /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0 (0x0000732075949000)\n\tlibXi.so.6 => /usr/lib/x86_64-linux-gnu/libXi.so.6 (0x0000732075935000)\n\tlibXRes.so.1 => /usr/lib/x86_64-linux-gnu/libXRes.so.1 (0x0000732075e13000)\n\tlibblkid.so.1 => /usr/lib/x86_64-linux-gnu/libblkid.so.1 (0x00007320758f9000)\n\tlibkrb5.so.3 => /usr/lib/x86_64-linux-gnu/libkrb5.so.3 (0x000073207582d000)\n\tlibk5crypto.so.3 => /usr/lib/x86_64-linux-gnu/libk5crypto.so.3 (0x0000732075801000)\n\tlibcom_err.so.2 => /usr/lib/x86_64-linux-gnu/libcom_err.so.2 (0x00007320757fb000)\n\tlibkrb5support.so.0 => /usr/lib/x86_64-linux-gnu/libkrb5support.so.0 (0x00007320757ee000)\n\tlibp11-kit.so.0 => /usr/lib/x86_64-linux-gnu/libp11-kit.so.0 (0x0000732075611000)\n\tlibidn2.so.0 => /usr/lib/x86_64-linux-gnu/libidn2.so.0 (0x00007320755ef000)\n\tlibunistring.so.5 => /usr/lib/x86_64-linux-gnu/libunistring.so.5 (0x0000732075408000)\n\tlibtasn1.so.6 => /usr/lib/x86_64-linux-gnu/libtasn1.so.6 (0x00007320753f1000)\n\tlibhogweed.so.6 => /usr/lib/x86_64-linux-gnu/libhogweed.so.6 (0x00007320753a6000)\n\tlibnettle.so.8 => /usr/lib/x86_64-linux-gnu/libnettle.so.8 (0x000073207534f000)\n\tlibgmp.so.10 => /usr/lib/x86_64-linux-gnu/libgmp.so.10 (0x00007320752c7000)\n\tlibbz2.so.1.0 => /usr/lib/x86_64-linux-gnu/libbz2.so.1.0 (0x00007320752b2000)\n\tlibbrotlidec.so.1 => /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 (0x00007320752a3000)\n\tlibdatrie.so.1 => /usr/lib/x86_64-linux-gnu/libdatrie.so.1 (0x000073207529a000)\n\tlibgraphite2.so.3 => /usr/lib/x86_64-linux-gnu/libgraphite2.so.3 (0x0000732075274000)\n\tlibkeyutils.so.1 => /usr/lib/x86_64-linux-gnu/libkeyutils.so.1 (0x000073207526b000)\n\tlibresolv.so.2 => /usr/lib/x86_64-linux-gnu/libresolv.so.2 (0x0000732075258000)\n\tlibbrotlicommon.so.1 => /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1 (0x0000732075235000)\n"
+    },
+    "compose": {
+      "argv": [
+        "docker",
+        "compose",
+        "version"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Docker Compose version v5.5.1\n"
+    },
+    "containers": {
+      "argv": [
+        "docker",
+        "ps",
+        "--format",
+        "{{.ID}} {{.Image}} {{.Names}} {{.Ports}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    "docker_context": {
+      "argv": [
+        "docker",
+        "context",
+        "show"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    "docker_endpoint": {
+      "argv": [
+        "docker",
+        "context",
+        "inspect",
+        "--format",
+        "{{.Endpoints.docker.Host}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "unix:///run/user/1002/docker.sock\n"
+    },
+    "docker_info": {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{json .ServerVersion}} {{json .Driver}} {{json .CgroupDriver}} {{json .CgroupVersion}} {{json .NCPU}} {{json .MemTotal}} {{json .SecurityOptions}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "\"29.8.1\" \"overlayfs\" \"systemd\" \"2\" 20 65915523072 [\"name=seccomp,profile=builtin\",\"name=rootless\",\"name=cgroupns\"]\n"
+    },
+    "filesystem": {
+      "argv": [
+        "df",
+        "-B1",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Filesystem                           1B-blocks        Used   Available Use% Mounted on\n/dev/mapper/ubuntu--vg-ubuntu--lv 105089261568 77607759872 22096015360  78% /\n"
+    },
+    "images": {
+      "argv": [
+        "docker",
+        "image",
+        "ls",
+        "--no-trunc",
+        "--digests",
+        "--format",
+        "{{.Repository}} {{.Tag}} {{.Digest}} {{.ID}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "nginx alpine sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d\nmoby/buildkit buildx-stable-1 sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea\nnode 22-alpine sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402\nalpine 3.20 sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc\nhello-world latest sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8 sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8\nprom/prometheus v3.5.0 sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996 sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996\ncurlimages/curl 8.12.1 sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6 sha256:94e9e444bcba979c2ea12e27ae39bee4cd10bc7041a472c4727a558e213744e6\nnode 22.12.0-alpine sha256:51eff88af6dff26f59316b6e356188ffa2c422bd3c3b76f2556a2e7e89d080bd sha256:51eff88af6dff26f59316b6e356188ffa2c422bd3c3b76f2556a2e7e89d080bd\n"
+    },
+    "listeners": {
+      "argv": [
+        "ss",
+        "-ltn"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      128        127.0.0.1:45867      0.0.0.0:*   \nLISTEN 0      4096      127.0.0.54:53         0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:46207      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:46851      0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:18000      0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:18080      0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:19090      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:41685      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:42481      0.0.0.0:*   \nLISTEN 0      4096       127.0.0.1:37397      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:36071      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:33149      0.0.0.0:*   \nLISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:5000       0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:32600      0.0.0.0:*   \nLISTEN 0      1024       127.0.0.1:32401      0.0.0.0:*   \nLISTEN 0      4096         0.0.0.0:111        0.0.0.0:*   \nLISTEN 0      4096         0.0.0.0:22         0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:1984       0.0.0.0:*   \nLISTEN 0      4096         0.0.0.0:9001       0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:8971       0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:8555       0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:8554       0.0.0.0:*   \nLISTEN 0      1024               *:32400            *:*   \nLISTEN 0      4096            [::]:111           [::]:*   \nLISTEN 0      4096            [::]:22            [::]:*   \nLISTEN 0      4096            [::]:9001          [::]:*   \n"
+    },
+    "networks": {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "--format",
+        "{{.ID}} {{.Name}} {{.Driver}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "ebcb80fa468e bridge bridge\nc5cbc0b10216 host host\n961b0ccc0199 none null\n"
+    },
+    "node": {
+      "argv": [
+        "node",
+        "--version"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "v22.12.0\n"
+    },
+    "playwright_inventory": {
+      "argv": [
+        "node",
+        "-e",
+        "\nconst {createRequire}=require('node:module');\nconst {readFileSync,existsSync}=require('node:fs');\nconst req=createRequire(process.argv[1]+'/package.json');\nconst core=require('node:path').dirname(req.resolve('playwright-core/package.json'));\nconst {chromium}=req('playwright');\nconst types=readFileSync(core+'/types/types.d.ts','utf8');\nconsole.log(JSON.stringify({version:req('playwright/package.json').version,\n  executable:chromium.executablePath(), executableExists:existsSync(chromium.executablePath()),\n  addInitScriptDisposable:/addInitScript<Arg>[\\s\\S]{0,250}Promise<Disposable>/.test(types),\n  exposeBindingDisposable:/exposeBinding\\([^;]{0,250}Promise<Disposable>/.test(types),\n  browsers:JSON.parse(readFileSync(core+'/browsers.json','utf8'))}));\n",
+        "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "{\"version\":\"1.63.0\",\"executable\":\"/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome\",\"executableExists\":true,\"addInitScriptDisposable\":true,\"exposeBindingDisposable\":true,\"browsers\":{\"comment\":\"Do not edit this file, use utils/roll_browser.js\",\"browsers\":[{\"name\":\"chromium\",\"revision\":\"1243\",\"installByDefault\":true,\"browserVersion\":\"153.0.8010.12\",\"title\":\"Chrome for Testing\"},{\"name\":\"chromium-headless-shell\",\"revision\":\"1243\",\"installByDefault\":true,\"browserVersion\":\"153.0.8010.12\",\"title\":\"Chrome Headless Shell\"},{\"name\":\"firefox\",\"revision\":\"1543\",\"installByDefault\":true,\"browserVersion\":\"155.0\",\"title\":\"Firefox\"},{\"name\":\"webkit\",\"revision\":\"2359\",\"installByDefault\":true,\"revisionOverrides\":{\"mac14\":\"2251\",\"mac14-arm64\":\"2251\"},\"browserVersion\":\"26.6\",\"title\":\"WebKit\"},{\"name\":\"ffmpeg\",\"revision\":\"1011\",\"installByDefault\":true},{\"name\":\"winldd\",\"revision\":\"1007\",\"installByDefault\":false},{\"name\":\"android\",\"revision\":\"1001\",\"installByDefault\":false}]}}\n"
+    },
+    "processes": {
+      "argv": [
+        "ps",
+        "-u",
+        "1002",
+        "-o",
+        "pid,ppid,pgid,comm"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "    PID    PPID    PGID COMMAND\n 586667 3570576  586667 codex-linux-san\n 586671  586667  586671 bwrap\n 586672  586671  586672 codex\n 586673  586672  586672 bash\n 586685  586673  586685 timeout\n 586686  586685  586685 python3\n 587867 3570576  587867 bash\n 587877  587867  587877 timeout\n 587878  587877  587877 python3\n 588089  587878  587877 ps\n 922708 2590788  922708 codex\n1630949 2575907 1630949 at-spi-bus-laun\n1668647 2591960 1668647 codex\n2575907       1 2575907 systemd\n2575912 2575907 2575907 (sd-pam)\n2575950 2575907 2575950 rootlesskit\n2575963 2575950 2575950 exe\n2575996 2575950 2575950 slirp4netns\n2576004 2575963 2575950 dockerd\n2576041 2576004 2576041 containerd\n2590788 2590360 2590788 bash\n2591960       1 2591960 codex\n3229629 2575907 3229629 dbus-daemon\n3570576 2591960 3570576 codex\n3573038 3570576 3573038 codex-code-mode\n4034910 2591960 4034910 codex\n"
+    },
+    "python": {
+      "argv": [
+        "/usr/bin/python3",
+        "--version"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Python 3.14.4\n"
+    },
+    "python311": {
+      "argv": [
+        "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/bin/python3.11",
+        "--version"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Python 3.11.16\n"
+    },
+    "routes": {
+      "argv": [
+        "ip",
+        "route"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "default via 10.10.50.1 dev enp5s0 proto static metric 50 \n10.10.40.0/24 dev camera40 proto kernel scope link src 10.10.40.30 \n10.10.50.0/24 dev enp5s0 proto kernel scope link src 10.10.50.30 \n172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 \n172.18.0.0/16 dev br-8ed5e20e658b proto kernel scope link src 172.18.0.1 \n172.19.0.0/16 dev br-7320eaef007a proto kernel scope link src 172.19.0.1 \n"
+    },
+    "task_container": {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-prep-408"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    "task_network": {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-prep-408"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    "task_volume": {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-prep-408"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    }
+  },
+  "environment_status_tool": "unavailable in this session",
+  "executor": {
+    "pgid": 587877,
+    "pid": 587878,
+    "start_id": "211969740",
+    "uid": 1002
+  },
+  "files": {
+    "/proc/cpuinfo": "processor\t: 0\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.338\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 0\ncpu cores\t: 10\napicid\t\t: 0\ninitial apicid\t: 0\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 1\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.522\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 1\ncpu cores\t: 10\napicid\t\t: 2\ninitial apicid\t: 2\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 2\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.273\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 2\ncpu cores\t: 10\napicid\t\t: 4\ninitial apicid\t: 4\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 3\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.995\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 3\ncpu cores\t: 10\napicid\t\t: 6\ninitial apicid\t: 6\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 4\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.259\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 4\ncpu cores\t: 10\napicid\t\t: 8\ninitial apicid\t: 8\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 5\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.984\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 5\ncpu cores\t: 10\napicid\t\t: 10\ninitial apicid\t: 10\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 6\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5001.940\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 6\ncpu cores\t: 10\napicid\t\t: 12\ninitial apicid\t: 12\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 7\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.083\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 7\ncpu cores\t: 10\napicid\t\t: 14\ninitial apicid\t: 14\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 8\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.903\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 8\ncpu cores\t: 10\napicid\t\t: 16\ninitial apicid\t: 16\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 9\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 800.000\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 9\ncpu cores\t: 10\napicid\t\t: 18\ninitial apicid\t: 18\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 10\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.716\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 0\ncpu cores\t: 10\napicid\t\t: 1\ninitial apicid\t: 1\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 11\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.850\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 1\ncpu cores\t: 10\napicid\t\t: 3\ninitial apicid\t: 3\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 12\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.126\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 2\ncpu cores\t: 10\napicid\t\t: 5\ninitial apicid\t: 5\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 13\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.093\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 3\ncpu cores\t: 10\napicid\t\t: 7\ninitial apicid\t: 7\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 14\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.997\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 4\ncpu cores\t: 10\napicid\t\t: 9\ninitial apicid\t: 9\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 15\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.936\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 5\ncpu cores\t: 10\napicid\t\t: 11\ninitial apicid\t: 11\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 16\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.124\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 6\ncpu cores\t: 10\napicid\t\t: 13\ninitial apicid\t: 13\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 17\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.989\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 7\ncpu cores\t: 10\napicid\t\t: 15\ninitial apicid\t: 15\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 18\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 4999.949\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 8\ncpu cores\t: 10\napicid\t\t: 17\ninitial apicid\t: 17\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 19\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 165\nmodel name\t: Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz\nstepping\t: 5\nmicrocode\t: 0x100\ncpu MHz\t\t: 5000.002\ncache size\t: 20480 KB\nphysical id\t: 0\nsiblings\t: 20\ncore id\t\t: 9\ncpu cores\t: 10\napicid\t\t: 19\ninitial apicid\t: 19\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 22\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp vnmi pku ospke md_clear flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid ple shadow_vmcs pml ept_violation_ve ept_mode_based_exec\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs itlb_multihit srbds mmio_stale_data retbleed eibrs_pbrsb gds bhi spectre_v2_user its vmscape\nbogomips\t: 7399.70\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 39 bits physical, 48 bits virtual\npower management:\n\n",
+    "/proc/meminfo": "MemTotal:       64370628 kB\nMemFree:         1403584 kB\nMemAvailable:   51295200 kB\nBuffers:         1674560 kB\nCached:         47308256 kB\nSwapCached:        50104 kB\nActive:          6951828 kB\nInactive:       48322900 kB\nActive(anon):    6195032 kB\nInactive(anon):  3575128 kB\nActive(file):     756796 kB\nInactive(file): 44747772 kB\nUnevictable:        9452 kB\nMlocked:            9328 kB\nSwapTotal:       8388604 kB\nSwapFree:          22708 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              3848 kB\nWriteback:             0 kB\nAnonPages:       6253228 kB\nMapped:          1023704 kB\nShmem:           3473140 kB\nKReclaimable:    5111368 kB\nSlab:            6399536 kB\nSReclaimable:    5108024 kB\nSUnreclaim:      1291512 kB\nKernelStack:       29568 kB\nPageTables:        63500 kB\nSecPageTables:      8184 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    40573916 kB\nCommitted_AS:   53199684 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:      137252 kB\nVmallocChunk:          0 kB\nPercpu:            37600 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:     34816 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:    872448 kB\nFilePmdMapped:      4096 kB\nCmaTotal:              0 kB\nCmaFree:               0 kB\nUnaccepted:            0 kB\nBalloon:               0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:     3616680 kB\nDirectMap2M:    51802112 kB\nDirectMap1G:    11534336 kB\n",
+    "/proc/self/cgroup": "0::/user.slice/user-1002.slice/session-c1.scope\n",
+    "/proc/self/status": "Name:\tpython3\nUmask:\t0002\nState:\tR (running)\nTgid:\t587878\nNgid:\t0\nPid:\t587878\nPPid:\t587877\nTracerPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t64\nGroups:\t1002 \nNStgid:\t587878\nNSpid:\t587878\nNSpgid:\t587877\nNSsid:\t587867\nKthread:\t0\nVmPeak:\t   30360 kB\nVmSize:\t   30324 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   19072 kB\nVmRSS:\t   19072 kB\nRssAnon:\t    7352 kB\nRssFile:\t   11720 kB\nRssShmem:\t       0 kB\nVmData:\t    8772 kB\nVmStk:\t     136 kB\nVmExe:\t    3608 kB\nVmLib:\t    7316 kB\nVmPTE:\t      92 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t2/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000000000002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t57\nnonvoluntary_ctxt_switches:\t1\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n",
+    "/proc/sys/kernel/random/boot_id": "389f67c6-ac9f-4b87-831e-ff430ad5eeab\n",
+    "/sys/fs/cgroup/cgroup.controllers": "cpuset cpu io memory hugetlb pids rdma misc dmem\n",
+    "/sys/fs/cgroup/cpu.max": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/cpu.stat": "usage_usec 5253997764000\nuser_usec 4725438809000\nsystem_usec 528558955000\nnice_usec 20256331000\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+    "/sys/fs/cgroup/cpuset.cpus.effective": "0-19\n",
+    "/sys/fs/cgroup/io.stat": "252:0 rbytes=135121148928 wbytes=636187844608 rios=3309006 wios=35382388 dbytes=78395744256 dios=37892\n259:2 rbytes=135501487616 wbytes=636789950976 rios=2843652 wios=12063909 dbytes=85350551552 dios=37969\n259:0 rbytes=93614974976 wbytes=1953419737088 rios=6167785 wios=33458147 dbytes=1858043465728 dios=85887\n7:7 \n7:6 rbytes=14336 wbytes=0 rios=11 wios=0 dbytes=0 dios=0\n7:5 rbytes=92783616 wbytes=0 rios=2197 wios=0 dbytes=0 dios=0\n7:4 rbytes=23397376 wbytes=0 rios=671 wios=0 dbytes=0 dios=0\n7:3 rbytes=1884672 wbytes=0 rios=137 wios=0 dbytes=0 dios=0\n7:2 rbytes=267776 wbytes=0 rios=80 wios=0 dbytes=0 dios=0\n7:1 rbytes=1531904 wbytes=0 rios=122 wios=0 dbytes=0 dios=0\n7:0 rbytes=3514368 wbytes=0 rios=288 wios=0 dbytes=0 dios=0\n",
+    "/sys/fs/cgroup/memory.current": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/memory.max": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/pids.max": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/user.slice/cgroup.controllers": "cpuset cpu io memory hugetlb pids rdma misc dmem\n",
+    "/sys/fs/cgroup/user.slice/cpu.max": "max 100000\n",
+    "/sys/fs/cgroup/user.slice/cpu.stat": "usage_usec 2021484610181\nuser_usec 1873836703451\nsystem_usec 147647906730\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+    "/sys/fs/cgroup/user.slice/cpuset.cpus.effective": "0-19\n",
+    "/sys/fs/cgroup/user.slice/io.stat": "7:5 rbytes=27092992 wbytes=0 rios=675 wios=0 dbytes=0 dios=0\n259:0 rbytes=70417858560 wbytes=1515312521216 rios=5938718 wios=47127422 dbytes=0 dios=0\n259:2 rbytes=119108538368 wbytes=433044004864 rios=2720795 wios=15970044 dbytes=0 dios=0\n252:0 rbytes=119107481600 wbytes=433044004864 rios=2715476 wios=13544918 dbytes=0 dios=0\n",
+    "/sys/fs/cgroup/user.slice/memory.current": "27032637440\n",
+    "/sys/fs/cgroup/user.slice/memory.max": "max\n",
+    "/sys/fs/cgroup/user.slice/pids.max": "max\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/cgroup.controllers": "cpu memory pids\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/cpu.max": "1000000 100000\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/cpu.stat": "usage_usec 1010342412770\nuser_usec 938058482525\nsystem_usec 72283930245\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 6950560\nnr_throttled 714667\nthrottled_usec 314659683971\nnr_bursts 0\nburst_usec 0\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/cpuset.cpus.effective": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/user.slice/user-1002.slice/io.stat": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/user.slice/user-1002.slice/memory.current": "25987919872\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/memory.max": "max\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/pids.max": "165561\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cgroup.controllers": "cpu memory pids\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cpu.max": "max 100000\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cpu.stat": "usage_usec 827735296106\nuser_usec 780368588598\nsystem_usec 47366707507\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cpuset.cpus.effective": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/io.stat": {
+      "unavailable": "FileNotFoundError"
+    },
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.current": "22878908416\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.max": "max\n",
+    "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.max": "max\n"
+  },
+  "mode": "read_only_inventory",
+  "namespaces": {
+    "cgroup": "cgroup:[4026531835]",
+    "mnt": "mnt:[4026531832]",
+    "net": "net:[4026531833]",
+    "pid": "pid:[4026531836]",
+    "time": "time:[4026531834]"
+  },
+  "node_binary": {
+    "mode": "0o100755",
+    "path": "/home/oracle-worker/.local/node-v22.12.0-linux-x64/bin/node",
+    "sha256": "177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9"
+  },
+  "package-lock.json": {
+    "path": "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/package-lock.json",
+    "sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482"
+  },
+  "package.json": {
+    "path": "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/package.json",
+    "sha256": "d729bbfc2b9f114b918297f38700535ebe58455902634dcfc316f2c29d8bafb8"
+  },
+  "playwright": {
+    "addInitScriptDisposable": true,
+    "browsers": {
+      "browsers": [
+        {
+          "browserVersion": "153.0.8010.12",
+          "installByDefault": true,
+          "name": "chromium",
+          "revision": "1243",
+          "title": "Chrome for Testing"
+        },
+        {
+          "browserVersion": "153.0.8010.12",
+          "installByDefault": true,
+          "name": "chromium-headless-shell",
+          "revision": "1243",
+          "title": "Chrome Headless Shell"
+        },
+        {
+          "browserVersion": "155.0",
+          "installByDefault": true,
+          "name": "firefox",
+          "revision": "1543",
+          "title": "Firefox"
+        },
+        {
+          "browserVersion": "26.6",
+          "installByDefault": true,
+          "name": "webkit",
+          "revision": "2359",
+          "revisionOverrides": {
+            "mac14": "2251",
+            "mac14-arm64": "2251"
+          },
+          "title": "WebKit"
+        },
+        {
+          "installByDefault": true,
+          "name": "ffmpeg",
+          "revision": "1011"
+        },
+        {
+          "installByDefault": false,
+          "name": "winldd",
+          "revision": "1007"
+        },
+        {
+          "installByDefault": false,
+          "name": "android",
+          "revision": "1001"
+        }
+      ],
+      "comment": "Do not edit this file, use utils/roll_browser.js"
+    },
+    "executable": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+    "executableExists": true,
+    "exposeBindingDisposable": true,
+    "version": "1.63.0"
+  },
+  "policy_snapshot": {
+    "unavailable": "FileNotFoundError"
+  },
+  "process_visibility": {
+    "/proc/1/cgroup": "0::/init.scope\n",
+    "/proc/1/stat": "1 (systemd) S 0 1 1 0 -1 4194560 3215822 21621373885 249 343250 3815 2857 257137574 25755063 20 0 1 0 26 27070464 4048 18446744073709551615 1 1 0 0 0 0 671173123 4096 1260 0 0 0 17 10 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+  },
+  "repo": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts",
+  "runtime_started": false,
+  "schema": "perf391-runtime-preflight-v1",
+  "selectors": {
+    "DOCKER_CONTEXT": null,
+    "DOCKER_HOST": "unix:///run/user/1002/docker.sock",
+    "XDG_RUNTIME_DIR": "/run/user/1002"
+  },
+  "tcpdump_binary": {
+    "mode": "0o100755",
+    "path": "/usr/bin/tcpdump",
+    "sha256": "b19250abc948f03f637ecf8845114ee03132ad0ce12526c180388b2ae6680fd3"
+  },
+  "utc": "2026-10-23T01:15:18Z"
+}

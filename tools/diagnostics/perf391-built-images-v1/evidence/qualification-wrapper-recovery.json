@@ -1,0 +1,9 @@
+{
+  "pid": 645544,
+  "start_id": "212044867",
+  "signals": [
+    "SIGTERM"
+  ],
+  "reason": "Completed qualification, child reaped and result persisted; sandbox Python wrapper remained in ep_poll during asyncio default executor shutdown.",
+  "same_identity_alive": false
+}

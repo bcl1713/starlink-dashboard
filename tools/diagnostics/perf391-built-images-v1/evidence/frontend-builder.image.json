@@ -1,0 +1,64 @@
+[
+    {
+        "Id": "sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862",
+        "RepoTags": [
+            "perf391-diag-408-frontend-builder:f9cf80bd"
+        ],
+        "RepoDigests": [
+            "perf391-diag-408-frontend-builder@sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-10-23T01:18:33.717194959Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NODE_VERSION=22.22.2",
+                "YARN_VERSION=1.22.22"
+            ],
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "Cmd": [
+                "node"
+            ],
+            "WorkingDir": "/workspace/frontend/mission-planner"
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 1174007707,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:79dd1f4c855cd061f687a994426634cf5f84c8ecdbc66c7a7d118e828dd93c99",
+                "sha256:a79c0beacd86a1bcce7cc3a2118acf7dc0ce688079db18e07fd9d9480a829199",
+                "sha256:9cee42420a0ef9b000f3cb46fecc2e7925c9b3849e256e2c8af51575d4edb136",
+                "sha256:79f0e059cd0488685998082d59cf881ef23c87884fda9da4da0753272cc66496",
+                "sha256:96db3b94f18189b79d28e4a95b617d38cd89e2b264e6a9ffab8872ed7408c107",
+                "sha256:527e263094e5df57b5eb15243005a5097f5b123b9aa63c6b2759148482a2f729",
+                "sha256:3ba5bde609a695b5640c4f877ce6e955ff3caed8b4f837caeedaf92d8f1e562e",
+                "sha256:2f8477a8742b263eb3f7f13c4db0d0e5ca9b00085fd1d3effbaee323775bcef8",
+                "sha256:3754e1f8813f3c3c6e31c43778922b27d6b093a305e436578410400872f4d9d0",
+                "sha256:ef9dedaec4eb4c9d9f7a8fc5c42105da495b5dc82fa5d43a5374f4c18bf06b89",
+                "sha256:854472db986b2eedd0a6a4ca52f8ca091b6dc321534e018dfb8b186a9b2b26f4",
+                "sha256:e6a1d1bf5f8823e9dff11d6af325465de6e7643a49bd7c3a9510fa98079083b2",
+                "sha256:5f1a5f8b0cdc67a792345166f8f19ed33b3e2c7548e852e9c99e013e59ea2e1f"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-23T01:19:43.584228275Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "t9yd9p7b1cll0otjzya91n92h",
+                    "CreatedAt": "2026-10-23T01:19:47.620667559Z"
+                }
+            ]
+        }
+    }
+]

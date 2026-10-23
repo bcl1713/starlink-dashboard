@@ -1,0 +1,182 @@
+{
+  "ac_compiled_frontend_assets_identical": true,
+  "ac_python_inventory_matches_reference": true,
+  "node_build_stages": {
+    "frontend-builder": {
+      "installed_package_lock_sha256": "ad1400f97a810b53efb57ecb3d8c44331ef713de18f9658180e9cf5d24c96cf1",
+      "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+      "node_version": "v22.22.2",
+      "npm_version": "10.9.7",
+      "package_inventory_sha256": "c69bd8da14f9ecf09620bc3ef9f77133f2750a3fb1343d642e59099849648b16",
+      "package_lock_sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+      "packages": 453
+    },
+    "renderer-builder": {
+      "installed_package_lock_sha256": "ad1400f97a810b53efb57ecb3d8c44331ef713de18f9658180e9cf5d24c96cf1",
+      "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+      "node_version": "v22.22.2",
+      "npm_version": "10.9.7",
+      "package_inventory_sha256": "c69bd8da14f9ecf09620bc3ef9f77133f2750a3fb1343d642e59099849648b16",
+      "package_lock_sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+      "packages": 453
+    }
+  },
+  "release": {
+    "release_manifest_sha256": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200",
+    "source_files": 97,
+    "verified_files": 621
+  },
+  "roles": {
+    "A": {
+      "compiled_closure_sha256": "65d3242be697b31509335368702179041ea6a3a9c6e476e641425174c77011cf",
+      "diagnostic_module_count": 11,
+      "frontend_asset_count": 29,
+      "frontend_asset_map_sha256": "80ba558abe1930f4154c3fc1cc190a73596545db499be5b29e9c614d6b699d92",
+      "frozen_alias_file_count": 49,
+      "images": {
+        "backend": {
+          "image_id": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+          "manifest_or_index_digest": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+          "repo_digests": [
+            "perf391-diag-408-a-backend@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+          ],
+          "rootfs_layers": [
+            "sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7",
+            "sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe",
+            "sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c",
+            "sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2",
+            "sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8",
+            "sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6",
+            "sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7",
+            "sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5",
+            "sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177",
+            "sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5",
+            "sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d",
+            "sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc",
+            "sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152",
+            "sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725",
+            "sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9",
+            "sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc",
+            "sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a",
+            "sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af",
+            "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+            "sha256:2b6eab517f9fb8075d70c53cc85df164fe92c1afec58e71722ef1afc335982f5",
+            "sha256:022a737a05c26f448c46f74fafaebece63cf41a61e9b69760d44ad7a86fadb37",
+            "sha256:872b00ed7351c22be62f1c261ebfd15baad9f33a344311c5c3cacc231d868f08",
+            "sha256:13b8f9dc3db083870bd1f8d0f67039cc22c92de2867d932e7debb43ed66dfd2f",
+            "sha256:84da2ebb85314a0c379944cf351f51880c2bf9f14e4038f817212c46e06fa04d",
+            "sha256:2935a3410dabfc39fd5bbce933fbaf2847128f40d8ef2019f20437bd17405bb1",
+            "sha256:ef9dedaec4eb4c9d9f7a8fc5c42105da495b5dc82fa5d43a5374f4c18bf06b89",
+            "sha256:26dc8ecda4e1e49e29833453ec0e1294993d93d26c262c7e862de28d4ba9b1a9",
+            "sha256:5d53203100f84fecbd97574452b9547c27123fa7efcbbe4fa656de9c34fbaab6"
+          ],
+          "size_bytes": 2230848264
+        },
+        "frontend": {
+          "image_id": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+          "manifest_or_index_digest": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+          "repo_digests": [
+            "perf391-diag-408-a-frontend@sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+          ],
+          "rootfs_layers": [
+            "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+            "sha256:1d5f8e4b80b9f3266d052972fd6bca72a1bcf57a849f1fca99e621a9aaa26f37",
+            "sha256:11c068032a923cdd9eded6001b3f98f2bc9c1ab4f898473642f5f2435d6e2c2f",
+            "sha256:f4b56df1052e76cd6baf6e1d8510f78af5b8754a97800750c141e52a381cc608",
+            "sha256:c01de5b74a8831bddd18ae59f36e88262c13c1d43bd3a05dec470b22ad7106cd",
+            "sha256:1cbec789df916efa6e277af74ae96e9ec0f5523f0e4bcc6692c81fd1a94297a0",
+            "sha256:a5237c8bfc4397a9b457bfbf4db5b93b1ab6aa64d287d1e8210b6a1662aa4eee",
+            "sha256:6aef7713033e574d61ccfb63c76c936acf96b3ad813bb4b8d18d416512e34d33",
+            "sha256:3326f127248bb6197c8d405a2938ce3032053b3cad5d70a4ba6e5321f9d35efa",
+            "sha256:f080779e6a74b84572d7655b89f476b3eb91a6bc1d6833d628b5da5e45cb3150"
+          ],
+          "size_bytes": 141425713
+        }
+      },
+      "python_package_inventory_sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+      "python_packages": 89,
+      "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f",
+      "receipt_validated": true,
+      "renderer_asset_count": 4,
+      "renderer_asset_map_sha256": "180c1bfe5541d57912086695ed42312f0f97a9bbe6b8f0ba4a74addbcfe8114b",
+      "source_file_count": 826
+    },
+    "C": {
+      "compiled_closure_sha256": "65d3242be697b31509335368702179041ea6a3a9c6e476e641425174c77011cf",
+      "diagnostic_module_count": 11,
+      "frontend_asset_count": 29,
+      "frontend_asset_map_sha256": "80ba558abe1930f4154c3fc1cc190a73596545db499be5b29e9c614d6b699d92",
+      "frozen_alias_file_count": 49,
+      "images": {
+        "backend": {
+          "image_id": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+          "manifest_or_index_digest": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+          "repo_digests": [
+            "perf391-diag-408-c-backend@sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9"
+          ],
+          "rootfs_layers": [
+            "sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7",
+            "sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe",
+            "sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c",
+            "sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2",
+            "sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8",
+            "sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6",
+            "sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7",
+            "sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5",
+            "sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177",
+            "sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5",
+            "sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d",
+            "sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc",
+            "sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152",
+            "sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725",
+            "sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9",
+            "sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc",
+            "sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a",
+            "sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af",
+            "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+            "sha256:9225e85f223c72fb70d1f5986872045eae35e34ffdd68244e0409ce790134707",
+            "sha256:ba694344aec7d78b252ad542f7a7a3cb885d56690b8750e3e973997a1b7351ab",
+            "sha256:579e040318d6f7aec6a99f82b184ac242760b8ff5a286f16b19bdd4e4de7d116",
+            "sha256:8e6bfeafd9f340826dfb20764e52925740f9be1b366cf677d0bd2475fe9e768f",
+            "sha256:fa3901f0cbfaee36af2f6435329cfd48acc52b6b1149268cc3585b7b9ea1752f",
+            "sha256:3da55fb8b481eec90e7e9e8134e208bb6a1b00c59c31e506393acec8951b0d92",
+            "sha256:a6537fa590f2b4b8599e7ba0797f5b8ad8d660c1280708073f2be6f419de559d",
+            "sha256:2a55390c3b0a68321b582769e3855d07376a7c9ed16af32f3c929b6ada3b21c3",
+            "sha256:74af1ca2466600a4ff58d2ace7c4c129832ec67093eee4f730c2e07f45602a94"
+          ],
+          "size_bytes": 2231188809
+        },
+        "frontend": {
+          "image_id": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+          "manifest_or_index_digest": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+          "repo_digests": [
+            "perf391-diag-408-c-frontend@sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+          ],
+          "rootfs_layers": [
+            "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+            "sha256:1d5f8e4b80b9f3266d052972fd6bca72a1bcf57a849f1fca99e621a9aaa26f37",
+            "sha256:11c068032a923cdd9eded6001b3f98f2bc9c1ab4f898473642f5f2435d6e2c2f",
+            "sha256:f4b56df1052e76cd6baf6e1d8510f78af5b8754a97800750c141e52a381cc608",
+            "sha256:c01de5b74a8831bddd18ae59f36e88262c13c1d43bd3a05dec470b22ad7106cd",
+            "sha256:1cbec789df916efa6e277af74ae96e9ec0f5523f0e4bcc6692c81fd1a94297a0",
+            "sha256:a5237c8bfc4397a9b457bfbf4db5b93b1ab6aa64d287d1e8210b6a1662aa4eee",
+            "sha256:6aef7713033e574d61ccfb63c76c936acf96b3ad813bb4b8d18d416512e34d33",
+            "sha256:3326f127248bb6197c8d405a2938ce3032053b3cad5d70a4ba6e5321f9d35efa",
+            "sha256:f080779e6a74b84572d7655b89f476b3eb91a6bc1d6833d628b5da5e45cb3150"
+          ],
+          "size_bytes": 141425713
+        }
+      },
+      "python_package_inventory_sha256": "03cf956e500c08952d7b1a1747f24e391f6d0c5cf32a675a93c55847c92e9a40",
+      "python_packages": 89,
+      "receipt_sha256": "a9b7492aed2e90448d2ed8aeb4586dccd667d03e1cbb0829ff759a04537109e2",
+      "receipt_validated": true,
+      "renderer_asset_count": 4,
+      "renderer_asset_map_sha256": "180c1bfe5541d57912086695ed42312f0f97a9bbe6b8f0ba4a74addbcfe8114b",
+      "source_file_count": 855
+    }
+  },
+  "runtime_executed": false,
+  "schema": "perf391-built-image-qualification-v1",
+  "starting_commit": "f9cf80bd4fe7915863cf7e0ed5a6bc52616c377b"
+}

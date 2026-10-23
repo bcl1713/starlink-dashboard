@@ -1,0 +1,77 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/docker/dockerfile@1",
+        "digest": {
+          "sha256": "4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e"
+        }
+      },
+      {
+        "uri": "pkg:docker/node@22.22.2-trixie-slim?digest=sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903\u0026platform=linux%2Famd64",
+        "digest": {
+          "sha256": "961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903"
+        }
+      },
+      {
+        "uri": "pkg:docker/python@3.11-slim-trixie?digest=sha256:b95327ce1439e687237841b0210677aeadd62d55a060a5f6bcb9c15bf6251dd3\u0026platform=linux%2Famd64",
+        "digest": {
+          "sha256": "b95327ce1439e687237841b0210677aeadd62d55a060a5f6bcb9c15bf6251dd3"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "backend.Dockerfile"
+      },
+      "parameters": {
+        "frontend": "gateway.v0",
+        "args": {
+          "build-arg:ACCEPTANCE_CANDIDATE_SHA": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+          "cmdline": "docker/dockerfile:1",
+          "source": "docker/dockerfile:1"
+        },
+        "secrets": [
+          {
+            "id": "proxy_ca",
+            "optional": true
+          }
+        ],
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "root": {
+          "configSource": {
+            "path": "backend.Dockerfile"
+          },
+          "request": {
+            "args": {
+              "build-arg:ACCEPTANCE_CANDIDATE_SHA": "25e34168f0e2cecb149b0323f1f5a795cb28cae0"
+            }
+          }
+        },
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "platform": "linux/amd64"
+      }
+    }
+  },
+  "buildx.build.ref": "default/default/3xho2lsl46h2vxa3mokdmrvq6",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "size": 856
+  },
+  "containerimage.digest": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+  "image.name": "docker.io/library/perf391-diag-408-a-backend:f9cf80bd"
+}

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Operator setup and recovery</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font:
+          17px/1.6 system-ui,
+          sans-serif;
+      }
+      body {
+        max-width: 52rem;
+        margin: auto;
+        padding: 1.5rem;
+      }
+      h1,
+      h2 {
+        line-height: 1.25;
+      }
+      a {
+        display: inline-block;
+        padding-block: 0.5rem;
+      }
+      code {
+        overflow-wrap: anywhere;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid #8896a5;
+        text-align: left;
+        padding: 0.6rem;
+        vertical-align: top;
+      }
+      @media print {
+        :root {
+          color-scheme: light;
+          font-size: 11pt;
+        }
+        body {
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Operator setup and recovery</h1>
+      <p>
+        Operator works in live and simulation modes. Its journal is separate
+        from optional ETA, PoP and model inputs. Missing predictions do not
+        prevent calls, conferences, issues, transport reports or notes when the
+        journal is ready.
+      </p>
+      <h2>First use</h2>
+      <ol>
+        <li>
+          Enable <code>OPERATOR_ENABLED=true</code> in the deployment
+          configuration and restart the application. Keep
+          <code>OPERATOR_ROOT</code> on private, durable storage.
+        </li>
+        <li>
+          For simulation, choose the mission and start its simulation in
+          Missions. An explicitly configured nonproduction training instance may
+          instead supply <code>OPERATOR_SIMULATION_RUN_ID</code>. Operator uses
+          the active simulation run in preference to that fallback.
+        </li>
+        <li>
+          Open Operator. Check the source and simulation run shown in
+          <strong>Set up this Operator journal</strong>.
+        </li>
+        <li>
+          Select <strong>Initialize simulation journal</strong> or
+          <strong>Initialize live journal</strong>. This explicit action creates
+          only a pristine current namespace. It cannot reset an existing journal
+          or switch its source.
+        </li>
+        <li>
+          When setup finishes, create your records normally. If the source
+          changes during setup, recheck the source and try the appropriate
+          current namespace.
+        </li>
+      </ol>
+      <h2>Understand the status</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Disabled</td>
+            <td>
+              Check the deployment flag and restart. No journal is opened or
+              initialized.
+            </td>
+          </tr>
+          <tr>
+            <td>First-time initialization needed</td>
+            <td>
+              Use the explicit initialization button after checking the
+              displayed source.
+            </td>
+          </tr>
+          <tr>
+            <td>Simulation run needed</td>
+            <td>
+              Start the intended mission simulation, or use the documented
+              training launcher with its explicit namespace.
+            </td>
+          </tr>
+          <tr>
+            <td>Unavailable</td>
+            <td>
+              Check the application service, storage access and free space. Keep
+              retained drafts open, then use Recheck store.
+            </td>
+          </tr>
+          <tr>
+            <td>Recovery required, corruption or identity mismatch</td>
+            <td>
+              Preserve the database, identity marker, sidecar files and backups.
+              Initialization is blocked. Follow offline recovery below.
+            </td>
+          </tr>
+          <tr>
+            <td>Mode or run mismatch</td>
+            <td>
+              Check the active source and deployment root. Never copy a live
+              database into a simulation namespace or edit its identity marker.
+            </td>
+          </tr>
+          <tr>
+            <td>ETA or model data unavailable</td>
+            <td>
+              Inspect the advisory's source details and flight/route inputs.
+              Continue independent Operator record workflows.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <h2>Restarts and simulation runs</h2>
+      <p>
+        When the source and run context stay the same, an application restart
+        reopens the journal with its durable store ID and epoch. Live storage
+        and each simulation run have separate identities. Starting another run
+        selects that run's journal; earlier files and records remain in their
+        original namespace. They are not merged, relabeled or erased. Keep the
+        same run when continuing work, and export the mission package before
+        deliberately moving to another run.
+      </p>
+      <p>
+        Paced replay is not exact-frame restart recovery. A stopped backend may
+        end its active replay, and a newly started replay has a new run ID. If
+        an explicit simulation fallback is configured, it becomes the journal
+        context when no paced run is active. Earlier run journals remain on
+        disk; use their exact run IDs for offline verification, backup and
+        recovery. Do not interpret the new run's empty journal as deletion of
+        earlier records.
+      </p>
+      <p>
+        Unsent drafts and uncertain saves retain their original source. A
+        changed-source save must be reconciled; it is never automatically
+        replayed into the new journal.
+      </p>
+      <h2>Offline administration and recovery</h2>
+      <p>
+        Stop the backend before offline maintenance. Work on the configured
+        durable root and the exact live or simulation namespace shown by health.
+        Preserve the whole namespace before investigating; deleting a database,
+        marker or lock file is not first-run setup.
+      </p>
+      <p>
+        The existing maintenance interface is
+        <code>python -m app.operator</code>, run in the backend's installed
+        Python environment. Use <code>check --root PATH --mode live</code> or
+        <code>check --root PATH --mode simulation --run RUN_ID</code> to verify
+        the intended journal. The <code>backup</code> command uses the same
+        root, mode and run arguments. Use the documented whole-store restore
+        procedure and a verified backup manifest when recovery is required; do
+        not initialize over recovery artifacts.
+      </p>
+      <p>
+        CLI <code>initialize</code> remains available for deliberate offline
+        first setup with the same root, mode and run arguments. The normal UI
+        initialization action discovers the current server context, so ordinary
+        first use does not require constructing that command.
+      </p>
+      <p>
+        This page is packaged with the application and is available offline.
+      </p>
+    </main>
+  </body>
+</html>

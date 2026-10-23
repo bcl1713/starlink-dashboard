@@ -1,0 +1,657 @@
+[
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "perf391-diag-408-a-backend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.030655842274427414,
+    "stdout": "[\n    {\n        \"Id\": \"sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\",\n        \"RepoTags\": [\n            \"perf391-diag-408-a-backend:f9cf80bd\"\n        ],\n        \"RepoDigests\": [\n            \"perf391-diag-408-a-backend@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\"\n        ],\n        \"Comment\": \"buildkit.dockerfile.v0\",\n        \"Created\": \"2026-10-23T01:17:01.410275266Z\",\n        \"Config\": {\n            \"ExposedPorts\": {\n                \"8000/tcp\": {}\n            },\n            \"Env\": [\n                \"PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"LANG=C.UTF-8\",\n                \"GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D\",\n                \"PYTHON_VERSION=3.11.17\",\n                \"PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599\",\n                \"PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers\",\n                \"BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png\",\n                \"PYTHONPATH=/diagnostic:/acceptance:/app\",\n                \"PYTHONDONTWRITEBYTECODE=1\"\n            ],\n            \"Entrypoint\": [\n                \"entrypoint.sh\"\n            ],\n            \"Cmd\": [\n                \"uvicorn\",\n                \"runtime_backend:create_app\",\n                \"--factory\",\n                \"--host\",\n                \"0.0.0.0\",\n                \"--port\",\n                \"8000\",\n                \"--workers\",\n                \"1\",\n                \"--timeout-graceful-shutdown\",\n                \"5\"\n            ],\n            \"WorkingDir\": \"/app\",\n            \"Labels\": {\n                \"base_application_sha\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"org.opencontainers.image.revision\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"patch_sha256\": \"c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c\",\n                \"perf391.role\": \"A\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            },\n            \"ArgsEscaped\": true,\n            \"Healthcheck\": {\n                \"Test\": [\n                    \"CMD-SHELL\",\n                    \"curl -f http://localhost:8000/health || exit 1\"\n                ],\n                \"Interval\": 30000000000,\n                \"Timeout\": 10000000000,\n                \"StartPeriod\": 5000000000,\n                \"Retries\": 3\n            }\n        },\n        \"Architecture\": \"amd64\",\n        \"Os\": \"linux\",\n        \"Size\": 2230848264,\n        \"RootFS\": {\n            \"Type\": \"layers\",\n            \"Layers\": [\n                \"sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7\",\n                \"sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe\",\n                \"sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c\",\n                \"sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2\",\n                \"sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8\",\n                \"sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6\",\n                \"sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7\",\n                \"sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5\",\n                \"sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177\",\n                \"sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5\",\n                \"sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d\",\n                \"sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc\",\n                \"sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152\",\n                \"sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725\",\n                \"sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9\",\n                \"sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc\",\n                \"sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a\",\n                \"sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af\",\n                \"sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef\",\n                \"sha256:2b6eab517f9fb8075d70c53cc85df164fe92c1afec58e71722ef1afc335982f5\",\n                \"sha256:022a737a05c26f448c46f74fafaebece63cf41a61e9b69760d44ad7a86fadb37\",\n                \"sha256:872b00ed7351c22be62f1c261ebfd15baad9f33a344311c5c3cacc231d868f08\",\n                \"sha256:13b8f9dc3db083870bd1f8d0f67039cc22c92de2867d932e7debb43ed66dfd2f\",\n                \"sha256:84da2ebb85314a0c379944cf351f51880c2bf9f14e4038f817212c46e06fa04d\",\n                \"sha256:2935a3410dabfc39fd5bbce933fbaf2847128f40d8ef2019f20437bd17405bb1\",\n                \"sha256:ef9dedaec4eb4c9d9f7a8fc5c42105da495b5dc82fa5d43a5374f4c18bf06b89\",\n                \"sha256:26dc8ecda4e1e49e29833453ec0e1294993d93d26c262c7e862de28d4ba9b1a9\",\n                \"sha256:5d53203100f84fecbd97574452b9547c27123fa7efcbbe4fa656de9c34fbaab6\"\n            ]\n        },\n        \"Metadata\": {\n            \"LastTagTime\": \"2026-10-23T01:17:01.87214652Z\"\n        },\n        \"Descriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.index.v1+json\",\n            \"digest\": \"sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\",\n            \"size\": 856\n        },\n        \"Identity\": {\n            \"Build\": [\n                {\n                    \"Ref\": \"3xho2lsl46h2vxa3mokdmrvq6\",\n                    \"CreatedAt\": \"2026-10-23T01:17:08.196562814Z\"\n                }\n            ]\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--name",
+      "perf391-build-408-a-backend",
+      "--label",
+      "perf391.owner=perf391-build-408",
+      "--entrypoint",
+      "/bin/false",
+      "perf391-diag-408-a-backend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.04053055588155985,
+    "stdout": "bd319cd64449a08481cb6bb6be6ae1815601bdeeb7c7040f242f51fb14090d8d\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "bd319cd64449a08481cb6bb6be6ae1815601bdeeb7c7040f242f51fb14090d8d:/usr/local/bin/node",
+      "/tmp/perf391-build-408/A-backend/node"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.09134718915447593,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "bd319cd64449a08481cb6bb6be6ae1815601bdeeb7c7040f242f51fb14090d8d"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.014138789847493172,
+    "stdout": "[\n    {\n        \"Id\": \"bd319cd64449a08481cb6bb6be6ae1815601bdeeb7c7040f242f51fb14090d8d\",\n        \"Created\": \"2026-10-23T01:20:18.692696991Z\",\n        \"Path\": \"/bin/false\",\n        \"Args\": [],\n        \"State\": {\n            \"Status\": \"created\",\n            \"Running\": false,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 0,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"0001-01-01T00:00:00Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\",\n        \"ResolvConfPath\": \"\",\n        \"HostnamePath\": \"\",\n        \"HostsPath\": \"\",\n        \"LogPath\": \"\",\n        \"Name\": \"/perf391-build-408-a-backend\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlayfs\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": null,\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"local\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"bridge\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": null,\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": [],\n            \"DnsSearch\": [],\n            \"ExtraHosts\": null,\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": false,\n            \"SecurityOpt\": null,\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 0,\n            \"NanoCpus\": 0,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": [],\n            \"BlkioDeviceReadBps\": [],\n            \"BlkioDeviceWriteBps\": [],\n            \"BlkioDeviceReadIOps\": [],\n            \"BlkioDeviceWriteIOps\": [],\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": [],\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 0,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": false,\n            \"PidsLimit\": null,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/acpi\",\n                \"/proc/asound\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/sys/devices/virtual/powercap\",\n                \"/sys/firmware\",\n                \"/sys/devices/system/cpu/cpu0/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu1/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu2/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu3/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu4/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu5/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu6/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu7/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu8/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu9/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu10/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu11/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu12/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu13/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu14/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu15/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu16/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu17/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu18/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu19/thermal_throttle\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"Storage\": {\n            \"RootFS\": {\n                \"Snapshot\": {\n                    \"Name\": \"overlayfs\"\n                }\n            }\n        },\n        \"Mounts\": [],\n        \"Config\": {\n            \"Hostname\": \"bd319cd64449\",\n            \"Domainname\": \"\",\n            \"User\": \"\",\n            \"AttachStdin\": false,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"ExposedPorts\": {\n                \"8000/tcp\": {}\n            },\n            \"Tty\": false,\n            \"OpenStdin\": false,\n            \"StdinOnce\": false,\n            \"Env\": [\n                \"PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"LANG=C.UTF-8\",\n                \"GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D\",\n                \"PYTHON_VERSION=3.11.17\",\n                \"PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599\",\n                \"PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers\",\n                \"BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png\",\n                \"PYTHONPATH=/diagnostic:/acceptance:/app\",\n                \"PYTHONDONTWRITEBYTECODE=1\"\n            ],\n            \"Cmd\": null,\n            \"Healthcheck\": {\n                \"Test\": [\n                    \"CMD-SHELL\",\n                    \"curl -f http://localhost:8000/health || exit 1\"\n                ],\n                \"Interval\": 30000000000,\n                \"Timeout\": 10000000000,\n                \"StartPeriod\": 5000000000,\n                \"Retries\": 3\n            },\n            \"Image\": \"perf391-diag-408-a-backend:f9cf80bd\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/app\",\n            \"Entrypoint\": [\n                \"/bin/false\"\n            ],\n            \"Labels\": {\n                \"base_application_sha\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"org.opencontainers.image.revision\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"patch_sha256\": \"c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c\",\n                \"perf391.owner\": \"perf391-build-408\",\n                \"perf391.role\": \"A\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            }\n        },\n        \"NetworkSettings\": {\n            \"SandboxID\": \"\",\n            \"SandboxKey\": \"\",\n            \"Ports\": {},\n            \"Networks\": {\n                \"bridge\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": null,\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"\",\n                    \"EndpointID\": \"\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"\",\n                    \"MacAddress\": \"\",\n                    \"IPPrefixLen\": 0,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": null\n                }\n            }\n        },\n        \"ImageManifestDescriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.manifest.v1+json\",\n            \"digest\": \"sha256:cf16a2f7f46c4aa7662ca2c1d070344355707412d55fa4e2ceeda1d1f82cbf3c\",\n            \"size\": 5621,\n            \"platform\": {\n                \"architecture\": \"amd64\",\n                \"os\": \"linux\"\n            }\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "bd319cd64449a08481cb6bb6be6ae1815601bdeeb7c7040f242f51fb14090d8d"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.042149827349931,
+    "stdout": "bd319cd64449a08481cb6bb6be6ae1815601bdeeb7c7040f242f51fb14090d8d\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "perf391-diag-408-a-frontend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.027697694953531027,
+    "stdout": "[\n    {\n        \"Id\": \"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\",\n        \"RepoTags\": [\n            \"perf391-diag-408-a-frontend:f9cf80bd\"\n        ],\n        \"RepoDigests\": [\n            \"perf391-diag-408-a-frontend@sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\"\n        ],\n        \"Comment\": \"buildkit.dockerfile.v0\",\n        \"Created\": \"2026-10-23T01:18:34.160994649Z\",\n        \"Config\": {\n            \"ExposedPorts\": {\n                \"80/tcp\": {}\n            },\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NGINX_VERSION=1.31.7\",\n                \"PKG_RELEASE=1\",\n                \"DYNPKG_RELEASE=1\",\n                \"NJS_VERSION=1.0.2\",\n                \"NJS_RELEASE=1\",\n                \"ACME_VERSION=0.4.1\"\n            ],\n            \"Entrypoint\": [\n                \"/docker-entrypoint.sh\"\n            ],\n            \"Cmd\": [\n                \"nginx\",\n                \"-g\",\n                \"daemon off;\"\n            ],\n            \"WorkingDir\": \"/\",\n            \"Labels\": {\n                \"base_application_sha\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"maintainer\": \"NGINX Docker Maintainers <docker-maint@nginx.com>\",\n                \"org.opencontainers.image.revision\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"patch_sha256\": \"c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c\",\n                \"perf391.role\": \"A\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            },\n            \"StopSignal\": \"SIGQUIT\",\n            \"ArgsEscaped\": true\n        },\n        \"Architecture\": \"amd64\",\n        \"Os\": \"linux\",\n        \"Size\": 141425713,\n        \"RootFS\": {\n            \"Type\": \"layers\",\n            \"Layers\": [\n                \"sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711\",\n                \"sha256:1d5f8e4b80b9f3266d052972fd6bca72a1bcf57a849f1fca99e621a9aaa26f37\",\n                \"sha256:11c068032a923cdd9eded6001b3f98f2bc9c1ab4f898473642f5f2435d6e2c2f\",\n                \"sha256:f4b56df1052e76cd6baf6e1d8510f78af5b8754a97800750c141e52a381cc608\",\n                \"sha256:c01de5b74a8831bddd18ae59f36e88262c13c1d43bd3a05dec470b22ad7106cd\",\n                \"sha256:1cbec789df916efa6e277af74ae96e9ec0f5523f0e4bcc6692c81fd1a94297a0\",\n                \"sha256:a5237c8bfc4397a9b457bfbf4db5b93b1ab6aa64d287d1e8210b6a1662aa4eee\",\n                \"sha256:6aef7713033e574d61ccfb63c76c936acf96b3ad813bb4b8d18d416512e34d33\",\n                \"sha256:3326f127248bb6197c8d405a2938ce3032053b3cad5d70a4ba6e5321f9d35efa\",\n                \"sha256:f080779e6a74b84572d7655b89f476b3eb91a6bc1d6833d628b5da5e45cb3150\"\n            ]\n        },\n        \"Metadata\": {\n            \"LastTagTime\": \"2026-10-23T01:18:34.869046731Z\"\n        },\n        \"Descriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.index.v1+json\",\n            \"digest\": \"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\",\n            \"size\": 856\n        },\n        \"Identity\": {\n            \"Build\": [\n                {\n                    \"Ref\": \"oigleetp5h7xsclsvn50mytk0\",\n                    \"CreatedAt\": \"2026-10-23T01:18:34.961748012Z\"\n                }\n            ]\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--name",
+      "perf391-build-408-a-frontend",
+      "--label",
+      "perf391.owner=perf391-build-408",
+      "--entrypoint",
+      "/bin/false",
+      "perf391-diag-408-a-frontend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.035836365073919296,
+    "stdout": "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c:/usr/share/nginx/html",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/evidence/A-assets"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.03601237200200558,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c:/etc/nginx/conf.d/default.conf",
+      "/tmp/perf391-build-408/A-frontend/nginx.conf"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.015371371991932392,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c:/lib/apk/db/installed",
+      "/tmp/perf391-build-408/A-frontend/apk-installed"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.016147816088050604,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.013129884377121925,
+    "stdout": "[\n    {\n        \"Id\": \"a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c\",\n        \"Created\": \"2026-10-23T01:20:18.90786086Z\",\n        \"Path\": \"/bin/false\",\n        \"Args\": [],\n        \"State\": {\n            \"Status\": \"created\",\n            \"Running\": false,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 0,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"0001-01-01T00:00:00Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\",\n        \"ResolvConfPath\": \"\",\n        \"HostnamePath\": \"\",\n        \"HostsPath\": \"\",\n        \"LogPath\": \"\",\n        \"Name\": \"/perf391-build-408-a-frontend\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlayfs\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": null,\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"local\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"bridge\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": null,\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": [],\n            \"DnsSearch\": [],\n            \"ExtraHosts\": null,\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": false,\n            \"SecurityOpt\": null,\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 0,\n            \"NanoCpus\": 0,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": [],\n            \"BlkioDeviceReadBps\": [],\n            \"BlkioDeviceWriteBps\": [],\n            \"BlkioDeviceReadIOps\": [],\n            \"BlkioDeviceWriteIOps\": [],\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": [],\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 0,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": false,\n            \"PidsLimit\": null,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/acpi\",\n                \"/proc/asound\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/sys/devices/virtual/powercap\",\n                \"/sys/firmware\",\n                \"/sys/devices/system/cpu/cpu0/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu1/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu2/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu3/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu4/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu5/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu6/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu7/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu8/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu9/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu10/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu11/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu12/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu13/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu14/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu15/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu16/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu17/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu18/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu19/thermal_throttle\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"Storage\": {\n            \"RootFS\": {\n                \"Snapshot\": {\n                    \"Name\": \"overlayfs\"\n                }\n            }\n        },\n        \"Mounts\": [],\n        \"Config\": {\n            \"Hostname\": \"a5c5e45a4d19\",\n            \"Domainname\": \"\",\n            \"User\": \"\",\n            \"AttachStdin\": false,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"ExposedPorts\": {\n                \"80/tcp\": {}\n            },\n            \"Tty\": false,\n            \"OpenStdin\": false,\n            \"StdinOnce\": false,\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NGINX_VERSION=1.31.7\",\n                \"PKG_RELEASE=1\",\n                \"DYNPKG_RELEASE=1\",\n                \"NJS_VERSION=1.0.2\",\n                \"NJS_RELEASE=1\",\n                \"ACME_VERSION=0.4.1\"\n            ],\n            \"Cmd\": null,\n            \"Image\": \"perf391-diag-408-a-frontend:f9cf80bd\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/\",\n            \"Entrypoint\": [\n                \"/bin/false\"\n            ],\n            \"Labels\": {\n                \"base_application_sha\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"maintainer\": \"NGINX Docker Maintainers <docker-maint@nginx.com>\",\n                \"org.opencontainers.image.revision\": \"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\n                \"patch_sha256\": \"c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c\",\n                \"perf391.owner\": \"perf391-build-408\",\n                \"perf391.role\": \"A\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            },\n            \"StopSignal\": \"SIGQUIT\"\n        },\n        \"NetworkSettings\": {\n            \"SandboxID\": \"\",\n            \"SandboxKey\": \"\",\n            \"Ports\": {},\n            \"Networks\": {\n                \"bridge\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": null,\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"\",\n                    \"EndpointID\": \"\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"\",\n                    \"MacAddress\": \"\",\n                    \"IPPrefixLen\": 0,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": null\n                }\n            }\n        },\n        \"ImageManifestDescriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.manifest.v1+json\",\n            \"digest\": \"sha256:dbf8b1a212426b81dc23b7fd5493829ea4acd3ea2f9feebd8c300009d6ee2467\",\n            \"size\": 2191,\n            \"platform\": {\n                \"architecture\": \"amd64\",\n                \"os\": \"linux\"\n            }\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.040500177070498466,
+    "stdout": "a5c5e45a4d199d3c60ce58984928ae65d24d395283025a5df5544a24b7934b5c\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "perf391-diag-408-c-backend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.031830649357289076,
+    "stdout": "[\n    {\n        \"Id\": \"sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\",\n        \"RepoTags\": [\n            \"perf391-diag-408-c-backend:f9cf80bd\"\n        ],\n        \"RepoDigests\": [\n            \"perf391-diag-408-c-backend@sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\"\n        ],\n        \"Comment\": \"buildkit.dockerfile.v0\",\n        \"Created\": \"2026-10-23T01:18:53.394577794Z\",\n        \"Config\": {\n            \"ExposedPorts\": {\n                \"8000/tcp\": {}\n            },\n            \"Env\": [\n                \"PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"LANG=C.UTF-8\",\n                \"GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D\",\n                \"PYTHON_VERSION=3.11.17\",\n                \"PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599\",\n                \"PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers\",\n                \"BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png\",\n                \"PYTHONPATH=/diagnostic:/acceptance:/app\",\n                \"PYTHONDONTWRITEBYTECODE=1\"\n            ],\n            \"Entrypoint\": [\n                \"entrypoint.sh\"\n            ],\n            \"Cmd\": [\n                \"uvicorn\",\n                \"runtime_backend:create_app\",\n                \"--factory\",\n                \"--host\",\n                \"0.0.0.0\",\n                \"--port\",\n                \"8000\",\n                \"--workers\",\n                \"1\",\n                \"--timeout-graceful-shutdown\",\n                \"5\"\n            ],\n            \"WorkingDir\": \"/app\",\n            \"Labels\": {\n                \"base_application_sha\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"org.opencontainers.image.revision\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"patch_sha256\": \"b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c\",\n                \"perf391.role\": \"C\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            },\n            \"ArgsEscaped\": true,\n            \"Healthcheck\": {\n                \"Test\": [\n                    \"CMD-SHELL\",\n                    \"curl -f http://localhost:8000/health || exit 1\"\n                ],\n                \"Interval\": 30000000000,\n                \"Timeout\": 10000000000,\n                \"StartPeriod\": 5000000000,\n                \"Retries\": 3\n            }\n        },\n        \"Architecture\": \"amd64\",\n        \"Os\": \"linux\",\n        \"Size\": 2231188809,\n        \"RootFS\": {\n            \"Type\": \"layers\",\n            \"Layers\": [\n                \"sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7\",\n                \"sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe\",\n                \"sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c\",\n                \"sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2\",\n                \"sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8\",\n                \"sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6\",\n                \"sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7\",\n                \"sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5\",\n                \"sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177\",\n                \"sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5\",\n                \"sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d\",\n                \"sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc\",\n                \"sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152\",\n                \"sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725\",\n                \"sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9\",\n                \"sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc\",\n                \"sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a\",\n                \"sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af\",\n                \"sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef\",\n                \"sha256:9225e85f223c72fb70d1f5986872045eae35e34ffdd68244e0409ce790134707\",\n                \"sha256:ba694344aec7d78b252ad542f7a7a3cb885d56690b8750e3e973997a1b7351ab\",\n                \"sha256:579e040318d6f7aec6a99f82b184ac242760b8ff5a286f16b19bdd4e4de7d116\",\n                \"sha256:8e6bfeafd9f340826dfb20764e52925740f9be1b366cf677d0bd2475fe9e768f\",\n                \"sha256:fa3901f0cbfaee36af2f6435329cfd48acc52b6b1149268cc3585b7b9ea1752f\",\n                \"sha256:3da55fb8b481eec90e7e9e8134e208bb6a1b00c59c31e506393acec8951b0d92\",\n                \"sha256:a6537fa590f2b4b8599e7ba0797f5b8ad8d660c1280708073f2be6f419de559d\",\n                \"sha256:2a55390c3b0a68321b582769e3855d07376a7c9ed16af32f3c929b6ada3b21c3\",\n                \"sha256:74af1ca2466600a4ff58d2ace7c4c129832ec67093eee4f730c2e07f45602a94\"\n            ]\n        },\n        \"Metadata\": {\n            \"LastTagTime\": \"2026-10-23T01:18:53.874488237Z\"\n        },\n        \"Descriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.index.v1+json\",\n            \"digest\": \"sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\",\n            \"size\": 856\n        },\n        \"Identity\": {\n            \"Build\": [\n                {\n                    \"Ref\": \"xze83oz7iqfnsn3i4c9w37cfy\",\n                    \"CreatedAt\": \"2026-10-23T01:18:54.071925082Z\"\n                }\n            ]\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--name",
+      "perf391-build-408-c-backend",
+      "--label",
+      "perf391.owner=perf391-build-408",
+      "--entrypoint",
+      "/bin/false",
+      "perf391-diag-408-c-backend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.041441760025918484,
+    "stdout": "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/home/appuser/.local/lib/python3.11/site-packages",
+      "/tmp/perf391-build-408/C-backend/site-packages"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 1.7574091833084822,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/usr/local/lib/python3.11/site-packages",
+      "/tmp/perf391-build-408/C-backend/global-site-packages"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.10941975424066186,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/var/lib/dpkg/status",
+      "/tmp/perf391-build-408/C-backend/dpkg-status"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.015624766703695059,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/diagnostic",
+      "/tmp/perf391-build-408/C-backend/diagnostic"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.016141720116138458,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/app",
+      "/tmp/perf391-build-408/C-backend/app"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.0958752571605146,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/acceptance",
+      "/tmp/perf391-build-408/C-backend/acceptance"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.019590580835938454,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/opt/customer-briefing/assets",
+      "/tmp/perf391-build-408/C-backend/renderer-assets"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.024053222965449095,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d:/usr/local/bin/node",
+      "/tmp/perf391-build-408/C-backend/node"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.09307777974754572,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.014265390578657389,
+    "stdout": "[\n    {\n        \"Id\": \"73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d\",\n        \"Created\": \"2026-10-23T01:20:19.105492459Z\",\n        \"Path\": \"/bin/false\",\n        \"Args\": [],\n        \"State\": {\n            \"Status\": \"created\",\n            \"Running\": false,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 0,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"0001-01-01T00:00:00Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\",\n        \"ResolvConfPath\": \"\",\n        \"HostnamePath\": \"\",\n        \"HostsPath\": \"\",\n        \"LogPath\": \"\",\n        \"Name\": \"/perf391-build-408-c-backend\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlayfs\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": null,\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"local\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"bridge\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": null,\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": [],\n            \"DnsSearch\": [],\n            \"ExtraHosts\": null,\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": false,\n            \"SecurityOpt\": null,\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 0,\n            \"NanoCpus\": 0,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": [],\n            \"BlkioDeviceReadBps\": [],\n            \"BlkioDeviceWriteBps\": [],\n            \"BlkioDeviceReadIOps\": [],\n            \"BlkioDeviceWriteIOps\": [],\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": [],\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 0,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": false,\n            \"PidsLimit\": null,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/acpi\",\n                \"/proc/asound\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/sys/devices/virtual/powercap\",\n                \"/sys/firmware\",\n                \"/sys/devices/system/cpu/cpu0/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu1/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu2/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu3/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu4/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu5/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu6/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu7/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu8/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu9/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu10/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu11/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu12/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu13/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu14/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu15/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu16/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu17/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu18/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu19/thermal_throttle\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"Storage\": {\n            \"RootFS\": {\n                \"Snapshot\": {\n                    \"Name\": \"overlayfs\"\n                }\n            }\n        },\n        \"Mounts\": [],\n        \"Config\": {\n            \"Hostname\": \"73506360a542\",\n            \"Domainname\": \"\",\n            \"User\": \"\",\n            \"AttachStdin\": false,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"ExposedPorts\": {\n                \"8000/tcp\": {}\n            },\n            \"Tty\": false,\n            \"OpenStdin\": false,\n            \"StdinOnce\": false,\n            \"Env\": [\n                \"PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"LANG=C.UTF-8\",\n                \"GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D\",\n                \"PYTHON_VERSION=3.11.17\",\n                \"PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599\",\n                \"PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers\",\n                \"BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png\",\n                \"PYTHONPATH=/diagnostic:/acceptance:/app\",\n                \"PYTHONDONTWRITEBYTECODE=1\"\n            ],\n            \"Cmd\": null,\n            \"Healthcheck\": {\n                \"Test\": [\n                    \"CMD-SHELL\",\n                    \"curl -f http://localhost:8000/health || exit 1\"\n                ],\n                \"Interval\": 30000000000,\n                \"Timeout\": 10000000000,\n                \"StartPeriod\": 5000000000,\n                \"Retries\": 3\n            },\n            \"Image\": \"perf391-diag-408-c-backend:f9cf80bd\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/app\",\n            \"Entrypoint\": [\n                \"/bin/false\"\n            ],\n            \"Labels\": {\n                \"base_application_sha\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"org.opencontainers.image.revision\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"patch_sha256\": \"b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c\",\n                \"perf391.owner\": \"perf391-build-408\",\n                \"perf391.role\": \"C\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            }\n        },\n        \"NetworkSettings\": {\n            \"SandboxID\": \"\",\n            \"SandboxKey\": \"\",\n            \"Ports\": {},\n            \"Networks\": {\n                \"bridge\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": null,\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"\",\n                    \"EndpointID\": \"\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"\",\n                    \"MacAddress\": \"\",\n                    \"IPPrefixLen\": 0,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": null\n                }\n            }\n        },\n        \"ImageManifestDescriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.manifest.v1+json\",\n            \"digest\": \"sha256:5716f92389311c962e1f33ab8c07d3c4f109f44f43090b73bab40380ad5521e6\",\n            \"size\": 5621,\n            \"platform\": {\n                \"architecture\": \"amd64\",\n                \"os\": \"linux\"\n            }\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.043145725037902594,
+    "stdout": "73506360a542a099597dd066f22eee42ad7207fd5caea75066f5e677702be67d\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "perf391-diag-408-c-frontend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.026736341882497072,
+    "stdout": "[\n    {\n        \"Id\": \"sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\",\n        \"RepoTags\": [\n            \"perf391-diag-408-c-frontend:f9cf80bd\"\n        ],\n        \"RepoDigests\": [\n            \"perf391-diag-408-c-frontend@sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\"\n        ],\n        \"Comment\": \"buildkit.dockerfile.v0\",\n        \"Created\": \"2026-10-23T01:18:34.160994649Z\",\n        \"Config\": {\n            \"ExposedPorts\": {\n                \"80/tcp\": {}\n            },\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NGINX_VERSION=1.31.7\",\n                \"PKG_RELEASE=1\",\n                \"DYNPKG_RELEASE=1\",\n                \"NJS_VERSION=1.0.2\",\n                \"NJS_RELEASE=1\",\n                \"ACME_VERSION=0.4.1\"\n            ],\n            \"Entrypoint\": [\n                \"/docker-entrypoint.sh\"\n            ],\n            \"Cmd\": [\n                \"nginx\",\n                \"-g\",\n                \"daemon off;\"\n            ],\n            \"WorkingDir\": \"/\",\n            \"Labels\": {\n                \"base_application_sha\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"maintainer\": \"NGINX Docker Maintainers <docker-maint@nginx.com>\",\n                \"org.opencontainers.image.revision\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"patch_sha256\": \"b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c\",\n                \"perf391.role\": \"C\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            },\n            \"StopSignal\": \"SIGQUIT\",\n            \"ArgsEscaped\": true\n        },\n        \"Architecture\": \"amd64\",\n        \"Os\": \"linux\",\n        \"Size\": 141425713,\n        \"RootFS\": {\n            \"Type\": \"layers\",\n            \"Layers\": [\n                \"sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711\",\n                \"sha256:1d5f8e4b80b9f3266d052972fd6bca72a1bcf57a849f1fca99e621a9aaa26f37\",\n                \"sha256:11c068032a923cdd9eded6001b3f98f2bc9c1ab4f898473642f5f2435d6e2c2f\",\n                \"sha256:f4b56df1052e76cd6baf6e1d8510f78af5b8754a97800750c141e52a381cc608\",\n                \"sha256:c01de5b74a8831bddd18ae59f36e88262c13c1d43bd3a05dec470b22ad7106cd\",\n                \"sha256:1cbec789df916efa6e277af74ae96e9ec0f5523f0e4bcc6692c81fd1a94297a0\",\n                \"sha256:a5237c8bfc4397a9b457bfbf4db5b93b1ab6aa64d287d1e8210b6a1662aa4eee\",\n                \"sha256:6aef7713033e574d61ccfb63c76c936acf96b3ad813bb4b8d18d416512e34d33\",\n                \"sha256:3326f127248bb6197c8d405a2938ce3032053b3cad5d70a4ba6e5321f9d35efa\",\n                \"sha256:f080779e6a74b84572d7655b89f476b3eb91a6bc1d6833d628b5da5e45cb3150\"\n            ]\n        },\n        \"Metadata\": {\n            \"LastTagTime\": \"2026-10-23T01:18:54.752507853Z\"\n        },\n        \"Descriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.index.v1+json\",\n            \"digest\": \"sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\",\n            \"size\": 856\n        },\n        \"Identity\": {\n            \"Build\": [\n                {\n                    \"Ref\": \"j324ciou8qnfldmr684qa5j17\",\n                    \"CreatedAt\": \"2026-10-23T01:18:54.761172909Z\"\n                }\n            ]\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--name",
+      "perf391-build-408-c-frontend",
+      "--label",
+      "perf391.owner=perf391-build-408",
+      "--entrypoint",
+      "/bin/false",
+      "perf391-diag-408-c-frontend:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.03511539613828063,
+    "stdout": "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23:/usr/share/nginx/html",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/evidence/C-assets"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.03478416008874774,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23:/etc/nginx/conf.d/default.conf",
+      "/tmp/perf391-build-408/C-frontend/nginx.conf"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.014823528937995434,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23:/lib/apk/db/installed",
+      "/tmp/perf391-build-408/C-frontend/apk-installed"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.013957920018583536,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.012835712172091007,
+    "stdout": "[\n    {\n        \"Id\": \"0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23\",\n        \"Created\": \"2026-10-23T01:20:21.363515547Z\",\n        \"Path\": \"/bin/false\",\n        \"Args\": [],\n        \"State\": {\n            \"Status\": \"created\",\n            \"Running\": false,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 0,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"0001-01-01T00:00:00Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\",\n        \"ResolvConfPath\": \"\",\n        \"HostnamePath\": \"\",\n        \"HostsPath\": \"\",\n        \"LogPath\": \"\",\n        \"Name\": \"/perf391-build-408-c-frontend\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlayfs\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": null,\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"local\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"bridge\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": null,\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": [],\n            \"DnsSearch\": [],\n            \"ExtraHosts\": null,\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": false,\n            \"SecurityOpt\": null,\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 0,\n            \"NanoCpus\": 0,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": [],\n            \"BlkioDeviceReadBps\": [],\n            \"BlkioDeviceWriteBps\": [],\n            \"BlkioDeviceReadIOps\": [],\n            \"BlkioDeviceWriteIOps\": [],\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": [],\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 0,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": false,\n            \"PidsLimit\": null,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/acpi\",\n                \"/proc/asound\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/sys/devices/virtual/powercap\",\n                \"/sys/firmware\",\n                \"/sys/devices/system/cpu/cpu0/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu1/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu2/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu3/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu4/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu5/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu6/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu7/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu8/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu9/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu10/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu11/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu12/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu13/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu14/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu15/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu16/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu17/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu18/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu19/thermal_throttle\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"Storage\": {\n            \"RootFS\": {\n                \"Snapshot\": {\n                    \"Name\": \"overlayfs\"\n                }\n            }\n        },\n        \"Mounts\": [],\n        \"Config\": {\n            \"Hostname\": \"0f3114991a61\",\n            \"Domainname\": \"\",\n            \"User\": \"\",\n            \"AttachStdin\": false,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"ExposedPorts\": {\n                \"80/tcp\": {}\n            },\n            \"Tty\": false,\n            \"OpenStdin\": false,\n            \"StdinOnce\": false,\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NGINX_VERSION=1.31.7\",\n                \"PKG_RELEASE=1\",\n                \"DYNPKG_RELEASE=1\",\n                \"NJS_VERSION=1.0.2\",\n                \"NJS_RELEASE=1\",\n                \"ACME_VERSION=0.4.1\"\n            ],\n            \"Cmd\": null,\n            \"Image\": \"perf391-diag-408-c-frontend:f9cf80bd\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/\",\n            \"Entrypoint\": [\n                \"/bin/false\"\n            ],\n            \"Labels\": {\n                \"base_application_sha\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"collector_release_sha\": \"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\n                \"collector_source_sha\": \"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\n                \"diagnostic\": \"true\",\n                \"effective_source_sha256\": \"4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a\",\n                \"frontend_patch_sha256\": \"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\n                \"frozen_harness_sha\": \"f3029024b5950a267645195476da5cbca326f16a\",\n                \"integration_source_sha\": \"051870c738d9ab72338852ea848918a35a663094\",\n                \"maintainer\": \"NGINX Docker Maintainers <docker-maint@nginx.com>\",\n                \"org.opencontainers.image.revision\": \"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\n                \"patch_sha256\": \"b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c\",\n                \"perf391.owner\": \"perf391-build-408\",\n                \"perf391.role\": \"C\",\n                \"runtime_frontend_closure_sha256\": \"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\n                \"runtime_overlay_sha256\": \"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"\n            },\n            \"StopSignal\": \"SIGQUIT\"\n        },\n        \"NetworkSettings\": {\n            \"SandboxID\": \"\",\n            \"SandboxKey\": \"\",\n            \"Ports\": {},\n            \"Networks\": {\n                \"bridge\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": null,\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"\",\n                    \"EndpointID\": \"\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"\",\n                    \"MacAddress\": \"\",\n                    \"IPPrefixLen\": 0,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": null\n                }\n            }\n        },\n        \"ImageManifestDescriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.manifest.v1+json\",\n            \"digest\": \"sha256:8142a468acb043aa01b1c3761699614ad3941bb547134014300af6d7ebd10f5a\",\n            \"size\": 2191,\n            \"platform\": {\n                \"architecture\": \"amd64\",\n                \"os\": \"linux\"\n            }\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.03941598907113075,
+    "stdout": "0f3114991a616e067f0005b8f25a5c2f23035320964f42bfbd1c5fd0b7ea9e23\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "perf391-diag-408-frontend-builder:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.02692563086748123,
+    "stdout": "[\n    {\n        \"Id\": \"sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862\",\n        \"RepoTags\": [\n            \"perf391-diag-408-frontend-builder:f9cf80bd\"\n        ],\n        \"RepoDigests\": [\n            \"perf391-diag-408-frontend-builder@sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862\"\n        ],\n        \"Comment\": \"buildkit.dockerfile.v0\",\n        \"Created\": \"2026-10-23T01:18:33.717194959Z\",\n        \"Config\": {\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NODE_VERSION=22.22.2\",\n                \"YARN_VERSION=1.22.22\"\n            ],\n            \"Entrypoint\": [\n                \"docker-entrypoint.sh\"\n            ],\n            \"Cmd\": [\n                \"node\"\n            ],\n            \"WorkingDir\": \"/workspace/frontend/mission-planner\"\n        },\n        \"Architecture\": \"amd64\",\n        \"Os\": \"linux\",\n        \"Size\": 1174007707,\n        \"RootFS\": {\n            \"Type\": \"layers\",\n            \"Layers\": [\n                \"sha256:79dd1f4c855cd061f687a994426634cf5f84c8ecdbc66c7a7d118e828dd93c99\",\n                \"sha256:a79c0beacd86a1bcce7cc3a2118acf7dc0ce688079db18e07fd9d9480a829199\",\n                \"sha256:9cee42420a0ef9b000f3cb46fecc2e7925c9b3849e256e2c8af51575d4edb136\",\n                \"sha256:79f0e059cd0488685998082d59cf881ef23c87884fda9da4da0753272cc66496\",\n                \"sha256:96db3b94f18189b79d28e4a95b617d38cd89e2b264e6a9ffab8872ed7408c107\",\n                \"sha256:527e263094e5df57b5eb15243005a5097f5b123b9aa63c6b2759148482a2f729\",\n                \"sha256:3ba5bde609a695b5640c4f877ce6e955ff3caed8b4f837caeedaf92d8f1e562e\",\n                \"sha256:2f8477a8742b263eb3f7f13c4db0d0e5ca9b00085fd1d3effbaee323775bcef8\",\n                \"sha256:3754e1f8813f3c3c6e31c43778922b27d6b093a305e436578410400872f4d9d0\",\n                \"sha256:ef9dedaec4eb4c9d9f7a8fc5c42105da495b5dc82fa5d43a5374f4c18bf06b89\",\n                \"sha256:854472db986b2eedd0a6a4ca52f8ca091b6dc321534e018dfb8b186a9b2b26f4\",\n                \"sha256:e6a1d1bf5f8823e9dff11d6af325465de6e7643a49bd7c3a9510fa98079083b2\",\n                \"sha256:5f1a5f8b0cdc67a792345166f8f19ed33b3e2c7548e852e9c99e013e59ea2e1f\"\n            ]\n        },\n        \"Metadata\": {\n            \"LastTagTime\": \"2026-10-23T01:19:43.584228275Z\"\n        },\n        \"Descriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.index.v1+json\",\n            \"digest\": \"sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862\",\n            \"size\": 856\n        },\n        \"Identity\": {\n            \"Build\": [\n                {\n                    \"Ref\": \"t9yd9p7b1cll0otjzya91n92h\",\n                    \"CreatedAt\": \"2026-10-23T01:19:47.620667559Z\"\n                }\n            ]\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--name",
+      "perf391-build-408-frontend-builder",
+      "--label",
+      "perf391.owner=perf391-build-408",
+      "--entrypoint",
+      "/bin/false",
+      "perf391-diag-408-frontend-builder:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.033458407036960125,
+    "stdout": "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6:/workspace/frontend/mission-planner/node_modules",
+      "/tmp/perf391-build-408/frontend-builder/node_modules"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 2.26618111692369,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6:/workspace/frontend/mission-planner/package-lock.json",
+      "/tmp/perf391-build-408/frontend-builder/package-lock.json"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.015009349677711725,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6:/usr/local/lib/node_modules/npm/package.json",
+      "/tmp/perf391-build-408/frontend-builder/npm-package.json"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.014024404808878899,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6:/usr/local/bin/node",
+      "/tmp/perf391-build-408/frontend-builder/node"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.09564829897135496,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.014275938738137484,
+    "stdout": "[\n    {\n        \"Id\": \"dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6\",\n        \"Created\": \"2026-10-23T01:20:21.546107659Z\",\n        \"Path\": \"/bin/false\",\n        \"Args\": [],\n        \"State\": {\n            \"Status\": \"created\",\n            \"Running\": false,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 0,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"0001-01-01T00:00:00Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862\",\n        \"ResolvConfPath\": \"\",\n        \"HostnamePath\": \"\",\n        \"HostsPath\": \"\",\n        \"LogPath\": \"\",\n        \"Name\": \"/perf391-build-408-frontend-builder\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlayfs\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": null,\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"local\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"bridge\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": null,\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": [],\n            \"DnsSearch\": [],\n            \"ExtraHosts\": null,\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": false,\n            \"SecurityOpt\": null,\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 0,\n            \"NanoCpus\": 0,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": [],\n            \"BlkioDeviceReadBps\": [],\n            \"BlkioDeviceWriteBps\": [],\n            \"BlkioDeviceReadIOps\": [],\n            \"BlkioDeviceWriteIOps\": [],\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": [],\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 0,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": false,\n            \"PidsLimit\": null,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/acpi\",\n                \"/proc/asound\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/sys/devices/virtual/powercap\",\n                \"/sys/firmware\",\n                \"/sys/devices/system/cpu/cpu0/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu1/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu2/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu3/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu4/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu5/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu6/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu7/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu8/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu9/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu10/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu11/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu12/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu13/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu14/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu15/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu16/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu17/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu18/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu19/thermal_throttle\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"Storage\": {\n            \"RootFS\": {\n                \"Snapshot\": {\n                    \"Name\": \"overlayfs\"\n                }\n            }\n        },\n        \"Mounts\": [],\n        \"Config\": {\n            \"Hostname\": \"dc3403f6c113\",\n            \"Domainname\": \"\",\n            \"User\": \"\",\n            \"AttachStdin\": false,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"Tty\": false,\n            \"OpenStdin\": false,\n            \"StdinOnce\": false,\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NODE_VERSION=22.22.2\",\n                \"YARN_VERSION=1.22.22\"\n            ],\n            \"Cmd\": null,\n            \"Image\": \"perf391-diag-408-frontend-builder:f9cf80bd\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/workspace/frontend/mission-planner\",\n            \"Entrypoint\": [\n                \"/bin/false\"\n            ],\n            \"Labels\": {\n                \"perf391.owner\": \"perf391-build-408\"\n            }\n        },\n        \"NetworkSettings\": {\n            \"SandboxID\": \"\",\n            \"SandboxKey\": \"\",\n            \"Ports\": {},\n            \"Networks\": {\n                \"bridge\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": null,\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"\",\n                    \"EndpointID\": \"\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"\",\n                    \"MacAddress\": \"\",\n                    \"IPPrefixLen\": 0,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": null\n                }\n            }\n        },\n        \"ImageManifestDescriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.manifest.v1+json\",\n            \"digest\": \"sha256:85949314c8a43d1bf53ad5be66de67ba79579c67bad8fd2426c7d48ac6aa5979\",\n            \"size\": 2769,\n            \"platform\": {\n                \"architecture\": \"amd64\",\n                \"os\": \"linux\"\n            }\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.05108660226687789,
+    "stdout": "dc3403f6c113b2f97cccedfdea624f29d24b0decb34f20f9bdfd08b2fa2807d6\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "rm",
+      "perf391-diag-408-frontend-builder:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.35486670723184943,
+    "stdout": "Untagged: perf391-diag-408-frontend-builder:f9cf80bd\nDeleted: sha256:27f9440fa802b8dcc4f3fce08aba22621cbdc18b434d90f707cb7cfc4fcd4862\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "perf391-diag-408-renderer-builder:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.02458230685442686,
+    "stdout": "[\n    {\n        \"Id\": \"sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91\",\n        \"RepoTags\": [\n            \"perf391-diag-408-renderer-builder:f9cf80bd\"\n        ],\n        \"RepoDigests\": [\n            \"perf391-diag-408-renderer-builder@sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91\"\n        ],\n        \"Comment\": \"buildkit.dockerfile.v0\",\n        \"Created\": \"2026-10-23T01:16:59.901414961Z\",\n        \"Config\": {\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NODE_VERSION=22.22.2\",\n                \"YARN_VERSION=1.22.22\"\n            ],\n            \"Entrypoint\": [\n                \"docker-entrypoint.sh\"\n            ],\n            \"Cmd\": [\n                \"node\"\n            ],\n            \"WorkingDir\": \"/renderer\"\n        },\n        \"Architecture\": \"amd64\",\n        \"Os\": \"linux\",\n        \"Size\": 1155087831,\n        \"RootFS\": {\n            \"Type\": \"layers\",\n            \"Layers\": [\n                \"sha256:79dd1f4c855cd061f687a994426634cf5f84c8ecdbc66c7a7d118e828dd93c99\",\n                \"sha256:a79c0beacd86a1bcce7cc3a2118acf7dc0ce688079db18e07fd9d9480a829199\",\n                \"sha256:9cee42420a0ef9b000f3cb46fecc2e7925c9b3849e256e2c8af51575d4edb136\",\n                \"sha256:79f0e059cd0488685998082d59cf881ef23c87884fda9da4da0753272cc66496\",\n                \"sha256:96db3b94f18189b79d28e4a95b617d38cd89e2b264e6a9ffab8872ed7408c107\",\n                \"sha256:f8ccf93a98b8872ebedf52253fd3434a6def057d50f08b1b6f563e1b077ca1dc\",\n                \"sha256:085ca14313c84399f44beaed127b207b888f5509e0e736f518ad13ac6dd36b86\",\n                \"sha256:17e3fe6add8ee5571718451083e8fd76aeb30a7a64f1e3d7d0c742469aeac979\",\n                \"sha256:06f0cb0e094a8577aaaf5bea5fc514b431d6effebb89d40fcf05079480467025\",\n                \"sha256:bb5eca4b9d1457f2ce07d0d4ece69a6f8d0b344782f13a496f8b46b714106507\",\n                \"sha256:d0154838c351dd661891ad84f338d9a9fa88935a6e2775b96bb1f4714736f86e\",\n                \"sha256:1377e5ee259bdee0ed63a15dec1b4a70da0530bb0eeca40b7dd4dd8d7bff5317\"\n            ]\n        },\n        \"Metadata\": {\n            \"LastTagTime\": \"2026-10-23T01:20:04.369126945Z\"\n        },\n        \"Descriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.index.v1+json\",\n            \"digest\": \"sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91\",\n            \"size\": 856\n        },\n        \"Identity\": {\n            \"Build\": [\n                {\n                    \"Ref\": \"w83ptlfxt0em0mm8n97f86qpu\",\n                    \"CreatedAt\": \"2026-10-23T01:20:08.209710578Z\"\n                }\n            ]\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--name",
+      "perf391-build-408-renderer-builder",
+      "--label",
+      "perf391.owner=perf391-build-408",
+      "--entrypoint",
+      "/bin/false",
+      "perf391-diag-408-renderer-builder:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.04447498079389334,
+    "stdout": "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739:/renderer/node_modules",
+      "/tmp/perf391-build-408/renderer-builder/node_modules"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 2.1958259004168212,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739:/renderer/package-lock.json",
+      "/tmp/perf391-build-408/renderer-builder/package-lock.json"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.017153974156826735,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739:/usr/local/lib/node_modules/npm/package.json",
+      "/tmp/perf391-build-408/renderer-builder/npm-package.json"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.014868789818137884,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739:/usr/local/bin/node",
+      "/tmp/perf391-build-408/renderer-builder/node"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.09049418801441789,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.01365734962746501,
+    "stdout": "[\n    {\n        \"Id\": \"daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739\",\n        \"Created\": \"2026-10-23T01:20:24.448889395Z\",\n        \"Path\": \"/bin/false\",\n        \"Args\": [],\n        \"State\": {\n            \"Status\": \"created\",\n            \"Running\": false,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 0,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"0001-01-01T00:00:00Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91\",\n        \"ResolvConfPath\": \"\",\n        \"HostnamePath\": \"\",\n        \"HostsPath\": \"\",\n        \"LogPath\": \"\",\n        \"Name\": \"/perf391-build-408-renderer-builder\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlayfs\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": null,\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"local\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"bridge\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": null,\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": [],\n            \"DnsSearch\": [],\n            \"ExtraHosts\": null,\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": false,\n            \"SecurityOpt\": null,\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 0,\n            \"NanoCpus\": 0,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": [],\n            \"BlkioDeviceReadBps\": [],\n            \"BlkioDeviceWriteBps\": [],\n            \"BlkioDeviceReadIOps\": [],\n            \"BlkioDeviceWriteIOps\": [],\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": [],\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 0,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": false,\n            \"PidsLimit\": null,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/acpi\",\n                \"/proc/asound\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/sys/devices/virtual/powercap\",\n                \"/sys/firmware\",\n                \"/sys/devices/system/cpu/cpu0/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu1/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu2/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu3/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu4/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu5/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu6/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu7/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu8/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu9/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu10/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu11/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu12/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu13/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu14/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu15/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu16/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu17/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu18/thermal_throttle\",\n                \"/sys/devices/system/cpu/cpu19/thermal_throttle\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"Storage\": {\n            \"RootFS\": {\n                \"Snapshot\": {\n                    \"Name\": \"overlayfs\"\n                }\n            }\n        },\n        \"Mounts\": [],\n        \"Config\": {\n            \"Hostname\": \"daa9539aa5ec\",\n            \"Domainname\": \"\",\n            \"User\": \"\",\n            \"AttachStdin\": false,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"Tty\": false,\n            \"OpenStdin\": false,\n            \"StdinOnce\": false,\n            \"Env\": [\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\n                \"NODE_VERSION=22.22.2\",\n                \"YARN_VERSION=1.22.22\"\n            ],\n            \"Cmd\": null,\n            \"Image\": \"perf391-diag-408-renderer-builder:f9cf80bd\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/renderer\",\n            \"Entrypoint\": [\n                \"/bin/false\"\n            ],\n            \"Labels\": {\n                \"perf391.owner\": \"perf391-build-408\"\n            }\n        },\n        \"NetworkSettings\": {\n            \"SandboxID\": \"\",\n            \"SandboxKey\": \"\",\n            \"Ports\": {},\n            \"Networks\": {\n                \"bridge\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": null,\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"\",\n                    \"EndpointID\": \"\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"\",\n                    \"MacAddress\": \"\",\n                    \"IPPrefixLen\": 0,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": null\n                }\n            }\n        },\n        \"ImageManifestDescriptor\": {\n            \"mediaType\": \"application/vnd.oci.image.manifest.v1+json\",\n            \"digest\": \"sha256:63636466ea991fd975cf0eb3a6efd64f7bbff554107e6475f542a9d244c2827e\",\n            \"size\": 2580,\n            \"platform\": {\n                \"architecture\": \"amd64\",\n                \"os\": \"linux\"\n            }\n        }\n    }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.043104922864586115,
+    "stdout": "daa9539aa5ec89cc3428078c222c06b2a68059ce99e0aa6674a2defeb60be739\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "rm",
+      "perf391-diag-408-renderer-builder:f9cf80bd"
+    ],
+    "status": "intent",
+    "exit": 0,
+    "wall_seconds": 0.3654868779703975,
+    "stdout": "Untagged: perf391-diag-408-renderer-builder:f9cf80bd\nDeleted: sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91\n",
+    "stderr": ""
+  }
+]

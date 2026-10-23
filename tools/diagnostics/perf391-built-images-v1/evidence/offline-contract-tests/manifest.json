@@ -1,0 +1,73 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "14"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 14,
+      "start_id": "212012834"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/evidence/offline-contract-tests"
+  ],
+  "owner": {
+    "pgid": 12,
+    "pid": 13,
+    "pid_namespace": "pid:[4026533972]",
+    "start_id": "212012828"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "30s",
+        "python3",
+        "-B",
+        "tools/diagnostics/perf391-runtime-preparation-v1/test_preparation.py"
+      ],
+      "pgid": 14,
+      "pid": 14,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "212012834",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-build408",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "scope": "build and stopped-image inspection"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

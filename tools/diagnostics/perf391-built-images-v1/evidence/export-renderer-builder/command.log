@@ -1,0 +1,63 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from backend.Dockerfile
+#1 transferring dockerfile: 7.06kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.1s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 861B done
+#5 DONE 0.0s
+
+#6 [renderer-build 1/8] FROM docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#6 resolve docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903 done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 75.49kB 0.0s done
+#7 DONE 0.0s
+
+#8 [renderer-build 6/8] COPY frontend/mission-planner/public ./public
+#8 CACHED
+
+#9 [renderer-build 2/8] WORKDIR /renderer
+#9 CACHED
+
+#10 [renderer-build 3/8] COPY frontend/mission-planner/package.json frontend/mission-planner/package-lock.json ./
+#10 CACHED
+
+#11 [renderer-build 5/8] COPY frontend/mission-planner/src ./src
+#11 CACHED
+
+#12 [renderer-build 4/8] RUN --mount=type=secret,id=proxy_ca     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi;     npm ci --strict-ssl=true --no-audit --no-fund
+#12 CACHED
+
+#13 [renderer-build 7/8] COPY frontend/mission-planner/mission-export.html frontend/mission-planner/vite.mission-export.config.ts ./
+#13 CACHED
+
+#14 [renderer-build 8/8] RUN npm run build:mission-export
+#14 CACHED
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 16.1s done
+#15 exporting manifest sha256:63636466ea991fd975cf0eb3a6efd64f7bbff554107e6475f542a9d244c2827e done
+#15 exporting config sha256:dd6f66e207c9c7917755369c07fc76a7b9b85290380475f1364edb85c2bad11e done
+#15 exporting attestation manifest sha256:9482842dd0212a83af4f13d28865f197a2e9e566b04921934df2e59564ae898e done
+#15 exporting manifest list sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91 done
+#15 naming to docker.io/library/perf391-diag-408-renderer-builder:f9cf80bd done
+#15 unpacking to docker.io/library/perf391-diag-408-renderer-builder:f9cf80bd
+#15 unpacking to docker.io/library/perf391-diag-408-renderer-builder:f9cf80bd 3.8s done
+#15 DONE 20.0s
+
+#16 resolving provenance for metadata file
+#16 DONE 0.0s

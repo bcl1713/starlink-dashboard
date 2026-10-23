@@ -1,0 +1,47 @@
+{
+  "release": {
+    "release_manifest_sha256": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200",
+    "verified_files": 621,
+    "source_files": 97
+  },
+  "overlay_verified": true,
+  "roles": {
+    "A": {
+      "context_sha256": "9563d8f4396323fc2ba726605704fb41a14c56c89010d55a2b48cfa1d412f7ab",
+      "labels": {
+        "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "collector_release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+        "collector_source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+        "diagnostic": "true",
+        "effective_source_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+        "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+        "frozen_harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+        "integration_source_sha": "051870c738d9ab72338852ea848918a35a663094",
+        "org.opencontainers.image.revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "patch_sha256": "c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c",
+        "perf391.role": "A",
+        "runtime_frontend_closure_sha256": "5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695",
+        "runtime_overlay_sha256": "5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c"
+      }
+    },
+    "C": {
+      "context_sha256": "a13a56cd0ddf80059c6d3b2ae389f627700421a1060d530534c239f488e1dcd6",
+      "labels": {
+        "base_application_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+        "collector_release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+        "collector_source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+        "diagnostic": "true",
+        "effective_source_sha256": "4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a",
+        "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+        "frozen_harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+        "integration_source_sha": "051870c738d9ab72338852ea848918a35a663094",
+        "org.opencontainers.image.revision": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+        "patch_sha256": "b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c",
+        "perf391.role": "C",
+        "runtime_frontend_closure_sha256": "5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695",
+        "runtime_overlay_sha256": "5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c"
+      }
+    }
+  },
+  "preparation_checkpoint_files_verified": 55
+}

@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "python3",
+    "-B",
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_preparation.py"
+  ],
+  "seconds_limit": 30,
+  "utc": "2026-10-23T01:22:29Z",
+  "exit": 0,
+  "wall_seconds": 0.4168359227478504,
+  "client_child_usage": {
+    "user_seconds": 0.25692699999999996,
+    "system_seconds": 0.132896,
+    "max_rss_kib": 33704
+  },
+  "accounting_limit": "Client child usage excludes Docker daemon/BuildKit work; not a performance measurement."
+}

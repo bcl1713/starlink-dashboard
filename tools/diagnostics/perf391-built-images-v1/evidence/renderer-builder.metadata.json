@@ -1,0 +1,71 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/docker/dockerfile@1",
+        "digest": {
+          "sha256": "4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e"
+        }
+      },
+      {
+        "uri": "pkg:docker/node@22.22.2-trixie-slim?digest=sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903\u0026platform=linux%2Famd64",
+        "digest": {
+          "sha256": "961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "backend.Dockerfile"
+      },
+      "parameters": {
+        "frontend": "gateway.v0",
+        "args": {
+          "cmdline": "docker/dockerfile:1",
+          "source": "docker/dockerfile:1",
+          "target": "renderer-build"
+        },
+        "secrets": [
+          {
+            "id": "proxy_ca",
+            "optional": true
+          }
+        ],
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ],
+        "root": {
+          "configSource": {
+            "path": "backend.Dockerfile"
+          },
+          "request": {
+            "args": {
+              "target": "renderer-build"
+            }
+          }
+        },
+        "compatibilityVersion": 30
+      },
+      "environment": {
+        "platform": "linux/amd64"
+      }
+    }
+  },
+  "buildx.build.ref": "default/default/w83ptlfxt0em0mm8n97f86qpu",
+  "containerimage.descriptor": {
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "digest": "sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91",
+    "size": 856
+  },
+  "containerimage.digest": "sha256:ea34e7554c30a9b2abb02e494e63c217e74ad3a1639f3af762fdfa4b71f87d91",
+  "image.name": "docker.io/library/perf391-diag-408-renderer-builder:f9cf80bd"
+}

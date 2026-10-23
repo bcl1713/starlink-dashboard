@@ -1,0 +1,6 @@
+{
+  "A-backend": "sha256:1d8789e6d8ea34f750aaa7bb8ae606362dc3200c8cef6834b9e6eb22a12be055",
+  "A-frontend": "sha256:660b0c09eadd2d8358cdeccaa34cc577b524694eb9eead3dad6f17d3a90659a6",
+  "C-backend": "sha256:f3bedfff6f2d0bda9e946c8939806bfd9ed2a1b27927b35e45fc43cbed0dbe67",
+  "C-frontend": "sha256:53965dba52a4afd1fb9839fa696e2ace20dbaaf784e19d060e6a811993ef488c"
+}

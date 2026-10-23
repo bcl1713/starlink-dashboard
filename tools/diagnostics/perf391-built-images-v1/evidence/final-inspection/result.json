@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "python3",
+    "-B",
+    "tools/diagnostics/perf391-built-images-v1/finish-inspection.py"
+  ],
+  "seconds_limit": 180,
+  "utc": "2026-10-23T01:24:35Z",
+  "exit": 0,
+  "wall_seconds": 1.261722704861313,
+  "client_child_usage": {
+    "user_seconds": 0.618533,
+    "system_seconds": 0.48287199999999997,
+    "max_rss_kib": 48296
+  },
+  "accounting_limit": "Client child usage excludes Docker daemon/BuildKit work; not a performance measurement."
+}

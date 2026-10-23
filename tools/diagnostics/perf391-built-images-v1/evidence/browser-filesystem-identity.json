@@ -1,0 +1,13 @@
+{
+  "browser": {
+    "chromium_executable": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+    "chromium_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+    "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+    "node_version": "22.22.2",
+    "playwright": "1.63.0",
+    "playwright_root": "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner"
+  },
+  "browser_tree_sha256": "ccaa0c678629edcff79e5db6003d391254eec00c17ecbe48b3ec6d06b3871ba1",
+  "lane": "Filesystem identities only. Private 22.22.2 Node is the diagnostic build lane; historical browser benchmark Node 22.12.0 remains separate and untouched.",
+  "launch_tested": false
+}

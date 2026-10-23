@@ -1,0 +1,2 @@
+# Preserve raw receipts, logs and extracted compiled shader strings.
+evidence/** -text -diff

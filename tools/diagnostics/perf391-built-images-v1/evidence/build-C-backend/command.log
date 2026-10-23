@@ -1,0 +1,152 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from backend.Dockerfile
+#1 transferring dockerfile: 7.06kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/python:3.11-slim-trixie@sha256:b95327ce1439e687237841b0210677aeadd62d55a060a5f6bcb9c15bf6251dd3
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#5 DONE 0.0s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 861B done
+#6 DONE 0.0s
+
+#7 [renderer-build 1/8] FROM docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903
+#7 resolve docker.io/library/node:22.22.2-trixie-slim@sha256:961a65354946a04bbf2bfb3a1b25b53638a0e1fdb07ff56689955b9788400903 done
+#7 DONE 0.0s
+
+#8 [builder 1/4] FROM docker.io/library/python:3.11-slim-trixie@sha256:b95327ce1439e687237841b0210677aeadd62d55a060a5f6bcb9c15bf6251dd3
+#8 resolve docker.io/library/python:3.11-slim-trixie@sha256:b95327ce1439e687237841b0210677aeadd62d55a060a5f6bcb9c15bf6251dd3 done
+#8 DONE 0.0s
+
+#9 [internal] load build context
+#9 transferring context: 42.06MB 0.2s done
+#9 DONE 0.2s
+
+#10 [renderer-build 8/8] RUN npm run build:mission-export
+#10 CACHED
+
+#11 [stage-2  5/25] COPY --from=renderer-build /renderer/node_modules/playwright-core /opt/customer-briefing/node_modules/playwright-core
+#11 CACHED
+
+#12 [stage-2 14/25] RUN mkdir -p /app/data/flight-events /app/data/gfs/products /app/data/gfs/staging /app/data/gfs-mailbox/leases &&     chown -R appuser:appuser /app/data/flight-events /app/data/gfs /app/data/gfs-mailbox
+#12 CACHED
+
+#13 [stage-2  7/25] COPY --from=renderer-build /renderer/dist-mission-export /opt/customer-briefing/assets
+#13 CACHED
+
+#14 [stage-2  4/25] COPY --from=renderer-build /renderer/node_modules/playwright /opt/customer-briefing/node_modules/playwright
+#14 CACHED
+
+#15 [stage-2  3/25] COPY --from=renderer-build /usr/local/bin/node /usr/local/bin/node
+#15 CACHED
+
+#16 [renderer-build 2/8] WORKDIR /renderer
+#16 CACHED
+
+#17 [stage-2  6/25] RUN --mount=type=secret,id=proxy_ca     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi;     node /opt/customer-briefing/node_modules/playwright/cli.js install --with-deps chromium --only-shell &&     apt-get update && apt-get install -y --no-install-recommends     curl fonts-dejavu-core poppler-utils     && rm -rf /var/lib/apt/lists/*
+#17 CACHED
+
+#18 [stage-2 10/25] COPY [backend/starlink-location/app/mission/assets/APO Patch.jpg, /opt/customer-briefing/APO Patch.jpg]
+#18 CACHED
+
+#19 [builder 3/4] COPY backend/starlink-location/requirements.txt .
+#19 CACHED
+
+#20 [stage-2  9/25] COPY frontend/mission-planner/src/mission-export/briefing/document.mjs      frontend/mission-planner/src/mission-export/briefing/timeline.mjs      frontend/mission-planner/src/mission-export/briefing/pagination.mjs      frontend/mission-planner/src/mission-export/briefing/pdf-expectations.mjs      frontend/mission-planner/src/mission-export/briefing/briefing.css /opt/customer-briefing/renderer/briefing/
+#20 CACHED
+
+#21 [renderer-build 3/8] COPY frontend/mission-planner/package.json frontend/mission-planner/package-lock.json ./
+#21 CACHED
+
+#22 [stage-2 11/25] COPY backend/starlink-location/app/mission/assets/apo-patch-briefing.png /opt/customer-briefing/apo-patch-briefing.png
+#22 CACHED
+
+#23 [renderer-build 6/8] COPY frontend/mission-planner/public ./public
+#23 CACHED
+
+#24 [stage-2 12/25] RUN useradd -m -u 1000 appuser
+#24 CACHED
+
+#25 [renderer-build 5/8] COPY frontend/mission-planner/src ./src
+#25 CACHED
+
+#26 [stage-2 13/25] RUN install -d -m 0700 -o appuser -g appuser /app/data/operator
+#26 CACHED
+
+#27 [builder 2/4] WORKDIR /app
+#27 CACHED
+
+#28 [renderer-build 7/8] COPY frontend/mission-planner/mission-export.html frontend/mission-planner/vite.mission-export.config.ts ./
+#28 CACHED
+
+#29 [renderer-build 4/8] RUN --mount=type=secret,id=proxy_ca     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi;     npm ci --strict-ssl=true --no-audit --no-fund
+#29 CACHED
+
+#30 [builder 4/4] RUN --mount=type=secret,id=proxy_ca     if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi;     pip install --user --no-cache-dir -r requirements.txt
+#30 CACHED
+
+#31 [stage-2  8/25] COPY frontend/mission-planner/src/mission-export/briefing-render.mjs      frontend/mission-planner/src/mission-export/mission-briefing-render.mjs      frontend/mission-planner/src/mission-export/briefing-mission-layout.mjs      frontend/mission-planner/src/mission-export/briefing-pdf-stage.mjs      frontend/mission-planner/src/mission-export/raster-policy.mjs      frontend/mission-planner/src/mission-export/map-stage.mjs      frontend/mission-planner/src/mission-export/render-budget.mjs      frontend/mission-planner/src/mission-export/render-owner.mjs /opt/customer-briefing/renderer/
+#31 CACHED
+
+#32 [stage-2 15/25] COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+#32 CACHED
+
+#33 [stage-2 16/25] RUN test -n "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832"
+#33 DONE 0.1s
+
+#34 [stage-2 17/25] COPY --chown=appuser:appuser backend/starlink-location/main.py .
+#34 DONE 0.0s
+
+#35 [stage-2 18/25] COPY --chown=appuser:appuser backend/starlink-location/config.yaml .
+#35 DONE 0.0s
+
+#36 [stage-2 19/25] COPY --chown=appuser:appuser backend/starlink-location/app/ ./app/
+#36 DONE 0.1s
+
+#37 [stage-2 20/25] COPY --chown=appuser:appuser backend/starlink-location/tests/ ./tests/
+#37 DONE 0.1s
+
+#38 [stage-2 21/25] RUN mkdir -p /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config/matplotlib /home/appuser/.cache/matplotlib &&     chown appuser:appuser /data /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config /home/appuser/.config/matplotlib /home/appuser/.cache /home/appuser/.cache/matplotlib &&     chmod 755 /data /data/routes /data/sim_routes /home/appuser/.local /home/appuser/.local/share /home/appuser/.local/share/cartopy /home/appuser/.config /home/appuser/.config/matplotlib /home/appuser/.cache /home/appuser/.cache/matplotlib
+#38 DONE 0.2s
+
+#39 [stage-2 22/25] COPY backend/starlink-location/entrypoint.sh /usr/local/bin/entrypoint.sh
+#39 DONE 0.0s
+
+#40 [stage-2 23/25] COPY .perf391/diagnostic/ /diagnostic/
+#40 DONE 0.0s
+
+#41 [stage-2 24/25] COPY .perf391/acceptance/ /acceptance/
+#41 DONE 0.0s
+
+#42 [stage-2 25/25] RUN install -d -m 0755 -o appuser -g appuser /app/data/perf391
+#42 DONE 0.1s
+
+#43 exporting to image
+#43 exporting layers
+#43 exporting layers 0.4s done
+#43 exporting manifest sha256:5716f92389311c962e1f33ab8c07d3c4f109f44f43090b73bab40380ad5521e6
+#43 exporting manifest sha256:5716f92389311c962e1f33ab8c07d3c4f109f44f43090b73bab40380ad5521e6 done
+#43 exporting config sha256:f3bedfff6f2d0bda9e946c8939806bfd9ed2a1b27927b35e45fc43cbed0dbe67 done
+#43 exporting attestation manifest sha256:e03ab67b6325735ab86741522f372c6b782edd57818f69134a4da6e5d18aa1bb done
+#43 exporting manifest list sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9 done
+#43 naming to docker.io/library/perf391-diag-408-c-backend:f9cf80bd done
+#43 unpacking to docker.io/library/perf391-diag-408-c-backend:f9cf80bd
+#43 unpacking to docker.io/library/perf391-diag-408-c-backend:f9cf80bd 0.2s done
+#43 DONE 0.7s
+
+#44 resolving provenance for metadata file
+#44 DONE 0.0s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - MultipleInstructionsDisallowed: Multiple CMD instructions should not be used in the same stage because only the last one will be used (line 97)

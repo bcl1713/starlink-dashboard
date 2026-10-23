@@ -1,0 +1,96 @@
+{
+  "asset_root": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts/tools/diagnostics/perf391-built-images-v1/evidence/A-assets",
+  "assets": {
+    ".vite/manifest.json": "0a34791639c9e9f463f6ed9a87cf2324a1d7083cb7e333621bddee2fb0f2e02b",
+    "50x.html": "876766b4e80133fd490603e073d3567425b88794828a9292104244c9e40875ed",
+    "assets/index-BMKTAuCA.css": "5b05126eed41746850a50886700ddf833f05d7e677ac73b6f30961d3127ed4f6",
+    "assets/index-Ct3JqmpR.js": "4a828683baacab77ce4464acd0cf3c5bcc85ebdab13e7526301ca9eff9443bfa",
+    "assets/index-D2_VGdr5.js": "9e5f6f1157f59ddcdffddb42ab7b179b7d5b0cc88bcd23d08bdb0516f1ef76b9",
+    "assets/orbital.worker-CMk1Mfgi.js": "8ec35ac3bf11f928c79bffb0d174f75fe6914e416b0af1398dfae3c8fddb055e",
+    "assets/overview-label-layout.worker-_XMzcRrn.js": "8c693ef08da2ea59689d1fc39364a80e59691923b1d79288383d52b4e5a838e7",
+    "boundaries/ATTRIBUTION.md": "ca63c51e156fbcdb767a832159f3a401a738f08f436de53791fc043ab9f15668",
+    "boundaries/countries.json": "5ee7d03dd3cb5e43b4ec107b3a17a2d11b9ff648296fd1b4e0b0afa1c9f52de8",
+    "boundaries/subdivisions.json": "ab70211879488900cba43f9e6263f93cafab74f84c1fc22bf44311c6f10afa7c",
+    "city-lights-mask.ATTRIBUTION.md": "cb83c13e727613177fa4ef1b58636bdfdfd458ac8557f85339760f5177c1e32c",
+    "city-lights-mask.png": "ecbe242b19eb1c3fe91cff79395991b613895b64fe12418d9c5b4089d371bc0f",
+    "earth-day-hi.ATTRIBUTION.md": "a61b001a182618f97ff93b3f7accc5121b124f66bf918b1391a3f9c4e92a453d",
+    "earth-day-hi.jpg": "f1f8735574544b9f738ab7ccc61675cbca47660246370623086b835fbb24d0f3",
+    "earth-day.ATTRIBUTION.md": "633bddd7d06ee165c9a5b696b096f159ff082f0b1a291a11681e565c9c305810",
+    "earth-day.jpg": "9874a6fd2776897c71ac041814f9bf599a1f95be69609c1c69b1c0b2410ce65e",
+    "index.html": "f2e5285b17665ab359351e4ce66a46bb94c56f9f870161d76ff9c1df99f79de9",
+    "operator-help/field-branches.html": "a29d770ad22da2ba00853d768b5fa16bc0685cedc78e381f514e5ac105915b3c",
+    "operator-help/guide.html": "ed8c3c31a7c5c60ce977744069bc8cf4ea30eece7eb2349b1f5e34780c011d16",
+    "operator-help/images/issue-followup-b31b5113d832.png": "b31b5113d83274a3796df4de15081f928d2c8e44cb5452b87277b79e6c7e1008",
+    "operator-help/images/provenance.json": "a18f0d07078c595e0561ee22f72cfdd7ceca7c8519dbe36da03f16401aa01e35",
+    "operator-help/images/simulation-network-0cd98752d979.png": "0cd98752d979a5618260a30f2cc4f8f93517d19646ea46b98b1761bfeab44fed",
+    "operator-help/images/training-evidence-32d8acfce238.png": "32d8acfce2388c729777016b61dea948b88ac899308f0606f5b4c533038abf5b",
+    "operator-help/images/transport-check-c4a20ed4a8a4.png": "c4a20ed4a8a4ade982d10916fdc4c033a4476cb4e699a0612a9a7f00187bca94",
+    "operator-help/images/workspace-mobile-f7e7c0540e64.png": "f7e7c0540e644eb4318d3ef183fe1887738b3dc591a27e217f38464c3eaa6eb1",
+    "operator-help/quick-reference.html": "4b0a93515c67a04918af5a4e2b69788804d9cd21734648da7930f1bf8cd4ba53",
+    "operator-help/setup.html": "ba4b960dace635e632a9ebfba9db3e81a35c7bef03d0578e089385bf84dfa0ff",
+    "perf391-module-closure.json": "65d3242be697b31509335368702179041ea6a3a9c6e476e641425174c77011cf",
+    "vite.svg": "4a748afd443918bb16591c834c401dae33e87861ab5dbad0811c3a3b4a9214fb"
+  },
+  "browser": {
+    "chromium_executable": "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+    "chromium_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+    "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+    "node_version": "22.22.2",
+    "playwright": "1.63.0",
+    "playwright_root": "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner"
+  },
+  "dependencies": {
+    "browser_tree_sha256": "ccaa0c678629edcff79e5db6003d391254eec00c17ecbe48b3ec6d06b3871ba1",
+    "npm_lock_sha256": "ffff2faabc44900887409a91af375f098bcc9580d788df991d3c492848177482",
+    "os_packages_sha256": "37b9e00dda915f2c92411141003f76d04486ace6a27000f8cb6675d03ebdc1c2",
+    "python_freeze_sha256": "73bdd5363cfc57bb27dc3b5bea01ffe8c6fe488ca37bbef839e40b18892df9b7"
+  },
+  "images": {
+    "backend": {
+      "id": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+      "labels": {
+        "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "collector_release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+        "collector_source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+        "diagnostic": "true",
+        "effective_source_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+        "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+        "frozen_harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+        "integration_source_sha": "051870c738d9ab72338852ea848918a35a663094",
+        "org.opencontainers.image.revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "patch_sha256": "c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c",
+        "perf391.role": "A",
+        "runtime_frontend_closure_sha256": "5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695",
+        "runtime_overlay_sha256": "5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c"
+      },
+      "repo_digests": [
+        "perf391-diag-408-a-backend@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+      ]
+    },
+    "frontend": {
+      "id": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+      "labels": {
+        "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "collector_release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+        "collector_source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+        "diagnostic": "true",
+        "effective_source_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+        "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+        "frozen_harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+        "integration_source_sha": "051870c738d9ab72338852ea848918a35a663094",
+        "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>",
+        "org.opencontainers.image.revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+        "patch_sha256": "c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c",
+        "perf391.role": "A",
+        "runtime_frontend_closure_sha256": "5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695",
+        "runtime_overlay_sha256": "5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c"
+      },
+      "repo_digests": [
+        "perf391-diag-408-a-frontend@sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+      ]
+    }
+  },
+  "plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+  "role": "A",
+  "schema": "perf391-runtime-receipt-v1"
+}

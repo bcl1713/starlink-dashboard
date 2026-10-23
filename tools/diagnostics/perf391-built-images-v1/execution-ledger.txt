@@ -1,0 +1,8 @@
+All final image builds used approved generated Dockerfiles with 2700-second timeout and 10-second forced grace. No application was launched.
+Exploratory metadata assertion failure: evidence/qualification-initial-failure.log.
+Initial cleanup failure: evidence/cleanup-initial-failure.log; recovered verified wrapper via SIGTERM, then final cleanup passed.
+Black CLI attempts each had 30-second limits and 5-second grace, returned 124 during process shutdown after reporting formatted/unchanged files. Host process audit found no formatter/multiprocessing survivors; serial Black API used afterward.
+Build history inspect default/default/3xho2lsl46h2vxa3mokdmrvq6 returned 1, no record found. No history resource data claimed.
+Non-resource commands: Git/registry read-only inspection, syntax/metadata hashes, cached formatter API and scoped Ruff. No shared package installation or new resolution.
+Tool session handles: preparation 55107; preflight 58419; A backend 76619; A frontend 23997; C builds 55531; cached stage export 72990; initial extraction 12409; stopped inspection 2974; offline tests 15017; final image inspection 4111; final qualification 17149 (recovered/reaped); cleanup 32107. All exited; no runtime service left alive.
+Initial staged whitespace check reported original whitespace inside immutable compiled shader strings and raw build logs. Evidence marked binary in this task directory only; no artifact bytes edited. Repeated staged source whitespace check passes.

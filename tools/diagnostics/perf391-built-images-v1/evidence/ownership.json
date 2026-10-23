@@ -1,0 +1,33 @@
+{
+  "task": "perf391-build-408",
+  "starting_commit": "f9cf80bd4fe7915863cf7e0ed5a6bc52616c377b",
+  "root": "/tmp/perf391-build-408",
+  "worktree": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-image-receipts",
+  "project": "perf391-build-408",
+  "planned_tags": [
+    "perf391-diag-408-a-backend:f9cf80bd",
+    "perf391-diag-408-a-frontend:f9cf80bd",
+    "perf391-diag-408-c-backend:f9cf80bd",
+    "perf391-diag-408-c-frontend:f9cf80bd"
+  ],
+  "planned_extraction_containers": [
+    "perf391-build-408-node",
+    "perf391-build-408-a-backend",
+    "perf391-build-408-a-frontend",
+    "perf391-build-408-c-backend",
+    "perf391-build-408-c-frontend",
+    "perf391-build-408-frontend-builder",
+    "perf391-build-408-renderer-builder"
+  ],
+  "containers_must_remain_stopped": true,
+  "networks": [],
+  "volumes": [],
+  "listeners": [],
+  "image_disposition": "retain successful labeled diagnostic images for receipt review; remove stopped extraction containers and task-owned temporary contexts/dependencies; preserve shared bases/cache",
+  "created_utc": "2026-10-23T01:15:02Z",
+  "temporary_stage_images": [
+    "perf391-diag-408-frontend-builder:f9cf80bd",
+    "perf391-diag-408-renderer-builder:f9cf80bd"
+  ],
+  "temporary_stage_image_disposition": "export unchanged approved cached intermediate stages for actual npm package inventories; remove immediately after inspection; not application images or receipt targets"
+}

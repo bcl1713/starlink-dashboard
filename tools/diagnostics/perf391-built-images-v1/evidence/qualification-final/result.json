@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "python3",
+    "-B",
+    "tools/diagnostics/perf391-built-images-v1/qualify.py"
+  ],
+  "seconds_limit": 120,
+  "utc": "2026-10-23T01:27:49Z",
+  "exit": 0,
+  "wall_seconds": 5.013038990087807,
+  "client_child_usage": {
+    "user_seconds": 4.27349,
+    "system_seconds": 0.717046,
+    "max_rss_kib": 321192
+  },
+  "accounting_limit": "Client child usage excludes Docker daemon/BuildKit work; not a performance measurement."
+}
