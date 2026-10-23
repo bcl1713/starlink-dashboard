@@ -19,6 +19,7 @@ import uuid
 from prepare import REPO, check_release, sha, write, browser_tree
 from launcher import launch_plan, validate_receipt
 from runtime_identity import verify_runtime_overlay, verify_runtime_identity
+from frontend_readiness import wait_ready, snapshot, bounded_argv
 
 LOCK_PATH = Path("/tmp/perf391-smoke-408.lock")
 
@@ -148,11 +149,17 @@ async def execute(args):
                         raise RuntimeError("command log budget")
                     await asyncio.sleep(0.02)
                 if child.returncode:
-                    raise RuntimeError("command failure: " + str(argv[:3]))
+                    raise RuntimeError(
+                        "command failure: "
+                        + str(log_path)
+                        + ": "
+                        + log_path.read_text(errors="replace")[-512:]
+                    )
             return log_path.read_text()
 
         failed = None
         host_job = None
+        frontend_attempted = False
         extraction_container = launch["project"] + "-assets"
         try:
             actual_node_version = (
@@ -345,7 +352,37 @@ async def execute(args):
                 ]
                 if step["phase"] == "seed-file":
                     argv[0] = sys.executable
+                if step["phase"] == "start-nginx":
+                    frontend_attempted = True
                 await command(argv, step["seconds"])
+                if step["phase"] == "start-nginx":
+                    readiness_count = 0
+
+                    async def readiness_command(argv, cap):
+                        nonlocal process_owner, readiness_count
+                        readiness_count += 1
+                        readiness_owner = Owner(
+                            root / ("frontend-probe-%02d" % readiness_count),
+                            adopt_descendants=True,
+                            run=launch["env"]["PERF391_RUN"],
+                            sources=owner.manifest["sources"],
+                        )
+                        process_owner = readiness_owner
+                        try:
+                            return await command(bounded_argv(argv, cap), cap)
+                        finally:
+                            await readiness_owner.close()
+                            process_owner = owner
+
+                    await wait_ready(
+                        readiness_command,
+                        dc,
+                        root,
+                        int(launch["env"]["PERF391_FRONTEND_PORT"]),
+                        receipt["assets"]["index.html"],
+                        began + 78,
+                        stop,
+                    )
             stats = json.loads((root / "backend/backend-stats.json").read_bytes())
             if not stats.get("runtime_boundary_drained") or any(
                 stats.get(k)
@@ -382,6 +419,38 @@ async def execute(args):
             )
             cleanup_owner.persist()
             cleanup_error = None
+            diagnostic_error = None
+            if failed and frontend_attempted:
+                # Existing command groups are reaped, but containers still exist.
+                # Each diagnostic gets its own owner so a failed probe cannot leak
+                # a child into the next observation or prevent Compose teardown.
+                diagnostic_count = 0
+
+                async def diagnostic_command(argv, cap):
+                    nonlocal process_owner, diagnostic_count
+                    diagnostic_count += 1
+                    diagnostic_owner = Owner(
+                        root / ("frontend-diagnostic-%02d" % diagnostic_count),
+                        adopt_descendants=True,
+                        run=launch["env"]["PERF391_RUN"],
+                        sources=owner.manifest["sources"],
+                    )
+                    process_owner = diagnostic_owner
+                    try:
+                        return await command(bounded_argv(argv, cap), cap, cleanup=True)
+                    finally:
+                        await diagnostic_owner.close()
+
+                try:
+                    await snapshot(
+                        diagnostic_command,
+                        dc,
+                        root,
+                        int(launch["env"]["PERF391_FRONTEND_PORT"]),
+                        min(began + 80, time.monotonic() + 1.5),
+                    )
+                except BaseException as error:
+                    diagnostic_error = type(error).__name__
             try:
                 # Remove the stopped extraction container if interrupted before its normal rm.
                 # Existence check and removal are scoped to the recorded name/project.
@@ -434,6 +503,7 @@ async def execute(args):
                 {
                     "failure": failed,
                     "cleanup_error": cleanup_error,
+                    "diagnostic_error": diagnostic_error,
                     "owner_status": owner.manifest["status"],
                     "external_host_audit_required": True,
                 },

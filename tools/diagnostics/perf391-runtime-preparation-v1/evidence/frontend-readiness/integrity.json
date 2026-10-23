@@ -1,0 +1,64 @@
+{
+  "docker_or_application_http_invoked": false,
+  "historical_artifacts_verified": 59,
+  "historical_external_pins_verified_at_starting_commit": 17,
+  "intentional_current_external_pin_changes": {
+    "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py": {
+      "historical": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
+      "new": "65d23ba738bb32b333a6d660b334501219cf379a50858b4282bceaad36d039f9"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime_identity.py": {
+      "historical": "d14d4af9df9bcaceb5ab0545be35554ec09ed4f05558bd0e6000b4c1936ddf26",
+      "new": "e5593dc35bd3a4eaf2b5b6988d12fe7517bd8537a32756fe34f253301d437f1a"
+    }
+  },
+  "modified_existing_files": [
+    "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py",
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime_identity.py",
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py"
+  ],
+  "runtime_builds_or_image_mutations": false,
+  "starting_commit": "360cd1afe3b3ef3803ad9753872310fdf14523f7",
+  "unchanged_protected_manifests_and_receipts": {
+    "tools/diagnostics/perf391-a-approved-smoke-v1/artifact-manifest.json": "305d68eda4ab75fb0fd60db493769fc3af9f641b3d02ef4b9f888b2e214d2544",
+    "tools/diagnostics/perf391-a-approved-smoke-v1/evidence/runtime/cleanup-owner/manifest.json": "f7c18b00198cd0ddc0c49ca5bedb49c7742ae091d62d611f7391cb2255ab7cdb",
+    "tools/diagnostics/perf391-a-approved-smoke-v1/evidence/runtime/manifest.json": "d93ababbb5d9b643a83a30d6fefb3ca9e32580bc25e1f4958f08a35c6993df99",
+    "tools/diagnostics/perf391-a-approved-smoke-v1/evidence/runtime/verification-owner/manifest.json": "d1634870e1ad0261f08d778fde204c2a4e5a9970778f96b1a19f11a683c12137",
+    "tools/diagnostics/perf391-a-functional-smoke-v1/artifact-manifest.json": "f7203b22d47ad0b4d2c1c3e48f6d44154bbc954cb06d2fa420a043a3e07d0a54",
+    "tools/diagnostics/perf391-a-runtime-smoke-v1/artifact-manifest.json": "1fbbdae3f3ecaae05879eee9bffcef6bfd1800496153029cb3a14fbcd7a93744",
+    "tools/diagnostics/perf391-a-runtime-smoke-v1/evidence/runtime/cleanup-owner/manifest.json": "55604c254343139d118a8fe506d5f640db423aa1b7a9d5df99b22df38956d2d3",
+    "tools/diagnostics/perf391-a-runtime-smoke-v1/evidence/runtime/manifest.json": "307114eefc44528cb4805f31cbf436c6de45e9f37822ead11035c63b7b1f8e8d",
+    "tools/diagnostics/perf391-a-runtime-smoke-v1/evidence/runtime/verification-owner/manifest.json": "85b4968a840c481cdb68f57a8c0c4dad2e79fc383d2215e58812e6da14ec7b60",
+    "tools/diagnostics/perf391-built-images-v1/artifact-manifest.json": "086118abaa43bb258a83fa30cad31837fb64012d3e93dcd21f34f87bb570e570",
+    "tools/diagnostics/perf391-built-images-v1/evidence/A-assets/.vite/manifest.json": "0a34791639c9e9f463f6ed9a87cf2324a1d7083cb7e333621bddee2fb0f2e02b",
+    "tools/diagnostics/perf391-built-images-v1/evidence/C-assets/.vite/manifest.json": "0a34791639c9e9f463f6ed9a87cf2324a1d7083cb7e333621bddee2fb0f2e02b",
+    "tools/diagnostics/perf391-built-images-v1/evidence/build-A-backend/manifest.json": "51fa8514e12a5acefc17ae0f4b4e9bb205cff9e83787d7028d007dbbe286732c",
+    "tools/diagnostics/perf391-built-images-v1/evidence/build-A-frontend/manifest.json": "d8b01ee3e84f611bdc8b41060595eb2ae15cea4fb558f743b72dfed26cf39323",
+    "tools/diagnostics/perf391-built-images-v1/evidence/build-C-backend/manifest.json": "bfdb184bc41a2164fadd2e9407fbdf1c2d0cdc8ba9657be149ec715428c51d2a",
+    "tools/diagnostics/perf391-built-images-v1/evidence/build-C-frontend/manifest.json": "1a7db462d5aa8ee792afb74312b48c47773ab6c98ec98f4b40667c3a058e5526",
+    "tools/diagnostics/perf391-built-images-v1/evidence/built-A.json": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f",
+    "tools/diagnostics/perf391-built-images-v1/evidence/built-C.json": "a9b7492aed2e90448d2ed8aeb4586dccd667d03e1cbb0829ff759a04537109e2",
+    "tools/diagnostics/perf391-built-images-v1/evidence/export-frontend-builder/manifest.json": "08bf90ef443e1cc1e4378a8d301ebc7ce28068c52209b749acc98f6d8432ce9f",
+    "tools/diagnostics/perf391-built-images-v1/evidence/export-renderer-builder/manifest.json": "163562572407233dcb42b44b744cb197cd60b6460c2aa99d5726a120e0fe6332",
+    "tools/diagnostics/perf391-built-images-v1/evidence/final-inspection/manifest.json": "9a960970a7a058f48f21228b11e8b3d044c53863ba834539021991725789bdf6",
+    "tools/diagnostics/perf391-built-images-v1/evidence/inspect-stopped/manifest.json": "003150038dca0f8a5c4a33a17ed06afd5aec6bfdf41dd4bfb63459905cc9c085",
+    "tools/diagnostics/perf391-built-images-v1/evidence/offline-contract-tests/manifest.json": "4ba96bf798279eef7890f04a5f7f8450b20cf1186a99f5c4aa682ad4aba6efdf",
+    "tools/diagnostics/perf391-built-images-v1/evidence/qualification-final/manifest.json": "19ed3563c8ab203cdf076f485c7e09067a2cac649ef550eb23a9354f60049b75",
+    "tools/diagnostics/perf391-built-images-v1/evidence/runtime-build-plan.json": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/build-manifest-schema.json": "4b18f7302716cfe4541b9c90cb5070f7e11a937351dcc9aba51917e34e85973a",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/pipeline/A-api/manifest.json": "b9be94599dc3eb65bd698170f2df93f349614413248af7281326ad71504b4107",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/pipeline/A-cli/manifest.json": "619356a93bf817b11759819a00e59ffb18be9bf7cd878fc67bc3d2593738f969",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/pipeline/C-api/manifest.json": "94237191f9a551dbdaf4ea684f718ec8db157202e898286b0555834d7f8639de",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/pipeline/C-cli/manifest.json": "80ed80d19509fa88f8b5d337b0c3a35411da466b6ceb6c31c96ce50f515d843b",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/pipeline/manifest.json": "1ef5a854e99b6fef65a3c6aa8cd4889a21cf3365892b0bc1144589300a9b5750",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/release-manifest.json": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200",
+    "tools/diagnostics/perf391-logging-compat-v1/artifact-manifest.json": "16f96d3e1c40cc81e776b657014067e8c3319cf6c71dbf211fdecdec7f8bbe5f",
+    "tools/diagnostics/perf391-node-contract-v1/artifact-manifest.json": "e75de0bdc5346b96768e9789e17f991f14177767e6748503d08a2ad2e1780886",
+    "tools/diagnostics/perf391-original-a-smoke-v1/artifact-manifest.json": "2faf0bccdaa927a1deb1380adbacd191f2f33f6cca2ba12cb0daa796912d0e54",
+    "tools/diagnostics/perf391-runtime-preparation-v1/checkpoint-manifest.json": "05f9e8d361f375e00dc358463fdfa14a0daec06a954e5458303f49d9620aa83e",
+    "tools/diagnostics/perf391-runtime-preparation-v1/evidence/offline-final/manifest.json": "d0eed9decacfbc6f717ec7f33d3b53c75bc9ab13ff85e60386d46cbc7dc75bf1",
+    "tools/diagnostics/perf391-runtime-preparation-v1/evidence/static-final/manifest.json": "26611f9c7fbeb76614cd46ee910502a21cc3dde90e8c242b4eacecbd0bc2210f",
+    "tools/diagnostics/perf391-runtime-preparation-v1/node-contract-overlay.json": "9e58db98dfaeb47fc617b6b0c7a98e6459ee8e1ad0e5c57fd69d1d665467cb02",
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime-receipt-schema.json": "fae140e62cb2816918cea4a6faf1d085cbf3410b94426b7fa5a8af0225b795c5"
+  }
+}

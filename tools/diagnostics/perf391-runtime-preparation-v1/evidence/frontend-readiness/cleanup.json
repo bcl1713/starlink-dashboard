@@ -1,0 +1,121 @@
+{
+  "all_successful_executor_fixtures_asserted_clean_owners_and_reaped_children": true,
+  "checked_aborted_fixture_processes": [
+    {
+      "alive": false,
+      "pid": 23,
+      "start_id": "215309600"
+    },
+    {
+      "alive": false,
+      "pid": 24,
+      "start_id": "215309604"
+    },
+    {
+      "alive": false,
+      "pid": 25,
+      "start_id": "215309609"
+    },
+    {
+      "alive": false,
+      "pid": 26,
+      "start_id": "215310214"
+    },
+    {
+      "alive": false,
+      "pid": 16,
+      "start_id": "215308569"
+    },
+    {
+      "alive": false,
+      "pid": 17,
+      "start_id": "215308573"
+    },
+    {
+      "alive": false,
+      "pid": 18,
+      "start_id": "215308577"
+    },
+    {
+      "alive": false,
+      "pid": 19,
+      "start_id": "215308581"
+    },
+    {
+      "alive": false,
+      "pid": 20,
+      "start_id": "215308586"
+    },
+    {
+      "alive": false,
+      "pid": 21,
+      "start_id": "215308595"
+    },
+    {
+      "alive": false,
+      "pid": 20,
+      "start_id": "215302185"
+    },
+    {
+      "alive": false,
+      "pid": 21,
+      "start_id": "215302189"
+    },
+    {
+      "alive": false,
+      "pid": 22,
+      "start_id": "215302193"
+    },
+    {
+      "alive": false,
+      "pid": 23,
+      "start_id": "215302798"
+    },
+    {
+      "alive": false,
+      "pid": 13,
+      "start_id": "215301152"
+    },
+    {
+      "alive": false,
+      "pid": 14,
+      "start_id": "215301156"
+    },
+    {
+      "alive": false,
+      "pid": 15,
+      "start_id": "215301160"
+    },
+    {
+      "alive": false,
+      "pid": 16,
+      "start_id": "215301164"
+    },
+    {
+      "alive": false,
+      "pid": 17,
+      "start_id": "215301168"
+    },
+    {
+      "alive": false,
+      "pid": 18,
+      "start_id": "215301178"
+    }
+  ],
+  "docker_contacted": false,
+  "host_fixture_processes": [],
+  "host_task_port_listeners": [],
+  "process_survivors": [],
+  "real_containers_browsers_application_http_listeners_created": false,
+  "remaining_fixture_paths": [],
+  "removed_task_paths": [
+    "/tmp/perf391-executor-fixture-52ohd5qq",
+    "/tmp/perf391-executor-fixture-x7xsu6o4",
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-52ohd5qq",
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-x7xsu6o4",
+    "/tmp/perf391-readiness-format-cache",
+    "/tmp/perf391-readiness-format-tools"
+  ],
+  "utc_ns": 1792752114938720783,
+  "worktree_preserved_for_open_pr": true
+}

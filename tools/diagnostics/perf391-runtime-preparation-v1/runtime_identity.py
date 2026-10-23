@@ -43,6 +43,20 @@ def verify_runtime_overlay(plan):
         set(expected) == {*OVERLAY_FILES, "runtime_identity.py"},
         "corrected runtime overlay inventory",
     )
+    readiness = json.loads((HERE / "frontend-readiness-overlay.json").read_bytes())
+    build.require(
+        sha(HERE / "node-contract-overlay.json") == readiness["predecessor_sha256"],
+        "readiness predecessor overlay drift",
+    )
+    build.require(
+        readiness["replaces"]
+        == {name: expected[name] for name in readiness["replaces"]}
+        and set(readiness["files"]) == {*readiness["replaces"], "frontend_readiness.py"}
+        and set(readiness["replaces"])
+        == {"execute.proposed.py", "runtime_identity.py"},
+        "readiness correction inventory",
+    )
+    expected = {**expected, **readiness["files"]}
     build.require(
         all(sha(HERE / name) == digest for name, digest in expected.items()),
         "corrected runtime overlay drift",

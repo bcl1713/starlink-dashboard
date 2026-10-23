@@ -31,6 +31,7 @@ FAKE = r"""
 import json,os,signal,sys,time,shutil
 from pathlib import Path
 argv=json.loads(sys.argv[1]); root=Path(sys.argv[2]); scenario=sys.argv[3]
+if argv[0]=='timeout': argv=argv[3:]
 with (root/'commands.jsonl').open('a') as f: f.write(json.dumps(argv)+'\n')
 if argv[-1:] == ['--version']: print('22.22.2'); sys.exit(0)
 if argv[:3]==['docker','image','inspect']:
@@ -44,6 +45,22 @@ if argv[:2]==['docker','cp']:
 if argv[:2]==['docker','ps']: sys.exit(0)
 if 'compose' in argv and 'down' in argv:
  sys.exit(1 if scenario=='cleanup-failure' else 0)
+if scenario.startswith('frontend-'):
+ if '-c' in argv:
+  if scenario=='frontend-delayed' and not (root/'refused').exists():
+   (root/'refused').touch(); print('ConnectionRefusedError: refused'); sys.exit(1)
+  receipt=json.loads((root/'receipt.json').read_bytes())
+  print(json.dumps({'status':200,'sha256':receipt['assets']['index.html']})); sys.exit(0)
+ if 'compose' in argv and 'up' in argv:
+  if 'mission-planner' in argv and scenario=='frontend-sigterm':
+   os.kill(os.getppid(),signal.SIGTERM); time.sleep(30)
+  sys.exit(0)
+ if 'compose' in argv and 'ps' in argv: print('frontend-id'); sys.exit(0)
+ if argv[:2]==['docker','inspect']:
+  ready=scenario in ('frontend-ready','frontend-delayed')
+  print(json.dumps({'Running':ready,'Status':'running' if ready else 'exited','ExitCode':0 if ready else 7})); sys.exit(0)
+ if 'compose' in argv and 'logs' in argv: print('nginx fixture failure'); sys.exit(0)
+ if argv[:2]==['docker','port']: print('80/tcp -> 127.0.0.1:38080'); sys.exit(0)
 if 'compose' in argv and 'up' in argv:
  if scenario=='sigterm':
   os.kill(os.getppid(),signal.SIGTERM)
@@ -84,6 +101,8 @@ class ExecutorTests(unittest.TestCase):
                     owners.append(self)
 
                 def spawn(self, argv, **kw):
+                    if scenario == "frontend-diagnostics-fail" and "logs" in argv:
+                        raise OSError("offline diagnostic failure")
                     if scenario == "spawn-error" and "compose" in argv and "up" in argv:
                         raise OSError("offline injected spawn failure")
                     return real_spawn(
@@ -150,6 +169,12 @@ class ExecutorTests(unittest.TestCase):
                 stack.enter_context(patch.object(executor.ctypes, "CDLL"))
                 executor.ctypes.CDLL.return_value.prctl.return_value = 0
                 stack.enter_context(patch("owner.Owner", OfflineOwner))
+                stack.enter_context(
+                    patch(
+                        "collector.prepare_collector",
+                        side_effect=RuntimeError("offline after readiness"),
+                    )
+                )
                 with self.assertRaises(Exception) as caught:
                     asyncio.run(executor.execute(args))
                 if not expected_preflight:
@@ -185,6 +210,47 @@ class ExecutorTests(unittest.TestCase):
                 self.assertNotIn("browser-owner.proposed.mjs", " ".join(c))
             if scenario == "missing-image":
                 self.assertFalse(any("up" in c or "create" in c for c in commands))
+            if scenario in ("frontend-ready", "frontend-delayed"):
+                readiness = json.loads((root / "frontend-readiness.json").read_text())
+                self.assertEqual(readiness["status"], "ready")
+                self.assertIn("offline after readiness", result["failure"])
+                self.assertEqual(
+                    len(readiness["attempts"]),
+                    2 if scenario == "frontend-delayed" else 1,
+                )
+            if scenario.startswith("frontend-"):
+                snapshots = json.loads(
+                    (root / "frontend-failure-diagnostics.json").read_text()
+                )
+                self.assertTrue(
+                    any(
+                        r["kind"] == "inspect" and "ExitCode" in r.get("output", "")
+                        for r in snapshots
+                    )
+                )
+                if scenario == "frontend-diagnostics-fail":
+                    self.assertTrue(
+                        any(
+                            r["kind"] == "frontend-logs" and "error" in r
+                            for r in snapshots
+                        )
+                    )
+                else:
+                    self.assertTrue(
+                        any(
+                            r["kind"] == "frontend-logs"
+                            and "nginx fixture" in r.get("output", "")
+                            for r in snapshots
+                        )
+                    )
+                self.assertLess(
+                    next(
+                        i
+                        for i, c in enumerate(commands)
+                        if "inspect" in c and "image" not in c
+                    ),
+                    next(i for i, c in enumerate(commands) if "down" in c),
+                )
             if scenario == "sigterm":
                 self.assertIn("signal", result["failure"])
             return commands
@@ -205,6 +271,21 @@ class ExecutorTests(unittest.TestCase):
                     ),
                     True,
                 )
+
+    def test_immediate_readiness_allows_next_phase(self):
+        self.run_case("frontend-ready")
+
+    def test_delayed_readiness_allows_next_phase(self):
+        self.run_case("frontend-delayed")
+
+    def test_failed_diagnostics_preserve_cleanup(self):
+        self.run_case("frontend-diagnostics-fail")
+
+    def test_frontend_exit_snapshots_before_cleanup(self):
+        self.run_case("frontend-exit")
+
+    def test_frontend_startup_signal_snapshots_before_cleanup(self):
+        self.run_case("frontend-sigterm")
 
     def test_startup_failure_runs_scoped_cleanup(self):
         self.run_case("startup-failure")

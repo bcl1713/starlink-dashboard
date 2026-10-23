@@ -1,0 +1,40 @@
+test_cleanup_failure_is_reported_and_processes_reaped (test_executor.ExecutorTests.test_cleanup_failure_is_reported_and_processes_reaped) ... ok
+test_delayed_readiness_allows_next_phase (test_executor.ExecutorTests.test_delayed_readiness_allows_next_phase) ... ok
+test_failed_diagnostics_preserve_cleanup (test_executor.ExecutorTests.test_failed_diagnostics_preserve_cleanup) ... ok
+test_frontend_exit_snapshots_before_cleanup (test_executor.ExecutorTests.test_frontend_exit_snapshots_before_cleanup) ... ok
+test_frontend_startup_signal_snapshots_before_cleanup (test_executor.ExecutorTests.test_frontend_startup_signal_snapshots_before_cleanup) ... ok
+test_immediate_readiness_allows_next_phase (test_executor.ExecutorTests.test_immediate_readiness_allows_next_phase) ... ok
+test_invalid_receipt_stops_before_ownership (test_executor.ExecutorTests.test_invalid_receipt_stops_before_ownership) ... ok
+test_missing_image_stops_before_container_creation_and_cleans (test_executor.ExecutorTests.test_missing_image_stops_before_container_creation_and_cleans) ... ok
+test_sigterm_reaps_running_command_and_runs_scoped_cleanup (test_executor.ExecutorTests.test_sigterm_reaps_running_command_and_runs_scoped_cleanup) ... ok
+test_spawn_failure_runs_scoped_cleanup (test_executor.ExecutorTests.test_spawn_failure_runs_scoped_cleanup) ... ok
+test_startup_failure_runs_scoped_cleanup (test_executor.ExecutorTests.test_startup_failure_runs_scoped_cleanup) ... ok
+test_wrong_node_receipt_stops_before_ownership (test_executor.ExecutorTests.test_wrong_node_receipt_stops_before_ownership) ... ok
+test_term_resistant_probe_is_killed_and_reaped_within_its_cap (test_frontend_readiness.CommandBoundTests.test_term_resistant_probe_is_killed_and_reaped_within_its_cap) ... ok
+test_probe_reads_static_route_and_closes_with_a_body_limit (test_frontend_readiness.HttpProbeTests.test_probe_reads_static_route_and_closes_with_a_body_limit) ... ok
+test_delayed_success_retains_failures (test_frontend_readiness.ReadinessTests.test_delayed_success_retains_failures) ... ok
+test_exit_and_unhealthy_stop_before_http (test_frontend_readiness.ReadinessTests.test_exit_and_unhealthy_stop_before_http) ... ok
+test_immediate_success_requires_expected_status_and_body (test_frontend_readiness.ReadinessTests.test_immediate_success_requires_expected_status_and_body) ... ok
+test_refusal_and_request_timeout_fail_within_work_deadline (test_frontend_readiness.ReadinessTests.test_refusal_and_request_timeout_fail_within_work_deadline) ... ok
+test_cancelled_gate_persists_evidence_without_http (test_frontend_readiness.SnapshotTests.test_cancelled_gate_persists_evidence_without_http) ... ok
+test_diagnostic_failures_do_not_skip_remaining_observations (test_frontend_readiness.SnapshotTests.test_diagnostic_failures_do_not_skip_remaining_observations) ... ok
+test_single_file_logging_explicitly_disables_compression (test_logging.DiagnosticLoggingTests.test_single_file_logging_explicitly_disables_compression) ... ok
+test_actual_node_wrong_hash_never_executes (test_node_identity.NodeIdentityTests.test_actual_node_wrong_hash_never_executes) ... ok
+test_actual_node_wrong_version_never_imports_playwright (test_node_identity.NodeIdentityTests.test_actual_node_wrong_version_never_imports_playwright) ... ok
+test_corrected_overlay_and_original_plan_are_both_bound (test_node_identity.NodeIdentityTests.test_corrected_overlay_and_original_plan_are_both_bound) ... ok
+test_receipt_identity_pairs_fail_closed (test_node_identity.NodeIdentityTests.test_receipt_identity_pairs_fail_closed) ... ok
+test_asset_changes_extras_and_symlinks_fail (test_preparation.PreparationTests.test_asset_changes_extras_and_symlinks_fail) ... ok
+test_both_launch_plans_are_isolated_bounded_and_five_samples (test_preparation.PreparationTests.test_both_launch_plans_are_isolated_bounded_and_five_samples) ... ok
+test_compiled_probe_absence_fails_even_with_rehashed_file (test_preparation.PreparationTests.test_compiled_probe_absence_fails_even_with_rehashed_file) ... ok
+test_exact_derivative_identities_and_unbuilt_claims (test_preparation.PreparationTests.test_exact_derivative_identities_and_unbuilt_claims) ... ok
+test_full_frozen_release_and_runtime_overlay (test_preparation.PreparationTests.test_full_frozen_release_and_runtime_overlay) ... ok
+test_offline_launcher_refuses_execution_without_reading_plan (test_preparation.PreparationTests.test_offline_launcher_refuses_execution_without_reading_plan) ... ok
+test_overlay_drift_and_existing_root_fail (test_preparation.PreparationTests.test_overlay_drift_and_existing_root_fail) ... ok
+test_proposed_python_is_syntax_only (test_preparation.PreparationTests.test_proposed_python_is_syntax_only) ... ok
+test_synthetic_receipt_fixture_is_accepted_offline (test_preparation.PreparationTests.test_synthetic_receipt_fixture_is_accepted_offline) ... ok
+test_wrong_role_collector_plan_or_node_fails (test_preparation.PreparationTests.test_wrong_role_collector_plan_or_node_fails) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 16.108s
+
+OK

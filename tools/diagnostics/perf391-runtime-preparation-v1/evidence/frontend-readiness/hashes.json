@@ -1,0 +1,18 @@
+{
+  "files": {
+    "FRONTEND-READINESS.md": "5feafe57c28574f828b672b1f9d4ebc39e0dfa5f3954ad6cad6f7cb6418031f8",
+    "evidence/frontend-readiness/cleanup.json": "d67a98b6c14a0234192ab03a54f714cfaaac4e63f2752038c6c393efb6145bc5",
+    "evidence/frontend-readiness/github-states.json": "78fbf4157014887560ec2f7661c22cad553b0a846127174ee15b24c3da485628",
+    "evidence/frontend-readiness/integrity.json": "b50deecb6257d6ef4ed1ea5f20627818e7ff26a228e4b2eb4bc461d042dc55ae",
+    "evidence/frontend-readiness/offline-tests.log": "7c5ea014d4901608bd0a6cbf23a6ea5a784043168741994aa454efe5364e1d34",
+    "execute.proposed.py": "65d23ba738bb32b333a6d660b334501219cf379a50858b4282bceaad36d039f9",
+    "frontend-readiness-overlay.json": "ea21f78ca9f71d8b6b67222839727558cd586ebc3e2e438a4b935bd0482fcdec",
+    "frontend_readiness.py": "d7d4d094c4a40c712eef1a7e050fe86e562d3bb26e82193f779848bfe14b6602",
+    "node-contract-overlay.json": "9e58db98dfaeb47fc617b6b0c7a98e6459ee8e1ad0e5c57fd69d1d665467cb02",
+    "runtime_identity.py": "e5593dc35bd3a4eaf2b5b6988d12fe7517bd8537a32756fe34f253301d437f1a",
+    "test_executor.py": "d787f12cc89907302e9d3d49d55739ea4d01abfa06e15d940141c0da859a45dc",
+    "test_frontend_readiness.py": "1393dfec9411dbe99e28b25bd4cc1984bb7e020b02d2a1870410f6d86f7e9034"
+  },
+  "schema": "perf391-frontend-readiness-evidence-v1",
+  "starting_commit": "360cd1afe3b3ef3803ad9753872310fdf14523f7"
+}

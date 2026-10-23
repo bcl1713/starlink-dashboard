@@ -1,0 +1,54 @@
+{
+  "observed_before_push": [
+    {
+      "number": 403,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "e1f657986f7b988a967ddd2bef8ca4626e30b5de"
+    },
+    {
+      "number": 405,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "f7253c687041342ee080b0197f0b98f20eaefdfe"
+    },
+    {
+      "number": 406,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832"
+    },
+    {
+      "number": 407,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b"
+    },
+    {
+      "number": 408,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "360cd1afe3b3ef3803ad9753872310fdf14523f7"
+    },
+    {
+      "number": 390,
+      "kind": "issue",
+      "state": "open"
+    },
+    {
+      "number": 391,
+      "kind": "issue",
+      "state": "open"
+    },
+    {
+      "number": 404,
+      "kind": "issue",
+      "state": "open"
+    }
+  ]
+}
