@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import ctypes
 import json
+import signal
 import sys
 from pathlib import Path
 
@@ -92,7 +93,31 @@ async def qualify(output):
         raise RuntimeError("qualification cleanup failed")
 
 
+async def main(output):
+    loop = asyncio.get_running_loop()
+    task = asyncio.current_task()
+    interrupted = [0]
+
+    def stop(sig):
+        if not interrupted[0]:
+            interrupted[0] = sig
+            task.cancel()
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, stop, sig)
+    try:
+        await qualify(output)
+    except asyncio.CancelledError:
+        if not interrupted[0]:
+            raise
+        return 128 + interrupted[0]
+    finally:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.remove_signal_handler(sig)
+    return 0
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    asyncio.run(qualify(parser.parse_args().output))
+    raise SystemExit(asyncio.run(main(parser.parse_args().output)))

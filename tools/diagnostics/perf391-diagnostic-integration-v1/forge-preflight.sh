@@ -10,6 +10,14 @@ import json
 from pathlib import Path
 root = Path.cwd()
 manifest = json.loads((root / 'evidence/stage5/release-manifest.json').read_bytes())
+if manifest.get('schema') != 'perf391-stage5-release-v1' or manifest.get('qualification') != 'offline_only':
+    raise SystemExit('wrong release contract')
+ignored = {'artifacts', 'node_modules', '__pycache__', '.ruff_cache', 'evidence'}
+actual = {p.relative_to(root).as_posix() for p in root.rglob('*')
+          if (p.is_file() or p.is_symlink()) and not ignored.intersection(p.relative_to(root).parts)}
+declared = set(manifest['source_files'])
+if actual != declared or not declared.issubset(manifest['files']):
+    raise SystemExit('source inventory differs from release closure')
 for name, expected in manifest['files'].items():
     path = root / name
     if path.is_symlink() or root not in path.resolve().parents:

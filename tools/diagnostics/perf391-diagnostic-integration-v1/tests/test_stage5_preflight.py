@@ -19,9 +19,14 @@ class Stage5PreflightTests(unittest.TestCase):
             artifact = root / "fixture.bin"
             artifact.write_bytes(b"fixture")
             manifest = {
+                "schema": "perf391-stage5-release-v1",
                 "files": {"fixture.bin": hashlib.sha256(b"fixture").hexdigest()},
                 "qualification": "offline_only",
+                "source_files": ["fixture.bin", "forge-preflight.sh"],
             }
+            manifest["files"]["forge-preflight.sh"] = hashlib.sha256(
+                (root / "forge-preflight.sh").read_bytes()
+            ).hexdigest()
             (root / "evidence/stage5/release-manifest.json").write_text(
                 json.dumps(manifest)
             )
@@ -35,6 +40,10 @@ class Stage5PreflightTests(unittest.TestCase):
                 )
 
             self.assertEqual(run().returncode, 0)
+            extra = root / "unreviewed.py"
+            extra.write_text("# unexpected source\n")
+            self.assertNotEqual(run().returncode, 0)
+            extra.unlink()
             artifact.write_bytes(b"changed")
             self.assertNotEqual(run().returncode, 0)
             artifact.unlink()
