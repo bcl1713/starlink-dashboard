@@ -1,0 +1,61 @@
+{
+  "pull_requests": [
+    {
+      "number": 403,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "perf/391-readonly-metrics",
+      "head_sha": "e1f657986f7b988a967ddd2bef8ca4626e30b5de"
+    },
+    {
+      "number": 405,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "docs/perf391-independent",
+      "head_sha": "f7253c687041342ee080b0197f0b98f20eaefdfe"
+    },
+    {
+      "number": 406,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "perf/391-rank1-consolidation",
+      "head_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832"
+    },
+    {
+      "number": 407,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "tooling/perf391-network-evidence-v1",
+      "head_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b"
+    },
+    {
+      "number": 408,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head": "docs/perf391-integration-plan",
+      "head_sha": "134cbcd3005eca0eeb6a1bb35d1bff91cf58d793"
+    }
+  ],
+  "issues": [
+    {
+      "number": 390,
+      "state": "open",
+      "is_pull_request": false
+    },
+    {
+      "number": 391,
+      "state": "open",
+      "is_pull_request": false
+    },
+    {
+      "number": 404,
+      "state": "open",
+      "is_pull_request": false
+    }
+  ]
+}

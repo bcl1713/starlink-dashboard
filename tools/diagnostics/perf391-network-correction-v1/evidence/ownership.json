@@ -1,0 +1,8 @@
+{
+  "cleanup": "TemporaryDirectory exit cleanup; no services created",
+  "pgid": 13,
+  "pid": 14,
+  "purpose": "offline regeneration, tests and Compose config only",
+  "runtime_resources": [],
+  "temporary_prefix": "perf391-network-offline-"
+}

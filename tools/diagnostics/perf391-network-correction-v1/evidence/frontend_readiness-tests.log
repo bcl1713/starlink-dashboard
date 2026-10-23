@@ -1,0 +1,9 @@
+test_delayed_success_retains_failures (test_frontend_readiness.ReadinessTests.test_delayed_success_retains_failures) ... ok
+test_exit_and_unhealthy_stop_before_http (test_frontend_readiness.ReadinessTests.test_exit_and_unhealthy_stop_before_http) ... ok
+test_immediate_success_requires_expected_status_and_body (test_frontend_readiness.ReadinessTests.test_immediate_success_requires_expected_status_and_body) ... ok
+test_refusal_and_request_timeout_fail_within_work_deadline (test_frontend_readiness.ReadinessTests.test_refusal_and_request_timeout_fail_within_work_deadline) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.015s
+
+OK

@@ -1,0 +1,36 @@
+{
+  "approved_override_hashes_match": true,
+  "correction": {
+    "checkpoint_manifest_sha256": "16f96d3e1c40cc81e776b657014067e8c3319cf6c71dbf211fdecdec7f8bbe5f",
+    "compiler_sha256": "8d52a986514fefbec833b45f2a4b64b4e86a004983588116ec389ba3a467b001",
+    "config_hashes_sha256": "63e98db136e5595cc6c0c1243382b2b8ccb7bc05445f508b7dc30a9fc52401c2",
+    "network_compiler_sha256": "4f20ed461d36705918070b478485addeebe3bf4ded05bc1e1199d46e5637fa30",
+    "network_manifest_sha256": "fdbbc561f690f1dfb7d7c0dd65c476b60df8e6da9f8879fbca8a07ad89ebba15",
+    "overlay_manifest_sha256": "9e58db98dfaeb47fc617b6b0c7a98e6459ee8e1ad0e5c57fd69d1d665467cb02"
+  },
+  "differences": [
+    {
+      "approved": "591e4e381bb572b8284ee79a0cf0012a083aede83f4727dceca2662c5781a939",
+      "original": "f2dfdc82231504b0d0df0d327bf15138f0e0a4b658c28d5d8800b19a5f83a086",
+      "path": "/roles/A/compose_sha256/base"
+    },
+    {
+      "approved": "5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c",
+      "approved_canonical": "dab1035fd61762f6feb203c0a12210f362e0a7fbfaf8881e78e6ab3770b522f7",
+      "original": "e34daea5880cf2053ee17c08c57a28e969f7ee783b789345676343720fe1d831",
+      "path": "/roles/A/compose_sha256/override"
+    },
+    {
+      "approved": "591e4e381bb572b8284ee79a0cf0012a083aede83f4727dceca2662c5781a939",
+      "original": "f2dfdc82231504b0d0df0d327bf15138f0e0a4b658c28d5d8800b19a5f83a086",
+      "path": "/roles/C/compose_sha256/base"
+    },
+    {
+      "approved": "ffdbe1293ea39e142752f56b438f12957dcd16fba22b546c2d8f4787446ca81e",
+      "approved_canonical": "96bdf2d8aed75b2180baaf60fea4e0a1b9fe7df5edf788e5da9b0e370bf0fcd5",
+      "original": "7d42f76540a337fc8c67b4f9ed463f0d2f96c187a60c01495cc406045932080b",
+      "path": "/roles/C/compose_sha256/override"
+    }
+  ],
+  "original_fields_identical": true
+}

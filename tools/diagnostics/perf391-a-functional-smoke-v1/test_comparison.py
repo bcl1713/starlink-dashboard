@@ -12,6 +12,10 @@ class ComparisonTests(unittest.TestCase):
         approved, provenance = approved_correction()
         generated = copy.deepcopy(original)
         for role in ("A", "C"):
+            self.assertFalse(prepare.compose(role)[0]["networks"]["default"]["internal"])
+            generated["roles"][role]["compose_sha256"]["base"] = prepare.build.digest(
+                (json.dumps(prepare.compose(role)[0], sort_keys=True, indent=2) + "\n").encode()
+            )
             generated["roles"][role]["compose_sha256"]["override"] = (
                 prepare.build.digest(
                     (
@@ -26,7 +30,10 @@ class ComparisonTests(unittest.TestCase):
         for path in [
             ("roles", "A", "compose_sha256", "override"),
             ("roles", "C", "compose_sha256", "override"),
+            ("roles", "A", "compose_sha256", "base"),
+            ("roles", "C", "compose_sha256", "base"),
             ("roles", "A", "context_sha256"),
+            ("roles", "C", "labels", "runtime_overlay_sha256"),
             ("overlay_sha256",),
         ]:
             changed = copy.deepcopy(generated)
@@ -36,6 +43,16 @@ class ComparisonTests(unittest.TestCase):
             target[path[-1]] = "0" * 64
             with self.subTest(path=path), self.assertRaises(ValueError):
                 compare(changed, original)
+        for mutate in (
+            lambda b: b["networks"]["default"].update(internal=True),
+            lambda b: b["networks"].update(unrelated={"external": True}),
+            lambda b: b["services"]["mission-planner"].update(networks=["unrelated"]),
+            lambda b: b["services"]["mission-planner"].update(image="unapproved"),
+        ):
+            bases = {role: prepare.compose(role)[0] for role in ("A", "C")}
+            mutate(bases["A"])
+            with self.assertRaises(ValueError):
+                compare(generated, original, bases=bases)
         changed = copy.deepcopy(generated)
         changed["unexpected"] = True
         with self.assertRaises(ValueError):

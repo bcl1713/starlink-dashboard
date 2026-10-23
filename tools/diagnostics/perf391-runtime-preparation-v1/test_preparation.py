@@ -164,7 +164,7 @@ class PreparationTests(unittest.TestCase):
             ports = set(plan["ownership"]["ports"])
             self.assertFalse(ports & seen)
             seen |= ports
-            self.assertTrue(plan["compose"]["base"]["networks"]["default"]["internal"])
+            self.assertFalse(plan["compose"]["base"]["networks"]["default"]["internal"])
             self.assertEqual(plan["browser_options"]["samples"], 5)
             self.assertEqual(plan["deadlines"]["outer_timeout_seconds"], 90)
             self.assertEqual(plan["deadlines"]["kill_grace_seconds"], 10)

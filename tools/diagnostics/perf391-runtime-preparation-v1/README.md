@@ -132,8 +132,10 @@ interpreter 3.11.16 is a declared runtime feasibility gate.
 Use only the generated private Compose base plus override. Never include the
 operator stack's production Compose file, shared volumes, privileged mode, host
 networking, Docker socket mounts, capability grants or restart policies. The
-private default network is `internal: true`; only explicit loopback publications
-are reachable from the host. No network/compression policy is changed on Forge.
+private default network now uses `internal: false` for Forge rootless port
+publication. Only explicit loopback ports are published; ordinary bridge egress
+is permitted. See the [diagnostic-only network correction](NETWORK.md) for its
+security tradeoff, provenance and offline checkpoint limits.
 
 | Role/project              | Frontend          | Backend/state     | Prometheus        | Browser WebSocket |
 | ------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |

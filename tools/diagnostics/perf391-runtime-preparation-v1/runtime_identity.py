@@ -57,6 +57,18 @@ def verify_runtime_overlay(plan):
         "readiness correction inventory",
     )
     expected = {**expected, **readiness["files"]}
+    network = json.loads((HERE / "network-overlay.json").read_bytes())
+    build.require(
+        sha(HERE / "frontend-readiness-overlay.json") == network["predecessor_sha256"],
+        "network predecessor overlay drift",
+    )
+    build.require(
+        set(network["replaces"]) == {"prepare.py", "runtime_identity.py"}
+        and network["replaces"] == {name: expected[name] for name in network["replaces"]}
+        and set(network["files"]) == set(network["replaces"]),
+        "network correction inventory",
+    )
+    expected = {**expected, **network["files"]}
     build.require(
         all(sha(HERE / name) == digest for name, digest in expected.items()),
         "corrected runtime overlay drift",

@@ -1,0 +1,9 @@
+{"roles": ["A", "C"], "release": {"release_manifest_sha256": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200", "verified_files": 621, "source_files": 97}, "runtime_authorized": false}
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-correction/tools/diagnostics/perf391-network-correction-v1/check.py", line 82, in <module>
+    main()
+    ~~~~^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-correction/tools/diagnostics/perf391-network-correction-v1/check.py", line 71, in main
+    assert result.returncode == 0, (name, result.stderr.decode())
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('preparation', 'test_cleanup_failure_is_reported_and_processes_reaped (test_executor.ExecutorTests.test_cleanup_failure_is_reported_and_processes_reaped) ... ')

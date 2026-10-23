@@ -1,0 +1,71 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "285"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 285,
+      "start_id": "215990947"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/tmp/tmpjq657w06/owner"
+  ],
+  "owner": {
+    "pgid": 283,
+    "pid": 284,
+    "pid_namespace": "pid:[4026533972]",
+    "start_id": "215990941"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "timeout",
+        "--kill-after=0.05s",
+        "0.30000000000000004s",
+        "/usr/bin/python3",
+        "-c",
+        "import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)"
+      ],
+      "pgid": 285,
+      "pid": 285,
+      "reaped": true,
+      "returncode": 137,
+      "start_id": "215990947",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-offline-timeout",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {},
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

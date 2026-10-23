@@ -1,0 +1,209 @@
+{
+  "compose_version": "Docker Compose version v5.5.1",
+  "earlier_broad_test_timeout": "Fake executor cleanup and readiness process-owner cases each reached 120s; process trees absent; owned scratch directories removed; timeout logs/owner evidence retained. Final readiness selection is deterministic ReadinessTests only.",
+  "original_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+  "original_regeneration_byte_identical": true,
+  "python_version": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "roles": {
+    "A": {
+      "compose_hashes": {
+        "base": "591e4e381bb572b8284ee79a0cf0012a083aede83f4727dceca2662c5781a939",
+        "override": "5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c",
+        "rendered": "70152ce569561e56c8ab2bbe85de103ded2497c1f19bda43b877790c0a02210e"
+      },
+      "context_sha256": "9563d8f4396323fc2ba726605704fb41a14c56c89010d55a2b48cfa1d412f7ab",
+      "deadlines": {
+        "cleanup_by_seconds": 90,
+        "kill_grace_seconds": 10,
+        "outer_timeout_seconds": 90,
+        "work_seconds": 78
+      },
+      "effective_source_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+      "images": {
+        "mission-planner": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+        "prometheus": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+        "starlink-location": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+      },
+      "limits": {
+        "mission-planner": {
+          "cpus": 0.5,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "268435456",
+          "pids_limit": 64
+        },
+        "prometheus": {
+          "cpus": 1,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "1073741824",
+          "pids_limit": 256
+        },
+        "starlink-location": {
+          "cpus": 2,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "2147483648",
+          "pids_limit": 256
+        }
+      },
+      "loopback_ports": {
+        "mission-planner": [
+          {
+            "host_ip": "127.0.0.1",
+            "mode": "ingress",
+            "protocol": "tcp",
+            "published": "38080",
+            "target": 80
+          }
+        ],
+        "prometheus": [
+          {
+            "host_ip": "127.0.0.1",
+            "mode": "ingress",
+            "protocol": "tcp",
+            "published": "38082",
+            "target": 9090
+          }
+        ],
+        "starlink-location": [
+          {
+            "host_ip": "127.0.0.1",
+            "mode": "ingress",
+            "protocol": "tcp",
+            "published": "38081",
+            "target": 8000
+          }
+        ]
+      },
+      "only_default_network": true,
+      "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+    },
+    "C": {
+      "compose_hashes": {
+        "base": "591e4e381bb572b8284ee79a0cf0012a083aede83f4727dceca2662c5781a939",
+        "override": "ffdbe1293ea39e142752f56b438f12957dcd16fba22b546c2d8f4787446ca81e",
+        "rendered": "2e67ff1d70813ee76fb60514796767a4be036ca7b3e9c5b7959245aea7d80edd"
+      },
+      "context_sha256": "a13a56cd0ddf80059c6d3b2ae389f627700421a1060d530534c239f488e1dcd6",
+      "deadlines": {
+        "cleanup_by_seconds": 90,
+        "kill_grace_seconds": 10,
+        "outer_timeout_seconds": 90,
+        "work_seconds": 78
+      },
+      "effective_source_sha256": "4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a",
+      "images": {
+        "mission-planner": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+        "prometheus": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+        "starlink-location": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9"
+      },
+      "limits": {
+        "mission-planner": {
+          "cpus": 0.5,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "268435456",
+          "pids_limit": 64
+        },
+        "prometheus": {
+          "cpus": 1,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "1073741824",
+          "pids_limit": 256
+        },
+        "starlink-location": {
+          "cpus": 2,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "2147483648",
+          "pids_limit": 256
+        }
+      },
+      "loopback_ports": {
+        "mission-planner": [
+          {
+            "host_ip": "127.0.0.1",
+            "mode": "ingress",
+            "protocol": "tcp",
+            "published": "38180",
+            "target": 80
+          }
+        ],
+        "prometheus": [
+          {
+            "host_ip": "127.0.0.1",
+            "mode": "ingress",
+            "protocol": "tcp",
+            "published": "38182",
+            "target": 9090
+          }
+        ],
+        "starlink-location": [
+          {
+            "host_ip": "127.0.0.1",
+            "mode": "ingress",
+            "protocol": "tcp",
+            "published": "38181",
+            "target": 8000
+          }
+        ]
+      },
+      "only_default_network": true,
+      "receipt_sha256": "a9b7492aed2e90448d2ed8aeb4586dccd667d03e1cbb0829ff759a04537109e2"
+    }
+  },
+  "scope": "offline only; no runtime qualification",
+  "source_hashes": {
+    "tools/diagnostics/perf391-a-functional-smoke-v1/comparison.py": "0e8d276677f06aae04b688bf4dd5ba17d99c8760dcbd5c34344eb2369a34743e",
+    "tools/diagnostics/perf391-runtime-preparation-v1/network-overlay.json": "fdbbc561f690f1dfb7d7c0dd65c476b60df8e6da9f8879fbca8a07ad89ebba15",
+    "tools/diagnostics/perf391-runtime-preparation-v1/prepare.py": "4f20ed461d36705918070b478485addeebe3bf4ded05bc1e1199d46e5637fa30",
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime_identity.py": "3664eaabcdbc434fd2ab4c73eee5a3952f235d7940c614eab34fe2acd8c4f164"
+  },
+  "temporary_root": "/tmp/perf391-network-offline-nnzg2kk8",
+  "temporary_root_absent": true,
+  "tests": {
+    "comparison": "passed; see comparison-tests.log",
+    "frontend_readiness": "passed; see frontend_readiness-tests.log",
+    "logging": "passed; see logging-tests.log",
+    "node_identity": "passed; see node_identity-tests.log",
+    "preparation": "passed; see preparation-tests.log"
+  }
+}

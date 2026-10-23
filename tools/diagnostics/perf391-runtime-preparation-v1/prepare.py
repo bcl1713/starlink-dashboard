@@ -170,7 +170,7 @@ def compose(role):
             "prometheus": {"image": PROMETHEUS, "pull_policy": "never"},
         },
         "volumes": {name: {} for name in ("data", "routes", "metrics")},
-        "networks": {"default": {"internal": True}},
+        "networks": {"default": {"internal": False}},
     }
     common = {
         "restart": "no",

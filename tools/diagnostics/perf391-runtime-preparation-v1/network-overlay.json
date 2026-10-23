@@ -1,0 +1,25 @@
+{
+  "approved_delta": {
+    "corrected": false,
+    "original": true,
+    "path": "/networks/default/internal"
+  },
+  "authority": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6364263800",
+  "compose_base": {
+    "corrected_sha256": "591e4e381bb572b8284ee79a0cf0012a083aede83f4727dceca2662c5781a939",
+    "original_sha256": "f2dfdc82231504b0d0df0d327bf15138f0e0a4b658c28d5d8800b19a5f83a086"
+  },
+  "evidence_commit": "dfb4f8675d34d28d5c930da03bb2aae6ff9c74aa",
+  "files": {
+    "prepare.py": "4f20ed461d36705918070b478485addeebe3bf4ded05bc1e1199d46e5637fa30",
+    "runtime_identity.py": "3664eaabcdbc434fd2ab4c73eee5a3952f235d7940c614eab34fe2acd8c4f164"
+  },
+  "predecessor_sha256": "ea21f78ca9f71d8b6b67222839727558cd586ebc3e2e438a4b935bd0482fcdec",
+  "replaces": {
+    "prepare.py": "8d52a986514fefbec833b45f2a4b64b4e86a004983588116ec389ba3a467b001",
+    "runtime_identity.py": "e5593dc35bd3a4eaf2b5b6988d12fe7517bd8537a32756fe34f253301d437f1a"
+  },
+  "schema": "perf391-network-overlay-v1",
+  "scope": "diagnostic-only; no runtime authorization; ordinary bridge egress permitted",
+  "starting_head": "134cbcd3005eca0eeb6a1bb35d1bff91cf58d793"
+}

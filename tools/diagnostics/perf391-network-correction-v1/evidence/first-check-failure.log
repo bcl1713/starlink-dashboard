@@ -1,0 +1,15 @@
+{"roles": ["A", "C"], "release": {"release_manifest_sha256": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200", "verified_files": 621, "source_files": 97}, "runtime_authorized": false}
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-correction/tools/diagnostics/perf391-network-correction-v1/check.py", line 81, in <module>
+    main()
+    ~~~~^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-correction/tools/diagnostics/perf391-network-correction-v1/check.py", line 38, in main
+    report["source_hashes"][str(path.relative_to(prepare.REPO))] = prepare.sha(path)
+                                                                   ~~~~~~~~~~~^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-correction/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py", line 54, in sha
+    with Path(path).open("rb") as f:
+         ~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-correction/tools/diagnostics/perf391-diagnostic-integration-v1/comparison.py'

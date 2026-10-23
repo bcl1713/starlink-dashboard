@@ -1,0 +1,50 @@
+{
+  "cleanup_verified": true,
+  "context": "default",
+  "daemon": "forge 29.8.1 [\"name=seccomp,profile=builtin\",\"name=rootless\",\"name=cgroupns\"]",
+  "docker_host": "unix:///run/user/1002/docker.sock",
+  "images": {
+    "A-backend": {
+      "id": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+      "labels_and_repo_digests_identical": true
+    },
+    "A-frontend": {
+      "id": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+      "labels_and_repo_digests_identical": true
+    },
+    "C-backend": {
+      "id": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+      "labels_and_repo_digests_identical": true
+    },
+    "C-frontend": {
+      "id": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+      "labels_and_repo_digests_identical": true
+    }
+  },
+  "projects": {
+    "p391-net-20261023-1149": {
+      "container": "",
+      "network": "",
+      "volume": ""
+    },
+    "perf391-preflight-contract": {
+      "container": "",
+      "network": "",
+      "volume": ""
+    },
+    "perf391-smoke-408-a": {
+      "container": "",
+      "network": "",
+      "volume": ""
+    },
+    "perf391-smoke-408-c": {
+      "container": "",
+      "network": "",
+      "volume": ""
+    }
+  },
+  "task_listeners": [],
+  "task_processes": [],
+  "temporary_roots": [],
+  "utc": "2026-10-23T12:28:18.737971+00:00"
+}

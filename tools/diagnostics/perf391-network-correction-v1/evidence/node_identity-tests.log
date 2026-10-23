@@ -1,0 +1,9 @@
+test_actual_node_wrong_hash_never_executes (test_node_identity.NodeIdentityTests.test_actual_node_wrong_hash_never_executes) ... ok
+test_actual_node_wrong_version_never_imports_playwright (test_node_identity.NodeIdentityTests.test_actual_node_wrong_version_never_imports_playwright) ... ok
+test_corrected_overlay_and_original_plan_are_both_bound (test_node_identity.NodeIdentityTests.test_corrected_overlay_and_original_plan_are_both_bound) ... ok
+test_receipt_identity_pairs_fail_closed (test_node_identity.NodeIdentityTests.test_receipt_identity_pairs_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.156s
+
+OK

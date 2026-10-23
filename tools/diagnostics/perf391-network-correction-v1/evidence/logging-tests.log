@@ -1,0 +1,6 @@
+test_single_file_logging_explicitly_disables_compression (test_logging.DiagnosticLoggingTests.test_single_file_logging_explicitly_disables_compression) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

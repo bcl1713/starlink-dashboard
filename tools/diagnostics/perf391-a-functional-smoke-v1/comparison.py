@@ -1,4 +1,4 @@
-"""Two-layer preflight identity; historical receipts and global guards stay closed."""
+"""Three-layer preflight identity; historical receipts and global guards stay closed."""
 
 import copy
 import json
@@ -22,6 +22,9 @@ CHECKPOINT_SHA256 = "16f96d3e1c40cc81e776b657014067e8c3319cf6c71dbf211fdecdec7f8
 CONFIG_SHA256 = "63e98db136e5595cc6c0c1243382b2b8ccb7bc05445f508b7dc30a9fc52401c2"
 
 
+NETWORK_SHA256 = "fdbbc561f690f1dfb7d7c0dd65c476b60df8e6da9f8879fbca8a07ad89ebba15"
+
+
 def approved_correction():
     manifest_path = LOGGING / "artifact-manifest.json"
     # Distinct approved checkpoint input, independent of the original build plan.
@@ -43,10 +46,16 @@ def approved_correction():
         == approved["overlay_manifest_sha256"],
         "approved overlay manifest identity",
     )
+    from runtime_identity import verify_runtime_overlay
+
+    network_path = PREP / "network-overlay.json"
+    prepare.build.require(prepare.sha(network_path) == NETWORK_SHA256, "network correction identity")
+    network = json.loads(network_path.read_bytes())
     prepare.build.require(
-        prepare.sha(PREP / "prepare.py") == approved["prepare_py_sha256"],
-        "approved compiler identity",
+        network["replaces"]["prepare.py"] == approved["prepare_py_sha256"],
+        "approved predecessor compiler identity",
     )
+    verify_runtime_overlay(json.loads((BUILT / "evidence/runtime-build-plan.json").read_bytes()))
     for role in ("A", "C"):
         prepare.build.require(
             prepare.sha(LOGGING / f"evidence/{role}.compose.json")
@@ -59,14 +68,30 @@ def approved_correction():
         "config_hashes_sha256": CONFIG_SHA256,
         "overlay_manifest_sha256": approved["overlay_manifest_sha256"],
         "compiler_sha256": approved["prepare_py_sha256"],
+        "network_manifest_sha256": NETWORK_SHA256,
+        "network_compiler_sha256": network["files"]["prepare.py"],
     }
 
 
-def compare(generated, original, overrides=None):
+def compare(generated, original, overrides=None, bases=None):
     approved, provenance = approved_correction()
     expected = copy.deepcopy(original)
     differences = []
+    network = json.loads((PREP / "network-overlay.json").read_bytes())
     for role in ("A", "C"):
+        base = (bases or {r: prepare.compose(r)[0] for r in ("A", "C")})[role]
+        digest = prepare.build.digest((json.dumps(base, sort_keys=True, indent=2) + "\n").encode())
+        prepare.build.require(
+            original["roles"][role]["compose_sha256"]["base"] == network["compose_base"]["original_sha256"]
+            and digest == network["compose_base"]["corrected_sha256"],
+            "approved network base identity: " + role,
+        )
+        expected["roles"][role]["compose_sha256"]["base"] = digest
+        differences.append({
+            "path": f"/roles/{role}/compose_sha256/base",
+            "original": original["roles"][role]["compose_sha256"]["base"],
+            "approved": digest,
+        })
         override = (overrides or {r: prepare.compose(r)[1] for r in ("A", "C")})[role]
         prepare.build.require(
             prepare.build.digest(prepare.build.canonical(override))
@@ -99,7 +124,7 @@ def compare(generated, original, overrides=None):
 
 
 def regenerate(task):
-    """Execute verified historical compiler normally, then apply approved overrides.
+    """Execute verified historical compiler, then apply approved logging/network deltas.
 
     No imported module paths are patched. The original compiler's output must first
     match the closed plan byte for byte; corrected hashes come only from real files.
@@ -153,22 +178,30 @@ def regenerate(task):
     )
     generated = json.loads((context / "runtime-build-plan.json").read_bytes())
     overrides = {}
+    bases = {}
     for role in ("A", "C"):
-        base, overrides[role] = prepare.compose(role)
+        bases[role], overrides[role] = prepare.compose(role)
+        historical_base = json.loads((context / f"{role}.compose.base.json").read_bytes())
+        expected_base = copy.deepcopy(historical_base)
+        prepare.build.require(expected_base["networks"]["default"]["internal"] is True, "historical internal network")
+        expected_base["networks"]["default"]["internal"] = False
         prepare.build.require(
-            json.loads((context / f"{role}.compose.base.json").read_bytes()) == base,
-            "unchanged Compose base",
+            bases[role] == expected_base,
+            "only approved internal network delta",
         )
+        base_path = context / f"{role}.compose.base.json"
+        prepare.write(base_path, bases[role])
+        generated["roles"][role]["compose_sha256"]["base"] = prepare.sha(base_path)
         path = context / f"{role}.compose.override.json"
         prepare.write(path, overrides[role])
         generated["roles"][role]["compose_sha256"]["override"] = prepare.sha(path)
-    comparison = compare(generated, original, overrides)
+    comparison = compare(generated, original, overrides, bases)
     prepare.write(context / "runtime-build-plan.json", generated)
     return generated, comparison
 
 
 def validate_compose(role, context, comparison):
-    """Render only; compare the full pinned effective config, including logging."""
+    """Render only; compare the pinned effective config plus the approved network delta."""
     from launcher import launch_plan
 
     approved_correction()
@@ -208,6 +241,9 @@ def validate_compose(role, context, comparison):
     )
     rendered = json.loads(result.stdout)
     approved = json.loads((LOGGING / f"evidence/{role}.compose.json").read_bytes())
+    # Compose omits the false default. No other network or service field may differ.
+    prepare.build.require(approved["networks"]["default"].pop("internal") is True, "approved historical internal network")
+    prepare.build.require(rendered["networks"]["default"].get("internal", False) is False, "corrected non-internal network")
     # Compose resolves only this explicitly supplied context path differently.
     expected_context = launch["env"]["PERF391_CONTEXT"]
     for volume in approved["services"]["prometheus"]["volumes"]:
