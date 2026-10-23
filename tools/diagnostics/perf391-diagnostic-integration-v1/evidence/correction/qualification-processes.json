@@ -1,0 +1,109 @@
+{
+  "kind": "offline-only; every Docker/browser argv in executor tests is replaced by fake Python commands",
+  "runner_pid": 536002,
+  "runner_pgid": 535991,
+  "runs": [
+    {
+      "name": "python-focused",
+      "argv": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "test_executor",
+        "test_node_identity"
+      ],
+      "timeout_seconds": 90,
+      "kill_grace_seconds": 5,
+      "intent_before_spawn": true,
+      "pid": 536003,
+      "pgid": 536003,
+      "start_id": "217924925",
+      "returncode": 0,
+      "elapsed_seconds": 25.071,
+      "reaped": true
+    },
+    {
+      "name": "node-focused",
+      "argv": [
+        "/home/oracle-worker/.local/bin/node",
+        "--test",
+        "--experimental-test-isolation=none",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs"
+      ],
+      "timeout_seconds": 90,
+      "kill_grace_seconds": 5,
+      "intent_before_spawn": true,
+      "pid": 538152,
+      "pgid": 538152,
+      "start_id": "217927434",
+      "returncode": 0,
+      "elapsed_seconds": 0.265,
+      "reaped": true
+    },
+    {
+      "name": "authentic-final",
+      "argv": [
+        "/home/oracle-worker/.local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/vitest.config.mjs",
+        "tests/frontend/probe.test.ts"
+      ],
+      "timeout_seconds": 90,
+      "kill_grace_seconds": 5,
+      "intent_before_spawn": true,
+      "pid": 538175,
+      "pgid": 538175,
+      "start_id": "217927460",
+      "returncode": 0,
+      "elapsed_seconds": 1.166,
+      "reaped": true
+    },
+    {
+      "name": "frontend-A-qualified",
+      "argv": [
+        "/home/oracle-worker/.local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/vitest.config.mjs",
+        "tests/frontend/application.test.tsx",
+        "tests/frontend/request.test.tsx"
+      ],
+      "timeout_seconds": 90,
+      "kill_grace_seconds": 5,
+      "intent_before_spawn": true,
+      "pid": 538338,
+      "pgid": 538338,
+      "start_id": "217927577",
+      "returncode": 0,
+      "elapsed_seconds": 2.068,
+      "reaped": true
+    },
+    {
+      "name": "frontend-C-qualified",
+      "argv": [
+        "/home/oracle-worker/.local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/vitest.config.mjs",
+        "tests/frontend/application.test.tsx",
+        "tests/frontend/request.test.tsx"
+      ],
+      "timeout_seconds": 90,
+      "kill_grace_seconds": 5,
+      "intent_before_spawn": true,
+      "pid": 538492,
+      "pgid": 538492,
+      "start_id": "217927784",
+      "returncode": 0,
+      "elapsed_seconds": 2.068,
+      "reaped": true
+    }
+  ],
+  "complete": true
+}

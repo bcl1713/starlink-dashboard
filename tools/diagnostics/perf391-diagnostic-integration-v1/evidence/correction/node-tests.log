@@ -1,0 +1,145 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 3.694907
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 2.986417
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.424328
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.500347
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.558243
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 5.607597
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.910027
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.409474
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.493875
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 1.705299
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 1.135827
+  ...
+# Subtest: a total sink deadline aborts its signal and never replaces it with more jobs
+ok 12 - a total sink deadline aborts its signal and never replaces it with more jobs
+  ---
+  duration_ms: 26.315681
+  ...
+# Subtest: navigation with identical local plot IDs cannot qualify a screenshot from a different document
+ok 13 - navigation with identical local plot IDs cannot qualify a screenshot from a different document
+  ---
+  duration_ms: 0.938004
+  ...
+# Subtest: cleanup disposes the pinned Playwright binding and init-script handles exactly once
+ok 14 - cleanup disposes the pinned Playwright binding and init-script handles exactly once
+  ---
+  duration_ms: 0.319819
+  ...
+# Subtest: close settles all owned capture wrappers and releases the shared screenshot slot
+ok 15 - close settles all owned capture wrappers and releases the shared screenshot slot
+  ---
+  duration_ms: 0.856442
+  ...
+# Subtest: interrupted assembly retains its pre-close counters and exact loss reason
+ok 16 - interrupted assembly retains its pre-close counters and exact loss reason
+  ---
+  duration_ms: 1.212538
+  ...
+# Subtest: binding, write, listener and disposal failures retain bounded reason codes
+ok 17 - binding, write, listener and disposal failures retain bounded reason codes
+  ---
+  duration_ms: 1.905321
+  ...
+# Subtest: screenshot distinguishes metadata deadline, native deadline and native failure without chart loss
+ok 18 - screenshot distinguishes metadata deadline, native deadline and native failure without chart loss
+  ---
+  duration_ms: 31.718043
+  ...
+# Subtest: duplicate, stale, oversized and malformed browser chunks fail closed with reasons
+ok 19 - duplicate, stale, oversized and malformed browser chunks fail closed with reasons
+  ---
+  duration_ms: 3.046521
+  ...
+# Subtest: owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish
+ok 20 - owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish
+  ---
+  duration_ms: 23.733256
+  ...
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 21 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 2.403674
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 22 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 0.736651
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 23 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 1.113416
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 24 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 0.799909
+  ...
+# Subtest: HTTP failures remain failed evidence in final source and collection summaries
+ok 25 - HTTP failures remain failed evidence in final source and collection summaries
+  ---
+  duration_ms: 0.788707
+  ...
+# Subtest: Page close during binding setup leaves no eventual binding or init handle
+ok 26 - Page close during binding setup leaves no eventual binding or init handle
+  ---
+  duration_ms: 0.722544
+  ...
+# Subtest: optional PNG artifact failure never becomes mandatory chart loss
+ok 27 - optional PNG artifact failure never becomes mandatory chart loss
+  ---
+  duration_ms: 0.616919
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 155.400959

@@ -1,0 +1,68 @@
+TAP version 13
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 1 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 4.346241
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 2 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 1.311811
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 3 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 1.251956
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 4 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 1.210362
+  ...
+# Subtest: HTTP failures remain failed evidence in final source and collection summaries
+ok 5 - HTTP failures remain failed evidence in final source and collection summaries
+  ---
+  duration_ms: 0.921995
+  ...
+# Subtest: Page close during binding setup leaves no eventual binding or init handle
+ok 6 - Page close during binding setup leaves no eventual binding or init handle
+  ---
+  duration_ms: 0.878589
+  ...
+# Subtest: optional PNG artifact failure never becomes mandatory chart loss
+ok 7 - optional PNG artifact failure never becomes mandatory chart loss
+  ---
+  duration_ms: 0.677462
+  ...
+# Subtest: PNG above the frozen importer's 2 MiB limit stays unavailable without an import reference
+not ok 8 - PNG above the frozen importer's 2 MiB limit stays unavailable without an import reference
+  ---
+  duration_ms: 10.058859
+  location: '/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs:241:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'ok'
+    - 'unavailable'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'unavailable'
+  actual: 'ok'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs:251:12)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29.561125

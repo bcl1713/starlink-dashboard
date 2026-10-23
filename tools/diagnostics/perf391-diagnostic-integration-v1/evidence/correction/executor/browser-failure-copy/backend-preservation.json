@@ -1,0 +1,23 @@
+{
+  "artifacts": {},
+  "complete": false,
+  "errors": [
+    "RuntimeError: command failure: /tmp/perf391-smoke-408-perf391-executor-fixture-c42mvod7/command-18.log: ",
+    "ValueError: backend artifact unavailable: backend-stats.json"
+  ],
+  "stats": null,
+  "steps": [
+    {
+      "cap_seconds": 8,
+      "outcome": "ok",
+      "phase": "stop-backend"
+    },
+    {
+      "cap_seconds": 3,
+      "outcome": "unavailable",
+      "phase": "copy-final-backend",
+      "reason": "RuntimeError: command failure: /tmp/perf391-smoke-408-perf391-executor-fixture-c42mvod7/command-18.log: "
+    }
+  ],
+  "zero_loss": false
+}

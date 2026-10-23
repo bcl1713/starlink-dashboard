@@ -1,0 +1,150 @@
+TAP version 13
+# Subtest: joins by Request identity through reordered callbacks; body APIs never used
+ok 1 - joins by Request identity through reordered callbacks; body APIs never used
+  ---
+  duration_ms: 3.457297
+  ...
+# Subtest: missing callbacks and saturation remain loss; cancellation clears owned jobs
+ok 2 - missing callbacks and saturation remain loss; cancellation clears owned jobs
+  ---
+  duration_ms: 3.124987
+  ...
+# Subtest: binding reassembles out-of-order bounded chunks without forging browser timestamps
+ok 3 - binding reassembles out-of-order bounded chunks without forging browser timestamps
+  ---
+  duration_ms: 1.384006
+  ...
+# Subtest: screenshots require stable commit and geometry and never retry ambiguity
+ok 4 - screenshots require stable commit and geometry and never retry ambiguity
+  ---
+  duration_ms: 1.406747
+  ...
+# Subtest: viewport changes, hidden panels, collector failures and close invalidate capture
+ok 5 - viewport changes, hidden panels, collector failures and close invalidate capture
+  ---
+  duration_ms: 1.457286
+  ...
+# Subtest: opt-in build helper refuses generic or non-synthetic frontend builds
+ok 6 - opt-in build helper refuses generic or non-synthetic frontend builds
+  ---
+  duration_ms: 4.955782
+  ...
+# Subtest: unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+ok 7 - unmount, DPR mismatch, artifact loss, and eight shared screenshots cannot qualify paint
+  ---
+  duration_ms: 1.643736
+  ...
+# Subtest: collector callbacks hang only until the total deadline and cannot keep close alive
+ok 8 - collector callbacks hang only until the total deadline and cannot keep close alive
+  ---
+  duration_ms: 0.355396
+  ...
+# Subtest: successful terminal callback without response metadata remains incomplete loss on close
+ok 9 - successful terminal callback without response metadata remains incomplete loss on close
+  ---
+  duration_ms: 0.478612
+  ...
+# Subtest: host refuses a ninth concurrent binding artifact and cancels the owned waiters
+ok 10 - host refuses a ninth concurrent binding artifact and cancels the owned waiters
+  ---
+  duration_ms: 1.349609
+  ...
+# Subtest: request object token allocation does not create phantom host event sequence gaps
+ok 11 - request object token allocation does not create phantom host event sequence gaps
+  ---
+  duration_ms: 0.944249
+  ...
+# Subtest: a total sink deadline aborts its signal and never replaces it with more jobs
+ok 12 - a total sink deadline aborts its signal and never replaces it with more jobs
+  ---
+  duration_ms: 25.118503
+  ...
+# Subtest: navigation with identical local plot IDs cannot qualify a screenshot from a different document
+ok 13 - navigation with identical local plot IDs cannot qualify a screenshot from a different document
+  ---
+  duration_ms: 0.849524
+  ...
+# Subtest: cleanup disposes the pinned Playwright binding and init-script handles exactly once
+ok 14 - cleanup disposes the pinned Playwright binding and init-script handles exactly once
+  ---
+  duration_ms: 0.236766
+  ...
+# Subtest: close settles all owned capture wrappers and releases the shared screenshot slot
+ok 15 - close settles all owned capture wrappers and releases the shared screenshot slot
+  ---
+  duration_ms: 0.608755
+  ...
+# Subtest: interrupted assembly retains its pre-close counters and exact loss reason
+ok 16 - interrupted assembly retains its pre-close counters and exact loss reason
+  ---
+  duration_ms: 0.945761
+  ...
+# Subtest: binding, write, listener and disposal failures retain bounded reason codes
+ok 17 - binding, write, listener and disposal failures retain bounded reason codes
+  ---
+  duration_ms: 1.505496
+  ...
+# Subtest: screenshot distinguishes metadata deadline, native deadline and native failure without chart loss
+ok 18 - screenshot distinguishes metadata deadline, native deadline and native failure without chart loss
+  ---
+  duration_ms: 31.187217
+  ...
+# Subtest: duplicate, stale, oversized and malformed browser chunks fail closed with reasons
+ok 19 - duplicate, stale, oversized and malformed browser chunks fail closed with reasons
+  ---
+  duration_ms: 3.285453
+  ...
+# Subtest: owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish
+ok 20 - owner retains actual selected state and final guard facts for absent, invalid and incomplete Finish
+  ---
+  duration_ms: 23.668252
+  ...
+# Subtest: artifact failure remains optional and the screenshot uses the remaining total budget
+ok 21 - artifact failure remains optional and the screenshot uses the remaining total budget
+  ---
+  duration_ms: 61.352537
+  ...
+# Subtest: collection closes real Stage 3A binding jobs and hashes artifacts
+ok 22 - collection closes real Stage 3A binding jobs and hashes artifacts
+  ---
+  duration_ms: 2.285661
+  ...
+# Subtest: bounded collection saturation and abort never publish a complete artifact
+ok 23 - bounded collection saturation and abort never publish a complete artifact
+  ---
+  duration_ms: 0.660823
+  ...
+# Subtest: owner shutdown cancels and awaits the source observer before final summary
+ok 24 - owner shutdown cancels and awaits the source observer before final summary
+  ---
+  duration_ms: 0.959724
+  ...
+# Subtest: close during browser binding setup disposes the eventual handles
+ok 25 - close during browser binding setup disposes the eventual handles
+  ---
+  duration_ms: 0.667379
+  ...
+# Subtest: HTTP failures remain failed evidence in final source and collection summaries
+ok 26 - HTTP failures remain failed evidence in final source and collection summaries
+  ---
+  duration_ms: 0.709061
+  ...
+# Subtest: Page close during binding setup leaves no eventual binding or init handle
+ok 27 - Page close during binding setup leaves no eventual binding or init handle
+  ---
+  duration_ms: 0.629009
+  ...
+# Subtest: optional PNG artifact failure never becomes mandatory chart loss
+ok 28 - optional PNG artifact failure never becomes mandatory chart loss
+  ---
+  duration_ms: 0.567785
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 209.301368

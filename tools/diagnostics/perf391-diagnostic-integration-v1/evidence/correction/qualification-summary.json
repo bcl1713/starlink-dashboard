@@ -1,0 +1,98 @@
+{
+  "A_C_runtime_qualified": false,
+  "accepted_image_identities_unchanged": {
+    "A": {
+      "images": {
+        "backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+        "frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+      },
+      "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+    },
+    "C": {
+      "images": {
+        "backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+        "frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+      },
+      "receipt_sha256": "a9b7492aed2e90448d2ed8aeb4586dccd667d03e1cbb0829ff759a04537109e2"
+    }
+  },
+  "baseline": "09095e263d3d1c237309b9f2359fa879b91353d2",
+  "compiled_correction_assets": {
+    "sha256": null,
+    "state": "unbuilt"
+  },
+  "diagnostic_source_files": {
+    "tools/diagnostics/perf391-diagnostic-integration-v1/browser-probe.ts": {
+      "predecessor_sha256": "7ed1e6293a699c27c94857b57daf1edef4d1884d182a2d1e8580537c9d3dfe83",
+      "sha256": "9b9677c4e889f478d4ae07613830cd7dbf6406e51072e61c6ef11b506f7ca40e"
+    },
+    "tools/diagnostics/perf391-diagnostic-integration-v1/browser.mjs": {
+      "predecessor_sha256": "88d5af06eae54015a792762856f75dba9fb339b5a3ae6e037c30d025bf0f7926",
+      "sha256": "bd9d594381b8d937aa6ffde7a3b32c7447e2aac9257dcf273051efd13ed5ece4"
+    },
+    "tools/diagnostics/perf391-diagnostic-integration-v1/collect.mjs": {
+      "predecessor_sha256": "b57f58911c44f3d818e1b77da39ec7222a41b2e78463454b8dd1f28306733d51",
+      "sha256": "96637359ead70b0563477810cc3b21d11fda658f745e438bca037d3177dfc2ae"
+    },
+    "tools/diagnostics/perf391-diagnostic-integration-v1/tests/browser.test.mjs": {
+      "predecessor_sha256": "861fa4ec5757c00ac3a4d90b0592457286da37cb866678532350982c8a9315c6",
+      "sha256": "5e16e4b53ac57086b52bf5e959cf9a1a5aa9b64f29f38a38af8e9fb3edd09c86"
+    },
+    "tools/diagnostics/perf391-diagnostic-integration-v1/tests/collection.test.mjs": {
+      "predecessor_sha256": "5d3befe4b50a5573803676c41215b599e4c488c3fd70fa6756a7c1d01a92d4cd",
+      "sha256": "9888860d2952d88290ab258795414114d38561ad147871af682c4cd8f9e8eb08"
+    },
+    "tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/application.test.tsx": {
+      "predecessor_sha256": "ecc165ee068cac089659701bc74f4a96a61d0d9be99bdbdb75814b366416d894",
+      "sha256": "2787e184de354e6df8958981865c346bb209bb72a593f14ff1cf6f144a236f7a"
+    },
+    "tools/diagnostics/perf391-diagnostic-integration-v1/tests/frontend/probe.test.ts": {
+      "predecessor_sha256": "b921f002fe35c324039c3d94959eb01ef4b6e0848fc47e3e4e613385b0bbd0ea",
+      "sha256": "af097979e5d9fdeb65565950b8fe0a7c085222e2a30febfe715cb4a77ab4cc44"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/analyze-runtime.py": {
+      "predecessor_sha256": "c2b460ead9469a9730f94ac3555de59c5b80d6dc7cbd89aab66ff92d029d93bb",
+      "sha256": "7305600d598e84ce8ed7d72dde373e4ab8f9f14ae12a969bdb34624999f25d68"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/backend_evidence.py": {
+      "predecessor_sha256": null,
+      "sha256": "015063ee8c29bbf86d0438266d208c915d5682df6e521defe9a7ec7db653f73b"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/browser-evidence.mjs": {
+      "predecessor_sha256": null,
+      "sha256": "7981994fa5de9ad95cdd7aac95661b0e205ecccbfcb46dba9a4b7ba2676da429"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs": {
+      "predecessor_sha256": "885a11a55bb76de21d75d885928ec2b60037f0b4e7525234968c44c181d41bb0",
+      "sha256": "746038044f4304492bcc0c234d8088cda56970caacf02b8541e90412349a0c88"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/correction.py": {
+      "predecessor_sha256": null,
+      "sha256": "5fe7ab9b5f367837393cb7c3610df393963a394a9f3022e92fde1fb7b2ba033a"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py": {
+      "predecessor_sha256": "65d23ba738bb32b333a6d660b334501219cf379a50858b4282bceaad36d039f9",
+      "sha256": "a2a52d5d23d26f9b90044f8db28373e28a6997059490eba04574a5c10c73fc79"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py": {
+      "predecessor_sha256": "d787f12cc89907302e9d3d49d55739ea4d01abfa06e15d940141c0da859a45dc",
+      "sha256": "71921908357d2bc69a44059f04a8a16af8f66d0e05b2fee13ef2ebc2898f804a"
+    },
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_node_identity.py": {
+      "predecessor_sha256": "af94e5eb8b3633271331ee3edac2a4430ffdbc45017cbad13cb6373dc213ce89",
+      "sha256": "0b44d66dbab1b4197bdc4209be4cc69af602ea26082113dd72fc482641e076d5"
+    }
+  },
+  "runtime_executions": 0,
+  "source_commit": "31b1fbbfded503344e9df653ba148850a2e69f95",
+  "source_overlay_sha256": "43a28519858ed545e5fe2ed8720a1437985b40e4dd49f8d3675b5ea5f954a970",
+  "verification": {
+    "A_panel_and_request": 11,
+    "C_panel_and_request": 11,
+    "new_ruff_findings": 0,
+    "node_focused": 29,
+    "probe_binding_collector_real_finish": 10,
+    "python_focused": 21,
+    "unchanged_baseline_ruff_findings": 12
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "adopted_processes": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "536707"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 536707,
+      "start_id": "217925692"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "536712"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 536712,
+      "start_id": "217925696"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "536713"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 536713,
+      "start_id": "217925700"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "536716"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 536716,
+      "start_id": "217925704"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "536717"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 536717,
+      "start_id": "217925708"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "536722"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 536722,
+      "start_id": "217925718"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [
+    "perf391-smoke-408-a-assets"
+  ],
+  "errors": [],
+  "exclusive_subreaper": false,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-s_qmc4dg/verification-owner"
+  ],
+  "owner": {
+    "pgid": 536003,
+    "pid": 536003,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "217924925"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-s_qmc4dg/fake.py",
+        "[\"/fixture/node\", \"--version\"]",
+        "/tmp/perf391-executor-fixture-s_qmc4dg",
+        "browser-failure-copy-timeout"
+      ],
+      "pgid": 536707,
+      "pid": 536707,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217925692",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-s_qmc4dg/fake.py",
+        "[\"docker\", \"image\", \"inspect\", \"sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\", \"--format\", \"{{json .}}\"]",
+        "/tmp/perf391-executor-fixture-s_qmc4dg",
+        "browser-failure-copy-timeout"
+      ],
+      "pgid": 536712,
+      "pid": 536712,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217925696",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-s_qmc4dg/fake.py",
+        "[\"docker\", \"image\", \"inspect\", \"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\", \"--format\", \"{{json .}}\"]",
+        "/tmp/perf391-executor-fixture-s_qmc4dg",
+        "browser-failure-copy-timeout"
+      ],
+      "pgid": 536713,
+      "pid": 536713,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217925700",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-s_qmc4dg/fake.py",
+        "[\"docker\", \"create\", \"--name\", \"perf391-smoke-408-a-assets\", \"--label\", \"com.docker.compose.project=perf391-smoke-408-a\", \"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\"]",
+        "/tmp/perf391-executor-fixture-s_qmc4dg",
+        "browser-failure-copy-timeout"
+      ],
+      "pgid": 536716,
+      "pid": 536716,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217925704",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-s_qmc4dg/fake.py",
+        "[\"docker\", \"cp\", \"perf391-smoke-408-a-assets:/usr/share/nginx/html/.\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-s_qmc4dg/image-assets\"]",
+        "/tmp/perf391-executor-fixture-s_qmc4dg",
+        "browser-failure-copy-timeout"
+      ],
+      "pgid": 536717,
+      "pid": 536717,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217925708",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-s_qmc4dg/fake.py",
+        "[\"docker\", \"rm\", \"perf391-smoke-408-a-assets\"]",
+        "/tmp/perf391-executor-fixture-s_qmc4dg",
+        "browser-failure-copy-timeout"
+      ],
+      "pgid": 536722,
+      "pid": 536722,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217925718",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#offline-test",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

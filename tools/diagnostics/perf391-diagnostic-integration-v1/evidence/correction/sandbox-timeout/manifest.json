@@ -1,0 +1,427 @@
+{
+  "adopted_processes": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "21"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 21,
+      "start_id": "217852143"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "22"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 22,
+      "start_id": "217852147"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "23"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 23,
+      "start_id": "217852151"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "24"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 24,
+      "start_id": "217852155"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "25"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 25,
+      "start_id": "217852159"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "26"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 26,
+      "start_id": "217852163"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "27"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 27,
+      "start_id": "217852168"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "28"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 28,
+      "start_id": "217852172"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "29"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 29,
+      "start_id": "217852176"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "30"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 30,
+      "start_id": "217852180"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "31"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 31,
+      "start_id": "217852185"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [
+    {
+      "cgroup": "/sys/fs/cgroup/offline-fixture",
+      "container": "fixture-cid",
+      "host_pid": 13,
+      "host_start_id": "217851027",
+      "pid_namespace": "pid:[4026533972]",
+      "status": "Name:\tpython\nUmask:\t0002\nState:\tR (running)\nTgid:\t13\nNgid:\t0\nPid:\t13\nPPid:\t12\nTracerPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t64\nGroups:\t1002 \nNStgid:\t13\nNSpid:\t13\nNSpgid:\t12\nNSsid:\t1\nKthread:\t0\nVmPeak:\t  192380 kB\nVmSize:\t  126860 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   42972 kB\nVmRSS:\t   40752 kB\nRssAnon:\t   27204 kB\nRssFile:\t   13548 kB\nRssShmem:\t       0 kB\nVmData:\t   35516 kB\nVmStk:\t     136 kB\nVmExe:\t   10516 kB\nVmLib:\t    3120 kB\nVmPTE:\t     160 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t2\nSigQ:\t1/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000100004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t49\nnonvoluntary_ctxt_switches:\t3\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/offline-fixture",
+      "container": "fixture-cid",
+      "host_pid": 13,
+      "host_start_id": "217851027",
+      "pid_namespace": "pid:[4026533972]",
+      "status": "Name:\tpython\nUmask:\t0002\nState:\tR (running)\nTgid:\t13\nNgid:\t0\nPid:\t13\nPPid:\t12\nTracerPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t64\nGroups:\t1002 \nNStgid:\t13\nNSpid:\t13\nNSpgid:\t12\nNSsid:\t1\nKthread:\t0\nVmPeak:\t  192380 kB\nVmSize:\t  126860 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   42972 kB\nVmRSS:\t   40752 kB\nRssAnon:\t   27204 kB\nRssFile:\t   13548 kB\nRssShmem:\t       0 kB\nVmData:\t   35516 kB\nVmStk:\t     136 kB\nVmExe:\t   10516 kB\nVmLib:\t    3120 kB\nVmPTE:\t     160 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t2\nSigQ:\t1/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000100004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t55\nnonvoluntary_ctxt_switches:\t3\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/offline-fixture",
+      "container": "fixture-cid",
+      "host_pid": 13,
+      "host_start_id": "217851027",
+      "pid_namespace": "pid:[4026533972]",
+      "status": "Name:\tpython\nUmask:\t0002\nState:\tR (running)\nTgid:\t13\nNgid:\t0\nPid:\t13\nPPid:\t12\nTracerPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t64\nGroups:\t1002 \nNStgid:\t13\nNSpid:\t13\nNSpgid:\t12\nNSsid:\t1\nKthread:\t0\nVmPeak:\t  192380 kB\nVmSize:\t  126860 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   42972 kB\nVmRSS:\t   40752 kB\nRssAnon:\t   27204 kB\nRssFile:\t   13548 kB\nRssShmem:\t       0 kB\nVmData:\t   35516 kB\nVmStk:\t     136 kB\nVmExe:\t   10516 kB\nVmLib:\t    3120 kB\nVmPTE:\t     160 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t2\nSigQ:\t1/250850\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000100004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tfffff\nCpus_allowed_list:\t0-19\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t61\nnonvoluntary_ctxt_switches:\t3\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n"
+    }
+  ],
+  "errors": [],
+  "exclusive_subreaper": false,
+  "listeners": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "networks": [
+    "perf391-smoke-408-a_default"
+  ],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz"
+  ],
+  "owner": {
+    "pgid": 12,
+    "pid": 13,
+    "pid_namespace": "pid:[4026533972]",
+    "start_id": "217851027"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python\", \"/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-built-images-v1/evidence/A/tools/acceptance/overview_history/seed.py\", \"--output\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/history.openmetrics\", \"--end\", \"1792776922\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 21,
+      "pid": 21,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852143",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.override.json\", \"run\", \"--rm\", \"--no-deps\", \"--name\", \"perf391-smoke-408-a-seed\", \"--entrypoint\", \"/bin/promtool\", \"prometheus\", \"tsdb\", \"create-blocks-from\", \"openmetrics\", \"/seed/history.openmetrics\", \"/prometheus\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 22,
+      "pid": 22,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852147",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.override.json\", \"up\", \"-d\", \"--no-build\", \"--pull\", \"never\", \"--wait\", \"--wait-timeout\", \"16\", \"prometheus\", \"starlink-location\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 23,
+      "pid": 23,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852151",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.override.json\", \"up\", \"-d\", \"--no-build\", \"--pull\", \"never\", \"--no-deps\", \"mission-planner\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 24,
+      "pid": 24,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852155",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.override.json\", \"ps\", \"-q\", \"starlink-location\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 25,
+      "pid": 25,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852159",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"inspect\", \"fixture-cid\", \"--format\", \"{{json .State}}\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 26,
+      "pid": 26,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852163",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.override.json\", \"ps\", \"-q\", \"prometheus\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 27,
+      "pid": 27,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852168",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"inspect\", \"fixture-cid\", \"--format\", \"{{json .State}}\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 28,
+      "pid": 28,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852172",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/compose.override.json\", \"ps\", \"-q\", \"mission-planner\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 29,
+      "pid": 29,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852176",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"docker\", \"inspect\", \"fixture-cid\", \"--format\", \"{{json .State}}\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 30,
+      "pid": 30,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217852180",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-833vw_wz/fake.py",
+        "[\"/fixture/node\", \"/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz/browser-options.json\"]",
+        "/tmp/perf391-executor-fixture-833vw_wz",
+        "browser-failure"
+      ],
+      "pgid": 31,
+      "pid": 31,
+      "reaped": true,
+      "returncode": 1,
+      "start_id": "217852185",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "resource_intent": {
+    "docker_containers": [
+      "perf391-smoke-408-a-seed",
+      "perf391-smoke-408-a-starlink-location-1",
+      "perf391-smoke-408-a-mission-planner-1",
+      "perf391-smoke-408-a-prometheus-1"
+    ],
+    "intent_before_spawn": true,
+    "networks": [
+      "perf391-smoke-408-a_default"
+    ],
+    "paths": [
+      "/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz"
+    ],
+    "pid_pgid_start_id_and_command_required": true,
+    "ports": [
+      38080,
+      38081,
+      38082,
+      38083
+    ],
+    "volumes": [
+      "perf391-smoke-408-a_data",
+      "perf391-smoke-408-a_routes",
+      "perf391-smoke-408-a_metrics"
+    ]
+  },
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#offline-test",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ]
+}

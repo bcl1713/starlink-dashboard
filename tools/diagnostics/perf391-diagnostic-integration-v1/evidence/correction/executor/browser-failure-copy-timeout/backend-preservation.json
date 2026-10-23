@@ -1,0 +1,23 @@
+{
+  "artifacts": {},
+  "complete": false,
+  "errors": [
+    "TimeoutError: command deadline/signal: ['timeout', '--kill-after=0.05s', '0.14331894749775528s']",
+    "ValueError: backend artifact unavailable: backend-stats.json"
+  ],
+  "stats": null,
+  "steps": [
+    {
+      "cap_seconds": 0.2999950647354126,
+      "outcome": "ok",
+      "phase": "stop-backend"
+    },
+    {
+      "cap_seconds": 0.2433189474977553,
+      "outcome": "unavailable",
+      "phase": "copy-final-backend",
+      "reason": "TimeoutError: command deadline/signal: ['timeout', '--kill-after=0.05s', '0.14331894749775528s']"
+    }
+  ],
+  "zero_loss": false
+}

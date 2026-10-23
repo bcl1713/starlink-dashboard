@@ -1,0 +1,42 @@
+{
+  "host_process_visibility": true,
+  "recorded_pid_start_identities_checked": 255,
+  "recorded_survivors": [],
+  "unexpected_task_processes": [],
+  "docker_host_preserved": "unix:///run/user/1002/docker.sock",
+  "docker_resources_started": false,
+  "scoped_docker_inventory": {
+    "containers": {
+      "returncode": 0,
+      "ids": [],
+      "error": ""
+    },
+    "networks": {
+      "returncode": 0,
+      "ids": [],
+      "error": ""
+    },
+    "volumes": {
+      "returncode": 0,
+      "ids": [],
+      "error": ""
+    }
+  },
+  "removed_paths": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/node_modules",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.ruff_cache",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/correction-roles",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/vitest-focused",
+    "/tmp/perf391-correction-qualify.py",
+    "/tmp/perf391-correction-edit-tests.py",
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-833vw_wz",
+    "/tmp/perf391-executor-fixture-833vw_wz"
+  ],
+  "retained_worktree": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction",
+  "purpose": "open draft PR review; no runtime resources",
+  "remaining_owned_temporary_paths": [],
+  "listener_inventory_command": "ss -ltnp; filter by surviving owned PID/start identities",
+  "listener_inventory_returncode": 0,
+  "task_listeners": []
+}

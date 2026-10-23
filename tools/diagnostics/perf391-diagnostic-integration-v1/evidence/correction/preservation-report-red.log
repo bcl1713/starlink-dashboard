@@ -1,0 +1,15 @@
+F
+======================================================================
+FAIL: test_browser_failure_export_faults_remain_unavailable_and_cleanup_runs (test_executor.ExecutorTests.test_browser_failure_export_faults_remain_unavailable_and_cleanup_runs) (scenario='browser-failure-report')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py", line 310, in test_browser_failure_export_faults_remain_unavailable_and_cleanup_runs
+    self.run_case(scenario)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py", line 205, in run_case
+    self.assertTrue(
+AssertionError: False is not true : OSError('offline report write failure')
+
+----------------------------------------------------------------------
+Ran 1 test in 5.738s
+
+FAILED (failures=1)

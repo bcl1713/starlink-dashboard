@@ -1,0 +1,107 @@
+I001 [*] Import block is un-sorted or un-formatted
+  --> tools/diagnostics/perf391-runtime-preparation-v1/analyze-runtime.py:3:1
+   |
+ 1 |   """Offline receipt-bound importer through the unchanged Stage 5/#407 API."""
+ 2 |
+ 3 | / import argparse
+ 4 | | import json
+ 5 | | from pathlib import Path
+ 6 | |
+ 7 | | from prepare import REPO, sha, verify_overlay, write, check_release
+ 8 | | from launcher import validate_receipt
+ 9 | | from collector import prepare_collector
+10 | | from evidence import Evidence
+11 | | from integration import Integration
+12 | | from analyze import analyze
+13 | | from run import read_jsonl
+14 | | from verify_evidence import validate_document, verify_analysis, verify_artifacts
+   | |________________________________________________________________________________^
+help: Organize imports
+   |
+6  |
+   - from prepare import REPO, sha, verify_overlay, write, check_release
+   - from launcher import validate_receipt
+7  + from analyze import analyze
+8  | from collector import prepare_collector
+9  | from evidence import Evidence
+10 | from integration import Integration
+   - from analyze import analyze
+11 + from launcher import validate_receipt
+12 + from prepare import REPO, check_release, sha, verify_overlay, write
+13 | from run import read_jsonl
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py:7:1
+   |
+ 5 |   """
+ 6 |
+ 7 | / import argparse
+ 8 | | import asyncio
+ 9 | | import ctypes
+10 | | import json
+11 | | import os
+12 | | from pathlib import Path
+13 | | import signal
+14 | | import socket
+15 | | import sys
+16 | | import time
+17 | | import uuid
+18 | |
+19 | | from prepare import REPO, check_release, sha, write, browser_tree
+20 | | from launcher import launch_plan, validate_receipt
+21 | | from runtime_identity import verify_runtime_overlay, verify_runtime_identity
+22 | | from frontend_readiness import wait_ready, snapshot, bounded_argv
+23 | | from backend_evidence import preserve_backend
+24 | | from correction import require_runtime_assets
+   | |_____________________________________________^
+25 |
+26 |   LOCK_PATH = Path("/tmp/perf391-smoke-408.lock")
+   |
+help: Organize imports
+   |
+11 | import os
+   - from pathlib import Path
+12 | import signal
+--------------------------------------------------------------------------------
+16 | import uuid
+17 + from pathlib import Path
+18 |
+   - from prepare import REPO, check_release, sha, write, browser_tree
+   - from launcher import launch_plan, validate_receipt
+   - from runtime_identity import verify_runtime_overlay, verify_runtime_identity
+   - from frontend_readiness import wait_ready, snapshot, bounded_argv
+19 | from backend_evidence import preserve_backend
+20 | from correction import require_runtime_assets
+21 + from frontend_readiness import bounded_argv, snapshot, wait_ready
+22 + from launcher import launch_plan, validate_receipt
+23 + from prepare import REPO, browser_tree, check_release, sha, write
+24 + from runtime_identity import verify_runtime_identity, verify_runtime_overlay
+25 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py:79:9
+   |
+77 |           if ctypes.CDLL(None).prctl(36, 1, 0, 0, 0) != 0:
+78 |               raise RuntimeError("exclusive subreaper required")
+79 | /         from owner import Owner
+80 | |         from collector import prepare_collector
+81 | |         import host
+   | |___________________^
+82 |
+83 |           owner = Owner(
+   |
+help: Organize imports
+   |
+78 |             raise RuntimeError("exclusive subreaper required")
+79 +         import host
+80 +         from collector import prepare_collector
+81 |         from owner import Owner
+   -         from collector import prepare_collector
+   -         import host
+82 |
+   |
+
+Found 3 errors.
+[*] 3 fixable with `--fix`.

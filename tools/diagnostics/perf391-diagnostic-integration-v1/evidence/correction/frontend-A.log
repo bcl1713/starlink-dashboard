@@ -1,0 +1,26 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/application.test.tsx (8 tests | 1 failed) 162ms
+   × retains the authentic full-size history and captures the real panel's uPlot inputs 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/application.test.tsx > retains the authentic full-size history and captures the real panel's uPlot inputs
+TypeError: The URL must be of scheme file
+ ❯ tests/frontend/application.test.tsx:270:5
+    268|   const { readFileSync } = await import("node:fs");
+    269|   const path = new URL(
+    270|     "../../../perf391-a-network-smoke-v1/evidence/runtime/browser/node…
+       |     ^
+    271|     import.meta.url,
+    272|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 10 passed (11)
+   Start at  17:45:30
+   Duration  1.93s (transform 168ms, setup 28ms, import 392ms, tests 241ms, environment 1.08s)
+

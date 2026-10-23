@@ -1,0 +1,23 @@
+test_browser_failure_preserves_backend_export_before_volume_teardown (test_executor.ExecutorTests.test_browser_failure_preserves_backend_export_before_volume_teardown) ... ERROR
+
+======================================================================
+ERROR: test_browser_failure_preserves_backend_export_before_volume_teardown (test_executor.ExecutorTests.test_browser_failure_preserves_backend_export_before_volume_teardown)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py", line 299, in test_browser_failure_preserves_backend_export_before_volume_teardown
+    self.run_case("browser-failure")
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py", line 236, in run_case
+    preserved = json.loads((root / "backend-preservation.json").read_bytes())
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/pathlib.py", line 1050, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/perf391-smoke-408-perf391-executor-fixture-dv62x721/backend-preservation.json'
+
+----------------------------------------------------------------------
+Ran 1 test in 1.990s
+
+FAILED (errors=1)

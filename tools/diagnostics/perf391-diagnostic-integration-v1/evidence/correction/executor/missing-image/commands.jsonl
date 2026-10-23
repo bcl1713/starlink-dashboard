@@ -1,0 +1,4 @@
+["/fixture/node", "--version"]
+["docker", "image", "inspect", "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd", "--format", "{{json .}}"]
+["docker", "ps", "-aq", "--filter", "name=^/perf391-smoke-408-a-assets$", "--filter", "label=com.docker.compose.project=perf391-smoke-408-a"]
+["docker", "compose", "-p", "perf391-smoke-408-a", "-f", "/tmp/perf391-smoke-408-perf391-executor-fixture-pupa44xk/compose.base.json", "-f", "/tmp/perf391-smoke-408-perf391-executor-fixture-pupa44xk/compose.override.json", "down", "--volumes", "--remove-orphans", "--timeout", "2"]

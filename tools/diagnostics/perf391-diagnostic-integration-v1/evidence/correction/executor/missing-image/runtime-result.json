@@ -1,0 +1,8 @@
+{
+  "backend_preservation": null,
+  "cleanup_error": null,
+  "diagnostic_error": null,
+  "external_host_audit_required": true,
+  "failure": "RuntimeError: command failure: /tmp/perf391-smoke-408-perf391-executor-fixture-pupa44xk/command-02.log: ",
+  "owner_status": "clean"
+}

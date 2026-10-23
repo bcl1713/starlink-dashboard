@@ -1,0 +1,15 @@
+F..............
+======================================================================
+FAIL: test_browser_failure_export_faults_remain_unavailable_and_cleanup_runs (test_executor.ExecutorTests.test_browser_failure_export_faults_remain_unavailable_and_cleanup_runs) (scenario='browser-failure-stop')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py", line 346, in test_browser_failure_export_faults_remain_unavailable_and_cleanup_runs
+    self.run_case(scenario)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py", line 268, in run_case
+    self.assertIsNone(preserved["stats"])
+AssertionError: {'buffered': 0, 'dropped': 0, 'failures': 0, 'invalid': 0, 'runtime_boundary_drained': True, 'token_evictions': 0, 'token_unavailable': 0} is not None
+
+----------------------------------------------------------------------
+Ran 15 tests in 25.764s
+
+FAILED (failures=1)

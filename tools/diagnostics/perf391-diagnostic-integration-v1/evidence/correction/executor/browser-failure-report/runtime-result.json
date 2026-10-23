@@ -1,0 +1,13 @@
+{
+  "backend_preservation": {
+    "complete": false,
+    "error": "OSError: offline report write failure",
+    "stats": null,
+    "zero_loss": false
+  },
+  "cleanup_error": null,
+  "diagnostic_error": null,
+  "external_host_audit_required": true,
+  "failure": "RuntimeError: browser smoke failure",
+  "owner_status": "clean"
+}

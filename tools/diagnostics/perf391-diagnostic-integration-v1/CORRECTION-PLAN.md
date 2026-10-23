@@ -30,7 +30,7 @@ stays intact.
       volume removal; require present final counters, retain missing evidence as
       unavailable, retain original failure. Verify owned workers are reaped even
       on export faults.
-- [ ] Run focused tests with wall-clock limits, scoped format/syntax checks and
+- [x] Run focused tests with wall-clock limits, scoped format/syntax checks and
       independent artifact hash comparisons. Record exact source/evidence hashes
       in a new correction layer; do not rewrite predecessor manifests or
       compiled assets. Review diff, push to draft #408, verify cleanup and stop

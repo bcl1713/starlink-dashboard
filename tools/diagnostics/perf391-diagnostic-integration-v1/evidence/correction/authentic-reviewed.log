@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1
+
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  17:51:37
+   Duration  895ms (transform 141ms, setup 21ms, import 64ms, tests 719ms, environment 0ms)
+

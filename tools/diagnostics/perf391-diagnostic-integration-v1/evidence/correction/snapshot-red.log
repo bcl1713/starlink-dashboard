@@ -1,0 +1,41 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-diagnostic-integration-v1
+
+ ❯ tests/frontend/probe.test.ts (9 tests | 1 failed) 85ms
+   × captures authentic full-ID 1801-point commits through binding and collector 67ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/frontend/probe.test.ts > captures authentic full-ID 1801-point commits through binding and collector
+AssertionError: expected { seq: 6, lost: 1, failed: true, …(5) } to match object { failed: false, lost: +0, …(2) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "failed": false,
++   "failed": true,
+    "inflight": 0,
+-   "lost": 0,
++   "lost": 1,
+    "pending": 0,
+  }
+
+ ❯ settle tests/frontend/probe.test.ts:238:29
+    236|     for (let i = 0; i < 300 && (probe.summary().pending || probe.summa…
+    237|       await new Promise(resolve => setImmediate(resolve));
+    238|     expect(probe.summary()).toMatchObject({ failed: false, lost: 0, pe…
+       |                             ^
+    239|   };
+    240|   try {
+ ❯ tests/frontend/probe.test.ts:251:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  17:30:05
+   Duration  276ms (transform 81ms, setup 20ms, import 64ms, tests 85ms, environment 0ms)
+

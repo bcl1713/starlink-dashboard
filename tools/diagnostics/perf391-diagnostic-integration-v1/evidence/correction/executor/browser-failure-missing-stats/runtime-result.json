@@ -1,0 +1,28 @@
+{
+  "backend_preservation": {
+    "artifacts": {},
+    "complete": false,
+    "errors": [
+      "ValueError: backend artifact unavailable: backend-stats.json"
+    ],
+    "stats": null,
+    "steps": [
+      {
+        "cap_seconds": 8,
+        "outcome": "ok",
+        "phase": "stop-backend"
+      },
+      {
+        "cap_seconds": 3,
+        "outcome": "ok",
+        "phase": "copy-final-backend"
+      }
+    ],
+    "zero_loss": false
+  },
+  "cleanup_error": null,
+  "diagnostic_error": null,
+  "external_host_audit_required": true,
+  "failure": "RuntimeError: browser smoke failure",
+  "owner_status": "clean"
+}

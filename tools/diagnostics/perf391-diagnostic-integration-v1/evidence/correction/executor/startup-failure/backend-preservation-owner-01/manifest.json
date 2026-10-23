@@ -1,0 +1,74 @@
+{
+  "adopted_processes": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "538094"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 538094,
+      "start_id": "217927387"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": false,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-74h_o6ae/backend-preservation-owner-01"
+  ],
+  "owner": {
+    "pgid": 536003,
+    "pid": 536003,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "217924925"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-74h_o6ae/fake.py",
+        "[\"timeout\", \"--kill-after=0.05s\", \"7.9s\", \"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-74h_o6ae/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-74h_o6ae/compose.override.json\", \"stop\", \"-t\", \"6\", \"starlink-location\"]",
+        "/tmp/perf391-executor-fixture-74h_o6ae",
+        "startup-failure"
+      ],
+      "pgid": 538094,
+      "pid": 538094,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217927387",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#offline-test",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

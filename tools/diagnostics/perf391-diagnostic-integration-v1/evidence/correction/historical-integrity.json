@@ -1,0 +1,15 @@
+{
+  "historical_manifest_sha256": "c7ed335f173fdea0d3f9534eb2b9fb3e4d5196fc4a6083c9c7c4ccc68513e258",
+  "historical_raw_jsonl_sha256": "6960bf04e51c115f17de5b535a89a42d3f12b653d2049c5095840a6baa398b13",
+  "verified_current_historical_evidence_files": 117,
+  "verified_external_predecessor_pins": 24,
+  "external_source_pins_explicitly_replaced_in_new_layer": [
+    "tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+    "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py"
+  ],
+  "verified_original_node_hashes": 13,
+  "tracked_changes_confined_to_correction_source_inventory": true,
+  "original_acceptance": "FAIL_BROWSER_FINALIZATION_STOP",
+  "A_reruns": 0,
+  "C_runs": 0
+}

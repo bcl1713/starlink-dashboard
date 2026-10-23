@@ -1,0 +1,6 @@
+test_browser_failure_preserves_backend_export_before_volume_teardown (test_executor.ExecutorTests.test_browser_failure_preserves_backend_export_before_volume_teardown) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.147s
+
+OK

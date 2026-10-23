@@ -1,0 +1,199 @@
+{
+  "adopted_processes": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "537408"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 537408,
+      "start_id": "217926557"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "537413"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 537413,
+      "start_id": "217926559"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "537418"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 537418,
+      "start_id": "217926561"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "537419"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 537419,
+      "start_id": "217926564"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": false,
+  "listeners": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "networks": [
+    "perf391-smoke-408-a_default"
+  ],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp"
+  ],
+  "owner": {
+    "pgid": 536003,
+    "pid": 536003,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "217924925"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-8ndzu2gp/fake.py",
+        "[\"/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python\", \"/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/tools/diagnostics/perf391-built-images-v1/evidence/A/tools/acceptance/overview_history/seed.py\", \"--output\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/history.openmetrics\", \"--end\", \"1792777666\"]",
+        "/tmp/perf391-executor-fixture-8ndzu2gp",
+        "frontend-exit"
+      ],
+      "pgid": 537408,
+      "pid": 537408,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217926557",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-8ndzu2gp/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/compose.override.json\", \"run\", \"--rm\", \"--no-deps\", \"--name\", \"perf391-smoke-408-a-seed\", \"--entrypoint\", \"/bin/promtool\", \"prometheus\", \"tsdb\", \"create-blocks-from\", \"openmetrics\", \"/seed/history.openmetrics\", \"/prometheus\"]",
+        "/tmp/perf391-executor-fixture-8ndzu2gp",
+        "frontend-exit"
+      ],
+      "pgid": 537413,
+      "pid": 537413,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217926559",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-8ndzu2gp/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/compose.override.json\", \"up\", \"-d\", \"--no-build\", \"--pull\", \"never\", \"--wait\", \"--wait-timeout\", \"16\", \"prometheus\", \"starlink-location\"]",
+        "/tmp/perf391-executor-fixture-8ndzu2gp",
+        "frontend-exit"
+      ],
+      "pgid": 537418,
+      "pid": 537418,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217926561",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-diagnostic-correction/.venv/bin/python",
+        "-B",
+        "/tmp/perf391-executor-fixture-8ndzu2gp/fake.py",
+        "[\"docker\", \"compose\", \"-p\", \"perf391-smoke-408-a\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/compose.base.json\", \"-f\", \"/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp/compose.override.json\", \"up\", \"-d\", \"--no-build\", \"--pull\", \"never\", \"--no-deps\", \"mission-planner\"]",
+        "/tmp/perf391-executor-fixture-8ndzu2gp",
+        "frontend-exit"
+      ],
+      "pgid": 537419,
+      "pid": 537419,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "217926564",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "resource_intent": {
+    "docker_containers": [
+      "perf391-smoke-408-a-seed",
+      "perf391-smoke-408-a-starlink-location-1",
+      "perf391-smoke-408-a-mission-planner-1",
+      "perf391-smoke-408-a-prometheus-1"
+    ],
+    "intent_before_spawn": true,
+    "networks": [
+      "perf391-smoke-408-a_default"
+    ],
+    "paths": [
+      "/tmp/perf391-smoke-408-perf391-executor-fixture-8ndzu2gp"
+    ],
+    "pid_pgid_start_id_and_command_required": true,
+    "ports": [
+      38080,
+      38081,
+      38082,
+      38083
+    ],
+    "volumes": [
+      "perf391-smoke-408-a_data",
+      "perf391-smoke-408-a_routes",
+      "perf391-smoke-408-a_metrics"
+    ]
+  },
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#offline-test",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ]
+}
