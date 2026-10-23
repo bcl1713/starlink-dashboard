@@ -1,0 +1,12 @@
+{
+  "excludes": [
+    "artifact-manifest.json; anchored by delivery commit"
+  ],
+  "files": {
+    "README.md": "cc10298e46f36102f50bee4b8b89ece13f2526e019b9339567c129351cdbc8bb",
+    "evidence/host-preflight.json": "60717f453232dbfc98dc87645cfee0b366ca1e2f7a5c3d0544940ec410f9b7f8",
+    "evidence/offline-preflight.json": "871e627c4f10bad29cc19a8266a29671eddca550a7fef5634a4b9517ef1f8292",
+    "host-preflight.py": "a8d11f28061752dbb8d39b91aed282fb4e5a4c81733c63d04719a4418b2288ca",
+    "preflight-stop.py": "f35380c6500aa8ef437483495aa8e42efdb680c7a5c7729caaf813104266166c"
+  }
+}
