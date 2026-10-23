@@ -1,0 +1,12 @@
+{
+  "all_other_preexisting_tracked_bytes_unchanged": true,
+  "changed_preexisting_files": [
+    "tools/diagnostics/perf391-corrected-a-smoke-v2/cleanup-checks.py",
+    "tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py",
+    "tools/diagnostics/perf391-corrected-a-smoke-v2/prepare-environment.py"
+  ],
+  "historical_evidence_unchanged": true,
+  "identity_guard_sources_unchanged": true,
+  "preexisting_tracked_files": 5593,
+  "starting_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6"
+}

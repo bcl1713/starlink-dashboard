@@ -1,0 +1,380 @@
+{
+  "A_invocations": 1,
+  "C_invocations": 0,
+  "actual_reason": "page.evaluate: Error: frontend not drained\n    at globalThis.__perf391Finish (http://127.0.0.1:38080/assets/index-HWZdjwZf.js:122:71478)\n    at eval (eval at evaluate (:311:30), <anonymous>:3:50)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+  "administrative_harness_errors": [
+    "Owner run name corrected to synthetic-corrected-a-preflight; guard preserved",
+    "Continuation receipt local variable restored before activation; no completed Owner exercise repeated"
+  ],
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6373144033",
+  "backend_final": {
+    "artifacts": {
+      "backend-stats.json": {
+        "bytes": 177,
+        "sha256": "812109cbcd9ccf214b6f3103ef33e8b75304f4686943842c15859d33b7c74082"
+      },
+      "backend.jsonl": {
+        "bytes": 653124,
+        "sha256": "c1b360a66f7ddb1967be5c6f89a90e1d35b80386ccc9892d377607a579554a14"
+      }
+    },
+    "complete": true,
+    "errors": [],
+    "stats": {
+      "buffered": 0,
+      "capacity": 8192,
+      "dropped": 0,
+      "failures": 0,
+      "high_water": 1072,
+      "invalid": 0,
+      "runtime_boundary_drained": true,
+      "token_evictions": 0,
+      "token_unavailable": 0
+    },
+    "steps": [
+      {
+        "cap_seconds": 8,
+        "outcome": "ok",
+        "phase": "stop-backend"
+      },
+      {
+        "cap_seconds": 3,
+        "outcome": "ok",
+        "phase": "copy-final-backend"
+      }
+    ],
+    "zero_loss": true
+  },
+  "chart": {
+    "backend_phases": [
+      "asgi.end",
+      "asgi.entry",
+      "asgi.headers",
+      "asgi.send.begin",
+      "asgi.send.end",
+      "history.begin",
+      "history.end"
+    ],
+    "browser_phases": [
+      "app.parse_available",
+      "app.request",
+      "app.response",
+      "browser.finished",
+      "browser.request",
+      "browser.response",
+      "history.retained",
+      "plot.commit",
+      "plot.upload",
+      "query.begin",
+      "query.success",
+      "react.commit",
+      "react.render_candidate"
+    ],
+    "commits": [
+      {
+        "artifact": {
+          "bytes": 628810,
+          "path": "artifacts/b2a914a3a887fad70d6301b0d977958503cf91bfc8dd91aee227be02e0b3d300.bin",
+          "sha256": "b2a914a3a887fad70d6301b0d977958503cf91bfc8dd91aee227be02e0b3d300"
+        },
+        "commit": "p/c29",
+        "metric": "starlink_network_latency_ms_current",
+        "snapshots": {
+          "plot": {
+            "artifact": {
+              "bytes": 91047,
+              "path": "artifacts/d4d4bb779b79ae4d27018031baa82e1bd677f5b82314e3d339e1a3f8e4c3f857.bin",
+              "sha256": "d4d4bb779b79ae4d27018031baa82e1bd677f5b82314e3d339e1a3f8e4c3f857"
+            },
+            "sha256": "d4d4bb779b79ae4d27018031baa82e1bd677f5b82314e3d339e1a3f8e4c3f857"
+          },
+          "projection": {
+            "artifact": {
+              "bytes": 90993,
+              "path": "artifacts/ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f.bin",
+              "sha256": "ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f"
+            },
+            "sha256": "ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f"
+          },
+          "retained": {
+            "artifact": {
+              "bytes": 165028,
+              "path": "artifacts/8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37.bin",
+              "sha256": "8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37"
+            },
+            "sha256": "8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37"
+          }
+        }
+      },
+      {
+        "artifact": {
+          "bytes": 628825,
+          "path": "artifacts/b4da5e23c0fbf239aa0775d46ba910e1c528e8e10e8afee37cae4deeffa6f6b1.bin",
+          "sha256": "b4da5e23c0fbf239aa0775d46ba910e1c528e8e10e8afee37cae4deeffa6f6b1"
+        },
+        "commit": "p/c30",
+        "metric": "starlink_network_latency_ms_current",
+        "snapshots": {
+          "plot": {
+            "artifact": {
+              "bytes": 91059,
+              "path": "artifacts/06cfe08fcff68e8d6baf3895da2d74bd85a4bfe0b5819e4139c821212fb7d099.bin",
+              "sha256": "06cfe08fcff68e8d6baf3895da2d74bd85a4bfe0b5819e4139c821212fb7d099"
+            },
+            "sha256": "06cfe08fcff68e8d6baf3895da2d74bd85a4bfe0b5819e4139c821212fb7d099"
+          },
+          "projection": {
+            "artifact": {
+              "bytes": 90993,
+              "path": "artifacts/ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f.bin",
+              "sha256": "ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f"
+            },
+            "sha256": "ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f"
+          },
+          "retained": {
+            "artifact": {
+              "bytes": 165028,
+              "path": "artifacts/8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37.bin",
+              "sha256": "8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37"
+            },
+            "sha256": "8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37"
+          }
+        }
+      }
+    ],
+    "request_id": "synthetic-408a/p/f306aaace6d94733/r1",
+    "state": "partial evidence preserved; no successful whole-run integrity qualification"
+  },
+  "cleanup_verified": true,
+  "collection": {
+    "browsers": [
+      {
+        "active": 0,
+        "assemblies": 0,
+        "bindingJobs": 0,
+        "bytes": 0,
+        "closed": true,
+        "failed": false,
+        "failureOverflow": 0,
+        "failures": [],
+        "jobs": 0,
+        "lost": 0,
+        "ownedOperations": 0,
+        "pending": 0,
+        "preClose": {
+          "active": 0,
+          "assemblies": 0,
+          "bindingJobs": 0,
+          "bytes": 0,
+          "closed": false,
+          "failed": false,
+          "jobs": 0,
+          "lost": 0,
+          "ownedOperations": 0,
+          "pending": 0
+        }
+      }
+    ],
+    "closed": true,
+    "complete": false,
+    "dropped": 0,
+    "sources": [
+      {
+        "cancelled": true,
+        "closed": true,
+        "completed": 4,
+        "failed": true,
+        "reason": "The operation was aborted",
+        "skipped": 0
+      }
+    ],
+    "streams": [
+      {
+        "last_seq": 60,
+        "stream_id": "synthetic-408a/p/f306aaace6d94733"
+      }
+    ]
+  },
+  "compositor": {
+    "after": {
+      "accepted": "o7",
+      "commit": "p/c30",
+      "document": "f306aaace6d94733",
+      "dpr": 1,
+      "error": false,
+      "generation": 30,
+      "height": 687,
+      "hidden": false,
+      "metric": "starlink_network_latency_ms_current",
+      "mounted": true,
+      "panel": "o6",
+      "rect": {
+        "height": 688.421875,
+        "width": 375.453125,
+        "x": 71.546875,
+        "y": 366.578125
+      },
+      "reducedMotion": false,
+      "retained": "o8",
+      "transform": "matrix(1, 0, 0, 1, -0.607505, 0)",
+      "visibility": "visible",
+      "width": 375
+    },
+    "artifact": {
+      "bytes": 23933,
+      "path": "artifacts/49d24e3ba1c2341a9626898bef9668299d91bb974c28141fbe38cae734ee9a6d.bin",
+      "sha256": "49d24e3ba1c2341a9626898bef9668299d91bb974c28141fbe38cae734ee9a6d"
+    },
+    "before": {
+      "accepted": "o7",
+      "commit": "p/c29",
+      "document": "f306aaace6d94733",
+      "dpr": 1,
+      "error": false,
+      "generation": 29,
+      "height": 687,
+      "hidden": false,
+      "metric": "starlink_network_latency_ms_current",
+      "mounted": true,
+      "panel": "o6",
+      "rect": {
+        "height": 688.421875,
+        "width": 375.453125,
+        "x": 71.546875,
+        "y": 366.578125
+      },
+      "reducedMotion": false,
+      "retained": "o8",
+      "transform": "matrix(1, 0, 0, 1, -0.543018, 0)",
+      "visibility": "visible",
+      "width": 378
+    },
+    "commit": "p/c29",
+    "outcome": "unavailable",
+    "panel": "o6",
+    "phase": "paint.artifact",
+    "physicalScanout": false,
+    "reason": "generation/viewport/loss changed",
+    "received_ns": "2185916589649273",
+    "renderer": "Playwright compositor screenshot; browser build supplied by later owner",
+    "sha256": "49d24e3ba1c2341a9626898bef9668299d91bb974c28141fbe38cae734ee9a6d",
+    "started_ns": "2185916205603532",
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    }
+  },
+  "context_regenerations": 1,
+  "deadline_policy_seconds": {
+    "forced_grace": 10,
+    "outer": 90,
+    "work": 78
+  },
+  "finish": {
+    "final": null,
+    "finishAdmitted": true,
+    "last": {
+      "frontend": {
+        "commits": [
+          {
+            "accepted": "o7",
+            "commit": "p/c30",
+            "document": "f306aaace6d94733",
+            "dpr": 1,
+            "error": false,
+            "generation": 30,
+            "height": 687,
+            "hidden": false,
+            "metric": "starlink_network_latency_ms_current",
+            "mounted": true,
+            "panel": "o6",
+            "rect": {
+              "height": 688.421875,
+              "width": 375.453125,
+              "x": 71.546875,
+              "y": 366.578125
+            },
+            "reducedMotion": false,
+            "retained": "o8",
+            "transform": "matrix(1, 0, 0, 1, -0.680401, 0)",
+            "visibility": "visible",
+            "width": 375
+          }
+        ],
+        "summary": {
+          "bytes": 0,
+          "closed": false,
+          "failed": false,
+          "inflight": 0,
+          "lost": 0,
+          "panels": 1,
+          "pending": 0,
+          "seq": 59
+        }
+      },
+      "observer": {
+        "active": 0,
+        "assemblies": 0,
+        "bindingJobs": 0,
+        "bytes": 0,
+        "closed": false,
+        "failed": false,
+        "failureOverflow": 0,
+        "failures": [],
+        "jobs": 0,
+        "lost": 0,
+        "ownedOperations": 0,
+        "pending": 0,
+        "preClose": null
+      }
+    },
+    "reason": "page.evaluate: Error: frontend not drained\n    at globalThis.__perf391Finish (http://127.0.0.1:38080/assets/index-HWZdjwZf.js:122:71478)\n    at eval (eval at evaluate (:311:30), <anonymous>:3:50)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at Ut"
+  },
+  "hashes": {
+    "evidence/completed-a/activation.json": "cf0c86a103b197069747fa55513cc105f99199718b35ba95eda9e2722fc732a1",
+    "evidence/completed-a/cleanup.json": "780520dc91f39e2d75a5e8c8d2d7d7690249a807a3f358548c8f3eb636b590fb",
+    "evidence/completed-a/post-cleanup.json": "66a1755c8863a598be183b0c048f299cf3d48b2cacae40ae717ec1c71d171299",
+    "evidence/completed-a/preflight.json": "c4cd80760f27cb5dc4d424b3f08e01839bc3b4883a6dad43c74b761f01b11ab7",
+    "evidence/completed-a/runtime/browser/frontend-finalization.json": "c5452753d51f6305abeadd254c4ad7e20435c1af3ebc840d9a2208cafa1e04fa",
+    "evidence/completed-a/runtime/browser/node/records.jsonl": "48569ab942061db475efd16983731cb5c6f9d7baa2fc8d92c09ca21a2bd369ef",
+    "evidence/completed-a/runtime/browser/node/summary.json": "2eda8ffe00c80169dcae36683ae4eddb770d0a1fca9db2c4f022853737cfeb9b",
+    "evidence/completed-a/runtime/runtime-result.json": "45186a7edc8f520006d7525400c8fa3c64d5fc8ffb3bda935ebc2e7d8a16f3b1"
+  },
+  "host": {
+    "scheduled_gaps_seconds": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "summary": {
+      "complete": true,
+      "completed": 5,
+      "kind": "summary",
+      "skipped": 0
+    }
+  },
+  "overall_zero_loss_gate": "FAIL: incomplete source stream and absent successful frontend Finish; zero reported drop counters do not establish complete evidence",
+  "preflight": "PASS after continuing only unexecuted local harness stages",
+  "reason_code": "FRONTEND_FINISH_NOT_DRAINED",
+  "source": {
+    "full_five_observation_gate": "FAIL: cancelled after four completed observations",
+    "observed_gaps_seconds": [
+      0.9999054,
+      1.000129,
+      0.999480482
+    ],
+    "observed_wakes": 4,
+    "required_max_gap_seconds": 1.5,
+    "summary": {
+      "cancelled": true,
+      "closed": true,
+      "completed": 4,
+      "failed": true,
+      "reason": "The operation was aborted",
+      "skipped": 0
+    }
+  },
+  "starting_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6",
+  "status": "STOP_RUNTIME_FAILURE"
+}

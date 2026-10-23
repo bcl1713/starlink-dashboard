@@ -1,0 +1,6 @@
+{
+  "error": "AssertionError: substantive preflight failure",
+  "preflight_exit": 1,
+  "result": "STOP",
+  "setup_exit": 0
+}

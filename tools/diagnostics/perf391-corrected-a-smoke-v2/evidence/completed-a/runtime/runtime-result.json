@@ -1,0 +1,45 @@
+{
+  "backend_preservation": {
+    "artifacts": {
+      "backend-stats.json": {
+        "bytes": 177,
+        "sha256": "812109cbcd9ccf214b6f3103ef33e8b75304f4686943842c15859d33b7c74082"
+      },
+      "backend.jsonl": {
+        "bytes": 653124,
+        "sha256": "c1b360a66f7ddb1967be5c6f89a90e1d35b80386ccc9892d377607a579554a14"
+      }
+    },
+    "complete": true,
+    "errors": [],
+    "stats": {
+      "buffered": 0,
+      "capacity": 8192,
+      "dropped": 0,
+      "failures": 0,
+      "high_water": 1072,
+      "invalid": 0,
+      "runtime_boundary_drained": true,
+      "token_evictions": 0,
+      "token_unavailable": 0
+    },
+    "steps": [
+      {
+        "cap_seconds": 8,
+        "outcome": "ok",
+        "phase": "stop-backend"
+      },
+      {
+        "cap_seconds": 3,
+        "outcome": "ok",
+        "phase": "copy-final-backend"
+      }
+    ],
+    "zero_loss": true
+  },
+  "cleanup_error": null,
+  "diagnostic_error": null,
+  "external_host_audit_required": true,
+  "failure": "RuntimeError: browser smoke failure",
+  "owner_status": "clean"
+}

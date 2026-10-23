@@ -1,0 +1,82 @@
+{
+  "schema": "perf391-node-collection-v1",
+  "version": 1,
+  "run": "synthetic-408a",
+  "host_identity": {
+    "process_uuid": "9238f971-2560-447a-9983-7a3012ebeed2",
+    "pid": 1018333,
+    "process_start_id": "2185912966173808",
+    "clock_id": "45721b60-c89f-4c73-82f2-976c7ba8970d"
+  },
+  "closed": true,
+  "complete": false,
+  "dropped": 0,
+  "optionalArtifacts": {
+    "dropped": 0,
+    "bytes": 23933,
+    "limit_bytes": 2097152
+  },
+  "written_bytes": 2570491,
+  "browsers": [
+    {
+      "closed": true,
+      "failed": false,
+      "lost": 0,
+      "active": 0,
+      "pending": 0,
+      "bytes": 0,
+      "jobs": 0,
+      "bindingJobs": 0,
+      "ownedOperations": 0,
+      "assemblies": 0,
+      "failures": [],
+      "failureOverflow": 0,
+      "preClose": {
+        "closed": false,
+        "failed": false,
+        "lost": 0,
+        "active": 0,
+        "pending": 0,
+        "bytes": 0,
+        "jobs": 0,
+        "bindingJobs": 0,
+        "ownedOperations": 0,
+        "assemblies": 0
+      }
+    }
+  ],
+  "sources": [
+    {
+      "completed": 4,
+      "failed": true,
+      "cancelled": true,
+      "skipped": 0,
+      "closed": true,
+      "reason": "The operation was aborted"
+    }
+  ],
+  "streams": [
+    {
+      "stream_id": "synthetic-408a/p/f306aaace6d94733",
+      "last_seq": 60
+    }
+  ],
+  "artifacts": {
+    "artifacts/7054d532a410e81e0e3541fb88caea54001fc2a55f025a3dc1ced29b518967ec.bin": "7054d532a410e81e0e3541fb88caea54001fc2a55f025a3dc1ced29b518967ec",
+    "artifacts/c543f14460d5e0b399255eb0a17c05bce76a173ebe96bf863ae8823c6137c53f.bin": "c543f14460d5e0b399255eb0a17c05bce76a173ebe96bf863ae8823c6137c53f",
+    "artifacts/229eac5ac466df59634fbdc2833002545b6df15a08afc68c2dcf53b380485397.bin": "229eac5ac466df59634fbdc2833002545b6df15a08afc68c2dcf53b380485397",
+    "artifacts/fc73e86684c9707710f77e460b0b83438ec1dbe8acafab01469fbbc0e943e1b5.bin": "fc73e86684c9707710f77e460b0b83438ec1dbe8acafab01469fbbc0e943e1b5",
+    "artifacts/0d87bdfc9e560965672256def3049b6ede2d462dfb0c0262adc82ed11da0b8e0.bin": "0d87bdfc9e560965672256def3049b6ede2d462dfb0c0262adc82ed11da0b8e0",
+    "artifacts/2975572256f82fe0964a06fc010a784a231867145f9f66a7f5ec3dc05bc714cb.bin": "2975572256f82fe0964a06fc010a784a231867145f9f66a7f5ec3dc05bc714cb",
+    "artifacts/6e63ac70be9216131fb328335e4fe25f3110c1677a92df8e5b0169097a2b8f2c.bin": "6e63ac70be9216131fb328335e4fe25f3110c1677a92df8e5b0169097a2b8f2c",
+    "artifacts/607f30a4c26792ec259f33f50ec2f9ed35fc1f7aa5dfc283ad08ae7aaa340a3b.bin": "607f30a4c26792ec259f33f50ec2f9ed35fc1f7aa5dfc283ad08ae7aaa340a3b",
+    "artifacts/22a7a1962113ca75d3244979ba5afd167d7514ea9a7020f4226eb68100a4d6b9.bin": "22a7a1962113ca75d3244979ba5afd167d7514ea9a7020f4226eb68100a4d6b9",
+    "artifacts/b2a914a3a887fad70d6301b0d977958503cf91bfc8dd91aee227be02e0b3d300.bin": "b2a914a3a887fad70d6301b0d977958503cf91bfc8dd91aee227be02e0b3d300",
+    "artifacts/8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37.bin": "8bafbf8005068d4ebb7bad00bb575f4a3d75169259067c24aeb1279cd7680c37",
+    "artifacts/ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f.bin": "ced454814cdca229d988b8e1da77c1cc95bb73248195e7231d987ac4723bc16f",
+    "artifacts/d4d4bb779b79ae4d27018031baa82e1bd677f5b82314e3d339e1a3f8e4c3f857.bin": "d4d4bb779b79ae4d27018031baa82e1bd677f5b82314e3d339e1a3f8e4c3f857",
+    "artifacts/49d24e3ba1c2341a9626898bef9668299d91bb974c28141fbe38cae734ee9a6d.bin": "49d24e3ba1c2341a9626898bef9668299d91bb974c28141fbe38cae734ee9a6d",
+    "artifacts/b4da5e23c0fbf239aa0775d46ba910e1c528e8e10e8afee37cae4deeffa6f6b1.bin": "b4da5e23c0fbf239aa0775d46ba910e1c528e8e10e8afee37cae4deeffa6f6b1",
+    "artifacts/06cfe08fcff68e8d6baf3895da2d74bd85a4bfe0b5819e4139c821212fb7d099.bin": "06cfe08fcff68e8d6baf3895da2d74bd85a4bfe0b5819e4139c821212fb7d099"
+  }
+}

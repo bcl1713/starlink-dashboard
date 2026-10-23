@@ -2,10 +2,11 @@
 import hashlib, json, os, signal, subprocess, time, urllib.request, zipfile
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
-E=HERE/'evidence'
+E=HERE/'evidence'/'completed-a'
 TASK=Path('/tmp/perf391-corrected-a-smoke-20261023')
 PINNED=HERE.with_name('perf391-python-preflight-v1')
 def write(p,v): p.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n')
+E.mkdir(parents=True,exist_ok=False)
 assert not TASK.exists()
 row={'pid':os.getpid(),'pgid':os.getpgrp(),'start_identity':Path('/proc/self/stat').read_text(),'temporary_root':str(TASK),'context_root':'/tmp/perf391-corrected-a-preflight','runtime_root':'/tmp/perf391-smoke-408-a','lock':'/tmp/perf391-smoke-408.lock','compose_project':'perf391-smoke-408-a','ports':[38080,38081,38082,38083],'volumes':['perf391-smoke-408-a_data','perf391-smoke-408-a_routes','perf391-smoke-408-a_metrics'],'extraction_containers':['perf391-corrected-a-preflight-frontend','perf391-corrected-a-preflight-backend','perf391-smoke-408-a-assets'],'utc':time.strftime('%FT%TZ',time.gmtime()),'commands':[]}
 write(E/'preparation-ownership.json',row)

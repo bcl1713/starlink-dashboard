@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py", line 119, in <module>
+    assert module.launch_plan('A','/tmp/perf391-smoke-408-a',p.PLAN,receipt)==compile_launch()
+                                                                    ^^^^^^^
+NameError: name 'receipt' is not defined

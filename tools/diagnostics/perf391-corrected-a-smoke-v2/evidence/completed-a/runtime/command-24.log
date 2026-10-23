@@ -1,0 +1,1 @@
+{"State":{"Status":"running","Running":true,"Paused":false,"Restarting":false,"OOMKilled":false,"Dead":false,"Pid":1017937,"ExitCode":0,"Error":"","StartedAt":"2026-10-23T19:38:52.015347047Z","FinishedAt":"0001-01-01T00:00:00Z"},"Ports":{"80/tcp":[{"HostIp":"127.0.0.1","HostPort":"38080"}]}}

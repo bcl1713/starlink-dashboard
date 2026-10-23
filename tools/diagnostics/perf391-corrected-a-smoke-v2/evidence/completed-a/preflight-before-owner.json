@@ -1,0 +1,434 @@
+{
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6373144033",
+  "checks": {
+    "cgroup_limits": {
+      "/sys/fs/cgroup/user.slice/cpu.max": "max 100000",
+      "/sys/fs/cgroup/user.slice/memory.current": "20391960576",
+      "/sys/fs/cgroup/user.slice/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/pids.current": "206",
+      "/sys/fs/cgroup/user.slice/pids.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/cpu.max": "1000000 100000",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/memory.current": "19350093824",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/pids.current": "193",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/pids.max": "165561",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cpu.max": "max 100000",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.current": "15540723712",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.current": "88",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.max": "max"
+    },
+    "corrected_preflight": {
+      "checks": {
+        "backend": {
+          "application_fixture_renderer_unchanged": true,
+          "diagnostic_module_inventory_sha256": "cfb46401b22a779ae074891e5ed465bc686abb3a82be57e564e9d66355f04f4c",
+          "python_packages": 89
+        },
+        "browser_identity": {
+          "api_imported_without_launch": true,
+          "browser_launched": false,
+          "browsers_json_sha256": "545d52f8382c391e605562c330e9c1c534a16045898203037a49bb8bd769a946",
+          "chromium_revision": "1243",
+          "chromium_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+          "historical_node_sha256": "177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9",
+          "historical_node_version": "22.12.0",
+          "lane": "diagnostic-functionality-only",
+          "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+          "node_version": "22.22.2",
+          "packages": {
+            "playwright": {
+              "node_engine": ">=20",
+              "sha256": "8bc2ddebe8d9b051b9ecb87d62c6c63877e59d08617f32c3215681ca8bb70998",
+              "version": "1.63.0"
+            },
+            "playwright-core": {
+              "node_engine": ">=20",
+              "sha256": "f061c58427e47e843e26d201f0a57076c734e57c734ecbbd87d4a23b7a20db9b",
+              "version": "1.63.0"
+            }
+          },
+          "runtime_compatibility_qualified": false
+        },
+        "browser_tree_sha256": "ccaa0c678629edcff79e5db6003d391254eec00c17ecbe48b3ec6d06b3871ba1",
+        "compose": {
+          "allowed_differences": [
+            "two corrected A image IDs",
+            "context paths",
+            "project namespace"
+          ],
+          "deadlines": {
+            "cleanup_by_seconds": 90,
+            "kill_grace_seconds": 10,
+            "outer_timeout_seconds": 90,
+            "work_seconds": 78
+          },
+          "executor_loaded_not_executed": true,
+          "limits": {
+            "mission-planner": {
+              "cpus": 0.5,
+              "logging": {
+                "driver": "local",
+                "options": {
+                  "compress": "false",
+                  "max-file": "1",
+                  "max-size": "10m"
+                }
+              },
+              "mem_limit": "268435456",
+              "pids_limit": 64
+            },
+            "prometheus": {
+              "cpus": 1,
+              "logging": {
+                "driver": "local",
+                "options": {
+                  "compress": "false",
+                  "max-file": "1",
+                  "max-size": "10m"
+                }
+              },
+              "mem_limit": "1073741824",
+              "pids_limit": 256
+            },
+            "starlink-location": {
+              "cpus": 2,
+              "logging": {
+                "driver": "local",
+                "options": {
+                  "compress": "false",
+                  "max-file": "1",
+                  "max-size": "10m"
+                }
+              },
+              "mem_limit": "2147483648",
+              "pids_limit": 256
+            }
+          },
+          "observer_max_cadence_ms": 1500,
+          "whole_approved_config_matches": true
+        },
+        "frontend": {
+          "assets_sha256": "9637a1b8a5a269e8a61090bbc1982a5f5578409536574fa45b66abce146ab80e",
+          "image_bytes_match_receipt": true,
+          "index_sha256": "943947d6b6edefdc596f1f2e3c7c450a41507a72b0ceff19316225fefcc241db",
+          "module_closure_sha256": "cc01ff100b633b664ee4a309e73181eda52069e834f67529d46f824bdf232322",
+          "served_files": 29
+        },
+        "selection": {
+          "analysis": {
+            "path": "tools/diagnostics/perf391-runtime-preparation-v1/analyze-runtime.py",
+            "sha256": "7305600d598e84ce8ed7d72dde373e4ab8f9f14ae12a969bdb34624999f25d68"
+          },
+          "backend_preservation": {
+            "path": "tools/diagnostics/perf391-runtime-preparation-v1/backend_evidence.py",
+            "sha256": "015063ee8c29bbf86d0438266d208c915d5682df6e521defe9a7ec7db653f73b"
+          },
+          "browser_finalization": {
+            "path": "tools/diagnostics/perf391-runtime-preparation-v1/browser-evidence.mjs",
+            "sha256": "7981994fa5de9ad95cdd7aac95661b0e205ecccbfcb46dba9a4b7ba2676da429"
+          },
+          "browser_instrumentation": {
+            "path": "tools/diagnostics/perf391-diagnostic-integration-v1/browser.mjs",
+            "sha256": "bd9d594381b8d937aa6ffde7a3b32c7447e2aac9257dcf273051efd13ed5ece4"
+          },
+          "browser_owner": {
+            "path": "tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+            "sha256": "746038044f4304492bcc0c234d8088cda56970caacf02b8541e90412349a0c88"
+          },
+          "collector": {
+            "path": "tools/diagnostics/perf391-diagnostic-integration-v1/collect.mjs",
+            "sha256": "96637359ead70b0563477810cc3b21d11fda658f745e438bca037d3177dfc2ae"
+          },
+          "compiled_frontend_probe_source": {
+            "path": "tools/diagnostics/perf391-diagnostic-integration-v1/browser-probe.ts",
+            "sha256": "9b9677c4e889f478d4ae07613830cd7dbf6406e51072e61c6ef11b506f7ca40e"
+          },
+          "executor": {
+            "path": "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py",
+            "sha256": "a2a52d5d23d26f9b90044f8db28373e28a6997059490eba04574a5c10c73fc79"
+          },
+          "frontend_readiness": {
+            "path": "tools/diagnostics/perf391-runtime-preparation-v1/frontend_readiness.py",
+            "sha256": "d7d4d094c4a40c712eef1a7e050fe86e562d3bb26e82193f779848bfe14b6602"
+          },
+          "observer": {
+            "path": "tools/diagnostics/perf391-diagnostic-integration-v1/observer.mjs",
+            "sha256": "2098aaa30934735fcd4d51a6961635940746bcdb6ecd479b3d0b89fdc7c2c5ef"
+          }
+        },
+        "source_context": {
+          "A_application_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+          "A_context_inventory_sha256": "c2ba6e024e0c8ca91eefb35d300ea4d38481175c7e4de30169546dbe9aebea68",
+          "A_context_sha256": "215801d9cedaf8a055a876d1fb6d78745462ceebad91de291eb9fd33b8a287d7",
+          "corrected_plan_exact_known_deltas": true,
+          "historical_plan_byte_identical": true
+        }
+      },
+      "hashes": {
+        "A.compose.base.json": "591e4e381bb572b8284ee79a0cf0012a083aede83f4727dceca2662c5781a939",
+        "A.compose.json": "4dd55d0becb437f58942e5b3e5d117480ce0258bf953d6610b6e3024d449179d",
+        "A.compose.override.json": "5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c",
+        "identity-overlay.json": "78e44168dceeeaad82bbcd2ced9a0d92aabcae554ebb02cf775b431904f7c6c9",
+        "launch-A.json": "7b84ca3c7fc6fe0436934d1b411a71286d61333ce3f74446ceab7fe61bdd950b"
+      },
+      "runtime_executed": false,
+      "scope": "offline corrected-A runtime preparation",
+      "starting_commit": "07c68cda45d541ea2817f750bd56ca3da9de9702"
+    },
+    "daemon": "forge 29.8.1 overlayfs 20 65915523072 2",
+    "headroom": {
+      "disk_free_bytes": 24505659392,
+      "memory_available_bytes": 55011143680
+    },
+    "historical_node": {
+      "sha256": "177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9",
+      "version": "v22.12.0"
+    },
+    "path_relocation": {
+      "all_non_path_fields_exact": true,
+      "historical_launch_unchanged": true,
+      "roles": [
+        {
+          "field": [
+            "commands",
+            4,
+            "argv",
+            1
+          ],
+          "no_symlink_escape": true,
+          "relative_role": "tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+          "sha256": "746038044f4304492bcc0c234d8088cda56970caacf02b8541e90412349a0c88",
+          "source_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6"
+        },
+        {
+          "field": [
+            "corrected_identity",
+            "build_plan"
+          ],
+          "no_symlink_escape": true,
+          "relative_role": "tools/diagnostics/perf391-corrected-images-v2/evidence/corrected-build-plan.json",
+          "sha256": "7b96a51d675b9b9c26787dfa06c2fe8458816b0088b2568e6707d6b5a7de7ca7",
+          "source_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6"
+        },
+        {
+          "field": [
+            "corrected_identity",
+            "executor_adapter"
+          ],
+          "no_symlink_escape": true,
+          "relative_role": "tools/diagnostics/perf391-corrected-a-runtime-v2/binding.py",
+          "sha256": "693a24bcaddb28001159535f757cbe5deae4171d848837c9d0c1ad3332297758",
+          "source_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6"
+        },
+        {
+          "field": [
+            "corrected_identity",
+            "lineage"
+          ],
+          "no_symlink_escape": true,
+          "relative_role": "tools/diagnostics/perf391-corrected-images-v2/evidence/built-A.v2.json",
+          "sha256": "785b24fc61fdd196ac64e9dd2ae1afd39b7210c73acbc711b614f39ab8235725",
+          "source_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6"
+        },
+        {
+          "field": [
+            "corrected_identity",
+            "receipt"
+          ],
+          "no_symlink_escape": true,
+          "relative_role": "tools/diagnostics/perf391-corrected-images-v2/evidence/built-A.compat-v1.json",
+          "sha256": "eba5c87d4e619a5468e96b6829d52c4ed0d24bff115ce043551cc6399a0281d4",
+          "source_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6"
+        }
+      ]
+    },
+    "process_visibility": {
+      "cgroup": "0::/user.slice/user-1002.slice/session-c1.scope\n",
+      "namespace": "pid:[4026531836]",
+      "pid1": "systemd"
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "hostname"
+      ],
+      "output": "forge\n"
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "output": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{json .SecurityOptions}}"
+      ],
+      "output": "[\"name=seccomp,profile=builtin\",\"name=rootless\",\"name=cgroupns\"]\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "context",
+        "show"
+      ],
+      "output": "default\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "context",
+        "inspect",
+        "--format",
+        "{{.Endpoints.docker.Host}}"
+      ],
+      "output": "unix:///run/user/1002/docker.sock\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "version"
+      ],
+      "output": "Docker Compose version v5.5.1\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}} {{.ServerVersion}} {{.Driver}} {{.NCPU}} {{.MemTotal}} {{.CgroupVersion}}"
+      ],
+      "output": "forge 29.8.1 overlayfs 20 65915523072 2\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-corrected-a-preflight"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-corrected-a-preflight"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-corrected-a-preflight"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-images-v2/verify-retained.py"
+      ],
+      "output": "PASS: correction provenance, old/new receipt lineage, 8 image identities, actual compiled closure/parity, dependencies and retained focused checks.\n"
+    },
+    {
+      "argv": [
+        "ldd",
+        "/home/oracle-worker/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome"
+      ],
+      "output": "\tlinux-vdso.so.1 (0x000076e34bd33000)\n\tlibdl.so.2 => /usr/lib/x86_64-linux-gnu/libdl.so.2 (0x000076e34bd1a000)\n\tlibpthread.so.0 => /usr/lib/x86_64-linux-gnu/libpthread.so.0 (0x000076e34bd15000)\n\tlibglib-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0 (0x000076e33a0a8000)\n\tlibgobject-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 (0x000076e34bcb1000)\n\tlibnspr4.so => /usr/lib/x86_64-linux-gnu/libnspr4.so (0x000076e33a068000)\n\tlibnss3.so => /usr/lib/x86_64-linux-gnu/libnss3.so (0x000076e339f2a000)\n\tlibnssutil3.so => /usr/lib/x86_64-linux-gnu/libnssutil3.so (0x000076e34bc7b000)\n\tlibsmime3.so => /usr/lib/x86_64-linux-gnu/libsmime3.so (0x000076e339efd000)\n\tlibgio-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libgio-2.0.so.0 (0x000076e339d20000)\n\tlibatk-1.0.so.0 => /usr/lib/x86_64-linux-gnu/libatk-1.0.so.0 (0x000076e339cf6000)\n\tlibatk-bridge-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libatk-bridge-2.0.so.0 (0x000076e339cb8000)\n\tlibdbus-1.so.3 => /usr/lib/x86_64-linux-gnu/libdbus-1.so.3 (0x000076e339c68000)\n\tlibcups.so.2 => /usr/lib/x86_64-linux-gnu/libcups.so.2 (0x000076e339bc5000)\n\tlibexpat.so.1 => /usr/lib/x86_64-linux-gnu/libexpat.so.1 (0x000076e339b97000)\n\tlibxcb.so.1 => /usr/lib/x86_64-linux-gnu/libxcb.so.1 (0x000076e339b6c000)\n\tlibxkbcommon.so.0 => /usr/lib/x86_64-linux-gnu/libxkbcommon.so.0 (0x000076e339b0d000)\n\tlibasound.so.2 => /usr/lib/x86_64-linux-gnu/libasound.so.2 (0x000076e3399ee000)\n\tlibgbm.so.1 => /usr/lib/x86_64-linux-gnu/libgbm.so.1 (0x000076e3399e7000)\n\tlibX11.so.6 => /usr/lib/x86_64-linux-gnu/libX11.so.6 (0x000076e3398a5000)\n\tlibXext.so.6 => /usr/lib/x86_64-linux-gnu/libXext.so.6 (0x000076e339891000)\n\tlibcairo.so.2 => /usr/lib/x86_64-linux-gnu/libcairo.so.2 (0x000076e339742000)\n\tlibpango-1.0.so.0 => /usr/lib/x86_64-linux-gnu/libpango-1.0.so.0 (0x000076e3396d1000)\n\tlibudev.so.1 => /usr/lib/x86_64-linux-gnu/libudev.so.1 (0x000076e33968a000)\n\tlibm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x000076e339564000)\n\tlibXcomposite.so.1 => /usr/lib/x86_64-linux-gnu/libXcomposite.so.1 (0x000076e33955f000)\n\tlibXdamage.so.1 => /usr/lib/x86_64-linux-gnu/libXdamage.so.1 (0x000076e33955a000)\n\tlibXfixes.so.3 => /usr/lib/x86_64-linux-gnu/libXfixes.so.3 (0x000076e339552000)\n\tlibXrandr.so.2 => /usr/lib/x86_64-linux-gnu/libXrandr.so.2 (0x000076e339545000)\n\tlibatspi.so.0 => /usr/lib/x86_64-linux-gnu/libatspi.so.0 (0x000076e339505000)\n\tlibgcc_s.so.1 => /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 (0x000076e3394d7000)\n\tlibc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x000076e339200000)\n\t/lib64/ld-linux-x86-64.so.2 (0x000076e34bd35000)\n\tlibatomic.so.1 => /usr/lib/x86_64-linux-gnu/libatomic.so.1 (0x000076e3394cc000)\n\tlibpcre2-8.so.0 => /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0 (0x000076e339154000)\n\tlibffi.so.8 => /usr/lib/x86_64-linux-gnu/libffi.so.8 (0x000076e3394bb000)\n\tlibplc4.so => /usr/lib/x86_64-linux-gnu/libplc4.so (0x000076e3394b2000)\n\tlibplds4.so => /usr/lib/x86_64-linux-gnu/libplds4.so (0x000076e3394ad000)\n\tlibgmodule-2.0.so.0 => /usr/lib/x86_64-linux-gnu/libgmodule-2.0.so.0 (0x000076e3394a6000)\n\tlibz.so.1 => /usr/lib/x86_64-linux-gnu/libz.so.1 (0x000076e339488000)\n\tlibmount.so.1 => /usr/lib/x86_64-linux-gnu/libmount.so.1 (0x000076e339435000)\n\tlibselinux.so.1 => /usr/lib/x86_64-linux-gnu/libselinux.so.1 (0x000076e339121000)\n\tlibsystemd.so.0 => /usr/lib/x86_64-linux-gnu/libsystemd.so.0 (0x000076e33900d000)\n\tlibgssapi_krb5.so.2 => /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so.2 (0x000076e338fb5000)\n\tlibavahi-common.so.3 => /usr/lib/x86_64-linux-gnu/libavahi-common.so.3 (0x000076e339424000)\n\tlibavahi-client.so.3 => /usr/lib/x86_64-linux-gnu/libavahi-client.so.3 (0x000076e338fa1000)\n\tlibgnutls.so.30 => /usr/lib/x86_64-linux-gnu/libgnutls.so.30 (0x000076e338c00000)\n\tlibXau.so.6 => /usr/lib/x86_64-linux-gnu/libXau.so.6 (0x000076e338f9b000)\n\tlibXdmcp.so.6 => /usr/lib/x86_64-linux-gnu/libXdmcp.so.6 (0x000076e338f93000)\n\tlibdrm.so.2 => /usr/lib/x86_64-linux-gnu/libdrm.so.2 (0x000076e338f7c000)\n\tlibpng16.so.16 => /usr/lib/x86_64-linux-gnu/libpng16.so.16 (0x000076e338f42000)\n\tlibfontconfig.so.1 => /usr/lib/x86_64-linux-gnu/libfontconfig.so.1 (0x000076e338eed000)\n\tlibfreetype.so.6 => /usr/lib/x86_64-linux-gnu/libfreetype.so.6 (0x000076e338e18000)\n\tlibXrender.so.1 => /usr/lib/x86_64-linux-gnu/libXrender.so.1 (0x000076e338bf4000)\n\tlibxcb-render.so.0 => /usr/lib/x86_64-linux-gnu/libxcb-render.so.0 (0x000076e338be5000)\n\tlibxcb-shm.so.0 => /usr/lib/x86_64-linux-gnu/libxcb-shm.so.0 (0x000076e338e13000)\n\tlibpixman-1.so.0 => /usr/lib/x86_64-linux-gnu/libpixman-1.so.0 (0x000076e338b2e000)\n\tlibfribidi.so.0 => /usr/lib/x86_64-linux-gnu/libfribidi.so.0 (0x000076e338b0f000)\n\tlibthai.so.0 => /usr/lib/x86_64-linux-gnu/libthai.so.0 (0x000076e338b03000)\n\tlibharfbuzz.so.0 => /usr/lib/x86_64-linux-gnu/libharfbuzz.so.0 (0x000076e3389d8000)\n\tlibXi.so.6 => /usr/lib/x86_64-linux-gnu/libXi.so.6 (0x000076e3389c4000)\n\tlibXRes.so.1 => /usr/lib/x86_64-linux-gnu/libXRes.so.1 (0x000076e3389be000)\n\tlibblkid.so.1 => /usr/lib/x86_64-linux-gnu/libblkid.so.1 (0x000076e338980000)\n\tlibkrb5.so.3 => /usr/lib/x86_64-linux-gnu/libkrb5.so.3 (0x000076e3388b4000)\n\tlibk5crypto.so.3 => /usr/lib/x86_64-linux-gnu/libk5crypto.so.3 (0x000076e338888000)\n\tlibcom_err.so.2 => /usr/lib/x86_64-linux-gnu/libcom_err.so.2 (0x000076e338882000)\n\tlibkrb5support.so.0 => /usr/lib/x86_64-linux-gnu/libkrb5support.so.0 (0x000076e338875000)\n\tlibp11-kit.so.0 => /usr/lib/x86_64-linux-gnu/libp11-kit.so.0 (0x000076e338698000)\n\tlibidn2.so.0 => /usr/lib/x86_64-linux-gnu/libidn2.so.0 (0x000076e338676000)\n\tlibunistring.so.5 => /usr/lib/x86_64-linux-gnu/libunistring.so.5 (0x000076e33848f000)\n\tlibtasn1.so.6 => /usr/lib/x86_64-linux-gnu/libtasn1.so.6 (0x000076e338478000)\n\tlibhogweed.so.6 => /usr/lib/x86_64-linux-gnu/libhogweed.so.6 (0x000076e33842d000)\n\tlibnettle.so.8 => /usr/lib/x86_64-linux-gnu/libnettle.so.8 (0x000076e3383d6000)\n\tlibgmp.so.10 => /usr/lib/x86_64-linux-gnu/libgmp.so.10 (0x000076e33834e000)\n\tlibbz2.so.1.0 => /usr/lib/x86_64-linux-gnu/libbz2.so.1.0 (0x000076e338339000)\n\tlibbrotlidec.so.1 => /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 (0x000076e33832a000)\n\tlibdatrie.so.1 => /usr/lib/x86_64-linux-gnu/libdatrie.so.1 (0x000076e338321000)\n\tlibgraphite2.so.3 => /usr/lib/x86_64-linux-gnu/libgraphite2.so.3 (0x000076e3382fb000)\n\tlibkeyutils.so.1 => /usr/lib/x86_64-linux-gnu/libkeyutils.so.1 (0x000076e3382f2000)\n\tlibresolv.so.2 => /usr/lib/x86_64-linux-gnu/libresolv.so.2 (0x000076e3382df000)\n\tlibbrotlicommon.so.1 => /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1 (0x000076e3382bc000)\n"
+    },
+    {
+      "argv": [
+        "/home/oracle-worker/.local/node-v22.12.0-linux-x64/bin/node",
+        "--version"
+      ],
+      "output": "v22.12.0\n"
+    }
+  ],
+  "failure": "ValueError: synthetic owner required",
+  "scope": "corrected A only; preflight; no services or browser launch",
+  "starting_commit": "dce002876b3b04316d3e1b1e0b1ba37b11bf3de6",
+  "status": "STOP_PREFLIGHT"
+}

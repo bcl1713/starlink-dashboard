@@ -1,0 +1,118 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "1019557"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 1019557,
+      "start_id": "218592022"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "1019568"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 1019568,
+      "start_id": "218592023"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [
+    "perf391-smoke-408-a_default"
+  ],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-a/cleanup-owner"
+  ],
+  "owner": {
+    "pgid": 1016502,
+    "pid": 1016503,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "218590212"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "name=^/perf391-smoke-408-a-assets$",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "pgid": 1019557,
+      "pid": 1019557,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "218592022",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "down",
+        "--volumes",
+        "--remove-orphans",
+        "--timeout",
+        "2"
+      ],
+      "pgid": 1019568,
+      "pid": 1019568,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "218592023",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6373144033",
+    "build_plan_sha256": "7b96a51d675b9b9c26787dfa06c2fe8458816b0088b2568e6707d6b5a7de7ca7",
+    "receipt_sha256": "eba5c87d4e619a5468e96b6829d52c4ed0d24bff115ce043551cc6399a0281d4"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ]
+}

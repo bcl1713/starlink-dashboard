@@ -1,0 +1,74 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "1013586"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 1013586,
+      "start_id": "218586292"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/evidence/completed-a/prerequisite-owner"
+  ],
+  "owner": {
+    "pgid": 1013508,
+    "pid": 1013509,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "218586196"
+  },
+  "processes": [
+    {
+      "actions": [
+        {
+          "pid": 1013586,
+          "signal": "SIGTERM",
+          "start_id": "218586292"
+        }
+      ],
+      "command": [
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+        "-c",
+        "import time; time.sleep(30)"
+      ],
+      "pgid": 1013586,
+      "pid": 1013586,
+      "reaped": true,
+      "returncode": -15,
+      "start_id": "218586292",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-corrected-a-preflight",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {},
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

@@ -1,0 +1,76 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "1019553"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 1019553,
+      "start_id": "218592014"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-a/frontend-diagnostic-07"
+  ],
+  "owner": {
+    "pgid": 1016502,
+    "pid": 1016503,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "218590212"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "timeout",
+        "--kill-after=0.05s",
+        "0.15s",
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+        "-B",
+        "-c",
+        "\nimport json,os\nfrom pathlib import Path\nrows=[]\nfor p in Path('/proc').iterdir():\n if not p.name.isdigit(): continue\n try:\n  if p.stat().st_uid != os.getuid(): continue\n  name=(p/'comm').read_text().strip()\n  if name not in ('rootlesskit','slirp4netns','docker-proxy','pasta','vpnkit'): continue\n  rows.append({'pid':int(p.name),'comm':name,'argv':(p/'cmdline').read_bytes()[:4096].replace(b'\\0',b' ').decode(errors='replace')})\n except (OSError,ValueError): continue\n if len(rows)>=32: break\nprint(json.dumps(rows))\n"
+      ],
+      "pgid": 1019553,
+      "pid": 1019553,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "218592014",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6373144033",
+    "build_plan_sha256": "7b96a51d675b9b9c26787dfa06c2fe8458816b0088b2568e6707d6b5a7de7ca7",
+    "receipt_sha256": "eba5c87d4e619a5468e96b6829d52c4ed0d24bff115ce043551cc6399a0281d4"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

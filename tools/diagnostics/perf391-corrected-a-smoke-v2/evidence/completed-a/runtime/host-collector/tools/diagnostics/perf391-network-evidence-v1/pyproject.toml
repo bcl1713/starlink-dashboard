@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perf391-network-evidence-v1"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = ["jsonschema==4.19.2"]
+
+[project.scripts]
+perf391-network-evidence-v1 = "perf391_network_evidence.cli:main"
+
+[tool.setuptools.package-data]
+perf391_network_evidence = ["event-schema.json"]
+
+[tool.setuptools.packages.find]
+include = ["perf391_network_evidence*"]

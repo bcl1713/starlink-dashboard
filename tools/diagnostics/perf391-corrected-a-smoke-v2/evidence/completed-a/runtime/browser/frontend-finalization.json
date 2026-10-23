@@ -1,0 +1,60 @@
+{
+  "finishAdmitted": true,
+  "last": {
+    "frontend": {
+      "commits": [
+        {
+          "panel": "o6",
+          "document": "f306aaace6d94733",
+          "commit": "p/c30",
+          "generation": 30,
+          "metric": "starlink_network_latency_ms_current",
+          "mounted": true,
+          "width": 375,
+          "height": 687,
+          "hidden": false,
+          "error": false,
+          "reducedMotion": false,
+          "accepted": "o7",
+          "retained": "o8",
+          "rect": {
+            "x": 71.546875,
+            "y": 366.578125,
+            "width": 375.453125,
+            "height": 688.421875
+          },
+          "transform": "matrix(1, 0, 0, 1, -0.680401, 0)",
+          "visibility": "visible",
+          "dpr": 1
+        }
+      ],
+      "summary": {
+        "seq": 59,
+        "lost": 0,
+        "failed": false,
+        "closed": false,
+        "pending": 0,
+        "bytes": 0,
+        "inflight": 0,
+        "panels": 1
+      }
+    },
+    "observer": {
+      "closed": false,
+      "failed": false,
+      "lost": 0,
+      "active": 0,
+      "pending": 0,
+      "bytes": 0,
+      "jobs": 0,
+      "bindingJobs": 0,
+      "ownedOperations": 0,
+      "assemblies": 0,
+      "failures": [],
+      "failureOverflow": 0,
+      "preClose": null
+    }
+  },
+  "final": null,
+  "reason": "page.evaluate: Error: frontend not drained\n    at globalThis.__perf391Finish (http://127.0.0.1:38080/assets/index-HWZdjwZf.js:122:71478)\n    at eval (eval at evaluate (:311:30), <anonymous>:3:50)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at Ut"
+}

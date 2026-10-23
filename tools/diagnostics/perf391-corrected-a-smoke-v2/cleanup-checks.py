@@ -1,9 +1,9 @@
 """Independent Forge-host audit and scoped removal after preflight STOP."""
 import hashlib,json,os,shutil,subprocess,time
 from pathlib import Path
-HERE=Path(__file__).resolve().parent;E=HERE/'evidence'
+HERE=Path(__file__).resolve().parent;E=HERE/'evidence'/'completed-a'
 TASK=Path('/tmp/perf391-corrected-a-smoke-20261023')
-report={'utc':time.strftime('%FT%TZ',time.gmtime()),'pid':os.getpid(),'pgid':os.getpgrp(),'start_identity':Path('/proc/self/stat').read_text(),'runtime_invocations':0,'commands':[],'process_checks':[]}
+report={'utc':time.strftime('%FT%TZ',time.gmtime()),'pid':os.getpid(),'pgid':os.getpgrp(),'start_identity':Path('/proc/self/stat').read_text(),'runtime_invocations':int((E/'activation.json').exists()),'commands':[],'process_checks':[]}
 def save(): (E/'cleanup.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
 def command(argv):
  p=subprocess.run(['timeout','--kill-after=10s','30s',*argv],capture_output=True,text=True)
@@ -13,6 +13,17 @@ rows=[]
 for name in ('preparation-ownership.json','context-ownership.json'):
  r=json.loads((E/name).read_bytes());rows.append(r);rows.extend(r.get('commands',[]))
 rows.extend(json.loads((E/'commands.json').read_bytes()))
+rows.extend(json.loads((E/'supervisor.json').read_bytes()))
+for name in ('owner-continuation-ownership.json','activation.json'):
+ if (E/name).exists():rows.append(json.loads((E/name).read_bytes()))
+for path in (E/'runtime').rglob('manifest.json'):
+ data=json.loads(path.read_bytes())
+ if 'owner' in data:
+  row=data['owner'];proc=Path('/proc',str(row['pid']),'stat')
+  try:same=proc.read_text().rsplit(')',1)[1].split()[19]==row['start_id']
+  except OSError:same=False
+  report['process_checks'].append({'pid':row['pid'],'pgid':row['pgid'],'live_same_identity':same,'manifest':str(path.relative_to(E))})
+  assert not same,row
 for row in rows:
  if 'pid' not in row:continue
  try: same=Path('/proc',str(row['pid']),'stat').read_text().rsplit(')',1)[1].split()[19]==row['start_identity'].rsplit(')',1)[1].split()[19]
@@ -46,6 +57,16 @@ for name in ('perf391-corrected-a-preflight-frontend','perf391-corrected-a-prefl
  assert not command(['docker','ps','-aq','--filter','name=^/'+name+'$']).strip()
 listeners=command(['ss','-ltnp'])
 assert not any(':'+str(port)+' ' in listeners for port in range(38080,38084));report['task_listeners']=[]
+# Evidence is retained in this package before removing disposable runtime/context.
+for root in (Path('/tmp/perf391-smoke-408-a'),Path('/tmp/perf391-corrected-a-preflight')):
+ if root.exists():
+  assert not root.is_symlink()
+  if root.name=='perf391-smoke-408-a':assert (E/'runtime/runtime-result.json').is_file()
+  shutil.rmtree(root)
+lock=Path('/tmp/perf391-smoke-408.lock')
+if lock.exists():
+ import fcntl
+ with lock.open('a') as f:fcntl.flock(f,fcntl.LOCK_EX|fcntl.LOCK_NB);lock.unlink()
 assert not Path('/tmp/perf391-corrected-a-preflight').exists()
 assert not Path('/tmp/perf391-smoke-408-a').exists()
 assert not Path('/tmp/perf391-smoke-408.lock').exists()

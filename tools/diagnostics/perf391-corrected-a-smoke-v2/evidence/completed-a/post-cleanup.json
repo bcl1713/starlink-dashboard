@@ -1,0 +1,166 @@
+{
+  "absent_paths": [
+    "/tmp/perf391-corrected-a-smoke-20261023",
+    "/tmp/perf391-corrected-a-preflight",
+    "/tmp/perf391-smoke-408-a",
+    "/tmp/perf391-smoke-408.lock"
+  ],
+  "cleanup_verified": true,
+  "commands": [
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=perf391.owner=perf391-corrected-a-preflight"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=perf391.owner=perf391-corrected-a-preflight"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=perf391.owner=perf391-corrected-a-preflight"
+      ],
+      "exit": 0,
+      "stdout": ""
+    }
+  ],
+  "host_pid1": "systemd",
+  "pid_start_identities_absent": {
+    "1016503:218590212": true,
+    "1016972:218590665": true,
+    "1016977:218590667": true,
+    "1016993:218590671": true,
+    "1017007:218590675": true,
+    "1017022:218590680": true,
+    "1017076:218590699": true,
+    "1017090:218590709": true,
+    "1017099:218590717": true,
+    "1017312:218590772": true,
+    "1017396:218590784": true,
+    "1017491:218590797": true,
+    "1017855:218591107": true,
+    "1017937:218591119": true,
+    "1018016:218591130": true,
+    "1018086:218591143": true,
+    "1018105:218591150": true,
+    "1018133:218591162": true,
+    "1018194:218591168": true,
+    "1018214:218591170": true,
+    "1018257:218591176": true,
+    "1018273:218591179": true,
+    "1018320:218591185": true,
+    "1018333:218591187": true,
+    "1018542:218591277": true,
+    "1018548:218591279": true,
+    "1018550:218591279": true,
+    "1018553:218591279": true,
+    "1018554:218591280": true,
+    "1018574:218591282": true,
+    "1019125:218591724": true,
+    "1019321:218591949": true,
+    "1019367:218591958": true,
+    "1019415:218591969": true,
+    "1019463:218591980": true,
+    "1019484:218591987": true,
+    "1019500:218591994": true,
+    "1019541:218592005": true,
+    "1019553:218592014": true,
+    "1019557:218592022": true,
+    "1019568:218592023": true
+  },
+  "ports_bound_and_released": [
+    38080,
+    38081,
+    38082,
+    38083
+  ]
+}

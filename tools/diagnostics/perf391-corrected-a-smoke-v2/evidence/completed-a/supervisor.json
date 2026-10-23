@@ -1,0 +1,70 @@
+[
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/prepare-environment.py"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "pgid": 1007340,
+    "pid": 1007340,
+    "seconds": 240,
+    "start_identity": "1007340 (timeout) R 1007339 1007340 1007340 0 -1 4194304 14 0 0 0 0 0 0 0 20 0 1 0 218579099 12238848 44 18446744073709551615 109127244947456 109127249990637 140730530846352 0 0 0 0 0 0 0 0 0 17 6 0 0 0 0 0 109127254264304 109127255752568 109128148516864 140730530852254 140730530852464 140730530852464 140730530856935 0\n"
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py"
+    ],
+    "exit": 1,
+    "grace_seconds": 10,
+    "pgid": 1007458,
+    "pid": 1007458,
+    "seconds": 600,
+    "start_identity": "1007458 (timeout) R 1007339 1007458 1007458 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218579192 12238848 44 18446744073709551615 100791730180096 100791735223277 140725056090160 0 0 0 0 0 0 0 0 0 17 1 0 0 0 0 0 100791739496944 100791740985208 100792718487552 140725056097658 140725056097904 140725056097904 140725056102375 0\n"
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py",
+      "--continue-owner"
+    ],
+    "exit": 1,
+    "grace_seconds": 10,
+    "pgid": 1013508,
+    "pid": 1013508,
+    "seconds": 60,
+    "start_identity": "1013508 (timeout) R 1013489 1013508 1013508 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218586196 12238848 44 18446744073709551615 95435009667072 95435014710253 140731898654400 0 0 0 0 0 0 0 0 0 17 15 0 0 0 0 0 95435018983920 95435020472184 95435945963520 140731898658154 140731898658416 140731898658416 140731898662887 0\n"
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py",
+      "--continue-activation"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "pgid": 1016286,
+    "pid": 1016286,
+    "seconds": 60,
+    "start_identity": "1016286 (timeout) R 1016285 1016286 1016286 0 -1 4194304 22 0 0 0 0 0 0 0 20 0 1 0 218590077 12296192 84 18446744073709551615 107454710902784 107454715945965 140735219849760 0 0 0 0 0 0 0 0 0 17 19 0 0 0 0 0 107454720219632 107454721707896 107455299289088 140735219858789 140735219859056 140735219859056 140735219863527 0\n"
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/complete-a.py",
+      "execute-once"
+    ],
+    "exit": 1,
+    "grace_seconds": 10,
+    "pgid": 1016502,
+    "pid": 1016502,
+    "seconds": 90,
+    "start_identity": "1016502 (timeout) R 1016285 1016502 1016502 0 -1 4194304 15 0 0 0 0 0 0 0 20 0 1 0 218590212 12238848 42 18446744073709551615 110649480990720 110649486033901 140734804983408 0 0 0 0 0 0 0 0 0 17 2 0 0 0 0 0 110649490307568 110649491795832 110649660669952 140734804991348 140734804991600 140734804991600 140734804996071 0\n"
+  }
+]

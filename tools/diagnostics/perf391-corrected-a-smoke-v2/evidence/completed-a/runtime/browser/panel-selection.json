@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "commits": [
+      {
+        "panel": "o6",
+        "document": "f306aaace6d94733",
+        "commit": "p/c29",
+        "generation": 29,
+        "metric": "starlink_network_latency_ms_current",
+        "mounted": true,
+        "width": 378,
+        "height": 687,
+        "hidden": false,
+        "error": false,
+        "reducedMotion": false,
+        "accepted": "o7",
+        "retained": "o8",
+        "rect": {
+          "x": 71.546875,
+          "y": 366.578125,
+          "width": 375.453125,
+          "height": 688.421875
+        },
+        "transform": "matrix(1, 0, 0, 1, -0.543018, 0)",
+        "visibility": "visible",
+        "dpr": 1
+      }
+    ],
+    "summary": {
+      "seq": 49,
+      "lost": 0,
+      "failed": false,
+      "closed": false,
+      "pending": 10,
+      "bytes": 1253699,
+      "inflight": 8,
+      "panels": 1
+    }
+  },
+  "selected": {
+    "panel": "o6",
+    "document": "f306aaace6d94733",
+    "commit": "p/c29",
+    "generation": 29,
+    "metric": "starlink_network_latency_ms_current",
+    "mounted": true,
+    "width": 378,
+    "height": 687,
+    "hidden": false,
+    "error": false,
+    "reducedMotion": false,
+    "accepted": "o7",
+    "retained": "o8",
+    "rect": {
+      "x": 71.546875,
+      "y": 366.578125,
+      "width": 375.453125,
+      "height": 688.421875
+    },
+    "transform": "matrix(1, 0, 0, 1, -0.543018, 0)",
+    "visibility": "visible",
+    "dpr": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "closed": false,
+  "failed": false,
+  "lost": 0,
+  "active": 0,
+  "pending": 0,
+  "bytes": 0,
+  "jobs": 0,
+  "bindingJobs": 0,
+  "ownedOperations": 0,
+  "assemblies": 0,
+  "failures": [],
+  "failureOverflow": 0,
+  "preClose": null
+}

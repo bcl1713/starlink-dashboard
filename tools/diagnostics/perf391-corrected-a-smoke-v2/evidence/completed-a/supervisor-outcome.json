@@ -1,0 +1,7 @@
+{
+  "owner_continuation_exit": 0,
+  "preflight_exit": 0,
+  "result": "STOP_RUNTIME_FAILURE",
+  "runtime_exit": 1,
+  "setup_exit": 0
+}
