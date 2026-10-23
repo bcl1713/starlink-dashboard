@@ -1,0 +1,36 @@
+test_term_of_replay_runner_reaps_its_separate_session_child (test_stage5_signal.Stage5SignalTests.test_term_of_replay_runner_reaps_its_separate_session_child) ... FAIL
+
+======================================================================
+FAIL: test_term_of_replay_runner_reaps_its_separate_session_child (test_stage5_signal.Stage5SignalTests.test_term_of_replay_runner_reaps_its_separate_session_child)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_signal.py", line 42, in test_term_of_replay_runner_reaps_its_separate_session_child
+    self.assertFalse(Path(f"/proc/{nested}").exists(), "timeout escaped scoped cleanup")
+AssertionError: True is not false : timeout escaped scoped cleanup
+
+----------------------------------------------------------------------
+Ran 1 test in 0.398s
+
+FAILED (failures=1)
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module workers was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module diagnostic_app was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module integration was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module verify_evidence was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module run was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")

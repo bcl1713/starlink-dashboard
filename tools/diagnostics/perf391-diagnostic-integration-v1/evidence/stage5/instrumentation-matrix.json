@@ -1,0 +1,329 @@
+{
+  "admission.file_wait": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "admission.hold": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "admission.local_wait": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "asgi.elapsed": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "chart_input.commit": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "history.elapsed": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "metrics.inplace": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "observer.body": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "observer.drain": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "observer.invocation_to_headers": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "observer.late_wake": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "observer.parse_available": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "polling.delivery": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "polling.request_to_response": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "presentation.capture": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "producer.collection": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "producer.delivery": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "producer.execution": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "producer.final_authority": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "producer.publication": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "producer.queue": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "publication.cas": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "refresh.delivery": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "refresh.execution": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "refresh.queue": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "replay.callback": {
+    "A": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    },
+    "C": {
+      "available": false,
+      "reason": "missing, inapplicable, failed or ambiguous instrumentation"
+    }
+  },
+  "worker.delivery": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "worker.execution": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "worker.queue": {
+    "A": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    },
+    "C": {
+      "available": true,
+      "reason": "complete same-clock pair"
+    }
+  },
+  "always_unavailable": {
+    "all_server_workers": {
+      "available": false,
+      "reason": "only explicitly instrumented call sites are covered"
+    },
+    "axios_parse_start": {
+      "available": false,
+      "reason": "Axios exposes resolution after parsing, no native parse-start boundary"
+    },
+    "cross_clock_one_way": {
+      "available": false,
+      "reason": "independent process/document clock origins"
+    },
+    "observer.wire_send": {
+      "available": false,
+      "reason": "HTTP invocation is not kernel wire send"
+    },
+    "passive_http_capture": {
+      "available": false,
+      "reason": "Stage 3B deferred; no raw browser body provenance"
+    },
+    "physical_acquisition": {
+      "available": false,
+      "reason": "no physical acquisition instrumentation"
+    },
+    "physical_scanout": {
+      "available": false,
+      "reason": "compositor sample does not establish physical scanout"
+    }
+  },
+  "offline_fixture_scope": {
+    "backend": "fixed probe events plus real guarded tick/gate and AnyIO pipeline tests",
+    "frontend": "fake Page request/response plus persisted parsed/retained/plot artifacts",
+    "observer_host": "separate fixed-stream, source deadline, resource/clock/identity suite; not installed in the positive replay fixture",
+    "paint": "hashed artificial capture adapter tests only; no pixels/presentation qualified",
+    "raw_wire": "unavailable; Stage 3B deferred"
+  }
+}

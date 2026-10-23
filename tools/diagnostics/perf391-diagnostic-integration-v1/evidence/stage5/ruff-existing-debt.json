@@ -1,0 +1,23 @@
+{
+  "count": 173,
+  "files_byte_identical_to_stage4": [
+    "backend_probe.py",
+    "build.py",
+    "tests/backend_support.py",
+    "tests/test_admission.py",
+    "tests/test_backend_endpoints.py",
+    "tests/test_backend_probe.py",
+    "tests/test_build_identity.py",
+    "tests/test_contract.py",
+    "tests/test_final_publication.py",
+    "tests/test_frontend_guards.py",
+    "tests/test_probe_bounds.py",
+    "tests/test_producer_integration.py",
+    "tests/test_refresh_replay_authority.py",
+    "tests/test_runner_cleanup.py",
+    "tests/test_tick_boundaries.py",
+    "tests/test_worker_delivery.py",
+    "verify_frontend.py"
+  ],
+  "changed_files_have_no_findings": true
+}

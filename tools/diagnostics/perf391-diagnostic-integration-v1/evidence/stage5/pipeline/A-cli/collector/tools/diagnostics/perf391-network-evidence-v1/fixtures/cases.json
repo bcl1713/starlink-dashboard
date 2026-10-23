@@ -1,0 +1,3199 @@
+[
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 101,
+          "up": 1,
+          "value": 2
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              2,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": []
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "complete"
+    ],
+    "name": "complete_zero_spike"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            null,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            null,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": null,
+          "scrape_duration_seconds": null,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "missing",
+          "timestamp": 101,
+          "up": 0,
+          "value": null
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              null,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": [
+            [
+              100,
+              102
+            ]
+          ]
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "network_data_gap"
+    ],
+    "name": "missing_scrape"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            null,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            null,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": null,
+          "scrape_duration_seconds": null,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "nan",
+          "timestamp": 101,
+          "up": 0,
+          "value": null
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              null,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": [
+            [
+              100,
+              102
+            ]
+          ]
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "network_data_gap"
+    ],
+    "name": "explicit_nan"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            null,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": null,
+          "scrape_duration_seconds": null,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "missing",
+          "timestamp": 101,
+          "up": 0,
+          "value": null
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              null,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": [
+            [
+              100,
+              102
+            ]
+          ]
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "history_projection_gap"
+    ],
+    "name": "api_deletion"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101.2,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 101,
+          "up": 1,
+          "value": 2
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              2,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": []
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "history_timestamp_defect"
+    ],
+    "name": "timestamp_shift"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 101,
+          "up": 1,
+          "value": 2
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              2,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": [
+            [
+              101,
+              102
+            ]
+          ]
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "frontend_rendering_gap"
+    ],
+    "name": "frontend_only_rendering_gap"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 101,
+          "up": 1,
+          "value": 2
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              null,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": []
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "frontend_data_path_gap"
+    ],
+    "name": "frontend_only_input_gap"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 101,
+          "up": 1,
+          "value": 2
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": null,
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              2,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": null
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "unknown"
+    ],
+    "name": "missing_paint"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "missing",
+          "timestamp": 101,
+          "up": 1,
+          "value": null
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              2,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": []
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "network_data_gap"
+    ],
+    "name": "finite_lookback_over_missing_scrape"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ],
+              [
+                103,
+                1
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "end": 103,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-1",
+          "sample_timestamps": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "start": 100,
+          "step": 1,
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "values": [
+            0,
+            2,
+            9,
+            1
+          ],
+          "viewer": "overview-1"
+        },
+        "kind": "evaluation",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 100,
+          "up": 1,
+          "value": 0
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 101,
+          "up": 1,
+          "value": 2
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 102,
+          "up": 1,
+          "value": 9
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "sample_count": 11,
+          "scrape_duration_seconds": 0.001,
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "source_id": "fictional-source",
+          "state": "finite",
+          "timestamp": 103,
+          "up": 1,
+          "value": 1
+        },
+        "kind": "scrape",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "b1",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-1",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            100,
+            101,
+            102,
+            103
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              0,
+              2,
+              9,
+              1
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            100,
+            103
+          ],
+          "visible_gaps": []
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "older",
+          "end": 102,
+          "evaluation_id": "eval-poll1",
+          "request_id": "poll-older",
+          "segment": "measured",
+          "series": {
+            "starlink_network_latency_ms_current": [
+              [
+                99,
+                1
+              ],
+              [
+                100,
+                0
+              ],
+              [
+                101,
+                2
+              ],
+              [
+                102,
+                9
+              ]
+            ]
+          },
+          "source_id": "fictional-source",
+          "start": 99,
+          "step": 1,
+          "viewer": "overview-1"
+        },
+        "kind": "history",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 8,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "bundle_id": "older",
+          "module_hashes": {
+            "plot": "fictional-module-sha256"
+          },
+          "paint_evidence": "fictional-paint-attestation",
+          "request_id": "poll-older",
+          "segment": "measured",
+          "series": "starlink_network_latency_ms_current",
+          "times": [
+            99,
+            100,
+            101,
+            102
+          ],
+          "traces": {
+            "avg": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "max": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "min": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "observed": [
+              1,
+              0,
+              2,
+              9
+            ]
+          },
+          "viewer": "overview-1",
+          "viewport": [
+            99,
+            102
+          ],
+          "visible_gaps": []
+        },
+        "kind": "chart",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 9,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "expected": [
+      "complete",
+      "out_of_order_bundle"
+    ],
+    "name": "out_of_order_history_responses"
+  },
+  {
+    "durations": {
+      "observer_http": 10000000,
+      "observer_wake": 700000000
+    },
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "observer.scheduled"
+        },
+        "kind": "boundary",
+        "mono_ns": "0",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "observer.wake"
+        },
+        "kind": "boundary",
+        "mono_ns": "700000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "observer.send"
+        },
+        "kind": "boundary",
+        "mono_ns": "710000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "observer.received"
+        },
+        "kind": "boundary",
+        "mono_ns": "720000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "name": "delayed_observer"
+  },
+  {
+    "durations": {
+      "worker_completion": 1000000,
+      "worker_queue": 200000000,
+      "worker_service": 1000000
+    },
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.dispatch"
+        },
+        "kind": "boundary",
+        "mono_ns": "0",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.start"
+        },
+        "kind": "boundary",
+        "mono_ns": "200000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.end"
+        },
+        "kind": "boundary",
+        "mono_ns": "201000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.returned"
+        },
+        "kind": "boundary",
+        "mono_ns": "202000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "name": "backend_queue"
+  },
+  {
+    "durations": {
+      "worker_completion": 500000000
+    },
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.dispatch"
+        },
+        "kind": "boundary",
+        "mono_ns": "0",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.start"
+        },
+        "kind": "boundary",
+        "mono_ns": "1000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.end"
+        },
+        "kind": "boundary",
+        "mono_ns": "2000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "worker.returned"
+        },
+        "kind": "boundary",
+        "mono_ns": "502000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "name": "worker_completion"
+  },
+  {
+    "durations": {
+      "producer_acquisition": 300000000,
+      "producer_completion": 300000000,
+      "producer_publication": 200000000
+    },
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.dispatch"
+        },
+        "kind": "boundary",
+        "mono_ns": "0",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.start"
+        },
+        "kind": "boundary",
+        "mono_ns": "1000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.collected"
+        },
+        "kind": "boundary",
+        "mono_ns": "301000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.validated"
+        },
+        "kind": "boundary",
+        "mono_ns": "302000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 4,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.published"
+        },
+        "kind": "boundary",
+        "mono_ns": "501000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 5,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.end"
+        },
+        "kind": "boundary",
+        "mono_ns": "502000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 6,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "producer.returned"
+        },
+        "kind": "boundary",
+        "mono_ns": "802000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 7,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "name": "producer_acquisition_publication"
+  },
+  {
+    "admission_wait_ns": 400000000,
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "repo.wait"
+        },
+        "kind": "boundary",
+        "mono_ns": "0",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": "gate1",
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "repo.acquired"
+        },
+        "kind": "boundary",
+        "mono_ns": "400000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 2,
+        "span_id": "gate1",
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      },
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "name": "repo.released"
+        },
+        "kind": "boundary",
+        "mono_ns": "401000000",
+        "op_id": "r1",
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 3,
+        "span_id": "gate1",
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "name": "repository_contention"
+  },
+  {
+    "events": [
+      {
+        "clock_id": "fictional-process",
+        "data": {
+          "available": false,
+          "boundary": "public.producer_prepare",
+          "reason": "private corrected path bypasses wrapper"
+        },
+        "kind": "coverage",
+        "mono_ns": "0",
+        "op_id": null,
+        "pid": 0,
+        "run_id": "fictional-fixture",
+        "schema": "perf391-network-evidence-v1",
+        "seq": 1,
+        "span_id": null,
+        "stream_id": "fixture",
+        "thread_cpu_ns": null,
+        "tid": 0,
+        "version": 1
+      }
+    ],
+    "name": "missing_private_wrapper"
+  }
+]

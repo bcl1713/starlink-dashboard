@@ -1,0 +1,97 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "286228"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 286228,
+      "start_id": "211553801"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "286263"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 286263,
+      "start_id": "211553853"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/collector-tests-owner"
+  ],
+  "owner": {
+    "pgid": 286226,
+    "pid": 286227,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "211553796"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/tmp/perf391-stage5-env/bin/python",
+        "-B",
+        "-c",
+        "import os,sys,unittest;os.chdir('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/release-replay/A-cli/collector/tools/diagnostics/perf391-network-evidence-v1');sys.path.insert(0,os.getcwd());r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover(\"tests\"));raise SystemExit(not r.wasSuccessful())"
+      ],
+      "pgid": 286228,
+      "pid": 286228,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211553801",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "node",
+        "--test",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/release-replay/A-cli/collector/tools/diagnostics/perf391-network-evidence-v1/tests/browser.test.mjs"
+      ],
+      "pgid": 286263,
+      "pid": 286263,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211553853",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-stage5",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

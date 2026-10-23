@@ -1,0 +1,128 @@
+{
+  "task": "perf391-stage5",
+  "host_verified": true,
+  "process_checks": [
+    {
+      "pid": 246053,
+      "start_id": "211499829",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 274140,
+      "start_id": "211537218",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 286228,
+      "start_id": "211553801",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 286263,
+      "start_id": "211553853",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 267219,
+      "start_id": "211527825",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 260781,
+      "start_id": "211519511",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 269072,
+      "start_id": "211530301",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 226495,
+      "start_id": "211479144",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 201706,
+      "start_id": "211447572",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 228929,
+      "start_id": "211481376",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 274203,
+      "start_id": "211537311",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 274217,
+      "start_id": "211537337",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 274230,
+      "start_id": "211537360",
+      "task_identity_alive": false,
+      "reaped": true
+    },
+    {
+      "pid": 274254,
+      "start_id": "211537387",
+      "task_identity_alive": false,
+      "reaped": true
+    }
+  ],
+  "remaining_task_processes": [],
+  "remaining_task_listeners": [],
+  "docker_inventory": {
+    "containers": {
+      "returncode": 0,
+      "ids": [],
+      "error": ""
+    },
+    "networks": {
+      "returncode": 0,
+      "ids": [],
+      "error": ""
+    },
+    "volumes": {
+      "returncode": 0,
+      "ids": [],
+      "error": ""
+    }
+  },
+  "compose_projects_created": [],
+  "services_browsers_http_capture_created": false,
+  "removed_paths": [
+    "/tmp/perf391-stage4-collector-7114uwyi",
+    "/tmp/perf391-stage5-worker-hwtq48tw",
+    "/tmp/perf391-stage2-slices-rwf9orhn",
+    "/tmp/perf391-stage4-collector-b5qg6vew",
+    "/tmp/perf391-stage5-env",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/vitest-focused",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/vitest-regression"
+  ],
+  "dependency_links_removed": true,
+  "remaining_runtime_resources": [],
+  "retained": [
+    "isolated open-PR worktree",
+    "committed qualification evidence"
+  ],
+  "configuration_credentials_primary_checkout_preserved": true
+}

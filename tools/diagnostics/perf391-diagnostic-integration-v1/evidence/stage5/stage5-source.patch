@@ -1,0 +1,1338 @@
+diff --git a/docs/superpowers/plans/2026-10-22-perf391-stage5-qualification.md b/docs/superpowers/plans/2026-10-22-perf391-stage5-qualification.md
+new file mode 100644
+index 00000000..81ce073f
+--- /dev/null
++++ b/docs/superpowers/plans/2026-10-22-perf391-stage5-qualification.md
+@@ -0,0 +1,40 @@
++# Stage 5 offline qualification plan
++
++**Goal:** qualify the diagnostic pipeline at the Stage 4 delivery without
++running application infrastructure.
++
++**Spec:** PR #408 orchestrator checkpoint 6353772496 and this session's Stage 5
++requirements.
++
++**Architecture:** retain exact guarded A/C exports and pinned #407 dependency.
++Feed deterministic Stage 2 probe events and fake-Page Stage 3A records into the
++real owner, evidence sink, collector and analyzers. Independently verify reports
++and artifacts. Changes are confined to the diagnostic integration package and
++this plan.
++
++- [ ] Reproduce exact sources and dependency inventories; preserve all
++      production and frozen bytes.
++- [ ] Run the existing bounded Python/Node baseline; independently review Stage
++      4's ten fixes.
++- [ ] Add persisted deterministic end-to-end fixtures, positive and negative
++      qualification, actual offline CLI replay and independent verification.
++      Repair reproduced integration-only defects with failing regressions first.
++- [ ] Run relevant Python, fake-Page Node, frontend and static checks; record
++      coverage and uncovered runtime risks.
++- [ ] Publish immutable hashes, review dispositions, boundary matrix, future
++      Forge preflight/runbook and verified cleanup to draft #408; stop.
++
++Constraints: no images, browser launches, services, application HTTP traffic,
++packet capture, calibration or sustained tests; no production/frozen
++collector/harness changes; no privileges or Nginx/network changes. Stage 3B
++deferred. Observer cadence requirement remains 1.5 seconds. PRs remain
++draft/unmerged and issues open.
++
++Ruling: base the isolated task branch on the explicitly requested Stage 4
++commit, which descends from origin/dev; fast-forward the existing #408 head
++after verification. Preserve other open-PR worktrees.
++
++Review focus: complete-summary/loss gates, corrupted sequence/source/clock
++identity, missing/duplicate events, restarts, partial body/snapshot references,
++unsupported paint/wire and cleanup failures. Runtime behavior remains
++unqualified.
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/FORGE-RUNBOOK.md b/tools/diagnostics/perf391-diagnostic-integration-v1/FORGE-RUNBOOK.md
+new file mode 100644
+index 00000000..2ec12995
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/FORGE-RUNBOOK.md
+@@ -0,0 +1,132 @@
++# Forge qualification handoff
++
++Stage 5 authorizes deterministic offline qualification only. This file prepares
++a future short-run review; it does not authorize images, services, browsers,
++HTTP, capture, calibration or sustained tests. Stage 3B remains deferred.
++
++## Repeat offline qualification
++
++Use a private Python 3.11 environment with `requirements-test.txt`; record the
++environment and output path before starting. Run from this package, using new
++output directories. The Python owner installs a process-local subreaper and
++records child PID, PGID, start identity and final cleanup. Retain an outer
++timeout.
++
++```sh
++timeout --kill-after=10s 30s ./forge-preflight.sh --offline
++timeout --kill-after=10s 140s python -B run.py tests --output artifacts/stage5-repeat-tests
++timeout --kill-after=10s 45s node --experimental-test-coverage --test tests/*.test.mjs
++timeout --kill-after=10s 90s python -B tests/stage5_qualify.py --output artifacts/stage5-repeat-pipeline
++timeout --kill-after=10s 2m python -B verify.py --output artifacts/stage5-repeat-identity
++timeout --kill-after=10s 2m python -B verify_frontend.py --output artifacts/stage5-repeat-derivatives
++```
++
++`tests/stage5-node-fixture.mjs OUTPUT` reproduces persisted synthetic request,
++response, parsed history, retained and committed chart records through the real
++Page adapter and collection owner using an EventEmitter fake Page. It normalizes
++host UUID/PID/start/receipt fields explicitly after collection; these fixture
++values never describe a real browser or performance. Backend fixtures use real
++probe entrypoints with fixed stamps and explicitly normalized process
++identities. Separate tests feed guarded production tick/gate functions and
++actual AnyIO worker events through the owner, collector and verified analyzer.
++
++For frontend checks, first finish guarded derivation. Add temporary dependency
++links only after source identity succeeds. Run the 18 focused tests for each
++role using `PERF391_FRONTEND_ROOT` and `tests/frontend/vitest.config.mjs`. For
++the 2,102 existing tests, change working directory to the effective frontend
++root, set `PERF391_FRONTEND_ROOT="$PWD"` and `PERF391_DIAGNOSTIC_TEST_MODE=off`,
++and invoke Vitest with the absolute `tests/frontend/regression.config.mjs` path.
++The existing regression tests assert the primary request API; active diagnostic
++request headers are covered by the separate focused tests. For TypeScript, use a
++private configuration extending `tsconfig.app.json` with the diagnostic alias
++`@perf391/browser-probe` pointing to this package's `browser-probe.ts`, preserve
++the application's `@/*` path, and disable incremental output. Run
++`tsc --noEmit -p PRIVATE_CONFIG`; the root solution has no source files and the
++raw application config deliberately has no diagnostic alias.
++Remove dependency links before rechecking complete source-tree identities.
++
++The replay script calls the actual `run.py integrate` and `run.py analyze`
++entrypoints for A and C and independently verifies resulting artifacts and
++duration references. The CLI deliberately has no reviewed module inventory, so
++its v1 chart projection remains unavailable; the API path supplies the pinned,
++independently reproduced projection-module inventory. A valid sidecar commit
++bracket alone does not establish valid chart contents or painted pixels.
++
++## Future read-only Forge preflight
++
++First obtain a separate runtime checkpoint. Review diagnostic Docker/build and
++owner lifecycle wiring before running any image, server, browser or traffic. No
++runnable application launcher is supplied by Stage 5; `run.py` remains an
++offline importer/test runner. A launch recipe must be separately reviewed.
++
++After authorization, record actor UID, executor, UTC, source/delivery manifest
++hash, command owner and intended task project. Read the current cloud runtime
++network policy and readiness through supported runtime tools if available; this
++session had no `environment_status` tool or executor policy snapshot. Do not
++infer credential/VPN readiness from their absence. Preserve proxy/CA,
++credentials, `DOCKER_HOST` and the active context.
++
++The executable inventory command below performs read-only Docker and local
++filesystem/process inventory. It does not launch or download a browser, build
++images, open an HTTP endpoint, alter ports or grant capture privileges. Do not
++run it in the Stage 5 session. Set image variables to reviewed existing
++immutable diagnostic image IDs; missing images correctly stop the inventory.
++
++```sh
++# Future separately authorized session only; supply existing reviewed values.
++PERF391_NODE_ROOT=/reviewed/playwright-install \
++PERF391_A_IMAGE=sha256:REVIEWED_A_IMAGE_ID \
++PERF391_C_IMAGE=sha256:REVIEWED_C_IMAGE_ID \
++timeout --kill-after=10s 90s ./forge-preflight.sh --inspect-runtime
++```
++
++If Docker configuration is absent, discover the actor socket at
++`${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock`; inspect explicitly with
++`docker -H unix://PATH info`. Failure at `/var/run/docker.sock` does not
++establish actor-daemon failure. Do not clear configuration, switch to root,
++restart shared services or request host capabilities.
++
++Before a short-run GO, require the following recorded evidence:
++
++| Gate              | Required evidence and failure action                                                                                                                                                                                                                                                   |
++| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
++| Sources           | Exact A/C source, reviewed patch specs, effective whole-tree inventories, external diagnostic module closure, #407 source/release and frozen harness identities match the Stage 5 manifest. Drift stops preparation.                                                                   |
++| Diagnostic builds | Separately reviewed opt-in build specs; exact image IDs/digests, seven required build-manifest labels, external modules and compiled JS/CSS maps. Stage 5 has no image/assets and its unbuilt schema cannot certify a built image. Extend/review the runtime manifest before building. |
++| Isolation         | Task Compose project, private volumes and loopback ports, image/container IDs and all commands recorded before creation. Preserve shared services/configuration. Empty `ss` results are advisory until a task owner actually reserves ports.                                           |
++| Host mapping      | Host and container PID namespaces, PID/TID start IDs, boot ID, cgroup v2 mount/path, CPU quota/cpuset/throttling and accessible counters mapped to each process. Inaccessible counters are null with a reason. No guessed cross-namespace PIDs.                                        |
++| Browser           | Existing Playwright/package lock and Chromium binary hashes, package/API compatibility, owned Page/context/browser close contract, viewport/DPR/visibility and document-generation identities. Fake-Page disposal does not establish real Playwright support.                          |
++| Observer          | Dedicated 1 Hz absolute deadlines, 2 s total request/body cap and bounded queues. The historical 1.5-second observer-cadence requirement is unchanged. Skips, failures and dropped events must remain visible.                                                                         |
++| Transport         | Actual task-owned browser → production Nginx → backend topology and compression documented. No Nginx/compression/fetch changes or unbounded `response.body()` fallback. No raw-wire claims: Stage 3B remains deferred.                                                                 |
++| Clock/source      | Process/thread/document/source restarts use new streams and start IDs; bracketed UTC anchors expose steps. Explicit request/parent joins only. Never subtract independent clock origins or treat unknown PoP/handover as an outage.                                                    |
++| Shutdown          | Register handles and callbacks before startup; stop admissions, cancel/await observer and browser bindings, flush/finalize loss summaries and artifacts, close contexts, terminate/reap owned workers. Verify scoped cleanup on normal completion, timeout and interruption.           |
++
++## Future short qualification sequence
++
++The separate runtime review must approve concrete launcher commands, resource
++budgets and exact diagnostic images/assets. Stop if any preflight gate fails; do
++not substitute another transport or unreviewed image. Proposed bounded scope:
++one A run and one C run, each at most 30 observer samples with a 90-second outer
++deadline and 10-second forced-termination grace. Fixed samples exercise source
++observation, one history request/response, retention and one actual plot commit;
++they do not establish long-run boundedness or performance savings. Calibration,
++benchmarks and soak need their own scope and are not part of this proposal.
++
++For each role, record identities and clock anchors, validate source/stream/final
++summary continuity, perform offline `integrate`/`analyze`, verify artifact
++hashes and unique successful same-clock duration references, and report each
++boundary independently. Real compositor snapshots, if separately approved and
++supported, must retain hashed PNG bytes plus unchanged
++document/generation/viewport brackets; they establish a sampled compositor
++result only. Missing paint/raw-wire evidence must leave those claims
++unavailable, even when the collection is complete.
++
++Use exit/INT/TERM cleanup handlers. After a timeout, verify the previous owned
++process tree is gone before retrying. Remove only the recorded project's
++containers/networks/disposable volumes, then inspect project-label listings and
++host PID/start/PGID/listener state through an approved host command. Preserve
++acceptance artifacts and open-PR worktrees; remove private environments/exports
++and dependency links. Report exact survivors if cleanup cannot finish.
++
++Keep #403/#405/#406/#407/#408 draft and unmerged, #390/#391 open. An offline GO
++does not change primary uninstrumented acceptance, the 1.5-second rule or the
++need for a separate runtime authorization.
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/SHA256SUMS.json b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/SHA256SUMS.json
+new file mode 100644
+index 00000000..0c2f898a
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/SHA256SUMS.json
+@@ -0,0 +1 @@
++{"artifacts/849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91.bin":"849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91","artifacts/9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2.bin":"9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2","artifacts/e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63.bin":"e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63","artifacts/e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a.bin":"e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a","artifacts/cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7.bin":"cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7","records.jsonl":"507fb256885656135d237a3a030a814c90f26e1a6d20b6da848a85636161e1d0","summary.json":"97b659fca64c6dd1c6fbf5dfb9a70e0829badb05e3c35d708ff13b7f6b187305"}
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91.bin b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91.bin
+new file mode 100644
+index 00000000..5f605113
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91.bin
+@@ -0,0 +1 @@
++{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":3,"monotonic_ms":3,"phase":"app.parse_available","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{"bundle":"bundle1","metric":"latency","history":{"window_seconds":60,"start_timestamp_seconds":1,"end_timestamp_seconds":3,"step_seconds":1,"series":{"latency":[[1,2],[2,3],[3,4]]}}}}
+\ No newline at end of file
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2.bin b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2.bin
+new file mode 100644
+index 00000000..8bb16b3f
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2.bin
+@@ -0,0 +1 @@
++{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":6,"monotonic_ms":6,"phase":"plot.commit","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{"accepted":"bundle1","acceptedRequest":"synthetic-stage5/p/doc/r1","metric":"latency","commit":"plot1","retained":{"window_seconds":60,"start_timestamp_seconds":1,"end_timestamp_seconds":3,"step_seconds":1,"series":{"latency":[[1,2],[2,3],[3,4]]}},"projection":{"times":[1,2,3]},"logFloor":1,"plot":{"data":[[1,2,3],[null,null,null],[null,null,null],[null,null,null],[2,3,4]],"scales":{"x":{"min":1,"max":3}}}}}
+\ No newline at end of file
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7.bin b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7.bin
+new file mode 100644
+index 00000000..7d59a267
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7.bin
+@@ -0,0 +1 @@
++{"data":[[1,2,3],[null,null,null],[null,null,null],[null,null,null],[2,3,4]],"scales":{"x":{"min":1,"max":3}}}
+\ No newline at end of file
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63.bin b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63.bin
+new file mode 100644
+index 00000000..367f06d7
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63.bin
+@@ -0,0 +1 @@
++{"window_seconds":60,"start_timestamp_seconds":1,"end_timestamp_seconds":3,"step_seconds":1,"series":{"latency":[[1,2],[2,3],[3,4]]}}
+\ No newline at end of file
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a.bin b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a.bin
+new file mode 100644
+index 00000000..0fed17fe
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/artifacts/e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a.bin
+@@ -0,0 +1 @@
++{"times":[1,2,3]}
+\ No newline at end of file
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/records.jsonl b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/records.jsonl
+new file mode 100644
+index 00000000..45c3080a
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/records.jsonl
+@@ -0,0 +1,9 @@
++{"host_seq":1,"host_received_ns":"1000","phase":"browser.request","requestId":"synthetic-stage5/p/doc/r1","requestToken":"p/n1","page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":2,"host_received_ns":"1010","phase":"browser.response","requestId":"synthetic-stage5/p/doc/r1","requestToken":"p/n1","response":true,"status":200,"encoding":"identity","page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":3,"host_received_ns":"1020","phase":"browser.finished","requestId":"synthetic-stage5/p/doc/r1","requestToken":"p/n1","response":true,"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":4,"host_received_ns":"1030","origin":"browser","event":{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":1,"monotonic_ms":1,"phase":"app.request","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{}},"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":5,"host_received_ns":"1040","origin":"browser","event":{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":2,"monotonic_ms":2,"phase":"app.response","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{}},"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":6,"host_received_ns":"1050","origin":"browser","event":{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":3,"monotonic_ms":3,"phase":"app.parse_available","op":"synthetic-stage5/p/doc/r1","outcome":"ok"},"artifact":{"path":"artifacts/849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91.bin","sha256":"849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91","bytes":380},"sha256":"849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91","commit":null,"metric":"latency","snapshots":{},"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":7,"host_received_ns":"1060","origin":"browser","event":{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":4,"monotonic_ms":4,"phase":"query.success","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{}},"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":8,"host_received_ns":"1070","origin":"browser","event":{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":5,"monotonic_ms":5,"phase":"history.retained","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{"commit":"plot1"}},"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
++{"host_seq":9,"host_received_ns":"1080","origin":"browser","event":{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":6,"monotonic_ms":6,"phase":"plot.commit","op":"synthetic-stage5/p/doc/r1","outcome":"ok"},"artifact":{"path":"artifacts/9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2.bin","sha256":"9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2","bytes":600},"sha256":"9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2","commit":"plot1","metric":"latency","snapshots":{"retained":{"sha256":"e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63","artifact":{"path":"artifacts/e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63.bin","sha256":"e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63","bytes":133}},"projection":{"sha256":"e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a","artifact":{"path":"artifacts/e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a.bin","sha256":"e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a","bytes":17}},"plot":{"sha256":"cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7","artifact":{"path":"artifacts/cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7.bin","sha256":"cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7","bytes":110}}},"page_id":"p","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"}}
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/summary.json b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/summary.json
+new file mode 100644
+index 00000000..b8cfb129
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5-node/summary.json
+@@ -0,0 +1 @@
++{"schema":"perf391-node-collection-v1","version":1,"run":"synthetic-stage5","host_identity":{"process_uuid":"33333333-3333-4333-8333-333333333333","pid":79,"process_start_id":"fixture-node-start","clock_id":"fixture-node-clock"},"closed":true,"complete":true,"dropped":0,"written_bytes":6226,"browsers":[{"closed":true,"failed":false,"lost":0,"active":0,"pending":0,"bytes":0,"jobs":0,"bindingJobs":0,"ownedOperations":0,"assemblies":0}],"sources":[],"streams":[{"stream_id":"synthetic-stage5/p/doc","last_seq":6}],"artifacts":{"artifacts/849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91.bin":"849f7e68269de3b17fd720081ecb0aa1e99fbf867967db2310025c05eba6de91","artifacts/9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2.bin":"9b6ab96c4ef4b34b6d308ce27d5557b434b0866be177d61cc0fbe8cc396c13d2","artifacts/e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63.bin":"e2c8ac71c178afce32bbdbd2df462373cde93e813f3c7d446af29b5d4d028f63","artifacts/e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a.bin":"e70f12c58d90e06c37de1db0d7e3c1ab5e320140d7de5b7671f5e41e759aa02a","artifacts/cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7.bin":"cbc85edf995787c04f5321fe43ce73a037f056cf1bb61d48c900c5df016e59e7"}}
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/A-backend.jsonl b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/A-backend.jsonl
+new file mode 100644
+index 00000000..db246ca1
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/A-backend.jsonl
+@@ -0,0 +1,21 @@
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"100","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.dispatch","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":1,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"10","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"110","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.start","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":2,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"11","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"120","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"collection.enter","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":3,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"12","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"130","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"collection.return","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":4,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"13","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"140","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.collected","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":5,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"14","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"150","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"metrics.inplace.begin","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":6,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"15","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"160","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"metrics.inplace.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":7,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"16","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"170","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":8,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"17","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"180","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.returned","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":9,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"18","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"190","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"asgi.entry","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":10,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"19","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"200","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.wait","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":11,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"20","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"210","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.local_grant","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":12,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"21","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"220","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.acquired","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":13,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"22","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"230","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.released","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":14,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"23","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"240","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.dispatch","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":15,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"24","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"250","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.start","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":16,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"25","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"260","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":17,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"26","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"270","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.returned","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":18,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"27","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"280","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"history.begin","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":19,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"28","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"290","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"history.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":20,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"29","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"300","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"asgi.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"A","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":21,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"30","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/C-backend.jsonl b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/C-backend.jsonl
+new file mode 100644
+index 00000000..73998a1e
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/C-backend.jsonl
+@@ -0,0 +1,24 @@
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"100","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.dispatch","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":1,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"10","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"110","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.start","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":2,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"11","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"120","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"collection.enter","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":3,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"12","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"130","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"collection.return","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":4,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"13","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"140","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.collected","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":5,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"14","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"150","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"source.final.begin","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":6,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"15","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"160","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"source.final.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":7,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"16","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"170","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"publication.attempt","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":8,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"17","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{"cas_success":true,"publication_kind":"ready"},"mono_ns":"180","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"publication.result","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":9,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"18","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{"cas_success":true,"publication_kind":"ready"},"mono_ns":"190","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.published","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":10,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"19","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"200","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":11,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"20","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"210","op_id":"producer","operation_type":"tick","outcome":"ok","parent_op_id":null,"phase":"producer.returned","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":12,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"21","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"220","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"asgi.entry","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":13,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"22","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"230","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.wait","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":14,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"23","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"240","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.local_grant","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":15,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"24","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"250","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.acquired","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":16,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"25","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"260","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"repo.released","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":17,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"26","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"270","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.dispatch","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":18,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"27","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"280","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.start","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":19,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"28","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"290","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":20,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"29","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"300","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"worker.returned","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":21,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"30","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"310","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"history.begin","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":22,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"31","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"320","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"history.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":23,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"32","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
++{"clock_id":"fixture-backend-clock","emitter":"backend","identity":{},"mono_ns":"330","op_id":"synthetic-stage5/p/doc/r1","operation_type":"history","outcome":"ok","parent_op_id":null,"phase":"asgi.end","pid":77,"process_start_id":"fixture-process-start","process_uuid":"11111111-1111-4111-8111-111111111111","role":"C","run_id":"synthetic-stage5","schema":"perf391-diagnostic-integration-v1","seq":24,"span_id":null,"stream_id":"fixture-backend","thread_cpu_ns":"33","thread_start_id":"fixture-thread-start","tid":78,"unavailable":{},"version":1}
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/backend-stats.json b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/backend-stats.json
+new file mode 100644
+index 00000000..79f620bb
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/fixtures/stage5/backend-stats.json
+@@ -0,0 +1 @@
++{"buffered":0,"dropped":0,"failures":0,"invalid":0}
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/forge-preflight.sh b/tools/diagnostics/perf391-diagnostic-integration-v1/forge-preflight.sh
+new file mode 100755
+index 00000000..4e32c2a9
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/forge-preflight.sh
+@@ -0,0 +1,67 @@
++#!/usr/bin/env bash
++# Read-only future Forge inventory. Never builds/starts apps, browsers or traffic.
++set -euo pipefail
++cd "$(dirname "$0")"
++case "${1:---offline}" in
++  --offline)
++    python3 -B - <<'PY'
++import hashlib
++import json
++from pathlib import Path
++root = Path.cwd()
++manifest = json.loads((root / 'evidence/stage5/release-manifest.json').read_bytes())
++if manifest.get('schema') != 'perf391-stage5-release-v1' or manifest.get('qualification') != 'offline_only':
++    raise SystemExit('wrong release contract')
++ignored = {'artifacts', 'node_modules', '__pycache__', '.ruff_cache', 'evidence'}
++actual = {p.relative_to(root).as_posix() for p in root.rglob('*')
++          if (p.is_file() or p.is_symlink()) and not ignored.intersection(p.relative_to(root).parts)}
++declared = set(manifest['source_files'])
++if actual != declared or not declared.issubset(manifest['files']):
++    raise SystemExit('source inventory differs from release closure')
++for name, expected in manifest['files'].items():
++    path = root / name
++    if path.is_symlink() or root not in path.resolve().parents:
++        raise SystemExit('invalid manifest path: ' + name)
++    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
++        raise SystemExit('hash mismatch: ' + name)
++print(json.dumps({'verified_files': len(manifest['files']),
++                  'qualification': manifest['qualification'],
++                  'runtime_authorized': False}))
++PY
++    ;;
++  --inspect-runtime)
++    # Run only in a separately authorized runtime session. Preserve actor selection.
++    printf 'Actor UID: %s\n' "$(id -u)"
++    printf 'Actor runtime directory: %s\n' "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
++    printf 'DOCKER_HOST configured: %s\n' "${DOCKER_HOST:+yes}"
++    timeout --kill-after=5s 15s docker context show
++    timeout --kill-after=5s 15s docker info --format '{{json .ServerVersion}} {{json .CgroupDriver}} {{json .CgroupVersion}} {{json .SecurityOptions}}'
++    timeout --kill-after=5s 15s docker compose version
++    node --version
++    python3 --version
++    # No browser launch or download; inspect a supplied existing installation only.
++    : "${PERF391_NODE_ROOT:?set the reviewed existing Playwright installation directory}"
++    PERF391_NODE_ROOT="$PERF391_NODE_ROOT" node - <<'JS'
++const { createRequire } = require('node:module');
++const req = createRequire(process.env.PERF391_NODE_ROOT + '/package.json');
++const { existsSync, readFileSync } = require('node:fs');
++const { createHash } = require('node:crypto');
++const browser = req('playwright').chromium.executablePath();
++if (!existsSync(browser)) throw Error('reviewed Chromium binary absent');
++console.log(JSON.stringify({playwright: req('playwright/package.json').version,
++  browser, sha256: createHash('sha256').update(readFileSync(browser)).digest('hex')}));
++JS
++    cat /proc/self/cgroup
++    readlink /proc/self/ns/pid /proc/self/ns/net /proc/self/ns/mnt
++    cat /proc/sys/kernel/random/boot_id
++    # These are inventory reads, not port reservation or capture permission checks.
++    ss -ltn
++    for role in A C; do
++      if [[ "$role" == A ]]; then image="${PERF391_A_IMAGE:-}"; else image="${PERF391_C_IMAGE:-}"; fi
++      [[ "$image" =~ ^sha256:[0-9a-f]{64}$ ]] || { printf 'Missing immutable %s diagnostic image ID\n' "$role" >&2; exit 2; }
++      timeout --kill-after=5s 15s docker image inspect "$image" --format '{{json .Id}} {{json .RepoDigests}} {{json .Config.Labels}}'
++    done
++    printf '%s\n' 'Inventory only. Match images/assets/labels and host mappings to the reviewed runtime manifest before a separate short-run GO. Stage 3B remains deferred.'
++    ;;
++  *) printf 'Usage: %s --offline | --inspect-runtime\n' "$0" >&2; exit 2 ;;
++esac
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/integration.py b/tools/diagnostics/perf391-diagnostic-integration-v1/integration.py
+index 7c50bd29..8625f85e 100644
+--- a/tools/diagnostics/perf391-diagnostic-integration-v1/integration.py
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/integration.py
+@@ -136,24 +136,13 @@ class Integration:
+                     "metric",
+                     "commit",
+                 )
+-                if (
+-                    not all(k in detail for k in required)
+-                    or not artifact
+-                    or detail["acceptedRequest"] != request
+-                    or not self.module_hashes
+-                ):
+-                    self._v1(
+-                        "coverage",
+-                        {
+-                            "boundary": "chart.input",
+-                            "available": False,
+-                            "reason": "missing actual retained/plot/provenance/module hashes",
+-                        },
+-                    )
+-                    return
+-                for name in ("retained", "projection", "plot"):
+-                    snap = row.get("snapshots", {}).get(name)
+-                    if not snap or load is None:
++                for name, snap in row.get("snapshots", {}).items():
++                    if (
++                        name not in ("retained", "projection", "plot")
++                        or name not in detail
++                        or not snap
++                        or load is None
++                    ):
+                         self.sink.failed = True
+                         raise ValueError("snapshot unavailable")
+                     try:
+@@ -170,6 +159,27 @@ class Integration:
+                         raise ValueError("snapshot hash/content mismatch")
+                     if self.sink.artifact(data)["state"] != "available":
+                         raise ValueError("snapshot storage unavailable")
++                if (
++                    not all(k in detail for k in required)
++                    or not artifact
++                    or detail["acceptedRequest"] != request
++                    or not self.module_hashes
++                ):
++                    self._v1(
++                        "coverage",
++                        {
++                            "boundary": "chart.input",
++                            "available": False,
++                            "reason": "missing actual retained/plot/provenance/module hashes",
++                        },
++                    )
++                    return
++                if not all(
++                    name in row.get("snapshots", {})
++                    for name in ("retained", "projection", "plot")
++                ):
++                    self.sink.failed = True
++                    raise ValueError("snapshot unavailable")
+                 data = detail["plot"]["data"]
+                 scales = detail["plot"]["scales"]["x"]
+                 projection = normalize_history(
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5-node-fixture.mjs b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5-node-fixture.mjs
+new file mode 100644
+index 00000000..05ca640c
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5-node-fixture.mjs
+@@ -0,0 +1,150 @@
++/** Offline fixture generator: fake Page only; no network or browser launch. */
++import { EventEmitter } from "node:events";
++import { readFileSync, writeFileSync } from "node:fs";
++import { join } from "node:path";
++import { createHash } from "node:crypto";
++import { createCollection } from "../collect.mjs";
++const root = process.argv[2];
++const run = "synthetic-stage5";
++const identity = {
++  process_uuid: "33333333-3333-4333-8333-333333333333",
++  pid: 79,
++  process_start_id: "fixture-node-start",
++  clock_id: "fixture-node-clock",
++};
++class Page extends EventEmitter {
++  bindings = new Map();
++  async exposeBinding(name, fn) {
++    this.bindings.set(name, fn);
++    return { dispose: async () => this.bindings.delete(name) };
++  }
++  async addInitScript() {
++    return { dispose: async () => {} };
++  }
++}
++const page = new Page();
++const owner = createCollection(root, { run });
++try {
++  const browser = await owner.browser(page, {
++    pageId: "p",
++    origin: "http://127.0.0.1:18080",
++    now: () => "1000",
++  });
++  const op = `${run}/p/doc/r1`;
++  const request = {
++    url: () => "http://127.0.0.1:18080/api/overview-history",
++    headers: () => ({ "x-diagnostic-id": op }),
++    method: () => "GET",
++  };
++  page.emit("request", request);
++  page.emit("response", {
++    request: () => request,
++    headers: () => ({}),
++    status: () => 200,
++  });
++  page.emit("requestfinished", request);
++  const history = {
++    window_seconds: 60,
++    start_timestamp_seconds: 1,
++    end_timestamp_seconds: 3,
++    step_seconds: 1,
++    series: {
++      latency: [
++        [1, 2],
++        [2, 3],
++        [3, 4],
++      ],
++    },
++  };
++  const details = {
++    accepted: "bundle1",
++    acceptedRequest: op,
++    metric: "latency",
++    commit: "plot1",
++    retained: history,
++    projection: { times: [1, 2, 3] },
++    logFloor: 1,
++    plot: {
++      data: [
++        [1, 2, 3],
++        [null, null, null],
++        [null, null, null],
++        [null, null, null],
++        [2, 3, 4],
++      ],
++      scales: { x: { min: 1, max: 3 } },
++    },
++  };
++  const binding = [...page.bindings.values()][0];
++  const events = [
++    ["app.request", {}],
++    ["app.response", {}],
++    ["app.parse_available", { bundle: "bundle1", metric: "latency", history }],
++    ["query.success", {}],
++    ["history.retained", { commit: "plot1" }],
++    ["plot.commit", details],
++  ];
++  for (const [index, [phase, detail]] of events.entries()) {
++    const seq = index + 1;
++    const event = {
++      run,
++      stream: `${run}/p/doc`,
++      clock: "browser/p/doc",
++      seq,
++      monotonic_ms: seq,
++      phase,
++      op,
++      outcome: "ok",
++      detail,
++    };
++    if (
++      !(await binding(
++        { page },
++        {
++          run,
++          page: "p",
++          document: "doc",
++          seq,
++          total: 1,
++          part: 0,
++          payload: JSON.stringify(event),
++        },
++      ))
++    )
++      throw Error("fixture rejected");
++  }
++  await new Promise(setImmediate);
++  await browser.close();
++} finally {
++  const result = await owner.close();
++  if (!result.complete || page.bindings.size)
++    throw Error("fixture cleanup/integrity");
++}
++// Explicit fixture normalization: these are synthetic identities, never runtime measurements.
++const records = readFileSync(join(root, "records.jsonl"), "utf8")
++  .trim()
++  .split("\n")
++  .map(JSON.parse);
++for (const [i, row] of records.entries()) {
++  row.host_identity = identity;
++  row.host_received_ns = String(1000 + i * 10);
++}
++writeFileSync(
++  join(root, "records.jsonl"),
++  records.map(JSON.stringify).join("\n") + "\n",
++);
++const summary = JSON.parse(readFileSync(join(root, "summary.json")));
++summary.host_identity = identity;
++summary.written_bytes =
++  Buffer.byteLength(readFileSync(join(root, "records.jsonl"))) +
++  Object.keys(summary.artifacts).reduce(
++    (n, path) => n + readFileSync(join(root, path)).length,
++    0,
++  );
++writeFileSync(join(root, "summary.json"), JSON.stringify(summary) + "\n");
++const hashes = JSON.parse(readFileSync(join(root, "SHA256SUMS.json")));
++for (const path of Object.keys(hashes))
++  hashes[path] = createHash("sha256")
++    .update(readFileSync(join(root, path)))
++    .digest("hex");
++writeFileSync(join(root, "SHA256SUMS.json"), JSON.stringify(hashes) + "\n");
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_fixture.py b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_fixture.py
+new file mode 100644
+index 00000000..a1efdb68
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_fixture.py
+@@ -0,0 +1,94 @@
++"""Fixed timestamps/identities emitted by the real Stage 2 probe entrypoint.
++
++These are deterministic event inputs; source-slice parity and actual AnyIO/gate
++integration are independently exercised by the existing suite and Stage 5 tests.
++"""
++
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++import backend_probe as probe
++from evidence import canonical
++
++RUN = "synthetic-stage5"
++STATS = {"buffered": 0, "dropped": 0, "invalid": 0, "failures": 0}
++
++
++def backend_fixture(role):
++    probe.configure(role, RUN)
++    operations = [
++        (
++            "producer",
++            "tick",
++            [
++                "producer.dispatch",
++                "producer.start",
++                "collection.enter",
++                "collection.return",
++                "producer.collected",
++            ]
++            + (
++                [
++                    "source.final.begin",
++                    "source.final.end",
++                    "publication.attempt",
++                    "publication.result",
++                    "producer.published",
++                ]
++                if role == "C"
++                else ["metrics.inplace.begin", "metrics.inplace.end"]
++            )
++            + ["producer.end", "producer.returned"],
++        ),
++        (
++            RUN + "/p/doc/r1",
++            "history",
++            [
++                "asgi.entry",
++                "repo.wait",
++                "repo.local_grant",
++                "repo.acquired",
++                "repo.released",
++                "worker.dispatch",
++                "worker.start",
++                "worker.end",
++                "worker.returned",
++                "history.begin",
++                "history.end",
++                "asgi.end",
++            ],
++        ),
++    ]
++    stamp = 100
++    for op, kind, phases in operations:
++        with probe.operation(op, kind):
++            for phase in phases:
++                identity = (
++                    {"cas_success": True, "publication_kind": "ready"}
++                    if phase in ("publication.result", "producer.published")
++                    else None
++                )
++                probe.mark(phase, identity=identity, at=(stamp, stamp // 10))
++                stamp += 10
++    rows = probe.drain()
++    for row in rows:
++        row.update(
++            stream_id="fixture-backend",
++            process_uuid="11111111-1111-4111-8111-111111111111",
++            pid=77,
++            tid=78,
++            process_start_id="fixture-process-start",
++            thread_start_id="fixture-thread-start",
++            clock_id="fixture-backend-clock",
++        )
++    return rows
++
++
++def write_backend(root, role):
++    rows = backend_fixture(role)
++    (root / (role + "-backend.jsonl")).write_bytes(
++        b"".join(canonical(r) + b"\n" for r in rows)
++    )
++    (root / "backend-stats.json").write_bytes(canonical(STATS) + b"\n")
++    return rows
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_qualify.py b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_qualify.py
+new file mode 100644
+index 00000000..32a528f4
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_qualify.py
+@@ -0,0 +1,123 @@
++"""Persist Stage 5 offline entrypoint evidence under an exclusive process owner."""
++
++import argparse
++import asyncio
++import ctypes
++import json
++import signal
++import sys
++from pathlib import Path
++
++from test_stage5_qualification import FIXTURES, RUN, replay
++
++from evidence import canonical
++from owner import Owner
++from run import source_identity
++from verify_evidence import verify_analysis, verify_artifacts
++
++
++async def qualify(output):
++    if ctypes.CDLL(None).prctl(36, 1, 0, 0, 0) != 0:
++        raise RuntimeError("subreaper unavailable")
++    package = Path(__file__).resolve().parents[1]
++    owner = Owner(
++        output,
++        run=RUN,
++        sources=source_identity(package.parents[2]),
++        adopt_descendants=True,
++    )
++    results = {}
++    try:
++        for role in ("A", "C"):
++            summary, report, _ = await asyncio.to_thread(
++                replay, owner.root / (role + "-api"), role
++            )
++            assert summary["complete"] and report["integrity"]["complete"]
++            results[role] = {
++                "api_complete": True,
++                "boundaries": report["boundaries"],
++                "unavailable": report["unavailable"],
++            }
++            commands = [
++                [
++                    "run.py",
++                    "integrate",
++                    "--role",
++                    role,
++                    "--backend",
++                    str(FIXTURES / "stage5" / (role + "-backend.jsonl")),
++                    "--stats",
++                    str(FIXTURES / "stage5/backend-stats.json"),
++                    "--node-root",
++                    str(FIXTURES / "stage5-node"),
++                    "--output",
++                    str(owner.root / (role + "-cli")),
++                ],
++                [
++                    "run.py",
++                    "analyze",
++                    "--events",
++                    str(owner.root / (role + "-cli/evidence/integration.jsonl")),
++                    "--summary",
++                    str(owner.root / (role + "-cli/evidence/summary.json")),
++                    "--output",
++                    str(owner.root / (role + "-cli-analysis.json")),
++                ],
++            ]
++            for index, command in enumerate(commands):
++                with (owner.root / (role + f"-command-{index}.log")).open("wb") as log:
++                    child = owner.spawn([sys.executable, "-B", *command], stdout=log)
++                    status = await asyncio.to_thread(child.wait, timeout=30)
++                    if status:
++                        raise RuntimeError(f"{role} command {index}: {status}")
++            result = json.loads(
++                (owner.root / (role + "-cli-analysis.json")).read_bytes()
++            )
++            cli_evidence = owner.root / (role + "-cli/evidence")
++            verify_artifacts(cli_evidence)
++            verify_analysis(
++                result,
++                [
++                    json.loads(line)
++                    for line in (cli_evidence / "integration.jsonl")
++                    .read_text()
++                    .splitlines()
++                ],
++            )
++            assert result["integrity"]["complete"]
++            results[role]["cli_complete"] = True
++        (owner.root / "results.json").write_bytes(canonical(results) + b"\n")
++    finally:
++        await owner.close()
++    if owner.manifest["status"] != "clean":
++        raise RuntimeError("qualification cleanup failed")
++
++
++async def main(output):
++    loop = asyncio.get_running_loop()
++    task = asyncio.current_task()
++    interrupted = [0]
++
++    def stop(sig):
++        if not interrupted[0]:
++            interrupted[0] = sig
++            task.cancel()
++
++    for sig in (signal.SIGTERM, signal.SIGINT):
++        loop.add_signal_handler(sig, stop, sig)
++    try:
++        await qualify(output)
++    except asyncio.CancelledError:
++        if not interrupted[0]:
++            raise
++        return 128 + interrupted[0]
++    finally:
++        for sig in (signal.SIGTERM, signal.SIGINT):
++            loop.remove_signal_handler(sig)
++    return 0
++
++
++if __name__ == "__main__":
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--output", type=Path, required=True)
++    raise SystemExit(asyncio.run(main(parser.parse_args().output)))
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_preflight.py b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_preflight.py
+new file mode 100644
+index 00000000..e66605fc
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_preflight.py
+@@ -0,0 +1,52 @@
++"""Offline release verifier must reject altered/missing/symlinked artifacts."""
++
++import hashlib
++import json
++import shutil
++import subprocess
++import tempfile
++import unittest
++from pathlib import Path
++
++
++class Stage5PreflightTests(unittest.TestCase):
++    def test_offline_preflight_accepts_exact_hashes_and_rejects_bad_artifacts(self):
++        package = Path(__file__).resolve().parents[1]
++        with tempfile.TemporaryDirectory(prefix="perf391-stage5-preflight-") as tmp:
++            root = Path(tmp)
++            shutil.copy2(package / "forge-preflight.sh", root)
++            (root / "evidence/stage5").mkdir(parents=True)
++            artifact = root / "fixture.bin"
++            artifact.write_bytes(b"fixture")
++            manifest = {
++                "schema": "perf391-stage5-release-v1",
++                "files": {"fixture.bin": hashlib.sha256(b"fixture").hexdigest()},
++                "qualification": "offline_only",
++                "source_files": ["fixture.bin", "forge-preflight.sh"],
++            }
++            manifest["files"]["forge-preflight.sh"] = hashlib.sha256(
++                (root / "forge-preflight.sh").read_bytes()
++            ).hexdigest()
++            (root / "evidence/stage5/release-manifest.json").write_text(
++                json.dumps(manifest)
++            )
++
++            def run():
++                return subprocess.run(
++                    ["bash", str(root / "forge-preflight.sh"), "--offline"],
++                    check=False,
++                    capture_output=True,
++                    timeout=10,
++                )
++
++            self.assertEqual(run().returncode, 0)
++            extra = root / "unreviewed.py"
++            extra.write_text("# unexpected source\n")
++            self.assertNotEqual(run().returncode, 0)
++            extra.unlink()
++            artifact.write_bytes(b"changed")
++            self.assertNotEqual(run().returncode, 0)
++            artifact.unlink()
++            self.assertNotEqual(run().returncode, 0)
++            artifact.symlink_to(root / "forge-preflight.sh")
++            self.assertNotEqual(run().returncode, 0)
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_qualification.py b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_qualification.py
+new file mode 100644
+index 00000000..d126fe68
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_qualification.py
+@@ -0,0 +1,257 @@
++"""End-to-end offline qualification; no services, sockets, browsers or HTTP."""
++
++import asyncio
++import copy
++import json
++import subprocess
++import tempfile
++import unittest
++from pathlib import Path
++
++from stage5_fixture import RUN, STATS, backend_fixture
++from test_stage4 import COLLECTOR
++
++import backend_probe as probe
++import build
++import workers
++from analyze import analyze
++from evidence import Evidence, canonical
++from integration import Integration
++from owner import Owner
++from verify_evidence import validate_document, verify_analysis, verify_artifacts
++
++PACKAGE = Path(__file__).resolve().parents[1]
++FIXTURES = PACKAGE / "fixtures"
++
++
++def replay(root, role, *, mutation=None):
++    """Actual owner/sink/collector API with persisted browser records/artifacts."""
++    owner = Owner(root, run=RUN, sources={"fixture": True, "pins": build.PINS})
++    sink = Evidence(owner.root / "evidence", COLLECTOR, run=RUN)
++    # Use verified production projection identities from the reviewed Stage 4 inventory.
++    modules = json.loads(
++        (PACKAGE / "evidence/stage4/derivative-identity.json").read_bytes()
++    )["roles"][role]["projection_module_hashes"]
++    adapter = Integration(sink, role=role, run=RUN, module_hashes=modules)
++    try:
++        rows = backend_fixture(role)
++        stats = dict(STATS)
++        if mutation == "missing":
++            rows.pop(2)
++        if mutation == "duplicate":
++            rows.insert(2, copy.deepcopy(rows[1]))
++        if mutation == "clock":
++            rows[2]["mono_ns"] = "1"
++        if mutation == "restart":
++            rows[2]["process_start_id"] = "restarted"
++        if mutation == "dropped":
++            stats["dropped"] = 1
++        adapter.backend(rows)
++        adapter.finish_backend(stats)
++        node = FIXTURES / "stage5-node"
++        verify_artifacts(node)
++
++        def load(ref):
++            body = (node / ref["path"]).read_bytes()
++            return body[:-1] if mutation == "partial" else body
++
++        for raw in (node / "records.jsonl").read_text().splitlines():
++            adapter.browser_record(json.loads(raw), load=load)
++        adapter.finish_browser({"closed": True, "failed": False, "lost": 0})
++        summary = sink.close()
++        validate_document(summary, "summary")
++        verify_artifacts(sink.root)
++        events = [
++            json.loads(line)
++            for line in (sink.root / "integration.jsonl").read_text().splitlines()
++        ]
++        report = analyze(events, summary)
++        verify_analysis(report, events)
++        v1 = [
++            json.loads(line)
++            for line in (sink.root / "v1/events.jsonl").read_text().splitlines()
++        ]
++        for event in v1:
++            COLLECTOR.model.validate(event)
++        supplemental = COLLECTOR.analyze.analyze(v1)
++        (root / "analysis.json").write_bytes(canonical(report) + b"\n")
++        (root / "collector-analysis.json").write_bytes(canonical(supplemental) + b"\n")
++        return summary, report, v1
++    finally:
++        if not sink.closed:
++            sink.close()
++        asyncio.run(owner.close())
++
++
++class Stage5QualificationTests(unittest.TestCase):
++    def test_persisted_backend_fixture_is_byte_identical(self):
++        for role in ("A", "C"):
++            self.assertEqual(
++                (FIXTURES / "stage5" / (role + "-backend.jsonl")).read_bytes(),
++                b"".join(canonical(r) + b"\n" for r in backend_fixture(role)),
++            )
++
++    def test_node_fixture_regeneration_is_byte_identical(self):
++        with tempfile.TemporaryDirectory(prefix="perf391-stage5-node-") as tmp:
++            target = Path(tmp) / "node"
++            subprocess.run(
++                ["node", "tests/stage5-node-fixture.mjs", str(target)],
++                timeout=15,
++                check=True,
++                capture_output=True,
++            )
++            before = {
++                p.relative_to(FIXTURES / "stage5-node"): p.read_bytes()
++                for p in (FIXTURES / "stage5-node").rglob("*")
++                if p.is_file()
++            }
++            after = {
++                p.relative_to(target): p.read_bytes()
++                for p in target.rglob("*")
++                if p.is_file()
++            }
++            self.assertEqual(before, after)
++
++    def test_full_pipeline_available_and_unavailable_boundaries_are_independent(self):
++        for role in ("A", "C"):
++            with self.subTest(role=role), tempfile.TemporaryDirectory(
++                prefix="perf391-stage5-full-"
++            ) as tmp:
++                summary, report, v1 = replay(Path(tmp) / "run", role)
++                self.assertTrue(summary["complete"])
++                self.assertTrue(report["integrity"]["complete"])
++                for name in (
++                    "producer.collection",
++                    "producer.execution",
++                    "admission.hold",
++                    "worker.queue",
++                    "worker.execution",
++                    "worker.delivery",
++                    "polling.request_to_response",
++                    "chart_input.commit",
++                ):
++                    self.assertTrue(report["boundaries"][name]["available"], name)
++                self.assertEqual(
++                    report["boundaries"]["producer.final_authority"]["available"],
++                    role == "C",
++                )
++                self.assertEqual(
++                    report["successful_publications"], 1 if role == "C" else None
++                )
++                self.assertFalse(
++                    report["boundaries"]["presentation.capture"]["available"]
++                )
++                self.assertFalse(
++                    report["unavailable"]["passive_http_capture"]["available"]
++                )
++                chart = next(row["data"] for row in v1 if row["kind"] == "chart")
++                self.assertEqual(chart["traces"]["observed"], [2, 3, 4])
++                self.assertIsNone(chart["paint_evidence"])
++                self.assertIsNone(chart["visible_gaps"])
++                supplemental = json.loads(
++                    (Path(tmp) / "run/collector-analysis.json").read_bytes()
++                )
++                self.assertEqual(supplemental["acceptance"], "not_evaluated")
++                self.assertEqual(supplemental["charts"][0]["classification"], "unknown")
++                self.assertIn("paint", supplemental["charts"][0]["unavailable"])
++
++    def test_corruptions_never_produce_verified_complete_durations(self):
++        for mutation in (
++            "missing",
++            "duplicate",
++            "clock",
++            "restart",
++            "dropped",
++            "partial",
++        ):
++            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory(
++                prefix="perf391-stage5-bad-"
++            ) as tmp:
++                if mutation == "partial":
++                    with self.assertRaises(ValueError):
++                        replay(Path(tmp) / "run", "C", mutation=mutation)
++                else:
++                    summary, report, _ = replay(
++                        Path(tmp) / "run", "C", mutation=mutation
++                    )
++                    self.assertFalse(summary["complete"])
++                    self.assertFalse(report["integrity"]["complete"])
++                    self.assertTrue(all(d["ns"] is None for d in report["durations"]))
++                manifest = json.loads((Path(tmp) / "run/manifest.json").read_bytes())
++                self.assertEqual(
++                    manifest["status"], "clean"
++                )  # resource status, not evidence success
++
++    def test_actual_guarded_tick_and_gate_events_survive_complete_pipeline(self):
++        from test_admission import AdmissionTests
++        from test_tick_boundaries import TickTests
++
++        for role in ("A", "C"):
++            _, tick = TickTests().execute(role, True, "normal")
++            _, gate = AdmissionTests().exercise(role, True, "nested")
++            for name, rows in (("tick", tick), ("gate", gate)):
++                with tempfile.TemporaryDirectory(
++                    prefix="perf391-stage5-real-hooks-"
++                ) as tmp:
++                    sink = Evidence(Path(tmp) / "evidence", COLLECTOR, run="offline")
++                    adapter = Integration(sink, role=role, run="offline")
++                    adapter.backend(rows)
++                    adapter.finish_backend(STATS)
++                    summary = sink.close()
++                    events = [
++                        json.loads(s)
++                        for s in (sink.root / "integration.jsonl")
++                        .read_text()
++                        .splitlines()
++                    ]
++                    report = analyze(events, summary)
++                    verify_analysis(report, events)
++                    self.assertTrue(summary["complete"], (role, name))
++                    boundary = (
++                        "producer.collection" if name == "tick" else "admission.hold"
++                    )
++                    self.assertTrue(
++                        report["boundaries"][boundary]["available"], (role, name)
++                    )
++
++    def test_cleanup_failure_stays_failed_even_with_valid_evidence(self):
++        with tempfile.TemporaryDirectory(prefix="perf391-stage5-cleanup-") as tmp:
++            owner = Owner(Path(tmp) / "owner", run=RUN, sources={})
++            done = []
++            owner.register_close(
++                "fails", lambda: (_ for _ in ()).throw(OSError("fixture cleanup"))
++            )
++            owner.register_close("remaining", lambda: done.append(True))
++            asyncio.run(owner.close())
++            self.assertEqual(done, [True])
++            self.assertEqual(owner.manifest["status"], "cleanup_failed")
++
++
++class Stage5WorkerTests(unittest.IsolatedAsyncioTestCase):
++    async def test_actual_anyio_worker_events_through_owner_collector_analyzer(self):
++        from starlette.concurrency import run_in_threadpool
++
++        for role in ("A", "C"):
++            with tempfile.TemporaryDirectory(prefix="perf391-stage5-worker-") as tmp:
++                owner = Owner(Path(tmp) / "owner", run=RUN, sources={})
++                sink = Evidence(owner.root / "evidence", COLLECTOR, run=RUN)
++                owner.register_close("sink", sink.close)
++                probe.configure(role, RUN)
++                self.assertEqual(
++                    await workers.await_pool(
++                        "worker", "job", run_in_threadpool, lambda: 42
++                    ),
++                    42,
++                )
++                adapter = Integration(sink, role=role, run=RUN)
++                adapter.backend(probe.drain())
++                adapter.finish_backend(STATS)
++                await owner.close()
++                rows = [
++                    json.loads(s)
++                    for s in (sink.root / "integration.jsonl").read_text().splitlines()
++                ]
++                report = analyze(rows, sink.result)
++                verify_analysis(report, rows)
++                self.assertTrue(report["boundaries"]["worker.execution"]["available"])
++                self.assertEqual(owner.manifest["status"], "clean")
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_regressions.py b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_regressions.py
+new file mode 100644
+index 00000000..68e661f1
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_regressions.py
+@@ -0,0 +1,92 @@
++"""Independent Stage 4 recheck: unavailable chart input still requires integrity."""
++
++import copy
++import hashlib
++import tempfile
++import unittest
++from pathlib import Path
++
++from test_stage4 import COLLECTOR, summaries
++from test_stage4_integration import wrapped
++
++from analyze import analyze
++from evidence import BrowserProjection, Evidence
++from integration import Integration
++from verify_evidence import verify_analysis
++
++
++class Stage5RegressionTests(unittest.TestCase):
++    def test_snapshot_missing_without_module_hashes_still_fails_integrity(self):
++        row, artifacts = wrapped("plot.commit", {"retained": {"fixture": True}})
++        row["snapshots"]["retained"]["artifact"] = "missing"
++        with tempfile.TemporaryDirectory(prefix="perf391-stage5-regression-") as tmp:
++            sink = Evidence(Path(tmp) / "evidence", COLLECTOR, run="synthetic-test")
++            adapter = Integration(sink, role="C", run="synthetic-test")
++            try:
++                with self.assertRaises(ValueError):
++                    adapter.browser_record(row, load=artifacts.__getitem__)
++                self.assertFalse(sink.close()["complete"])
++            finally:
++                if not sink.closed:
++                    sink.close()
++
++    def test_snapshot_is_retained_when_chart_capability_is_unavailable(self):
++        row, artifacts = wrapped("plot.commit", {"retained": {"fixture": True}})
++        digest = hashlib.sha256(artifacts["retained"]).hexdigest()
++        with tempfile.TemporaryDirectory(prefix="perf391-stage5-regression-") as tmp:
++            sink = Evidence(Path(tmp) / "evidence", COLLECTOR, run="synthetic-test")
++            adapter = Integration(sink, role="C", run="synthetic-test")
++            try:
++                adapter.browser_record(row, load=artifacts.__getitem__)
++                adapter.finish_browser({"closed": True, "failed": False, "lost": 0})
++                self.assertTrue(sink.close()["complete"])
++                self.assertTrue((sink.root / "v1/bodies" / (digest + ".bin")).exists())
++            finally:
++                if not sink.closed:
++                    sink.close()
++
++    def test_verifier_rejects_duration_between_distinct_plot_tokens(self):
++        projection = BrowserProjection("C", "synthetic-test", "p")
++        rows = []
++        for seq, (token, phase) in enumerate(
++            [
++                ("plot-a", "history.retained"),
++                ("plot-a", "plot.commit"),
++                ("plot-b", "history.retained"),
++                ("plot-b", "plot.commit"),
++            ],
++            1,
++        ):
++            rows.append(
++                projection.event(
++                    {
++                        "run": "synthetic-test",
++                        "stream": "synthetic-test/p/doc",
++                        "clock": "browser/p/doc",
++                        "seq": seq,
++                        "monotonic_ms": seq,
++                        "phase": phase,
++                        "op": "synthetic-test/p/doc/r1",
++                        "outcome": "ok",
++                        "detail": {"commit": token},
++                    },
++                    artifact={"state": "available", "sha256": "a" * 64},
++                )
++            )
++        report = analyze(rows, summaries(rows))
++        verify_analysis(report, rows)
++        forged = copy.deepcopy(report)
++        claim = next(
++            d for d in forged["durations"] if d["boundary"] == "chart_input.commit"
++        )
++        claim.update(
++            ns=3000000,
++            thread_cpu_ns=None,
++            reason=None,
++            events=[
++                {k: e[k] for k in ("stream_id", "seq", "phase", "clock_id", "mono_ns")}
++                for e in (rows[0], rows[3])
++            ],
++        )
++        with self.assertRaises(ValueError):
++            verify_analysis(forged, rows)
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_signal.py b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_signal.py
+new file mode 100644
+index 00000000..e5e76263
+--- /dev/null
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_signal.py
+@@ -0,0 +1,61 @@
++"""A timeout must enter the replay runner's finally and reap new-session children."""
++
++import asyncio
++import json
++import signal
++import subprocess
++import sys
++import tempfile
++import unittest
++from pathlib import Path
++
++from test_stage4 import COLLECTOR  # initializes the package import path
++
++from owner import Owner
++
++
++class Stage5SignalTests(unittest.IsolatedAsyncioTestCase):
++    async def test_term_of_replay_runner_reaps_its_separate_session_child(self):
++        self.assertIsNotNone(COLLECTOR)
++        with tempfile.TemporaryDirectory(prefix="perf391-stage5-signal-") as tmp:
++            root = Path(tmp)
++            script = """import runpy,sys
++sys.path[:0]=['.', 'tests']
++from owner import Owner
++original=Owner.spawn
++def spawn(self, command, **kwargs):
++    child=original(self,[sys.executable,'-c','import signal;signal.pause()'],**kwargs)
++    print(child.pid,flush=True)
++    return child
++Owner.spawn=spawn
++sys.argv=['tests/stage5_qualify.py','--output',sys.argv[1]]
++runpy.run_path('tests/stage5_qualify.py',run_name='__main__')
++"""
++            owner = Owner(
++                root / "test-owner",
++                run="synthetic-stage5",
++                sources={},
++                adopt_descendants=True,
++            )
++            with (root / "runner.py").open("w") as stream:
++                stream.write(script)
++            child = owner.spawn(
++                [sys.executable, "-B", str(root / "runner.py"), str(root / "run")],
++                stdout=subprocess.PIPE,
++            )
++            try:
++                line = await asyncio.wait_for(
++                    asyncio.to_thread(child.stdout.readline), timeout=10
++                )
++                self.assertTrue(line, "runner did not reach owned child")
++                nested = int(line)
++                child.send_signal(signal.SIGTERM)
++                await asyncio.to_thread(child.wait, timeout=10)
++                self.assertFalse(
++                    Path(f"/proc/{nested}").exists(), "timeout escaped scoped cleanup"
++                )
++                manifest = json.loads((root / "run/manifest.json").read_bytes())
++                self.assertEqual(manifest["status"], "clean")
++            finally:
++                child.stdout.close()
++                await owner.close()
+diff --git a/tools/diagnostics/perf391-diagnostic-integration-v1/verify_evidence.py b/tools/diagnostics/perf391-diagnostic-integration-v1/verify_evidence.py
+index 76a79758..48ba0105 100644
+--- a/tools/diagnostics/perf391-diagnostic-integration-v1/verify_evidence.py
++++ b/tools/diagnostics/perf391-diagnostic-integration-v1/verify_evidence.py
+@@ -62,6 +62,8 @@ def verify_analysis(report, events):
+                 for e in group
+                 if e["identity"].get("plot_token") == a["identity"].get("plot_token")
+             ]
++        if a not in group or b not in group:
++            raise ValueError("referenced pair differs from unique source group")
+         begin, end = PAIRS[claim["boundary"]]
+         if (
+             len([e for e in group if e["phase"] == begin]) != 1

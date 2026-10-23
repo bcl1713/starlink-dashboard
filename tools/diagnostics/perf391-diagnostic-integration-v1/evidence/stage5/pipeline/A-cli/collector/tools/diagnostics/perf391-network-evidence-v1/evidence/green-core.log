@@ -1,0 +1,10 @@
+test_bounded_recorder_drop_summary_artifacts_cleanup (test_core.CoreTests.test_bounded_recorder_drop_summary_artifacts_cleanup) ... ok
+test_clock_step_no_cross_origin_subtraction (test_core.CoreTests.test_clock_step_no_cross_origin_subtraction) ... ok
+test_fixture_classifications_and_hashes (test_core.CoreTests.test_fixture_classifications_and_hashes) ... ok
+test_ids_clocks_missing_and_duplicate_boundaries (test_core.CoreTests.test_ids_clocks_missing_and_duplicate_boundaries) ... ok
+test_schema_compatibility_and_intentional_missing (test_core.CoreTests.test_schema_compatibility_and_intentional_missing) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.036s
+
+OK

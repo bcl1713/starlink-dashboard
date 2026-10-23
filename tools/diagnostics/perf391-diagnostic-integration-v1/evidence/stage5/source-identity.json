@@ -1,0 +1,65 @@
+{
+  "schema": "perf391-diagnostic-integration-v1",
+  "stage": 1,
+  "pins": {
+    "A": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+    "C": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+    "implementation": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+    "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+    "release": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+    "harness": "f3029024b5950a267645195476da5cbca326f16a",
+    "base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+    "plan": "8aa7791bb03f0573cf602bdbfe8e43c085ee2325"
+  },
+  "roles": {
+    "A": {
+      "role": "A",
+      "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "archive_sha256": "cebfb7254994f0c6e31e0fd8cc06319430efcd32b4457787673c70ab21795153",
+      "tree_sha256": "6566d9b8e14fa9dc261f4b8bc23b68390f5d1995e8e9af84cf2ff05670bd4685",
+      "file_count": 3536,
+      "inventory_sha256": "b0d4a8edd65a336544a4c73b27b59901208267f528376f460b672d4aeed9636c",
+      "archive_byte_identical": true
+    },
+    "C": {
+      "role": "C",
+      "base_application_sha": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "archive_sha256": "279c1717f3b186a9780096d8fcce2fe925ac489c2ff3b6db3fd613f54d8acdf5",
+      "tree_sha256": "b1a05645415fa0c60d4b6433a678073e2e877fca9e26d69532e5082608957d17",
+      "file_count": 3660,
+      "inventory_sha256": "871de5f9645fd38b1066230bb202811d962e1e999d9bcd7bc216cceaddd6fd58",
+      "archive_byte_identical": true
+    }
+  },
+  "equivalence": {
+    "frontend_equal": true,
+    "corrected_runtime_equal": true,
+    "runtime_paths": [
+      "backend",
+      "frontend",
+      "tools",
+      "monitoring",
+      "scripts",
+      "docker-compose*"
+    ]
+  },
+  "collector_release": {
+    "source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+    "release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+    "manifest_sha256": "d84e7b62cb56ef9e44c1e63b0b3a933e4c0a73a55254f614b8785098c1090f44"
+  },
+  "image_built": false,
+  "runtime_executed": false,
+  "dependencies": {
+    "collector": {
+      "sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+      "files": 58,
+      "inventory_sha256": "a0a5f6135556e19c096f39fc6e45653b44747c2b55920a94c7f2c48854bbcfb4"
+    },
+    "harness": {
+      "sha": "f3029024b5950a267645195476da5cbca326f16a",
+      "files": 22,
+      "inventory_sha256": "b39d7425e8c95ac3056d8d4630481049a75710843bf4c0b3fe7ee2d90d4f49a0"
+    }
+  }
+}

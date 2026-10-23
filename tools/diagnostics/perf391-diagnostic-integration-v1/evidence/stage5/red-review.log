@@ -1,0 +1,29 @@
+FFF
+======================================================================
+FAIL: test_snapshot_is_retained_when_chart_capability_is_unavailable (test_stage5_regressions.Stage5RegressionTests.test_snapshot_is_retained_when_chart_capability_is_unavailable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_regressions.py", line 43, in test_snapshot_is_retained_when_chart_capability_is_unavailable
+    self.assertTrue((sink.root / "v1/bodies" / (digest + ".bin")).exists())
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_snapshot_missing_without_module_hashes_still_fails_integrity (test_stage5_regressions.Stage5RegressionTests.test_snapshot_missing_without_module_hashes_still_fails_integrity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_regressions.py", line 26, in test_snapshot_missing_without_module_hashes_still_fails_integrity
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_verifier_rejects_duration_between_distinct_plot_tokens (test_stage5_regressions.Stage5RegressionTests.test_verifier_rejects_duration_between_distinct_plot_tokens)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_regressions.py", line 69, in test_verifier_rejects_duration_between_distinct_plot_tokens
+    with self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.010s
+
+FAILED (failures=3)

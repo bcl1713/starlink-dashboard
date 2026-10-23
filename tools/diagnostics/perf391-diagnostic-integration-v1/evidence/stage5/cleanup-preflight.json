@@ -1,0 +1,32 @@
+{
+  "temporary_paths": [
+    {
+      "path": "/tmp/perf391-stage4-collector-7114uwyi",
+      "uid": 1002,
+      "mtime": 1792713699.5912876
+    },
+    {
+      "path": "/tmp/perf391-stage5-worker-hwtq48tw",
+      "uid": 1002,
+      "mtime": 1792713127.2401903
+    },
+    {
+      "path": "/tmp/perf391-stage2-slices-rwf9orhn",
+      "uid": 1002,
+      "mtime": 1792713122.5911894
+    },
+    {
+      "path": "/tmp/perf391-stage4-collector-b5qg6vew",
+      "uid": 1002,
+      "mtime": 1792713116.5611882
+    },
+    {
+      "path": "/tmp/perf391-stage5-env",
+      "uid": 1002,
+      "mtime": 1792712878.4541476
+    }
+  ],
+  "host_process_matches": [
+    " 295962 3570576  295962 /usr/bin/bash -lc python3 - <<'PY' import json,os,subprocess,time from pathlib import Path root=Path.cwd();out=root/'evidence/stage5'; observed=[] for p in Path('/tmp').iterdir():  if p.is_dir() and p.name.startswith(('perf391-stage5','perf391-stage2-slices-','perf391-stage4-collector-')) and p.stat().st_mtime>=1792712820:   observed.append({'path':str(p),'uid':p.stat().st_uid,'mtime':p.stat().st_mtime}) proc=subprocess.run(['ps','-eo','pid,ppid,pgid,args'],capture_output=True,text=True,check=True) rows=[line for line in proc.stdout.splitlines() if '/tmp/perf391-stage5-env' in line or '/.worktrees/perf391-integration-stage5/' in line] (out/'cleanup-preflight.json').write_text(json.dumps({'temporary_paths':observed,'host_process_matches':rows},indent=2)+'\\n');print(json.dumps(observed,indent=2)) PY"
+  ]
+}

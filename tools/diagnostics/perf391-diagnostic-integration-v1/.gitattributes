@@ -7,3 +7,8 @@ evidence/stage3a/*.log whitespace=-blank-at-eol,-blank-at-eof
 # Stage 4 preserves exact reporter bytes and the independently hashed source diff.
 evidence/stage4/*.log whitespace=-blank-at-eol,-blank-at-eof
 evidence/stage4/stage4-source.patch whitespace=-blank-at-eol
+
+# Preserve native Stage 5 evidence bytes and the reviewed source diff.
+evidence/stage5/**/*.log whitespace=-blank-at-eol,-blank-at-eof
+evidence/stage5/*.log whitespace=-blank-at-eol,-blank-at-eof
+evidence/stage5/stage5-source.patch whitespace=-blank-at-eol

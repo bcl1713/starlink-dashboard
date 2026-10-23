@@ -1,0 +1,4 @@
+src/hooks/api/useOverviewHistory.ts(1,39): error TS2307: Cannot find module '@perf391/browser-probe' or its corresponding type declarations.
+src/hooks/api/useOverviewHistory.ts(19,26): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/pages/OverviewMetricHistoryPanel.tsx(1,39): error TS2307: Cannot find module '@perf391/browser-probe' or its corresponding type declarations.
+src/services/overview-history.ts(1,39): error TS2307: Cannot find module '@perf391/browser-probe' or its corresponding type declarations.

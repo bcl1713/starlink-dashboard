@@ -1,0 +1,73 @@
+{
+  "reviewer": "independent stage5_review agent; read-only source/evidence review, no tests executed by reviewer",
+  "stage4_reviewed_commit": "9f50189ed4ad067e49135b2325bae754f3539d23",
+  "stage5_initial_source": "b5ed6157ed193cbab1d917b9939b958ec93f75ff",
+  "critical": [],
+  "stage4_recheck": [
+    {
+      "finding": "collection summary/loss gates",
+      "assessment": "confirmed",
+      "evidence": "analyze.py complete-summary schema/loss gates; test_evidence_verification.py CLI loss regression"
+    },
+    {
+      "finding": "incremental stream validation",
+      "assessment": "confirmed",
+      "evidence": "evidence.py StreamValidator; test_evidence_verification.py sequence/clock/duplicate regressions"
+    },
+    {
+      "finding": "source HTTP failures",
+      "assessment": "confirmed",
+      "evidence": "observer.mjs failure stops sample loop; collection.test.mjs failed source/collection summaries"
+    },
+    {
+      "finding": "actual paint/error records",
+      "assessment": "confirmed",
+      "evidence": "integration.py paint.request; BrowserProjection app.response_error; test_stage4_integration.py"
+    },
+    {
+      "finding": "PNG verification/retention",
+      "assessment": "confirmed for supplied references; runtime unavailable",
+      "evidence": "integration.py hash/budget/retain path and artifact regressions"
+    },
+    {
+      "finding": "snapshot verification/retention",
+      "assessment": "residual Important reproduced and fixed",
+      "evidence": "test_stage5_regressions.py missing and valid snapshots without module hashes RED->GREEN; checks now precede capability gate"
+    },
+    {
+      "finding": "eventual Page setup disposal",
+      "assessment": "confirmed offline",
+      "evidence": "browser.mjs setup/close and collection.test.mjs eventual handle regressions"
+    },
+    {
+      "finding": "unique duration/source pair",
+      "assessment": "residual Important reproduced and fixed",
+      "evidence": "test_stage5_regressions.py cross-plot token forgery RED->GREEN; both references now required in unique source group"
+    },
+    {
+      "finding": "adopted nested-session cleanup",
+      "assessment": "confirmed exclusive-runner scope",
+      "evidence": "owner.py subreaper adoption and test_stage4.py nested-session regression"
+    },
+    {
+      "finding": "existing duration brackets",
+      "assessment": "confirmed",
+      "evidence": "analyze.py inplace/refresh/history/replay pairs; CompleteBoundaryTests"
+    }
+  ],
+  "stage5_important": [
+    {
+      "finding": "outer timeout could bypass replay owner cleanup",
+      "status": "fixed after deterministic reproduction",
+      "test": "test_stage5_signal.py SIGTERM reaps separate-session child; RED->GREEN",
+      "fix": "TERM/INT cancel main coroutine once, await qualify finally and Owner.close, remove handlers, nonzero interrupted exit"
+    }
+  ],
+  "additional_hardening": "Offline preflight rejects wrong release contract and unexpected source closure; altered/missing/symlinked artifacts and extra source tested RED->GREEN.",
+  "unresolved_critical_or_important": [],
+  "limitations": [
+    "Bare stream-summary API callers cannot certify collection-level integrity; all Stage 5 qualified paths use complete collection summary objects.",
+    "No real Playwright, images/assets, live transport, cgroup mapping, paint, raw capture, calibration, performance savings, sustained boundedness or production acceptance qualified."
+  ],
+  "signoff": "Implementation fixes verified by deterministic regressions; final exact-source suite and release evidence recorded separately. No cryptographic signature is claimed."
+}

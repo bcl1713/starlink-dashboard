@@ -1,0 +1,32 @@
+test_stage5_qualification (unittest.loader._FailedTest.test_stage5_qualification) ... ERROR
+test_snapshot_is_retained_when_chart_capability_is_unavailable (test_stage5_regressions.Stage5RegressionTests.test_snapshot_is_retained_when_chart_capability_is_unavailable) ... ok
+test_snapshot_missing_without_module_hashes_still_fails_integrity (test_stage5_regressions.Stage5RegressionTests.test_snapshot_missing_without_module_hashes_still_fails_integrity) ... ok
+test_verifier_rejects_duration_between_distinct_plot_tokens (test_stage5_regressions.Stage5RegressionTests.test_verifier_rejects_duration_between_distinct_plot_tokens) ... ok
+
+======================================================================
+ERROR: test_stage5_qualification (unittest.loader._FailedTest.test_stage5_qualification)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_stage5_qualification
+Traceback (most recent call last):
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/loader.py", line 419, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/unittest/loader.py", line 362, in _get_module_from_name
+    __import__(name)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_qualification.py", line 11, in <module>
+    from stage5_fixture import RUN, STATS, backend_fixture
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/stage5_fixture.py", line 6, in <module>
+    import backend_probe as probe
+ModuleNotFoundError: No module named 'backend_probe'
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.028s
+
+FAILED (errors=1)
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module workers was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module diagnostic_app was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module run was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")

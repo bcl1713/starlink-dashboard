@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/derivatives/C-effective/frontend/mission-planner
+
+
+ Test Files  308 passed (308)
+      Tests  2102 passed (2102)
+   Start at  23:54:15
+   Duration  99.79s (transform 5.02s, setup 1.08s, import 33.49s, tests 52.43s, environment 84.90s)
+

@@ -1,0 +1,86 @@
+{
+  "task": "perf391-stage5",
+  "temporary_paths": [
+    "/tmp/perf391-stage5-env",
+    "artifacts/stage5"
+  ],
+  "compose_projects": [],
+  "containers": [],
+  "networks": [],
+  "volumes": [],
+  "services": [],
+  "browsers": [],
+  "listeners": [],
+  "purpose": "deterministic offline qualification; test child ownership recorded by Owner; no runtime collection",
+  "temporary_symlinks": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/node_modules",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/derivatives/A-effective/frontend/mission-planner/node_modules",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/derivatives/C-effective/frontend/mission-planner/node_modules"
+  ],
+  "command_sessions": [
+    {
+      "session": 38615,
+      "status": "baseline passed"
+    },
+    {
+      "session": 24361,
+      "status": "identity passed"
+    },
+    {
+      "session": 26876,
+      "status": "derivatives passed"
+    },
+    {
+      "session": 42014,
+      "status": "sandbox timeout; process absent"
+    },
+    {
+      "session": 81802,
+      "status": "wrong-config regression stopped; group absent"
+    },
+    {
+      "session": 37041,
+      "status": "2102 frontend tests passed"
+    },
+    {
+      "session": 65764,
+      "status": "focused passed"
+    },
+    {
+      "session": 54289,
+      "status": "119 tests passed"
+    },
+    {
+      "session": 32847,
+      "status": "earlier replay passed"
+    },
+    {
+      "session": 98695,
+      "status": "119 exact-source tests passed"
+    },
+    {
+      "session": 8685,
+      "status": "earlier exact-source replay passed"
+    },
+    {
+      "session": 59626,
+      "status": "120 final tests passed"
+    },
+    {
+      "session": 81672,
+      "status": "final replay passed"
+    },
+    {
+      "session": 52891,
+      "status": "collector suites passed"
+    }
+  ],
+  "recovered_temporary_paths": [
+    "/tmp/perf391-stage4-collector-7114uwyi",
+    "/tmp/perf391-stage5-worker-hwtq48tw",
+    "/tmp/perf391-stage2-slices-rwf9orhn",
+    "/tmp/perf391-stage4-collector-b5qg6vew",
+    "/tmp/perf391-stage5-env"
+  ],
+  "final_status": "all temporary resources removed; open-PR worktree and evidence retained"
+}

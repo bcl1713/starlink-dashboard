@@ -1,0 +1,19 @@
+test_actual_guarded_tick_and_gate_events_survive_complete_pipeline (test_stage5_qualification.Stage5QualificationTests.test_actual_guarded_tick_and_gate_events_survive_complete_pipeline) ... ok
+test_cleanup_failure_stays_failed_even_with_valid_evidence (test_stage5_qualification.Stage5QualificationTests.test_cleanup_failure_stays_failed_even_with_valid_evidence) ... ok
+test_corruptions_never_produce_verified_complete_durations (test_stage5_qualification.Stage5QualificationTests.test_corruptions_never_produce_verified_complete_durations) ... ok
+test_full_pipeline_available_and_unavailable_boundaries_are_independent (test_stage5_qualification.Stage5QualificationTests.test_full_pipeline_available_and_unavailable_boundaries_are_independent) ... ok
+test_node_fixture_regeneration_is_byte_identical (test_stage5_qualification.Stage5QualificationTests.test_node_fixture_regeneration_is_byte_identical) ... ok
+test_persisted_backend_fixture_is_byte_identical (test_stage5_qualification.Stage5QualificationTests.test_persisted_backend_fixture_is_byte_identical) ... ok
+test_actual_anyio_worker_events_through_owner_collector_analyzer (test_stage5_qualification.Stage5WorkerTests.test_actual_anyio_worker_events_through_owner_collector_analyzer) ... ok
+test_snapshot_is_retained_when_chart_capability_is_unavailable (test_stage5_regressions.Stage5RegressionTests.test_snapshot_is_retained_when_chart_capability_is_unavailable) ... ok
+test_snapshot_missing_without_module_hashes_still_fails_integrity (test_stage5_regressions.Stage5RegressionTests.test_snapshot_missing_without_module_hashes_still_fails_integrity) ... ok
+test_verifier_rejects_duration_between_distinct_plot_tokens (test_stage5_regressions.Stage5RegressionTests.test_verifier_rejects_duration_between_distinct_plot_tokens) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 12.949s
+
+OK
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module diagnostic_app was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+/tmp/perf391-stage5-env/lib/python3.11/site-packages/coverage/inorout.py:558: CoverageWarning: Module run was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")

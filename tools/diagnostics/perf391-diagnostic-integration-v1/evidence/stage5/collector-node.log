@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: passive response capture joins IDs and detaches cleanly
+ok 1 - passive response capture joins IDs and detaches cleanly
+  ---
+  duration_ms: 7.332742
+  ...
+# Subtest: missing length never triggers unbounded body read; drops are counted
+ok 2 - missing length never triggers unbounded body read; drops are counted
+  ---
+  duration_ms: 3.269222
+  ...
+# Subtest: schema rejects unknown fields and nonfinite numbers before writing
+ok 3 - schema rejects unknown fields and nonfinite numbers before writing
+  ---
+  duration_ms: 0.540078
+  ...
+# Subtest: pending body rejection after close never writes to closed sink
+ok 4 - pending body rejection after close never writes to closed sink
+  ---
+  duration_ms: 1002.026106
+  ...
+# Subtest: shared schema accepts every versioned fixture event
+ok 5 - shared schema accepts every versioned fixture event
+  ---
+  duration_ms: 16.99835
+  ...
+# Subtest: unavailable body keeps request ID until terminal event
+ok 6 - unavailable body keeps request ID until terminal event
+  ---
+  duration_ms: 2.176709
+  ...
+# Subtest: failed requests with pending bodies cannot exceed active job bound
+ok 7 - failed requests with pending bodies cannot exceed active job bound
+  ---
+  duration_ms: 1.924103
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1082.439129

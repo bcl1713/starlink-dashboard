@@ -1,0 +1,35 @@
+test_diagnostic_worker_and_admission_cleanup (test_adapters.AdapterTests.test_diagnostic_worker_and_admission_cleanup) ... ok
+test_legacy_import_preserves_missing_and_op_ids (test_adapters.AdapterTests.test_legacy_import_preserves_missing_and_op_ids) ... ok
+test_observer_fake_response_body_parse_and_error_cleanup (test_adapters.AdapterTests.test_observer_fake_response_body_parse_and_error_cleanup) ... ok
+test_resource_missing_and_ancestor_coverage (test_adapters.AdapterTests.test_resource_missing_and_ancestor_coverage) ... ok
+test_artifact_traversal_rejected (test_cli.CliTests.test_artifact_traversal_rejected) ... ok
+test_collection_duration_hard_cap (test_cli.CliTests.test_collection_duration_hard_cap) ... usage: -c [-h] {analyze,fixtures,import-legacy,import-stored,observe,host} ...
+-c: error: only bounded diagnostic collection 1..180 seconds is implemented; no soak runner
+ok
+test_fixture_replay_machine_and_human_results (test_cli.CliTests.test_fixture_replay_machine_and_human_results) ... ok
+test_signal_cleanup_with_fictional_resource_sampler (test_cli.CliTests.test_signal_cleanup_with_fictional_resource_sampler) ... ok
+test_bounded_recorder_drop_summary_artifacts_cleanup (test_core.CoreTests.test_bounded_recorder_drop_summary_artifacts_cleanup) ... ok
+test_clock_step_no_cross_origin_subtraction (test_core.CoreTests.test_clock_step_no_cross_origin_subtraction) ... ok
+test_fixture_classifications_and_hashes (test_core.CoreTests.test_fixture_classifications_and_hashes) ... ok
+test_ids_clocks_missing_and_duplicate_boundaries (test_core.CoreTests.test_ids_clocks_missing_and_duplicate_boundaries) ... ok
+test_schema_compatibility_and_intentional_missing (test_core.CoreTests.test_schema_compatibility_and_intentional_missing) ... ok
+test_byte_disk_limits_and_summary_reserve (test_core.StorageLimitTests.test_byte_disk_limits_and_summary_reserve) ... ok
+test_admission_fixture_and_unique_gap_dedup (test_integrity.IntegrityTests.test_admission_fixture_and_unique_gap_dedup) ... ok
+test_bad_chart_lengths_and_scrape_state_are_rejected (test_integrity.IntegrityTests.test_bad_chart_lengths_and_scrape_state_are_rejected) ... ok
+test_drop_or_absent_summary_never_claims_complete_evidence (test_integrity.IntegrityTests.test_drop_or_absent_summary_never_claims_complete_evidence) ... ok
+test_store_export_separates_nan_missing_family_and_failed_scrape (test_integrity.IntegrityTests.test_store_export_separates_nan_missing_family_and_failed_scrape) ... ok
+test_worker_cancellation_drains_owned_worker (test_integrity.IntegrityTests.test_worker_cancellation_drains_owned_worker) ... ok
+test_actual_plot_without_retained_input_is_unknown (test_review_regressions.ReviewRegressions.test_actual_plot_without_retained_input_is_unknown) ... ok
+test_incomplete_store_and_stale_sample_provenance_are_unknown (test_review_regressions.ReviewRegressions.test_incomplete_store_and_stale_sample_provenance_are_unknown) ... ok
+test_removed_event_with_zero_drop_summary_is_detected (test_review_regressions.ReviewRegressions.test_removed_event_with_zero_drop_summary_is_detected) ... ok
+test_segment_mismatch_never_joins (test_review_regressions.ReviewRegressions.test_segment_mismatch_never_joins) ... ok
+test_summaries_are_required_for_every_stream (test_review_regressions.ReviewRegressions.test_summaries_are_required_for_every_stream) ... ok
+test_unrelated_evaluation_cannot_prove_api_defect (test_review_regressions.ReviewRegressions.test_unrelated_evaluation_cannot_prove_api_defect) ... ok
+test_plot_log_floor_is_not_finite_deletion (test_statistics.StatisticsTests.test_plot_log_floor_is_not_finite_deletion) ... ok
+test_scrape_jitter_does_not_become_acquisition_jitter (test_statistics.StatisticsTests.test_scrape_jitter_does_not_become_acquisition_jitter) ... ok
+test_throttle_deltas_counter_reset_and_clock_scope (test_statistics.StatisticsTests.test_throttle_deltas_counter_reset_and_clock_scope) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 0.313s
+
+OK

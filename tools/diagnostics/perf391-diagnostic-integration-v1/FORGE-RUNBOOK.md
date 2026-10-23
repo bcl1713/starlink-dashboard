@@ -42,8 +42,8 @@ private configuration extending `tsconfig.app.json` with the diagnostic alias
 `@perf391/browser-probe` pointing to this package's `browser-probe.ts`, preserve
 the application's `@/*` path, and disable incremental output. Run
 `tsc --noEmit -p PRIVATE_CONFIG`; the root solution has no source files and the
-raw application config deliberately has no diagnostic alias.
-Remove dependency links before rechecking complete source-tree identities.
+raw application config deliberately has no diagnostic alias. Remove dependency
+links before rechecking complete source-tree identities.
 
 The replay script calls the actual `run.py integrate` and `run.py analyze`
 entrypoints for A and C and independently verifies resulting artifacts and

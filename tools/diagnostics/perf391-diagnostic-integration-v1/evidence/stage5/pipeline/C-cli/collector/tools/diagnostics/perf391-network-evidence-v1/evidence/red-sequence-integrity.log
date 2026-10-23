@@ -1,0 +1,20 @@
+test_actual_plot_without_retained_input_is_unknown (test_review_regressions.ReviewRegressions.test_actual_plot_without_retained_input_is_unknown) ... ok
+test_incomplete_store_and_stale_sample_provenance_are_unknown (test_review_regressions.ReviewRegressions.test_incomplete_store_and_stale_sample_provenance_are_unknown) ... ok
+test_removed_event_with_zero_drop_summary_is_detected (test_review_regressions.ReviewRegressions.test_removed_event_with_zero_drop_summary_is_detected) ... FAIL
+test_segment_mismatch_never_joins (test_review_regressions.ReviewRegressions.test_segment_mismatch_never_joins) ... ok
+test_summaries_are_required_for_every_stream (test_review_regressions.ReviewRegressions.test_summaries_are_required_for_every_stream) ... ok
+test_unrelated_evaluation_cannot_prove_api_defect (test_review_regressions.ReviewRegressions.test_unrelated_evaluation_cannot_prove_api_defect) ... ok
+
+======================================================================
+FAIL: test_removed_event_with_zero_drop_summary_is_detected (test_review_regressions.ReviewRegressions.test_removed_event_with_zero_drop_summary_is_detected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_review_regressions.py", line 81, in test_removed_event_with_zero_drop_summary_is_detected
+    self.assertIn('unaccounted_sequence_gap',result['issues'])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'unaccounted_sequence_gap' not found in []
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.015s
+
+FAILED (failures=1)

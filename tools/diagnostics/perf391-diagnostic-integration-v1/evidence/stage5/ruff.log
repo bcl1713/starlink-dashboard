@@ -1,0 +1,2165 @@
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:129:12
+    |
+127 |     try:
+128 |         return kind + "-" + str(next(_serial))
+129 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+130 |         return "unavailable"
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:185:12
+    |
+183 |     try:
+184 |         return time.monotonic_ns(), time.thread_time_ns()
+185 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+186 |         _counts["failures"] += 1
+187 |         return None
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:222:12
+    |
+220 |         reserved = None
+221 |         return entry[1]
+222 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+223 |         if reserved is not None:
+224 |             _free_token_slots.append(reserved)
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:246:12
+    |
+244 |             "replay_mission_time": identity.replay_mission_time,
+245 |         }
+246 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+247 |         return {}
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:257:12
+    |
+255 |             result["observation_timestamp"] = timestamp.timestamp()
+256 |         return result
+257 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+258 |         return {}
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:359:12
+    |
+357 |             raise
+358 |         _counts["high_water"] = max(_counts["high_water"], len(_records))
+359 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+360 |         _counts["failures"] += 1
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:420:12
+    |
+418 |         ):
+419 |             mark("producer.published", identity=identity)
+420 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+421 |         _counts["failures"] += 1
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:435:12
+    |
+433 |         mark("repo.wait", span_id=span, at=entered)
+434 |         mark("repo.local_grant", span_id=span, at=granted)
+435 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+436 |         _counts["failures"] += 1
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:443:12
+    |
+441 |         span, op, _slot = _thread().holds[id(gate)]
+442 |         mark("repo.acquired", op_id=op, span_id=span)
+443 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+444 |         _counts["failures"] += 1
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:456:12
+    |
+454 |                 _free_hold_slots.append(previous[2])
+455 |         mark("repo.acquire_failed", span_id=span, outcome="error")
+456 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+457 |         _counts["failures"] += 1
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:477:12
+    |
+475 |         else:
+476 |             mark("repo.released", op_id=op, span_id=span, at=released)
+477 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+478 |         mark("probe.failure", outcome="unavailable")
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:562:16
+    |
+560 |         try:
+561 |             previous = getattr(args[0], "_last_valid_telemetry", None)
+562 |         except BaseException:
+    |                ^^^^^^^^^^^^^
+563 |             previous = None
+564 |         state = _collection.get()
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> backend_probe.py:609:12
+    |
+607 |             "replay_mission_time": run.simulation_time.timestamp() if run else None,
+608 |         }
+609 |     except BaseException:
+    |            ^^^^^^^^^^^^^
+610 |         return {}
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> build.py:8:1
+   |
+ 6 |   """
+ 7 |
+ 8 | / from __future__ import annotations
+ 9 | |
+10 | | import hashlib
+11 | | import io
+12 | | import json
+13 | | import os
+14 | | from pathlib import Path, PurePosixPath
+15 | | import re
+16 | | import subprocess
+17 | | import tarfile
+   | |______________^
+18 |
+19 |   PINS = {
+   |
+help: Organize imports
+   |
+13 | import os
+   - from pathlib import Path, PurePosixPath
+14 | import re
+15 | import subprocess
+16 | import tarfile
+17 + from pathlib import Path, PurePosixPath
+18 |
+   |
+
+PLW1510 `subprocess.run` without explicit `check` argument
+  --> build.py:57:14
+   |
+56 | def git(repo, *args):
+57 |     result = subprocess.run(
+   |              ^^^^^^^^^^^^^^
+58 |         ["git", "-C", str(repo), *args], capture_output=True, timeout=60
+59 |     )
+   |
+help: Add explicit `check=False`
+   |
+57 |     result = subprocess.run(
+   -         ["git", "-C", str(repo), *args], capture_output=True, timeout=60
+58 +         ["git", "-C", str(repo), *args], check=False, capture_output=True, timeout=60
+59 |     )
+   |
+note: This suggestion may be incorrect or produce invalid syntax. It requires manual review and cannot be applied automatically
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> tests/backend_support.py:23:32
+   |
+21 | PACKAGE = Path(__file__).resolve().parents[1]
+22 | sys.path.insert(0, str(PACKAGE))
+23 | import backend_probe as probe  # noqa: E402
+   |                                ^^^^^^^^^^^^
+24 | import build  # noqa: E402
+25 | import workers  # noqa: E402
+   |
+help: Remove unused `noqa` directive
+   |
+22 | sys.path.insert(0, str(PACKAGE))
+   - import backend_probe as probe  # noqa: E402
+23 + import backend_probe as probe
+24 | import build  # noqa: E402
+   |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> tests/backend_support.py:24:15
+   |
+22 | sys.path.insert(0, str(PACKAGE))
+23 | import backend_probe as probe  # noqa: E402
+24 | import build  # noqa: E402
+   |               ^^^^^^^^^^^^
+25 | import workers  # noqa: E402
+   |
+help: Remove unused `noqa` directive
+   |
+23 | import backend_probe as probe  # noqa: E402
+   - import build  # noqa: E402
+24 + import build
+25 | import workers  # noqa: E402
+   |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> tests/backend_support.py:25:17
+   |
+23 | import backend_probe as probe  # noqa: E402
+24 | import build  # noqa: E402
+25 | import workers  # noqa: E402
+   |                 ^^^^^^^^^^^^
+26 |
+27 | REPO = PACKAGE.parents[2]
+   |
+help: Remove unused `noqa` directive
+   |
+24 | import build  # noqa: E402
+   - import workers  # noqa: E402
+25 + import workers
+26 |
+   |
+
+S102 Use of `exec` detected
+  --> tests/backend_support.py:82:5
+   |
+80 |         ast.Module(body=[prefix, *selected], type_ignores=[])
+81 |     )
+82 |     exec(compile(code, str(root / relative), "exec"), namespace)
+   |     ^^^^
+83 |     return namespace
+   |
+
+SIM117 [*] Use a single `with` statement with multiple contexts instead of nested `with` statements
+  --> tests/test_admission.py:35:21
+   |
+33 |                       values.append(gate.is_locked)
+34 |                   elif case == "exception":
+35 | /                     with self.assertRaises(ValueError):
+36 | |                         with gate:
+   | |__________________________________^
+37 |                               raise ValueError("inside hold")
+38 |                       values.append(gate.is_locked)
+   |
+help: Combine `with` statements
+   |
+34 |                 elif case == "exception":
+   -                     with self.assertRaises(ValueError):
+   -                         with gate:
+   -                             raise ValueError("inside hold")
+35 +                     with self.assertRaises(ValueError), gate:
+36 +                         raise ValueError("inside hold")
+37 |                     values.append(gate.is_locked)
+   |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> tests/test_admission.py:122:32
+    |
+120 |                             with gate.acquire(timeout=5):
+121 |                                 values.append(index)
+122 |                         except BaseException as error:
+    |                                ^^^^^^^^^^^^^
+123 |                             errors.append(type(error).__name__)
+    |
+
+B023 Function definition does not bind loop variable `gate`
+   --> tests/test_admission.py:214:36
+    |
+213 |                 def failing_transition_stamp():
+214 |                     return None if gate._condition._is_owned() else original_stamp()
+    |                                    ^^^^
+215 |
+216 |                 with patch.object(probe, "stamp", failing_transition_stamp):
+    |
+
+B023 Function definition does not bind loop variable `original_stamp`
+   --> tests/test_admission.py:214:69
+    |
+213 |                 def failing_transition_stamp():
+214 |                     return None if gate._condition._is_owned() else original_stamp()
+    |                                                                     ^^^^^^^^^^^^^^
+215 |
+216 |                 with patch.object(probe, "stamp", failing_transition_stamp):
+    |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_backend_endpoints.py:29:29
+   |
+28 |                         def payload(*args):
+29 |                             calls.append(("payload", args))
+   |                             ^^^^^
+30 |                             if error:
+31 |                                 raise failure
+   |
+
+B023 Function definition does not bind loop variable `error`
+  --> tests/test_backend_endpoints.py:30:32
+   |
+28 |                         def payload(*args):
+29 |                             calls.append(("payload", args))
+30 |                             if error:
+   |                                ^^^^^
+31 |                                 raise failure
+32 |                             return (
+   |
+
+B023 Function definition does not bind loop variable `failure`
+  --> tests/test_backend_endpoints.py:31:39
+   |
+29 | …                     calls.append(("payload", args))
+30 | …                     if error:
+31 | …                         raise failure
+   |                                 ^^^^^^^
+32 | …                     return (
+33 | …                         "# EOF\n"
+   |
+
+B023 Function definition does not bind loop variable `endpoint`
+  --> tests/test_backend_endpoints.py:34:36
+   |
+32 | …                     return (
+33 | …                         "# EOF\n"
+34 | …                         if endpoint == "metrics"
+   |                              ^^^^^^^^
+35 | …                         else {"status": "ready"}
+36 | …                     )
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_backend_endpoints.py:39:29
+   |
+38 |                         def record(value):
+39 |                             calls.append(("record", value))
+   |                             ^^^^^
+40 |
+41 |                         env = {
+   |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_backend_endpoints.py:100:28
+    |
+ 99 |                     async def reader():
+100 |                         if case == "reader_error":
+    |                            ^^^^
+101 |                             raise ReaderError("read")
+102 |                         if case == "cancel":
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_backend_endpoints.py:102:28
+    |
+100 |                         if case == "reader_error":
+101 |                             raise ReaderError("read")
+102 |                         if case == "cancel":
+    |                            ^^^^
+103 |                             raise asyncio.CancelledError("cancel")
+104 |                         return {"series": [1, None, 3], "window": 1800}
+    |
+
+B023 Function definition does not bind loop variable `started`
+   --> tests/test_backend_endpoints.py:175:17
+    |
+174 |             def refresh():
+175 |                 started.set()
+    |                 ^^^^^^^
+176 |                 try:
+177 |                     if not release.wait(5):
+    |
+
+B023 Function definition does not bind loop variable `release`
+   --> tests/test_backend_endpoints.py:177:28
+    |
+175 |                 started.set()
+176 |                 try:
+177 |                     if not release.wait(5):
+    |                            ^^^^^^^
+178 |                         raise TimeoutError("barrier")
+179 |                     effects.append("refresh")
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_backend_endpoints.py:179:21
+    |
+177 |                     if not release.wait(5):
+178 |                         raise TimeoutError("barrier")
+179 |                     effects.append("refresh")
+    |                     ^^^^^^^
+180 |                     return True
+181 |                 finally:
+    |
+
+B023 Function definition does not bind loop variable `finished`
+   --> tests/test_backend_endpoints.py:182:21
+    |
+180 |                     return True
+181 |                 finally:
+182 |                     finished.set()
+    |                     ^^^^^^^^
+183 |
+184 |             owner = lifecycle.MetricsRefreshOwner(
+    |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> tests/test_backend_probe.py:12:18
+   |
+10 | PACKAGE = Path(__file__).resolve().parents[1]
+11 | sys.path.insert(0, str(PACKAGE))
+12 | import contract  # noqa: E402
+   |                  ^^^^^^^^^^^^
+help: Remove unused `noqa` directive
+   |
+11 | sys.path.insert(0, str(PACKAGE))
+   - import contract  # noqa: E402
+12 + import contract
+13 |
+   |
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+  --> tests/test_backend_probe.py:24:9
+   |
+23 |       def test_closed_records_parent_context_and_unavailable_nonfinite(self):
+24 | /         with self.p.operation("parent", "tick"):
+25 | |             with self.p.operation("child", "replay"):
+   | |_____________________________________________________^
+26 |                   self.p.mark("replay.commit", identity={"replay_mission_time": math.nan})
+27 |           records = self.p.drain()
+   |
+help: Combine `with` statements
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_backend_probe.py:117:9
+    |
+116 |       def test_invalid_context_and_a_frame_fields_cannot_escape_closed_contract(self):
+117 | /         with self.p.operation("x" * 97, "tick"):
+118 | |             with self.p.operation("child", "tick"):
+    | |___________________________________________________^
+119 |                   self.p.mark("producer.start")
+120 |           with self.p.operation("valid", "invented"):
+    |
+help: Combine `with` statements
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_build_identity.py:3:1
+   |
+ 1 |   """Offline Stage 1 identity gates: real pinned Git objects, synthetic patches only."""
+ 2 |
+ 3 | / import copy
+ 4 | | import hashlib
+ 5 | | from pathlib import Path
+ 6 | | import sys
+ 7 | | import tempfile
+ 8 | | import unittest
+   | |_______________^
+ 9 |
+10 |   PACKAGE = Path(__file__).resolve().parents[1]
+   |
+help: Organize imports
+  |
+4 | import hashlib
+  - from pathlib import Path
+5 | import sys
+6 | import tempfile
+7 | import unittest
+8 + from pathlib import Path
+9 |
+  |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> tests/test_build_identity.py:12:15
+   |
+10 | PACKAGE = Path(__file__).resolve().parents[1]
+11 | sys.path.insert(0, str(PACKAGE))
+12 | import build  # noqa: E402
+   |               ^^^^^^^^^^^^
+13 |
+14 | REPO = PACKAGE.parents[2]
+   |
+help: Remove unused `noqa` directive
+   |
+11 | sys.path.insert(0, str(PACKAGE))
+   - import build  # noqa: E402
+12 + import build
+13 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tests/test_contract.py:1:1
+  |
+1 | / import json
+2 | | from pathlib import Path
+3 | | import sys
+4 | | import unittest
+  | |_______________^
+5 |
+6 |   PACKAGE = Path(__file__).resolve().parents[1]
+  |
+help: Organize imports
+  |
+1 | import json
+  - from pathlib import Path
+2 | import sys
+3 | import unittest
+4 + from pathlib import Path
+5 |
+  |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+ --> tests/test_contract.py:8:18
+  |
+6 | PACKAGE = Path(__file__).resolve().parents[1]
+7 | sys.path.insert(0, str(PACKAGE))
+8 | import contract  # noqa: E402
+  |                  ^^^^^^^^^^^^
+help: Remove unused `noqa` directive
+  |
+7 | sys.path.insert(0, str(PACKAGE))
+  - import contract  # noqa: E402
+8 + import contract
+9 |
+  |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_final_publication.py:96:21
+   |
+95 |                 def prepare(*args, **kwargs):
+96 |                     calls.append("prepare")
+   |                     ^^^^^
+97 |                     captured = store.invalidate("during capture")
+98 |                     frame1 = frames.GaugeFrame(
+   |
+
+B023 Function definition does not bind loop variable `store`
+  --> tests/test_final_publication.py:97:32
+   |
+95 |                 def prepare(*args, **kwargs):
+96 |                     calls.append("prepare")
+97 |                     captured = store.invalidate("during capture")
+   |                                ^^^^^
+98 |                     frame1 = frames.GaugeFrame(
+99 |                         frames.FrameIdentity(mode="live", input_revision=1),
+   |
+
+B023 Function definition does not bind loop variable `frames`
+   --> tests/test_final_publication.py:98:30
+    |
+ 96 |                     calls.append("prepare")
+ 97 |                     captured = store.invalidate("during capture")
+ 98 |                     frame1 = frames.GaugeFrame(
+    |                              ^^^^^^
+ 99 |                         frames.FrameIdentity(mode="live", input_revision=1),
+100 |                         frame.families,
+    |
+
+B023 Function definition does not bind loop variable `frames`
+   --> tests/test_final_publication.py:99:25
+    |
+ 97 |                     captured = store.invalidate("during capture")
+ 98 |                     frame1 = frames.GaugeFrame(
+ 99 |                         frames.FrameIdentity(mode="live", input_revision=1),
+    |                         ^^^^^^
+100 |                         frame.families,
+101 |                         100.0,
+    |
+
+B023 Function definition does not bind loop variable `frame`
+   --> tests/test_final_publication.py:100:25
+    |
+ 98 |                     frame1 = frames.GaugeFrame(
+ 99 |                         frames.FrameIdentity(mode="live", input_revision=1),
+100 |                         frame.families,
+    |                         ^^^^^
+101 |                         100.0,
+102 |                     )
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_final_publication.py:104:24
+    |
+102 |                     )
+103 |                     kwargs["_captured_head"](captured)
+104 |                     if case == "preparation_error":
+    |                        ^^^^
+105 |                         raise ValueError("prepare")
+106 |                     if case == "stale":
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_final_publication.py:106:24
+    |
+104 |                     if case == "preparation_error":
+105 |                         raise ValueError("prepare")
+106 |                     if case == "stale":
+    |                        ^^^^
+107 |                         store.invalidate("newer source")
+108 |                     return frame1
+    |
+
+B023 Function definition does not bind loop variable `store`
+   --> tests/test_final_publication.py:107:25
+    |
+105 |                         raise ValueError("prepare")
+106 |                     if case == "stale":
+107 |                         store.invalidate("newer source")
+    |                         ^^^^^
+108 |                     return frame1
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_final_publication.py:111:21
+    |
+110 |                 def validate(candidate):
+111 |                     calls.append("final")
+    |                     ^^^^^
+112 |                     if case == "predicate_error":
+113 |                         raise ValueError("predicate")
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_final_publication.py:112:24
+    |
+110 |                 def validate(candidate):
+111 |                     calls.append("final")
+112 |                     if case == "predicate_error":
+    |                        ^^^^
+113 |                         raise ValueError("predicate")
+114 |                     return case != "rejected"
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_final_publication.py:114:28
+    |
+112 |                     if case == "predicate_error":
+113 |                         raise ValueError("predicate")
+114 |                     return case != "rejected"
+    |                            ^^^^
+115 |
+116 |                 namespace = functions(
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_final_publication.py:190:21
+    |
+189 |                 def inputs(expected, **kwargs):
+190 |                     effects.append("inputs")
+    |                     ^^^^^^^
+191 |                     return expected
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_final_publication.py:194:21
+    |
+193 |                 def unavailable(expected):
+194 |                     effects.append("prepare")
+    |                     ^^^^^^^
+195 |                     if case == "service_error":
+196 |                         raise ValueError("optional")
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_final_publication.py:195:24
+    |
+193 |                 def unavailable(expected):
+194 |                     effects.append("prepare")
+195 |                     if case == "service_error":
+    |                        ^^^^
+196 |                         raise ValueError("optional")
+197 |                     return frames.GaugeFrame(
+    |
+
+B023 Function definition does not bind loop variable `frames`
+   --> tests/test_final_publication.py:197:28
+    |
+195 |                     if case == "service_error":
+196 |                         raise ValueError("optional")
+197 |                     return frames.GaugeFrame(
+    |                            ^^^^^^
+198 |                         frames.FrameIdentity(
+199 |                             mode="simulation", input_revision=expected.input_revision
+    |
+
+B023 Function definition does not bind loop variable `frames`
+   --> tests/test_final_publication.py:198:25
+    |
+196 |                         raise ValueError("optional")
+197 |                     return frames.GaugeFrame(
+198 |                         frames.FrameIdentity(
+    |                         ^^^^^^
+199 |                             mode="simulation", input_revision=expected.input_revision
+200 |                         ),
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_final_publication.py:212:67
+    |
+210 |                     {
+211 |                         "model_input_write": admission.model_input_write,
+212 |                         "clear_independent_dish_metrics": lambda: effects.append(
+    |                                                                   ^^^^^^^
+213 |                             "independent.clear"
+214 |                         ),
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/test_final_publication.py:217:32
+    |
+215 |                         "math": math,
+216 |                         "datetime": datetime,
+217 |                         "UTC": timezone.utc,
+    |                                ^^^^^^^^^^^^
+218 |                     },
+219 |                 )
+    |
+help: Convert to `datetime.UTC` alias
+    |
+7   | import contract
+8   + from datetime import UTC
+9   |
+--------------------------------------------------------------------------------
+217 |                         "datetime": datetime,
+    -                         "UTC": timezone.utc,
+218 +                         "UTC": UTC,
+219 |                     },
+    |
+
+BLE001 Do not catch blind exception: `BaseException`
+   --> tests/test_final_publication.py:299:20
+    |
+297 |                         )
+298 |                     )
+299 |             except BaseException as error:
+    |                    ^^^^^^^^^^^^^
+300 |                 errors.append(error)
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_frontend_guards.py:3:1
+   |
+ 1 |   """Stage 3A source identity, protected-file parity and identical A/C hooks."""
+ 2 |
+ 3 | / import json
+ 4 | | import tempfile
+ 5 | | import unittest
+ 6 | | from pathlib import Path
+ 7 | | import build
+ 8 | | from verify_frontend import verify
+   | |__________________________________^
+ 9 |
+10 |   PACKAGE = Path(__file__).resolve().parents[1]
+   |
+help: Organize imports
+  |
+6 | from pathlib import Path
+7 +
+8 | import build
+  |
+
+B023 Function definition does not bind loop variable `gate`
+   --> tests/test_probe_bounds.py:185:24
+    |
+184 |                 def mark(*a, **kw):
+185 |                     if gate._condition._is_owned():
+    |                        ^^^^
+186 |                         violations.append(a[0])
+187 |                     return original_mark(*a, **kw)
+    |
+
+B023 Function definition does not bind loop variable `violations`
+   --> tests/test_probe_bounds.py:186:25
+    |
+184 |                 def mark(*a, **kw):
+185 |                     if gate._condition._is_owned():
+186 |                         violations.append(a[0])
+    |                         ^^^^^^^^^^
+187 |                     return original_mark(*a, **kw)
+    |
+
+B023 Function definition does not bind loop variable `original_mark`
+   --> tests/test_probe_bounds.py:187:28
+    |
+185 |                     if gate._condition._is_owned():
+186 |                         violations.append(a[0])
+187 |                     return original_mark(*a, **kw)
+    |                            ^^^^^^^^^^^^^
+188 |
+189 |                 probe.configure(role, "offline")
+    |
+
+SIM117 [*] Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> tests/test_probe_bounds.py:190:17
+    |
+189 |                   probe.configure(role, "offline")
+190 | /                 with patch.object(probe, "mark", mark):
+191 | |                     with gate:
+    | |______________________________^
+192 |                           with gate:
+193 |                               pass
+    |
+help: Combine `with` statements
+    |
+189 |                 probe.configure(role, "offline")
+    -                 with patch.object(probe, "mark", mark):
+190 +                 with patch.object(probe, "mark", mark), gate:
+191 |                     with gate:
+    -                         with gate:
+    -                             pass
+192 +                         pass
+193 |                 self.assertEqual(violations, [])
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/test_producer_integration.py:39:72
+   |
+37 |                     ) as tmp:
+38 |                         lock = gate(tmp + "/gate")
+39 |                         new = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+   |                                                                        ^^^^^^^^^^^^
+40 |                         old = (
+41 |                             NS(timestamp=datetime(2025, 1, 1, tzinfo=timezone.utc))
+   |
+help: Convert to `datetime.UTC` alias
+   |
+8  | import unittest
+   - from datetime import datetime, timezone
+9  + from datetime import datetime, timezone, UTC
+10 | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+38 |                         lock = gate(tmp + "/gate")
+   -                         new = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+39 +                         new = NS(timestamp=datetime(2026, 1, 1, tzinfo=UTC))
+40 |                         old = (
+   |
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/test_producer_integration.py:41:70
+   |
+39 |                         new = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+40 |                         old = (
+41 |                             NS(timestamp=datetime(2025, 1, 1, tzinfo=timezone.utc))
+   |                                                                      ^^^^^^^^^^^^
+42 |                             if case == "retained"
+43 |                             else None
+   |
+help: Convert to `datetime.UTC` alias
+   |
+8  | import unittest
+   - from datetime import datetime, timezone
+9  + from datetime import datetime, timezone, UTC
+10 | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+40 |                         old = (
+   -                             NS(timestamp=datetime(2025, 1, 1, tzinfo=timezone.utc))
+41 +                             NS(timestamp=datetime(2025, 1, 1, tzinfo=UTC))
+42 |                             if case == "retained"
+   |
+
+B023 Function definition does not bind loop variable `effects`
+  --> tests/test_producer_integration.py:48:29
+   |
+47 |                         def generate(frame):
+48 |                             effects.append("generate")
+   |                             ^^^^^^^
+49 |                             if case != "normal":
+50 |                                 raise ValueError("sensor")
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_producer_integration.py:49:32
+   |
+47 |                         def generate(frame):
+48 |                             effects.append("generate")
+49 |                             if case != "normal":
+   |                                ^^^^
+50 |                                 raise ValueError("sensor")
+51 |                             return new
+   |
+
+B023 Function definition does not bind loop variable `new`
+  --> tests/test_producer_integration.py:51:36
+   |
+49 |                             if case != "normal":
+50 |                                 raise ValueError("sensor")
+51 |                             return new
+   |                                    ^^^
+52 |
+53 |                         obj = NS(
+   |
+
+B023 Function definition does not bind loop variable `effects`
+  --> tests/test_producer_integration.py:55:61
+   |
+53 |                         obj = NS(
+54 |                             _last_valid_telemetry=old,
+55 |                             _update_route_following=lambda: effects.append("route"),
+   |                                                             ^^^^^^^
+56 |                             _generate_telemetry=generate,
+57 |                         )
+   |
+
+B023 Function definition does not bind loop variable `lock`
+  --> tests/test_producer_integration.py:69:68
+   |
+67 | …                     **{
+68 | …                         "app.mission.storage": {
+69 | …                             "get_active_leg_lock": lambda: lock
+   |                                                              ^^^^
+70 | …                         }
+71 | …                     }
+   |
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/test_producer_integration.py:133:74
+    |
+131 |                     status = NS(revision=1)
+132 |                     tick = NS(frame=frame, plan=plan, status=status)
+133 |                     telemetry = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+    |                                                                          ^^^^^^^^^^^^
+134 |                     runtime = NS(
+135 |                         selected_plan=lambda: None if case == "no_plan" else plan,
+    |
+help: Convert to `datetime.UTC` alias
+    |
+8   | import unittest
+    - from datetime import datetime, timezone
+9   + from datetime import datetime, timezone, UTC
+10  | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+132 |                     tick = NS(frame=frame, plan=plan, status=status)
+    -                     telemetry = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+133 +                     telemetry = NS(timestamp=datetime(2026, 1, 1, tzinfo=UTC))
+134 |                     runtime = NS(
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_producer_integration.py:135:55
+    |
+133 |                     telemetry = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+134 |                     runtime = NS(
+135 |                         selected_plan=lambda: None if case == "no_plan" else plan,
+    |                                                       ^^^^
+136 |                         prepare_tick=lambda: None if case == "paused" else tick,
+137 |                         frame=lambda: frame,
+    |
+
+B023 Function definition does not bind loop variable `plan`
+   --> tests/test_producer_integration.py:135:78
+    |
+133 |                     telemetry = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+134 |                     runtime = NS(
+135 |                         selected_plan=lambda: None if case == "no_plan" else plan,
+    |                                                                              ^^^^
+136 |                         prepare_tick=lambda: None if case == "paused" else tick,
+137 |                         frame=lambda: frame,
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_producer_integration.py:136:54
+    |
+134 |                     runtime = NS(
+135 |                         selected_plan=lambda: None if case == "no_plan" else plan,
+136 |                         prepare_tick=lambda: None if case == "paused" else tick,
+    |                                                      ^^^^
+137 |                         frame=lambda: frame,
+138 |                         fail=lambda *a: effects.append("runtime.fail"),
+    |
+
+B023 Function definition does not bind loop variable `tick`
+   --> tests/test_producer_integration.py:136:76
+    |
+134 |                     runtime = NS(
+135 |                         selected_plan=lambda: None if case == "no_plan" else plan,
+136 |                         prepare_tick=lambda: None if case == "paused" else tick,
+    |                                                                            ^^^^
+137 |                         frame=lambda: frame,
+138 |                         fail=lambda *a: effects.append("runtime.fail"),
+    |
+
+B023 Function definition does not bind loop variable `frame`
+   --> tests/test_producer_integration.py:137:39
+    |
+135 |                         selected_plan=lambda: None if case == "no_plan" else plan,
+136 |                         prepare_tick=lambda: None if case == "paused" else tick,
+137 |                         frame=lambda: frame,
+    |                                       ^^^^^
+138 |                         fail=lambda *a: effects.append("runtime.fail"),
+139 |                     )
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:138:41
+    |
+136 |                         prepare_tick=lambda: None if case == "paused" else tick,
+137 |                         frame=lambda: frame,
+138 |                         fail=lambda *a: effects.append("runtime.fail"),
+    |                                         ^^^^^^^
+139 |                     )
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:142:25
+    |
+141 |                     def commit(value):
+142 |                         effects.append("commit")
+    |                         ^^^^^^^
+143 |                         if case == "commit_error":
+144 |                             raise ValueError("commit failed")
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_producer_integration.py:143:28
+    |
+141 |                     def commit(value):
+142 |                         effects.append("commit")
+143 |                         if case == "commit_error":
+    |                            ^^^^
+144 |                             raise ValueError("commit failed")
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:149:25
+    |
+148 |                     def collect(**kwargs):
+149 |                         effects.append("collect")
+    |                         ^^^^^^^
+150 |                         if case == "collection_error":
+151 |                             raise ValueError("collection failed")
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_producer_integration.py:150:28
+    |
+148 |                     def collect(**kwargs):
+149 |                         effects.append("collect")
+150 |                         if case == "collection_error":
+    |                            ^^^^
+151 |                             raise ValueError("collection failed")
+152 |                         return telemetry
+    |
+
+B023 Function definition does not bind loop variable `telemetry`
+   --> tests/test_producer_integration.py:152:32
+    |
+150 |                         if case == "collection_error":
+151 |                             raise ValueError("collection failed")
+152 |                         return telemetry
+    |                                ^^^^^^^^^
+153 |
+154 |                     coordinator = NS(
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:155:54
+    |
+154 |                     coordinator = NS(
+155 |                         checkpoint_telemetry=lambda: effects.append("checkpoint"),
+    |                                                      ^^^^^^^
+156 |                         restore_telemetry=lambda cp: effects.append("restore"),
+157 |                         update=collect,
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:156:54
+    |
+154 |                     coordinator = NS(
+155 |                         checkpoint_telemetry=lambda: effects.append("checkpoint"),
+156 |                         restore_telemetry=lambda cp: effects.append("restore"),
+    |                                                      ^^^^^^^
+157 |                         update=collect,
+158 |                         get_config=lambda: NS(model_dump_json=lambda: "config"),
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:161:44
+    |
+159 |                     )
+160 |                     flight = NS(
+161 |                         checkpoint=lambda: effects.append("flight.checkpoint"),
+    |                                            ^^^^^^^
+162 |                         apply_simulation_frame=lambda *a: effects.append(
+163 |                             "flight.apply"
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:162:59
+    |
+160 |                     flight = NS(
+161 |                         checkpoint=lambda: effects.append("flight.checkpoint"),
+162 |                         apply_simulation_frame=lambda *a: effects.append(
+    |                                                           ^^^^^^^
+163 |                             "flight.apply"
+164 |                         ),
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:165:55
+    |
+163 |                             "flight.apply"
+164 |                         ),
+165 |                         restore_checkpoint=lambda cp: effects.append("flight.restore"),
+    |                                                       ^^^^^^^
+166 |                     )
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:169:25
+    |
+168 |                     def publish(value, candidate):
+169 |                         effects.append("inplace" if role == "A" else "prepare")
+    |                         ^^^^^^^
+170 |                         if case == "callback_error":
+171 |                             raise ValueError("callback failed")
+    |
+
+B023 Function definition does not bind loop variable `role`
+   --> tests/test_producer_integration.py:169:53
+    |
+168 |                     def publish(value, candidate):
+169 |                         effects.append("inplace" if role == "A" else "prepare")
+    |                                                     ^^^^
+170 |                         if case == "callback_error":
+171 |                             raise ValueError("callback failed")
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_producer_integration.py:170:28
+    |
+168 |                     def publish(value, candidate):
+169 |                         effects.append("inplace" if role == "A" else "prepare")
+170 |                         if case == "callback_error":
+    |                            ^^^^
+171 |                             raise ValueError("callback failed")
+172 |                         return None
+    |
+
+RET501 [*] Do not explicitly `return None` in function if it is the only possible return value
+   --> tests/test_producer_integration.py:172:25
+    |
+170 |                         if case == "callback_error":
+171 |                             raise ValueError("callback failed")
+172 |                         return None
+    |                         ^^^^^^^^^^^
+173 |
+174 |                     self_obj = NS(
+    |
+help: Remove explicit `return None`
+    |
+171 |                             raise ValueError("callback failed")
+    -                         return None
+172 +                         return
+173 |
+    |
+
+PLR1711 [*] Useless `return` statement at end of function
+   --> tests/test_producer_integration.py:172:25
+    |
+170 |                         if case == "callback_error":
+171 |                             raise ValueError("callback failed")
+172 |                         return None
+    |                         ^^^^^^^^^^^
+173 |
+174 |                     self_obj = NS(
+    |
+help: Remove useless `return` statement
+    |
+171 |                             raise ValueError("callback failed")
+    -                         return None
+172 |
+    |
+
+B023 Function definition does not bind loop variable `status`
+   --> tests/test_producer_integration.py:176:40
+    |
+174 |                     self_obj = NS(
+175 |                         runtime=runtime,
+176 |                         status=lambda: status,
+    |                                        ^^^^^^
+177 |                         publish_committed_metrics=lambda *a: effects.append(
+178 |                             "post_commit_publish"
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:177:62
+    |
+175 |                         runtime=runtime,
+176 |                         status=lambda: status,
+177 |                         publish_committed_metrics=lambda *a: effects.append(
+    |                                                              ^^^^^^^
+178 |                             "post_commit_publish"
+179 |                         ),
+    |
+
+B023 Function definition does not bind loop variable `frame`
+   --> tests/test_producer_integration.py:183:41
+    |
+182 |                     def paused_tick(*args):
+183 |                         return NS(frame=frame, plan=plan, status=status)
+    |                                         ^^^^^
+184 |
+185 |                     env = {
+    |
+
+B023 Function definition does not bind loop variable `plan`
+   --> tests/test_producer_integration.py:183:53
+    |
+182 |                     def paused_tick(*args):
+183 |                         return NS(frame=frame, plan=plan, status=status)
+    |                                                     ^^^^
+184 |
+185 |                     env = {
+    |
+
+B023 Function definition does not bind loop variable `status`
+   --> tests/test_producer_integration.py:183:66
+    |
+182 |                     def paused_tick(*args):
+183 |                         return NS(frame=frame, plan=plan, status=status)
+    |                                                                  ^^^^^^
+184 |
+185 |                     env = {
+    |
+
+B023 Function definition does not bind loop variable `flight`
+   --> tests/test_producer_integration.py:187:61
+    |
+185 |                     env = {
+186 |                         "get_active_leg_lock": contextlib.nullcontext,
+187 |                         "get_flight_state_manager": lambda: flight,
+    |                                                             ^^^^^^
+188 |                         "RunTick": paused_tick,
+189 |                         "replay_input_identity": lambda *a: ("inputs",),
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:208:75
+    |
+206 | …                     },
+207 | …                     "app.core.metrics.metric_updater": {
+208 | …                         "clear_independent_dish_metrics": lambda: effects.append(
+    |                                                                     ^^^^^^^
+209 | …                             "clear.independent"
+210 | …                         )
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:213:68
+    |
+211 | …                     },
+212 | …                     "app.core.metrics": {
+213 | …                         "clear_telemetry_metrics": lambda: effects.append(
+    |                                                              ^^^^^^^
+214 | …                             "clear"
+215 | …                         )
+    |
+
+B023 Function definition does not bind loop variable `phase`
+   --> tests/test_producer_integration.py:260:31
+    |
+258 |                     reset_detection=lambda: None,
+259 |                     get_status=lambda: NS(
+260 |                         phase=phase,
+    |                               ^^^^^
+261 |                         eta_mode=mode,
+262 |                         departure_time=None,
+    |
+
+B023 Function definition does not bind loop variable `mode`
+   --> tests/test_producer_integration.py:261:34
+    |
+259 |                     get_status=lambda: NS(
+260 |                         phase=phase,
+261 |                         eta_mode=mode,
+    |                                  ^^^^
+262 |                         departure_time=None,
+263 |                         arrival_time=None,
+    |
+
+B023 Function definition does not bind loop variable `flight`
+   --> tests/test_producer_integration.py:313:65
+    |
+311 |                     **{
+312 |                         "app.services.flight_state": {
+313 |                             "get_flight_state_manager": lambda: flight
+    |                                                                 ^^^^^^
+314 |                         },
+315 |                         "app.core.labels": {
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:370:25
+    |
+369 |                     async def sleep(delay):
+370 |                         effects.append(("sleep", delay))
+    |                         ^^^^^^^
+371 |                         sleeping.set()
+372 |                         await asyncio.Event().wait()
+    |
+
+B023 Function definition does not bind loop variable `sleeping`
+   --> tests/test_producer_integration.py:371:25
+    |
+369 |                     async def sleep(delay):
+370 |                         effects.append(("sleep", delay))
+371 |                         sleeping.set()
+    |                         ^^^^^^^^
+372 |                         await asyncio.Event().wait()
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:390:25
+    |
+389 |                     def tick(*a):
+390 |                         effects.append("worker.start")
+    |                         ^^^^^^^
+391 |                         started.set()
+392 |                         try:
+    |
+
+B023 Function definition does not bind loop variable `started`
+   --> tests/test_producer_integration.py:391:25
+    |
+389 |                     def tick(*a):
+390 |                         effects.append("worker.start")
+391 |                         started.set()
+    |                         ^^^^^^^
+392 |                         try:
+393 |                             if not release.wait(5):
+    |
+
+B023 Function definition does not bind loop variable `release`
+   --> tests/test_producer_integration.py:393:36
+    |
+391 |                         started.set()
+392 |                         try:
+393 |                             if not release.wait(5):
+    |                                    ^^^^^^^
+394 |                                 raise TimeoutError("barrier")
+395 |                             if case == "error":
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_producer_integration.py:395:32
+    |
+393 | …                     if not release.wait(5):
+394 | …                         raise TimeoutError("barrier")
+395 | …                     if case == "error":
+    |                          ^^^^
+396 | …                         raise ValueError("worker")
+397 | …                     return 1
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:399:29
+    |
+397 |                             return 1
+398 |                         finally:
+399 |                             effects.append("worker.end")
+    |                             ^^^^^^^
+400 |                             finished.set()
+    |
+
+B023 Function definition does not bind loop variable `finished`
+   --> tests/test_producer_integration.py:400:29
+    |
+398 |                         finally:
+399 |                             effects.append("worker.end")
+400 |                             finished.set()
+    |                             ^^^^^^^^
+401 |
+402 |                     ns = functions(
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_producer_integration.py:421:49
+    |
+419 | …                     "app.core.metrics": {
+420 | …                         "simulation_errors_total": NS(
+421 | …                             inc=lambda: effects.append("error.counter")
+    |                                           ^^^^^^^
+422 | …                         )
+423 | …                     }
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/test_refresh_replay_authority.py:43:53
+   |
+41 |                 plan = object()
+42 |                 replay = object()
+43 |                 stamp = datetime.fromtimestamp(100, timezone.utc)
+   |                                                     ^^^^^^^^^^^^
+44 |                 telemetry = NS(timestamp=stamp)
+45 |                 run = NS(run_id="run", simulation_time=stamp)
+   |
+help: Convert to `datetime.UTC` alias
+   |
+4  | import unittest
+   - from datetime import datetime, timezone
+5  + from datetime import datetime, timezone, UTC
+6  | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+42 |                 replay = object()
+   -                 stamp = datetime.fromtimestamp(100, timezone.utc)
+43 +                 stamp = datetime.fromtimestamp(100, UTC)
+44 |                 telemetry = NS(timestamp=stamp)
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_refresh_replay_authority.py:50:21
+   |
+49 |                 def selected():
+50 |                     calls.append("selected_plan")
+   |                     ^^^^^
+51 |                     if case == "predicate_error":
+52 |                         raise OSError("source reader")
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_refresh_replay_authority.py:51:24
+   |
+49 |                 def selected():
+50 |                     calls.append("selected_plan")
+51 |                     if case == "predicate_error":
+   |                        ^^^^
+52 |                         raise OSError("source reader")
+53 |                     return object() if case == "plan" else plan
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_refresh_replay_authority.py:53:40
+   |
+51 |                     if case == "predicate_error":
+52 |                         raise OSError("source reader")
+53 |                     return object() if case == "plan" else plan
+   |                                        ^^^^
+54 |
+55 |                 runtime = NS(
+   |
+
+B023 Function definition does not bind loop variable `plan`
+  --> tests/test_refresh_replay_authority.py:53:60
+   |
+51 |                     if case == "predicate_error":
+52 |                         raise OSError("source reader")
+53 |                     return object() if case == "plan" else plan
+   |                                                            ^^^^
+54 |
+55 |                 runtime = NS(
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_refresh_replay_authority.py:58:25
+   |
+56 |                     selected_plan=selected,
+57 |                     frame=lambda: (
+58 |                         calls.append("runtime.frame"),
+   |                         ^^^^^
+59 |                         object() if case == "frame" else replay,
+60 |                     )[1],
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_refresh_replay_authority.py:59:37
+   |
+57 |                     frame=lambda: (
+58 |                         calls.append("runtime.frame"),
+59 |                         object() if case == "frame" else replay,
+   |                                     ^^^^
+60 |                     )[1],
+61 |                 )
+   |
+
+B023 Function definition does not bind loop variable `replay`
+  --> tests/test_refresh_replay_authority.py:59:58
+   |
+57 |                     frame=lambda: (
+58 |                         calls.append("runtime.frame"),
+59 |                         object() if case == "frame" else replay,
+   |                                                          ^^^^^^
+60 |                     )[1],
+61 |                 )
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_refresh_replay_authority.py:64:25
+   |
+62 |                 config = NS(
+63 |                     model_dump_json=lambda: (
+64 |                         calls.append("config"),
+   |                         ^^^^^
+65 |                         "changed" if case == "config" else "config",
+66 |                     )[1]
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_refresh_replay_authority.py:65:38
+   |
+63 |                     model_dump_json=lambda: (
+64 |                         calls.append("config"),
+65 |                         "changed" if case == "config" else "config",
+   |                                      ^^^^
+66 |                     )[1]
+67 |                 )
+   |
+
+B023 Function definition does not bind loop variable `config`
+  --> tests/test_refresh_replay_authority.py:69:40
+   |
+67 |                 )
+68 |                 coordinator = NS(
+69 |                     get_config=lambda: config,
+   |                                        ^^^^^^
+70 |                     get_current_telemetry=lambda: (
+71 |                         calls.append("telemetry"),
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_refresh_replay_authority.py:71:25
+   |
+69 |                     get_config=lambda: config,
+70 |                     get_current_telemetry=lambda: (
+71 |                         calls.append("telemetry"),
+   |                         ^^^^^
+72 |                         object() if case == "telemetry" else telemetry,
+73 |                     )[1],
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_refresh_replay_authority.py:72:37
+   |
+70 |                     get_current_telemetry=lambda: (
+71 |                         calls.append("telemetry"),
+72 |                         object() if case == "telemetry" else telemetry,
+   |                                     ^^^^
+73 |                     )[1],
+74 |                 )
+   |
+
+B023 Function definition does not bind loop variable `telemetry`
+  --> tests/test_refresh_replay_authority.py:72:62
+   |
+70 |                     get_current_telemetry=lambda: (
+71 |                         calls.append("telemetry"),
+72 |                         object() if case == "telemetry" else telemetry,
+   |                                                              ^^^^^^^^^
+73 |                     )[1],
+74 |                 )
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_refresh_replay_authority.py:88:54
+   |
+86 |                     status.run = None
+87 |                 obj = NS(
+88 |                     runtime=runtime, status=lambda: (calls.append("status"), status)[1]
+   |                                                      ^^^^^
+89 |                 )
+90 |                 ns = functions(
+   |
+
+B023 Function definition does not bind loop variable `status`
+  --> tests/test_refresh_replay_authority.py:88:78
+   |
+86 |                     status.run = None
+87 |                 obj = NS(
+88 |                     runtime=runtime, status=lambda: (calls.append("status"), status)[1]
+   |                                                                              ^^^^^^
+89 |                 )
+90 |                 ns = functions(
+   |
+
+B023 Function definition does not bind loop variable `calls`
+  --> tests/test_refresh_replay_authority.py:96:29
+   |
+94 |                     {
+95 |                         "replay_input_identity": lambda *a: (
+96 |                             calls.append("inputs"),
+   |                             ^^^^^
+97 |                             ("changed",) if case == "inputs" else ("inputs",),
+98 |                         )[1],
+   |
+
+B023 Function definition does not bind loop variable `case`
+  --> tests/test_refresh_replay_authority.py:97:45
+   |
+95 |                         "replay_input_identity": lambda *a: (
+96 |                             calls.append("inputs"),
+97 |                             ("changed",) if case == "inputs" else ("inputs",),
+   |                                             ^^^^
+98 |                         )[1],
+99 |                         "logger": Log(),
+   |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:109:33
+    |
+107 |                         "app.core.metrics.frame_builder": {
+108 |                             "coordinator_identity": lambda c: (
+109 |                                 calls.append("coordinator"),
+    |                                 ^^^^^
+110 |                                 "source",
+111 |                             )[1]
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/test_refresh_replay_authority.py:164:53
+    |
+162 |                 store = frames.FrameStore((frames.GaugeDefinition("g", "fixture"),))
+163 |                 calls = []
+164 |                 stamp = datetime.fromtimestamp(100, timezone.utc)
+    |                                                     ^^^^^^^^^^^^
+165 |                 telemetry = NS(timestamp=stamp)
+166 |                 identity = frames.FrameIdentity(
+    |
+help: Convert to `datetime.UTC` alias
+    |
+4   | import unittest
+    - from datetime import datetime, timezone
+5   + from datetime import datetime, timezone, UTC
+6   | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+163 |                 calls = []
+    -                 stamp = datetime.fromtimestamp(100, timezone.utc)
+164 +                 stamp = datetime.fromtimestamp(100, UTC)
+165 |                 telemetry = NS(timestamp=stamp)
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:178:25
+    |
+176 |                     _last_valid_telemetry=telemetry,
+177 |                     route_progress_snapshot=lambda: (
+178 |                         calls.append("progress"),
+    |                         ^^^^^
+179 |                         (0.0, 0),
+180 |                     )[1],
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:184:46
+    |
+182 |                 config = NS(
+183 |                     mode="simulation",
+184 |                     model_dump_json=lambda: (calls.append("config"), "config")[1],
+    |                                              ^^^^^
+185 |                 )
+186 |                 route = object()
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:187:55
+    |
+185 |                 )
+186 |                 route = object()
+187 |                 routes = NS(get_active_route=lambda: (calls.append("route"), route)[1])
+    |                                                       ^^^^^
+188 |                 manager = NS(list_pois=lambda: (calls.append("pois"), [])[1])
+    |
+
+B023 Function definition does not bind loop variable `route`
+   --> tests/test_refresh_replay_authority.py:187:78
+    |
+185 |                 )
+186 |                 route = object()
+187 |                 routes = NS(get_active_route=lambda: (calls.append("route"), route)[1])
+    |                                                                              ^^^^^
+188 |                 manager = NS(list_pois=lambda: (calls.append("pois"), [])[1])
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:188:49
+    |
+186 |                 route = object()
+187 |                 routes = NS(get_active_route=lambda: (calls.append("route"), route)[1])
+188 |                 manager = NS(list_pois=lambda: (calls.append("pois"), [])[1])
+    |                                                 ^^^^^
+189 |
+190 |                 def sources():
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:191:21
+    |
+190 |                 def sources():
+191 |                     calls.append("sources")
+    |                     ^^^^^
+192 |                     if calls.count("sources") == 2 and case == "error":
+193 |                         raise ValueError("reader")
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:192:24
+    |
+190 |                 def sources():
+191 |                     calls.append("sources")
+192 |                     if calls.count("sources") == 2 and case == "error":
+    |                        ^^^^^
+193 |                         raise ValueError("reader")
+194 |                     return coordinator, config, routes, manager, None
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_refresh_replay_authority.py:192:56
+    |
+190 |                 def sources():
+191 |                     calls.append("sources")
+192 |                     if calls.count("sources") == 2 and case == "error":
+    |                                                        ^^^^
+193 |                         raise ValueError("reader")
+194 |                     return coordinator, config, routes, manager, None
+    |
+
+B023 Function definition does not bind loop variable `coordinator`
+   --> tests/test_refresh_replay_authority.py:194:28
+    |
+192 |                     if calls.count("sources") == 2 and case == "error":
+193 |                         raise ValueError("reader")
+194 |                     return coordinator, config, routes, manager, None
+    |                            ^^^^^^^^^^^
+195 |
+196 |                 def prepare(inputs, *, admit_observation):
+    |
+
+B023 Function definition does not bind loop variable `config`
+   --> tests/test_refresh_replay_authority.py:194:41
+    |
+192 |                     if calls.count("sources") == 2 and case == "error":
+193 |                         raise ValueError("reader")
+194 |                     return coordinator, config, routes, manager, None
+    |                                         ^^^^^^
+195 |
+196 |                 def prepare(inputs, *, admit_observation):
+    |
+
+B023 Function definition does not bind loop variable `routes`
+   --> tests/test_refresh_replay_authority.py:194:49
+    |
+192 |                     if calls.count("sources") == 2 and case == "error":
+193 |                         raise ValueError("reader")
+194 |                     return coordinator, config, routes, manager, None
+    |                                                 ^^^^^^
+195 |
+196 |                 def prepare(inputs, *, admit_observation):
+    |
+
+B023 Function definition does not bind loop variable `manager`
+   --> tests/test_refresh_replay_authority.py:194:57
+    |
+192 |                     if calls.count("sources") == 2 and case == "error":
+193 |                         raise ValueError("reader")
+194 |                     return coordinator, config, routes, manager, None
+    |                                                         ^^^^^^^
+195 |
+196 |                 def prepare(inputs, *, admit_observation):
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:197:21
+    |
+196 |                 def prepare(inputs, *, admit_observation):
+197 |                     calls.append(("prepare", admit_observation))
+    |                     ^^^^^
+198 |                     return (
+199 |                         previous
+    |
+
+B023 Function definition does not bind loop variable `previous`
+   --> tests/test_refresh_replay_authority.py:199:25
+    |
+197 |                     calls.append(("prepare", admit_observation))
+198 |                     return (
+199 |                         previous
+    |                         ^^^^^^^^
+200 |                         if case == "unchanged"
+201 |                         else frames.GaugeFrame(identity, ((((), 8.0),),), 100.0)
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_refresh_replay_authority.py:200:28
+    |
+198 |                     return (
+199 |                         previous
+200 |                         if case == "unchanged"
+    |                            ^^^^
+201 |                         else frames.GaugeFrame(identity, ((((), 8.0),),), 100.0)
+202 |                     )
+    |
+
+B023 Function definition does not bind loop variable `frames`
+   --> tests/test_refresh_replay_authority.py:201:30
+    |
+199 |                         previous
+200 |                         if case == "unchanged"
+201 |                         else frames.GaugeFrame(identity, ((((), 8.0),),), 100.0)
+    |                              ^^^^^^
+202 |                     )
+    |
+
+B023 Function definition does not bind loop variable `identity`
+   --> tests/test_refresh_replay_authority.py:201:48
+    |
+199 |                         previous
+200 |                         if case == "unchanged"
+201 |                         else frames.GaugeFrame(identity, ((((), 8.0),),), 100.0)
+    |                                                ^^^^^^^^
+202 |                     )
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:205:53
+    |
+204 |                 builder = NS(
+205 |                     coordinator_identity=lambda c: (calls.append("identity"), "source")[
+    |                                                     ^^^^^
+206 |                         1
+207 |                     ],
+    |
+
+B023 Function definition does not bind loop variable `telemetry`
+   --> tests/test_refresh_replay_authority.py:208:60
+    |
+206 |                         1
+207 |                     ],
+208 |                     model_identity=lambda v: "obs" if v is telemetry else "route",
+    |                                                            ^^^^^^^^^
+209 |                     FrameInputs=lambda *a, **kw: NS(),
+210 |                     prepare_frame=prepare,
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/test_refresh_replay_authority.py:218:32
+    |
+216 |                     {
+217 |                         "datetime": datetime,
+218 |                         "UTC": timezone.utc,
+    |                                ^^^^^^^^^^^^
+219 |                         "FRAME_STORE": store,
+220 |                         "get_active_leg_lock": contextlib.nullcontext,
+    |
+help: Convert to `datetime.UTC` alias
+    |
+4   | import unittest
+    - from datetime import datetime, timezone
+5   + from datetime import datetime, timezone, UTC
+6   | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+217 |                         "datetime": datetime,
+    -                         "UTC": timezone.utc,
+218 +                         "UTC": UTC,
+219 |                         "FRAME_STORE": store,
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:223:29
+    |
+221 |                         "frame_builder": builder,
+222 |                         "route_source_identity": lambda r: (
+223 |                             calls.append("route.key"),
+    |                             ^^^^^
+224 |                             "route-key",
+225 |                         )[1],
+    |
+
+B023 Function definition does not bind loop variable `calls`
+   --> tests/test_refresh_replay_authority.py:230:29
+    |
+228 |                         ),
+229 |                         "frame_inputs_are_current": lambda *a: (
+230 |                             calls.append("final.inputs"),
+    |                             ^^^^^
+231 |                             case != "rejected",
+232 |                         )[1],
+    |
+
+B023 Function definition does not bind loop variable `case`
+   --> tests/test_refresh_replay_authority.py:231:29
+    |
+229 |                         "frame_inputs_are_current": lambda *a: (
+230 |                             calls.append("final.inputs"),
+231 |                             case != "rejected",
+    |                             ^^^^
+232 |                         )[1],
+233 |                         "logger": Log(),
+    |
+
+B023 Function definition does not bind loop variable `stamp`
+   --> tests/test_refresh_replay_authority.py:240:61
+    |
+238 |                     **{
+239 |                         "app.services.position_freshness": {
+240 |                             "observation_time": lambda *a: (stamp, "fresh")
+    |                                                             ^^^^^
+241 |                         }
+242 |                     }
+    |
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/test_refresh_replay_authority.py:245:66
+    |
+243 |                 ), probe.operation("tick", "tick"):
+244 |                     result = ns["refresh_current_metrics"](
+245 |                         sources, now=datetime.fromtimestamp(101, timezone.utc)
+    |                                                                  ^^^^^^^^^^^^
+246 |                     )
+247 |                 outputs.append(
+    |
+help: Convert to `datetime.UTC` alias
+    |
+4   | import unittest
+    - from datetime import datetime, timezone
+5   + from datetime import datetime, timezone, UTC
+6   | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+244 |                     result = ns["refresh_current_metrics"](
+    -                         sources, now=datetime.fromtimestamp(101, timezone.utc)
+245 +                         sources, now=datetime.fromtimestamp(101, UTC)
+246 |                     )
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/test_runner_cleanup.py:3:1
+   |
+ 1 |   """The offline test owner must also clean children after their leader exits."""
+ 2 |
+ 3 | / import contextlib
+ 4 | | import io
+ 5 | | import json
+ 6 | | import os
+ 7 | | from pathlib import Path
+ 8 | | import signal
+ 9 | | import subprocess
+10 | | import sys
+11 | | import tempfile
+12 | | import time
+13 | | import unittest
+14 | | from unittest.mock import patch
+15 | |
+16 | | import run_backend
+   | |__________________^
+help: Organize imports
+   |
+6  | import os
+   - from pathlib import Path
+7  | import signal
+--------------------------------------------------------------------------------
+12 | import unittest
+13 + from pathlib import Path
+14 | from unittest.mock import patch
+   |
+
+PLW1510 `subprocess.run` without explicit `check` argument
+  --> tests/test_stage5_preflight.py:24:24
+   |
+22 |             (root / "evidence/stage5/release-manifest.json").write_text(json.dumps(manifest))
+23 |             def run():
+24 |                 return subprocess.run(["bash", str(root / "forge-preflight.sh"), "--offline"],
+   |                        ^^^^^^^^^^^^^^
+25 |                                       capture_output=True, timeout=10)
+26 |             self.assertEqual(run().returncode, 0)
+   |
+help: Add explicit `check=False`
+   |
+24 |                 return subprocess.run(["bash", str(root / "forge-preflight.sh"), "--offline"],
+   -                                       capture_output=True, timeout=10)
+25 +                                       check=False, capture_output=True, timeout=10)
+26 |             self.assertEqual(run().returncode, 0)
+   |
+note: This suggestion may be incorrect or produce invalid syntax. It requires manual review and cannot be applied automatically
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/test_tick_boundaries.py:48:56
+   |
+46 |             get_active_route_id=lambda: (calls.append("route.id"), "route-id")[1],
+47 |         )
+48 |         old = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+   |                                                        ^^^^^^^^^^^^
+49 |         telemetry = (
+50 |             None
+   |
+help: Convert to `datetime.UTC` alias
+   |
+9  | import unittest
+   - from datetime import datetime, timezone
+10 + from datetime import datetime, timezone, UTC
+11 | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+47 |         )
+   -         old = NS(timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc))
+48 +         old = NS(timestamp=datetime(2026, 1, 1, tzinfo=UTC))
+49 |         telemetry = (
+   |
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/test_tick_boundaries.py:55:63
+   |
+53 |                 old
+54 |                 if case == "retained"
+55 |                 else NS(timestamp=datetime(2026, 1, 2, tzinfo=timezone.utc))
+   |                                                               ^^^^^^^^^^^^
+56 |             )
+57 |         )
+   |
+help: Convert to `datetime.UTC` alias
+   |
+9  | import unittest
+   - from datetime import datetime, timezone
+10 + from datetime import datetime, timezone, UTC
+11 | from types import SimpleNamespace as NS
+--------------------------------------------------------------------------------
+54 |                 if case == "retained"
+   -                 else NS(timestamp=datetime(2026, 1, 2, tzinfo=timezone.utc))
+55 +                 else NS(timestamp=datetime(2026, 1, 2, tzinfo=UTC))
+56 |             )
+   |
+
+B023 Function definition does not bind loop variable `started`
+   --> tests/test_worker_delivery.py:121:21
+    |
+120 |                 def work():
+121 |                     started.set()
+    |                     ^^^^^^^
+122 |                     try:
+123 |                         if not release.wait(5):
+    |
+
+B023 Function definition does not bind loop variable `release`
+   --> tests/test_worker_delivery.py:123:32
+    |
+121 |                     started.set()
+122 |                     try:
+123 |                         if not release.wait(5):
+    |                                ^^^^^^^
+124 |                             raise TimeoutError("test barrier")
+125 |                         effects.append("complete")
+    |
+
+B023 Function definition does not bind loop variable `effects`
+   --> tests/test_worker_delivery.py:125:25
+    |
+123 |                         if not release.wait(5):
+124 |                             raise TimeoutError("test barrier")
+125 |                         effects.append("complete")
+    |                         ^^^^^^^
+126 |                         return "result"
+127 |                     finally:
+    |
+
+B023 Function definition does not bind loop variable `finished`
+   --> tests/test_worker_delivery.py:128:25
+    |
+126 |                         return "result"
+127 |                     finally:
+128 |                         finished.set()
+    |                         ^^^^^^^^
+129 |
+130 |                 task = None
+    |
+
+B023 Function definition does not bind loop variable `started`
+   --> tests/test_worker_delivery.py:198:17
+    |
+197 |             def work():
+198 |                 started.set()
+    |                 ^^^^^^^
+199 |                 try:
+200 |                     if not release.wait(5):
+    |
+
+B023 Function definition does not bind loop variable `release`
+   --> tests/test_worker_delivery.py:200:28
+    |
+198 |                 started.set()
+199 |                 try:
+200 |                     if not release.wait(5):
+    |                            ^^^^^^^
+201 |                         raise TimeoutError("barrier")
+202 |                     return 42
+    |
+
+B023 Function definition does not bind loop variable `finished`
+   --> tests/test_worker_delivery.py:204:21
+    |
+202 |                     return 42
+203 |                 finally:
+204 |                     finished.set()
+    |                     ^^^^^^^^
+205 |
+206 |             async def job():
+    |
+
+B023 Function definition does not bind loop variable `instrumented`
+   --> tests/test_worker_delivery.py:211:24
+    |
+209 |                         "worker", "shielded", run_in_threadpool, work
+210 |                     )
+211 |                     if instrumented
+    |                        ^^^^^^^^^^^^
+212 |                     else await run_in_threadpool(work)
+213 |                 )
+    |
+
+B023 Function definition does not bind loop variable `values`
+   --> tests/test_worker_delivery.py:214:17
+    |
+212 |                     else await run_in_threadpool(work)
+213 |                 )
+214 |                 values.append(value)
+    |                 ^^^^^^
+215 |
+216 |             try:
+    |
+
+ASYNC115 [*] Use `anyio.lowlevel.checkpoint()` instead of `anyio.sleep(0)`
+   --> tests/test_worker_delivery.py:220:31
+    |
+218 |                     group.start_soon(job)
+219 |                     while not started.is_set():
+220 |                         await anyio.sleep(0)
+    |                               ^^^^^^^^^^^^^^
+221 |                     group.cancel_scope.cancel()
+222 |                     self.assertFalse(finished.is_set())
+    |
+help: Replace with `anyio.lowlevel.checkpoint()`
+    |
+11  | from starlette.concurrency import run_in_threadpool
+12  + import anyio.lowlevel
+13  |
+--------------------------------------------------------------------------------
+220 |                     while not started.is_set():
+    -                         await anyio.sleep(0)
+221 +                         await anyio.lowlevel.checkpoint()
+222 |                     group.cancel_scope.cancel()
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> verify_frontend.py:3:1
+  |
+1 |   """Offline Stage 3A exact A/C derivation. No image, network or app launch path."""
+2 |
+3 | / import argparse
+4 | | import json
+5 | | import shutil
+6 | | from pathlib import Path
+7 | | import build
+  | |____________^
+8 |
+9 |   PACKAGE = Path(__file__).resolve().parent
+  |
+help: Organize imports
+  |
+6 | from pathlib import Path
+7 +
+8 | import build
+  |
+
+Found 174 errors.
+[*] 27 fixable with `--fix`.

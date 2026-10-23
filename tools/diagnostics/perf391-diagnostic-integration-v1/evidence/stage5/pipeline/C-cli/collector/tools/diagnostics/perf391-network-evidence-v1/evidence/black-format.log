@@ -1,0 +1,7 @@
+reformatted /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/adapters.py
+reformatted /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/cli.py
+reformatted /home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_statistics.py
+reformatted fixtures/build.py
+
+All done! ✨ 🍰 ✨
+4 files reformatted, 11 files left unchanged.

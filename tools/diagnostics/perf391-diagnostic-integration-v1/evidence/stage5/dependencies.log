@@ -1,0 +1,26 @@
+Using Python 3.11.16 environment at: /tmp/perf391-stage5-env
+Resolved 20 packages in 2ms
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 20 packages in 33ms
+ + anyio==4.15.1
+ + attrs==26.1.0
+ + black==26.10.1
+ + click==8.5.0
+ + coverage==7.17.0
+ + filelock==4.2.4
+ + idna==3.20
+ + jsonschema==4.19.2
+ + jsonschema-specifications==2025.9.1
+ + mypy-extensions==1.1.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + platformdirs==4.13.5
+ + prometheus-client==0.26.0
+ + pytokens==0.4.1
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + ruff==0.17.1
+ + starlette==1.9.0
+ + typing-extensions==4.16.0

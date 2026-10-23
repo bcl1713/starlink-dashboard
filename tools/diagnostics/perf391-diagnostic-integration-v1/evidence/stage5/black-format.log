@@ -1,0 +1,7 @@
+integration.py
+verify_evidence.py
+tests/stage5_fixture.py
+tests/stage5_qualify.py
+tests/test_stage5_qualification.py
+tests/test_stage5_regressions.py
+tests/test_stage5_preflight.py

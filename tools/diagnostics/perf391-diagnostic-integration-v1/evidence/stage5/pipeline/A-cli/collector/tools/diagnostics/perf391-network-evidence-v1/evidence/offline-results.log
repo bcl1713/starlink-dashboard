@@ -1,0 +1,18 @@
+Fictional fixture cases passed: 16
+Fixture SHA-256: 7f7963ef767471e81a96165ad2c1f50349c54d3b668c552368c1197ae52a3517
+complete_zero_spike: passed; complete
+missing_scrape: passed; network_data_gap
+explicit_nan: passed; network_data_gap
+api_deletion: passed; history_projection_gap
+timestamp_shift: passed; history_timestamp_defect
+frontend_only_rendering_gap: passed; frontend_rendering_gap
+frontend_only_input_gap: passed; frontend_data_path_gap
+missing_paint: passed; unknown
+finite_lookback_over_missing_scrape: passed; network_data_gap
+out_of_order_history_responses: passed; complete, out_of_order_bundle
+delayed_observer: passed; timing/coverage only
+backend_queue: passed; timing/coverage only
+worker_completion: passed; timing/coverage only
+producer_acquisition_publication: passed; timing/coverage only
+repository_contention: passed; timing/coverage only
+missing_private_wrapper: passed; timing/coverage only

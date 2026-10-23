@@ -1,0 +1,1 @@
+{"run":"synthetic-stage5","stream":"synthetic-stage5/p/doc","clock":"browser/p/doc","seq":3,"monotonic_ms":3,"phase":"app.parse_available","op":"synthetic-stage5/p/doc/r1","outcome":"ok","detail":{"bundle":"bundle1","metric":"latency","history":{"window_seconds":60,"start_timestamp_seconds":1,"end_timestamp_seconds":3,"step_seconds":1,"series":{"latency":[[1,2],[2,3],[3,4]]}}}}

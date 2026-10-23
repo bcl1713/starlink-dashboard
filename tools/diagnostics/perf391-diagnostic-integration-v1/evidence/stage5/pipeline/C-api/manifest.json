@@ -1,0 +1,51 @@
+{
+  "adopted_processes": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": false,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/release-replay/C-api"
+  ],
+  "owner": {
+    "pgid": 274185,
+    "pid": 274186,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "211537284"
+  },
+  "processes": [],
+  "run_id": "synthetic-stage5",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "fixture": true,
+    "pins": {
+      "A": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "C": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+      "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+      "harness": "f3029024b5950a267645195476da5cbca326f16a",
+      "implementation": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+      "plan": "8aa7791bb03f0573cf602bdbfe8e43c085ee2325",
+      "release": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b"
+    }
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

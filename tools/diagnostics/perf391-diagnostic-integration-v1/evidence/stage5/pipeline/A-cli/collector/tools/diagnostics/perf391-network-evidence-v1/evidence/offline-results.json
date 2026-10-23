@@ -1,0 +1,3701 @@
+{
+  "schema": "perf391-network-evidence-fixtures-v1",
+  "fixture_sha256": "7f7963ef767471e81a96165ad2c1f50349c54d3b668c552368c1197ae52a3517",
+  "passed": 16,
+  "cases": [
+    {
+      "name": "complete_zero_spike",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "complete",
+            "unavailable": [],
+            "findings": [],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": 0,
+            "visible_fraction": 0.0,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 0
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "missing_scrape",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "network_data_gap",
+            "unavailable": [],
+            "findings": [
+              "missing"
+            ],
+            "api_missing_slots": [
+              101
+            ],
+            "longest_api_missing_seconds": 1,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              1,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": [
+                [
+                  100,
+                  102
+                ]
+              ]
+            },
+            "visible_gap_seconds": 2,
+            "visible_fraction": 0.6666666666666666,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 1,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 1
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "explicit_nan",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "network_data_gap",
+            "unavailable": [],
+            "findings": [
+              "nan"
+            ],
+            "api_missing_slots": [
+              101
+            ],
+            "longest_api_missing_seconds": 1,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              1,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": [
+                [
+                  100,
+                  102
+                ]
+              ]
+            },
+            "visible_gap_seconds": 2,
+            "visible_fraction": 0.6666666666666666,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 1,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 1
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "api_deletion",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "history_projection_gap",
+            "unavailable": [
+              "evaluation_sample_provenance"
+            ],
+            "findings": [
+              "missing"
+            ],
+            "api_missing_slots": [
+              101
+            ],
+            "longest_api_missing_seconds": 1,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              1,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": [
+                [
+                  100,
+                  102
+                ]
+              ]
+            },
+            "visible_gap_seconds": 2,
+            "visible_fraction": 0.6666666666666666,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 1,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 1
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "timestamp_shift",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "history_timestamp_defect",
+            "unavailable": [
+              "exact_evaluation_grid"
+            ],
+            "findings": [],
+            "api_missing_slots": [
+              101
+            ],
+            "longest_api_missing_seconds": 1,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [
+              101.2
+            ],
+            "timestamp_errors_seconds": [
+              0.20000000000000284,
+              -0.20000000000000284,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": 0,
+            "visible_fraction": 0.0,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 1,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 0
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "frontend_only_rendering_gap",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "frontend_rendering_gap",
+            "unavailable": [],
+            "findings": [],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": 1,
+            "visible_fraction": 0.3333333333333333,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 0
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "frontend_only_input_gap",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "frontend_data_path_gap",
+            "unavailable": [],
+            "findings": [],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": [
+                [
+                  100,
+                  102
+                ]
+              ]
+            },
+            "visible_gap_seconds": 0,
+            "visible_fraction": 0.0,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 0
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "missing_paint",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "unknown",
+            "unavailable": [
+              "paint"
+            ],
+            "findings": [],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": null,
+            "visible_fraction": null,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 0
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "finite_lookback_over_missing_scrape",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "network_data_gap",
+            "unavailable": [
+              "evaluation_sample_provenance"
+            ],
+            "findings": [
+              "missing",
+              "finite_query_values_do_not_prove_fresh_scrapes"
+            ],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": 0,
+            "visible_fraction": 0.0,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 1
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "out_of_order_history_responses",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-1",
+            "bundle_id": "b1",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "complete",
+            "unavailable": [],
+            "findings": [],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "max": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "min": [
+                [
+                  100,
+                  103
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": 0,
+            "visible_fraction": 0.0,
+            "stored_timing_gaps_seconds": []
+          },
+          {
+            "viewer": "overview-1",
+            "request_id": "poll-older",
+            "bundle_id": "older",
+            "series": "starlink_network_latency_ms_current",
+            "segment": "measured",
+            "classification": "out_of_order_bundle",
+            "unavailable": [
+              "exact_evaluation_grid"
+            ],
+            "findings": [],
+            "api_missing_slots": [],
+            "longest_api_missing_seconds": 0,
+            "rollup_state": "unavailable",
+            "duplicate_timestamps": 0,
+            "shifted_timestamps": [],
+            "timestamp_errors_seconds": [
+              0,
+              0,
+              0
+            ],
+            "null_gaps": {
+              "avg": [
+                [
+                  99,
+                  102
+                ]
+              ],
+              "max": [
+                [
+                  99,
+                  102
+                ]
+              ],
+              "min": [
+                [
+                  99,
+                  102
+                ]
+              ],
+              "observed": []
+            },
+            "visible_gap_seconds": 0,
+            "visible_fraction": 0.0,
+            "stored_timing_gaps_seconds": []
+          }
+        ],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {
+          "starlink_network_latency_ms_current/measured": {
+            "count": 4,
+            "interval_seconds": {
+              "count": 3,
+              "p50": 1,
+              "p95": 1,
+              "p99": 1,
+              "max": 1
+            },
+            "signed_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "absolute_error_seconds": {
+              "count": 3,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "over_1_25_seconds": 0,
+            "unavailable_samples": 0
+          }
+        },
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "delayed_observer",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {
+          "r1": {
+            "producer_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_acquisition": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_publication": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_tick": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_service": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "asgi": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_wake": {
+              "value_ns": 700000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "observer_send": {
+              "value_ns": 10000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "observer_http": {
+              "value_ns": 10000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "observer_parse": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_write": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "refresh": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_body_delivery": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            }
+          }
+        },
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {},
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 1,
+            "p50": 700000000,
+            "p95": 700000000,
+            "p99": 700000000,
+            "max": 700000000
+          },
+          "observer_send": {
+            "count": 1,
+            "p50": 10000000,
+            "p95": 10000000,
+            "p99": 10000000,
+            "max": 10000000
+          },
+          "observer_http": {
+            "count": 1,
+            "p50": 10000000,
+            "p95": 10000000,
+            "p99": 10000000,
+            "max": 10000000
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "backend_queue",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {
+          "r1": {
+            "producer_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_acquisition": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_publication": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_tick": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_queue": {
+              "value_ns": 200000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "worker_service": {
+              "value_ns": 1000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "worker_completion": {
+              "value_ns": 1000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "asgi": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_wake": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_send": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_parse": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_write": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "refresh": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_body_delivery": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            }
+          }
+        },
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {},
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 1,
+            "p50": 200000000,
+            "p95": 200000000,
+            "p99": 200000000,
+            "max": 200000000
+          },
+          "worker_service": {
+            "count": 1,
+            "p50": 1000000,
+            "p95": 1000000,
+            "p99": 1000000,
+            "max": 1000000
+          },
+          "worker_completion": {
+            "count": 1,
+            "p50": 1000000,
+            "p95": 1000000,
+            "p99": 1000000,
+            "max": 1000000
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "worker_completion",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {
+          "r1": {
+            "producer_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_acquisition": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_publication": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_tick": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_queue": {
+              "value_ns": 1000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "worker_service": {
+              "value_ns": 1000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "worker_completion": {
+              "value_ns": 500000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "asgi": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_wake": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_send": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_parse": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_write": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "refresh": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_body_delivery": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            }
+          }
+        },
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {},
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 1,
+            "p50": 1000000,
+            "p95": 1000000,
+            "p99": 1000000,
+            "max": 1000000
+          },
+          "worker_service": {
+            "count": 1,
+            "p50": 1000000,
+            "p95": 1000000,
+            "p99": 1000000,
+            "max": 1000000
+          },
+          "worker_completion": {
+            "count": 1,
+            "p50": 500000000,
+            "p95": 500000000,
+            "p99": 500000000,
+            "max": 500000000
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "producer_acquisition_publication",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {
+          "r1": {
+            "producer_queue": {
+              "value_ns": 1000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "producer_acquisition": {
+              "value_ns": 300000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "producer_publication": {
+              "value_ns": 200000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "producer_tick": {
+              "value_ns": 501000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "producer_completion": {
+              "value_ns": 300000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "worker_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_service": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "asgi": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_wake": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_send": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_parse": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_write": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "refresh": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_body_delivery": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            }
+          }
+        },
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {},
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 1,
+            "p50": 1000000,
+            "p95": 1000000,
+            "p99": 1000000,
+            "max": 1000000
+          },
+          "producer_acquisition": {
+            "count": 1,
+            "p50": 300000000,
+            "p95": 300000000,
+            "p99": 300000000,
+            "max": 300000000
+          },
+          "producer_publication": {
+            "count": 1,
+            "p50": 200000000,
+            "p95": 200000000,
+            "p99": 200000000,
+            "max": 200000000
+          },
+          "producer_tick": {
+            "count": 1,
+            "p50": 501000000,
+            "p95": 501000000,
+            "p99": 501000000,
+            "max": 501000000
+          },
+          "producer_completion": {
+            "count": 1,
+            "p50": 300000000,
+            "p95": 300000000,
+            "p99": 300000000,
+            "max": 300000000
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "repository_contention",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {
+          "r1": {
+            "producer_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_acquisition": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_publication": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_tick": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "producer_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_queue": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_service": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "worker_completion": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "asgi": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_wake": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_send": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_parse": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "observer_write": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "refresh": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_http": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            },
+            "browser_body_delivery": {
+              "value_ns": null,
+              "reason": "missing_boundary",
+              "clock_id": null,
+              "thread_cpu_ns": null
+            }
+          }
+        },
+        "admissions": [
+          {
+            "op_id": "r1",
+            "span_id": "gate1",
+            "wait": {
+              "value_ns": 400000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            },
+            "hold": {
+              "value_ns": 1000000,
+              "reason": null,
+              "clock_id": "fictional-process",
+              "thread_cpu_ns": null
+            }
+          }
+        ],
+        "clock_adjustments": [],
+        "charts": [],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {},
+        "coverage": [],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    },
+    {
+      "name": "missing_private_wrapper",
+      "status": "passed",
+      "analysis": {
+        "schema": "perf391-network-evidence-analysis-v1",
+        "acceptance": "not_evaluated",
+        "issues": [
+          "missing_stream_summary"
+        ],
+        "dropped": null,
+        "observed_dropped": 0,
+        "missing_stream_summaries": [
+          "fixture"
+        ],
+        "operations": {},
+        "admissions": [],
+        "clock_adjustments": [],
+        "charts": [],
+        "unique_api_missing_slots": 0,
+        "resource_deltas": [],
+        "scrape_timing": {},
+        "coverage": [
+          {
+            "available": false,
+            "boundary": "public.producer_prepare",
+            "reason": "private corrected path bypasses wrapper"
+          }
+        ],
+        "summary_present": false,
+        "timing_distributions_ns": {
+          "producer_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_acquisition": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_publication": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_tick": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "producer_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_queue": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_service": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "worker_completion": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "asgi": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_wake": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_send": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_parse": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "observer_write": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "refresh": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_http": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "browser_body_delivery": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          }
+        }
+      }
+    }
+  ]
+}

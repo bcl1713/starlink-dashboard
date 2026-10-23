@@ -1,0 +1,21 @@
+test_diagnostic_worker_and_admission_cleanup (test_adapters.AdapterTests.test_diagnostic_worker_and_admission_cleanup) ... Timeout (0:00:05)!
+Thread 0x00007f6d98b1a200 [python3] (most recent call first):
+  File "/usr/lib/python3.14/selectors.py", line 452 in select
+  File "/usr/lib/python3.14/asyncio/base_events.py", line 2019 in _run_once
+  File "/usr/lib/python3.14/asyncio/base_events.py", line 677 in run_forever
+  File "/usr/lib/python3.14/asyncio/base_events.py", line 706 in run_until_complete
+  File "/usr/lib/python3.14/asyncio/runners.py", line 73 in close
+  File "/usr/lib/python3.14/asyncio/runners.py", line 63 in __exit__
+  File "/usr/lib/python3.14/asyncio/runners.py", line 203 in run
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_adapters.py", line 45 in test_diagnostic_worker_and_admission_cleanup
+  File "/usr/lib/python3.14/unittest/case.py", line 615 in _callTestMethod
+  File "/usr/lib/python3.14/unittest/case.py", line 669 in run
+  File "/usr/lib/python3.14/unittest/case.py", line 725 in __call__
+  File "/usr/lib/python3.14/unittest/suite.py", line 122 in run
+  File "/usr/lib/python3.14/unittest/suite.py", line 84 in __call__
+  File "/usr/lib/python3.14/unittest/suite.py", line 122 in run
+  File "/usr/lib/python3.14/unittest/suite.py", line 84 in __call__
+  File "/usr/lib/python3.14/unittest/suite.py", line 122 in run
+  File "/usr/lib/python3.14/unittest/suite.py", line 84 in __call__
+  File "/usr/lib/python3.14/unittest/runner.py", line 257 in run
+  File "<stdin>", line 4 in <module>

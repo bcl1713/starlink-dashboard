@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_offline_preflight_accepts_exact_hashes_and_rejects_bad_artifacts (test_stage5_preflight.Stage5PreflightTests.test_offline_preflight_accepts_exact_hashes_and_rejects_bad_artifacts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/tests/test_stage5_preflight.py", line 43, in test_offline_preflight_accepts_exact_hashes_and_rejects_bad_artifacts
+    self.assertNotEqual(run().returncode, 0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.050s
+
+FAILED (failures=1)

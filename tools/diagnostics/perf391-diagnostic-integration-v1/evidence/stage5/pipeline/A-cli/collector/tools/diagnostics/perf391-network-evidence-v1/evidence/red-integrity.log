@@ -1,0 +1,21 @@
+test_integrity (unittest.loader._FailedTest.test_integrity) ... ERROR
+
+======================================================================
+ERROR: test_integrity (unittest.loader._FailedTest.test_integrity)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_integrity
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/unittest/loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/usr/lib/python3.14/unittest/loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_integrity.py", line 11, in <module>
+    from perf391_network_evidence.ingestion import stored_events
+ModuleNotFoundError: No module named 'perf391_network_evidence.ingestion'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

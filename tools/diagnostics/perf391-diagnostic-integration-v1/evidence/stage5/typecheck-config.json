@@ -1,0 +1,14 @@
+{
+  "extends": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/derivatives/C-effective/frontend/mission-planner/tsconfig.app.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/artifacts/stage5/derivatives/C-effective/frontend/mission-planner/src/*"
+      ],
+      "@perf391/browser-probe": [
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-integration-stage5/tools/diagnostics/perf391-diagnostic-integration-v1/browser-probe.ts"
+      ]
+    },
+    "incremental": false
+  }
+}

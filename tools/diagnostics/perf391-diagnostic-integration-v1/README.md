@@ -1,4 +1,4 @@
-# Perf391 diagnostic integration v1 — Stages 1–4
+# Perf391 diagnostic integration v1 — Stages 1–5
 
 Stage 1 implements offline contracts and source/build guards only, authorized by
 [the #408 orchestrator review](https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6350554670).
@@ -120,3 +120,10 @@ Browser/capture, owner/host integration and offline integration verification
 remain subsequent stages. Runtime/calibration needs a separate decision. Frozen
 acceptance gates, the 1.5-second threshold, draft PR states and open #390/#391
 remain unchanged.
+
+## Stage 5 offline qualification
+
+[Stage 5 results, exact identities, review resolutions and limits](STAGE5.md),
+[immutable offline release manifest](evidence/stage5/release-manifest.json), and
+[future Forge preflight/runbook](FORGE-RUNBOOK.md) complete offline qualification.
+Runtime qualification still requires separate authorization; Stage 3B remains deferred.

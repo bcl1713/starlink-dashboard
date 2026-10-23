@@ -1,0 +1,20 @@
+PLW1510 `subprocess.run` without explicit `check` argument
+  --> tests/test_stage5_preflight.py:24:24
+   |
+22 |             (root / "evidence/stage5/release-manifest.json").write_text(json.dumps(manifest))
+23 |             def run():
+24 |                 return subprocess.run(["bash", str(root / "forge-preflight.sh"), "--offline"],
+   |                        ^^^^^^^^^^^^^^
+25 |                                       capture_output=True, timeout=10)
+26 |             self.assertEqual(run().returncode, 0)
+   |
+help: Add explicit `check=False`
+   |
+24 |                 return subprocess.run(["bash", str(root / "forge-preflight.sh"), "--offline"],
+   -                                       capture_output=True, timeout=10)
+25 +                                       check=False, capture_output=True, timeout=10)
+26 |             self.assertEqual(run().returncode, 0)
+   |
+note: This suggestion may be incorrect or produce invalid syntax. It requires manual review and cannot be applied automatically
+
+Found 1 error.

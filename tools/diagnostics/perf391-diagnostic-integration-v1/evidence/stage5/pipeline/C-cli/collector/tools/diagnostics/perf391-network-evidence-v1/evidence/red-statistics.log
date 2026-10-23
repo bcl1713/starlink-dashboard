@@ -1,0 +1,184 @@
+test_plot_log_floor_is_not_finite_deletion (test_statistics.StatisticsTests.test_plot_log_floor_is_not_finite_deletion) ... ERROR
+test_scrape_jitter_does_not_become_acquisition_jitter (test_statistics.StatisticsTests.test_scrape_jitter_does_not_become_acquisition_jitter) ... ERROR
+test_throttle_deltas_counter_reset_and_clock_scope (test_statistics.StatisticsTests.test_throttle_deltas_counter_reset_and_clock_scope) ... ERROR
+
+======================================================================
+ERROR: test_plot_log_floor_is_not_finite_deletion (test_statistics.StatisticsTests.test_plot_log_floor_is_not_finite_deletion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/model.py", line 19, in validate
+    VALIDATOR.validate(row)
+    ~~~~~~~~~~~~~~~~~~^^^^^
+  File "/usr/lib/python3/dist-packages/jsonschema/validators.py", line 435, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('input_stage', 'log_floor' were unexpected)
+
+Failed validating 'additionalProperties' in schema['allOf'][6]['then']['properties']['data']:
+    {'additionalProperties': False,
+     'properties': {'bundle_id': {'minLength': 1, 'type': 'string'},
+                    'module_hashes': {'additionalProperties': {'minLength': 1,
+                                                               'type': 'string'},
+                                      'type': 'object'},
+                    'paint_evidence': {'type': ['string', 'null']},
+                    'request_id': {'minLength': 1, 'type': 'string'},
+                    'segment': {'enum': ['seeded', 'measured']},
+                    'series': {'minLength': 1, 'type': 'string'},
+                    'times': {'items': {'type': 'number'}, 'type': 'array'},
+                    'traces': {'additionalProperties': False,
+                               'properties': {'avg': {'items': {'type': ['number',
+                                                                         'null']},
+                                                      'type': 'array'},
+                                              'max': {'items': {'type': ['number',
+                                                                         'null']},
+                                                      'type': 'array'},
+                                              'min': {'items': {'type': ['number',
+                                                                         'null']},
+                                                      'type': 'array'},
+                                              'observed': {'items': {'type': ['number',
+                                                                              'null']},
+                                                           'type': 'array'}},
+                               'required': ['observed',
+                                            'min',
+                                            'avg',
+                                            'max'],
+                               'type': 'object'},
+                    'viewer': {'minLength': 1, 'type': 'string'},
+                    'viewport': {'items': {'type': 'number'},
+                                 'type': 'array'},
+                    'visible_gaps': {'anyOf': [{'type': 'null'},
+                                               {'items': {'items': {'type': 'number'},
+                                                          'type': 'array'},
+                                                'type': 'array'}]}},
+     'required': ['viewer',
+                  'request_id',
+                  'bundle_id',
+                  'series',
+                  'segment',
+                  'times',
+                  'traces',
+                  'viewport',
+                  'visible_gaps',
+                  'module_hashes',
+                  'paint_evidence'],
+     'type': 'object'}
+
+On instance['data']:
+    {'bundle_id': 'b1',
+     'input_stage': 'plot',
+     'log_floor': 1,
+     'module_hashes': {'plot': 'fictional-module-sha256'},
+     'paint_evidence': 'fictional-paint-attestation',
+     'request_id': 'poll-1',
+     'segment': 'measured',
+     'series': 'starlink_network_latency_ms_current',
+     'times': [100, 101, 102, 103],
+     'traces': {'avg': [None, None, None, None],
+                'max': [None, None, None, None],
+                'min': [None, None, None, None],
+                'observed': [1, 2, 9, 1]},
+     'viewer': 'overview-1',
+     'viewport': [100, 103],
+     'visible_gaps': []}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_statistics.py", line 21, in test_plot_log_floor_is_not_finite_deletion
+    self.assertEqual(analyze(c['events'])['charts'][0]['classification'],'complete')
+                     ~~~~~~~^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/analyze.py", line 81, in analyze
+    validate(row)
+    ~~~~~~~~^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/perf391_network_evidence/model.py", line 21, in validate
+    raise ValueError(str(exc)) from exc
+ValueError: Additional properties are not allowed ('input_stage', 'log_floor' were unexpected)
+
+Failed validating 'additionalProperties' in schema['allOf'][6]['then']['properties']['data']:
+    {'additionalProperties': False,
+     'properties': {'bundle_id': {'minLength': 1, 'type': 'string'},
+                    'module_hashes': {'additionalProperties': {'minLength': 1,
+                                                               'type': 'string'},
+                                      'type': 'object'},
+                    'paint_evidence': {'type': ['string', 'null']},
+                    'request_id': {'minLength': 1, 'type': 'string'},
+                    'segment': {'enum': ['seeded', 'measured']},
+                    'series': {'minLength': 1, 'type': 'string'},
+                    'times': {'items': {'type': 'number'}, 'type': 'array'},
+                    'traces': {'additionalProperties': False,
+                               'properties': {'avg': {'items': {'type': ['number',
+                                                                         'null']},
+                                                      'type': 'array'},
+                                              'max': {'items': {'type': ['number',
+                                                                         'null']},
+                                                      'type': 'array'},
+                                              'min': {'items': {'type': ['number',
+                                                                         'null']},
+                                                      'type': 'array'},
+                                              'observed': {'items': {'type': ['number',
+                                                                              'null']},
+                                                           'type': 'array'}},
+                               'required': ['observed',
+                                            'min',
+                                            'avg',
+                                            'max'],
+                               'type': 'object'},
+                    'viewer': {'minLength': 1, 'type': 'string'},
+                    'viewport': {'items': {'type': 'number'},
+                                 'type': 'array'},
+                    'visible_gaps': {'anyOf': [{'type': 'null'},
+                                               {'items': {'items': {'type': 'number'},
+                                                          'type': 'array'},
+                                                'type': 'array'}]}},
+     'required': ['viewer',
+                  'request_id',
+                  'bundle_id',
+                  'series',
+                  'segment',
+                  'times',
+                  'traces',
+                  'viewport',
+                  'visible_gaps',
+                  'module_hashes',
+                  'paint_evidence'],
+     'type': 'object'}
+
+On instance['data']:
+    {'bundle_id': 'b1',
+     'input_stage': 'plot',
+     'log_floor': 1,
+     'module_hashes': {'plot': 'fictional-module-sha256'},
+     'paint_evidence': 'fictional-paint-attestation',
+     'request_id': 'poll-1',
+     'segment': 'measured',
+     'series': 'starlink_network_latency_ms_current',
+     'times': [100, 101, 102, 103],
+     'traces': {'avg': [None, None, None, None],
+                'max': [None, None, None, None],
+                'min': [None, None, None, None],
+                'observed': [1, 2, 9, 1]},
+     'viewer': 'overview-1',
+     'viewport': [100, 103],
+     'visible_gaps': []}
+
+======================================================================
+ERROR: test_scrape_jitter_does_not_become_acquisition_jitter (test_statistics.StatisticsTests.test_scrape_jitter_does_not_become_acquisition_jitter)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_statistics.py", line 26, in test_scrape_jitter_does_not_become_acquisition_jitter
+    self.assertAlmostEqual(result['scrape_timing']['x/measured']['signed_error_seconds']['max'],.1)
+                           ~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'scrape_timing'
+
+======================================================================
+ERROR: test_throttle_deltas_counter_reset_and_clock_scope (test_statistics.StatisticsTests.test_throttle_deltas_counter_reset_and_clock_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-network-evidence-v1/tools/diagnostics/perf391-network-evidence-v1/tests/test_statistics.py", line 13, in test_throttle_deltas_counter_reset_and_clock_scope
+    self.assertEqual(r['resource_deltas'][0]['delta']['nr_throttled'],3)
+                     ~^^^^^^^^^^^^^^^^^^^
+KeyError: 'resource_deltas'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.007s
+
+FAILED (errors=3)

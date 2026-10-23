@@ -1,0 +1,11 @@
+test_artifact_traversal_rejected (test_cli.CliTests.test_artifact_traversal_rejected) ... ok
+test_collection_duration_hard_cap (test_cli.CliTests.test_collection_duration_hard_cap) ... usage: python3 -m unittest [-h]
+                           {analyze,fixtures,import-legacy,import-stored,observe,host} ...
+python3 -m unittest: error: only bounded diagnostic collection 1..180 seconds is implemented; no soak runner
+ok
+test_fixture_replay_machine_and_human_results (test_cli.CliTests.test_fixture_replay_machine_and_human_results) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.029s
+
+OK

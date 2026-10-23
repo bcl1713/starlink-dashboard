@@ -1,0 +1,25 @@
+BLE001 Do not catch blind exception: `Exception`
+   --> perf391_network_evidence/adapters.py:103:12
+    |
+101 |                     },
+102 |                 )
+103 |     except Exception as exc:
+    |            ^^^^^^^^^
+104 |         recorder.emit(
+105 |             "coverage",
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+  --> perf391_network_evidence/model.py:24:5
+   |
+22 |           raise ValueError(str(exc)) from exc
+23 |       data = row["data"]
+24 | /     if row["kind"] == "scrape":
+25 | |         if (data["state"] == "finite") != (data["value"] is not None):
+   | |______________________________________________________________________^
+26 |               raise ValueError(
+27 |                   "finite scrape requires a finite value; missing states require null"
+   |
+help: Combine `if` statements using `and`
+
+Found 66 errors (64 fixed, 2 remaining).

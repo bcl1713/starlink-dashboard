@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: tests/browser.test.mjs
+ok 1 - tests/browser.test.mjs
+  ---
+  duration_ms: 102.469427
+  ...
+# Subtest: tests/collection.test.mjs
+ok 2 - tests/collection.test.mjs
+  ---
+  duration_ms: 85.967209
+  ...
+# Subtest: tests/observer.test.mjs
+ok 3 - tests/observer.test.mjs
+  ---
+  duration_ms: 90.057157
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 108.982239
+# start of coverage report
+# -----------------------------------------------------------------------------------------------------
+# file                 | line % | branch % | funcs % | uncovered lines
+# -----------------------------------------------------------------------------------------------------
+# browser.mjs          |  96.99 |    89.25 |   94.44 | 114-116 134-135 156-157 324-325 351-355 507-508
+# collect.mjs          |  85.54 |    66.07 |  100.00 | 81-83 88-90 93-95 107 112-124 178-180 224-233
+# frontend-config.mjs  | 100.00 |   100.00 |  100.00 | 
+# observer.mjs         |  93.92 |    79.78 |   80.00 | 103-105 143-144 157-161 184-186 250-252
+# tests                |        |          |         | 
+#  browser.test.mjs    |  99.73 |   100.00 |   90.77 | 98
+#  collection.test.mjs | 100.00 |    96.77 |  100.00 | 
+#  observer.test.mjs   |  99.49 |   100.00 |   91.18 | 192
+# -----------------------------------------------------------------------------------------------------
+# all files            |  96.21 |    87.71 |   92.44 | 
+# -----------------------------------------------------------------------------------------------------
+# end of coverage report

@@ -1,0 +1,16 @@
+{
+  "task": "perf391-network-evidence-v1",
+  "remaining_owned_test_processes": [],
+  "owned_runtime_servers": [],
+  "owned_listener_ports": [],
+  "owned_compose_projects": [],
+  "owned_images": [],
+  "owned_volumes": [],
+  "owned_networks": []
+}
+{"command": ["docker", "context", "show"], "exit_code": 0, "stdout": "default", "stderr": ""}
+{"command": ["docker", "info", "--format", "{{.ServerVersion}} {{.Driver}}"], "exit_code": 0, "stdout": "29.8.1 overlayfs", "stderr": ""}
+{"command": ["docker", "ps", "-aq", "--filter", "label=com.docker.compose.project=perf391-network-evidence-v1"], "exit_code": 0, "stdout": "", "stderr": ""}
+{"command": ["docker", "network", "ls", "-q", "--filter", "label=com.docker.compose.project=perf391-network-evidence-v1"], "exit_code": 0, "stdout": "", "stderr": ""}
+{"command": ["docker", "volume", "ls", "-q", "--filter", "label=com.docker.compose.project=perf391-network-evidence-v1"], "exit_code": 0, "stdout": "", "stderr": ""}
+Task schema-generation temporary removed. No task runtime services were started.
