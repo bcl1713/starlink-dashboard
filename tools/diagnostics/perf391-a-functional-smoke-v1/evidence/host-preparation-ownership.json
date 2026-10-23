@@ -1,0 +1,20 @@
+{
+  "task": "perf391-a-functional-20261023",
+  "paths": [
+    "/tmp/perf391-a-functional-20261023",
+    "/tmp/perf391-smoke-408-a"
+  ],
+  "project": "perf391-smoke-408-a",
+  "ports": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "cleanup": "Reviewed executor owner close and Compose down --volumes --remove-orphans --timeout 2; independent host audit; remove private paths after retention",
+  "max_A_attempts": 1,
+  "C_authorized": false,
+  "preparation_pid": 1116224,
+  "preparation_pgid": 1116214,
+  "pid_namespace": "pid:[4026531836]"
+}

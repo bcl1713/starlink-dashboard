@@ -1,0 +1,6 @@
+Both closed receipts, image/asset/dependency identities, approved recipes, frozen release and cleanup validate.
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-functional-20261023/tools/diagnostics/perf391-a-functional-smoke-v1/preflight.py", line 89, in <module>
+    assert regenerated==plan
+           ^^^^^^^^^^^^^^^^^
+AssertionError

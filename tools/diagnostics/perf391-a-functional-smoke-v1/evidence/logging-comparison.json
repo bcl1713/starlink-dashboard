@@ -1,0 +1,131 @@
+{
+  "mode": "offline comparison of already generated override to retained approved rendered config; no fresh Compose rendering after stop",
+  "roles": [
+    {
+      "compiled_override_canonical_sha256": "dab1035fd61762f6feb203c0a12210f362e0a7fbfaf8881e78e6ab3770b522f7",
+      "role": "A",
+      "services": {
+        "mission-planner": {
+          "approved_rendered": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "equal": true,
+          "generated": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          }
+        },
+        "prometheus": {
+          "approved_rendered": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "equal": true,
+          "generated": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          }
+        },
+        "starlink-location": {
+          "approved_rendered": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "equal": true,
+          "generated": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          }
+        }
+      }
+    },
+    {
+      "compiled_override_canonical_sha256": "96bdf2d8aed75b2180baaf60fea4e0a1b9fe7df5edf788e5da9b0e370bf0fcd5",
+      "role": "C",
+      "services": {
+        "mission-planner": {
+          "approved_rendered": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "equal": true,
+          "generated": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          }
+        },
+        "prometheus": {
+          "approved_rendered": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "equal": true,
+          "generated": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          }
+        },
+        "starlink-location": {
+          "approved_rendered": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "equal": true,
+          "generated": {
+            "driver": "local",
+            "options": {
+              "compress": "false",
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

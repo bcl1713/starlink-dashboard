@@ -1,0 +1,31 @@
+{
+  "A_attempts": 0,
+  "C_attempts": 0,
+  "applicable_runtime_joins": null,
+  "backend_started": false,
+  "browser_launch_attempts": 0,
+  "cadence_result": "not exercised; unchanged",
+  "checks_not_reached": [
+    "fresh Node extraction/hash/version",
+    "fresh Playwright/Chromium runtime identity",
+    "fresh browser distribution/ELF check",
+    "receipt-bound launch compilation",
+    "fresh Docker Compose rendering",
+    "runtime execution and acceptance"
+  ],
+  "dropped_event_counts": null,
+  "expected_unavailable": [
+    "raw-wire bytes",
+    "native Axios parse-start",
+    "original-A final-authority/CAS/frame semantics"
+  ],
+  "history_chart_chains": 0,
+  "host_observations": 0,
+  "observer_cadence_seconds": 1.5,
+  "reason": "Runtime executor never invoked; missing streams do not establish zero loss.",
+  "runtime_capabilities_confirmed": [],
+  "runtime_final_summaries": null,
+  "screenshot_attempts": 0,
+  "source_observations": 0,
+  "status": "STOP_PREFLIGHT"
+}

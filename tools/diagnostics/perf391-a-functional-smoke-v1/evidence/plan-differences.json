@@ -1,0 +1,17 @@
+{
+  "differences": [
+    {
+      "path": "/roles/A/compose_sha256/override",
+      "regenerated": "5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c",
+      "retained": "e34daea5880cf2053ee17c08c57a28e969f7ee783b789345676343720fe1d831"
+    },
+    {
+      "path": "/roles/C/compose_sha256/override",
+      "regenerated": "ffdbe1293ea39e142752f56b438f12957dcd16fba22b546c2d8f4787446ca81e",
+      "retained": "7d42f76540a337fc8c67b4f9ed463f0d2f96c187a60c01495cc406045932080b"
+    }
+  ],
+  "interpretation": "Only Compose override hashes differ; original overlay files restored but prepare.compose function remains the active corrected implementation. No retry or repair performed.",
+  "regenerated_plan_sha256": "014b948f5312fc8c937f2be5c6c25b6ef82d6a0728ab81464cb1a9869550b750",
+  "retained_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5"
+}

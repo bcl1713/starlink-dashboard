@@ -1,0 +1,54 @@
+{
+  "actor_uid": 1002,
+  "clean": true,
+  "docker": {
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "excluded_audit_ancestors": [
+    1,
+    1123854,
+    1123865,
+    2591960,
+    3570576
+  ],
+  "images": {
+    "A-backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "A-frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "C-backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "C-frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+  },
+  "listeners": [],
+  "lock_absent": true,
+  "pid_namespace": "pid:[4026531836]",
+  "ports_checked": [
+    38080,
+    38081,
+    38082,
+    38083,
+    38180,
+    38181,
+    38182,
+    38183
+  ],
+  "preflight_command_pids_absent": {
+    "1116214": true,
+    "1116225": true,
+    "1116226": true,
+    "1116725": true
+  },
+  "process_survivors": [],
+  "removed_paths": [
+    "/tmp/perf391-a-functional-20261023"
+  ],
+  "runtime_root_absent": true,
+  "utc": "2026-10-23T03:25:02Z"
+}

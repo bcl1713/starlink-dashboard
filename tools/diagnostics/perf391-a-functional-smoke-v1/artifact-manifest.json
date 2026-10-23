@@ -1,0 +1,43 @@
+{
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6356577550",
+  "external_files": {
+    "tools/diagnostics/perf391-a-runtime-smoke-v1/artifact-manifest.json": "1fbbdae3f3ecaae05879eee9bffcef6bfd1800496153029cb3a14fbcd7a93744",
+    "tools/diagnostics/perf391-built-images-v1/evidence/built-A.json": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f",
+    "tools/diagnostics/perf391-built-images-v1/evidence/built-C.json": "a9b7492aed2e90448d2ed8aeb4586dccd667d03e1cbb0829ff759a04537109e2",
+    "tools/diagnostics/perf391-built-images-v1/evidence/runtime-build-plan.json": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "tools/diagnostics/perf391-diagnostic-integration-v1/evidence/stage5/release-manifest.json": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200",
+    "tools/diagnostics/perf391-logging-compat-v1/artifact-manifest.json": "16f96d3e1c40cc81e776b657014067e8c3319cf6c71dbf211fdecdec7f8bbe5f",
+    "tools/diagnostics/perf391-logging-compat-v1/evidence/A.compose.json": "a7add4de0d0c8a2a652fecb5f41e302d450e01cfd5e80704529dbea82d1542c8",
+    "tools/diagnostics/perf391-logging-compat-v1/evidence/C.compose.json": "bacbd35eeaeaa9a7c5784679c3e199af4119a5d91907ceac92367ecb79696035",
+    "tools/diagnostics/perf391-logging-compat-v1/evidence/config-hashes.json": "63e98db136e5595cc6c0c1243382b2b8ccb7bc05445f508b7dc30a9fc52401c2",
+    "tools/diagnostics/perf391-runtime-preparation-v1/analyze-runtime.py": "c2b460ead9469a9730f94ac3555de59c5b80d6dc7cbd89aab66ff92d029d93bb",
+    "tools/diagnostics/perf391-runtime-preparation-v1/audit.py": "4d9bd069c99a80a96db132d6b5f31ca3471a5321461a0677268e1418308d9377",
+    "tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs": "885a11a55bb76de21d75d885928ec2b60037f0b4e7525234968c44c181d41bb0",
+    "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
+    "tools/diagnostics/perf391-runtime-preparation-v1/launcher.py": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4",
+    "tools/diagnostics/perf391-runtime-preparation-v1/node-contract-overlay.json": "9e58db98dfaeb47fc617b6b0c7a98e6459ee8e1ad0e5c57fd69d1d665467cb02",
+    "tools/diagnostics/perf391-runtime-preparation-v1/prepare.py": "8d52a986514fefbec833b45f2a4b64b4e86a004983588116ec389ba3a467b001",
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime_identity.py": "d14d4af9df9bcaceb5ab0545be35554ec09ed4f05558bd0e6000b4c1936ddf26"
+  },
+  "files": {
+    "README.md": "4c36e61966882b4743cfca066e553db9d502bca37d4e36a30f3b8ec9a4ee7184",
+    "cleanup.py": "b1e516ff49ae03285e73e0f510a60c7ea9583ffebe7548ea11c29036f8e4fdba",
+    "evidence/A.compose.base.json": "f2dfdc82231504b0d0df0d327bf15138f0e0a4b658c28d5d8800b19a5f83a086",
+    "evidence/A.compose.override.json": "5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c",
+    "evidence/C.compose.base.json": "f2dfdc82231504b0d0df0d327bf15138f0e0a4b658c28d5d8800b19a5f83a086",
+    "evidence/C.compose.override.json": "ffdbe1293ea39e142752f56b438f12957dcd16fba22b546c2d8f4787446ca81e",
+    "evidence/final-host-cleanup.json": "bdd365abac3d040366381d766e57e99b983a959d6162e453dd03ba8c1db5a50b",
+    "evidence/host-preparation-ownership.json": "103102a89617eb254792267aa826ba944d245e9aa22e0e7fc811638e2c14a89d",
+    "evidence/logging-comparison.json": "c846b6ecef4558af76048c5a6ae8fa5b09a204431b57a991ec6621f4b76ab625",
+    "evidence/plan-differences.json": "425d20ac7fb40bef12628fe6c32e518921f8b5b60dffb26431ab922eff0b932f",
+    "evidence/preflight.json": "34b7979dcdc938eab1cfc5a31abd94b5b3abbdf86a16b0ad2604ab6b74ccd047",
+    "evidence/preflight.log": "5754dc3d562d4e2de27460d5deb3b1e11ea84b49796c57b876e67a3bff161eec",
+    "evidence/preparation-ownership.json": "ca34e84acad9d1236aea0f9bd8055854be0944f170e79e61c869a7d57da0bdb1",
+    "evidence/regenerated-build-plan.json": "014b948f5312fc8c937f2be5c6c25b6ef82d6a0728ab81464cb1a9869550b750",
+    "evidence/stream-status.json": "ac2174c7a03d0ecfdf58570366ac28911c458100bffa232d31132af12b6bb4ab",
+    "preflight.py": "a8bc5a896b8abfa0b9cb3535ed66888ecb41ab186f69c684c4ab815cc1edc430",
+    "verify.py": "e121a4bf6e8f9f9ff07480a642441b245d2edd3e6da1b5c3d9fde4765b0dadef"
+  },
+  "schema": "perf391-a-functional-preflight-stop-v1",
+  "starting_commit": "ae3c8d28fa1e5263fe6d85b0e1a897d3ae339ee9"
+}

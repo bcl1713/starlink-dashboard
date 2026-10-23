@@ -1,0 +1,127 @@
+"""Task-owned read-only preflight and exact offline context regeneration. No launches."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import runpy
+import shutil
+import subprocess
+import sys
+import tarfile
+from unittest.mock import patch
+
+HERE = Path(__file__).resolve().parent
+PREP = HERE.with_name('perf391-runtime-preparation-v1')
+BUILT = HERE.with_name('perf391-built-images-v1')
+REPO = HERE.parents[2]
+TASK = Path('/tmp/perf391-a-functional-20261023')
+E = HERE / 'evidence'
+sys.path.insert(0, str(PREP))
+import prepare
+from runtime_identity import verify_runtime_overlay, verify_runtime_identity
+from launcher import launch_plan, validate_receipt
+
+result = {'starting_commit': 'ae3c8d28fa1e5263fe6d85b0e1a897d3ae339ee9', 'authorization': 'https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6356577550', 'runtime_attempts': 0, 'commands': [], 'checks': {}}
+def save():
+    prepare.write(E/'preflight.json', result)
+def command(argv, seconds=15):
+    p = subprocess.run(argv, capture_output=True, text=True, timeout=seconds)
+    row = {'argv':argv, 'exit':p.returncode, 'stdout':p.stdout, 'stderr':p.stderr}
+    result['commands'].append(row)
+    save()
+    if p.returncode: raise RuntimeError(row)
+    return p.stdout
+try:
+    assert command(['hostname']).strip() == 'forge'
+    assert command(['git','rev-parse','HEAD']).strip() == result['starting_commit']
+    plan_path = BUILT/'evidence/runtime-build-plan.json'
+    plan = json.loads(plan_path.read_bytes())
+    verify_runtime_overlay(plan)
+    with patch.object(prepare, 'verify_overlay', verify_runtime_overlay):
+        runpy.run_path(str(BUILT/'verify-retained.py'), run_name='__offline_audit__')
+    result['checks']['stage5'] = prepare.check_release()
+    prepare.build.verify_collector_release(REPO)
+    for role in ('A','C'):
+        receipt = json.loads((BUILT/f'evidence/built-{role}.json').read_bytes())
+        validate_receipt(receipt,plan,prepare.sha(plan_path))
+        for kind,image in receipt['images'].items():
+            actual = json.loads(command(['docker','image','inspect',image['id'],'--format','{{json .}}']))
+            assert actual['Id']==image['id'] and actual['Config']['Labels']==image['labels']
+        result['checks'][role+'_receipt_sha256'] = prepare.sha(BUILT/f'evidence/built-{role}.json')
+    result['checks']['context'] = command(['docker','context','show']).strip()
+    result['checks']['daemon'] = command(['docker','info','--format','{{.Name}} {{.NCPU}} {{.MemTotal}} {{.CgroupVersion}}']).strip()
+    assert result['checks']['daemon'].startswith('forge ')
+    command(['docker','context','inspect','--format','{{.Endpoints.docker.Host}}'])
+    command(['docker','compose','version'])
+    for role in ('a','c'):
+        for argv in (['docker','ps','-aq'],['docker','network','ls','-q'],['docker','volume','ls','-q']):
+            assert not command([*argv,'--filter','label=com.docker.compose.project=perf391-smoke-408-'+role]).strip()
+    listeners = command(['ss','-ltn'])
+    assert not any(':'+str(port)+' ' in listeners for port in range(38080,38084))
+    assert not Path('/tmp/perf391-smoke-408-a').exists()
+    assert not Path('/tmp/perf391-smoke-408.lock').exists()
+    command(['ps','-u',str(os.getuid()),'-o','pid,ppid,pgid,comm'])
+    result['checks']['process_visibility'] = {'pid1':Path('/proc/1/comm').read_text().strip(),'pid_namespace':os.readlink('/proc/self/ns/pid'),'cgroup':Path('/proc/self/cgroup').read_text()}
+    assert result['checks']['process_visibility']['pid1']=='systemd'
+    cgroup=Path('/sys/fs/cgroup')/Path('/proc/self/cgroup').read_text().strip()[3:].lstrip('/')
+    result['checks']['cgroup_limits']={}
+    for parent in (cgroup,*cgroup.parents):
+        if parent==Path('/sys/fs'):break
+        for name in ('cpu.max','memory.max','memory.current','pids.max','pids.current'):
+            p=parent/name
+            if p.is_file():result['checks']['cgroup_limits'][str(p)]=p.read_text().strip()
+    free=shutil.disk_usage(TASK).free
+    mem={line.split(':')[0]:int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines() if line.split()[1].isdigit()}
+    result['checks']['headroom']={'disk_free_bytes':free,'memory_available_bytes':mem['MemAvailable'],'required_disk_bytes':4*1024**3,'required_memory_bytes':6*1024**3}
+    assert free>4*1024**3 and mem['MemAvailable']>6*1024**3
+    # Restore only historical overlay bytes into a private offline compiler directory.
+    # Its output must match the immutable build plan exactly; no receipt is rewritten.
+    original=TASK/'original-overlay'
+    original.mkdir()
+    for name,expected in plan['overlay_files'].items():
+        data=subprocess.check_output(['git','show','68f3f644beef98cd8412e8a354c8621540660739:tools/diagnostics/perf391-runtime-preparation-v1/'+name])
+        assert hashlib.sha256(data).hexdigest()==expected
+        (original/name).write_bytes(data)
+    original_here=prepare.HERE
+    prepare.HERE=original
+    try: regenerated=prepare.prepare(TASK/'context')
+    finally: prepare.HERE=original_here
+    assert regenerated==plan
+    assert (TASK/'context/runtime-build-plan.json').read_bytes()==plan_path.read_bytes()
+    result['checks']['regenerated_context_sha256']=regenerated['roles']['A']['context_sha256']
+    result['checks']['build_plan_sha256']=prepare.sha(plan_path)
+    result['checks']['pins']=plan['pins']
+    # No container: save retained Node image and read its exact executable member.
+    archive=TASK/'node-image.tar'
+    command(['docker','image','inspect',plan['bases']['node'],'--format','{{.Id}}'])
+    command(['timeout','--kill-after=10s','45s','docker','image','save','-o',str(archive),plan['bases']['node']],55)
+    node=TASK/'node-22.22.2'
+    with tarfile.open(archive) as image:
+        manifest=json.load(image.extractfile('manifest.json'))
+        for layer in manifest[0]['Layers']:
+            with tarfile.open(fileobj=image.extractfile(layer)) as members:
+                for member in members:
+                    if member.name.lstrip('./')=='usr/local/bin/node':
+                        assert member.isfile()
+                        with node.open('wb') as out:shutil.copyfileobj(members.extractfile(member),out)
+    node.chmod(0o700)
+    assert prepare.sha(node)=='81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90'
+    archive.unlink()
+    receipt=json.loads((BUILT/'evidence/built-A.json').read_bytes())
+    result['checks']['runtime_identity']=verify_runtime_identity(node,receipt)
+    assert prepare.browser_tree(receipt['browser']['playwright_root'],receipt['browser']['chromium_executable'])==receipt['dependencies']['browser_tree_sha256']
+    historical=Path(shutil.which('node')).resolve()
+    result['checks']['historical_node']={'path':str(historical),'sha256':prepare.sha(historical),'version':command([str(historical),'--version']).strip()}
+    assert result['checks']['historical_node']['sha256']=='177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9'
+    libraries=command(['ldd',receipt['browser']['chromium_executable']])
+    assert 'not found' not in libraries
+    launch=launch_plan('A','/tmp/perf391-smoke-408-a',TASK/'context/runtime-build-plan.json',receipt)
+    prepare.write(E/'launch-A.json',launch)
+    result['checks']['launch_sha256']=prepare.sha(E/'launch-A.json')
+    result['status']='PASS_PREFLIGHT_NO_RUNTIME_STARTED'
+except BaseException as error:
+    result['status']='STOP_PREFLIGHT'
+    result['failure']=type(error).__name__+': '+str(error)
+    raise
+finally:save()
+print(result['status'])
