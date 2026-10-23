@@ -3,7 +3,6 @@ import re
 import subprocess
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/lint.yml"
 VERIFY = ROOT / "tools/verify"
@@ -45,7 +44,9 @@ def commit(repository: Path, name: str, content: str) -> str:
 
 def repository_with_origin(tmp_path: Path) -> Path:
     origin = tmp_path / "origin.git"
-    subprocess.run(["git", "init", "--bare", str(origin)], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "init", "--bare", str(origin)], check=True, capture_output=True
+    )
     repository = tmp_path / "repository"
     git(repository.parent, "clone", str(origin), str(repository))
     git(repository, "config", "user.email", "ci@example.test")
@@ -56,13 +57,15 @@ def repository_with_origin(tmp_path: Path) -> Path:
     return repository
 
 
-def run_static_gate(repository: Path, **environment: str) -> subprocess.CompletedProcess[str]:
+def run_static_gate(
+    repository: Path, **environment: str
+) -> subprocess.CompletedProcess[str]:
     verifier = repository / "tools/verify"
     verifier.parent.mkdir(exist_ok=True)
     verifier.write_text(
         "#!/usr/bin/env bash\n"
-        "git cat-file -e \"${ACCEPTANCE_POLICY_BASE_SHA}^{commit}\"\n"
-        "git merge-base --is-ancestor \"$ACCEPTANCE_POLICY_BASE_SHA\" HEAD\n"
+        'git cat-file -e "${ACCEPTANCE_POLICY_BASE_SHA}^{commit}"\n'
+        'git merge-base --is-ancestor "$ACCEPTANCE_POLICY_BASE_SHA" HEAD\n'
         "printf '%s\\n' \"$ACCEPTANCE_POLICY_BASE_SHA\"\n",
         encoding="utf-8",
     )
@@ -108,7 +111,7 @@ def test_static_job_installs_its_runner_prerequisites():
     static = job_block(workflow_text(), "static", "backend")
 
     assert "actions/setup-python@v5" in static
-    assert 'python-version: "3.13"' in static
+    assert "python-version-file: backend/starlink-location/.python-version" in static
     assert "astral-sh/setup-uv@v6" in static
     assert (
         "python -m pip install -r backend/starlink-location/requirements-dev.txt"
@@ -223,9 +226,11 @@ def test_backend_and_frontend_jobs_install_their_runner_prerequisites():
     frontend = job_block(workflow, "frontend")
 
     assert "actions/setup-python@v5" in backend
-    assert 'python-version: "3.13"' in backend
+    assert "python-version-file: backend/starlink-location/.python-version" in backend
+    assert "pip install" not in backend
+    assert 'UV_PYTHON_DOWNLOADS: "never"' in backend
+    assert "UV_PYTHON: ${{ steps.python.outputs.python-path }}" in backend
     assert "astral-sh/setup-uv@v6" in backend
-    assert "requirements-dev.txt" in backend
     assert "actions/setup-node@v4" in frontend
     assert 'node-version: "22.22.2"' in frontend
     assert "npm ci --legacy-peer-deps" in frontend

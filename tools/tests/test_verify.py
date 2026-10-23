@@ -1,5 +1,6 @@
 import importlib.machinery
 import importlib.util
+import os
 import subprocess
 import sys
 import types
@@ -42,7 +43,7 @@ def test_invalid_tier_returns_usage_from_nested_directory():
     assert "static|backend|frontend|all" in result.stderr
 
 
-def test_backend_command_uses_backend_directory(monkeypatch):
+def test_backend_command_uses_backend_directory(monkeypatch, capsys):
     module = load_verify()
     calls = []
     monkeypatch.setattr(
@@ -53,15 +54,27 @@ def test_backend_command_uses_backend_directory(monkeypatch):
     )
 
     assert module.main(["tools/verify", "backend"]) == 0
-    assert calls == [(module.tier_commands("backend")[0][0], module.BACKEND)]
+    assert calls == module.tier_commands("backend")
+    assert "elapsed=" in capsys.readouterr().out
 
 
-def test_backend_command_uses_manifest_resolved_from_repository_root():
+def test_backend_command_uses_manifest_resolved_from_repository_root(monkeypatch):
+    monkeypatch.delenv("UV_PYTHON", raising=False)
     module = load_verify()
 
     command, cwd = module.tier_commands("backend")[0]
     assert cwd == module.BACKEND
-    assert command[3] == str(module.ROOT / "backend/starlink-location/requirements-dev.txt")
+    assert str(module.BACKEND / "requirements-dev.txt") in command
+    assert str(module.BACKEND / "requirements-gfs.txt") in command
+    assert command[command.index("--python") + 1] == "3.11"
+    pytest_command = module.tier_commands("backend")[-1][0]
+    assert pytest_command[pytest_command.index("pytest") :] == [
+        "pytest",
+        "tests/",
+        "-q",
+        "--durations=50",
+        "--durations-min=0",
+    ]
 
 
 def test_static_prettier_uses_root_relative_frontend_source_glob():
@@ -81,7 +94,7 @@ def test_static_prettier_uses_root_relative_frontend_source_glob():
     ]
 
 
-def test_all_stops_at_first_failed_child_and_preserves_status(monkeypatch):
+def test_all_stops_at_first_failed_child_and_preserves_status(monkeypatch, capsys):
     module = load_verify()
     base = module.os.environ["ACCEPTANCE_POLICY_BASE_SHA"]
     git_calls = []
@@ -120,12 +133,20 @@ def test_all_stops_at_first_failed_child_and_preserves_status(monkeypatch):
         ),
     ]
     assert child_calls == [module.tier_commands("static")[0]]
+    assert "exit=17" in capsys.readouterr().out
 
 
-def test_backend_tier_dispatches_from_nested_caller_directory():
+def test_backend_tier_dispatches_from_nested_caller_directory(tmp_path, monkeypatch):
+    # Exercise dispatch without launching the full backend suite.
+    uv = tmp_path / "uv"
+    uv.write_text("#!/bin/sh\npwd\nprintf '%s\\n' \"$@\"\n")
+    uv.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ['PATH']}")
     result = run("backend", cwd=ROOT / "backend/starlink-location")
 
     assert result.returncode == 0
+    assert str(ROOT / "backend/starlink-location") in result.stdout
+    assert "pytest" in result.stdout
 
 
 def test_all_dispatches_static_backend_and_frontend_in_order(monkeypatch):
@@ -171,3 +192,28 @@ def test_all_dispatches_static_backend_and_frontend_in_order(monkeypatch):
         *module.tier_commands("backend"),
         *module.tier_commands("frontend"),
     ]
+
+
+def test_backend_python_can_use_ci_setup_interpreter(monkeypatch):
+    monkeypatch.setenv("UV_PYTHON", "/opt/hostedtoolcache/Python/3.11/bin/python")
+    module = load_verify()
+    for command, _ in module.tier_commands("backend"):
+        assert command[command.index("--python") + 1] == module.os.environ["UV_PYTHON"]
+
+
+def test_backend_inventory_executes_and_prints_versions():
+    module = load_verify()
+    command = module.BACKEND_COMMANDS[0][0]
+    code = command[command.index("-c") + 1]
+    result = subprocess.run(
+        [sys.executable, "-c", code], text=True, capture_output=True, check=False
+    )
+    assert f"Python: {sys.version.split()[0]}" in result.stdout
+    assert "executable:" in result.stdout
+    if sys.version_info[:2] == (3, 11):
+        assert result.returncode == 0, result.stderr
+        assert "Installed distributions:\n" in result.stdout
+        assert "pytest==" in result.stdout
+    else:
+        assert result.returncode != 0
+        assert "backend requires Python 3.11" in result.stderr
