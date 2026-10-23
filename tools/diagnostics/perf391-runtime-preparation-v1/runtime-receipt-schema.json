@@ -18,7 +18,10 @@
       "const": "perf391-runtime-receipt-v1"
     },
     "role": {
-      "enum": ["A", "C"]
+      "enum": [
+        "A",
+        "C"
+      ]
     },
     "plan_sha256": {
       "$ref": "#/$defs/hash"
@@ -30,7 +33,10 @@
     "images": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["backend", "frontend"],
+      "required": [
+        "backend",
+        "frontend"
+      ],
       "properties": {
         "backend": {
           "$ref": "#/$defs/image"
@@ -104,7 +110,8 @@
           "type": "string",
           "pattern": "^/"
         }
-      }
+      },
+      "description": "Receipt-bound diagnostic smoke/browser process Node 22.22.2; independent of historical frozen benchmark Node 22.12.0. Image build/app-side Node minimum remains 22.22.2. Exact diagnostic hash/version enforced by launcher."
     }
   },
   "$defs": {
@@ -115,7 +122,11 @@
     "image": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "labels", "repo_digests"],
+      "required": [
+        "id",
+        "labels",
+        "repo_digests"
+      ],
       "properties": {
         "id": {
           "type": "string",

@@ -1,0 +1,22 @@
+{
+  "files": {
+    "tools/diagnostics/perf391-node-contract-v1/README.md": "63e288d0902cbf9aac8147b4f25be979c76cca0c104864e8c68970dcd6ac442a",
+    "tools/diagnostics/perf391-node-contract-v1/cleanup.py": "9fb14d6d220635278bc876a9300e8c426cf34a881429c08eb0a04a621f49ffdc",
+    "tools/diagnostics/perf391-node-contract-v1/evidence/cleanup.json": "74a3d6ae6a005528f43e2a2334140fdacf4bb5fd37bb9fe40922b89f572998ee",
+    "tools/diagnostics/perf391-node-contract-v1/evidence/immutable-identities.json": "bce4eb73cca73e72fea5b777a74c9c96a55eb5231277670a01907dddf07feeec",
+    "tools/diagnostics/perf391-node-contract-v1/evidence/launch-A.proposed.json": "d8da059af3a8950c7ffb7c65da85e3b1f107517a5436660a496f26a197c76acb",
+    "tools/diagnostics/perf391-node-contract-v1/evidence/runtime-identity.json": "630d8d95f5726e4d80964c69e72d227b49eb237e5c98d5788815a26a62ec6c38",
+    "tools/diagnostics/perf391-node-contract-v1/evidence/tests.log": "0bf3eb7175ce38e16999dd46c3482742b73b4ffb5d60b5266558fae338fa3c65",
+    "tools/diagnostics/perf391-node-contract-v1/verify.py": "00f8b445c4913dd7509a24ff09e618e5742fac4c594e59284f05ceccd9c0950b",
+    "tools/diagnostics/perf391-runtime-preparation-v1/RUNBOOK.md": "07c175c26c60dd760b7f3d2b285e67d1cf8a5c2e68e027e136d8c33444cd1342",
+    "tools/diagnostics/perf391-runtime-preparation-v1/execute.proposed.py": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
+    "tools/diagnostics/perf391-runtime-preparation-v1/launcher.py": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4",
+    "tools/diagnostics/perf391-runtime-preparation-v1/node-contract-overlay.json": "3e49581d67c348a6ecd5f495599f76603a49914cddc6b0787ded1be03eb241c0",
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime-receipt-schema.json": "fae140e62cb2816918cea4a6faf1d085cbf3410b94426b7fa5a8af0225b795c5",
+    "tools/diagnostics/perf391-runtime-preparation-v1/runtime_identity.py": "d14d4af9df9bcaceb5ab0545be35554ec09ed4f05558bd0e6000b4c1936ddf26",
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_executor.py": "46d2938bc681d5ad9925ecd846c4ddc0c60eb51772a4bee7a7bb7f82450f0edd",
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_node_identity.py": "af94e5eb8b3633271331ee3edac2a4430ffdbc45017cbad13cb6373dc213ce89",
+    "tools/diagnostics/perf391-runtime-preparation-v1/test_preparation.py": "8624dd2fab33d2441780794ce6b4b9ee785eee773afe2c3c87d53480221d3c5c"
+  },
+  "schema": "perf391-node-contract-artifacts-v1"
+}

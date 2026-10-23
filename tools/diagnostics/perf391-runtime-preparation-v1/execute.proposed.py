@@ -16,8 +16,11 @@ import sys
 import time
 import uuid
 
-from prepare import REPO, check_release, sha, write, verify_overlay, browser_tree
+from prepare import REPO, check_release, sha, write, browser_tree
 from launcher import launch_plan, validate_receipt
+from runtime_identity import verify_runtime_overlay, verify_runtime_identity
+
+LOCK_PATH = Path("/tmp/perf391-smoke-408.lock")
 
 
 async def execute(args):
@@ -25,7 +28,7 @@ async def execute(args):
     receipt = json.loads(args.receipt.read_bytes())
     plan_path = args.build_plan.resolve()
     plan = json.loads(plan_path.read_bytes())
-    verify_overlay(plan)
+    verify_runtime_overlay(plan)
     validate_receipt(receipt, plan, sha(plan_path))
     launch = launch_plan(proposed["role"], proposed["root"], plan_path, receipt)
     if proposed != launch:
@@ -35,8 +38,7 @@ async def execute(args):
     ):
         raise ValueError("separate explicit runtime checkpoint reference required")
     check_release()
-    if sha(args.node) != receipt["browser"]["node_sha256"]:
-        raise ValueError("actual Node executable hash differs")
+    runtime_identity = verify_runtime_identity(args.node, receipt)
     if (
         sha(receipt["browser"]["chromium_executable"])
         != receipt["browser"]["chromium_sha256"]
@@ -61,7 +63,7 @@ async def execute(args):
         raise ValueError("context drift")
     import fcntl
 
-    lock_path = Path("/tmp/perf391-smoke-408.lock")
+    lock_path = LOCK_PATH
     with lock_path.open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         # Port checking is not a durable reservation; bind failures later stop the run.
@@ -101,6 +103,7 @@ async def execute(args):
         )
         process_owner = verification_owner
         root = owner.root
+        write(root / "runtime-identity.json", runtime_identity)
         write(root / "launch.json", launch)
         write(root / "compose.base.json", launch["compose"]["base"])
         write(root / "compose.override.json", launch["compose"]["override"])

@@ -12,6 +12,7 @@ import unittest
 
 from prepare import HERE, sha, write, verify_overlay, check_release
 from launcher import launch_plan, validate_receipt
+from runtime_identity import DIAGNOSTIC_NODE_SHA256, verify_runtime_overlay
 
 
 class PreparationTests(unittest.TestCase):
@@ -79,7 +80,7 @@ class PreparationTests(unittest.TestCase):
             "browser": {
                 "playwright": "1.63.0",
                 "chromium_sha256": "6" * 64,
-                "node_sha256": "7" * 64,
+                "node_sha256": DIAGNOSTIC_NODE_SHA256,
                 "node_version": "22.22.2",
                 "playwright_root": "/synthetic/offline-only",
                 "chromium_executable": "/synthetic/offline-only/chrome",
@@ -91,7 +92,7 @@ class PreparationTests(unittest.TestCase):
 
     def test_full_frozen_release_and_runtime_overlay(self):
         self.assertEqual(check_release()["verified_files"], 621)
-        verify_overlay(self.plan)
+        verify_runtime_overlay(self.plan)
 
     def test_exact_derivative_identities_and_unbuilt_claims(self):
         for role, expected in (

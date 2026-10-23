@@ -1,0 +1,30 @@
+{
+  "corrected_overlay_files": {
+    "analyze-runtime.py": "c2b460ead9469a9730f94ac3555de59c5b80d6dc7cbd89aab66ff92d029d93bb",
+    "audit.py": "4d9bd069c99a80a96db132d6b5f31ca3471a5321461a0677268e1418308d9377",
+    "browser-owner.proposed.mjs": "885a11a55bb76de21d75d885928ec2b60037f0b4e7525234968c44c181d41bb0",
+    "browser-runtime.ts": "3f5e94be8067025c9513c09b9c3d738e7e212b309388e10684d88e48283715ec",
+    "execute.proposed.py": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
+    "frontend.Dockerfile": "ebc2a4bab91bb7ba03804b9d5c5ab66ca88292c8e564e24cdea9a195ea2bc725",
+    "launcher.py": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4",
+    "prepare.py": "3a080a9275d4fa118e39ca7ccf2383921891d2b3abd5c0fcc49bf567b1b7eb22",
+    "runtime-receipt-schema.json": "fae140e62cb2816918cea4a6faf1d085cbf3410b94426b7fa5a8af0225b795c5",
+    "runtime_backend.proposed.py": "6caca1d4e858231be0e49dd4f2742c1e1329b4274a2f9bf740fc7396df3689aa",
+    "runtime_identity.py": "d14d4af9df9bcaceb5ab0545be35554ec09ed4f05558bd0e6000b4c1936ddf26",
+    "vite.perf391.mjs": "4d8b1d57569672489d68b7f69b9194d00665d8f6dc8ff830c16d9dcf686f7adf"
+  },
+  "original_overlay_files": {
+    "analyze-runtime.py": "c2b460ead9469a9730f94ac3555de59c5b80d6dc7cbd89aab66ff92d029d93bb",
+    "audit.py": "4d9bd069c99a80a96db132d6b5f31ca3471a5321461a0677268e1418308d9377",
+    "browser-owner.proposed.mjs": "885a11a55bb76de21d75d885928ec2b60037f0b4e7525234968c44c181d41bb0",
+    "browser-runtime.ts": "3f5e94be8067025c9513c09b9c3d738e7e212b309388e10684d88e48283715ec",
+    "execute.proposed.py": "a58366a409b91857f70f4f3d922d7da665345b05551f06f679b3f3188948af87",
+    "frontend.Dockerfile": "ebc2a4bab91bb7ba03804b9d5c5ab66ca88292c8e564e24cdea9a195ea2bc725",
+    "launcher.py": "a5f4beb608d9af3be732f6a75ea9204b6469245f38d89f1de8619e7c13b465cb",
+    "prepare.py": "3a080a9275d4fa118e39ca7ccf2383921891d2b3abd5c0fcc49bf567b1b7eb22",
+    "runtime-receipt-schema.json": "79245bb0a4fcd7da573868349426d68ea6a1f6d98807b50e5e383bdef9c23919",
+    "runtime_backend.proposed.py": "6caca1d4e858231be0e49dd4f2742c1e1329b4274a2f9bf740fc7396df3689aa",
+    "vite.perf391.mjs": "4d8b1d57569672489d68b7f69b9194d00665d8f6dc8ff830c16d9dcf686f7adf"
+  },
+  "schema": "perf391-node-contract-overlay-v1"
+}

@@ -10,6 +10,13 @@ import json
 from pathlib import Path
 
 from prepare import HERE, sha, compose, build
+from runtime_identity import (
+    validate_diagnostic_node,
+    DIAGNOSTIC_NODE_VERSION,
+    DIAGNOSTIC_NODE_SHA256,
+    HISTORICAL_NODE_VERSION,
+    HISTORICAL_NODE_SHA256,
+)
 
 
 def validate_receipt(receipt, plan, plan_hash):
@@ -30,8 +37,7 @@ def validate_receipt(receipt, plan, plan_hash):
         == plan["roles"][receipt["role"]]["package_lock_sha256"],
         "npm lock identity",
     )
-    major, minor, patch = map(int, receipt["browser"]["node_version"].split("."))
-    build.require(major == 22 and (minor, patch) >= (22, 2), "Node engine floor")
+    validate_diagnostic_node(receipt["browser"])
     assets = receipt["assets"]
     build.require(
         {"index.html", ".vite/manifest.json", "perf391-module-closure.json"}
@@ -230,6 +236,15 @@ def launch_plan(role, root, plan_path, receipt=None):
     return {
         "schema": "perf391-proposed-launch-v1",
         "mode": "dry_run",
+        "runtime_lane": {
+            "purpose": "diagnostic functionality only; no historical timing comparison",
+            "image_build_app_node_minimum": "22.22.2",
+            "diagnostic_browser_node_version": DIAGNOSTIC_NODE_VERSION,
+            "diagnostic_browser_node_sha256": DIAGNOSTIC_NODE_SHA256,
+            "historical_frozen_browser_node_version": HISTORICAL_NODE_VERSION,
+            "historical_frozen_browser_node_sha256": HISTORICAL_NODE_SHA256,
+            "correction_manifest_sha256": sha(HERE / "node-contract-overlay.json"),
+        },
         "runtime_authorized": False,
         "role": role,
         "root": str(root),

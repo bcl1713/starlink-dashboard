@@ -166,3 +166,47 @@ This preparation task created no runtime project, container, listener, browser,
 capture or service. Its exported sources and test temporary paths are removed
 after validation. Retain only review artifacts and the isolated open-PR
 worktree.
+
+## Node identity correction — review checkpoint only
+
+The [latest orchestrator decision](https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6355528452)
+separates these contracts:
+
+| Role | Required identity |
+| --- | --- |
+| Diagnostic image build / app-side scripts | Node minimum 22.22.2; accepted images unchanged |
+| Diagnostic smoke/browser owner | Exactly Node 22.22.2, SHA-256 `81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90`, as bound by both receipts |
+| Historical frozen benchmark browser | Node 22.12.0, SHA-256 `177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9`; frozen comparator requirements unchanged |
+
+The diagnostic tuple is a new functionality lane. It is not a matched historical
+benchmark; its timings must not be compared to historical controls. Playwright
+1.63.0 and Chromium revision 1243/binary hash are verified independently.
+`verify_runtime_identity` hashes Node before executing it, checks `--version`,
+reads package engines/revision metadata and imports Playwright to resolve its
+configured executable without calling launch. Package compatibility and import
+do not qualify actual browser startup.
+
+Use a private executable extracted from the retained pinned Node image; do not
+fall back to PATH Node. Container-free preparation can use `docker image save`
+and read only `usr/local/bin/node` from its layers. Record ownership and bound the
+export/extraction; hash-check before executing. This task's private copy is
+removed after verification; a future authorized smoke must recreate and verify
+it, then supply that exact path to `--node`.
+
+The accepted build plan, receipts, assets and image IDs remain immutable.
+`node-contract-overlay.json` records the original overlay inventory and the
+corrected launcher/executor/schema/helper inventory. The executor checks both;
+it does not rewrite the original plan to make the old receipt accept new bytes.
+The launcher binds the correction manifest hash into every new dry-run plan.
+Regenerate the proposed A plan using the **retained**
+`perf391-built-images-v1/evidence/runtime-build-plan.json` and `built-A.json`;
+old launch-plan JSON intentionally fails equality validation. Do not regenerate
+build contexts or receipts for this contract correction.
+
+STOP for review. A future A-only proposal retains the private Compose project,
+5 samples at 1 Hz, 78 s work / 90 s outer / 10 s force grace, one chart join and
+at most one screenshot attempt. Fresh image, identity, source/context, port,
+headroom and cleanup gates remain mandatory. The 1.5-second cadence requirement
+is unchanged. No A smoke is authorized here; no C, calibration or sustained run.
+Raw-wire provenance remains unavailable. Keep #403–#408 draft/unmerged and
+#390/#391 open.
