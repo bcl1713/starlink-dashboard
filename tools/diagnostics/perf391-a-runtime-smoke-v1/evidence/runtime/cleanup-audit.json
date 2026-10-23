@@ -1,0 +1,15 @@
+{
+  "clean": true,
+  "docker": {
+    "containers": [],
+    "networks": [],
+    "volumes": []
+  },
+  "listeners": [],
+  "processes": [],
+  "project": "perf391-smoke-408-a",
+  "runtime_root": "/tmp/perf391-smoke-408-a",
+  "schema": "perf391-runtime-cleanup-audit-v1",
+  "temporary_paths": [],
+  "unavailable": []
+}

@@ -1,0 +1,14 @@
+{
+  "task": "perf391-a-runtime-20261023",
+  "paths": [
+    "/tmp/perf391-a-runtime-20261023",
+    "/tmp/perf391-smoke-408-a"
+  ],
+  "project": "perf391-smoke-408-a",
+  "private_node": "/tmp/perf391-a-runtime-20261023/node-22.22.2",
+  "containers": [
+    "perf391-smoke-408-a-assets"
+  ],
+  "cleanup": "Compose down --volumes --remove-orphans --timeout 2 using recorded launch env; verify owned PID/start identities and ports; remove only recorded private paths after evidence retention",
+  "preflight_pid": 14
+}

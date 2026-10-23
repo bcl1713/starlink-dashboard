@@ -1,0 +1,41 @@
+{
+  "C_ready": false,
+  "attempts": {
+    "A": 1,
+    "C": 0
+  },
+  "backend_final_summary": null,
+  "backend_started": false,
+  "browser_final_summary": null,
+  "browser_launch_attempts": 0,
+  "chart_evidence_chains": 0,
+  "clock_domains": {
+    "boot_id": "389f67c6-ac9f-4b87-831e-ff430ad5eeab",
+    "browser_backend_operation_clocks": "unavailable: neither process launched",
+    "execution_intent_and_exit": "host UTC wall clock; not phase durations",
+    "owner_start_id": "Forge Linux /proc stat starttime ticks since boot",
+    "ticks_per_second": 100,
+    "work_deadline": "executor time.monotonic, 78 seconds; enclosing GNU timeout 90 seconds + 10 seconds kill grace"
+  },
+  "completed_host_observations": 0,
+  "completed_source_observations": 0,
+  "compositor_screenshot_attempts": 0,
+  "dropped_event_counts": null,
+  "dropped_event_counts_reason": "unavailable: producers/collectors never started; no zero-loss claim",
+  "expected_unavailable": [
+    "raw-wire capture",
+    "native Axios parse-start",
+    "original-A CAS/final-authority/frame semantics"
+  ],
+  "host_final_summary": null,
+  "instrumentation_end_to_end": false,
+  "observer_cadence_gate_seconds": 1.5,
+  "observer_cadence_result": "not exercised; not waived",
+  "owner_streams": [],
+  "phase_reached": "seed-tsdb",
+  "producer_worker_admission_observer_evidence": "unavailable: application never started",
+  "run_id": "synthetic-408a",
+  "scheduled_host_observations": 5,
+  "scheduled_source_observations": 5,
+  "stop": "startup failure; no retry; separately reviewed correction required before any future runtime authorization"
+}

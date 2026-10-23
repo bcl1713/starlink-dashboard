@@ -1,0 +1,6 @@
+{
+  "cleanup_error": null,
+  "external_host_audit_required": true,
+  "failure": "RuntimeError: command failure: ['docker', 'compose', '-p']",
+  "owner_status": "clean"
+}

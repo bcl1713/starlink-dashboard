@@ -1,0 +1,11 @@
+ Volume perf391-smoke-408-a_metrics Creating 
+ Volume perf391-smoke-408-a_metrics Creating 
+ Network perf391-smoke-408-a_default Creating 
+ Network perf391-smoke-408-a_default Creating 
+ Volume perf391-smoke-408-a_metrics Created 
+ Volume perf391-smoke-408-a_metrics Created 
+ Network perf391-smoke-408-a_default Created 
+ Network perf391-smoke-408-a_default Created 
+ Container perf391-smoke-408-a-seed Creating 
+ Container perf391-smoke-408-a-seed Created 
+Error response from daemon: failed to create task for container: failed to initialize logging driver: compression cannot be enabled when max file count is 1

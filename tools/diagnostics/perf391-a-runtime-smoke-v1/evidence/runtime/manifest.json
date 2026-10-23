@@ -1,0 +1,157 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "982501"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 982501,
+      "start_id": "212539109"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "982502"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 982502,
+      "start_id": "212539117"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "networks": [
+    "perf391-smoke-408-a_default"
+  ],
+  "output_directories": [
+    "/tmp/perf391-smoke-408-a"
+  ],
+  "owner": {
+    "pgid": 981968,
+    "pid": 981969,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "212538659"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/tmp/perf391-a-runtime-20261023/venv/bin/python",
+        "/tmp/perf391-a-runtime-20261023/context/A/tools/acceptance/overview_history/seed.py",
+        "--output",
+        "/tmp/perf391-smoke-408-a/history.openmetrics",
+        "--end",
+        "1792723791"
+      ],
+      "pgid": 982501,
+      "pid": 982501,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "212539109",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-a",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-a/compose.override.json",
+        "run",
+        "--rm",
+        "--no-deps",
+        "--name",
+        "perf391-smoke-408-a-seed",
+        "--entrypoint",
+        "/bin/promtool",
+        "prometheus",
+        "tsdb",
+        "create-blocks-from",
+        "openmetrics",
+        "/seed/history.openmetrics",
+        "/prometheus"
+      ],
+      "pgid": 982502,
+      "pid": 982502,
+      "reaped": true,
+      "returncode": 1,
+      "start_id": "212539117",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "resource_intent": {
+    "docker_containers": [
+      "perf391-smoke-408-a-seed",
+      "perf391-smoke-408-a-starlink-location-1",
+      "perf391-smoke-408-a-mission-planner-1",
+      "perf391-smoke-408-a-prometheus-1"
+    ],
+    "intent_before_spawn": true,
+    "networks": [
+      "perf391-smoke-408-a_default"
+    ],
+    "paths": [
+      "/tmp/perf391-smoke-408-a"
+    ],
+    "pid_pgid_start_id_and_command_required": true,
+    "ports": [
+      38080,
+      38081,
+      38082,
+      38083
+    ],
+    "volumes": [
+      "perf391-smoke-408-a_data",
+      "perf391-smoke-408-a_routes",
+      "perf391-smoke-408-a_metrics"
+    ]
+  },
+  "run_id": "synthetic-408a",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6355796338",
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ]
+}

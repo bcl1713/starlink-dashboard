@@ -1,0 +1,14 @@
+{
+  "shell_pid": 981957,
+  "shell_pgid": 981957,
+  "shell_stat": "981957 (bash) S 3570576 981957 981957 0 -1 4194304 2016 1957 0 0 0 0 0 0 20 0 1 0 212538656 8273920 963 18446744073709551615 94228143616000 94228144675233 140726785889232 0 0 0 65536 4 65538 1 0 0 17 17 0 0 0 0 0 94228144904432 94228144953480 94228398477312 140726785890474 140726785892248 140726785892248 140726785896426 0\n",
+  "utc": "2026-10-23T02:50:07Z",
+  "command": "timeout --kill-after=10s 90s private-python -B execute.proposed.py --execute",
+  "runtime_root": "/tmp/perf391-smoke-408-a",
+  "project": "perf391-smoke-408-a",
+  "private_root": "/tmp/perf391-a-runtime-20261023",
+  "attempt": 1,
+  "max_attempts": 1,
+  "C_authorized": false,
+  "cleanup_command": "docker compose -p perf391-smoke-408-a -f /tmp/perf391-smoke-408-a/compose.base.json -f /tmp/perf391-smoke-408-a/compose.override.json down --volumes --remove-orphans --timeout 2 (recorded launch env)"
+}
