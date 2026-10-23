@@ -1,0 +1,10 @@
+{
+  "compose_project": "perf391-preflight-contract",
+  "paths": [
+    "/tmp/perf391-preflight-contract-st5yi_7w"
+  ],
+  "pgid": 17,
+  "pid": 18,
+  "resources_started": [],
+  "runtime_attempts": 0
+}

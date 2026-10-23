@@ -1,5 +1,4 @@
 """Task-owned read-only preflight and exact offline context regeneration. No launches."""
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -9,6 +8,7 @@ import subprocess
 import sys
 import tarfile
 from unittest.mock import patch
+from comparison import regenerate, validate_compose
 
 HERE = Path(__file__).resolve().parent
 PREP = HERE.with_name('perf391-runtime-preparation-v1')
@@ -19,7 +19,7 @@ E = HERE / 'evidence'
 sys.path.insert(0, str(PREP))
 import prepare
 from runtime_identity import verify_runtime_overlay, verify_runtime_identity
-from launcher import launch_plan, validate_receipt
+from launcher import validate_receipt
 
 result = {'starting_commit': 'ae3c8d28fa1e5263fe6d85b0e1a897d3ae339ee9', 'authorization': 'https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6356577550', 'runtime_attempts': 0, 'commands': [], 'checks': {}}
 def save():
@@ -74,20 +74,12 @@ try:
     mem={line.split(':')[0]:int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines() if line.split()[1].isdigit()}
     result['checks']['headroom']={'disk_free_bytes':free,'memory_available_bytes':mem['MemAvailable'],'required_disk_bytes':4*1024**3,'required_memory_bytes':6*1024**3}
     assert free>4*1024**3 and mem['MemAvailable']>6*1024**3
-    # Restore only historical overlay bytes into a private offline compiler directory.
-    # Its output must match the immutable build plan exactly; no receipt is rewritten.
-    original=TASK/'original-overlay'
-    original.mkdir()
-    for name,expected in plan['overlay_files'].items():
-        data=subprocess.check_output(['git','show','68f3f644beef98cd8412e8a354c8621540660739:tools/diagnostics/perf391-runtime-preparation-v1/'+name])
-        assert hashlib.sha256(data).hexdigest()==expected
-        (original/name).write_bytes(data)
-    original_here=prepare.HERE
-    prepare.HERE=original
-    try: regenerated=prepare.prepare(TASK/'context')
-    finally: prepare.HERE=original_here
-    assert regenerated==plan
-    assert (TASK/'context/runtime-build-plan.json').read_bytes()==plan_path.read_bytes()
+    regenerated, comparison = regenerate(TASK)
+    result['checks']['build_plan_comparison'] = comparison
+    for role in ('A', 'C'):
+        proposal, rendered = validate_compose(role, TASK/'context', comparison)
+        prepare.write(E/f'launch-{role}.json', proposal)
+        prepare.write(E/f'{role}.compose.json', rendered)
     result['checks']['regenerated_context_sha256']=regenerated['roles']['A']['context_sha256']
     result['checks']['build_plan_sha256']=prepare.sha(plan_path)
     result['checks']['pins']=plan['pins']
@@ -115,8 +107,6 @@ try:
     assert result['checks']['historical_node']['sha256']=='177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9'
     libraries=command(['ldd',receipt['browser']['chromium_executable']])
     assert 'not found' not in libraries
-    launch=launch_plan('A','/tmp/perf391-smoke-408-a',TASK/'context/runtime-build-plan.json',receipt)
-    prepare.write(E/'launch-A.json',launch)
     result['checks']['launch_sha256']=prepare.sha(E/'launch-A.json')
     result['status']='PASS_PREFLIGHT_NO_RUNTIME_STARTED'
 except BaseException as error:

@@ -1,0 +1,6 @@
+test_only_approved_superseded_hashes_are_accepted (__main__.ComparisonTests.test_only_approved_superseded_hashes_are_accepted) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK

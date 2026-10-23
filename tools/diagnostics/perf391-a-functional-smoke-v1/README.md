@@ -98,3 +98,43 @@ Publish to draft #408, then stop. PRs #403/#405/#406/#407/#408 remain draft,
 open and unmerged; #404 is an open issue rather than a PR. #390/#391 remain open.
 No packet capture, calibration, regression expansion, soak, merge, deployment,
 issue closure, image build or application change occurred.
+
+## Offline comparison correction (2026-10-23)
+
+Starting commit: `6751c00c6c6ca1480e7d6d90bbc94916b2ee6668`.
+Authorization: [latest checkpoint](https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6362257846).
+
+The preflight now executes the pinned original compiler from a verified historical
+export, without changing imported source paths. Its first output must equal the
+immutable original build plan byte for byte. The active, approved compiler then
+supplies the corrected Compose overrides. The comparison checks every original
+plan field, allowing only the two override hashes, and independently binds those
+overrides to the logging checkpoint's canonical hashes. The original plan and
+receipts remain unchanged. Correction provenance is included in each generated
+launch and its ownership evidence; global identity guards remain unchanged.
+
+Both roles regenerated offline. The only plan differences are A override
+`5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c`
+and C override
+`ffdbe1293ea39e142752f56b438f12957dcd16fba22b546c2d8f4787446ca81e`.
+Their canonical hashes match the exact approved logging checkpoint. Both full
+rendered Compose configurations, including all six bounded local logging service
+configurations, match the pinned approved configurations after explicit task
+project/context substitutions. Fifteen existing preparation/identity/logging tests
+and one new behavioral compatibility case pass. No new literal-option tests.
+
+Run: `timeout --kill-after=10s 5m python3 -B tools/diagnostics/perf391-a-functional-smoke-v1/check-comparison.py`.
+Results: [verification output](evidence/comparison-run.log),
+[two-layer comparison](evidence/comparison/comparison.json),
+[changed source hashes](evidence/comparison/source-hashes.json), and
+[host cleanup](evidence/comparison/host-cleanup.json).
+All package source/evidence hashes are recorded in the updated artifact manifest.
+A multi-file formatter hung in the sandbox; its verified owned host process group
+was terminated and checked absent. Subsequent bounded single-file format checks
+passed. Offline scratch is removed; no task processes, listeners, containers,
+networks or volumes remain. The open-PR worktree is retained.
+
+STOP for review. A runtime attempts 0; C executions 0. No images built, application
+services, browser, benchmark, calibration or sustained tests. The original closed
+receipts, image IDs, application sources and frozen tooling are preserved. Related
+PRs remain draft/unmerged; #390/#391 remain open; the 1.5-second cadence is unchanged.
