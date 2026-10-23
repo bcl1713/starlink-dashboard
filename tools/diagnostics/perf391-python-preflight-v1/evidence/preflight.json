@@ -1,0 +1,294 @@
+{
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6363230112",
+  "checks": {
+    "A_receipt_sha256": "7d337809082015880bb51e69bcf8973fd5036518286b876dda77145543c9c24f",
+    "C_receipt_sha256": "a9b7492aed2e90448d2ed8aeb4586dccd667d03e1cbb0829ff759a04537109e2",
+    "build_plan_comparison": {
+      "approved_override_hashes_match": true,
+      "correction": {
+        "checkpoint_manifest_sha256": "16f96d3e1c40cc81e776b657014067e8c3319cf6c71dbf211fdecdec7f8bbe5f",
+        "compiler_sha256": "8d52a986514fefbec833b45f2a4b64b4e86a004983588116ec389ba3a467b001",
+        "config_hashes_sha256": "63e98db136e5595cc6c0c1243382b2b8ccb7bc05445f508b7dc30a9fc52401c2",
+        "overlay_manifest_sha256": "9e58db98dfaeb47fc617b6b0c7a98e6459ee8e1ad0e5c57fd69d1d665467cb02"
+      },
+      "differences": [
+        {
+          "approved": "5419094df7e1bb5dbae1f0282aa0e4881d5a5f73e1b9c09fd83746d3fc36764c",
+          "approved_canonical": "dab1035fd61762f6feb203c0a12210f362e0a7fbfaf8881e78e6ab3770b522f7",
+          "original": "e34daea5880cf2053ee17c08c57a28e969f7ee783b789345676343720fe1d831",
+          "path": "/roles/A/compose_sha256/override"
+        },
+        {
+          "approved": "ffdbe1293ea39e142752f56b438f12957dcd16fba22b546c2d8f4787446ca81e",
+          "approved_canonical": "96bdf2d8aed75b2180baaf60fea4e0a1b9fe7df5edf788e5da9b0e370bf0fcd5",
+          "original": "7d42f76540a337fc8c67b4f9ed463f0d2f96c187a60c01495cc406045932080b",
+          "path": "/roles/C/compose_sha256/override"
+        }
+      ],
+      "original_fields_identical": true
+    },
+    "build_plan_sha256": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+    "cgroup_limits": {
+      "/sys/fs/cgroup/user.slice/cpu.max": "max 100000",
+      "/sys/fs/cgroup/user.slice/memory.current": "14711054336",
+      "/sys/fs/cgroup/user.slice/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/pids.current": "195",
+      "/sys/fs/cgroup/user.slice/pids.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/cpu.max": "1000000 100000",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/memory.current": "13689597952",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/pids.current": "182",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/pids.max": "165561",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cpu.max": "max 100000",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.current": "11641266176",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.current": "89",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.max": "max"
+    },
+    "context": "default",
+    "daemon": "forge 20 65915523072 2",
+    "frontend_readiness_overlay_sha256": "ea21f78ca9f71d8b6b67222839727558cd586ebc3e2e438a4b935bd0482fcdec",
+    "headroom": {
+      "disk_free_bytes": 24504389632,
+      "memory_available_bytes": 55256109056,
+      "required_disk_bytes": 4294967296,
+      "required_memory_bytes": 6442450944
+    },
+    "pins": {
+      "A": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+      "C": "ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832",
+      "base": "33b60fa85c0d0b80d9b82ea5eac7d612a54f4c96",
+      "collector": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+      "harness": "f3029024b5950a267645195476da5cbca326f16a",
+      "implementation": "3cd79e2ac77557b7ef0ba7bc8bf60069bd260bbc",
+      "plan": "8aa7791bb03f0573cf602bdbfe8e43c085ee2325",
+      "release": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b"
+    },
+    "process_visibility": {
+      "cgroup": "0::/user.slice/user-1002.slice/session-c1.scope\n",
+      "pid1": "systemd",
+      "pid_namespace": "pid:[4026531836]"
+    },
+    "regenerated_context_sha256": "9563d8f4396323fc2ba726605704fb41a14c56c89010d55a2b48cfa1d412f7ab",
+    "stage5": {
+      "release_manifest_sha256": "1ff9bf12f578538b6a2fb8946395f88993f569b1ec9aeb3939d4f27284601200",
+      "source_files": 97,
+      "verified_files": 621
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "hostname"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "forge\n"
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "de434540998587f105b720d1477133c8deb57b4a\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "{\"Id\":\"sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\",\"RepoTags\":[\"perf391-diag-408-a-backend:f9cf80bd\"],\"RepoDigests\":[\"perf391-diag-408-a-backend@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-23T01:17:01.410275266Z\",\"Config\":{\"ExposedPorts\":{\"8000/tcp\":{}},\"Env\":[\"PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D\",\"PYTHON_VERSION=3.11.17\",\"PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599\",\"PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers\",\"BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png\",\"PYTHONPATH=/diagnostic:/acceptance:/app\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Entrypoint\":[\"entrypoint.sh\"],\"Cmd\":[\"uvicorn\",\"runtime_backend:create_app\",\"--factory\",\"--host\",\"0.0.0.0\",\"--port\",\"8000\",\"--workers\",\"1\",\"--timeout-graceful-shutdown\",\"5\"],\"WorkingDir\":\"/app\",\"Labels\":{\"base_application_sha\":\"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\"collector_release_sha\":\"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\"collector_source_sha\":\"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\"diagnostic\":\"true\",\"effective_source_sha256\":\"015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa\",\"frontend_patch_sha256\":\"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\"frozen_harness_sha\":\"f3029024b5950a267645195476da5cbca326f16a\",\"integration_source_sha\":\"051870c738d9ab72338852ea848918a35a663094\",\"org.opencontainers.image.revision\":\"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\"patch_sha256\":\"c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c\",\"perf391.role\":\"A\",\"runtime_frontend_closure_sha256\":\"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\"runtime_overlay_sha256\":\"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"},\"ArgsEscaped\":true,\"Healthcheck\":{\"Test\":[\"CMD-SHELL\",\"curl -f http://localhost:8000/health || exit 1\"],\"Interval\":30000000000,\"Timeout\":10000000000,\"StartPeriod\":5000000000,\"Retries\":3}},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":2230848264,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7\",\"sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe\",\"sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c\",\"sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2\",\"sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8\",\"sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6\",\"sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7\",\"sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5\",\"sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177\",\"sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5\",\"sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d\",\"sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc\",\"sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152\",\"sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725\",\"sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9\",\"sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc\",\"sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a\",\"sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af\",\"sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef\",\"sha256:2b6eab517f9fb8075d70c53cc85df164fe92c1afec58e71722ef1afc335982f5\",\"sha256:022a737a05c26f448c46f74fafaebece63cf41a61e9b69760d44ad7a86fadb37\",\"sha256:872b00ed7351c22be62f1c261ebfd15baad9f33a344311c5c3cacc231d868f08\",\"sha256:13b8f9dc3db083870bd1f8d0f67039cc22c92de2867d932e7debb43ed66dfd2f\",\"sha256:84da2ebb85314a0c379944cf351f51880c2bf9f14e4038f817212c46e06fa04d\",\"sha256:2935a3410dabfc39fd5bbce933fbaf2847128f40d8ef2019f20437bd17405bb1\",\"sha256:ef9dedaec4eb4c9d9f7a8fc5c42105da495b5dc82fa5d43a5374f4c18bf06b89\",\"sha256:26dc8ecda4e1e49e29833453ec0e1294993d93d26c262c7e862de28d4ba9b1a9\",\"sha256:5d53203100f84fecbd97574452b9547c27123fa7efcbbe4fa656de9c34fbaab6\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-23T01:17:01.87214652Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"3xho2lsl46h2vxa3mokdmrvq6\",\"CreatedAt\":\"2026-10-23T01:17:08.196562814Z\"}]}}\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "{\"Id\":\"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\",\"RepoTags\":[\"perf391-diag-408-a-frontend:f9cf80bd\"],\"RepoDigests\":[\"perf391-diag-408-a-frontend@sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-23T01:18:34.160994649Z\",\"Config\":{\"ExposedPorts\":{\"80/tcp\":{}},\"Env\":[\"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"NGINX_VERSION=1.31.7\",\"PKG_RELEASE=1\",\"DYNPKG_RELEASE=1\",\"NJS_VERSION=1.0.2\",\"NJS_RELEASE=1\",\"ACME_VERSION=0.4.1\"],\"Entrypoint\":[\"/docker-entrypoint.sh\"],\"Cmd\":[\"nginx\",\"-g\",\"daemon off;\"],\"WorkingDir\":\"/\",\"Labels\":{\"base_application_sha\":\"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\"collector_release_sha\":\"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\"collector_source_sha\":\"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\"diagnostic\":\"true\",\"effective_source_sha256\":\"015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa\",\"frontend_patch_sha256\":\"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\"frozen_harness_sha\":\"f3029024b5950a267645195476da5cbca326f16a\",\"integration_source_sha\":\"051870c738d9ab72338852ea848918a35a663094\",\"maintainer\":\"NGINX Docker Maintainers <docker-maint@nginx.com>\",\"org.opencontainers.image.revision\":\"25e34168f0e2cecb149b0323f1f5a795cb28cae0\",\"patch_sha256\":\"c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c\",\"perf391.role\":\"A\",\"runtime_frontend_closure_sha256\":\"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\"runtime_overlay_sha256\":\"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"},\"StopSignal\":\"SIGQUIT\",\"ArgsEscaped\":true},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":141425713,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711\",\"sha256:1d5f8e4b80b9f3266d052972fd6bca72a1bcf57a849f1fca99e621a9aaa26f37\",\"sha256:11c068032a923cdd9eded6001b3f98f2bc9c1ab4f898473642f5f2435d6e2c2f\",\"sha256:f4b56df1052e76cd6baf6e1d8510f78af5b8754a97800750c141e52a381cc608\",\"sha256:c01de5b74a8831bddd18ae59f36e88262c13c1d43bd3a05dec470b22ad7106cd\",\"sha256:1cbec789df916efa6e277af74ae96e9ec0f5523f0e4bcc6692c81fd1a94297a0\",\"sha256:a5237c8bfc4397a9b457bfbf4db5b93b1ab6aa64d287d1e8210b6a1662aa4eee\",\"sha256:6aef7713033e574d61ccfb63c76c936acf96b3ad813bb4b8d18d416512e34d33\",\"sha256:3326f127248bb6197c8d405a2938ce3032053b3cad5d70a4ba6e5321f9d35efa\",\"sha256:f080779e6a74b84572d7655b89f476b3eb91a6bc1d6833d628b5da5e45cb3150\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-23T01:18:34.869046731Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"oigleetp5h7xsclsvn50mytk0\",\"CreatedAt\":\"2026-10-23T01:18:34.961748012Z\"}]}}\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "{\"Id\":\"sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\",\"RepoTags\":[\"perf391-diag-408-c-backend:f9cf80bd\"],\"RepoDigests\":[\"perf391-diag-408-c-backend@sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-23T01:18:53.394577794Z\",\"Config\":{\"ExposedPorts\":{\"8000/tcp\":{}},\"Env\":[\"PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D\",\"PYTHON_VERSION=3.11.17\",\"PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599\",\"PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers\",\"BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png\",\"PYTHONPATH=/diagnostic:/acceptance:/app\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Entrypoint\":[\"entrypoint.sh\"],\"Cmd\":[\"uvicorn\",\"runtime_backend:create_app\",\"--factory\",\"--host\",\"0.0.0.0\",\"--port\",\"8000\",\"--workers\",\"1\",\"--timeout-graceful-shutdown\",\"5\"],\"WorkingDir\":\"/app\",\"Labels\":{\"base_application_sha\":\"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\"collector_release_sha\":\"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\"collector_source_sha\":\"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\"diagnostic\":\"true\",\"effective_source_sha256\":\"4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a\",\"frontend_patch_sha256\":\"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\"frozen_harness_sha\":\"f3029024b5950a267645195476da5cbca326f16a\",\"integration_source_sha\":\"051870c738d9ab72338852ea848918a35a663094\",\"org.opencontainers.image.revision\":\"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\"patch_sha256\":\"b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c\",\"perf391.role\":\"C\",\"runtime_frontend_closure_sha256\":\"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\"runtime_overlay_sha256\":\"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"},\"ArgsEscaped\":true,\"Healthcheck\":{\"Test\":[\"CMD-SHELL\",\"curl -f http://localhost:8000/health || exit 1\"],\"Interval\":30000000000,\"Timeout\":10000000000,\"StartPeriod\":5000000000,\"Retries\":3}},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":2231188809,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7\",\"sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe\",\"sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c\",\"sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2\",\"sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8\",\"sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6\",\"sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7\",\"sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5\",\"sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177\",\"sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5\",\"sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d\",\"sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc\",\"sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152\",\"sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725\",\"sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9\",\"sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc\",\"sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a\",\"sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af\",\"sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef\",\"sha256:9225e85f223c72fb70d1f5986872045eae35e34ffdd68244e0409ce790134707\",\"sha256:ba694344aec7d78b252ad542f7a7a3cb885d56690b8750e3e973997a1b7351ab\",\"sha256:579e040318d6f7aec6a99f82b184ac242760b8ff5a286f16b19bdd4e4de7d116\",\"sha256:8e6bfeafd9f340826dfb20764e52925740f9be1b366cf677d0bd2475fe9e768f\",\"sha256:fa3901f0cbfaee36af2f6435329cfd48acc52b6b1149268cc3585b7b9ea1752f\",\"sha256:3da55fb8b481eec90e7e9e8134e208bb6a1b00c59c31e506393acec8951b0d92\",\"sha256:a6537fa590f2b4b8599e7ba0797f5b8ad8d660c1280708073f2be6f419de559d\",\"sha256:2a55390c3b0a68321b582769e3855d07376a7c9ed16af32f3c929b6ada3b21c3\",\"sha256:74af1ca2466600a4ff58d2ace7c4c129832ec67093eee4f730c2e07f45602a94\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-23T01:18:53.874488237Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"xze83oz7iqfnsn3i4c9w37cfy\",\"CreatedAt\":\"2026-10-23T01:18:54.071925082Z\"}]}}\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "{\"Id\":\"sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\",\"RepoTags\":[\"perf391-diag-408-c-frontend:f9cf80bd\"],\"RepoDigests\":[\"perf391-diag-408-c-frontend@sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-23T01:18:34.160994649Z\",\"Config\":{\"ExposedPorts\":{\"80/tcp\":{}},\"Env\":[\"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"NGINX_VERSION=1.31.7\",\"PKG_RELEASE=1\",\"DYNPKG_RELEASE=1\",\"NJS_VERSION=1.0.2\",\"NJS_RELEASE=1\",\"ACME_VERSION=0.4.1\"],\"Entrypoint\":[\"/docker-entrypoint.sh\"],\"Cmd\":[\"nginx\",\"-g\",\"daemon off;\"],\"WorkingDir\":\"/\",\"Labels\":{\"base_application_sha\":\"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\"collector_release_sha\":\"c47d21e3c5bbf92189afbf291b73b9da7a035a4b\",\"collector_source_sha\":\"a48837b99d87366c6e3fc24ba2915f0b739cddad\",\"diagnostic\":\"true\",\"effective_source_sha256\":\"4f1913894101595ab96bdd289bd80f88a6dcb95c058d0851cb3e4e025ae13f4a\",\"frontend_patch_sha256\":\"e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551\",\"frozen_harness_sha\":\"f3029024b5950a267645195476da5cbca326f16a\",\"integration_source_sha\":\"051870c738d9ab72338852ea848918a35a663094\",\"maintainer\":\"NGINX Docker Maintainers <docker-maint@nginx.com>\",\"org.opencontainers.image.revision\":\"ee9ce1010e72e83cb6d4b8c79ecc15091b9d8832\",\"patch_sha256\":\"b0886cc70df5811670f43e455cd8917b641d42a09c320bb378cb5df85be26c3c\",\"perf391.role\":\"C\",\"runtime_frontend_closure_sha256\":\"5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695\",\"runtime_overlay_sha256\":\"5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c\"},\"StopSignal\":\"SIGQUIT\",\"ArgsEscaped\":true},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":141425713,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711\",\"sha256:1d5f8e4b80b9f3266d052972fd6bca72a1bcf57a849f1fca99e621a9aaa26f37\",\"sha256:11c068032a923cdd9eded6001b3f98f2bc9c1ab4f898473642f5f2435d6e2c2f\",\"sha256:f4b56df1052e76cd6baf6e1d8510f78af5b8754a97800750c141e52a381cc608\",\"sha256:c01de5b74a8831bddd18ae59f36e88262c13c1d43bd3a05dec470b22ad7106cd\",\"sha256:1cbec789df916efa6e277af74ae96e9ec0f5523f0e4bcc6692c81fd1a94297a0\",\"sha256:a5237c8bfc4397a9b457bfbf4db5b93b1ab6aa64d287d1e8210b6a1662aa4eee\",\"sha256:6aef7713033e574d61ccfb63c76c936acf96b3ad813bb4b8d18d416512e34d33\",\"sha256:3326f127248bb6197c8d405a2938ce3032053b3cad5d70a4ba6e5321f9d35efa\",\"sha256:f080779e6a74b84572d7655b89f476b3eb91a6bc1d6833d628b5da5e45cb3150\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-23T01:18:54.752507853Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"j324ciou8qnfldmr684qa5j17\",\"CreatedAt\":\"2026-10-23T01:18:54.761172909Z\"}]}}\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "context",
+        "show"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "default\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}} {{.NCPU}} {{.MemTotal}} {{.CgroupVersion}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "forge 20 65915523072 2\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "context",
+        "inspect",
+        "--format",
+        "{{.Endpoints.docker.Host}}"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "unix:///run/user/1002/docker.sock\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "version"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Docker Compose version v5.5.1\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "ss",
+        "-ltn"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      128        127.0.0.1:45867      0.0.0.0:*   \nLISTEN 0      4096      127.0.0.54:53         0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:46207      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:46851      0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:18000      0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:18080      0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:19090      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:41685      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:42481      0.0.0.0:*   \nLISTEN 0      4096       127.0.0.1:37397      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:36071      0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:33149      0.0.0.0:*   \nLISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:5000       0.0.0.0:*   \nLISTEN 0      128        127.0.0.1:32600      0.0.0.0:*   \nLISTEN 0      1024       127.0.0.1:32401      0.0.0.0:*   \nLISTEN 0      4096         0.0.0.0:111        0.0.0.0:*   \nLISTEN 0      4096         0.0.0.0:22         0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:1984       0.0.0.0:*   \nLISTEN 0      4096         0.0.0.0:9001       0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:8971       0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:8555       0.0.0.0:*   \nLISTEN 0      4096     10.10.50.30:8554       0.0.0.0:*   \nLISTEN 0      1024               *:32400            *:*   \nLISTEN 0      4096            [::]:111           [::]:*   \nLISTEN 0      4096            [::]:22            [::]:*   \nLISTEN 0      4096            [::]:9001          [::]:*   \n"
+    },
+    {
+      "argv": [
+        "ps",
+        "-u",
+        "1002",
+        "-o",
+        "pid,ppid,pgid,comm"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "    PID    PPID    PGID COMMAND\n 922708 2590788  922708 codex\n1630949 2575907 1630949 at-spi-bus-laun\n1668647 2591960 1668647 codex\n1678804 2591960 1678804 codex\n2575907       1 2575907 systemd\n2575912 2575907 2575907 (sd-pam)\n2575950 2575907 2575950 rootlesskit\n2575963 2575950 2575950 exe\n2575996 2575950 2575950 slirp4netns\n2576004 2575963 2575950 dockerd\n2576041 2576004 2576041 containerd\n2590788 2590360 2590788 bash\n2591960       1 2591960 codex\n2730359 1678804 2730359 codex-code-mode\n2992159 1678804 2992159 bash\n2992174 2992159 2992174 timeout\n2992175 2992174 2992174 python\n2992685 2992175 2992174 ps\n3229629 2575907 3229629 dbus-daemon\n3570576 2591960 3570576 codex\n4034910 2591960 4034910 codex\n"
+    }
+  ],
+  "runtime_attempts": 0,
+  "starting_commit": "de434540998587f105b720d1477133c8deb57b4a",
+  "status": "PASS_OFFLINE_PREFLIGHT_NO_RUNTIME_STARTED"
+}

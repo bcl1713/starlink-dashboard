@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "host": "forge",
+  "host_pid1": "systemd",
+  "task_process_survivors": [],
+  "compose_resources": {
+    "perf391-preflight-contract/containers": "",
+    "perf391-preflight-contract/networks": "",
+    "perf391-preflight-contract/volumes": "",
+    "perf391-smoke-408-a/containers": "",
+    "perf391-smoke-408-a/networks": "",
+    "perf391-smoke-408-a/volumes": "",
+    "perf391-smoke-408-c/containers": "",
+    "perf391-smoke-408-c/networks": "",
+    "perf391-smoke-408-c/volumes": ""
+  },
+  "ports_38080_38083_38180_38183_free": true,
+  "scratch_removed": "/tmp/perf391-python-preflight",
+  "private_venvs_and_wheels_removed": true,
+  "resources_started": false,
+  "worktree_retained_for_review": true
+}

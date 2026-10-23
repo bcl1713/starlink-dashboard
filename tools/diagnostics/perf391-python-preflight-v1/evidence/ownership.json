@@ -1,0 +1,1 @@
+{"task":"perf391-python-preflight","scratch":"/tmp/perf391-python-preflight","worktree":".worktrees/perf391-python-preflight","branch":"diag/perf391-python-preflight","runtime_resources_started":false,"compose_project":"perf391-preflight-contract (config only)","process_policy":"foreground commands with bounded timeout; no background workers"}

@@ -1,0 +1,21 @@
+{
+  "python": "3.11.16",
+  "PYTHONPATH": "unset",
+  "PYTHONNOUSERSITE": "1",
+  "command": [
+    "timeout",
+    "--kill-after=10s",
+    "5m",
+    "env",
+    "-u",
+    "PYTHONPATH",
+    "PYTHONNOUSERSITE=1",
+    "/tmp/perf391-python-preflight/venv/bin/python",
+    "-B",
+    "tools/diagnostics/perf391-python-preflight-v1/run-preflight.py"
+  ],
+  "exit_code": 0,
+  "runtime_attempts": 0,
+  "a_executions": 0,
+  "c_executions": 0
+}
