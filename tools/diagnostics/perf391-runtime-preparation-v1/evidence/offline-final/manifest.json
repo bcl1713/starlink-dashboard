@@ -1,0 +1,342 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "475122"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 475122,
+      "start_id": "211813315"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "476459"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 476459,
+      "start_id": "211815174"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "477843"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 477843,
+      "start_id": "211817055"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "477967"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 477967,
+      "start_id": "211817093"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "477976"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 477976,
+      "start_id": "211817095"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "477983"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 477983,
+      "start_id": "211817098"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "478012"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 478012,
+      "start_id": "211817144"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "478013"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 478013,
+      "start_id": "211817150"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "478061"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 478061,
+      "start_id": "211817156"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "478064"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 478064,
+      "start_id": "211817163"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/evidence/offline-final"
+  ],
+  "owner": {
+    "pgid": 475094,
+    "pid": 475117,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "211813308"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py",
+        "--output",
+        "/tmp/perf391-runtime-prep-408-final1"
+      ],
+      "pgid": 475122,
+      "pid": 475122,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211813315",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py",
+        "--output",
+        "/tmp/perf391-runtime-prep-408-final2"
+      ],
+      "pgid": 476459,
+      "pid": 476459,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211815174",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/test_preparation.py"
+      ],
+      "pgid": 477843,
+      "pid": 477843,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817055",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "node",
+        "--check",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs"
+      ],
+      "pgid": 477967,
+      "pid": 477967,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817093",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "node",
+        "--check",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/vite.perf391.mjs"
+      ],
+      "pgid": 477976,
+      "pid": 477976,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817095",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "node",
+        "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/typescript/bin/tsc",
+        "-p",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/evidence/offline-final/typecheck/tsconfig.json"
+      ],
+      "pgid": 477983,
+      "pid": 477983,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817098",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/launcher.py",
+        "--role",
+        "A",
+        "--plan",
+        "/tmp/perf391-runtime-prep-408-final1/runtime-build-plan.json",
+        "--root",
+        "/tmp/perf391-smoke-408-a"
+      ],
+      "pgid": 478012,
+      "pid": 478012,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817144",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-prep-408",
+        "-f",
+        "/tmp/perf391-runtime-prep-408-final1/A.compose.base.json",
+        "-f",
+        "/tmp/perf391-runtime-prep-408-final1/A.compose.override.json",
+        "config",
+        "--format",
+        "json"
+      ],
+      "pgid": 478013,
+      "pid": 478013,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817150",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/launcher.py",
+        "--role",
+        "C",
+        "--plan",
+        "/tmp/perf391-runtime-prep-408-final1/runtime-build-plan.json",
+        "--root",
+        "/tmp/perf391-smoke-408-c"
+      ],
+      "pgid": 478061,
+      "pid": 478061,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817156",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-prep-408",
+        "-f",
+        "/tmp/perf391-runtime-prep-408-final1/C.compose.base.json",
+        "-f",
+        "/tmp/perf391-runtime-prep-408-final1/C.compose.override.json",
+        "config",
+        "--format",
+        "json"
+      ],
+      "pgid": 478064,
+      "pid": 478064,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211817163",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-prep408",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "scope": "offline preparation checks"
+  },
+  "status": "clean",
+  "streams": [],
+  "temporary_paths": [
+    "/tmp/perf391-runtime-prep-408-final1",
+    "/tmp/perf391-runtime-prep-408-final2"
+  ],
+  "temporary_paths_remaining": [],
+  "version": 1,
+  "volumes": []
+}

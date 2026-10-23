@@ -1,0 +1,15 @@
+test_asset_changes_extras_and_symlinks_fail (__main__.PreparationTests.test_asset_changes_extras_and_symlinks_fail) ... ok
+test_both_launch_plans_are_isolated_bounded_and_five_samples (__main__.PreparationTests.test_both_launch_plans_are_isolated_bounded_and_five_samples) ... ok
+test_compiled_probe_absence_fails_even_with_rehashed_file (__main__.PreparationTests.test_compiled_probe_absence_fails_even_with_rehashed_file) ... ok
+test_exact_derivative_identities_and_unbuilt_claims (__main__.PreparationTests.test_exact_derivative_identities_and_unbuilt_claims) ... ok
+test_full_frozen_release_and_runtime_overlay (__main__.PreparationTests.test_full_frozen_release_and_runtime_overlay) ... ok
+test_offline_launcher_refuses_execution_without_reading_plan (__main__.PreparationTests.test_offline_launcher_refuses_execution_without_reading_plan) ... ok
+test_overlay_drift_and_existing_root_fail (__main__.PreparationTests.test_overlay_drift_and_existing_root_fail) ... ok
+test_proposed_python_is_syntax_only (__main__.PreparationTests.test_proposed_python_is_syntax_only) ... ok
+test_synthetic_receipt_fixture_is_accepted_offline (__main__.PreparationTests.test_synthetic_receipt_fixture_is_accepted_offline) ... ok
+test_wrong_role_collector_plan_or_node_fails (__main__.PreparationTests.test_wrong_role_collector_plan_or_node_fails) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.302s
+
+OK

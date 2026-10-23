@@ -1,0 +1,54 @@
+{
+  "assessment": "ready for preparation-only checkpoint",
+  "dispositions": [
+    {
+      "finding": "64-artifact capacity incompatible with continuous five-panel30sample capture",
+      "resolution": "five source/host samples, ordinary synthetic one-panel preference, first browser evidence slice, early admission close, unchanged capacity and fail-closed loss gates"
+    },
+    {
+      "finding": "feature worktree lacks Playwright installation",
+      "resolution": "receipt specifies exact reviewed installation/executable paths; dry-run unavailable markers cannot execute"
+    },
+    {
+      "finding": "actual Node/Chromium identities not bound",
+      "resolution": "executor verifies actual binary hashes/version and full Playwright/Chromium tree against receipt"
+    },
+    {
+      "finding": "local asset hashes not bound to executed image",
+      "resolution": "future stopped owned frontend container extraction re-verifies all asset bytes against exact image ID"
+    },
+    {
+      "finding": "mutable runtime overlay unchecked",
+      "resolution": "executor and analysis recheck complete reviewed overlay inventory/hash"
+    },
+    {
+      "finding": "old same-role evidence could be paired with a new receipt",
+      "resolution": "analysis verifies owner plan/receipt hashes, role/run/launch images, successful runtime result and clean host audit"
+    },
+    {
+      "finding": "phase presence did not require request correlation",
+      "resolution": "analysis requires explicit successful joined backend/browser/history-retention/plot request"
+    },
+    {
+      "finding": "analysis helpers could drift",
+      "resolution": "analysis rechecks full frozen release/tested source before importing results"
+    }
+  ],
+  "remaining_critical": 0,
+  "remaining_important": 0,
+  "reviewed_overlay_sha256": "5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c",
+  "reviewer": "independent read-only subagent /root/runtime_prep_review",
+  "runtime_executed": false,
+  "schema": "perf391-preparation-review-v1",
+  "scope": "source/design/retained offline evidence only",
+  "unqualified": [
+    "actual builds",
+    "real browser behavior/disposal",
+    "runtime evidence capacity",
+    "pixels",
+    "packet capture",
+    "probe overhead",
+    "performance",
+    "production acceptance"
+  ]
+}

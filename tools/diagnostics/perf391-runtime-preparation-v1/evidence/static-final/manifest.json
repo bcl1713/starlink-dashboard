@@ -1,0 +1,131 @@
+{
+  "adopted_processes": [],
+  "adopted_survivors": [],
+  "budgets": {
+    "adopted_processes": 256,
+    "body_bytes": 2097152,
+    "callback_seconds": 5,
+    "callbacks": 16,
+    "disk_bytes": 268435456,
+    "processes": 16,
+    "queue_bytes": 8388608,
+    "queue_events": 4096,
+    "shutdown_seconds": 240,
+    "streams": 4096
+  },
+  "cleanup_commands": [
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "494049"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 494049,
+      "start_id": "211839368"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "494074"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 494074,
+      "start_id": "211839399"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "--",
+        "494097"
+      ],
+      "guard": "verify PID namespace, PGID and start_id before signal; reap via owner",
+      "pid": 494097,
+      "start_id": "211839401"
+    }
+  ],
+  "compose_project": null,
+  "containers": [],
+  "errors": [],
+  "exclusive_subreaper": true,
+  "listeners": [],
+  "networks": [],
+  "output_directories": [
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/evidence/static-final"
+  ],
+  "owner": {
+    "pgid": 494043,
+    "pid": 494044,
+    "pid_namespace": "pid:[4026531836]",
+    "start_id": "211839362"
+  },
+  "processes": [
+    {
+      "actions": [],
+      "command": [
+        "node",
+        "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/README.md",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-runtime.ts",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/vite.perf391.mjs",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/runtime-receipt-schema.json"
+      ],
+      "pgid": 494049,
+      "pid": 494049,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211839368",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/.cache/uv/archive-v0/tAvvkPZJiX0Hg11D/ruff-0.16.8.data/scripts/ruff",
+        "check",
+        "--no-cache",
+        "--select",
+        "E4,E7,E9,F",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1"
+      ],
+      "pgid": 494074,
+      "pid": 494074,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211839399",
+      "status": "stopped",
+      "survivors": []
+    },
+    {
+      "actions": [],
+      "command": [
+        "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/bin/python3.11",
+        "-B",
+        "-c",
+        "import black; from pathlib import Path; p=Path('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1'); files=list(p.glob(\"*.py\")); assert all(black.format_str(f.read_text(),mode=black.Mode())==f.read_text() for f in files); print(str(len(files))+\" files match Black API formatting; no worker pool\")"
+      ],
+      "pgid": 494097,
+      "pid": 494097,
+      "reaped": true,
+      "returncode": 0,
+      "start_id": "211839401",
+      "status": "stopped",
+      "survivors": []
+    }
+  ],
+  "run_id": "synthetic-static408",
+  "schema": "perf391-collection-owner-v1",
+  "sources": {
+    "scope": "static checks only"
+  },
+  "status": "clean",
+  "streams": [],
+  "version": 1,
+  "volumes": []
+}

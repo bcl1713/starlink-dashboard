@@ -1,0 +1,145 @@
+[
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py",
+      "--output",
+      "/tmp/perf391-runtime-prep-408-final1"
+    ],
+    "exit": 0,
+    "log": "check-00.log",
+    "status": "passed",
+    "wall_limit_seconds": 120
+  },
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py",
+      "--output",
+      "/tmp/perf391-runtime-prep-408-final2"
+    ],
+    "exit": 0,
+    "log": "check-01.log",
+    "status": "passed",
+    "wall_limit_seconds": 120
+  },
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/test_preparation.py"
+    ],
+    "exit": 0,
+    "log": "check-02.log",
+    "status": "passed",
+    "wall_limit_seconds": 30
+  },
+  {
+    "argv": [
+      "node",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs"
+    ],
+    "exit": 0,
+    "log": "check-03.log",
+    "status": "passed",
+    "wall_limit_seconds": 10
+  },
+  {
+    "argv": [
+      "node",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/vite.perf391.mjs"
+    ],
+    "exit": 0,
+    "log": "check-04.log",
+    "status": "passed",
+    "wall_limit_seconds": 10
+  },
+  {
+    "argv": [
+      "node",
+      "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/typescript/bin/tsc",
+      "-p",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/evidence/offline-final/typecheck/tsconfig.json"
+    ],
+    "exit": 0,
+    "log": "check-05.log",
+    "status": "passed",
+    "wall_limit_seconds": 30
+  },
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/launcher.py",
+      "--role",
+      "A",
+      "--plan",
+      "/tmp/perf391-runtime-prep-408-final1/runtime-build-plan.json",
+      "--root",
+      "/tmp/perf391-smoke-408-a"
+    ],
+    "exit": 0,
+    "log": "check-06.log",
+    "status": "passed",
+    "wall_limit_seconds": 10
+  },
+  {
+    "argv": [
+      "docker",
+      "compose",
+      "-p",
+      "perf391-prep-408",
+      "-f",
+      "/tmp/perf391-runtime-prep-408-final1/A.compose.base.json",
+      "-f",
+      "/tmp/perf391-runtime-prep-408-final1/A.compose.override.json",
+      "config",
+      "--format",
+      "json"
+    ],
+    "exit": 0,
+    "log": "check-07.log",
+    "status": "passed",
+    "wall_limit_seconds": 10
+  },
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/launcher.py",
+      "--role",
+      "C",
+      "--plan",
+      "/tmp/perf391-runtime-prep-408-final1/runtime-build-plan.json",
+      "--root",
+      "/tmp/perf391-smoke-408-c"
+    ],
+    "exit": 0,
+    "log": "check-08.log",
+    "status": "passed",
+    "wall_limit_seconds": 10
+  },
+  {
+    "argv": [
+      "docker",
+      "compose",
+      "-p",
+      "perf391-prep-408",
+      "-f",
+      "/tmp/perf391-runtime-prep-408-final1/C.compose.base.json",
+      "-f",
+      "/tmp/perf391-runtime-prep-408-final1/C.compose.override.json",
+      "config",
+      "--format",
+      "json"
+    ],
+    "exit": 0,
+    "log": "check-09.log",
+    "status": "passed",
+    "wall_limit_seconds": 10
+  }
+]

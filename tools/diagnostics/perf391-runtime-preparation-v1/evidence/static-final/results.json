@@ -1,0 +1,35 @@
+[
+  {
+    "argv": [
+      "node",
+      "/home/oracle-worker/Work/starlink-dashboard/frontend/mission-planner/node_modules/prettier/bin/prettier.cjs",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/README.md",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-runtime.ts",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/vite.perf391.mjs",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/runtime-receipt-schema.json"
+    ],
+    "exit": 0
+  },
+  {
+    "argv": [
+      "/home/oracle-worker/.cache/uv/archive-v0/tAvvkPZJiX0Hg11D/ruff-0.16.8.data/scripts/ruff",
+      "check",
+      "--no-cache",
+      "--select",
+      "E4,E7,E9,F",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1"
+    ],
+    "exit": 0
+  },
+  {
+    "argv": [
+      "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/bin/python3.11",
+      "-B",
+      "-c",
+      "import black; from pathlib import Path; p=Path('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1'); files=list(p.glob(\"*.py\")); assert all(black.format_str(f.read_text(),mode=black.Mode())==f.read_text() for f in files); print(str(len(files))+\" files match Black API formatting; no worker pool\")"
+    ],
+    "exit": 0
+  }
+]

@@ -1,0 +1,361 @@
+{
+  "browser_options": {
+    "browserPort": 38183,
+    "chromiumExecutable": "UNAVAILABLE_REVIEWED_CHROMIUM",
+    "nodeRoot": "UNAVAILABLE_REVIEWED_PLAYWRIGHT_ROOT",
+    "origin": "http://127.0.0.1:38180",
+    "output": "/tmp/perf391-smoke-408-c/browser",
+    "run": "synthetic-408c",
+    "samples": 5,
+    "source": "http://127.0.0.1:38181/api/_diagnostic/state"
+  },
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "/tmp/perf391-runtime-prep-408-final1/C/tools/acceptance/overview_history/seed.py",
+        "--output",
+        "/tmp/perf391-smoke-408-c/history.openmetrics",
+        "--end",
+        "FUTURE_UTC_SECONDS_MINUS_20"
+      ],
+      "phase": "seed-file",
+      "seconds": 3
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-c",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.override.json",
+        "run",
+        "--rm",
+        "--no-deps",
+        "--name",
+        "perf391-smoke-408-c-seed",
+        "--entrypoint",
+        "/bin/promtool",
+        "prometheus",
+        "tsdb",
+        "create-blocks-from",
+        "openmetrics",
+        "/seed/history.openmetrics",
+        "/prometheus"
+      ],
+      "phase": "seed-tsdb",
+      "seconds": 7
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-c",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.override.json",
+        "up",
+        "-d",
+        "--no-build",
+        "--pull",
+        "never",
+        "--wait",
+        "--wait-timeout",
+        "16",
+        "prometheus",
+        "starlink-location"
+      ],
+      "phase": "start-backend-prometheus",
+      "seconds": 18
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-c",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.override.json",
+        "up",
+        "-d",
+        "--no-build",
+        "--pull",
+        "never",
+        "--no-deps",
+        "mission-planner"
+      ],
+      "phase": "start-nginx",
+      "seconds": 2
+    },
+    {
+      "argv": [
+        "REVIEWED_NODE_22_22_2",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-runtime-prep/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+        "/tmp/perf391-smoke-408-c/browser-options.json"
+      ],
+      "phase": "browser-and-source",
+      "seconds": 35
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-c",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.override.json",
+        "stop",
+        "-t",
+        "6",
+        "starlink-location"
+      ],
+      "phase": "stop-backend",
+      "seconds": 8
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-c",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.override.json",
+        "cp",
+        "starlink-location:/app/data/perf391/.",
+        "/tmp/perf391-smoke-408-c/backend"
+      ],
+      "phase": "copy-final-backend",
+      "seconds": 3
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "-p",
+        "perf391-smoke-408-c",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.base.json",
+        "-f",
+        "/tmp/perf391-smoke-408-c/compose.override.json",
+        "down",
+        "--volumes",
+        "--remove-orphans",
+        "--timeout",
+        "2"
+      ],
+      "phase": "cleanup",
+      "seconds": 10
+    }
+  ],
+  "compose": {
+    "base": {
+      "networks": {
+        "default": {
+          "internal": true
+        }
+      },
+      "services": {
+        "mission-planner": {
+          "image": "${PERF391_FRONTEND_IMAGE:?reviewed immutable diagnostic image required}",
+          "pull_policy": "never"
+        },
+        "prometheus": {
+          "image": "prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+          "pull_policy": "never"
+        },
+        "starlink-location": {
+          "image": "${PERF391_BACKEND_IMAGE:?reviewed immutable diagnostic image required}",
+          "pull_policy": "never"
+        }
+      },
+      "volumes": {
+        "data": {},
+        "metrics": {},
+        "routes": {}
+      }
+    },
+    "override": {
+      "services": {
+        "mission-planner": {
+          "cpus": 0.5,
+          "depends_on": {
+            "starlink-location": {
+              "condition": "service_healthy"
+            }
+          },
+          "init": true,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "256m",
+          "pids_limit": 64,
+          "ports": [
+            "127.0.0.1:${PERF391_FRONTEND_PORT}:80"
+          ],
+          "restart": "no",
+          "stop_grace_period": "8s"
+        },
+        "prometheus": {
+          "command": [
+            "--config.file=/etc/prometheus/prometheus.yml",
+            "--storage.tsdb.retention.time=12h",
+            "--storage.tsdb.path=/prometheus"
+          ],
+          "cpus": 1,
+          "init": true,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "1g",
+          "pids_limit": 256,
+          "ports": [
+            "127.0.0.1:${PERF391_PROMETHEUS_PORT}:9090"
+          ],
+          "restart": "no",
+          "stop_grace_period": "8s",
+          "volumes": [
+            "metrics:/prometheus",
+            "${PERF391_CONTEXT}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+            "${PERF391_CONTEXT}/monitoring/prometheus/rules:/etc/prometheus/rules:ro",
+            "${PERF391_OUTPUT}/history.openmetrics:/seed/history.openmetrics:ro"
+          ]
+        },
+        "starlink-location": {
+          "cpus": 2,
+          "environment": {
+            "NO_PROXY": "prometheus,localhost,127.0.0.1",
+            "OPERATOR_ENABLED": "true",
+            "OPERATOR_SIMULATION_RUN_ID": "default",
+            "PERF391_ROLE": "C",
+            "PERF391_RUN": "${PERF391_RUN}",
+            "PERF_SYNTHETIC": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": "/diagnostic:/acceptance:/app",
+            "SIMULATION_MODE": "true",
+            "STARLINK_GROUND_ENTRY_LATITUDE": "0",
+            "STARLINK_GROUND_ENTRY_LONGITUDE": "0",
+            "STARLINK_MODE": "simulation",
+            "STARLINK_PROMETHEUS_URL": "http://prometheus:9090",
+            "STARLINK_ROUTE_LATITUDE_START": "0",
+            "STARLINK_ROUTE_LONGITUDE_START": "-10"
+          },
+          "healthcheck": {
+            "interval": "2s",
+            "retries": 15,
+            "start_period": "1s",
+            "test": [
+              "CMD",
+              "curl",
+              "--max-time",
+              "1",
+              "-f",
+              "http://localhost:8000/health"
+            ],
+            "timeout": "2s"
+          },
+          "init": true,
+          "logging": {
+            "driver": "local",
+            "options": {
+              "max-file": "1",
+              "max-size": "10m"
+            }
+          },
+          "mem_limit": "2g",
+          "pids_limit": 256,
+          "ports": [
+            "127.0.0.1:${PERF391_BACKEND_PORT}:8000"
+          ],
+          "restart": "no",
+          "stop_grace_period": "8s",
+          "volumes": [
+            "data:/app/data",
+            "routes:/data"
+          ]
+        }
+      }
+    }
+  },
+  "deadlines": {
+    "cleanup_by_seconds": 90,
+    "kill_grace_seconds": 10,
+    "outer_timeout_seconds": 90,
+    "work_seconds": 78
+  },
+  "env": {
+    "PERF391_BACKEND_IMAGE": "UNBUILT_BACKEND",
+    "PERF391_BACKEND_PORT": "38181",
+    "PERF391_CONTEXT": "/tmp/perf391-runtime-prep-408-final1/C",
+    "PERF391_FRONTEND_IMAGE": "UNBUILT_FRONTEND",
+    "PERF391_FRONTEND_PORT": "38180",
+    "PERF391_OUTPUT": "/tmp/perf391-smoke-408-c",
+    "PERF391_PROMETHEUS_PORT": "38182",
+    "PERF391_RUN": "synthetic-408c"
+  },
+  "hard_gates": [
+    "separate authorization",
+    "built receipt",
+    "Node engine floor",
+    "free ports then exclusive task lock",
+    "source/context/label/asset identity",
+    "host PID/cgroup mapping",
+    "zero loss and final summaries",
+    "no skipped source deadline; unchanged 1.5s cadence",
+    "no retry",
+    "verified cleanup before C"
+  ],
+  "mode": "dry_run",
+  "note": "Phase caps share a 78s work deadline, not additive extensions. Always reserve cleanup until 90s. Offline analysis follows shutdown.",
+  "ownership": {
+    "docker_containers": [
+      "perf391-smoke-408-c-seed",
+      "perf391-smoke-408-c-starlink-location-1",
+      "perf391-smoke-408-c-mission-planner-1",
+      "perf391-smoke-408-c-prometheus-1"
+    ],
+    "intent_before_spawn": true,
+    "networks": [
+      "perf391-smoke-408-c_default"
+    ],
+    "paths": [
+      "/tmp/perf391-smoke-408-c"
+    ],
+    "pid_pgid_start_id_and_command_required": true,
+    "ports": [
+      38180,
+      38181,
+      38182,
+      38183
+    ],
+    "volumes": [
+      "perf391-smoke-408-c_data",
+      "perf391-smoke-408-c_routes",
+      "perf391-smoke-408-c_metrics"
+    ]
+  },
+  "project": "perf391-smoke-408-c",
+  "role": "C",
+  "root": "/tmp/perf391-smoke-408-c",
+  "runtime_authorized": false,
+  "schema": "perf391-proposed-launch-v1",
+  "serial_phase_upper_bound_seconds": 86
+}

@@ -1,0 +1,76 @@
+{
+  "clean": true,
+  "docker": {
+    "perf391-prep-408": {
+      "containers": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      },
+      "networks": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      },
+      "volumes": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      }
+    },
+    "perf391-smoke-408-a": {
+      "containers": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      },
+      "networks": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      },
+      "volumes": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      }
+    },
+    "perf391-smoke-408-c": {
+      "containers": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      },
+      "networks": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      },
+      "volumes": {
+        "exit": 0,
+        "ids": [],
+        "stderr": ""
+      }
+    }
+  },
+  "listeners": [],
+  "owner_statuses": {
+    "offline-final": "clean",
+    "static-final": "clean"
+  },
+  "primary_checkout": "## dev...origin/dev",
+  "process_survivors": [],
+  "schema": "perf391-preparation-cleanup-v1",
+  "task_command_survivors": [],
+  "temporary_paths": {
+    "/tmp/perf391-runtime-prep-408-final1": false,
+    "/tmp/perf391-runtime-prep-408-final2": false,
+    "/tmp/perf391-runtime-prep-408-offline": false,
+    "/tmp/perf391-smoke-408-a": false,
+    "/tmp/perf391-smoke-408-c": false,
+    "/tmp/perf391-smoke-408.lock": false
+  },
+  "test_temporary_paths": [],
+  "utc": "2026-10-23T00:58:27Z",
+  "verified_pid_start_identities": 15
+}

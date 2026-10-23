@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Built diagnostic receipt; never a Stage 5 unbuilt manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "role",
+    "plan_sha256",
+    "images",
+    "assets",
+    "asset_root",
+    "dependencies",
+    "browser"
+  ],
+  "properties": {
+    "schema": {
+      "const": "perf391-runtime-receipt-v1"
+    },
+    "role": {
+      "enum": ["A", "C"]
+    },
+    "plan_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "asset_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend", "frontend"],
+      "properties": {
+        "backend": {
+          "$ref": "#/$defs/image"
+        },
+        "frontend": {
+          "$ref": "#/$defs/image"
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "minProperties": 3,
+      "additionalProperties": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_freeze_sha256",
+        "npm_lock_sha256",
+        "os_packages_sha256",
+        "browser_tree_sha256"
+      ],
+      "properties": {
+        "python_freeze_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "npm_lock_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "os_packages_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "browser_tree_sha256": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "playwright",
+        "chromium_sha256",
+        "node_sha256",
+        "node_version",
+        "playwright_root",
+        "chromium_executable"
+      ],
+      "properties": {
+        "playwright": {
+          "const": "1.63.0"
+        },
+        "chromium_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "node_sha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "node_version": {
+          "type": "string",
+          "pattern": "^22\\.[0-9]+\\.[0-9]+$"
+        },
+        "playwright_root": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "chromium_executable": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "labels", "repo_digests"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "repo_digests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

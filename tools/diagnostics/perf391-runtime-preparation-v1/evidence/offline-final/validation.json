@@ -1,0 +1,16 @@
+{
+  "browsers_launched": false,
+  "compose_configurations": 2,
+  "fixture_receipts": "synthetic only; no image identity certification",
+  "frozen_files": 621,
+  "frozen_source_entries": 97,
+  "images_built": false,
+  "manifest_sha256_before_reporting_format": "8537bddee63b76d65f08548d447fbc93f42dfbe919b09f4fc9826d4e128954d5",
+  "node_syntax_files": 2,
+  "passed": true,
+  "runtime_executed": false,
+  "schema": "perf391-runtime-offline-validation-v1",
+  "tests": 10,
+  "two_build_plans_byte_identical": true,
+  "typescript_no_emit": true
+}
