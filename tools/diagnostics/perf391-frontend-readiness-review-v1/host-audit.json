@@ -1,0 +1,58 @@
+{
+  "actor_uid": 1002,
+  "clean": true,
+  "clock_ticks_per_second": 100,
+  "cwd_unreadable": [
+    2575907,
+    2575912
+  ],
+  "docker": {
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "docker_context": "default",
+  "docker_security_options": [
+    "name=seccomp,profile=builtin",
+    "name=rootless",
+    "name=cgroupns"
+  ],
+  "historical_process_identities_checked": 23,
+  "images": {
+    "A-backend": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "A-frontend": "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "C-backend": "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "C-frontend": "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+  },
+  "listeners": [],
+  "pid_namespace": "pid:[4026531836]",
+  "ports_checked": [
+    38080,
+    38081,
+    38082,
+    38083,
+    38180,
+    38181,
+    38182,
+    38183
+  ],
+  "process_scan_scope": "recorded historical identities and actor UID 1002 processes",
+  "process_survivors": [],
+  "source_sha256": {
+    "perf391-a-approved-smoke-v1/evidence/executor-launch-A.json": "26bcc96656550768d74498ea3dd795d6ef0d17a43ad9ef6505e31d838272b6d6",
+    "perf391-diagnostic-integration-v1/owner.py": "b1c2f65c4179b9a60751c6e3eb7709ab81a4379a33d102282e986d506ccd2511",
+    "perf391-runtime-preparation-v1/browser-owner.proposed.mjs": "885a11a55bb76de21d75d885928ec2b60037f0b4e7525234968c44c181d41bb0",
+    "perf391-runtime-preparation-v1/execute.proposed.py": "92736fd1805d9f140853dcc070e33106362ebd7f321c454f22c68850f6ec0fe8",
+    "perf391-runtime-preparation-v1/launcher.py": "f202e79fc31add067c5c76b43bce6834f87685afc4a5444dffaaf5ddf04ec7c4"
+  },
+  "task_runtime_resources_started": [],
+  "temporary_paths_present": [],
+  "utc": "2026-10-23T10:21:58Z"
+}
