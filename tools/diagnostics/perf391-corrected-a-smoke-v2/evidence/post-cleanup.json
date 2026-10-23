@@ -1,0 +1,50 @@
+{
+  "cleanup_verified": true,
+  "commands": [
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "exit": 0,
+      "stdout": ""
+    }
+  ],
+  "paths_absent": [
+    "/tmp/perf391-corrected-a-smoke-20261023",
+    "/tmp/perf391-corrected-a-preflight",
+    "/tmp/perf391-smoke-408-a",
+    "/tmp/perf391-smoke-408.lock"
+  ],
+  "pid1": "systemd",
+  "task_ports": [],
+  "task_processes": [],
+  "utc": "2026-10-23T19:13:03Z"
+}

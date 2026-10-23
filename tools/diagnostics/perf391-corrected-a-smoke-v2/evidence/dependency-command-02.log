@@ -1,0 +1,10 @@
+Using Python 3.11.16 environment at: /tmp/perf391-corrected-a-smoke-20261023/venv
+Resolved 6 packages in 0.54ms
+Prepared 6 packages in 4ms
+Installed 6 packages in 1ms
+ + attrs==26.1.0
+ + jsonschema==4.19.2
+ + jsonschema-specifications==2025.9.1
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + typing-extensions==4.16.0

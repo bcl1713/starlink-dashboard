@@ -1,0 +1,40 @@
+{
+  "all_differences_exact_worktree_prefix_relocation": true,
+  "binding_factory_called": false,
+  "context_regenerations": 0,
+  "differences": [
+    {
+      "path": "/commands/4/argv/1",
+      "regenerated": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs",
+      "retained": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs"
+    },
+    {
+      "path": "/corrected_identity/build_plan",
+      "regenerated": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-images-v2/evidence/corrected-build-plan.json",
+      "retained": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-images-v2/evidence/corrected-build-plan.json"
+    },
+    {
+      "path": "/corrected_identity/executor_adapter",
+      "regenerated": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-runtime-v2/binding.py:bound_executor",
+      "retained": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-a-runtime-v2/binding.py:bound_executor"
+    },
+    {
+      "path": "/corrected_identity/lineage",
+      "regenerated": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-images-v2/evidence/built-A.v2.json",
+      "retained": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-images-v2/evidence/built-A.v2.json"
+    },
+    {
+      "path": "/corrected_identity/receipt",
+      "regenerated": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-images-v2/evidence/built-A.compat-v1.json",
+      "retained": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-images-v2/evidence/built-A.compat-v1.json"
+    }
+  ],
+  "failed_check": "verify.py:20 assert compile_launch() == launch",
+  "historical_evidence_modified": false,
+  "identity_guard_modified": false,
+  "note": "The additional retained-artifact verifier was run in a new worktree. Its launch comparator is tied to the prior worktree. No conclusion that the bound executor is defective or cannot activate is supported.",
+  "reason_code": "RETAINED_LAUNCH_ABSOLUTE_WORKTREE_PATH_MISMATCH",
+  "retained_launch_sha256": "f15d657727bd029e54233e783cfa1acdf18f6889c7180f9dba4158c4182ce0e2",
+  "runtime_invocations": 0,
+  "scope": "read-only diagnosis after STOP; not a preflight retry"
+}

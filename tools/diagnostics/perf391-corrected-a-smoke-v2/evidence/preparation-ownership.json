@@ -1,0 +1,104 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "uv",
+        "venv",
+        "--python",
+        "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/bin/python3.11",
+        "/tmp/perf391-corrected-a-smoke-20261023/venv"
+      ],
+      "exit": 0,
+      "pgid": 877349,
+      "pid": 877349,
+      "start_identity": "877349 (timeout) R 877316 877349 877349 0 -1 4194304 20 0 0 0 0 0 0 0 20 0 1 0 218407374 12247040 95 18446744073709551615 102360834785280 102360839828461 140733029141840 0 0 0 0 0 0 0 0 0 17 15 0 0 0 0 0 102360844102128 102360845590392 102361843777536 140733029145980 140733029146162 140733029146162 140733029150695 0\n",
+      "state": "exited"
+    },
+    {
+      "argv": [
+        "uv",
+        "pip",
+        "sync",
+        "--python",
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+        "--offline",
+        "--no-index",
+        "--find-links",
+        "/tmp/perf391-corrected-a-smoke-20261023/wheels",
+        "--require-hashes",
+        "--only-binary",
+        ":all:",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-python-preflight-v1/requirements.lock"
+      ],
+      "exit": 0,
+      "pgid": 877354,
+      "pid": 877354,
+      "start_identity": "877354 (timeout) R 877316 877354 877354 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218407378 12238848 44 18446744073709551615 107200703074304 107200708117485 140735407606096 0 0 0 0 0 0 0 0 0 17 0 0 0 0 0 0 107200712391152 107200713879416 107201494630400 140735407615160 140735407615538 140735407615538 140735407620071 0\n",
+      "state": "exited"
+    },
+    {
+      "argv": [
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+        "-B",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-python-preflight-v1/verify-environment.py"
+      ],
+      "exit": 0,
+      "pgid": 877384,
+      "pid": 877384,
+      "start_identity": "877384 (timeout) R 877316 877384 877384 0 -1 4194304 15 0 0 0 0 0 0 0 20 0 1 0 218407383 12238848 44 18446744073709551615 105898469101568 105898474144749 140720663159328 0 0 0 0 0 0 0 0 0 17 18 0 0 0 0 0 105898478418416 105898479906680 105899321511936 140720663166268 140720663166514 140720663166514 140720663171047 0\n",
+      "state": "exited"
+    },
+    {
+      "argv": [
+        "uv",
+        "pip",
+        "check",
+        "--python",
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python"
+      ],
+      "exit": 0,
+      "pgid": 877407,
+      "pid": 877407,
+      "start_identity": "877407 (timeout) R 877316 877407 877407 0 -1 4194304 11 0 0 0 0 0 0 0 20 0 1 0 218407402 12238848 42 18446744073709551615 108830704185344 108830709228525 140723099711632 0 0 0 0 0 0 0 0 0 17 9 0 0 0 0 0 108830713502192 108830714990456 108831462150144 140723099712967 140723099713074 140723099713074 140723099717607 0\n",
+      "state": "exited"
+    },
+    {
+      "argv": [
+        "/tmp/perf391-corrected-a-smoke-20261023/venv/bin/python",
+        "-B",
+        "-c",
+        "import importlib.metadata as m,json,zipfile\nfrom pathlib import Path\nfor row in json.loads(Path('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/evidence/wheels.json').read_bytes()):\n d=m.distribution(row['name'])\n with zipfile.ZipFile(Path('/tmp/perf391-corrected-a-smoke-20261023/wheels')/row['filename']) as z:\n  for f in d.files:\n   s=str(f)\n   if s in z.namelist() and not s.endswith('/RECORD'):assert d.locate_file(f).read_bytes()==z.read(s),s\nprint('PASS: all six installed payloads match pinned wheel archives')"
+      ],
+      "exit": 0,
+      "pgid": 877411,
+      "pid": 877411,
+      "start_identity": "877411 (timeout) R 877316 877411 877411 0 -1 4194304 20 0 0 0 0 0 0 0 20 0 1 0 218407403 12247040 84 18446744073709551615 105966849527808 105966854570989 140734874920000 0 0 0 0 0 0 0 0 0 17 2 0 0 0 0 0 105966858844656 105966860332920 105967633813504 140734874925942 140734874926642 140734874926642 140734874931175 0\n",
+      "state": "exited"
+    }
+  ],
+  "compose_project": "perf391-smoke-408-a",
+  "context_root": "/tmp/perf391-corrected-a-preflight",
+  "extraction_containers": [
+    "perf391-corrected-a-preflight-frontend",
+    "perf391-corrected-a-preflight-backend",
+    "perf391-smoke-408-a-assets"
+  ],
+  "lock": "/tmp/perf391-smoke-408.lock",
+  "pgid": 877315,
+  "pid": 877316,
+  "ports": [
+    38080,
+    38081,
+    38082,
+    38083
+  ],
+  "runtime_root": "/tmp/perf391-smoke-408-a",
+  "start_identity": "877316 (python3) R 877315 877315 877305 0 -1 4194304 3072 0 0 0 3 0 0 0 20 0 1 0 218407311 35323904 5703 18446744073709551615 4333568 8024065 140724634883552 0 0 0 0 16781312 2 0 0 0 17 17 0 0 0 0 0 11038136 11672456 354885632 140724634885708 140724634885789 140724634885789 140724634890215 0\n",
+  "temporary_root": "/tmp/perf391-corrected-a-smoke-20261023",
+  "utc": "2026-10-23T19:08:13Z",
+  "volumes": [
+    "perf391-smoke-408-a_data",
+    "perf391-smoke-408-a_routes",
+    "perf391-smoke-408-a_metrics"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "A_executor_invocations": 0,
+  "C_executor_invocations": 0,
+  "application_containers_started": 0,
+  "boundaries": {
+    "Forge_rootless_Docker_host_visibility_ports_headroom": "verified before STOP",
+    "HTTP_readiness_actual_browser_chart_chain_stable_Finish": "unavailable: NO_RUNTIME_STARTED",
+    "all_eight_daemon_image_configs_layers_tags": "verified during independent preservation/cleanup audit",
+    "backend_final_export_and_loss_accounting": "unavailable: NO_BACKEND_STARTED; no bounded export existed",
+    "bound_executor_activation": "not reached; no activation attempt",
+    "fresh_extracted_Node_Playwright_Chromium_identity": "not reached",
+    "private_CPython_3_11_16_six_wheels_payloads_native_functionality": "verified before STOP; environment now removed",
+    "regenerated_corrected_context_and_approved_three_layer_config": "not reached",
+    "retained_correction_receipts_lineage_assets_module_closure": "existing retained validator passed; see host-check-16.log",
+    "retained_launch_equality": "failed; exactly five absolute worktree-path differences",
+    "screenshot": "unavailable: NO_BROWSER_STARTED; zero attempts",
+    "source_host_final_stream_summaries": "unavailable: NO_OBSERVATION_STREAM_STARTED"
+  },
+  "browser_launches": 0,
+  "cleanup_verified": true,
+  "context_regenerations": 0,
+  "decision": "Honor first failed prerequisite STOP; no changes, retries, A activation or C. Stop for checkpoint review.",
+  "host_observations": 0,
+  "limits_unchanged": {
+    "forced_termination_grace_seconds": 10,
+    "host_samples": 5,
+    "max_bracketed_screenshot_attempts": 1,
+    "max_observer_cadence_seconds": 1.5,
+    "network_charts": 1,
+    "observation_hz": 1,
+    "outer_timeout_seconds": 90,
+    "source_samples": 5,
+    "work_seconds": 78
+  },
+  "no_claims": [
+    "functional diagnostic smoke pass",
+    "complete mandatory chart or backend evidence",
+    "zero runtime evidence loss",
+    "observer runtime cadence pass",
+    "corrected executor defect or inability to activate",
+    "paint or raw-wire provenance",
+    "calibration or performance acceptance"
+  ],
+  "preflight_attempts": 1,
+  "preserved_images": [
+    "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+    "sha256:87a2379218610bd64b4e9e332a0d1bd70ed3fabe673c0dee8c865950d5fc9747",
+    "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88",
+    "sha256:f3d62a630ea1c8be51a609b611a50d1e3725a7f2f8d83d530dea6ff78f3b9df5",
+    "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9",
+    "sha256:a703a9660e84b151e3e2ffa86c09c5b6d17c490bb4a34003d121c97e6fad5046",
+    "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec",
+    "sha256:ce18b80b76c60db365b77662317bac7c386f1173a97b3810839d41406dda8ed1"
+  ],
+  "private_environment_pass": true,
+  "reason_code": "RETAINED_LAUNCH_ABSOLUTE_WORKTREE_PATH_MISMATCH",
+  "runtime_gate_pass": false,
+  "screenshot_attempts": 0,
+  "source_observations": 0,
+  "starting_commit": "8c95eecb93fd5f37d9d6150008168682a5ba514d",
+  "status": "STOP_PREFLIGHT_NO_RUNTIME"
+}

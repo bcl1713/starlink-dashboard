@@ -1,0 +1,73 @@
+"""Call existing corrected offline validators; retain their exact generated context."""
+import asyncio, ctypes, json, os, shutil, socket, subprocess, sys, time
+from pathlib import Path
+HERE=Path(__file__).resolve().parent; E=HERE/'evidence'; REPO=HERE.parents[2]
+sys.path.insert(0,str(HERE.with_name('perf391-corrected-a-runtime-v2')))
+import preflight as p
+from binding import bound_executor, verify_binding, compile_launch
+p.E=E; p.forge.E=E
+report={'scope':'corrected A only; preflight; no services or browser launch','starting_commit':'8c95eecb93fd5f37d9d6150008168682a5ba514d','authorization':'https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6372603348','commands':[],'checks':{}}
+def save():p.prepare.write(E/'preflight.json',report)
+def command(argv,seconds=30):
+ raw=p.run(argv,'host-check-%02d'%len(report['commands']),seconds)
+ report['commands'].append({'argv':list(map(str,argv)),'output':raw.decode()});save();return raw.decode()
+assert not p.TASK.exists()
+p.prepare.write(E/'context-ownership.json',{'pid':os.getpid(),'pgid':os.getpgrp(),'start_identity':Path('/proc/self/stat').read_text(),'temporary_root':str(p.TASK),'runtime_resources':[],'containers':[p.OWNER+'-frontend',p.OWNER+'-backend']})
+try:
+ assert command(['hostname']).strip()=='forge'
+ assert Path('/proc/1/comm').read_text().strip()=='systemd'
+ assert command(['git','rev-parse','HEAD']).strip()==report['starting_commit']
+ assert os.environ.get('DOCKER_HOST')=='unix:///run/user/1002/docker.sock'
+ assert 'name=rootless' in json.loads(command(['docker','info','--format','{{json .SecurityOptions}}']))
+ command(['docker','context','show']);command(['docker','context','inspect','--format','{{.Endpoints.docker.Host}}']);command(['docker','compose','version'])
+ report['checks']['daemon']=command(['docker','info','--format','{{.Name}} {{.ServerVersion}} {{.Driver}} {{.NCPU}} {{.MemTotal}} {{.CgroupVersion}}']).strip()
+ report['checks']['process_visibility']={'pid1':Path('/proc/1/comm').read_text().strip(),'namespace':os.readlink('/proc/self/ns/pid'),'cgroup':Path('/proc/self/cgroup').read_text()}
+ report['checks']['headroom']={'disk_free_bytes':shutil.disk_usage('/tmp').free,'memory_available_bytes':int(next(x.split()[1] for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:')))*1024}
+ assert report['checks']['headroom']['disk_free_bytes']>4*1024**3
+ assert report['checks']['headroom']['memory_available_bytes']>6*1024**3
+ group=Path('/sys/fs/cgroup')/Path('/proc/self/cgroup').read_text().strip()[3:].lstrip('/')
+ report['checks']['cgroup_limits']={}
+ for parent in (group,*group.parents):
+  if parent==Path('/sys/fs'):break
+  for n in ('cpu.max','memory.max','memory.current','pids.max','pids.current'):
+   path=parent/n
+   if path.is_file():report['checks']['cgroup_limits'][str(path)]=path.read_text().strip()
+ for project in ('perf391-smoke-408-a','perf391-smoke-408-c','perf391-corrected-a-preflight'):
+  for argv in (['docker','ps','-aq'],['docker','network','ls','-q'],['docker','volume','ls','-q']):
+   assert not command([*argv,'--filter','label=com.docker.compose.project='+project]).strip()
+ for port in range(38080,38084):
+  with socket.socket() as s:s.bind(('127.0.0.1',port))
+ assert not Path('/tmp/perf391-smoke-408-a').exists() and not Path('/tmp/perf391-smoke-408.lock').exists()
+ # Read-only historical package validation before this invocation creates its context.
+ command([sys.executable,'-B',p.HERE/'verify.py'],180)
+ verify_binding();p.prepare.build.verify_collector_release(REPO)
+ p.TASK.mkdir()
+ p.regenerate();p.inspect_images();p.compile_and_render()
+ report['checks']['corrected_preflight']=p.report
+ receipt=p.read(p.RECEIPT)
+ assert 'not found' not in command(['ldd',receipt['browser']['chromium_executable']])
+ historical=Path(shutil.which('node')).resolve()
+ report['checks']['historical_node']={'sha256':p.prepare.sha(historical),'version':command([str(historical),'--version']).strip()}
+ assert report['checks']['historical_node']['sha256']=='177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9'
+ # Exercise existing Owner in host namespace, bounded by this runner's outer timeout.
+ assert ctypes.CDLL(None).prctl(36,1,0,0,0)==0
+ from owner import Owner,members,start_id
+ async def own():
+  owner=Owner(E/'prerequisite-owner',run='corrected-a-preflight',sources={},adopt_descendants=True)
+  child=None
+  try:
+   child=owner.spawn([sys.executable,'-c','import time; time.sleep(30)'])
+   report['checks']['process_prerequisite']={'pid':child.pid,'pgid':os.getpgid(child.pid),'start_id':start_id(child.pid)};save()
+  finally:result=await owner.close()
+  assert child.returncode is not None and result['status']=='clean' and not members(child.pid)
+  report['checks']['process_prerequisite'].update(child_reaped=True,group_absent=True,owner_status=result['status'])
+ asyncio.run(own())
+ module=bound_executor()
+ assert Path(module.execute.__code__.co_filename).resolve()==p.PREP/'execute.proposed.py'
+ assert module.launch_plan('A','/tmp/perf391-smoke-408-a',p.PLAN,receipt)==compile_launch()
+ report['checks']['activation']={'factory':'binding.bound_executor','entrypoint':'execute','executor_sha256':p.prepare.sha(p.PREP/'execute.proposed.py'),'binding_sha256':p.prepare.sha(p.HERE/'binding.py'),'overlay_sha256':p.prepare.sha(p.HERE/'identity-overlay.json'),'no_external_hook_replacements':True,'cli_execute_rejection_preserved':True}
+ report['status']='PASS_PREFLIGHT_CONTEXT_RETAINED_FOR_ONE_A'
+except BaseException as error:
+ report.update(status='STOP_PREFLIGHT',failure=type(error).__name__+': '+str(error));save();raise
+finally:save()
+print(report['status'])

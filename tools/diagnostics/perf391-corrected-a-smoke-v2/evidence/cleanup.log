@@ -1,0 +1,1 @@
+PASS: host PID/start identities absent; scoped processes/listeners/containers/networks/volumes absent; private dependencies removed; all eight images unchanged

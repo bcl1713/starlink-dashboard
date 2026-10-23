@@ -1,0 +1,14 @@
+{
+  "cleanup_exit": 0,
+  "first_commit_attempt": {
+    "commit_created": false,
+    "exit": 128,
+    "reason": "AUTHOR_IDENTITY_UNSET"
+  },
+  "post_removal_audit_exit": 0,
+  "preflight_exit": 1,
+  "preflight_session": 57259,
+  "resolution": "Use per-command user.name=Codex and user.email=codex@openai.com matching the five prior commits; no persistent Git configuration changes.",
+  "runtime_invocations": 0,
+  "setup_exit": 0
+}

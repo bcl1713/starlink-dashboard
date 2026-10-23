@@ -1,0 +1,6 @@
+PASS: correction provenance, old/new receipt lineage, 8 image identities, actual compiled closure/parity, dependencies and retained focused checks.
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-runtime-v2/verify.py", line 20, in <module>
+    assert compile_launch() == launch
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

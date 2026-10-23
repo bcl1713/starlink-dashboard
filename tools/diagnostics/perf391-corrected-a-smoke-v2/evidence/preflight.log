@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py", line 42, in <module>
+    command([sys.executable,'-B',p.HERE/'verify.py'],180)
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/preflight-checks.py", line 12, in command
+    raw=p.run(argv,'host-check-%02d'%len(report['commands']),seconds)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-images-v2/forge.py", line 80, in run
+    assert rc == 0, (name, rc, log)
+           ^^^^^^^
+AssertionError: ('host-check-16', 1, PosixPath('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/evidence/host-check-16.log'))

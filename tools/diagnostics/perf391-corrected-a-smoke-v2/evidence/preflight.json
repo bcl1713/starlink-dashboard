@@ -1,0 +1,192 @@
+{
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6372603348",
+  "checks": {
+    "cgroup_limits": {
+      "/sys/fs/cgroup/user.slice/cpu.max": "max 100000",
+      "/sys/fs/cgroup/user.slice/memory.current": "20354940928",
+      "/sys/fs/cgroup/user.slice/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/pids.current": "209",
+      "/sys/fs/cgroup/user.slice/pids.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/cpu.max": "1000000 100000",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/memory.current": "19315556352",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/pids.current": "196",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/pids.max": "165561",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/cpu.max": "max 100000",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.current": "15516860416",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/memory.max": "max",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.current": "91",
+      "/sys/fs/cgroup/user.slice/user-1002.slice/session-c1.scope/pids.max": "max"
+    },
+    "daemon": "forge 29.8.1 overlayfs 20 65915523072 2",
+    "headroom": {
+      "disk_free_bytes": 24505659392,
+      "memory_available_bytes": 55168512000
+    },
+    "process_visibility": {
+      "cgroup": "0::/user.slice/user-1002.slice/session-c1.scope\n",
+      "namespace": "pid:[4026531836]",
+      "pid1": "systemd"
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "hostname"
+      ],
+      "output": "forge\n"
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "output": "8c95eecb93fd5f37d9d6150008168682a5ba514d\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{json .SecurityOptions}}"
+      ],
+      "output": "[\"name=seccomp,profile=builtin\",\"name=rootless\",\"name=cgroupns\"]\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "context",
+        "show"
+      ],
+      "output": "default\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "context",
+        "inspect",
+        "--format",
+        "{{.Endpoints.docker.Host}}"
+      ],
+      "output": "unix:///run/user/1002/docker.sock\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "compose",
+        "version"
+      ],
+      "output": "Docker Compose version v5.5.1\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}} {{.ServerVersion}} {{.Driver}} {{.NCPU}} {{.MemTotal}} {{.CgroupVersion}}"
+      ],
+      "output": "forge 29.8.1 overlayfs 20 65915523072 2\n"
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-a"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-smoke-408-c"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=perf391-corrected-a-preflight"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-corrected-a-preflight"
+      ],
+      "output": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=perf391-corrected-a-preflight"
+      ],
+      "output": ""
+    }
+  ],
+  "failure": "AssertionError: ('host-check-16', 1, PosixPath('/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-a-smoke-20261023/tools/diagnostics/perf391-corrected-a-smoke-v2/evidence/host-check-16.log'))",
+  "scope": "corrected A only; preflight; no services or browser launch",
+  "starting_commit": "8c95eecb93fd5f37d9d6150008168682a5ba514d",
+  "status": "STOP_PREFLIGHT"
+}
