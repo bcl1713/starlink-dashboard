@@ -1,0 +1,557 @@
+[
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-images-v2/verify-retained.py"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "retained-validator",
+    "pgid": 828948,
+    "pid": 828948,
+    "seconds": 120,
+    "start_identity": "828948 (timeout) R 828906 828948 828948 0 -1 4194304 10 0 0 0 0 0 0 0 20 0 1 0 218339537 12238848 0 18446744073709551615 107611691909120 107611696952301 140736292279984 0 0 0 0 0 0 0 0 0 17 2 0 0 0 0 0 107611701225968 107611702714232 107612032692224 140736292285896 140736292286092 140736292286092 140736292290535 0\n",
+    "state": "exited",
+    "wall_seconds": 0.5182459987699986
+  },
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/tmp/perf391-corrected-a-preflight/baseline/tools/diagnostics/perf391-runtime-preparation-v1/prepare.py",
+      "--output",
+      "/tmp/perf391-corrected-a-preflight/contexts"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-regeneration",
+    "pgid": 829053,
+    "pid": 829053,
+    "seconds": 300,
+    "start_identity": "829053 (timeout) R 828906 829053 829053 0 -1 4194304 15 0 0 0 0 0 0 0 20 0 1 0 218339600 12238848 44 18446744073709551615 101750204272640 101750209315821 140736383237024 0 0 0 0 0 0 0 0 0 17 7 0 0 0 0 0 101750213589488 101750215077752 101750268870656 140736383241568 140736383241775 140736383241775 140736383246311 0\n",
+    "state": "exited",
+    "wall_seconds": 18.67842405103147
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-A-backend-inspect-image",
+    "pgid": 830466,
+    "pid": 830466,
+    "seconds": 120,
+    "start_identity": "830466 (timeout) R 828906 830466 830466 0 -1 4194304 9 0 0 0 0 0 0 0 20 0 1 0 218341620 12238848 0 18446744073709551615 102475737858048 102475742901229 140730701169216 0 0 0 0 0 0 0 0 0 17 5 0 0 0 0 0 102475747174896 102475748663160 102476400893952 140730701172267 140730701172390 140730701172390 140730701176807 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03618227411061525
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:87a2379218610bd64b4e9e332a0d1bd70ed3fabe673c0dee8c865950d5fc9747"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "A-backend-inspect-image",
+    "pgid": 830481,
+    "pid": 830481,
+    "seconds": 120,
+    "start_identity": "830481 (timeout) R 828906 830481 830481 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218341624 12238848 44 18446744073709551615 94920698593280 94920703636461 140720836348064 0 0 0 0 0 0 0 0 0 17 3 0 0 0 0 0 94920707910128 94920709398392 94920764891136 140720836353579 140720836353702 140720836353702 140720836358119 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03165547829121351
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:aee6d4fdf4a1c7746c8e4ba65458aa3160ffb8d1792982ba56a3e1cb1745dd88"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-A-frontend-inspect-image",
+    "pgid": 830495,
+    "pid": 830495,
+    "seconds": 120,
+    "start_identity": "830495 (timeout) R 828906 830495 830495 0 -1 4194304 6 0 0 0 0 0 0 0 20 0 1 0 218341627 12238848 0 18446744073709551615 94404542423040 94404547466221 140722765605504 0 0 0 0 0 0 0 0 0 17 0 0 0 0 0 0 94404551739888 94404553228152 94405175742464 140722765610539 140722765610662 140722765610662 140722765615079 0\n",
+    "state": "exited",
+    "wall_seconds": 0.022030991967767477
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:f3d62a630ea1c8be51a609b611a50d1e3725a7f2f8d83d530dea6ff78f3b9df5"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "A-frontend-inspect-image",
+    "pgid": 830516,
+    "pid": 830516,
+    "seconds": 120,
+    "start_identity": "830516 (timeout) R 828906 830516 830516 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218341629 12238848 44 18446744073709551615 99594038509568 99594043552749 140728992097520 0 0 0 0 0 0 0 0 0 17 13 0 0 0 0 0 99594047826416 99594049314680 99594112536576 140728992103979 140728992104102 140728992104102 140728992108519 0\n",
+    "state": "exited",
+    "wall_seconds": 0.02260940009728074
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:91ba1d82f80d6d27afd7ed5cda4876be3a0e5ad9c7f5f5f156d32c8b0bbb3db9"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-C-backend-inspect-image",
+    "pgid": 830531,
+    "pid": 830531,
+    "seconds": 120,
+    "start_identity": "830531 (timeout) R 828906 830531 830531 0 -1 4194304 9 0 0 0 0 0 0 0 20 0 1 0 218341632 12238848 44 18446744073709551615 97992150986752 97992156029933 140723233925760 0 0 0 0 0 0 0 0 0 17 19 0 0 0 0 0 97992160303600 97992161791864 97992303190016 140723233926699 140723233926822 140723233926822 140723233931239 0\n",
+    "state": "exited",
+    "wall_seconds": 0.031581885647028685
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:a703a9660e84b151e3e2ffa86c09c5b6d17c490bb4a34003d121c97e6fad5046"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "C-backend-inspect-image",
+    "pgid": 830546,
+    "pid": 830546,
+    "seconds": 120,
+    "start_identity": "830546 (timeout) R 828906 830546 830546 0 -1 4194304 9 0 0 0 0 0 0 0 20 0 1 0 218341635 12238848 0 18446744073709551615 96546503540736 96546508583917 140732799818032 0 0 0 0 0 0 0 0 0 17 16 0 0 0 0 0 96546512857584 96546514345848 96546654715904 140732799823403 140732799823526 140732799823526 140732799827943 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03373701497912407
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:05afd27ad94e61bad76ddde918be17b9b1702cdc724d51f98a584bc4b3c714ec"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "historical-C-frontend-inspect-image",
+    "pgid": 830563,
+    "pid": 830563,
+    "seconds": 120,
+    "start_identity": "830563 (timeout) R 828906 830563 830563 0 -1 4194304 11 0 0 0 0 0 0 0 20 0 1 0 218341638 12238848 44 18446744073709551615 94999595798528 94999600841709 140730552552736 0 0 0 0 0 0 0 0 0 17 1 0 0 0 0 0 94999605115376 94999606603640 95000041156608 140730552561195 140730552561318 140730552561318 140730552565735 0\n",
+    "state": "exited",
+    "wall_seconds": 0.02290677512064576
+  },
+  {
+    "argv": [
+      "docker",
+      "image",
+      "inspect",
+      "sha256:ce18b80b76c60db365b77662317bac7c386f1173a97b3810839d41406dda8ed1"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "C-frontend-inspect-image",
+    "pgid": 830578,
+    "pid": 830578,
+    "seconds": 120,
+    "start_identity": "830578 (timeout) R 828906 830578 830578 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218341641 12238848 44 18446744073709551615 108646782889984 108646787933165 140721581383152 0 0 0 0 0 0 0 0 0 17 1 0 0 0 0 0 108646792206832 108646793695096 108647214465024 140721581387307 140721581387430 140721581387430 140721581391847 0\n",
+    "state": "exited",
+    "wall_seconds": 0.02317386632785201
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--pull=never",
+      "--name",
+      "perf391-corrected-a-preflight-frontend",
+      "--label",
+      "perf391.owner=perf391-corrected-a-preflight",
+      "--entrypoint",
+      "/bin/false",
+      "sha256:f3d62a630ea1c8be51a609b611a50d1e3725a7f2f8d83d530dea6ff78f3b9df5"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "perf391-corrected-a-preflight-frontend-create",
+    "pgid": 830593,
+    "pid": 830593,
+    "seconds": 120,
+    "start_identity": "830593 (timeout) R 828906 830593 830593 0 -1 4194304 11 0 0 0 0 0 0 0 20 0 1 0 218341643 12238848 44 18446744073709551615 99484482879488 99484487922669 140722216025392 0 0 0 0 0 0 0 0 0 17 6 0 0 0 0 0 99484492196336 99484493684600 99484575404032 140722216029611 140722216029862 140722216029862 140722216034279 0\n",
+    "state": "exited",
+    "wall_seconds": 0.04071468813344836
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "08f285377c545b4d9354b6a55553954b9f80233a1eb931e28cd604cc033424e5:/usr/share/nginx/html",
+      "/tmp/perf391-corrected-a-preflight/assets"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "frontend-copy-assets",
+    "pgid": 830612,
+    "pid": 830612,
+    "seconds": 120,
+    "start_identity": "830612 (timeout) R 828906 830612 830612 0 -1 4194304 6 0 0 0 0 0 0 0 20 0 1 0 218341647 12238848 0 18446744073709551615 102581470605312 102581475648493 140728282183104 0 0 0 0 0 0 0 0 0 17 5 0 0 0 0 0 102581479922160 102581481410424 102581847937024 140728282185213 140728282185382 140728282185382 140728282189799 0\n",
+    "state": "exited",
+    "wall_seconds": 0.033405544236302376
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "08f285377c545b4d9354b6a55553954b9f80233a1eb931e28cd604cc033424e5:/etc/nginx/conf.d/default.conf",
+      "/tmp/perf391-corrected-a-preflight/nginx.conf"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "frontend-copy-nginx.conf",
+    "pgid": 830628,
+    "pid": 830628,
+    "seconds": 120,
+    "start_identity": "830628 (timeout) R 828906 830628 830628 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218341650 12238848 44 18446744073709551615 102438452703232 102438457746413 140730687907616 0 0 0 0 0 0 0 0 0 17 3 0 0 0 0 0 102438462020080 102438463508344 102438602555392 140730687909360 140730687909542 140730687909542 140730687913959 0\n",
+    "state": "exited",
+    "wall_seconds": 0.014869248028844595
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "08f285377c545b4d9354b6a55553954b9f80233a1eb931e28cd604cc033424e5:/lib/apk/db/installed",
+      "/tmp/perf391-corrected-a-preflight/apk-installed"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "frontend-copy-apk-installed",
+    "pgid": 830643,
+    "pid": 830643,
+    "seconds": 120,
+    "start_identity": "830643 (timeout) R 828906 830643 830643 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218341652 12238848 44 18446744073709551615 109636555087872 109636560131053 140732997405008 0 0 0 0 0 0 0 0 0 17 3 0 0 0 0 0 109636564404720 109636565892984 109636949286912 140732997410294 140732997410470 140732997410470 140732997414887 0\n",
+    "state": "exited",
+    "wall_seconds": 0.014750504866242409
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "08f285377c545b4d9354b6a55553954b9f80233a1eb931e28cd604cc033424e5"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "perf391-corrected-a-preflight-frontend-inspect",
+    "pgid": 830664,
+    "pid": 830664,
+    "seconds": 120,
+    "start_identity": "830664 (timeout) R 828906 830664 830664 0 -1 4194304 10 0 0 0 0 0 0 0 20 0 1 0 218341663 12238848 44 18446744073709551615 106446773870592 106446778913773 140724565652880 0 0 0 0 0 0 0 0 0 17 15 0 0 0 0 0 106446783187440 106446784675704 106446830567424 140724565655096 140724565655206 140724565655206 140724565659623 0\n",
+    "state": "exited",
+    "wall_seconds": 0.013984933029860258
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "08f285377c545b4d9354b6a55553954b9f80233a1eb931e28cd604cc033424e5"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "perf391-corrected-a-preflight-frontend-remove",
+    "pgid": 830679,
+    "pid": 830679,
+    "seconds": 120,
+    "start_identity": "830679 (timeout) R 828906 830679 830679 0 -1 4194304 21 0 0 0 0 0 0 0 20 0 1 0 218341665 12247040 97 18446744073709551615 104769466040320 104769471083501 140731682840832 0 0 0 0 0 0 0 0 0 17 15 0 0 0 0 0 104769475357168 104769476845432 104770357686272 140731682848317 140731682848422 140731682848422 140731682852839 0\n",
+    "state": "exited",
+    "wall_seconds": 0.043286208994686604
+  },
+  {
+    "argv": [
+      "docker",
+      "create",
+      "--pull=never",
+      "--name",
+      "perf391-corrected-a-preflight-backend",
+      "--label",
+      "perf391.owner=perf391-corrected-a-preflight",
+      "--entrypoint",
+      "/bin/false",
+      "sha256:87a2379218610bd64b4e9e332a0d1bd70ed3fabe673c0dee8c865950d5fc9747"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "perf391-corrected-a-preflight-backend-create",
+    "pgid": 830696,
+    "pid": 830696,
+    "seconds": 120,
+    "start_identity": "830696 (timeout) R 828906 830696 830696 0 -1 4194304 10 0 0 0 0 0 0 0 20 0 1 0 218341669 12238848 0 18446744073709551615 109341475008512 109341480051693 140726441193744 0 0 0 0 0 0 0 0 0 17 5 0 0 0 0 0 109341484325360 109341485813624 109342105047040 140726441201068 140726441201318 140726441201318 140726441205735 0\n",
+    "state": "exited",
+    "wall_seconds": 0.04369649197906256
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/diagnostic",
+      "/tmp/perf391-corrected-a-preflight/backend/diagnostic"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-diagnostic",
+    "pgid": 830711,
+    "pid": 830711,
+    "seconds": 120,
+    "start_identity": "830711 (timeout) R 828906 830711 830711 0 -1 4194304 9 0 0 0 0 0 0 0 20 0 1 0 218341673 12238848 0 18446744073709551615 96505435021312 96505440064493 140720811463616 0 0 0 0 0 0 0 0 0 17 14 0 0 0 0 0 96505444338160 96505445826424 96506460676096 140720811466235 140720811466406 140720811466406 140720811470823 0\n",
+    "state": "exited",
+    "wall_seconds": 0.016933545004576445
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/acceptance",
+      "/tmp/perf391-corrected-a-preflight/backend/acceptance"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-acceptance",
+    "pgid": 830730,
+    "pid": 830730,
+    "seconds": 120,
+    "start_identity": "830730 (timeout) R 828906 830730 830730 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218341675 12238848 41 18446744073709551615 105808762621952 105808767665133 140732938409232 0 0 0 0 0 0 0 0 0 17 9 0 0 0 0 0 105808771938800 105808773427064 105809176969216 140732938411515 140732938411686 140732938411686 140732938416103 0\n",
+    "state": "exited",
+    "wall_seconds": 0.019807913340628147
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/app",
+      "/tmp/perf391-corrected-a-preflight/backend/app"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-app",
+    "pgid": 830746,
+    "pid": 830746,
+    "seconds": 120,
+    "start_identity": "830746 (timeout) R 828906 830746 830746 0 -1 4194304 6 0 0 0 0 0 0 0 20 0 1 0 218341677 12238848 0 18446744073709551615 99909967417344 99909972460525 140726764182720 0 0 0 0 0 0 0 0 0 17 1 0 0 0 0 0 99909976734192 99909978222456 99910706094080 140726764187145 140726764187302 140726764187302 140726764191719 0\n",
+    "state": "exited",
+    "wall_seconds": 0.09422469465062022
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/usr/local/bin/node",
+      "/tmp/perf391-corrected-a-preflight/backend/node"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-node",
+    "pgid": 830769,
+    "pid": 830769,
+    "seconds": 120,
+    "start_identity": "830769 (timeout) R 828906 830769 830769 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218341687 12238848 44 18446744073709551615 100291927117824 100291932161005 140733001797024 0 0 0 0 0 0 0 0 0 17 11 0 0 0 0 0 100291936434672 100291937922936 100292639088640 140733001805305 140733001805478 140733001805478 140733001809895 0\n",
+    "state": "exited",
+    "wall_seconds": 0.08895526640117168
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/var/lib/dpkg/status",
+      "/tmp/perf391-corrected-a-preflight/backend/dpkg-status"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-dpkg-status",
+    "pgid": 830787,
+    "pid": 830787,
+    "seconds": 120,
+    "start_identity": "830787 (timeout) R 828906 830787 830787 0 -1 4194304 9 0 0 0 0 0 0 0 20 0 1 0 218341696 12238848 0 18446744073709551615 98329867436032 98329872479213 140727733284336 0 0 0 0 0 0 0 0 0 17 14 0 0 0 0 0 98329876752880 98329878241144 98330654593024 140727733288433 140727733288614 140727733288614 140727733293031 0\n",
+    "state": "exited",
+    "wall_seconds": 0.014997345395386219
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/opt/customer-briefing/assets",
+      "/tmp/perf391-corrected-a-preflight/backend/renderer-assets"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-renderer-assets",
+    "pgid": 830802,
+    "pid": 830802,
+    "seconds": 120,
+    "start_identity": "830802 (timeout) R 828906 830802 830802 0 -1 4194304 7 0 0 0 0 0 0 0 20 0 1 0 218341697 12238848 0 18446744073709551615 106682349850624 106682354893805 140721577946288 0 0 0 0 0 0 0 0 0 17 8 0 0 0 0 0 106682359167472 106682360655736 106682586992640 140721577954788 140721577954982 140721577954982 140721577959399 0\n",
+    "state": "exited",
+    "wall_seconds": 0.024450324941426516
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/home/appuser/.local/lib/python3.11/site-packages",
+      "/tmp/perf391-corrected-a-preflight/backend/site-packages"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-site-packages",
+    "pgid": 830823,
+    "pid": 830823,
+    "seconds": 120,
+    "start_identity": "830823 (timeout) R 828906 830823 830823 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218341700 12238848 44 18446744073709551615 109920474636288 109920479679469 140722509463088 0 0 0 0 0 0 0 0 0 17 3 0 0 0 0 0 109920483953136 109920485441400 109920577335296 140722509467090 140722509467302 140722509467302 140722509471719 0\n",
+    "state": "exited",
+    "wall_seconds": 1.726082416716963
+  },
+  {
+    "argv": [
+      "docker",
+      "cp",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d:/usr/local/lib/python3.11/site-packages",
+      "/tmp/perf391-corrected-a-preflight/backend/global-site-packages"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "backend-copy-global-site-packages",
+    "pgid": 831024,
+    "pid": 831024,
+    "seconds": 120,
+    "start_identity": "831024 (timeout) R 828906 831024 831024 0 -1 4194304 8 0 0 0 0 0 0 0 20 0 1 0 218341872 12238848 0 18446744073709551615 96862910291968 96862915335149 140720425909920 0 0 0 0 0 0 0 0 0 17 14 0 0 0 0 0 96862919608816 96862921097080 96863368552448 140720425913813 140720425914022 140720425914022 140720425918439 0\n",
+    "state": "exited",
+    "wall_seconds": 0.11478250473737717
+  },
+  {
+    "argv": [
+      "docker",
+      "inspect",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "perf391-corrected-a-preflight-backend-inspect",
+    "pgid": 831253,
+    "pid": 831253,
+    "seconds": 120,
+    "start_identity": "831253 (timeout) R 828906 831253 831253 0 -1 4194304 13 0 0 0 0 0 0 0 20 0 1 0 218342141 12238848 44 18446744073709551615 95802735239168 95802740282349 140727869474400 0 0 0 0 0 0 0 0 0 17 17 0 0 0 0 0 95802744556016 95802746044280 95802815180800 140727869480504 140727869480614 140727869480614 140727869485031 0\n",
+    "state": "exited",
+    "wall_seconds": 0.014839656185358763
+  },
+  {
+    "argv": [
+      "docker",
+      "rm",
+      "397a78c8723ba7234f8a39d76af756e680570e34a77f58f61fd64d155b19c71d"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "perf391-corrected-a-preflight-backend-remove",
+    "pgid": 831272,
+    "pid": 831272,
+    "seconds": 120,
+    "start_identity": "831272 (timeout) R 828906 831272 831272 0 -1 4194304 8 0 0 0 0 0 0 0 20 0 1 0 218342142 12238848 0 18446744073709551615 104137728696320 104137733739501 140725838816528 0 0 0 0 0 0 0 0 0 17 9 0 0 0 0 0 104137738013168 104137739501432 104137905840128 140725838818877 140725838818982 140725838818982 140725838823399 0\n",
+    "state": "exited",
+    "wall_seconds": 0.03967786068096757
+  },
+  {
+    "argv": [
+      "docker",
+      "compose",
+      "-p",
+      "perf391-smoke-408-a",
+      "-f",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-a-runtime-v2/evidence/A.compose.base.json",
+      "-f",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-corrected-a-runtime-v2/evidence/A.compose.override.json",
+      "config",
+      "--format",
+      "json"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "compose-config",
+    "pgid": 831319,
+    "pid": 831319,
+    "seconds": 20,
+    "start_identity": "831319 (timeout) R 828906 831319 831319 0 -1 4194304 7 0 0 0 0 0 0 0 20 0 1 0 218342158 12238848 0 18446744073709551615 97117074485248 97117079528429 140727253970864 0 0 0 0 0 0 0 0 0 17 9 0 0 0 0 0 97117083802096 97117085290360 97117127544832 140727253977971 140727253978387 140727253978387 140727253983207 0\n",
+    "state": "exited",
+    "wall_seconds": 0.043900726828724146
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-preflight/backend/node",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-runtime-preparation-v1/browser-owner.proposed.mjs"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "syntax-browser-owner.proposed.mjs",
+    "pgid": 831539,
+    "pid": 831539,
+    "seconds": 10,
+    "start_identity": "831539 (timeout) R 828906 831539 831539 0 -1 4194304 10 0 0 0 0 0 0 0 20 0 1 0 218342227 12238848 44 18446744073709551615 95550905356288 95550910399469 140734934054704 0 0 0 0 0 0 0 0 0 17 18 0 0 0 0 0 95550914673136 95550916161400 95551576293376 140734934056372 140734934056614 140734934056614 140734934061031 0\n",
+    "state": "exited",
+    "wall_seconds": 0.021127962972968817
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-preflight/backend/node",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-runtime-preparation-v1/browser-evidence.mjs"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "syntax-browser-evidence.mjs",
+    "pgid": 831547,
+    "pid": 831547,
+    "seconds": 10,
+    "start_identity": "831547 (timeout) R 828906 831547 831547 0 -1 4194304 12 0 0 0 0 0 0 0 20 0 1 0 218342229 12238848 44 18446744073709551615 104146608390144 104146613433325 140728832437232 0 0 0 0 0 0 0 0 0 17 7 0 0 0 0 0 104146617706992 104146619195256 104146839826432 140728832441786 140728832442022 140728832442022 140728832446439 0\n",
+    "state": "exited",
+    "wall_seconds": 0.019562819972634315
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-preflight/backend/node",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-diagnostic-integration-v1/collect.mjs"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "syntax-collect.mjs",
+    "pgid": 831555,
+    "pid": 831555,
+    "seconds": 10,
+    "start_identity": "831555 (timeout) R 828906 831555 831555 0 -1 4194304 11 0 0 0 0 0 0 0 20 0 1 0 218342231 12238848 44 18446744073709551615 102315734212608 102315739255789 140726655538800 0 0 0 0 0 0 0 0 0 17 19 0 0 0 0 0 102315743529456 102315745017720 102316753117184 140726655540672 140726655540902 140726655540902 140726655545319 0\n",
+    "state": "exited",
+    "wall_seconds": 0.0228383201174438
+  },
+  {
+    "argv": [
+      "/tmp/perf391-corrected-a-preflight/backend/node",
+      "--check",
+      "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-corrected-runtime/tools/diagnostics/perf391-diagnostic-integration-v1/browser.mjs"
+    ],
+    "exit": 0,
+    "grace_seconds": 10,
+    "name": "syntax-browser.mjs",
+    "pgid": 831563,
+    "pid": 831563,
+    "seconds": 10,
+    "start_identity": "831563 (timeout) R 828906 831563 831563 0 -1 4194304 23 0 0 0 0 0 0 0 20 0 1 0 218342234 13426688 96 18446744073709551615 101425760391168 101425765434349 140723079668736 0 0 0 0 0 0 0 0 0 17 7 0 0 0 0 0 101425769708016 101425771196280 101426228215808 140723079675328 140723079675558 140723079675558 140723079679975 0\n",
+    "state": "exited",
+    "wall_seconds": 0.020979166962206364
+  }
+]

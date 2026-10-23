@@ -1,0 +1,55 @@
+{
+  "checks": {
+    "backend": {
+      "application_fixture_renderer_unchanged": true,
+      "diagnostic_module_inventory_sha256": "cfb46401b22a779ae074891e5ed465bc686abb3a82be57e564e9d66355f04f4c",
+      "python_packages": 89
+    },
+    "browser_identity": {
+      "api_imported_without_launch": true,
+      "browser_launched": false,
+      "browsers_json_sha256": "545d52f8382c391e605562c330e9c1c534a16045898203037a49bb8bd769a946",
+      "chromium_revision": "1243",
+      "chromium_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e",
+      "historical_node_sha256": "177208bfc4a9403121a40c72d038c670f4fd937fa16ca7df0a720e90be0fe2d9",
+      "historical_node_version": "22.12.0",
+      "lane": "diagnostic-functionality-only",
+      "node_sha256": "81925c0995b5c1427b5d538e6a90ca2fdc4daffb786b09af749beaf7369d4e90",
+      "node_version": "22.22.2",
+      "packages": {
+        "playwright": {
+          "node_engine": ">=20",
+          "sha256": "8bc2ddebe8d9b051b9ecb87d62c6c63877e59d08617f32c3215681ca8bb70998",
+          "version": "1.63.0"
+        },
+        "playwright-core": {
+          "node_engine": ">=20",
+          "sha256": "f061c58427e47e843e26d201f0a57076c734e57c734ecbbd87d4a23b7a20db9b",
+          "version": "1.63.0"
+        }
+      },
+      "runtime_compatibility_qualified": false
+    },
+    "browser_tree_sha256": "ccaa0c678629edcff79e5db6003d391254eec00c17ecbe48b3ec6d06b3871ba1",
+    "frontend": {
+      "assets_sha256": "9637a1b8a5a269e8a61090bbc1982a5f5578409536574fa45b66abce146ab80e",
+      "image_bytes_match_receipt": true,
+      "index_sha256": "943947d6b6edefdc596f1f2e3c7c450a41507a72b0ceff19316225fefcc241db",
+      "module_closure_sha256": "cc01ff100b633b664ee4a309e73181eda52069e834f67529d46f824bdf232322",
+      "served_files": 29
+    },
+    "source_context": {
+      "A_application_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+      "A_context_inventory_sha256": "c2ba6e024e0c8ca91eefb35d300ea4d38481175c7e4de30169546dbe9aebea68",
+      "A_context_sha256": "215801d9cedaf8a055a876d1fb6d78745462ceebad91de291eb9fd33b8a287d7",
+      "corrected_plan_exact_known_deltas": true,
+      "historical_plan_byte_identical": true
+    }
+  },
+  "failure": "AssertionError: ",
+  "runtime_executed": false,
+  "scope": "offline corrected-A runtime preparation",
+  "starting_commit": "07c68cda45d541ea2817f750bd56ca3da9de9702",
+  "status": "STOP",
+  "temporary_root_removed": true
+}

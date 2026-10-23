@@ -1,0 +1,13 @@
+{
+  "containers": [
+    "perf391-corrected-a-preflight-frontend",
+    "perf391-corrected-a-preflight-backend"
+  ],
+  "owner_label": "perf391-corrected-a-preflight",
+  "pgid": 828896,
+  "pid": 828906,
+  "runtime_resources": [],
+  "scope": "offline only; stopped extraction containers never started",
+  "start_identity": "828906 (python3) R 828896 828896 828896 0 -1 4194304 3889 0 0 0 3 1 0 0 20 0 1 0 218339516 37007360 6368 18446744073709551615 4333568 8024065 140732651870576 0 0 0 0 16781312 16386 0 0 0 17 17 0 0 0 0 0 11038136 11672456 164040704 140732651875933 140732651876006 140732651876006 140732651880423 0\n",
+  "temporary_root": "/tmp/perf391-corrected-a-preflight"
+}

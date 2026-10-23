@@ -1,0 +1,129 @@
+[
+    {
+        "Id": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+        "RepoTags": [
+            "perf391-diag-408-a-backend:f9cf80bd"
+        ],
+        "RepoDigests": [
+            "perf391-diag-408-a-backend@sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-10-23T01:17:01.410275266Z",
+        "Config": {
+            "ExposedPorts": {
+                "8000/tcp": {}
+            },
+            "Env": [
+                "PATH=/home/appuser/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+                "PYTHON_VERSION=3.11.17",
+                "PYTHON_SHA256=bfb74ad39efae27cda510f134ab408e00f9992c56851cfc0b1cdb5646da11599",
+                "PLAYWRIGHT_BROWSERS_PATH=/opt/customer-briefing/browsers",
+                "BRIEFING_APO_PATH=/opt/customer-briefing/apo-patch-briefing.png",
+                "PYTHONPATH=/diagnostic:/acceptance:/app",
+                "PYTHONDONTWRITEBYTECODE=1"
+            ],
+            "Entrypoint": [
+                "entrypoint.sh"
+            ],
+            "Cmd": [
+                "uvicorn",
+                "runtime_backend:create_app",
+                "--factory",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--workers",
+                "1",
+                "--timeout-graceful-shutdown",
+                "5"
+            ],
+            "WorkingDir": "/app",
+            "Labels": {
+                "base_application_sha": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+                "collector_release_sha": "c47d21e3c5bbf92189afbf291b73b9da7a035a4b",
+                "collector_source_sha": "a48837b99d87366c6e3fc24ba2915f0b739cddad",
+                "diagnostic": "true",
+                "effective_source_sha256": "015c5f515438b7114f903e90c5c43014a2b29fb6c316fdbca0232681585c5baa",
+                "frontend_patch_sha256": "e744be0f260e77799d55c6c4f9f23e8a65d9fd793e9eb164c13a21f156e44551",
+                "frozen_harness_sha": "f3029024b5950a267645195476da5cbca326f16a",
+                "integration_source_sha": "051870c738d9ab72338852ea848918a35a663094",
+                "org.opencontainers.image.revision": "25e34168f0e2cecb149b0323f1f5a795cb28cae0",
+                "patch_sha256": "c45588f73582531dda971e359ff368d5843cc924cd24e3a5a233be3baaf9f43c",
+                "perf391.role": "A",
+                "runtime_frontend_closure_sha256": "5dcf2b6ace61440516fc695f4bcab4d8da487e0612f80a864dd6669bab641695",
+                "runtime_overlay_sha256": "5b3b36938d43d5ade1b9bb67d32dd6bf36b5f80d8f298b475ef732e794ba965c"
+            },
+            "ArgsEscaped": true,
+            "Healthcheck": {
+                "Test": [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8000/health || exit 1"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 10000000000,
+                "StartPeriod": 5000000000,
+                "Retries": 3
+            }
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 2230848264,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:a70f6272827f64e1427d048ced77491aab5d64ab95725e56920802ff391197d7",
+                "sha256:535a5d38abecfac4fa49da33fa942b53c53c463bd0d39a860967e46eb03faafe",
+                "sha256:6972161a9a77e7c1afb997daac15abc54f5b70c7b40b814601f53e038d8c398c",
+                "sha256:d86e9bd004831a6069b9a02e5caac80b73526315f52719079b4017b099956ed2",
+                "sha256:1b8a9864dfa7b79d3fdaa4447dcb41829739fbb346dfb596391674dea76b63d8",
+                "sha256:4243cc5a92e5c16157a5a81b94192c1273cb385481dccf881a606ba49251c7f6",
+                "sha256:7e397d0c7e63bddb995fd09a42db8bd19cd95910776d4fa785107cd50c73bce7",
+                "sha256:c7f7941738e22684e171205b21c340a21cfda33f48dc4258ef5ee53c31ffdcd5",
+                "sha256:8ee6353697c050e9b3f9363927a315e471f0b5f6cf0bee611cd9cf4e6e841177",
+                "sha256:03fb63537ea3030ba140af2163db40647d8dfcf3f1e7194cc83a2f20a78290f5",
+                "sha256:54a59646552e73b69e0b264805dc67ce46b45d69dd6c1fb5cc226111185c6d2d",
+                "sha256:30f6ed9eaaa816cb28955a218dde64c7416514e7ccc6be08b246b596561b2cbc",
+                "sha256:52717a94826bae2f600de2c348e30b9b3783b1b0f1645bbf28f6adf47151d152",
+                "sha256:d56d5cc8ffe3974af8a9908a5a403e62a7751dcd34fd19477d86f517c1724725",
+                "sha256:3c3203b45ca02b43c9d334e2425973bce8ca159ecbcdef2f4dd5e4b2aa4f55d9",
+                "sha256:aa520902d5949249cb33f807ef909b2d2d6b56f296c2192c9c696e6295a474dc",
+                "sha256:94f9c7dbf5dc40332fc28a4d179a596e055c1f6815c4ed6c44e981f71593a95a",
+                "sha256:8dddc4ba9cf9ef56f4055b45030f75bce39cc49e77f85887664fa8305ac230af",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:2b6eab517f9fb8075d70c53cc85df164fe92c1afec58e71722ef1afc335982f5",
+                "sha256:022a737a05c26f448c46f74fafaebece63cf41a61e9b69760d44ad7a86fadb37",
+                "sha256:872b00ed7351c22be62f1c261ebfd15baad9f33a344311c5c3cacc231d868f08",
+                "sha256:13b8f9dc3db083870bd1f8d0f67039cc22c92de2867d932e7debb43ed66dfd2f",
+                "sha256:84da2ebb85314a0c379944cf351f51880c2bf9f14e4038f817212c46e06fa04d",
+                "sha256:2935a3410dabfc39fd5bbce933fbaf2847128f40d8ef2019f20437bd17405bb1",
+                "sha256:ef9dedaec4eb4c9d9f7a8fc5c42105da495b5dc82fa5d43a5374f4c18bf06b89",
+                "sha256:26dc8ecda4e1e49e29833453ec0e1294993d93d26c262c7e862de28d4ba9b1a9",
+                "sha256:5d53203100f84fecbd97574452b9547c27123fa7efcbbe4fa656de9c34fbaab6"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-23T01:17:01.87214652Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:8b8518fe1007170ce423b76f98958d85a4153927a0d8e59930d3790f38318abd",
+            "size": 856
+        },
+        "Identity": {
+            "Pull": [
+                {
+                    "Repository": "docker.io/library/perf391-diag-408-a-backend"
+                }
+            ],
+            "Build": [
+                {
+                    "Ref": "3xho2lsl46h2vxa3mokdmrvq6",
+                    "CreatedAt": "2026-10-23T01:17:08.196562814Z"
+                }
+            ]
+        }
+    }
+]
