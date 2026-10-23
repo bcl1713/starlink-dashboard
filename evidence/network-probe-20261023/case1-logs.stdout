@@ -1,0 +1,26 @@
+http-1  | 2026-10-23T11:38:51.915935857Z 2026/10/23 11:38:51 [notice] 1#1: using the "epoll" event method
+http-1  | 2026-10-23T11:38:51.915957050Z 2026/10/23 11:38:51 [notice] 1#1: nginx/1.31.7
+http-1  | 2026-10-23T11:38:51.915958640Z 2026/10/23 11:38:51 [notice] 1#1: built by gcc 15.2.0 (Alpine 15.2.0) 
+http-1  | 2026-10-23T11:38:51.915959595Z 2026/10/23 11:38:51 [notice] 1#1: OS: Linux 7.0.0-34-generic
+http-1  | 2026-10-23T11:38:51.915960261Z 2026/10/23 11:38:51 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 524288:524288
+http-1  | 2026-10-23T11:38:51.915976663Z 2026/10/23 11:38:51 [notice] 1#1: start worker processes
+http-1  | 2026-10-23T11:38:51.916126249Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 7
+http-1  | 2026-10-23T11:38:51.916222089Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 8
+http-1  | 2026-10-23T11:38:51.916321577Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 9
+http-1  | 2026-10-23T11:38:51.916407533Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 10
+http-1  | 2026-10-23T11:38:51.916492314Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 11
+http-1  | 2026-10-23T11:38:51.916585716Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 12
+http-1  | 2026-10-23T11:38:51.916704304Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 13
+http-1  | 2026-10-23T11:38:51.916809222Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 14
+http-1  | 2026-10-23T11:38:51.916915125Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 15
+http-1  | 2026-10-23T11:38:51.917021890Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 16
+http-1  | 2026-10-23T11:38:51.917120533Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 17
+http-1  | 2026-10-23T11:38:51.917221955Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 18
+http-1  | 2026-10-23T11:38:51.917329213Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 19
+http-1  | 2026-10-23T11:38:51.917443267Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 20
+http-1  | 2026-10-23T11:38:51.917547183Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 21
+http-1  | 2026-10-23T11:38:51.917659690Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 22
+http-1  | 2026-10-23T11:38:51.917788247Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 23
+http-1  | 2026-10-23T11:38:51.917894282Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 24
+http-1  | 2026-10-23T11:38:51.918015191Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 25
+http-1  | 2026-10-23T11:38:51.918139604Z 2026/10/23 11:38:51 [notice] 1#1: start worker process 26

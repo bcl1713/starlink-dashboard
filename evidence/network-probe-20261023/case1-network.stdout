@@ -1,0 +1,55 @@
+[
+    {
+        "Name": "p391-net-20261023-1149_default",
+        "Id": "14c14e349d168819c1b2847b3b28e9e1fcfa083550de240fd27655dc8725a512",
+        "Created": "2026-10-23T11:38:51.765163513Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.18.0.0/16",
+                    "Gateway": "172.18.0.1"
+                }
+            ]
+        },
+        "Internal": true,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {},
+        "Labels": {
+            "com.docker.compose.config-hash": "d0845a83b4554432774c04e48efd351a00bd4563cd79b8952df787aa057e0d6b",
+            "com.docker.compose.network": "default",
+            "com.docker.compose.project": "p391-net-20261023-1149",
+            "com.docker.compose.version": "5.5.1",
+            "probe.owner": "p391-net-20261023-1149"
+        },
+        "Containers": {
+            "ddbaabdef636081a7d003dc5b1403dac43739a3c1c86ff30e0ec3b1d4348e281": {
+                "Name": "p391-net-20261023-1149-http-1",
+                "EndpointID": "770414d7f4c45168097c9064f2dcf4f817a43bceffb68484a50e0978f2f3d450",
+                "MacAddress": "62:4e:37:c1:67:14",
+                "IPv4Address": "172.18.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "172.18.0.0/16": {
+                        "IPsInUse": 4,
+                        "DynamicIPsAvailable": 65532
+                    }
+                }
+            }
+        }
+    }
+]

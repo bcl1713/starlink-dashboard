@@ -1,0 +1,496 @@
+    PID    PPID    PGID COMMAND
+      1       0       1 systemd
+      2       0       0 kthreadd
+      3       2       0 pool_workqueue_release
+      4       2       0 kworker/R-rcu_gp
+      5       2       0 kworker/R-sync_wq
+      6       2       0 kworker/R-kvfree_rcu_reclaim
+      7       2       0 kworker/R-slub_flushwq
+      8       2       0 kworker/R-netns
+     10       2       0 kworker/0:0H-kblockd
+     13       2       0 kworker/R-mm_percpu_wq
+     14       2       0 ksoftirqd/0
+     15       2       0 rcu_preempt
+     16       2       0 rcu_exp_par_gp_kthread_worker/1
+     17       2       0 rcu_exp_gp_kthread_worker
+     18       2       0 migration/0
+     19       2       0 kprobe-optimizer
+     20       2       0 idle_inject/0
+     21       2       0 cpuhp/0
+     22       2       0 cpuhp/1
+     23       2       0 idle_inject/1
+     24       2       0 migration/1
+     25       2       0 ksoftirqd/1
+     27       2       0 kworker/1:0H-kblockd
+     28       2       0 cpuhp/2
+     29       2       0 idle_inject/2
+     30       2       0 migration/2
+     31       2       0 ksoftirqd/2
+     33       2       0 kworker/2:0H-kblockd
+     34       2       0 cpuhp/3
+     35       2       0 idle_inject/3
+     36       2       0 migration/3
+     37       2       0 ksoftirqd/3
+     39       2       0 kworker/3:0H-i915_cleanup
+     40       2       0 cpuhp/4
+     41       2       0 idle_inject/4
+     42       2       0 migration/4
+     43       2       0 ksoftirqd/4
+     45       2       0 kworker/4:0H-kblockd
+     46       2       0 cpuhp/5
+     47       2       0 idle_inject/5
+     48       2       0 migration/5
+     49       2       0 ksoftirqd/5
+     51       2       0 kworker/5:0H-kblockd
+     52       2       0 cpuhp/6
+     53       2       0 idle_inject/6
+     54       2       0 migration/6
+     55       2       0 ksoftirqd/6
+     57       2       0 kworker/6:0H-i915_cleanup
+     58       2       0 cpuhp/7
+     59       2       0 idle_inject/7
+     60       2       0 migration/7
+     61       2       0 ksoftirqd/7
+     63       2       0 kworker/7:0H-kblockd
+     64       2       0 cpuhp/8
+     65       2       0 idle_inject/8
+     66       2       0 migration/8
+     67       2       0 ksoftirqd/8
+     69       2       0 kworker/8:0H-kblockd
+     70       2       0 cpuhp/9
+     71       2       0 idle_inject/9
+     72       2       0 migration/9
+     73       2       0 ksoftirqd/9
+     75       2       0 kworker/9:0H-kblockd
+     76       2       0 cpuhp/10
+     77       2       0 idle_inject/10
+     78       2       0 migration/10
+     79       2       0 ksoftirqd/10
+     81       2       0 kworker/10:0H-kblockd
+     82       2       0 rcu_exp_par_gp_kthread_worker/2
+     83       2       0 cpuhp/11
+     84       2       0 idle_inject/11
+     85       2       0 migration/11
+     86       2       0 ksoftirqd/11
+     88       2       0 kworker/11:0H-kblockd
+     89       2       0 cpuhp/12
+     90       2       0 idle_inject/12
+     91       2       0 migration/12
+     92       2       0 ksoftirqd/12
+     94       2       0 kworker/12:0H-kblockd
+     95       2       0 cpuhp/13
+     96       2       0 idle_inject/13
+     97       2       0 migration/13
+     98       2       0 ksoftirqd/13
+    100       2       0 kworker/13:0H-kblockd
+    101       2       0 cpuhp/14
+    102       2       0 idle_inject/14
+    103       2       0 migration/14
+    104       2       0 ksoftirqd/14
+    106       2       0 kworker/14:0H-kblockd
+    107       2       0 cpuhp/15
+    108       2       0 idle_inject/15
+    109       2       0 migration/15
+    110       2       0 ksoftirqd/15
+    112       2       0 kworker/15:0H-kblockd
+    113       2       0 cpuhp/16
+    114       2       0 idle_inject/16
+    115       2       0 migration/16
+    116       2       0 ksoftirqd/16
+    118       2       0 kworker/16:0H-kblockd
+    119       2       0 cpuhp/17
+    120       2       0 idle_inject/17
+    121       2       0 migration/17
+    122       2       0 ksoftirqd/17
+    124       2       0 kworker/17:0H-kblockd
+    125       2       0 cpuhp/18
+    126       2       0 idle_inject/18
+    127       2       0 migration/18
+    128       2       0 ksoftirqd/18
+    130       2       0 kworker/18:0H-kblockd
+    131       2       0 cpuhp/19
+    132       2       0 idle_inject/19
+    133       2       0 migration/19
+    134       2       0 ksoftirqd/19
+    136       2       0 kworker/19:0H-kblockd
+    137       2       0 kdevtmpfs
+    138       2       0 kworker/R-inet_frag_wq
+    139       2       0 rcu_tasks_kthread
+    140       2       0 rcu_tasks_rude_kthread
+    141       2       0 kauditd
+    142       2       0 khungtaskd
+    143       2       0 oom_reaper
+    146       2       0 kworker/R-writeback
+    147       2       0 kcompactd0
+    148       2       0 ksmd
+    149       2       0 khugepaged
+    150       2       0 kworker/R-kblockd
+    151       2       0 kworker/R-blkcg_punt_bio
+    152       2       0 kworker/R-kintegrityd
+    154       2       0 irq/9-acpi
+    158       2       0 kworker/R-tpm_dev_wq
+    159       2       0 kworker/R-ata_sff
+    160       2       0 kworker/R-md_bitmap
+    161       2       0 kworker/R-md_llbitmap_io
+    162       2       0 kworker/R-md_llbitmap_unplug
+    163       2       0 kworker/R-edac-poller
+    164       2       0 kworker/R-devfreq_wq
+    165       2       0 watchdogd
+    167       2       0 kworker/R-quota_events_unbound
+    168       2       0 kswapd0
+    169       2       0 ecryptfs-kthread
+    170       2       0 kworker/R-kthrotld
+    171       2       0 irq/121-aerdrv
+    172       2       0 irq/123-aerdrv
+    173       2       0 irq/123-pcie-dpc
+    174       2       0 irq/125-aerdrv
+    175       2       0 irq/125-pcie-dpc
+    176       2       0 irq/127-aerdrv
+    177       2       0 irq/127-pcie-dpc
+    178       2       0 kworker/R-acpi_thermal_pm
+    180       2       0 kworker/R-mld
+    181       2       0 kworker/R-ipv6_addrconf
+    182       2       0 kworker/R-kstrp
+    195       2       0 kworker/u81:0-hci0
+    212       2       0 kworker/R-charger_manager
+    484       2       0 kworker/R-nvme-wq
+    485       2       0 kworker/R-nvme-reset-wq
+    486       2       0 kworker/R-nvme-delete-wq
+    487       2       0 kworker/R-nvme-auth-wq
+    488       2       0 scsi_eh_0
+    489       2       0 kworker/R-scsi_tmf_0
+    490       2       0 scsi_eh_1
+    491       2       0 kworker/R-scsi_tmf_1
+    492       2       0 scsi_eh_2
+    493       2       0 kworker/R-scsi_tmf_2
+    494       2       0 scsi_eh_3
+    495       2       0 kworker/R-scsi_tmf_3
+    496       2       0 scsi_eh_4
+    497       2       0 kworker/R-scsi_tmf_4
+    498       2       0 scsi_eh_5
+    499       2       0 kworker/R-scsi_tmf_5
+    590       2       0 kworker/R-kdmflush/252:0
+    621       2       0 kworker/17:1H-kblockd
+    625       2       0 jbd2/dm-0-8
+    626       2       0 kworker/R-ext4-rsv-conversion
+    694       2       0 kworker/9:1H-kblockd
+    724       2       0 kworker/2:1H-kblockd
+    741       2       0 kworker/11:1H-kblockd
+    757       2       0 kworker/R-kmpathd
+    758       2       0 kworker/R-kmpath_handlerd
+    787       2       0 kworker/5:1H-kblockd
+    791       2       0 kworker/19:1H-kblockd
+    808       2       0 kworker/4:1H-kblockd
+    905       2       0 kworker/14:1H-kblockd
+    911       2       0 irq/186-mei_me
+    915       2       0 kworker/R-cfg80211
+    973       2       0 kworker/16:1H-kblockd
+    977       2       0 kworker/12:1H-kblockd
+   1052       2       0 irq/187-iwlwifi:default_queue
+   1053       2       0 irq/188-iwlwifi:queue_1
+   1054       2       0 irq/189-iwlwifi:queue_2
+   1055       2       0 irq/190-iwlwifi:queue_3
+   1056       2       0 irq/191-iwlwifi:queue_4
+   1057       2       0 irq/192-iwlwifi:queue_5
+   1058       2       0 irq/193-iwlwifi:queue_6
+   1059       2       0 irq/194-iwlwifi:queue_7
+   1060       2       0 irq/195-iwlwifi:queue_8
+   1061       2       0 irq/196-iwlwifi:queue_9
+   1063       2       0 irq/197-iwlwifi:queue_10
+   1064       2       0 irq/198-iwlwifi:queue_11
+   1065       2       0 irq/199-iwlwifi:queue_12
+   1066       2       0 irq/200-iwlwifi:queue_13
+   1067       2       0 irq/201-iwlwifi:queue_14
+   1068       2       0 irq/202-iwlwifi:exception
+   1248       1    1248 sudo
+   1341       2       0 kworker/R-ttm
+   1346       2       0 card2-crtc0
+   1347       2       0 card2-crtc1
+   1348       2       0 card2-crtc2
+   1349       2       0 kworker/u81:1-hci0
+   1365       2       0 kworker/3:1H-kblockd
+   1366       2       0 kworker/6:1H-kblockd
+   1498    1248    1498 sudo
+   1499    1498    1499 su
+   1501    1499    1501 bash
+   1641       2       0 kworker/R-rpciod
+   1642       2       0 kworker/R-xprtiod
+   1729       2       0 kworker/18:1H-kblockd
+   1732       2       0 kworker/8:1H-kblockd
+   1767       2       0 kworker/10:1H-kblockd
+   1977       2       0 kworker/13:1H-kblockd
+   2004       2       0 kworker/7:1H-kblockd
+   2055       2       0 kworker/0:1H-kblockd
+   2086       2       0 kworker/15:1H-kblockd
+   2123       2       0 kworker/1:1H-kblockd
+ 169790       2       0 NFSv4 callback
+ 188259       2       0 nv_queue
+ 188260       2       0 nv_mem_pool_scrubber_queue
+ 188261       2       0 nv_mem_pool_scrubber_queue
+ 188262       2       0 nv_mem_pool_scrubber_queue
+ 188263       2       0 nv_queue
+ 188264       2       0 nv_open_q
+ 188268       2       0 nvidia-modeset/kthread_q
+ 188269       2       0 nvidia-modeset/deferred_close_kthread_q
+ 188272       2       0 irq/185-nvidia
+ 188273       2       0 nvidia
+ 188274       2       0 nv_queue
+ 188368       2       0 UVM global queue
+ 188369       2       0 UVM deferred release queue
+ 188370       2       0 UVM Tools Event Queue
+ 188400       1  188400 nvidia-persiste
+ 188495       1  188495 runuser
+ 188503  188495  188495 btop
+ 298658 2315494 2315465 python3.11
+ 753558       1  753558 thermald
+ 922708 2590788  922708 codex
+1232202       1 1232202 containerd-shim
+1232230 1232202 1232230 s6-svscan
+1232271 1232230 1232230 s6-supervise
+1232537 1232230 1232230 s6-supervise
+1232540 1232537 1232540 Plex Media Serv
+1233261 1232540 1232540 Plex Script Hos
+1233431 1232540 1232540 Plex Tuner Serv
+1233569 1232540 1232540 Plex Script Hos
+1233582 1232540 1232540 Plex Script Hos
+1233631 1232540 1232540 Plex Script Hos
+1233792 1232540 1232540 Plex Script Hos
+1233968 1232540 1232540 Plex Script Hos
+1373758 1232540 1232540 Plex Relay
+1469275       1 1469275 fwupd
+1511579 1232540 1232540 EasyAudioEncode
+1615361 2581507 1615361 bash
+1616094 1615361 1616094 btop
+1630949 2575907 1630949 at-spi-bus-laun
+1668647 2591960 1668647 codex
+1678804 2591960 1678804 codex
+1711493       1 1711493 sshd
+1753589       1 1753589 udisksd
+2184789 3399666 3399172 frigate.detecto
+2315299       1 2315299 containerd-shim
+2315301       1 2315301 containerd-shim
+2315348 2315301 2315348 docker-init
+2315354 2315299 2315354 docker-init
+2315440 2575851 2575851 docker-proxy
+2315465 2315348 2315465 runuser
+2315467 2315354 2315467 python
+2315494 2315465 2315465 uvicorn
+2316160       1 2316160 containerd-shim
+2316162       1 2316162 containerd-shim
+2316210 2316162 2316210 nginx
+2316215 2316160 2316215 prometheus
+2316304 2575851 2575851 docker-proxy
+2316326 2575851 2575851 docker-proxy
+2316365 2316210 2316210 nginx
+2316366 2316210 2316210 nginx
+2316367 2316210 2316210 nginx
+2316368 2316210 2316210 nginx
+2316369 2316210 2316210 nginx
+2316370 2316210 2316210 nginx
+2316371 2316210 2316210 nginx
+2316372 2316210 2316210 nginx
+2316373 2316210 2316210 nginx
+2316374 2316210 2316210 nginx
+2316375 2316210 2316210 nginx
+2316376 2316210 2316210 nginx
+2316377 2316210 2316210 nginx
+2316378 2316210 2316210 nginx
+2316379 2316210 2316210 nginx
+2316380 2316210 2316210 nginx
+2316381 2316210 2316210 nginx
+2316382 2316210 2316210 nginx
+2316383 2316210 2316210 nginx
+2316384 2316210 2316210 nginx
+2575158       1 2575158 systemd-journal
+2575202       1 2575202 multipathd
+2575206       1 2575206 systemd-resolve
+2575219       1 2575219 systemd-udevd
+2575222       2       0 psimon
+2575294       2       0 jbd2/nvme1n1p2-8
+2575295       2       0 kworker/R-ext4-rsv-conversion
+2575312       2       0 jbd2/nvme0n1p1-8
+2575314       2       0 kworker/R-ext4-rsv-conversion
+2575354       1 2575354 wpa_supplicant
+2575363       1 2575363 systemd-network
+2575379       1 2575379 chronyd-starter
+2575380       1 2575380 dbus-daemon
+2575386       1 2575386 networkd-dispat
+2575389       1 2575389 polkitd
+2575393       1 2575393 smartd
+2575395       1 2575395 snapd
+2575400       1 2575400 systemd-logind
+2575448       1 2575448 wpa_supplicant
+2575468 2575379 2575379 chronyd
+2575490 2575468 2575379 chronyd
+2575541       1 2575541 unattended-upgr
+2575554       1 2575554 rsyslogd
+2575561       1 2575561 ModemManager
+2575608       1 2575608 containerd
+2575851       1 2575851 dockerd
+2575869       1 2575869 cron
+2575907       1 2575907 systemd
+2575912 2575907 2575907 (sd-pam)
+2575950 2575907 2575950 rootlesskit
+2575963 2575950 2575950 exe
+2575996 2575950 2575950 slirp4netns
+2576004 2575963 2575950 dockerd
+2576041 2576004 2576041 containerd
+2576523       1 2576523 containerd-shim
+2576579 2576523 2576579 agent
+2576649 2575851 2575851 docker-proxy
+2576666 2575851 2575851 docker-proxy
+2578441       1 2578441 systemd
+2578443 2578441 2578441 (sd-pam)
+2581507       1 2581507 tmux: server
+2581511 2578441 2581511 dbus-daemon
+2588749 2581507 2588749 bash
+2590360 2588749 2590360 su
+2590788 2590360 2590788 bash
+2591960       1 2591960 codex
+2698055       1 2698055 upowerd
+2730359 1678804 2730359 codex-code-mode
+2738754 3402070 2738754 ffmpeg
+2738759 3402070 2738759 ffmpeg
+2768848       2       0 kworker/u80:6-rpciod
+2972425       2       0 kworker/13:2-events
+3011446       2       0 kworker/u80:3-rpciod
+3044577       2       0 kworker/12:2-mm_percpu_wq
+3049430       2       0 kworker/11:2-events
+3054382       2       0 kworker/10:0-events
+3057401       2       0 kworker/u80:4-rpciod
+3058868       2       0 kworker/5:1-events
+3062509       2       0 kworker/4:2-events
+3063149       2       0 kworker/1:0-events
+3064562       2       0 kworker/16:2-events
+3065911       2       0 kworker/u80:5-rpciod
+3075608       2       0 kworker/0:1-events
+3078143       2       0 kworker/6:0-events
+3080476       2       0 kworker/9:0-events
+3083952       2       0 kworker/15:2-mm_percpu_wq
+3089548       2       0 kworker/7:1-events
+3094837       2       0 kworker/2:1-events
+3105342       2       0 kworker/6:1-events
+3115203       2       0 kworker/17:1-events
+3115392       2       0 kworker/19:1-events
+3116993       2       0 kworker/8:1-events
+3117512       2       0 kworker/18:1-events
+3121942       2       0 kworker/14:1-events
+3122668       2       0 kworker/3:1-events
+3124560       2       0 kworker/u80:1-rpciod
+3124717       2       0 kworker/5:0-events
+3126373       2       0 kworker/16:0
+3135746       2       0 kworker/12:0-events
+3135933       2       0 kworker/10:1-events
+3135990       2       0 kworker/15:0-events
+3136174       2       0 kworker/11:1-mm_percpu_wq
+3136745       2       0 kworker/0:2-events
+3139019       2       0 kworker/9:1-events
+3139058       2       0 kworker/19:2-events
+3139998       2       0 kworker/17:0-mm_percpu_wq
+3141043       2       0 kworker/8:0-events
+3144326       2       0 kworker/4:1-events_freezable
+3146704       2       0 kworker/14:0-events
+3146924       2       0 kworker/u80:7-rpciod
+3148663       2       0 kworker/1:1-events
+3150273       2       0 kworker/2:0-events
+3153382       2       0 kworker/3:0-mm_percpu_wq
+3153453       2       0 kworker/13:1-events
+3157257       2       0 kworker/18:2-events
+3157398       2       0 kworker/7:2-events
+3160078       2       0 kworker/15:1-events
+3160897       2       0 kworker/5:2-events
+3161609       2       0 kworker/6:2-events
+3161650       2       0 kworker/16:1
+3162360       2       0 kworker/12:1-events
+3163389       2       0 kworker/17:2-events
+3164365       2       0 kworker/10:2-events
+3164438       2       0 kworker/0:0-events
+3165989       2       0 kworker/8:2-events
+3167965       2       0 kworker/4:0
+3168603       2       0 kworker/11:0-events
+3169293       2       0 kworker/19:0-events
+3169318       2       0 kworker/9:2-events
+3171406       2       0 kworker/2:2-mm_percpu_wq
+3175729       2       0 kworker/14:2-events
+3176153       2       0 kworker/3:2-mm_percpu_wq
+3176397       2       0 kworker/13:0-events
+3179023 3399421 3399421 sleep
+3179091       2       0 kworker/1:2-mm_percpu_wq
+3180645 3399171 3399171 sleep
+3180650       2       0 kworker/u80:0-rpciod
+3181727       2       0 kworker/18:0-events
+3181837       2       0 kworker/7:0
+3182460 1678804 3182460 timeout
+3182472 3182460 3182460 python3
+3182590 3182472 3182590 ps
+3229629 2575907 3229629 dbus-daemon
+3398784       1 3398784 containerd-shim
+3398814 3398784 3398814 s6-svscan
+3398948 2575851 2575851 docker-proxy
+3398962 2575851 2575851 docker-proxy
+3398976 2575851 2575851 docker-proxy
+3398990 2575851 2575851 docker-proxy
+3399002 2575851 2575851 docker-proxy
+3399016 2575851 2575851 docker-proxy
+3399048 3398814 3398814 s6-supervise
+3399049 3399048 3399049 s6-linux-init-s
+3399062 3398814 3398814 s6-supervise
+3399063 3398814 3398814 s6-supervise
+3399064 3398814 3398814 s6-supervise
+3399065 3398814 3398814 s6-supervise
+3399066 3398814 3398814 s6-supervise
+3399067 3398814 3398814 s6-supervise
+3399068 3398814 3398814 s6-supervise
+3399069 3398814 3398814 s6-supervise
+3399070 3398814 3398814 s6-supervise
+3399071 3398814 3398814 s6-supervise
+3399072 3398814 3398814 s6-supervise
+3399083 3399067 3399083 s6-fdholderd
+3399084 3399066 3399084 s6-ipcserverd
+3399132 3399069 3399132 s6-log
+3399133 3399064 3399133 s6-log
+3399136 3399065 3399136 s6-log
+3399139 3399068 3399139 s6-log
+3399163 3399063 3399163 go2rtc
+3399171 3399070 3399171 bash
+3399172 3399071 3399172 python3
+3399178 3399062 3399178 nginx
+3399281 3399178 3399178 nginx
+3399284 3399178 3399178 nginx
+3399285 3399178 3399178 nginx
+3399286 3399178 3399178 nginx
+3399290 3399178 3399178 nginx
+3399421 3399072 3399421 bash
+3399665 3399172 3399172 python3
+3399666 3399172 3399172 python3
+3399765 3399666 3399172 python3
+3401455 3399666 3399172 frigate.recordi
+3401468 3399666 3399172 frigate.review_
+3401478 3399666 3399172 frigate.embeddi
+3401544 3399666 3399172 frigate.output
+3401590 3399666 3399172 frigate.process
+3401647 3399666 3399172 frigate.capture
+3401713 3399666 3399172 frigate.process
+3401770 3401544 3401770 ffmpeg
+3401777 3399666 3399172 frigate.capture
+3401778 3401544 3401778 ffmpeg
+3401783 3401544 3401783 ffmpeg
+3401791 3401544 3401791 ffmpeg
+3401845 3401777 3401845 ffmpeg
+3401857 3401777 3401857 ffmpeg
+3401858 3399666 3399172 frigate.process
+3401889 3401544 3401889 ffmpeg
+3401931 3399666 3399172 frigate.capture
+3401965 3401931 3401965 ffmpeg
+3401972 3401931 3401972 ffmpeg
+3402013 3399666 3399172 frigate.process
+3402070 3399666 3399172 frigate.capture
+3402383       2       0 vidmem lazy free
+3402408       2       0 UVM GPU1 BH
+3402409       2       0 UVM GPU1 KC
+3570576 2591960 3570576 codex
+3729759       2       0 psimon
+3789016       2       0 kworker/R-nfsiod
+3809108 3401647 3809108 ffmpeg
+3810839 3401647 3810839 ffmpeg
+4034910 2591960 4034910 codex

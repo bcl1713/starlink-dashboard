@@ -1,0 +1,24 @@
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+  0      0   0      0   0      0      0      0                              0*   Trying 127.0.0.1:43892...
+* Established connection to 127.0.0.1 (127.0.0.1 port 43892) from 127.0.0.1 port 49308 
+* using HTTP/1.x
+> GET / HTTP/1.1
+> Host: 127.0.0.1:43892
+> User-Agent: curl/8.18.0
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: nginx/1.31.7
+< Date: Fri, 23 Oct 2026 11:38:54 GMT
+< Content-Type: text/html
+< Content-Length: 896
+< Last-Modified: Thu, 01 Oct 2026 23:04:24 GMT
+< Connection: keep-alive
+< ETag: "6abee6f8-380"
+< Accept-Ranges: bytes
+< 
+{ [896 bytes data]
+100    896 100    896   0      0  95147      0                              0100    896 100    896   0      0  94975      0                              0100    896 100    896   0      0  94804      0                              0
+* Connection #0 to host 127.0.0.1:43892 left intact

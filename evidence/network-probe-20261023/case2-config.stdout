@@ -1,0 +1,40 @@
+{
+  "name": "p391-net-20261023-1149",
+  "networks": {
+    "default": {
+      "name": "p391-net-20261023-1149_default",
+      "ipam": {},
+      "labels": {
+        "probe.owner": "p391-net-20261023-1149"
+      }
+    }
+  },
+  "services": {
+    "http": {
+      "command": [
+        "-g",
+        "daemon off;"
+      ],
+      "entrypoint": [
+        "nginx"
+      ],
+      "image": "sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d",
+      "labels": {
+        "probe.owner": "p391-net-20261023-1149"
+      },
+      "networks": {
+        "default": null
+      },
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 80,
+          "published": "43892",
+          "protocol": "tcp"
+        }
+      ],
+      "pull_policy": "never"
+    }
+  }
+}
