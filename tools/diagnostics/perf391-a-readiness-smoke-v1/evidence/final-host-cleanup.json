@@ -1,0 +1,36 @@
+{
+  "clean": true,
+  "docker": {
+    "perf391-smoke-408-a": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    },
+    "perf391-smoke-408-c": {
+      "containers": [],
+      "networks": [],
+      "volumes": []
+    }
+  },
+  "docker_host": "unix:///run/user/1002/docker.sock",
+  "listeners": [],
+  "lock_absent": true,
+  "pid_namespace": "pid:[4026531836]",
+  "ports_checked": [
+    38080,
+    38081,
+    38082,
+    38083,
+    38180,
+    38181,
+    38182,
+    38183
+  ],
+  "process_survivors": [],
+  "removed_paths": [
+    "/tmp/perf391-a-readiness-smoke"
+  ],
+  "runtime_attempts": 0,
+  "runtime_root_absent": true,
+  "utc": "2026-10-23T10:49:59Z"
+}

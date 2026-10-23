@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-readiness-smoke/tools/diagnostics/perf391-a-readiness-smoke-v1/run-preflight.py", line 8, in <module>
+    exec(compile(source,str(ORIGINAL/'preflight.py'),'exec'),{'__file__':str(ORIGINAL/'preflight.py'),'__name__':'__main__'})
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-readiness-smoke/tools/diagnostics/perf391-a-functional-smoke-v1/preflight.py", line 43, in <module>
+    prepare.build.verify_collector_release(REPO)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 291, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-readiness-smoke/tools/diagnostics/perf391-built-images-v1/verify-retained.py", line 20, in <module>
+    validate_receipt(receipt, plan, prepare.sha(E / "runtime-build-plan.json"))
+  File "/home/oracle-worker/Work/starlink-dashboard/.worktrees/perf391-a-readiness-smoke/tools/diagnostics/perf391-runtime-preparation-v1/launcher.py", line 23, in validate_receipt
+    from jsonschema import Draft202012Validator
+  File "/usr/lib/python3/dist-packages/jsonschema/__init__.py", line 13, in <module>
+    from jsonschema._format import FormatChecker
+  File "/usr/lib/python3/dist-packages/jsonschema/_format.py", line 11, in <module>
+    from jsonschema.exceptions import FormatError
+  File "/usr/lib/python3/dist-packages/jsonschema/exceptions.py", line 15, in <module>
+    from referencing.exceptions import Unresolvable as _Unresolvable
+  File "/usr/lib/python3/dist-packages/referencing/__init__.py", line 5, in <module>
+    from referencing._core import Anchor, Registry, Resource, Specification
+  File "/usr/lib/python3/dist-packages/referencing/_core.py", line 9, in <module>
+    from rpds import HashTrieMap, HashTrieSet, List
+  File "/usr/lib/python3/dist-packages/rpds/__init__.py", line 1, in <module>
+    from .rpds import *
+ModuleNotFoundError: No module named 'rpds.rpds'

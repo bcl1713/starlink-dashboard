@@ -1,0 +1,17 @@
+{
+  "files": {
+    "README.md": "9cf9c0130091ef9402aeade8a1f3d3a1f9d9891f33ede5b08b01667fd503a399",
+    "evidence/final-host-cleanup.json": "d329a46e5130053a56f235e0c9cd42ff4573d459f0809aa56f3c70f98893682e",
+    "evidence/invocation.json": "3a1cd8dea9df8de2f19e4c05353517ab91d46e08db0b86e4d1b1c4b1d813b894",
+    "evidence/ownership.json": "e6f5a00fe8b6b29f1d2c7734b10c0a0a5e4248f73737acd839ac37a3f168d5d0",
+    "evidence/preflight.json": "a4d5aaf52fe5b77eed03c6f2afe456a8b828aeea7fb8a4f7eeab8fc253fbb790",
+    "evidence/preflight.log": "35377bc79d2e99d9c8c05388962769a46c1a557a9018a8d482c92004a4dc7208",
+    "preflight-adapted.txt": "a62af22de29d30b6b56d27fad0023098a9f008d4fcc28398303b7e1e870c2fbd",
+    "run-preflight.py": "aeeab8cabad3031d4da3bc178dcd310721148233c590c6b233a35fcdbe17c8e8",
+    "verify-cleanup.py": "b0db56aa6fd4cbe48017845a06c8efec16fe173a71aa7cc052b7755d7cf752d1"
+  },
+  "outcome": "STOP_PREFLIGHT",
+  "runtime_attempts": 0,
+  "schema": "perf391-a-readiness-smoke-evidence-v1",
+  "starting_commit": "9b83eaf18c69102bbed06e166b51a4cb7b9dfbc2"
+}

@@ -1,0 +1,22 @@
+{
+  "preflight_argv": [
+    "timeout",
+    "--kill-after=10s",
+    "5m",
+    "/home/oracle-worker/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/bin/python3.11",
+    "-B",
+    "tools/diagnostics/perf391-a-readiness-smoke-v1/run-preflight.py"
+  ],
+  "environment_selection": {
+    "PYTHONPATH": "/usr/lib/python3/dist-packages"
+  },
+  "exit_code": 1,
+  "runtime_attempts": 0,
+  "a_executions": 0,
+  "c_executions": 0,
+  "screenshot_attempts": 0,
+  "source_observations": 0,
+  "host_scheduled_observations": 0,
+  "outcome": "STOP_PREFLIGHT",
+  "host_cleanup_verified": true
+}

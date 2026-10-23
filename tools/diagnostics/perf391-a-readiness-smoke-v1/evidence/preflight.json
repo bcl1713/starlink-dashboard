@@ -1,0 +1,30 @@
+{
+  "authorization": "https://github.com/bcl1713/starlink-dashboard/pull/408#issuecomment-6363126925",
+  "checks": {
+    "frontend_readiness_overlay_sha256": "ea21f78ca9f71d8b6b67222839727558cd586ebc3e2e438a4b935bd0482fcdec"
+  },
+  "commands": [
+    {
+      "argv": [
+        "hostname"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "forge\n"
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "9b83eaf18c69102bbed06e166b51a4cb7b9dfbc2\n"
+    }
+  ],
+  "failure": "ModuleNotFoundError: No module named 'rpds.rpds'",
+  "runtime_attempts": 0,
+  "starting_commit": "9b83eaf18c69102bbed06e166b51a4cb7b9dfbc2",
+  "status": "STOP_PREFLIGHT"
+}
