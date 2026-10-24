@@ -1,9 +1,97 @@
 """Integration tests for route API endpoints with timing data."""
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import pytest
+
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
+
+
+@pytest.fixture(autouse=True)
+def isolated_route_timing_data(test_client, tmp_path, monkeypatch):
+    """Give every endpoint case real timed and untimed routes in private stores."""
+    route_manager = RouteManager(routes_dir=tmp_path / "routes")
+    poi_manager = POIManager(pois_file=tmp_path / "pois.json")
+    departure = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    for route_id, timed in (("timed-route", True), ("untimed-route", False)):
+        points = [
+            RoutePoint(
+                latitude=40.0 + index / 10,
+                longitude=-74.0 + index / 10,
+                altitude=1000,
+                sequence=index,
+                expected_arrival_time=(
+                    departure + timedelta(minutes=10 * index) if timed else None
+                ),
+                expected_segment_speed_knots=45.0 if timed and index else None,
+            )
+            for index in range(3)
+        ]
+        route_manager.add_route(
+            route_id,
+            ParsedRoute(
+                metadata=RouteMetadata(
+                    name=route_id,
+                    file_path=str(route_manager.routes_dir / f"{route_id}.kml"),
+                    imported_at=departure,
+                    point_count=len(points),
+                ),
+                points=points,
+                timing_profile=(
+                    RouteTimingProfile(
+                        departure_time=departure,
+                        arrival_time=departure + timedelta(minutes=20),
+                        total_expected_duration_seconds=1200,
+                        has_timing_data=True,
+                        segment_count_with_timing=2,
+                    )
+                    if timed
+                    else None
+                ),
+            ),
+        )
+
+    # The API resolves these real managers from app.state after lifespan startup.
+    # Restore them before the shared test_client closes its original resources.
+    with monkeypatch.context() as bindings:
+        bindings.setattr(test_client.app.state, "route_manager", route_manager)
+        bindings.setattr(test_client.app.state, "poi_manager", poi_manager)
+        try:
+            response = test_client.get("/api/routes")
+            assert response.status_code == 200
+            assert [route["id"] for route in response.json()["routes"]] == [
+                "timed-route",
+                "untimed-route",
+            ]
+            assert [
+                route["has_timing_data"] for route in response.json()["routes"]
+            ] == [
+                True,
+                False,
+            ]
+            response = test_client.get("/api/routes/timed-route")
+            assert response.status_code == 200
+            timed_route = response.json()
+            assert timed_route["timing_profile"]["has_timing_data"] is True
+            assert (
+                timed_route["timing_profile"]["total_expected_duration_seconds"] == 1200
+            )
+            assert timed_route["timing_profile"]["segment_count_with_timing"] == 2
+            assert len(timed_route["points"]) == 3
+            assert all(
+                point["expected_arrival_time"] for point in timed_route["points"]
+            )
+            assert all(
+                point["expected_segment_speed_knots"] > 0
+                for point in timed_route["points"][1:]
+            )
+            yield
+        finally:
+            route_manager.deactivate_route()
+            route_manager.stop_watching()
 
 
 @pytest.mark.asyncio

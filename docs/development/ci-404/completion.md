@@ -113,6 +113,16 @@ remain unchanged. No existing case/assertion, within-test concurrency overlap,
 production tick, fixture lifetime, sleep, or backup test is removed or
 shortened.
 
+The first normal PR 411 run,
+[40064607994](https://github.com/bcl1713/starlink-dashboard/actions/runs/40064607994),
+collected all 4,300 IDs but skipped 26 items. The aggregate correctly rejected
+six new skips in the route-timing endpoint module, which had relied on routes
+left by other files. A function-scoped fixture now binds private real route/POI
+managers containing timed and untimed data to the real client. Both fresh-root
+module checks passed 10 cases with only the two unchanged legacy skips. No
+allowance or existing test body changed; this failed CI round is retained and
+does not count toward the two accepted hosted rounds.
+
 The accepted Stage 2 no-change findings remain: retain real slow planning,
 long-history, WAL, filesystem, concurrency, and recovery behavior; do not widen
 fixtures or accelerate production work for timing. Full-family assignment and
@@ -256,9 +266,10 @@ runtime hashes and backend Git tree identities across documentation-only heads;
 do not rewrite earlier checkout/run facts. Inspect counts, the explicit two-case
 ledger, skip reasons, timings, command status, runner minutes, and cleanup.
 Current implementation verification is limited to bounded focused tools and
-synthetic suites plus the nine-case gzip module. The mandatory static command
-runs the source-controlled shard/gate/verifier/workflow/lifecycle contracts
-alongside the existing policy and docs-link contracts.
+synthetic suites, the nine-case gzip module, and two fresh-root route-timing
+module runs. The mandatory static command runs the source-controlled
+shard/gate/verifier/workflow/lifecycle contracts alongside the existing policy
+and docs-link contracts.
 
 Rollback restores the single serial `backend` workflow job with the same
 `Backend Test Gate` name and
