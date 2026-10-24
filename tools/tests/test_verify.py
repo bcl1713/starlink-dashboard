@@ -66,6 +66,7 @@ def test_backend_command_uses_manifest_resolved_from_repository_root(monkeypatch
     assert cwd == module.BACKEND
     assert str(module.BACKEND / "requirements-dev.txt") in command
     assert str(module.BACKEND / "requirements-gfs.txt") in command
+    assert str(module.BACKEND / "requirements-ci.txt") in command
     assert command[command.index("--python") + 1] == "3.11"
     pytest_command = module.tier_commands("backend")[-1][0]
     assert pytest_command[pytest_command.index("pytest") :] == [
@@ -217,3 +218,13 @@ def test_backend_inventory_executes_and_prints_versions():
     else:
         assert result.returncode != 0
         assert "backend requires Python 3.11" in result.stderr
+
+
+def test_stale_backend_lock_stops_before_uv(tmp_path, monkeypatch, capsys):
+    module = load_verify()
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    calls = []
+    monkeypatch.setattr(module.subprocess, "run", lambda *a, **kw: calls.append(a))
+    assert module.main(["tools/verify", "backend"]) == 2
+    assert calls == []
+    assert "regenerate" in capsys.readouterr().err.lower()

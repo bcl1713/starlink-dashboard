@@ -221,3 +221,54 @@ def test_report_path_must_be_absolute(tmp_path):
     assert result.returncode == 4
     assert "absolute" in result.stderr
     assert not (tmp_path / "relative.json").exists()
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        "requirements-dev.txt",
+        "requirements.txt",
+        "requirements-gfs.txt",
+        ".python-version",
+    ],
+)
+def test_backend_lock_rejects_changed_source_inputs(tmp_path, changed):
+    import backend_ci
+
+    backend = tmp_path / "backend/starlink-location"
+    backend.mkdir(parents=True)
+    for name in (
+        "requirements-dev.txt",
+        "requirements.txt",
+        "requirements-gfs.txt",
+        ".python-version",
+    ):
+        (backend / name).write_text(
+            "3.11\n" if name == ".python-version" else "example>=1\n"
+        )
+    digest = backend_ci.backend_lock_input_hashes(tmp_path)
+    (backend / "requirements-ci.txt").write_text(
+        "# backend-lock-input-sha256: " + json.dumps(digest) + "\nexample==1\n"
+    )
+    backend_ci.validate_backend_lock(tmp_path)
+    (backend / changed).write_text((backend / changed).read_text() + "# change\n")
+    with pytest.raises(ValueError, match="regenerate"):
+        backend_ci.validate_backend_lock(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        "",
+        "# backend-lock-input-sha256: not-json\n",
+        "# backend-lock-input-sha256: {}\n",
+    ],
+)
+def test_backend_lock_rejects_missing_or_incomplete_provenance(tmp_path, header):
+    import backend_ci
+
+    backend = tmp_path / "backend/starlink-location"
+    backend.mkdir(parents=True)
+    (backend / "requirements-ci.txt").write_text(header)
+    with pytest.raises(ValueError, match="regenerate"):
+        backend_ci.validate_backend_lock(tmp_path)

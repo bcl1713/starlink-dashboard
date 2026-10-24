@@ -153,6 +153,7 @@ class TestMissionTimelineExporters:
         assert set(df["Ground Entry Latitude"]) == {41.2565}
         assert set(df["Ground Entry Longitude"]) == {-95.9345}
 
+    @pytest.mark.usefixtures("offline_cartography")
     def test_generate_pptx_starts_with_zip_header(self, mission, timeline):
         output = generate_timeline_export(
             TimelineExportFormat.PPTX, mission, timeline

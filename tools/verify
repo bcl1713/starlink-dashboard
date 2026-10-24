@@ -13,6 +13,10 @@ import tokenize
 from collections.abc import Mapping
 from pathlib import Path
 
+# SourceFileLoader callers need the same helper lookup as the executable script.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from backend_ci import validate_backend_lock
+
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend/starlink-location"
 PYTHON = (
@@ -93,6 +97,8 @@ BACKEND_UV = [
     str(BACKEND / "requirements-dev.txt"),
     "--with-requirements",
     str(BACKEND / "requirements-gfs.txt"),
+    "--with-requirements",
+    str(BACKEND / "requirements-ci.txt"),
 ]
 BACKEND_COMMANDS: list[Command] = [
     (
@@ -100,11 +106,13 @@ BACKEND_COMMANDS: list[Command] = [
             *BACKEND_UV,
             "python",
             "-c",
-            "import sys; from importlib.metadata import distributions; "
-            "print('Python:', sys.version, 'executable:', sys.executable, flush=True); "
-            "assert sys.version_info[:2] == (3, 11), 'backend requires Python 3.11'; "
-            "print('Installed distributions:\\n' + '\\n'.join(sorted("
-            "d.metadata['Name'] + '==' + d.version for d in distributions())))",
+            (
+                "import sys; from importlib.metadata import distributions; "
+                "print('Python:', sys.version, 'executable:', sys.executable, flush=True); "
+                "assert sys.version_info[:2] == (3, 11), 'backend requires Python 3.11'; "
+                "print('Installed distributions:\\n' + '\\n'.join(sorted("
+                "d.metadata['Name'] + '==' + d.version for d in distributions())))"
+            ),
         ],
         BACKEND,
     ),
@@ -254,6 +262,13 @@ def main(argv: list[str] | None = None) -> int:
         if violations:
             print(*violations, sep="\n", file=sys.stderr)
             return 1
+
+    if args[1] in {"backend", "all"}:
+        try:
+            validate_backend_lock(ROOT)
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
 
     for command, cwd in tier_commands(args[1]):
         print(f"({cwd}) $ {' '.join(command)}", flush=True)

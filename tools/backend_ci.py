@@ -19,6 +19,42 @@ from datetime import datetime, timezone
 from importlib.metadata import distributions
 from pathlib import Path
 
+BACKEND_LOCK_INPUTS = (
+    "requirements-dev.txt",
+    "requirements.txt",
+    "requirements-gfs.txt",
+    ".python-version",
+)
+BACKEND_LOCK_HEADER = "# backend-lock-input-sha256: "
+
+
+def backend_lock_input_hashes(root):
+    """Fingerprint all canonical dependency sources and the tracked interpreter."""
+    backend = root / "backend/starlink-location"
+    return {name: _sha256(backend / name) for name in BACKEND_LOCK_INPUTS}
+
+
+def validate_backend_lock(root):
+    """Reject stale or missing lock provenance before resolving dependencies."""
+    try:
+        lock = root / "backend/starlink-location/requirements-ci.txt"
+        headers = [
+            line.removeprefix(BACKEND_LOCK_HEADER)
+            for line in lock.read_text().splitlines()
+            if line.startswith(BACKEND_LOCK_HEADER)
+        ]
+        if len(headers) != 1 or json.loads(headers[0]) != backend_lock_input_hashes(
+            root
+        ):
+            raise ValueError("source fingerprints differ")
+    except (OSError, ValueError, TypeError) as error:
+        raise ValueError(
+            "Backend dependency lock is missing or stale; regenerate requirements-ci.txt "
+            "with uv pip compile --generate-hashes using requirements-dev.txt and "
+            "requirements-gfs.txt plus reviewed inventory constraints, then update the "
+            "backend-lock-input-sha256 header with backend_lock_input_hashes(ROOT)."
+        ) from error
+
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
