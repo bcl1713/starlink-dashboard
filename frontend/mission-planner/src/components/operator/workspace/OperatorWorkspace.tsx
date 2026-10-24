@@ -65,6 +65,7 @@ import { OperatorEventFeed } from '../OperatorEventFeed';
 import { OperatorAlertSettings } from '../OperatorAlertSettings';
 import { OperatorDisplayTools } from '../OperatorDisplayTools';
 import { OperatorStoreSetup } from '../OperatorStoreSetup';
+import { ManualDestinationSettingsCard } from '../ManualDestinationSettingsCard';
 import { useEventAlerts } from '../useEventAlerts';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import { WorkspaceAwareness } from './WorkspaceAwareness';
@@ -882,6 +883,9 @@ export function OperatorWorkspace() {
               }}
             />
           )}
+          <div hidden={view !== 'Now'}>
+            <ManualDestinationSettingsCard />
+          </div>
           <OperatorStoreSetup
             health={health.data}
             error={health.error}

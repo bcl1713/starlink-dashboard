@@ -194,3 +194,41 @@ expiry can be calculated.
 
 - `200 OK` — the projection returned. Availability is represented by the
   response `state`, not by a fabricated fallback POI or ETA.
+
+## Manual destination fallback
+
+`GET /api/overview/manual-destination` returns shared persistent settings:
+`{"destination": null}` or
+`{"destination": {"name": "Remote stop", "latitude": 0, "longitude": 1, "airport_code": null}}`.
+`PUT` to the same path replaces the whole setting with that shape; explicit
+`null` clears it. A destination requires a nonblank name of at most 120
+characters and finite numeric latitude −90…90 and longitude −180…180. Optional
+airport code is 1–12 characters. Invalid or partial input returns 422 and leaves
+saved settings intact. Settings are stored atomically under
+`data/settings/overview-manual-destination.json` and survive restarts.
+
+`GET /api/overview/airports?q=LHR` returns `{"airports": [...]}` with at most 20
+records containing `ident`, `name`, `latitude`, `longitude`, `icao_code`,
+`iata_code`, `gps_code`, `local_code`, `municipality`, and `country`. Search
+accepts codes or name words, ignores case/accents, and ranks exact identifiers
+first. Two characters are required for results; the query is limited to 120
+characters. The packaged
+[OurAirports snapshot](../../../backend/starlink-location/app/assets/airports.md)
+requires no runtime Internet access.
+
+When no mission leg is active and a manual destination is saved, upcoming POIs
+returns `source: "manual"`, one retained `arrival` POI with ID
+`manual-destination`, and null route progress, scheduled departure and flight
+phase. The point has no scheduled arrival or mission association. Direct
+great-circle distance divided by fresh positive groundspeed gives `eta_seconds`;
+arrival UTC is `calculated_at + eta_seconds`. Both position and speed must have
+valid observation provenance younger than 10 seconds. Missing, stale, invalid or
+zero speed suppresses ETA (`state: "unavailable"`) while retaining the
+destination marker. The response includes `speed_observed_at` so displays also
+suppress aging timing between polls. Manual timing uses wall clock, independent
+of mission phase or replay clock.
+
+An active mission always retains precedence, including its existing diagnostics
+for unbound or inconsistent state. A standalone uploaded route does not block
+manual fallback. Mission deactivation reveals the saved destination again.
+Mission responses retain existing semantics and identify `source: "mission"`.

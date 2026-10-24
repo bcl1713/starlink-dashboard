@@ -95,6 +95,36 @@ export function deriveArrivalPanel(
   const refreshException = refreshUnavailable
     ? 'Arrival refresh unavailable'
     : null;
+  if (response.source === 'manual') {
+    const destination = response.pois.find((p) => p.kind === 'arrival');
+    const fresh = (timestamp: string | null | undefined) => {
+      const age = timestamp ? statusObservationAgeMs(timestamp, now) : null;
+      return age !== null && age < 10_000;
+    };
+    const usable =
+      !refreshUnavailable &&
+      response.state === 'available' &&
+      response.position_state === 'fresh' &&
+      fresh(response.position_observed_at) &&
+      fresh(response.speed_observed_at);
+    return {
+      ...empty,
+      exception: refreshException,
+      sections: [
+        {
+          label: 'DESTINATION',
+          name: destination?.name ?? null,
+          timing:
+            usable && destination
+              ? timing(destination.estimated_arrival_time, now)
+              : null,
+          unavailable: destination
+            ? 'ETA unavailable'
+            : 'Destination unavailable',
+        },
+      ],
+    };
+  }
   if (!response.flight_phase)
     return {
       ...empty,

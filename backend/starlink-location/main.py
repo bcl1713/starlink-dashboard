@@ -25,6 +25,7 @@ from app.api import (
     geojson,
     gps,
     health,
+    manual_destination,
     metrics,
     orbital_catalog,
     overview_adsb,
@@ -76,6 +77,7 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
+from app.services.manual_destination import ManualDestinationStore
 from app.services.orbital_catalog import OrbitalCatalogService
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.overview_adsb_traffic import AdsbTrafficService
@@ -329,6 +331,9 @@ async def startup_event():
 
         initialize_overview_history_runtime()
         initialize_overview_clock_settings_runtime()
+        app.state.manual_destination_store = ManualDestinationStore(
+            Path("data/settings/overview-manual-destination.json")
+        )
         initialize_overview_link_settings_runtime()
         app.state.x_band_selection_store = XBandSelectionStore(X_BAND_SELECTION_PATH)
         initialize_orbital_catalog_runtime()
@@ -747,6 +752,8 @@ async def _shutdown_resources():
         overview_history.set_overview_history_reader(None)
         overview_history.set_overview_history_settings_store(None)
         overview_clock_settings.set_overview_clock_settings_store(None)
+        if hasattr(app.state, "manual_destination_store"):
+            del app.state.manual_destination_store
         overview_link_settings.set_overview_link_settings_store(None)
         if hasattr(app.state, "x_band_selection_store"):
             del app.state.x_band_selection_store
@@ -1450,6 +1457,7 @@ app.include_router(overview_adsb.router, tags=["ADS-B Aircraft"])
 app.include_router(orbital_catalog.router, tags=["Orbital Experiment"])
 app.include_router(overview_history.router, tags=["Overview History"])
 app.include_router(overview_upcoming_pois.router, tags=["Overview POIs"])
+app.include_router(manual_destination.router)
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])

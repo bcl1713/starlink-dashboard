@@ -89,7 +89,10 @@ import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { OverviewClockPanel } from './OverviewClockPanel';
 import { OverviewFullscreenControl } from './OverviewFullscreenControl';
 import { useOverviewUpcomingPois } from '@/hooks/api/useOverviewUpcomingPois';
-import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
+import {
+  overviewPoiView,
+  overviewPoiUrgencyColor,
+} from './overview-upcoming-pois';
 import { OverviewPoiMarker } from './OverviewPoiMarker';
 import { OverviewMapLabel } from './OverviewMapLabel';
 import { OverviewLabelLayout } from './OverviewLabelLayout';
@@ -1120,9 +1123,11 @@ export function OverviewPage() {
                   <OverviewPoiMarker
                     key={poi.poi_id}
                     poi={poi}
-                    color={urgencyColor(
+                    color={overviewPoiUrgencyColor(
                       poi.estimated_arrival_time,
-                      new Date(missionNow)
+                      upcomingPoisResponse?.source,
+                      currentTime,
+                      missionNow
                     )}
                     globeOccluder={globeOccluder}
                   />

@@ -426,3 +426,19 @@ it('shows pending immediately and the authoritative accepted conference while li
     });
   }
 });
+
+it('offers manual destination in Now without a mission or ready operator journal', async () => {
+  const { manualDestinationApi } = await import(
+    '@/services/manual-destination'
+  );
+  vi.spyOn(manualDestinationApi, 'get').mockResolvedValue({
+    destination: null,
+  });
+  mount('/operator', false);
+  expect(
+    await screen.findByRole('region', { name: 'Manual destination' })
+  ).toBeTruthy();
+  const save = await screen.findByRole('button', { name: 'Save destination' });
+  expect((save as HTMLButtonElement).disabled).toBe(false);
+  expect(screen.getByLabelText('Destination name')).toBeTruthy();
+});

@@ -63,6 +63,19 @@ export function urgencyColor(
   return interpolateHexColor(lower.color, upper.color, progress);
 }
 
+/** Manual estimates use live telemetry time even if an old replay remains selected. */
+export function overviewPoiUrgencyColor(
+  estimatedArrivalTime: string | null,
+  source: 'mission' | 'manual' | undefined,
+  wallNowMs: number,
+  missionNowMs: number
+): string {
+  return urgencyColor(
+    estimatedArrivalTime,
+    new Date(source === 'manual' ? wallNowMs : missionNowMs)
+  );
+}
+
 export function overviewPoiView(
   records: OverviewUpcomingPoi[],
   missionNowMs?: number,

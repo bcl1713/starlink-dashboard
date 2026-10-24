@@ -1,6 +1,7 @@
 """API endpoint for truthful Overview upcoming mission POIs."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from math import isfinite
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
@@ -9,8 +10,12 @@ from app.core.eta_service import get_eta_calculator
 from app.mission.active_context import resolve_active_mission_leg_context
 from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.flight_status import FlightPhase
-from app.models.overview_upcoming_pois import OverviewUpcomingPoisResponse
+from app.models.overview_upcoming_pois import (
+    OverviewUpcomingPoi,
+    OverviewUpcomingPoisResponse,
+)
 from app.services.flight_state import get_flight_state_manager
+from app.services.manual_destination import ManualDestination
 from app.services.overview_upcoming_pois import (
     calculate_route_aware_eta_results,
     project_overview_upcoming_pois,
@@ -41,6 +46,73 @@ def _route_progress(
         return None
 
 
+def _manual_destination_response(
+    request: Request, destination: ManualDestination, calculated_at: datetime
+) -> OverviewUpcomingPoisResponse:
+    """Project one direct-distance estimate without consulting mission state."""
+    observed_at = speed_observed_at = None
+    position_state = "unavailable"
+    eta = None
+    arrival_time = None
+    try:
+        position = request.app.state.coordinator.get_current_telemetry().position
+        observed_at, position_state = position_observation(
+            position.latitude,
+            position.longitude,
+            getattr(position, "observed_at", None),
+            calculated_at,
+        )
+        speed = getattr(position, "speed", None)
+        speed_observed_at = getattr(position, "speed_observed_at", None)
+        if (
+            position_state == "fresh"
+            and speed_is_fresh(speed, speed_observed_at, calculated_at)
+            and speed > 0
+        ):
+            distance = get_eta_calculator().calculate_distance(
+                position.latitude,
+                position.longitude,
+                destination.latitude,
+                destination.longitude,
+            )
+            seconds = distance / 1852 / speed * 3600
+            if (
+                isfinite(seconds)
+                and 0
+                <= seconds
+                <= (
+                    datetime.max.replace(tzinfo=timezone.utc) - calculated_at
+                ).total_seconds()
+            ):
+                arrival_time = calculated_at + timedelta(seconds=seconds)
+                eta = seconds
+    except (AttributeError, TypeError, ValueError, RuntimeError, OverflowError):
+        pass
+    return OverviewUpcomingPoisResponse(
+        source="manual",
+        state="available" if eta is not None else "unavailable",
+        calculated_at=calculated_at,
+        position_observed_at=observed_at,
+        position_state=position_state,
+        speed_observed_at=speed_observed_at if eta is not None else None,
+        pois=[
+            OverviewUpcomingPoi(
+                poi_id="manual-destination",
+                name=destination.name,
+                kind="arrival",
+                latitude=destination.latitude,
+                longitude=destination.longitude,
+                eta_seconds=eta,
+                estimated_arrival_time=arrival_time,
+                eta_type="estimated",
+                flight_phase=None,
+                upcoming=True,
+                map_retained=True,
+            )
+        ],
+    )
+
+
 @router.get("/upcoming-pois", response_model=OverviewUpcomingPoisResponse)
 async def get_overview_upcoming_pois(
     request: Request,
@@ -51,6 +123,11 @@ async def get_overview_upcoming_pois(
     calculated_at = _utc_now()
     resolution = resolve_active_mission_leg_context(route_manager)
     if resolution.context is None:
+        store = getattr(request.app.state, "manual_destination_store", None)
+        if resolution.state == "no_active_mission" and store is not None:
+            destination = store.get().destination
+            if destination is not None:
+                return _manual_destination_response(request, destination, calculated_at)
         return OverviewUpcomingPoisResponse(
             state=resolution.state, calculated_at=calculated_at, pois=[]
         )

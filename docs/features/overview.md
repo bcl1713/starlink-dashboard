@@ -297,3 +297,18 @@ The deployment laptop still requires hardware validation.
 See [optional boundaries](overview-boundaries.md), [setup](../setup/README.md),
 [API reference](../api/README.md),
 [troubleshooting](../troubleshooting/README.md) and [README](../../README.md).
+
+### Destination without a mission
+
+In **Operator → Now → Manual destination**, search by ICAO/IATA code or airport
+name, select a result, then **Save destination**. You can also enter a
+**Destination name**, **Latitude**, and **Longitude** directly. **Clear
+destination** removes the saved point. The setting is shared across Overview
+displays and saved across restarts.
+
+With no active mission leg, Overview shows the point using its destination
+marker and a **DESTINATION** arrival section with estimated UTC and countdown.
+The estimate uses direct distance and fresh groundspeed; timing becomes
+unavailable when telemetry is missing, stationary, invalid or stale. An active
+mission takes precedence and leaves the manual destination saved for later. No
+uncertainty acknowledgment is required to save or use this estimate.
