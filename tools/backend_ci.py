@@ -1,8 +1,7 @@
-"""Observe pytest without selecting tests or changing their execution semantics.
+"""Observe pytest inventories/phases and validate exhaustive backend shard evidence.
 
-Schema 1 keeps ordered inventories and individual phase events, including failures
-and missing phases, so later consumers can validate completeness without guessing.
-Only explicitly supplied run metadata is read from the environment.
+Serial observations use schema 1; shard schema 3 requires collector-skip evidence
+and binds the report to its canonical resource owner's run and command context.
 """
 
 from __future__ import annotations
@@ -33,6 +32,44 @@ BACKEND_LOCK_INPUTS = (
     ".python-version",
 )
 BACKEND_LOCK_HEADER = "# backend-lock-input-sha256: "
+
+
+def backend_commands(root, python_selector):
+    """The single canonical serial inventory/pytest pipeline, shared with its gate."""
+    backend = Path(root) / "backend/starlink-location"
+    uv = [
+        "uv",
+        "run",
+        "--python",
+        python_selector,
+        "--with-requirements",
+        str(backend / "requirements-dev.txt"),
+        "--with-requirements",
+        str(backend / "requirements-gfs.txt"),
+        "--with-requirements",
+        str(backend / "requirements-ci.txt"),
+    ]
+    return [
+        (
+            [
+                *uv,
+                "python",
+                "-c",
+                (
+                    "import sys; from importlib.metadata import distributions; "
+                    "print('Python:', sys.version, 'executable:', sys.executable, flush=True); "
+                    "assert sys.version_info[:2] == (3, 11), 'backend requires Python 3.11'; "
+                    "print('Installed distributions:\\n' + '\\n'.join(sorted("
+                    "d.metadata['Name'] + '==' + d.version for d in distributions())))"
+                ),
+            ],
+            backend,
+        ),
+        (
+            [*uv, "pytest", "tests/", "-q", "--durations=50", "--durations-min=0"],
+            backend,
+        ),
+    ]
 
 
 def backend_lock_input_hashes(root):
@@ -98,6 +135,12 @@ def _identity(config):
         "workflow": os.environ.get("GITHUB_WORKFLOW"),
         "shard": parse_shard(config.getoption("backend_ci_shard")),
         "checkout_path": str(root),
+        "report_path": config.getoption("backend_ci_report"),
+        "owner_context": (
+            _decode_json(os.environ["BACKEND_CI_OWNER_CONTEXT"])
+            if os.environ.get("BACKEND_CI_OWNER_CONTEXT")
+            else None
+        ),
         "runner_sha256": (
             _sha256(root / "tools/backend_test_runner.py")
             if (root / "tools/backend_test_runner.py").exists()
@@ -202,6 +245,8 @@ def pytest_configure(config):
         ):
             raise ValueError("shards require unfiltered full tests/ collection")
         observer = _Observer(config, Path(path))
+        if observer.report["identity"]["owner_context"] is not None:
+            validate_owner_context(observer.report["identity"])
     except (ValueError, OSError) as error:
         raise pytest.UsageError(str(error)) from error
     pytest.hookimpl(tryfirst=True)(_Observer.pytest_collection_modifyitems)
@@ -217,7 +262,7 @@ class _Observer:
         self.shards = load_shard_config(Path(config.getoption("backend_ci_config")))
         self.shard = parse_shard(config.getoption("backend_ci_shard"))
         self.report = {
-            "schema_version": 2 if self.shard["index"] is not None else 1,
+            "schema_version": 3 if self.shard["index"] is not None else 1,
             "allowed_existing_nonpasses": self.shards["allowed_existing_nonpasses"],
             "identity": _identity(config),
             "session": {
@@ -235,6 +280,7 @@ class _Observer:
                 "selected_nodeids": [],
                 "deselected_nodeids": [],
                 "errors": [],
+                "skipped_collectors": [],
                 "duration_seconds": None,
             },
             "phases": [],
@@ -244,6 +290,17 @@ class _Observer:
         self.collection_started = time.monotonic()
 
     def pytest_collectreport(self, report):
+        if report.skipped:
+            self.report["collection"]["skipped_collectors"].append(
+                {
+                    "nodeid": report.nodeid,
+                    "reason": (
+                        str(report.longrepr[2])
+                        if isinstance(report.longrepr, tuple)
+                        else str(report.longrepr)
+                    ),
+                }
+            )
         if report.failed:
             self.report["collection"]["errors"].append(
                 {"nodeid": report.nodeid, "longrepr": str(report.longrepr)}
@@ -340,6 +397,10 @@ class _Observer:
 
 def read_json(path):
     """Decode evidence without JSON's permissive duplicate/nonfinite extensions."""
+    return _decode_json(Path(path).read_text())
+
+
+def _decode_json(source):
 
     def pairs(values):
         result = {}
@@ -352,9 +413,7 @@ def read_json(path):
     def constant(value):
         raise ValueError(f"nonfinite JSON number: {value}")
 
-    result = json.loads(
-        Path(path).read_text(), object_pairs_hook=pairs, parse_constant=constant
-    )
+    result = json.loads(source, object_pairs_hook=pairs, parse_constant=constant)
 
     def finite(value):
         if isinstance(value, float) and not math.isfinite(value):
@@ -446,6 +505,175 @@ def assignment_digest(mapping):
     ).hexdigest()
 
 
+def backend_pipeline(commands, report, run_root, shard):
+    """Record the exact reported command plan before any owned process starts."""
+    pipeline = []
+    for index, (command, cwd) in enumerate(commands):
+        command = list(command)
+        if "pytest" in command:
+            command += [
+                "-p",
+                "backend_ci",
+                f"--backend-ci-report={report}",
+                f"--basetemp={Path(run_root) / 'basetemp'}",
+            ]
+            if shard:
+                command += [f"--backend-ci-shard={shard}"]
+        pipeline.append(
+            {
+                "label": "inventory" if index == 0 else "pytest",
+                "command": command,
+                "cwd": str(cwd),
+            }
+        )
+    return pipeline
+
+
+def _absolute_record_path(value, label):
+    if (
+        not isinstance(value, str)
+        or not Path(value).is_absolute()
+        or any(part in (".", "..") for part in value.split("/"))
+    ):
+        raise ValueError(f"{label} must record an absolute path without traversal")
+    return Path(value)
+
+
+def expected_owner_context(identity, run_root, python_selector):
+    """Reconstruct canonical argv in the artifact's own recorded path context."""
+    checkout = _absolute_record_path(identity["checkout_path"], "checkout")
+    report = _absolute_record_path(identity["report_path"], "report")
+    private = _absolute_record_path(run_root, "run root")
+    if private == report.parent or private in report.parents:
+        raise ValueError("recorded report must be outside its private root")
+    if not isinstance(python_selector, str) or not python_selector:
+        raise ValueError("missing canonical Python selector")
+    shard = identity["shard"]
+    if shard == {"index": None, "count": None}:
+        selection = None
+    else:
+        if (
+            not isinstance(shard, dict)
+            or set(shard) != {"index", "count"}
+            or type(shard["index"]) is not int
+            or shard["index"] not in range(1, 5)
+            or type(shard["count"]) is not int
+            or shard["count"] != 4
+        ):
+            raise ValueError("invalid owner shard selection")
+        selection = f"{shard['index']}/4"
+    pipeline = backend_pipeline(
+        backend_commands(checkout, python_selector), report, private, selection
+    )
+    return {
+        "schema_version": 1,
+        "run_id": identity["run_id"],
+        "run_attempt": identity["run_attempt"],
+        "checkout_sha": identity["checkout_sha"],
+        "checkout": str(checkout),
+        "cwd": str(checkout / "backend/starlink-location"),
+        "report": str(report),
+        "run_root": str(private),
+        "shard": shard,
+        "python_selector": python_selector,
+        "verify_sha256": identity["verify_sha256"],
+        "pipeline": pipeline,
+        "pipeline_sha256": assignment_digest(pipeline),
+    }
+
+
+def make_owner_context(repo, commands, report, run_root, shard):
+    """Bind the producer's source/run identity to its canonical planned commands."""
+    revision = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    ).stdout.strip()
+    try:
+        command = commands[0][0]
+        selector = command[command.index("--python") + 1]
+    except (IndexError, ValueError) as error:
+        raise ValueError(
+            "reported pytest pipeline lacks its canonical inventory command"
+        ) from error
+    identity = {
+        "checkout_path": str(repo),
+        "report_path": str(report),
+        "checkout_sha": revision,
+        "shard": parse_shard(shard),
+        "run_id": os.environ.get("BACKEND_CI_RUN_ID", os.environ.get("GITHUB_RUN_ID")),
+        "run_attempt": os.environ.get(
+            "BACKEND_CI_RUN_ATTEMPT", os.environ.get("GITHUB_RUN_ATTEMPT")
+        ),
+        "verify_sha256": _sha256(Path(repo) / "tools/verify"),
+    }
+    context = expected_owner_context(identity, str(run_root), selector)
+    if backend_pipeline(commands, report, run_root, shard) != context["pipeline"]:
+        raise ValueError(
+            "reported pytest pipeline differs from canonical inventory/pytest argv"
+        )
+    return context
+
+
+def validate_owner_context(identity):
+    context = identity["owner_context"]
+    if not isinstance(context, dict) or not context:
+        raise ValueError("missing owner context")
+    expected = expected_owner_context(
+        identity, context["run_root"], context["python_selector"]
+    )
+    # JSON equality distinguishes bool/int as well as missing/extra context keys.
+    if assignment_digest(context) != assignment_digest(expected):
+        raise ValueError(
+            "owner context differs from observed run/source/selection identity"
+        )
+    if identity["cwd"] != expected["cwd"]:
+        raise ValueError("observation cwd differs from its checkout backend context")
+    pytest_command = expected["pipeline"][1]["command"]
+    if identity["pytest_args"] != pytest_command[pytest_command.index("pytest") + 1 :]:
+        raise ValueError(
+            "observed pytest args differ from the canonical owner selection"
+        )
+    return expected
+
+
+def validate_ownership(report, ownership):
+    """Require the exact owner and successful inventory→pytest pipeline for a report."""
+    context = validate_owner_context(report["identity"])
+    if (
+        not isinstance(ownership, dict)
+        or assignment_digest(ownership.get("context")) != assignment_digest(context)
+        or ownership.get("checkout") != context["checkout"]
+        or ownership.get("report") != context["report"]
+        or ownership.get("shard") != f"{context['shard']['index']}/4"
+    ):
+        raise ValueError("ownership belongs to a different run/checkout/shard/report")
+    commands = ownership.get("commands")
+    if not isinstance(commands, list) or len(commands) != 2:
+        raise ValueError("ownership requires successful inventory then pytest records")
+    for actual, planned in zip(commands, context["pipeline"], strict=True):
+        if (
+            not isinstance(actual, dict)
+            or {key: actual.get(key) for key in ("label", "command", "cwd")} != planned
+            or type(actual.get("exit_code")) is not int
+            or actual["exit_code"] != 0
+            or type(actual.get("subprocess_returncode")) is not int
+            or actual["subprocess_returncode"] != 0
+            or actual.get("harness_error")
+            or actual.get("cleanup_error")
+        ):
+            raise ValueError(
+                "ownership command/order/cwd/status differs from the planned pipeline"
+            )
+    if (
+        ownership.get("cleanup") != {"survivors": [], "listeners": []}
+        or ownership.get("private_paths_removed") is not True
+    ):
+        raise ValueError("runner cleanup evidence failed")
+
+
 def check_needs(needs):
     expected = {f"backend_{i}" for i in range(1, 5)}
     if not isinstance(needs, dict) or set(needs) != expected:
@@ -515,7 +743,7 @@ def _validate_reports(reports, expected_identity, needs_results):
     timings = []
     indices = set()
     for report in reports:
-        if type(report["schema_version"]) is not int or report["schema_version"] != 2:
+        if type(report["schema_version"]) is not int or report["schema_version"] != 3:
             raise ValueError("unsupported report schema")
         identity = report["identity"]
         shard = identity["shard"]
@@ -587,6 +815,10 @@ def _validate_reports(reports, expected_identity, needs_results):
             raise ValueError("missing allowed existing nonpasses")
         semantic["allowed_existing_nonpasses"] = allowed
         collection = report["collection"]
+        if collection["skipped_collectors"] != []:
+            raise ValueError(
+                "unexpected skipped collector: no collection skips are approved"
+            )
         full = _unique(collection["full_nodeids"], "full node IDs")
         selected = _unique(collection["selected_nodeids"], "selected node IDs")
         deselected = _unique(collection["deselected_nodeids"], "deselected node IDs")
@@ -806,22 +1038,9 @@ def gate_artifacts(directory, expected, needs):
             path: assign_file(path, 4, config["overrides"]) for path in mapping
         }:
             raise ValueError("altered reviewed file assignment")
-        ownership = read_json(artifact / "ownership.json")
-        if (
-            ownership.get("cleanup") != {"survivors": [], "listeners": []}
-            or ownership.get("private_paths_removed") is not True
-            or not ownership.get("commands")
-            or any(
-                type(command.get("exit_code")) is not int
-                or command["exit_code"] != 0
-                or type(command.get("subprocess_returncode")) is not int
-                or command["subprocess_returncode"] != 0
-                or command.get("harness_error")
-                or command.get("cleanup_error")
-                for command in ownership["commands"]
-            )
-        ):
-            raise ValueError("runner command or cleanup evidence failed")
+        if Path(report["identity"]["report_path"]).name != f"{name}.json":
+            raise ValueError("recorded report path does not match artifact identity")
+        validate_ownership(report, read_json(artifact / "ownership.json"))
         reports.append(report)
     return validate_reports(reports, expected, needs)
 

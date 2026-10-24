@@ -16,7 +16,12 @@ from pathlib import Path
 
 # SourceFileLoader callers need the same helper lookup as the executable script.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from backend_ci import parse_shard, reject_pytest_overrides, validate_backend_lock
+from backend_ci import (
+    backend_commands,
+    parse_shard,
+    reject_pytest_overrides,
+    validate_backend_lock,
+)
 from backend_test_runner import run_backend
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -94,39 +99,8 @@ STATIC: list[Command] = [
 ]
 # Both commands share uv's requirement-keyed cached environment. The first
 # separates dependency setup/inventory time from pytest execution.
-BACKEND_UV = [
-    "uv",
-    "run",
-    "--python",
-    PYTHON,
-    "--with-requirements",
-    str(BACKEND / "requirements-dev.txt"),
-    "--with-requirements",
-    str(BACKEND / "requirements-gfs.txt"),
-    "--with-requirements",
-    str(BACKEND / "requirements-ci.txt"),
-]
-BACKEND_COMMANDS: list[Command] = [
-    (
-        [
-            *BACKEND_UV,
-            "python",
-            "-c",
-            (
-                "import sys; from importlib.metadata import distributions; "
-                "print('Python:', sys.version, 'executable:', sys.executable, flush=True); "
-                "assert sys.version_info[:2] == (3, 11), 'backend requires Python 3.11'; "
-                "print('Installed distributions:\\n' + '\\n'.join(sorted("
-                "d.metadata['Name'] + '==' + d.version for d in distributions())))"
-            ),
-        ],
-        BACKEND,
-    ),
-    (
-        [*BACKEND_UV, "pytest", "tests/", "-q", "--durations=50", "--durations-min=0"],
-        BACKEND,
-    ),
-]
+BACKEND_COMMANDS: list[Command] = backend_commands(ROOT, PYTHON)
+
 FRONTEND: list[Command] = [
     (["npm", "--prefix", "frontend/mission-planner", "run", "test:unit"], ROOT),
     (["npm", "--prefix", "frontend/mission-planner", "run", "build"], ROOT),

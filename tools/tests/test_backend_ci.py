@@ -433,7 +433,7 @@ def valid_gate_reports():
         }
         reports.append(
             {
-                "schema_version": 2,
+                "schema_version": 3,
                 "identity": identity,
                 "session": {
                     "finished": True,
@@ -448,6 +448,7 @@ def valid_gate_reports():
                     "selected_nodeids": [node],
                     "deselected_nodeids": [x for x in full if x != node],
                     "errors": [],
+                    "skipped_collectors": [],
                     "duration_seconds": 0.1,
                     "file_assignments": mapping,
                     "nodeid_paths": {n: n.split("::")[0] for n in full},
@@ -633,6 +634,80 @@ def test_actual_gate_cli_rejects_non_success_needs_before_download(tmp_path, sta
     assert "backend_2" in result.stderr
 
 
+def _owner_fixture(report, path, index):
+    # The fixture uses the actual tracked canonical argv; producer correctness is
+    # separately exercised end to end with the source verifier and real pytest.
+    import copy
+    import runpy
+
+    commands = runpy.run_path(str(TOOLS / "verify"))["BACKEND_COMMANDS"]
+    root = str(TOOLS.parent)
+    run_root = str(path.parent.parent.parent / f"private-{index}")
+    pipeline = []
+    for position, (command, cwd) in enumerate(commands):
+        command = list(command)
+        if position == 1:
+            command += [
+                "-p",
+                "backend_ci",
+                f"--backend-ci-report={path}",
+                f"--basetemp={run_root}/basetemp",
+                f"--backend-ci-shard={index}/4",
+            ]
+        pipeline.append(
+            {
+                "label": "inventory" if position == 0 else "pytest",
+                "command": command,
+                "cwd": str(cwd),
+            }
+        )
+    identity = report["identity"]
+    context = {
+        "schema_version": 1,
+        "run_id": identity["run_id"],
+        "run_attempt": identity["run_attempt"],
+        "checkout_sha": identity["checkout_sha"],
+        "checkout": root,
+        "cwd": str(TOOLS.parent / "backend/starlink-location"),
+        "report": str(path),
+        "run_root": run_root,
+        "shard": identity["shard"],
+        "python_selector": pipeline[0]["command"][3],
+        "verify_sha256": identity["verify_sha256"],
+        "pipeline": pipeline,
+        "pipeline_sha256": hashlib.sha256(
+            json.dumps(pipeline, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest(),
+    }
+    identity.update(
+        checkout_path=root,
+        cwd=context["cwd"],
+        report_path=str(path),
+        owner_context=copy.deepcopy(context),
+        pytest_args=pipeline[1]["command"][
+            pipeline[1]["command"].index("pytest") + 1 :
+        ],
+    )
+    return {
+        "context": context,
+        "checkout": root,
+        "report": str(path),
+        "shard": f"{index}/4",
+        "cleanup": {"survivors": [], "listeners": []},
+        "private_paths_removed": True,
+        "commands": [
+            {
+                **copy.deepcopy(stage),
+                "exit_code": 0,
+                "subprocess_returncode": 0,
+                "harness_error": None,
+                "cleanup_error": None,
+            }
+            for stage in pipeline
+        ],
+    }
+
+
 def _gate_cli_fixture(tmp_path):
     import backend_ci
 
@@ -675,24 +750,10 @@ def _gate_cli_fixture(tmp_path):
         folder = artifacts / name
         folder.mkdir()
         path = folder / f"{name}.json"
+        owner = _owner_fixture(report, path, i)
         path.write_text(json.dumps(report))
         files.append(path)
-        (folder / "ownership.json").write_text(
-            json.dumps(
-                {
-                    "cleanup": {"survivors": [], "listeners": []},
-                    "private_paths_removed": True,
-                    "commands": [
-                        {
-                            "exit_code": 0,
-                            "subprocess_returncode": 0,
-                            "harness_error": None,
-                            "cleanup_error": None,
-                        }
-                    ],
-                }
-            )
-        )
+        (folder / "ownership.json").write_text(json.dumps(owner))
     needs = tmp_path / "needs.json"
     needs.write_text(
         json.dumps({f"backend_{i}": {"result": "success"} for i in range(1, 5)})
@@ -771,7 +832,7 @@ def test_actual_gate_cli_fails_closed_on_artifact_and_runtime_faults(
     elif mutation == "malformed":
         path.write_text("{")
     elif mutation == "duplicate-key":
-        path.write_text('{"schema_version": 2,"schema_version": 2}')
+        path.write_text('{"schema_version": 3,"schema_version": 2}')
     elif mutation == "nonfinite":
         path.write_text('{"duration": NaN}')
     elif mutation in {
@@ -902,3 +963,150 @@ def test_real_empty_shard_is_nonzero_and_cannot_supply_success_evidence(tmp_path
     assert "empty selected shard" in result.stdout + result.stderr
     if report.exists():
         assert json.loads(report.read_text())["session"]["exit_code"] != 0
+
+
+@pytest.mark.parametrize(
+    "source,reason",
+    [
+        (
+            "import pytest\npytest.skip('collector unavailable', allow_module_level=True)\n",
+            "collector unavailable",
+        ),
+        (
+            "import pytest\npytest.importorskip('ci404_nonexistent_optional_dependency')\n",
+            "ci404_nonexistent_optional_dependency",
+        ),
+    ],
+)
+def test_actual_gate_rejects_real_skipped_collector_with_identical_reduced_manifests(
+    tmp_path, source, reason
+):
+    command, _, files = _gate_cli_fixture(tmp_path)
+    fixture = tmp_path / "suite"
+    fixture.mkdir()
+    template = json.loads(files[0].read_text())
+    for path in template["collection"]["file_assignments"]:
+        target = fixture / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("def test_ok(): pass\n")
+    (fixture / "tests/test_unavailable.py").write_text(source)
+    actual = fixture / "actual.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/",
+            "-q",
+            "-p",
+            "backend_ci",
+            f"--backend-ci-report={actual}",
+        ],
+        cwd=fixture,
+        env={**os.environ, "PYTHONPATH": str(TOOLS), "PYTEST_ADDOPTS": ""},
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    observed = json.loads(actual.read_text())
+    full = observed["collection"]["full_nodeids"]
+    assert len(full) == 4 and all("unavailable" not in node for node in full)
+    for path in files:
+        report = json.loads(path.read_text())
+        assert set(report["collection"]["full_nodeids"]) == set(full)
+        report["collection"]["skipped_collectors"] = observed["collection"].get(
+            "skipped_collectors", []
+        )
+        path.write_text(json.dumps(report))
+    gated = subprocess.run(
+        command, capture_output=True, text=True, timeout=15, check=False
+    )
+    assert (
+        gated.returncode != 0
+    ), "identically reduced manifests with a real skipped module passed the aggregate"
+    skipped = observed["collection"]["skipped_collectors"]
+    assert len(skipped) == 1
+    assert skipped[0]["nodeid"] == "tests/test_unavailable.py"
+    assert reason in skipped[0]["reason"]
+    assert "collector" in gated.stderr
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "owner-run",
+        "owner-attempt",
+        "owner-sha",
+        "owner-shard",
+        "owner-report",
+        "owner-checkout",
+        "owner-cwd",
+        "owner-selection",
+        "inventory-only",
+        "missing-inventory",
+        "unlabelled",
+        "different-command",
+        "wrong-command-cwd",
+        "matching-filtered-plan",
+        "observed-selection",
+        "owner-bool-schema",
+    ],
+)
+def test_actual_gate_cli_rejects_mismatched_owner_and_incomplete_pipeline(
+    tmp_path, mutation
+):
+    command, _, files = _gate_cli_fixture(tmp_path)
+    path = files[0].parent / "ownership.json"
+    owner = json.loads(path.read_text())
+    key = {
+        "owner-run": "run_id",
+        "owner-attempt": "run_attempt",
+        "owner-sha": "checkout_sha",
+        "owner-shard": "shard",
+        "owner-report": "report",
+        "owner-checkout": "checkout",
+        "owner-cwd": "cwd",
+    }
+    if mutation in key:
+        owner["context"][key[mutation]] = "different"
+    elif mutation == "owner-selection":
+        owner["context"]["pipeline"][1]["command"].append("-k=omit")
+    elif mutation == "inventory-only":
+        owner["commands"] = owner["commands"][:1]
+    elif mutation == "missing-inventory":
+        owner["commands"] = owner["commands"][1:]
+    elif mutation == "unlabelled":
+        owner["commands"][1].pop("label")
+    elif mutation == "different-command":
+        owner["commands"][1]["command"].append("-k=omit")
+    elif mutation == "wrong-command-cwd":
+        owner["commands"][1]["cwd"] = "/another/checkout"
+    elif mutation in {"matching-filtered-plan", "owner-bool-schema"}:
+        report = json.loads(files[0].read_text())
+        if mutation == "matching-filtered-plan":
+            owner["context"]["pipeline"][1]["command"].append("-k=omit")
+            owner["commands"][1]["command"].append("-k=omit")
+            report["identity"]["pytest_args"].append("-k=omit")
+            owner["context"]["pipeline_sha256"] = hashlib.sha256(
+                json.dumps(
+                    owner["context"]["pipeline"], sort_keys=True, separators=(",", ":")
+                ).encode()
+            ).hexdigest()
+        else:
+            owner["context"]["schema_version"] = True
+        report["identity"]["owner_context"] = owner["context"]
+        files[0].write_text(json.dumps(report))
+    elif mutation == "observed-selection":
+        report = json.loads(files[0].read_text())
+        report["identity"]["pytest_args"].append("-k=omit")
+        files[0].write_text(json.dumps(report))
+    path.write_text(json.dumps(owner))
+    result = subprocess.run(
+        command, capture_output=True, text=True, timeout=15, check=False
+    )
+    assert (
+        result.returncode != 0
+    ), f"{mutation} accepted unrelated/incomplete ownership evidence"
+    assert "backend gate error:" in result.stderr

@@ -422,3 +422,178 @@ def test_actual_wrapper_term_cleans_resistant_detached_listener_before_outer_kil
         if owner_path.exists():
             records += json.loads(owner_path.read_text())["owned"]
         _cleanup_test_identities(tmp_path, records)
+
+
+def test_copied_source_verifier_produces_bound_reports_accepted_by_real_gate(tmp_path):
+    """Synthetic four-case checkout; uv adapter executes real inventory and pytest."""
+    import shutil
+
+    import backend_ci
+
+    source = RUNNER.parent.parent
+    repo = tmp_path / "checkout"
+    backend = repo / "backend/starlink-location"
+    (repo / "tools").mkdir(parents=True)
+    backend.mkdir(parents=True)
+    for name in (
+        "backend_ci.py",
+        "backend_test_runner.py",
+        "backend_shards.json",
+        "verify",
+    ):
+        shutil.copyfile(source / "tools" / name, repo / "tools" / name)
+    for path in [
+        *(source / "backend/starlink-location").glob("requirements*.txt"),
+        source / "backend/starlink-location/.python-version",
+        source / "backend/starlink-location/pytest.ini",
+    ]:
+        shutil.copyfile(path, backend / path.name)
+    paths = {}
+    number = 0
+    while len(paths) != 4:
+        path = f"tests/test_producer_{number}.py"
+        number += 1
+        paths.setdefault(backend_ci.assign_file(path, 4, {}), path)
+    for path in paths.values():
+        target = backend / path
+        target.parent.mkdir(exist_ok=True)
+        target.write_text("def test_ok(): pass\n")
+    for args in (
+        ["init", "--initial-branch=synthetic"],
+        ["add", "."],
+        [
+            "-c",
+            "user.name=CI contract",
+            "-c",
+            "user.email=ci@example.test",
+            "commit",
+            "-m",
+            "synthetic source contract",
+        ],
+    ):
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    ).stdout.strip()
+    binary = tmp_path / "bin"
+    binary.mkdir()
+    uv = binary / "uv"
+    uv.write_text(
+        f"#!{sys.executable}\n"
+        "import os,sys\n"
+        "args=sys.argv[1:]\n"
+        'if args==["--version"]: print("uv 0.12.19 synthetic-argv-adapter");sys.exit(0)\n'
+        'assert args.pop(0)=="run"\n'
+        "requirements=[];selector=None\n"
+        'while args and args[0] in ("--python","--with-requirements"):\n'
+        "    flag=args.pop(0);value=args.pop(0)\n"
+        '    if flag=="--python": selector=value\n'
+        "    else: requirements.append(value)\n"
+        "assert selector and len(requirements)==3\n"
+        'assert args[0] in ("python","pytest")\n'
+        'os.execv(sys.executable,[sys.executable,*(args[1:] if args[0]=="python" else ["-m","pytest",*args[1:]])])\n'
+    )
+    uv.chmod(0o755)
+    env = {
+        **os.environ,
+        "PATH": f'{binary}{os.pathsep}{os.environ["PATH"]}',
+        "UV_PYTHON": sys.executable,
+        "GITHUB_SHA": sha,
+        "BACKEND_CI_PR_HEAD_SHA": sha,
+        "BACKEND_CI_RUN_ID": "producer-17",
+        "BACKEND_CI_RUN_ATTEMPT": "2",
+        "PYTEST_ADDOPTS": "",
+    }
+    artifacts = tmp_path / "artifacts"
+    summaries = []
+    for index in range(1, 5):
+        name = f"backend-report-producer-17-2-{index}"
+        report = artifacts / name / f"{name}.json"
+        private = tmp_path / f"private-{index}"
+        command = [
+            sys.executable,
+            str(repo / "tools/verify"),
+            "backend",
+            "--shard",
+            f"{index}/4",
+            "--report",
+            str(report),
+            "--run-root",
+            str(private),
+        ]
+        (tmp_path / f"command-{index}.json").write_text(json.dumps(command))
+        result = subprocess.run(
+            command,
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        (tmp_path / f"verify-{index}.log").write_text(result.stdout + result.stderr)
+        assert result.returncode == 0, result.stdout + result.stderr
+        observed = json.loads(report.read_text())
+        owner = json.loads((report.parent / "ownership.json").read_text())
+        assert observed["schema_version"] == 3
+        assert observed["identity"]["owner_context"] == owner["context"]
+        assert [stage["label"] for stage in owner["commands"]] == [
+            "inventory",
+            "pytest",
+        ]
+        assert len(observed["collection"]["full_nodeids"]) == 4
+        assert len(observed["collection"]["selected_nodeids"]) == 1
+        assert owner["cleanup"] == {"survivors": [], "listeners": []}
+        assert owner["private_paths_removed"] is True
+        assert not private.exists()
+        assert all(
+            _identity(item["pid"]) is None
+            or _identity(item["pid"])["start"] != item["start"]
+            for item in owner["owned"]
+        )
+        summaries.append(
+            {
+                "shard": index,
+                "report": str(report),
+                "pipeline_sha256": owner["context"]["pipeline_sha256"],
+            }
+        )
+    needs = tmp_path / "needs.json"
+    needs.write_text(
+        json.dumps({f"backend_{i}": {"result": "success"} for i in range(1, 5)})
+    )
+    gate = [
+        sys.executable,
+        str(repo / "tools/backend_ci.py"),
+        "gate",
+        "--reports",
+        str(artifacts),
+        "--needs-json",
+        str(needs),
+        "--sha",
+        sha,
+        "--run-id",
+        "producer-17",
+        "--attempt",
+        "2",
+        "--pr-head-sha",
+        sha,
+    ]
+    result = subprocess.run(
+        gate, cwd=repo, env=env, capture_output=True, text=True, timeout=15, check=False
+    )
+    (tmp_path / "gate.log").write_text(result.stdout + result.stderr)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads(result.stdout)["outcomes"] == {"passed": 4}
+    assert not (repo / ".backend-ci-active").exists()
+    (tmp_path / "synthetic-summary.json").write_text(json.dumps(summaries, indent=2))

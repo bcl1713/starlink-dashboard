@@ -340,7 +340,7 @@ class OwnedRunner:
 
 def run_backend(repo, commands, *, report, run_root, shard=None):
     """Run canonical commands in one isolated checkout with recorded ownership."""
-    from backend_ci import reject_pytest_overrides
+    from backend_ci import backend_pipeline, make_owner_context, reject_pytest_overrides
 
     reject_pytest_overrides(os.environ)
     repo, report, run_root = Path(repo), Path(report), Path(run_root)
@@ -350,6 +350,12 @@ def run_backend(repo, commands, *, report, run_root, shard=None):
         raise ValueError("report and private root must be fresh")
     if report.parent == run_root or run_root in report.parents:
         raise ValueError("evidence must be outside the private root")
+    pipeline = backend_pipeline(commands, report, run_root, shard)
+    context = (
+        make_owner_context(repo, commands, report, run_root, shard)
+        if any("pytest" in command for command, _ in commands)
+        else None
+    )
     lock = repo / ".backend-ci-active"
     # The atomic per-checkout claim rejects concurrent local shards; independent
     # worktrees and GitHub runner checkouts have separate claims.
@@ -371,6 +377,7 @@ def run_backend(repo, commands, *, report, run_root, shard=None):
             # boundary uses TERM5s plus KILL/reap2s to fit an early outer TERM's
             # 10-second kill grace; OwnedRunner's standalone default stays 10s.
             runner.deadline = time.monotonic() + 20 * 60 - 12
+            runner.data["context"] = context
             runner.data["checkout"] = str(repo)
             runner.data["report"] = str(report)
             runner.data["shard"] = shard
@@ -386,18 +393,16 @@ def run_backend(repo, commands, *, report, run_root, shard=None):
                 "XDG_CACHE_HOME": str(runner.root / "cache"),
                 "MPLCONFIGDIR": str(runner.root / "matplotlib"),
             }
-            for index, (command, cwd) in enumerate(commands):
-                command = list(command)
-                label = "inventory" if index == 0 else "pytest"
-                if "pytest" in command:
-                    command += [
-                        "-p",
-                        "backend_ci",
-                        f"--backend-ci-report={report}",
-                        f"--basetemp={runner.root / 'basetemp'}",
-                    ]
-                    if shard:
-                        command += [f"--backend-ci-shard={shard}"]
+            if context is not None:
+                env["BACKEND_CI_OWNER_CONTEXT"] = json.dumps(context, sort_keys=True)
+            else:
+                env.pop("BACKEND_CI_OWNER_CONTEXT", None)
+            for index, stage in enumerate(pipeline):
+                command, cwd, label = (
+                    stage["command"],
+                    Path(stage["cwd"]),
+                    stage["label"],
+                )
                 try:
                     runner.run(
                         command,

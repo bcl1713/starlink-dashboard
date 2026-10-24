@@ -67,6 +67,18 @@ configuration, checkout SHA, and PR head identities. The merge checkout SHA is
 bound to `github.sha`; PR head is recorded separately. Executable/temp paths,
 CPU count, and kernel metadata are recorded but can vary across runners.
 
+Shard report schema 3 also retains skipped collector identities and reasons. The
+baseline permits zero collection-time skips: module-level `pytest.skip` and
+`importorskip` fail the aggregate even when all four item manifests are reduced
+identically. Per-item baseline skip semantics remain separate.
+
+Ownership context schema 1 binds run/attempt, checkout SHA/path, report path,
+shard selection, backend cwd, Python selector, verifier hash, and the exact
+canonical command pipeline to the observation. The gate requires successful
+inventory then pytest records in order, with matching arguments and recorded
+cwd. Absolute paths are compared within each artifact's own context. A copied
+owner record, inventory-only result, or differently filtered invocation fails.
+
 Selected inventories must be nonempty, disjoint, and exhaust the common full
 collection. Each selected ID needs exactly one complete terminal result with
 valid setup/call/teardown phases. Collection/session/internal errors,
