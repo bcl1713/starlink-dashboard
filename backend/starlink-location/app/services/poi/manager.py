@@ -19,6 +19,7 @@ from filelock import FileLock
 
 from app.mission.storage import planning_read_gate
 from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,9 @@ def _poi_access(fn):
     @wraps(fn)
     @planning_read_gate
     def coherent(self, *args, **kwargs):
-        if _file_signature(self.pois_file) != getattr(
-            self, "_persisted_signature", None
-        ):
+        if getattr(self, "_load_failed", False) or _file_signature(
+            self.pois_file
+        ) != getattr(self, "_persisted_signature", None):
             self._load_pois()
         return fn(self, *args, **kwargs)
 
@@ -52,7 +53,7 @@ def _route_geometry_hash(route) -> str:
     ).hexdigest()
 
 
-class POIManager:
+class POIManager(MetricsChangeSource):
     """
     Manages POI storage and retrieval from JSON file.
 
@@ -94,8 +95,24 @@ class POIManager:
             except OSError as e:
                 logger.error(f"Failed to create POI file: {e}")
 
+    def _metrics_load_key(self):
+        return getattr(self, "_load_generation", 0), getattr(
+            self, "_load_failed", False
+        )
+
+    @property
+    def metrics_inputs_available(self):
+        return not getattr(self, "_load_failed", False)
+
     @planning_read_gate
+    @metrics_changed("POIManager:_load_pois", key="_metrics_load_key")
     def _load_pois(self) -> None:
+        # Uncaught parse/validation errors must invalidate too. Retain the last
+        # accepted file signature so the existing access lifecycle can retry.
+        self._load_failed = True
+        self._read_pois_file()
+
+    def _read_pois_file(self) -> None:
         """Load POIs from JSON file with file locking.
 
         Reads POIs from the pois section of the JSON file and converts
@@ -111,6 +128,7 @@ class POIManager:
         except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
+            self._load_failed = True
             return
         except (
             RuntimeError,
@@ -126,6 +144,7 @@ class POIManager:
         ) as e:
             logger.error(f"Failed to acquire lock for reading POI file: {e}")
             self._pois = {}
+            self._load_failed = True
             return
 
         # Load POIs from the "pois" section (global POIs)
@@ -173,9 +192,12 @@ class POIManager:
                 logger.warning(f"Failed to load POI {poi_id}: {e}")
 
         self._persisted_signature = signature
+        self._load_failed = False
+        self._load_generation = getattr(self, "_load_generation", 0) + 1
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
     @planning_read_gate
+    @metrics_changed("POIManager:_save_pois")
     def _save_pois(self) -> None:
         """Save POIs to JSON file with file locking and atomic writes.
 
@@ -270,6 +292,7 @@ class POIManager:
         )
 
     @_poi_access
+    @metrics_changed("POIManager:restore_checkpoint")
     def restore_checkpoint(
         self, checkpoint: tuple[dict[str, POI], bytes | None]
     ) -> None:
@@ -304,6 +327,19 @@ class POIManager:
         if mission_id:
             pois = [poi for poi in pois if poi.mission_id == mission_id]
         return pois
+
+    @_poi_access
+    def metrics_input_identity(self) -> str:
+        """Revalidate current models without allocating another detached POI list.
+
+        The ordinary access gate still detects disk changes. Hash the models on
+        every call, including legacy references; this is not a revision cache.
+        """
+        if not self.metrics_inputs_available:
+            raise OSError("POI source read failed")
+        return hashlib.sha256(
+            "".join(poi.model_dump_json() for poi in self._pois.values()).encode()
+        ).hexdigest()
 
     @_poi_access
     def get_poi(self, poi_id: str) -> POI | None:

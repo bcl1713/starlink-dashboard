@@ -5,10 +5,17 @@ import os
 import sqlite3
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -95,12 +102,6 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -565,7 +566,7 @@ async def startup_event():
 
         run_service = SimulationRunService(
             SimulationRunRuntime(
-                time.monotonic, lambda: datetime.now(timezone.utc), active_mode
+                time.monotonic, lambda: datetime.now(UTC), active_mode
             ),
             _route_manager,
             poi_manager,
@@ -586,6 +587,33 @@ async def startup_event():
         # or replaces a store as a side effect of application startup.
         with app.state.operator_binding.access():
             pass
+
+        from app.core.metrics.lifecycle import MetricsRefreshOwner
+        from app.services.flight_state import get_flight_state_manager
+
+        initial_refresh = True
+
+        def refresh_metrics():
+            nonlocal initial_refresh
+            initial, initial_refresh = initial_refresh, False
+            return _refresh_metrics_without_collection(initial)
+
+        owner = MetricsRefreshOwner(
+            refresh_metrics,
+            background_enabled=_background_updates_enabled,
+        )
+        from app.services.metrics_changes import mission_metrics_changes
+
+        owner.attach(
+            _route_manager,
+            poi_manager,
+            get_flight_state_manager(),
+            _coordinator,
+            run_service.runtime,
+            mission_metrics_changes,
+        )
+        app.state.metrics_refresh_owner = owner
+        await owner.refresh_without_collection(force=True)
 
         if _background_updates_enabled:
             run_service.wakeup = ReplayWakeup()
@@ -637,7 +665,14 @@ async def startup_event():
 
 
 async def shutdown_event():
-    """Cleanup on shutdown."""
+    """Drain the complete teardown even if its lifespan waiter is cancelled."""
+    from app.core.metrics.lifecycle import drain_work
+
+    await drain_work(asyncio.create_task(_shutdown_resources()))
+
+
+async def _shutdown_resources():
+    """Cleanup on shutdown; owned by the shielded lifespan teardown task."""
     from app.mission.planning.deadlines import shutdown_workers
 
     await asyncio.to_thread(shutdown_workers)
@@ -651,6 +686,10 @@ async def shutdown_event():
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
+        owner = getattr(app.state, "metrics_refresh_owner", None)
+        if owner is not None:
+            await owner.close()
+            del app.state.metrics_refresh_owner
         if _background_task:
             logger.info_json("Cancelling background update task")
             _background_task.cancel()
@@ -659,6 +698,10 @@ async def shutdown_event():
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
             _background_task = None
+
+        from app.core.metrics.prometheus_metrics import FRAME_STORE
+
+        FRAME_STORE.invalidate("shutdown")
 
         if hasattr(app.state, "itinerary_import_service"):
             await asyncio.to_thread(app.state.itinerary_import_service.close)
@@ -869,7 +912,7 @@ def _simulation_pop_context():
             call_capabilities=plan.artifacts.call_capabilities,
             projector=plan.artifacts.projector,
             now=frame.simulation_time,
-            observed_now=datetime.now(timezone.utc),
+            observed_now=datetime.now(UTC),
             flight_phase=frame.phase.value,
             unavailable_reason=None,
             enabled=plan.starshield_enabled,
@@ -908,10 +951,11 @@ def _publish_pop_observation(telemetry, tick=None):
 
 
 def _publish_replay_telemetry(telemetry, tick):
-    from app.core.metrics import update_metrics_from_telemetry
+    from app.core.metrics.frame_builder import coordinator_identity
+    from app.core.metrics.metric_updater import prepare_metrics_from_telemetry
     from app.simulation.run_timing import mission_time_context
 
-    update_metrics_from_telemetry(
+    frame = prepare_metrics_from_telemetry(
         telemetry,
         _current_runtime_config(),
         tick.plan.artifacts.route.model_copy(deep=True),
@@ -919,13 +963,127 @@ def _publish_replay_telemetry(telemetry, tick):
         mission_context=mission_time_context(tick.status),
         simulation_plan=tick.plan,
         simulation_frame=tick.frame,
+        coordinator_id=coordinator_identity(_coordinator),
     )
     _publish_pop_observation(telemetry, tick)
+    return frame
+
+
+def _refresh_metrics_without_collection(initial=False):
+    from app.core.metrics.metric_updater import UTC, datetime
+    from app.core.metrics.refresh_inputs import refresh_current_metrics
+
+    return refresh_current_metrics(
+        lambda: (
+            _coordinator,
+            _current_runtime_config(),
+            _route_manager,
+            app.state.poi_manager,
+            getattr(app.state, "simulation_run_service", None),
+        ),
+        initial=initial,
+        now=datetime.now(UTC),
+    )
 
 
 def _background_update_tick(poi_manager, refresh_interval, update_count, error_count):
     """One complete ordered telemetry/metric update, owned by the async loop."""
-    current_config = _current_runtime_config()
+    # Capture the producer binding before collection, including replacements
+    # that happen while live transport is blocked outside repository admission.
+    from app.core.metrics.frame_builder import coordinator_identity
+    from app.core.metrics.frames import GaugeFrame
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
+    from app.core.metrics.source_admission import (
+        frame_inputs_are_current,
+        route_source_identity,
+    )
+    from app.mission.storage import get_active_leg_lock
+
+    with get_active_leg_lock():
+        source_expected = FRAME_STORE.read()
+        coordinator = _coordinator
+        source_lifecycle = coordinator_identity(coordinator)
+        source_routes = _route_manager
+        source_route = source_routes.get_active_route() if source_routes else None
+        source_route_id = source_routes.get_active_route_id() if source_routes else None
+        current_config = _current_runtime_config()
+        source_config = (
+            current_config.model_dump_json()
+            if isinstance(current_config, SimulationConfig)
+            else None
+        )
+        source_route_revision = (
+            route_source_identity(source_route) if source_config is not None else None
+        )
+        source_service = getattr(app.state, "simulation_run_service", None)
+        source_status = source_service.status() if source_service is not None else None
+        source_revision = (
+            (
+                getattr(source_status, "runtime_id", None),
+                getattr(source_status, "revision", None),
+            )
+            if source_status
+            else None
+        )
+
+    source_mission = None
+
+    def source_is_current(frame: GaugeFrame | None = None) -> bool:
+        # Legacy adapters use the application fallback configuration and may not
+        # expose domain-model/source readers. Runnable sources have a validated
+        # SimulationConfig and use all admission checks below.
+        if source_config is None:
+            return (
+                _coordinator is coordinator
+                and _current_runtime_config() is current_config
+                and (
+                    frame is None
+                    or frame_inputs_are_current(frame, active_route, poi_manager)
+                )
+            )
+        from app.core.metrics.source_admission import model_identity
+
+        checked_routes = _route_manager
+        checked_route = checked_routes.get_active_route() if checked_routes else None
+
+        current_service = getattr(app.state, "simulation_run_service", None)
+        status = current_service.status() if current_service is not None else None
+        revision = (
+            (getattr(status, "runtime_id", None), getattr(status, "revision", None))
+            if status
+            else None
+        )
+        return (
+            _coordinator is coordinator
+            and coordinator_identity(coordinator) == source_lifecycle
+            and _current_runtime_config() is current_config
+            and (
+                source_config is None
+                or current_config.model_dump_json() == source_config
+            )
+            and current_service is source_service
+            and checked_routes is source_routes
+            and checked_route is source_route
+            and route_source_identity(checked_route) == source_route_revision
+            and (checked_routes.get_active_route_id() if checked_routes else None)
+            == source_route_id
+            and revision == source_revision
+            and (
+                source_mission is None
+                or model_identity(mission_storage.load_mission_v2(source_mission[0]))
+                == source_mission[1]
+            )
+            and (
+                coordinator.get_current_telemetry() is telemetry
+                if telemetry is not None
+                else not getattr(coordinator, "is_connected", lambda: False)()
+            )
+            and (
+                frame is None
+                or frame_inputs_are_current(frame, checked_route, poi_manager)
+            )
+        )
+
     if should_automatically_refresh_ground_entry_point(current_config):
         publish_ground_entry_point_metrics(
             maybe_refresh_ground_entry_point_metrics(
@@ -947,19 +1105,33 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
         paced = (
             run_service is not None and run_service.runtime.selected_plan() is not None
         )
+        try:
+            previous_telemetry = getattr(
+                coordinator, "get_current_telemetry", lambda: None
+            )()
+        except RuntimeError:
+            previous_telemetry = None
         telemetry = (
             run_service.collect(_coordinator, _publish_replay_telemetry)
             if paced
-            else _coordinator.update()
+            else coordinator.update()
         )
         if not paced:
             _publish_pop_observation(telemetry)
         update_count += 1
 
-        if telemetry is None:
-            from app.core.metrics import update_metrics_from_telemetry
-
-            update_metrics_from_telemetry(None)
+        # Retained acquisition: refresh planned values and freshness without
+        # observation accounting, source generation, or detection side effects.
+        if telemetry is not None and telemetry is previous_telemetry and not paced:
+            with get_active_leg_lock():
+                active_route = (
+                    _route_manager.get_active_route() if _route_manager else None
+                )
+                if source_is_current():
+                    _refresh_metrics_without_collection()
+                else:
+                    FRAME_STORE.fail(source_expected, "retained source superseded")
+            return update_count
 
         # Only update metrics if telemetry is available
         # In live mode, telemetry will be None when disconnected
@@ -967,53 +1139,80 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             # Track metric collection duration
             from app.core.metrics import (
                 starlink_metrics_generation_errors_total,
-                starlink_metrics_last_update_timestamp_seconds,
                 starlink_metrics_scrape_duration_seconds,
-                update_metrics_from_telemetry,
+            )
+            from app.core.metrics.metric_updater import (
+                _update_metrics_from_telemetry_admitted,
             )
 
             scrape_start = time.time()
             try:
-                # Both live and simulation metrics use the application's
-                # current route, independent of coordinator capabilities.
-                active_route = None
-                if _route_manager is not None:
-                    active_route = _route_manager.get_active_route()
-
-                flight_events_managed = False
-                runtime = getattr(app.state, "flight_event_runtime", None)
-                if runtime is not None and current_config.mode == "live":
-                    from app.mission.active_context import (
-                        resolve_active_mission_leg_context,
+                with get_active_leg_lock():
+                    # Both live and simulation metrics use the application's
+                    # current route, independent of coordinator capabilities.
+                    active_route = source_route
+                    # Snapshot progress before immediate admission validation;
+                    # its reader may change the source binding.
+                    route_progress = (
+                        getattr(coordinator, "route_progress_snapshot", lambda: None)()
+                        if current_config.mode == "simulation"
+                        else None
                     )
-                    from app.services.flight_state import get_flight_state_manager
 
-                    resolution = resolve_active_mission_leg_context(_route_manager)
-                    flight_events_managed = True
-                    try:
-                        runtime.record_live(telemetry)
-                        if resolution.context is not None:
-                            runtime.observe_live(telemetry, resolution.context)
-                            runtime.sync_legacy_phase(
-                                get_flight_state_manager(),
-                                resolution.context.parent_mission_id,
-                                resolution.context.leg.id,
-                            )
-                    except (OSError, sqlite3.Error, ValueError) as archive_error:
-                        logger.warning_json(
-                            "Live recording pending recovery",
-                            extra_fields={"error": type(archive_error).__name__},
+                    flight_events_managed = False
+                    runtime = getattr(app.state, "flight_event_runtime", None)
+                    live_events = runtime is not None and current_config.mode == "live"
+                    if not source_is_current():
+                        FRAME_STORE.fail(
+                            source_expected, "source changed during collection"
                         )
-                update_metrics_from_telemetry(
-                    telemetry,
-                    current_config,
-                    active_route,
-                    poi_manager,
-                    flight_events_managed=flight_events_managed,
-                )
-                scrape_duration = time.time() - scrape_start
-                starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
-                starlink_metrics_last_update_timestamp_seconds.set(time.time())
+                        return update_count
+
+                    if live_events:
+                        from app.mission.active_context import (
+                            resolve_active_mission_leg_context,
+                        )
+                        from app.services.flight_state import get_flight_state_manager
+
+                        resolution = resolve_active_mission_leg_context(_route_manager)
+                        if resolution.context is not None:
+                            from app.core.metrics.source_admission import model_identity
+
+                            source_mission = (
+                                resolution.context.parent_mission_id,
+                                model_identity(resolution.context.parent_mission),
+                            )
+                        flight_events_managed = True
+                        try:
+                            runtime.record_live(telemetry)
+                            if resolution.context is not None:
+                                runtime.observe_live(telemetry, resolution.context)
+                                runtime.sync_legacy_phase(
+                                    get_flight_state_manager(),
+                                    resolution.context.parent_mission_id,
+                                    resolution.context.leg.id,
+                                )
+                        except (OSError, sqlite3.Error, ValueError) as archive_error:
+                            logger.warning_json(
+                                "Live recording pending recovery",
+                                extra_fields={"error": type(archive_error).__name__},
+                            )
+                        # Event handling (including caught recording failures)
+                        # may replace inputs. Keep its distinct entry boundary.
+                        if not source_is_current():
+                            return update_count
+                    _update_metrics_from_telemetry_admitted(
+                        telemetry,
+                        current_config,
+                        active_route,
+                        poi_manager,
+                        flight_events_managed=flight_events_managed,
+                        route_progress=route_progress,
+                        coordinator_id=source_lifecycle,
+                        final_validation=source_is_current,
+                    )
+                    scrape_duration = time.time() - scrape_start
+                    starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
             except Exception as metric_error:  # noqa: BLE001
                 starlink_metrics_generation_errors_total.inc()
                 logger.warning_json(
@@ -1041,7 +1240,24 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             # This sets all telemetry metrics to NaN, which Prometheus won't store
             from app.core.metrics import clear_telemetry_metrics
 
-            clear_telemetry_metrics()
+            with get_active_leg_lock():
+                active_route = (
+                    _route_manager.get_active_route() if _route_manager else None
+                )
+                if source_is_current():
+                    from app.core.metrics import update_metrics_from_telemetry
+
+                    update_metrics_from_telemetry(None)
+                    clear_telemetry_metrics(
+                        config=current_config,
+                        active_route=active_route,
+                        poi_manager=poi_manager,
+                        coordinator_id=source_lifecycle,
+                    )
+                else:
+                    FRAME_STORE.fail(
+                        source_expected, "source changed during disconnect"
+                    )
 
             # Log when disconnected (less frequently to avoid spam)
             if update_count % 600 == 0:
@@ -1105,7 +1321,15 @@ async def _background_update_loop(poi_manager=None):
                     if run_service and run_service.status().state == "running"
                     else _simulation_config.update_interval_seconds
                 )
-                if run_service and run_service.wakeup:
+                owner = getattr(app.state, "metrics_refresh_owner", None)
+                if owner is not None and _background_updates_enabled:
+                    deadline = asyncio.get_running_loop().time() + delay
+                    while not await owner.wait(
+                        deadline - asyncio.get_running_loop().time(),
+                        run_service.wakeup if run_service else None,
+                    ):
+                        await owner.refresh_without_collection()
+                elif run_service and run_service.wakeup:
                     await run_service.wakeup.wait(delay)
                 else:
                     await asyncio.sleep(delay)
@@ -1140,9 +1364,11 @@ async def _background_update_loop(poi_manager=None):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    await startup_event()
-    yield
-    await shutdown_event()
+    try:
+        await startup_event()
+        yield
+    finally:
+        await shutdown_event()
 
 
 # Create FastAPI application

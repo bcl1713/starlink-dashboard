@@ -7,7 +7,10 @@ to Prometheus.
 """
 
 import logging
+from collections import deque
+from copy import copy, deepcopy
 from datetime import datetime
+from threading import Lock
 
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
@@ -17,6 +20,7 @@ logger = logging.getLogger(__name__)
 # Global singleton instance
 _eta_calculator: ETACalculator | None = None
 _poi_manager: POIManager | None = None
+_computation_guard = Lock()
 
 
 def initialize_eta_service(poi_manager: POIManager | None = None) -> None:
@@ -82,90 +86,126 @@ def get_poi_manager() -> POIManager:
     return _poi_manager
 
 
-def update_eta_metrics(
-    latitude: float,
-    longitude: float,
-    speed_knots: float,
+def _prepare_eta_metrics(
+    latitude,
+    longitude,
+    speed_knots,
     active_route=None,
     eta_mode=None,
     flight_phase=None,
-    poi_manager: POIManager | None = None,
+    poi_manager=None,
+    *,
+    mission_now=None,
+    pois=None,
+    admit_observation=False,
+):
+    """Strict preparation: capture manager inputs before singleton computation."""
+    from app.models.flight_status import ETAMode
+    from app.services.eta.projection import ETAProjection
+
+    calculator = get_eta_calculator()
+    if pois is None:
+        manager = poi_manager if poi_manager is not None else get_poi_manager()
+        pois = manager.list_pois()
+    pois = tuple(deepcopy(poi) for poi in pois)
+    safe_speed = speed_knots if speed_knots is not None and speed_knots >= 0.5 else None
+    mode = eta_mode if eta_mode is not None else ETAMode.ESTIMATED
+    clock = {"mission_now": mission_now} if mission_now is not None else {}
+    with _computation_guard:
+        if admit_observation:
+            calculator.update_speed(
+                (
+                    safe_speed
+                    if safe_speed is not None
+                    else calculator.default_speed_knots
+                ),
+                **(
+                    {"sample_time_seconds": mission_now.timestamp()}
+                    if mission_now is not None
+                    else {}
+                ),
+            )
+            return calculator.calculate_poi_metrics(
+                latitude,
+                longitude,
+                pois,
+                safe_speed,
+                active_route=active_route,
+                eta_mode=mode,
+                flight_phase=flight_phase,
+                **clock,
+            )
+        # Clone only our calculator state, never managers or registry instruments.
+        detached = copy(calculator)
+        detached._speed_history = deque(calculator._speed_history)
+        detached._passed_pois = calculator._passed_pois.copy()
+        detached._projection = ETAProjection(detached)
+    return detached.calculate_poi_metrics(
+        latitude,
+        longitude,
+        pois,
+        safe_speed,
+        active_route=active_route,
+        eta_mode=mode,
+        flight_phase=flight_phase,
+        track_passage=False,
+        **clock,
+    )
+
+
+def derive_eta_metrics(
+    latitude: float,
+    longitude: float,
+    speed_knots: float | None,
+    active_route=None,
+    eta_mode=None,
+    flight_phase=None,
+    poi_manager=None,
     *,
     mission_now: datetime | None = None,
+    pois=None,
 ) -> dict:
-    """Update ETA metrics for all POIs.
+    """Read-only derivation; failures propagate to complete-frame preparation."""
+    return _prepare_eta_metrics(
+        latitude,
+        longitude,
+        speed_knots,
+        active_route,
+        eta_mode,
+        flight_phase,
+        poi_manager,
+        mission_now=mission_now,
+        pois=pois,
+        admit_observation=False,
+    )
 
-    This function is called by the background update loop on each telemetry cycle.
-    It calculates ETA and distance for all available POIs and returns the results.
 
-    When an active route with timing data is available, POIs that are waypoints
-    on that route will use route-aware ETA calculations (segment-based speeds).
-    POIs not on the active route fall back to distance/speed calculation.
-
-    Args:
-        latitude: Current latitude in decimal degrees
-        longitude: Current longitude in decimal degrees
-        speed_knots: Current speed in knots
-        active_route: Optional ParsedRoute with timing data for route-aware calculations
-        eta_mode: Optional ETAMode for dual-mode calculation (defaults to ESTIMATED)
-        flight_phase: Optional flight phase for context
-        poi_manager: Optional POIManager instance to use instead of global singleton
-
-    Returns:
-        Dictionary mapping POI IDs to their ETA metrics
-    """
+def update_eta_metrics(
+    latitude: float,
+    longitude: float,
+    speed_knots: float | None,
+    active_route=None,
+    eta_mode=None,
+    flight_phase=None,
+    poi_manager=None,
+    *,
+    mission_now: datetime | None = None,
+    pois=None,
+) -> dict:
+    """Legacy accepted-observation API; retain its logged empty-result fallback."""
     try:
-        from app.models.flight_status import ETAMode
-
-        eta_calculator = get_eta_calculator()
-
-        # Use provided manager or fall back to singleton
-        if poi_manager is None:
-            poi_manager = get_poi_manager()
-
-        # Default to estimated mode if not specified
-        if eta_mode is None:
-            eta_mode = ETAMode.ESTIMATED
-
-        # Update speed in calculator (maintains rolling average)
-        safe_speed = None
-        if speed_knots is not None and speed_knots >= 0.5:
-            safe_speed = speed_knots
-            eta_calculator.update_speed(
-                speed_knots,
-                **(
-                    {"sample_time_seconds": mission_now.timestamp()}
-                    if mission_now is not None
-                    else {}
-                ),
-            )
-        else:
-            # Seed smoothing window with default cruise speed so pre-departure ETAs stay positive
-            eta_calculator.update_speed(
-                eta_calculator.default_speed_knots,
-                **(
-                    {"sample_time_seconds": mission_now.timestamp()}
-                    if mission_now is not None
-                    else {}
-                ),
-            )
-
-        # Get all POIs
-        pois = poi_manager.list_pois()
-
-        # Calculate metrics for all POIs (passing active_route and eta_mode)
-        metrics = eta_calculator.calculate_poi_metrics(
+        return _prepare_eta_metrics(
             latitude,
             longitude,
-            pois,
-            safe_speed,
-            active_route=active_route,
-            eta_mode=eta_mode,
-            flight_phase=flight_phase,
-            **({"mission_now": mission_now} if mission_now is not None else {}),
+            speed_knots,
+            active_route,
+            eta_mode,
+            flight_phase,
+            poi_manager,
+            mission_now=mission_now,
+            pois=pois,
+            admit_observation=True,
         )
-
-        return metrics
     except (
         RuntimeError,
         ValueError,
