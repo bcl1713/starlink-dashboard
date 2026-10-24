@@ -15,6 +15,7 @@ keeping runtime resources alive.
   [API reference](../api-reference-index.md)
 - [Code quality](../code-quality-standards.md) and
   [focused testing](../contributing/testing-guide.md)
+- [Issue 404 test-runtime assessment and session handoff](ci-404/README.md)
 - [Acceptance platform](../operations/acceptance-platform.md)
 - [Mission export preparation](mission-export-preparation.md)
 - [Customer briefing exports](customer-briefing-exports.md) and
