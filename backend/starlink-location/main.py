@@ -63,7 +63,7 @@ from app.models.config import SimulationConfig
 from app.operator.clock import MissionClock
 from app.operator.runtime import OperatorRuntimeBinding
 from app.satellites import routes as satellite_routes
-from app.services.adsb_lol import AdsbLolProvider
+from app.services.adsb_fi import AdsbFiProvider
 from app.services.aviation_weather.gfs.bridge import GfsBridge
 from app.services.aviation_weather.live_encounters import capture_flight_encounters
 from app.services.aviation_weather.route_context import select_route_context
@@ -206,7 +206,7 @@ def initialize_overview_adsb_runtime() -> None:
     store = AdsbSettingsStore(OVERVIEW_ADSB_SETTINGS_PATH)
     app.state.overview_adsb_settings_store = store
     client = httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         timeout=10,
         headers={
             "User-Agent": (
@@ -216,7 +216,7 @@ def initialize_overview_adsb_runtime() -> None:
         },
     )
     service = AdsbTrafficService(
-        store, AdsbLolProvider(client), time.time, time.monotonic
+        store, AdsbFiProvider(client), time.time, time.monotonic
     )
     app.state.overview_adsb_client = client
     app.state.overview_adsb_service = service

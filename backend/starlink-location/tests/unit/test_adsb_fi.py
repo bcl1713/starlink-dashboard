@@ -1,10 +1,11 @@
+import asyncio
 import json
 from pathlib import Path
 
 import httpx
 import pytest
 
-from app.services.adsb_lol import AdsbLolProvider, AdsbProviderError, normalize_contact
+from app.services.adsb_fi import AdsbFiProvider, AdsbProviderError, normalize_contact
 
 NOW = 1791028800000.0
 RECORD = {"hex": "00ab12", "lat": 40, "lon": -75, "seen_pos": 2.5}
@@ -128,11 +129,11 @@ def test_ground_altitude_and_invalid_optional_fields():
 )
 async def test_malformed_envelope_fails(payload):
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
     ) as client:
         with pytest.raises(AdsbProviderError):
-            await AdsbLolProvider(client, lambda: NOW / 1000).fetch_military()
+            await AdsbFiProvider(client, lambda: NOW / 1000).fetch_military()
 
 
 async def test_invalid_record_is_isolated_and_endpoints_are_exact():
@@ -150,26 +151,27 @@ async def test_invalid_record_is_isolated_and_endpoints_are_exact():
         )
 
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
     ) as client:
-        provider = AdsbLolProvider(client, lambda: NOW / 1000)
+        provider = AdsbFiProvider(client, lambda: NOW / 1000)
         result = await provider.fetch_military()
         assert [c.hex for c in result.contacts] == ["00AB12"]
         assert result.contacts[0].military is True
         await provider.fetch_hex("00AB12")
-    assert paths == ["/v2/mil", "/v2/hex/00AB12"]
+    assert paths == ["/api/v2/mil", "/api/v2/hex/00AB12"]
 
 
 @pytest.mark.parametrize("field", ["lat", "lon", "seen_pos", "gs", "track", "alt_baro"])
 async def test_overflow_in_mixed_records_keeps_valid_positions(field):
     record = {**RECORD, "hex": "000002", field: 10**400}
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(
             lambda _: httpx.Response(200, json={"now": NOW, "ac": [record, RECORD]})
         ),
     ) as client:
-        result = await AdsbLolProvider(client, lambda: NOW / 1000).fetch_military()
+        result = await AdsbFiProvider(client, lambda: NOW / 1000).fetch_military()
     if field in {"lat", "lon", "seen_pos"}:
         assert [c.hex for c in result.contacts] == ["00AB12"]
     else:
@@ -190,13 +192,13 @@ async def test_retry_after_seconds_and_http_date(retry, expected):
 
     now = datetime(2026, 10, 3, 12, tzinfo=timezone.utc).timestamp()
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(
             lambda _: httpx.Response(429, headers={"Retry-After": retry})
         ),
     ) as client:
         with pytest.raises(AdsbProviderError) as error:
-            await AdsbLolProvider(client, lambda: now).fetch_military()
+            await AdsbFiProvider(client, lambda: now).fetch_military()
         assert error.value.retry_after_seconds == expected
 
 
@@ -208,10 +210,11 @@ async def test_json_and_transport_failure_are_sanitized():
         ),
     ]:
         async with httpx.AsyncClient(
-            base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+            base_url="https://opendata.adsb.fi/api",
+            transport=httpx.MockTransport(transport),
         ) as client:
             with pytest.raises(AdsbProviderError) as error:
-                await AdsbLolProvider(client).fetch_military()
+                await AdsbFiProvider(client).fetch_military()
             assert "secret" not in str(error.value)
 
 
@@ -223,13 +226,13 @@ async def test_json_and_transport_failure_are_sanitized():
     ],
 )
 async def test_saved_provider_fixtures(name, hex_code, age, military):
-    fixture = Path(__file__).parents[1] / f"fixtures/adsb_lol/{name}.json"
+    fixture = Path(__file__).parents[1] / f"fixtures/adsb_fi/{name}.json"
     payload = json.loads(fixture.read_text())
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
     ) as client:
-        provider = AdsbLolProvider(client, lambda: NOW / 1000)
+        provider = AdsbFiProvider(client, lambda: NOW / 1000)
         result = (
             await provider.fetch_military()
             if military
@@ -257,10 +260,11 @@ async def test_invalid_batch_is_rejected_before_transport(hexes):
         return httpx.Response(200, json={"now": NOW, "ac": []})
 
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
     ) as client:
         with pytest.raises(AdsbProviderError):
-            await AdsbLolProvider(client, lambda: NOW / 1000).fetch_hexes(hexes)
+            await AdsbFiProvider(client, lambda: NOW / 1000).fetch_hexes(hexes)
     assert requests == []
 
 
@@ -272,8 +276,149 @@ async def test_empty_batch_skips_transport():
         return httpx.Response(200, json={"now": NOW, "ac": []})
 
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
     ) as client:
-        result = await AdsbLolProvider(client, lambda: NOW / 1000).fetch_hexes([])
+        result = await AdsbFiProvider(client, lambda: NOW / 1000).fetch_hexes([])
     assert result.contacts == []
     assert requests == []
+
+
+class PacingClock:
+    def __init__(self):
+        self.now = 100.0
+        self.sleeps = []
+
+    def __call__(self):
+        return self.now
+
+    async def sleep(self, delay):
+        self.sleeps.append(delay)
+        self.now += delay
+        await asyncio.sleep(0)
+
+
+async def test_concurrent_endpoints_share_serial_request_start_spacing():
+    clock = PacingClock()
+    starts = []
+    active = 0
+    peak = 0
+
+    async def transport(request):
+        nonlocal active, peak
+        starts.append(clock())
+        active += 1
+        peak = max(peak, active)
+        await asyncio.sleep(0)
+        active -= 1
+        return httpx.Response(200, json={"now": NOW, "ac": []})
+
+    async with httpx.AsyncClient(
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
+    ) as client:
+        provider = AdsbFiProvider(
+            client, lambda: NOW / 1000, monotonic_source=clock, sleep=clock.sleep
+        )
+        await asyncio.gather(
+            provider.fetch_military(),
+            provider.fetch_hexes(["00AB12", "000002"]),
+            provider.fetch_hex("ABCDEF"),
+        )
+    assert starts == pytest.approx([100, 101.1, 102.2])
+    assert peak == 1
+
+
+@pytest.mark.parametrize("retry", ["60", "Sat, 03 Oct 2026 12:01:00 GMT"])
+async def test_retry_after_is_shared_across_endpoints_without_long_sleep(retry):
+    clock = PacingClock()
+    paths = []
+
+    def transport(request):
+        paths.append(request.url.path)
+        return (
+            httpx.Response(429, headers={"Retry-After": retry})
+            if len(paths) == 1
+            else httpx.Response(200, json={"now": NOW, "ac": []})
+        )
+
+    async with httpx.AsyncClient(
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
+    ) as client:
+        provider = AdsbFiProvider(
+            client, lambda: NOW / 1000, monotonic_source=clock, sleep=clock.sleep
+        )
+        with pytest.raises(AdsbProviderError):
+            await provider.fetch_military()
+        clock.now += 10
+        with pytest.raises(AdsbProviderError) as error:
+            await provider.fetch_hex("00AB12")
+        assert error.value.retry_after_seconds == pytest.approx(50)
+        assert len(paths) == 1
+        assert clock.sleeps == []
+        clock.now += 50
+        await provider.fetch_hex("00AB12")
+        assert len(paths) == 2
+
+
+@pytest.mark.parametrize("failure", ["cancel", "transport"])
+async def test_consumed_slot_survives_cancellation_or_transport_failure(failure):
+    clock = PacingClock()
+    started = asyncio.Event()
+    starts = []
+
+    async def transport(request):
+        starts.append(clock())
+        if len(starts) == 1:
+            started.set()
+            if failure == "cancel":
+                await asyncio.Event().wait()
+            raise httpx.ConnectError("failure", request=request)
+        return httpx.Response(200, json={"now": NOW, "ac": []})
+
+    async with httpx.AsyncClient(
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
+    ) as client:
+        provider = AdsbFiProvider(
+            client, lambda: NOW / 1000, monotonic_source=clock, sleep=clock.sleep
+        )
+        task = asyncio.create_task(provider.fetch_military())
+        try:
+            await asyncio.wait_for(started.wait(), 1)
+            if failure == "cancel":
+                task.cancel()
+            with pytest.raises(
+                asyncio.CancelledError if failure == "cancel" else AdsbProviderError
+            ):
+                await task
+            await provider.fetch_hex("00AB12")
+        finally:
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+    assert starts == pytest.approx([100, 101.1])
+
+
+async def test_invalid_or_empty_input_does_not_consume_request_slot():
+    clock = PacingClock()
+    starts = []
+
+    def transport(request):
+        starts.append(clock())
+        return httpx.Response(200, json={"now": NOW, "ac": []})
+
+    async with httpx.AsyncClient(
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
+    ) as client:
+        provider = AdsbFiProvider(
+            client, lambda: NOW / 1000, monotonic_source=clock, sleep=clock.sleep
+        )
+        await provider.fetch_hexes([])
+        with pytest.raises(AdsbProviderError):
+            await provider.fetch_hexes(["invalid"])
+        await provider.fetch_military()
+    assert starts == [100]
+    assert clock.sleeps == []

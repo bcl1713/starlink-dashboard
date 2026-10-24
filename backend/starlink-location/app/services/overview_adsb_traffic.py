@@ -9,7 +9,7 @@ from app.models.overview_adsb import (
     AdsbSourceStatus,
     AdsbTrafficBundle,
 )
-from app.services.adsb_lol import AdsbLolProvider, AdsbProviderError
+from app.services.adsb_fi import AdsbFiProvider, AdsbProviderError
 from app.services.overview_adsb_selection import position_state, select_contacts
 from app.services.overview_adsb_settings import AdsbSettingsStore
 
@@ -18,7 +18,7 @@ class AdsbTrafficService:
     def __init__(
         self,
         store: AdsbSettingsStore,
-        provider: AdsbLolProvider,
+        provider: AdsbFiProvider,
         time_source: Callable[[], float],
         monotonic_source: Callable[[], float],
     ) -> None:
@@ -311,7 +311,7 @@ class AdsbTrafficService:
                         pending.append(f"hex:{hex_code}")
                 # One request for ordinary lists. Sequential minimum chunking
                 # respects readsb's documented cap and stops on batch failure.
-                limit = AdsbLolProvider.HEX_BATCH_LIMIT
+                limit = AdsbFiProvider.HEX_BATCH_LIMIT
                 for offset in range(0, len(pending), limit):
                     if not await self._fetch_sources(
                         pending[offset : offset + limit], generation

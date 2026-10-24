@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api import overview_adsb
-from app.services.adsb_lol import AdsbLolProvider
+from app.services.adsb_fi import AdsbFiProvider
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.overview_adsb_traffic import AdsbTrafficService
 
@@ -15,12 +15,12 @@ async def test_traffic_api_filters_immediately_and_keeps_source_errors(tmp_path)
         "ac": [{"hex": "00ab12", "lat": 40, "lon": -75, "seen_pos": 0}],
     }
     upstream = httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
     )
     store = AdsbSettingsStore(tmp_path / "adsb.json")
     service = AdsbTrafficService(
-        store, AdsbLolProvider(upstream, lambda: now), lambda: now, lambda: now
+        store, AdsbFiProvider(upstream, lambda: now), lambda: now, lambda: now
     )
     overview_adsb.set_overview_adsb_runtime(store, service)
     app = FastAPI()
@@ -63,7 +63,7 @@ def test_uninitialized_traffic_returns_503():
 async def test_source_failure_returns_200_with_status(tmp_path):
     now = 1791028800.0
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(
             lambda _: httpx.Response(503, content="private upstream body")
         ),
@@ -71,7 +71,7 @@ async def test_source_failure_returns_200_with_status(tmp_path):
         store = AdsbSettingsStore(tmp_path / "a.json")
         store.update({"enabled": True})
         service = AdsbTrafficService(
-            store, AdsbLolProvider(upstream, lambda: now), lambda: now, lambda: now
+            store, AdsbFiProvider(upstream, lambda: now), lambda: now, lambda: now
         )
         overview_adsb.set_overview_adsb_runtime(store, service)
         app = FastAPI()
@@ -107,11 +107,11 @@ async def test_catalog_api_is_independent_and_cache_only(tmp_path):
         )
 
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol", transport=httpx.MockTransport(response)
+        base_url="https://opendata.adsb.fi/api", transport=httpx.MockTransport(response)
     ) as upstream:
         store = AdsbSettingsStore(tmp_path / "catalog.json")
         service = AdsbTrafficService(
-            store, AdsbLolProvider(upstream, lambda: now), lambda: now, lambda: now
+            store, AdsbFiProvider(upstream, lambda: now), lambda: now, lambda: now
         )
         overview_adsb.set_overview_adsb_runtime(store, service)
         app = FastAPI()
