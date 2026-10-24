@@ -168,14 +168,19 @@ caches are preserved. No Compose resources or persistent server is needed.
 ## Dependency lock and reproducibility
 
 Backend commands retain the original dev and GFS requirement inputs and add
-`requirements-ci.txt`. Its 98 hashed runtime pins reproduce the original local
-M1 inventory's 100-entry sorted multiset, including ambient pip and two visible
-setuptools entries. The reviewed runtime setuptools pin is 84.2.1; ambient
-build-tool 84.0.0 is preserved in the inventory rather than silently discarded.
+`requirements-ci.txt`. Its 98 hashed runtime pins preserve the reviewed M1
+versions. Task 2's locked validation reproduced M1's complete 100-entry sorted
+multiset, including ambient pip and two visible setuptools entries. The later
+[focused gzip runtime](evidence/gzip-runtime-summary.json) recorded 102 entries:
+every M1 entry plus one additional pip26.2.1 and setuptools84.0.0 metadata
+entry. No version changed. Keep these duplicate ambient entries in reports; do
+not silently normalize them away or assume multiplicity is fixed by the runtime
+lock. All four hosted shards must agree on their complete actual multiset. The
+reviewed runtime setuptools pin is 84.2.1.
 [Lock comparison](evidence/lock-comparison.json) and
-[preservation evidence](evidence/lock-preservation.json) record unchanged
-versions and source hashes. This is source drift detection and pinned
-resolution, not a claim that ambient build tooling has vanished.
+[Task 2 preservation evidence](evidence/lock-preservation.json) retain their
+original observed versions/source hashes. This is source drift detection and
+pinned resolution, not a claim that ambient build tooling has vanished.
 
 CI pins tested uv 0.12.19 and uses setup-python's actual 3.11 executable with
 Python downloads disabled. Cache identities include OS, architecture, actual
