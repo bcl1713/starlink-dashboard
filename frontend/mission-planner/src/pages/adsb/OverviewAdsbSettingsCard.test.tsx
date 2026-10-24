@@ -122,13 +122,13 @@ it('shows independent source status and provider attribution', () => {
     </>
   );
   expect(screen.getByText(/Provider acquisition failed/)).toBeVisible();
-  expect(screen.getByRole('link', { name: 'adsb.lol' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'adsb.fi' })).toHaveAttribute(
     'href',
-    'https://www.adsb.lol/'
+    'https://adsb.fi/'
   );
-  expect(screen.getByRole('link', { name: 'ODbL license' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Terms of use' })).toHaveAttribute(
     'href',
-    'https://opendatacommons.org/licenses/odbl/1-0/'
+    'https://github.com/adsbfi/opendata/blob/main/README.md'
   );
 });
 

@@ -6,16 +6,24 @@ from contextlib import asynccontextmanager
 import httpx
 import pytest
 
-from app.services.adsb_lol import AdsbLolProvider
+from app.services.adsb_fi import AdsbFiProvider
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.overview_adsb_traffic import AdsbTrafficService
 
 
 class Clock:
     now = 1791028800.0
+    pacing_offset = 0.0
 
     def __call__(self):
         return self.now
+
+    def pacing_now(self):
+        return self.now + self.pacing_offset
+
+    async def sleep(self, seconds):
+        self.pacing_offset += seconds
+        await asyncio.sleep(0)
 
     def advance(self, seconds):
         self.now += seconds
@@ -35,12 +43,18 @@ async def runtime(tmp_path, respond, settings):
         return await respond(request, clock)
 
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol", transport=httpx.MockTransport(transport)
+        base_url="https://opendata.adsb.fi/api",
+        transport=httpx.MockTransport(transport),
     ) as client:
         store = AdsbSettingsStore(tmp_path / "adsb.json")
         store.update({"enabled": True, "mode": "included_only", **settings})
         service = AdsbTrafficService(
-            store, AdsbLolProvider(client, clock), clock, clock
+            store,
+            AdsbFiProvider(
+                client, clock, monotonic_source=clock.pacing_now, sleep=clock.sleep
+            ),
+            clock,
+            clock,
         )
         try:
             yield store, service, clock, requests
@@ -51,11 +65,15 @@ async def runtime(tmp_path, respond, settings):
 @pytest.mark.parametrize(
     "included,excluded,expected",
     [
-        (["00ab12", "000002"], [], [b"/v2/hex/00AB12%2C000002"]),
-        ([" 00ab12 ", "00AB12", "000002", "000002"], [], [b"/v2/hex/00AB12%2C000002"]),
-        (["000002"], [], [b"/v2/hex/000002"]),
+        (["00ab12", "000002"], [], [b"/api/v2/hex/00AB12%2C000002"]),
+        (
+            [" 00ab12 ", "00AB12", "000002", "000002"],
+            [],
+            [b"/api/v2/hex/00AB12%2C000002"],
+        ),
+        (["000002"], [], [b"/api/v2/hex/000002"]),
         ([], [], []),
-        (["00ab12", "000002", "abcdef"], ["000002"], [b"/v2/hex/00AB12%2CABCDEF"]),
+        (["00ab12", "000002", "abcdef"], ["000002"], [b"/api/v2/hex/00AB12%2CABCDEF"]),
         (["000002"], ["000002"], []),
     ],
 )
@@ -106,7 +124,7 @@ async def test_partial_batch_preserves_missing_observation_and_deduplicates(tmp_
         assert [c.hex for c in service.read().contacts] == ["00AB12"]
         clock.advance(30)
         assert service.read().contacts == []
-        assert requests == [b"/v2/hex/00AB12%2C000002"] * 3
+        assert requests == [b"/api/v2/hex/00AB12%2C000002"] * 3
 
 
 @pytest.mark.parametrize("status,retry,delay", [(503, None, 15), (429, "600", 600)])
@@ -142,11 +160,11 @@ async def test_batch_failure_has_shared_backoff_without_single_code_fallback(
         service.settings_changed()
         clock.advance(delay - 0.001)
         await asyncio.gather(*(service.refresh_once() for _ in range(10)))
-        assert requests == [b"/v2/hex/00AB12%2C000002"]
+        assert requests == [b"/api/v2/hex/00AB12%2C000002"]
         clock.advance(0.001)
         failed = False
         await service.refresh_once()
-        assert requests == [b"/v2/hex/00AB12%2C000002", b"/v2/hex/000003"]
+        assert requests == [b"/api/v2/hex/00AB12%2C000002", b"/api/v2/hex/000003"]
         assert service.read().sources[0].error is None
         assert [c.hex for c in service.read().contacts] == ["000003"]
 
@@ -157,7 +175,7 @@ async def test_military_current_positions_avoid_batch_but_stale_cache_does_not(
     military_replies = [[record("00AB12")], []]
 
     async def respond(request, clock):
-        contacts = military_replies.pop(0) if request.url.path == "/v2/mil" else []
+        contacts = military_replies.pop(0) if request.url.path == "/api/v2/mil" else []
         return httpx.Response(200, json={"now": clock() * 1000, "ac": contacts})
 
     async with runtime(
@@ -169,10 +187,13 @@ async def test_military_current_positions_avoid_batch_but_stale_cache_does_not(
         },
     ) as (_, service, clock, requests):
         await service.refresh_once()
-        assert requests == [b"/v2/mil", b"/v2/hex/000002%2C000003"]
+        assert requests == [b"/api/v2/mil", b"/api/v2/hex/000002%2C000003"]
         clock.advance(15)
         await service.refresh_once()
-        assert requests[-2:] == [b"/v2/mil", b"/v2/hex/00AB12%2C000002%2C000003"]
+        assert requests[-2:] == [
+            b"/api/v2/mil",
+            b"/api/v2/hex/00AB12%2C000002%2C000003",
+        ]
 
 
 @pytest.mark.parametrize(
@@ -200,7 +221,9 @@ async def test_documented_size_limit_uses_minimum_sequential_chunks(
         requests,
     ):
         await service.refresh_once()
-        batches = [path.removeprefix(b"/v2/hex/").split(b"%2C") for path in requests]
+        batches = [
+            path.removeprefix(b"/api/v2/hex/").split(b"%2C") for path in requests
+        ]
         assert [len(batch) for batch in batches] == sizes
         assert [code.decode() for batch in batches for code in batch] == codes
         assert peak == 1
@@ -225,7 +248,7 @@ async def test_later_chunk_failure_escalates_until_whole_batch_recovers(tmp_path
     fail_last = True
 
     async def respond(request, clock):
-        if fail_last and request.url.path == "/v2/hex/0003E8":
+        if fail_last and request.url.path == "/api/v2/hex/0003E8":
             return httpx.Response(503)
         return httpx.Response(200, json={"now": clock() * 1000, "ac": []})
 
@@ -278,7 +301,7 @@ async def test_settings_change_discards_inflight_included_batch(tmp_path, change
         finally:
             release.set()
             await refresh
-        assert requests == [b"/v2/hex/00AB12%2C000002"]
+        assert requests == [b"/api/v2/hex/00AB12%2C000002"]
         assert service.read().contacts == []
         assert service.read().sources == []
 

@@ -1,9 +1,10 @@
-"""adsb.lol adapter: convert readsb position observation time, never message age."""
+"""adsb.fi adapter: convert readsb position observation time, never message age."""
 
+import asyncio
 import math
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 
@@ -101,15 +102,25 @@ class AdsbProviderError(Exception):
         self.retry_after_seconds = retry_after_seconds
 
 
-class AdsbLolProvider:
+class AdsbFiProvider:
     # readsb's documented find_hex limit; larger acquisitions are chunked.
     HEX_BATCH_LIMIT = 1000
 
     def __init__(
-        self, client: httpx.AsyncClient, time_source: Callable[[], float] = time.time
+        self,
+        client: httpx.AsyncClient,
+        time_source: Callable[[], float] = time.time,
+        *,
+        monotonic_source: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
         self._client = client
         self._time = time_source
+        self._monotonic = monotonic_source
+        self._sleep = sleep
+        self._request_lock = asyncio.Lock()
+        self._last_start: float | None = None
+        self._cooldown_until = 0.0
 
     async def fetch_military(self) -> AdsbProviderResult:
         return await self._fetch("/v2/mil", True)
@@ -129,6 +140,20 @@ class AdsbLolProvider:
         return await self._fetch("/v2/hex/" + "%2C".join(codes), False)
 
     async def _fetch(self, path: str, military: bool) -> AdsbProviderResult:
+        async with self._request_lock:
+            remaining = self._cooldown_until - self._monotonic()
+            if remaining > 0:
+                raise AdsbProviderError("Provider cooldown", remaining)
+            if self._last_start is not None:
+                remaining = self._last_start + 1.1 - self._monotonic()
+                while remaining > 0:
+                    await self._sleep(remaining)
+                    remaining = self._last_start + 1.1 - self._monotonic()
+            # A cancelled or failed request still consumes its start slot.
+            self._last_start = self._monotonic()
+            return await self._request(path, military)
+
+    async def _request(self, path: str, military: bool) -> AdsbProviderResult:
         try:
             response = await self._client.get(path)
         except httpx.HTTPError as error:
@@ -149,6 +174,10 @@ class AdsbLolProvider:
                         pass
                 if seconds is not None:
                     seconds = max(0, seconds) if math.isfinite(seconds) else None
+            if seconds is not None:
+                self._cooldown_until = max(
+                    self._cooldown_until, self._monotonic() + seconds
+                )
             raise AdsbProviderError(f"Provider HTTP {response.status_code}", seconds)
         try:
             payload = response.json()

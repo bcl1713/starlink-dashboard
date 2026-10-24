@@ -7,16 +7,20 @@ const directory = process.env.ADSB_EVIDENCE_DIR;
 if (!directory) throw new Error("ADSB_EVIDENCE_DIR required");
 await mkdir(directory, { recursive: true });
 const browser = await chromium.launch();
-const context = await browser.newContext({
-  baseURL: "http://127.0.0.1:15244",
-  viewport: { width: 1920, height: 1080 },
-  recordVideo: { dir: directory },
-});
+let context;
 try {
+  context = await browser.newContext({
+    baseURL: `http://127.0.0.1:${process.env.ADSB_ACCEPTANCE_PORT || 15244}`,
+    viewport: { width: 1920, height: 1080 },
+    recordVideo: { dir: directory },
+  });
   const overview = await context.newPage(),
     editing = await context.newPage();
   await overview.goto("/overview");
   await editing.goto("/configuration");
+  await editing
+    .getByRole("tab", { name: "Aircraft Traffic", exact: true })
+    .click();
   await editing.getByRole("switch", { name: "ADS-B aircraft layer" }).click();
   await expect(
     editing.getByRole("switch", { name: "ADS-B aircraft layer" }),
@@ -99,6 +103,9 @@ try {
     ),
   );
 } finally {
-  await context.close();
-  await browser.close();
+  try {
+    await context?.close();
+  } finally {
+    await browser.close();
+  }
 }
