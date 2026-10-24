@@ -1,0 +1,58 @@
+{
+  "run_id": 40064607994,
+  "run_attempt": 1,
+  "head_sha": "c22d872f10ea00390037930e6274ce24b3b111ba",
+  "conclusion": "failure",
+  "accepted": false,
+  "reason": "The aggregate correctly rejected six unexpected route fixture skips. No new skip allowance was authorized.",
+  "outcomes": {
+    "passed": 4274,
+    "skipped": 26
+  },
+  "jobs_seconds": {
+    "Backend Shard 3/4": 223.0,
+    "Backend Shard 4/4": 183.0,
+    "Frontend Test and Build Gate": 200.0,
+    "Backend Shard 2/4": 222.0,
+    "Static Quality Gate": 135.0,
+    "Backend Shard 1/4": 168.0,
+    "Backend Test Gate": 9.0
+  },
+  "backend_window_seconds": 234.0,
+  "runner_minutes": 19.0,
+  "common_shard_overlap_seconds": 168.0,
+  "checkout_sha": "2a6cf77c398e1213240ae6a609d552f41bc86ec6",
+  "unexpected_skips": {
+    "outcomes": {
+      "passed": 4274,
+      "skipped": 26
+    },
+    "unexpected_skips": [
+      {
+        "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_get_route_detail_includes_timing_profile",
+        "reason": "Skipped: No routes available for testing"
+      },
+      {
+        "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_get_route_detail_has_timing_data_flag",
+        "reason": "Skipped: No routes available for testing"
+      },
+      {
+        "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_activate_route_includes_timing_data",
+        "reason": "Skipped: No routes available for testing"
+      },
+      {
+        "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_route_response_timing_profile_structure",
+        "reason": "Skipped: No routes available for testing"
+      },
+      {
+        "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_list_routes_timing_consistency",
+        "reason": "Skipped: No routes available for testing"
+      },
+      {
+        "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_route_points_include_timing_fields",
+        "reason": "Skipped: No routes available for testing"
+      }
+    ]
+  },
+  "run_url": "https://github.com/bcl1713/starlink-dashboard/actions/runs/40064607994"
+}

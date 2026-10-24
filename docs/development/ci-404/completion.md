@@ -2,9 +2,11 @@
 
 Issue 404 replaces the serial CI backend job with four isolated whole-file
 shards and an always-running `Backend Test Gate` aggregate. The complete serial
-`./tools/verify backend` and `all` paths remain available. Hosted acceptance and
-two comparable normal PR rounds are pending; this document does not claim a
-five-minute hosted result.
+`./tools/verify backend` and `all` paths remain available. The first accepted
+hosted round completed the backend path in 250s with all coverage reconciled.
+The final-head checks, comparable second round, and independent acceptance
+record are maintained in
+[PR 411](https://github.com/bcl1713/starlink-dashboard/pull/411).
 
 ## Measured baseline and allocation
 
@@ -43,17 +45,22 @@ matched; comparing their elapsed times does not establish causal speedup. Two
 optional process-counter point samples sum RSS to 736.9/871.5MiB; shared pages
 may be counted twice, and these are not whole-run peak memory.
 
-| Measurement              | Backend wall time | Total runner minutes     | Status                          |
-| ------------------------ | ----------------- | ------------------------ | ------------------------------- |
-| Hosted historical serial | 851s job          | 19.383, all three jobs   | Observed, unmatched environment |
-| Local M1 serial          | 634.48s pytest    | Not a hosted measurement | Observed once                   |
-| New normal PR round 1    | Pending           | Pending                  | Required                        |
-| New normal PR round 2    | Pending           | Pending                  | Required                        |
+| Measurement               | Backend wall time          | Total runner minutes       | Status                            |
+| ------------------------- | -------------------------- | -------------------------- | --------------------------------- |
+| Hosted historical serial  | 851s job                   | 19.383, all three jobs     | Observed, unmatched environment   |
+| Local M1 serial           | 634.48s pytest             | Not a hosted measurement   | Observed once                     |
+| Accepted hosted round 1   | 250s including aggregate   | 20.050, all seven jobs     | Observed, exact coverage retained |
+| Comparable hosted round 2 | Final PR acceptance record | Final PR acceptance record | Required before merge             |
 
 Four runners trade wall time for repeated environment/collection work. Report
-both backend critical path and summed runner minutes; five minutes is an
-aspiration until normal CI supplies measured evidence. Do not use synthetic
-fixtures or local phase sums as hosted acceptance results.
+both backend critical path and summed runner minutes. The first accepted normal
+PR round met the five-minute aspiration; two samples cannot establish a
+long-term percentile or a causal speedup against the unmatched historical
+environment. Do not use synthetic fixtures or local phase sums as hosted
+acceptance results.
+
+See [hosted results](hosted-results.md) for per-job timing, source/runtime
+identities, cache state, runner-minute accounting and retained raw artifacts.
 
 ## Coverage and execution semantics
 
@@ -259,17 +266,25 @@ paths:
   [resource point samples](evidence/resource-samples.jsonl).
 - [Hosted serial summary](evidence/hosted-serial-summary.json) and
   [host distribution differences](evidence/host-distribution-differences.json).
+- [First accepted hosted summary](evidence/hosted-clean-1-summary.json),
+  [original reports, owners, logs and GitHub metadata](evidence/hosted-clean-1.tar.gz),
+  and [archive/entry checksums](evidence/hosted-clean-1-manifest.json).
+- [Failed qualification and six unexpected skips](evidence/hosted-failed-qualification.json),
+  plus
+  [route fixture preservation and isolated results](evidence/route-timing-isolation.json).
 
 Normal PR CI must supply all four independently isolated runs plus mandatory
 static/frontend results, followed by a second comparable normal round. Compare
 runtime hashes and backend Git tree identities across documentation-only heads;
 do not rewrite earlier checkout/run facts. Inspect counts, the explicit two-case
-ledger, skip reasons, timings, command status, runner minutes, and cleanup.
-Current implementation verification is limited to bounded focused tools and
-synthetic suites, the nine-case gzip module, and two fresh-root route-timing
-module runs. The mandatory static command runs the source-controlled
-shard/gate/verifier/workflow/lifecycle contracts alongside the existing policy
-and docs-link contracts.
+ledger, skip reasons, timings, command status, runner minutes, and cleanup. The
+committed first hosted archive proves the full 4,300-case result, with bounded
+focused tools/synthetic suites, the nine-case gzip module, and two fresh-root
+route-timing module runs supplying development evidence. The final repeatability
+result and reviewed head are recorded durably in PR 411 so a prose-only
+second-result commit does not trigger a redundant third full run. The mandatory
+static command runs the source-controlled shard/gate/verifier/workflow/lifecycle
+contracts alongside the existing policy and docs-link contracts.
 
 Rollback restores the single serial `backend` workflow job with the same
 `Backend Test Gate` name and
