@@ -11,6 +11,20 @@ UNAVAILABLE_GROUND_ENTRY_POINT_METRICS = {
 }
 
 
+@pytest.fixture(autouse=True)
+def accepted_metrics_observation(test_client):
+    """Scrapes consume a real accepted producer sample in disabled-background tests."""
+    import main
+    from app.core.metrics import update_metrics_from_telemetry
+
+    update_metrics_from_telemetry(
+        main._coordinator.get_current_telemetry(),
+        main._current_runtime_config(),
+        main.app.state.route_manager.get_active_route(),
+        main.app.state.poi_manager,
+    )
+
+
 @pytest.mark.asyncio
 async def test_metrics_endpoint_returns_200(test_client):
     """Test that metrics endpoint returns 200 status."""

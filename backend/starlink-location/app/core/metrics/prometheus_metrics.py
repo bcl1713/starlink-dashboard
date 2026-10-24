@@ -6,7 +6,7 @@
 # discoverability. Deferred to v0.4.0.
 
 import logging
-from collections.abc import Generator
+from collections.abc import Mapping
 
 from prometheus_client import (
     CollectorRegistry,
@@ -14,54 +14,221 @@ from prometheus_client import (
     Gauge,
     Histogram,
 )
-from prometheus_client.core import GaugeMetricFamily
+
+from app.core.metrics.frames import (
+    FrameGaugeView,
+    FrameStore,
+    GaugeDefinition,
+    TelemetryFrameCollector,
+)
 
 logger = logging.getLogger(__name__)
 
 # Create a dedicated registry for our metrics
 REGISTRY: CollectorRegistry = CollectorRegistry()
 
-# Current position data for custom collector
-# This is updated by metric_updater functions and read by PositionCollector
-_current_position: dict[str, float] = {
-    "latitude": 0.0,
-    "longitude": 0.0,
-    "altitude": 0.0,
-}
+COUPLED_SCHEMA = (
+    GaugeDefinition(
+        "starlink_dish_latitude_degrees", "Dish latitude in decimal degrees", ()
+    ),
+    GaugeDefinition(
+        "starlink_dish_longitude_degrees", "Dish longitude in decimal degrees", ()
+    ),
+    GaugeDefinition(
+        "starlink_dish_altitude_feet", "Dish altitude in feet above sea level", ()
+    ),
+    GaugeDefinition("starlink_dish_speed_knots", "Dish speed in knots", ()),
+    GaugeDefinition(
+        "starlink_dish_heading_degrees",
+        "Dish heading in degrees (0=North, 90=East)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_network_latency_ms_current",
+        "Network round-trip latency in milliseconds (current value)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_network_throughput_down_mbps_current",
+        "Download throughput in Megabits per second (current value)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_network_throughput_up_mbps_current",
+        "Upload throughput in Megabits per second (current value)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_network_packet_loss_percent", "Packet loss as percentage (0-100)", ()
+    ),
+    GaugeDefinition(
+        "starlink_dish_obstruction_percent",
+        "Dish obstruction as percentage (0-100)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_signal_quality_percent", "Signal quality as percentage (0-100)", ()
+    ),
+    GaugeDefinition(
+        "starlink_service_info", "Starlink service information", ("version", "mode")
+    ),
+    GaugeDefinition(
+        "starlink_mode_info", "Starlink operating mode indicator", ("mode",)
+    ),
+    GaugeDefinition("starlink_uptime_seconds", "Service uptime in seconds", ()),
+    GaugeDefinition(
+        "starlink_eta_poi_seconds",
+        "Estimated time of arrival to point of interest in seconds (anticipated or estimated)",
+        ("name", "category", "eta_type"),
+    ),
+    GaugeDefinition(
+        "starlink_distance_to_poi_meters",
+        "Distance to point of interest in meters",
+        ("name", "category", "eta_type"),
+    ),
+    GaugeDefinition(
+        "starlink_flight_phase",
+        "Current flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_eta_mode",
+        "Current ETA calculation mode (0=anticipated, 1=estimated)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_flight_departure_time_unix",
+        "Detected departure time (Unix timestamp), 0 if not yet departed",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_flight_arrival_time_unix",
+        "Detected arrival time (Unix timestamp), 0 if not yet arrived",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_time_until_departure_seconds",
+        "Seconds remaining until scheduled or detected departure (0 once departed, negative if scheduled time is in the past and departure not detected)",
+        (),
+    ),
+    GaugeDefinition(
+        "starlink_route_progress_percent",
+        "Current progress along active KML route (0-100%)",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_current_waypoint_index",
+        "Index of current waypoint in active route (0-indexed)",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_route_has_timing_data",
+        "Binary flag indicating if route has embedded timing data (1=has timing, 0=no timing)",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_route_total_duration_seconds",
+        "Expected total flight duration for active route in seconds",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_route_departure_time_unix",
+        "Expected departure time for active route (Unix timestamp)",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_route_arrival_time_unix",
+        "Expected arrival time for active route (Unix timestamp)",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_route_segment_count_with_timing",
+        "Number of route segments with calculated expected speeds",
+        ("route_name",),
+    ),
+    GaugeDefinition(
+        "starlink_metrics_last_update_timestamp_seconds",
+        "Timestamp of last successful metric update (Unix epoch)",
+        (),
+    ),
+)
+FRAME_STORE = FrameStore(COUPLED_SCHEMA)
+(
+    starlink_dish_latitude_degrees,
+    starlink_dish_longitude_degrees,
+    starlink_dish_altitude_feet,
+    starlink_dish_speed_knots,
+    starlink_dish_heading_degrees,
+    starlink_network_latency_ms_current,
+    starlink_network_throughput_down_mbps_current,
+    starlink_network_throughput_up_mbps_current,
+    starlink_network_packet_loss_percent,
+    starlink_dish_obstruction_percent,
+    starlink_signal_quality_percent,
+    starlink_service_info,
+    starlink_mode_info,
+    starlink_uptime_seconds,
+    starlink_eta_poi_seconds,
+    starlink_distance_to_poi_meters,
+    starlink_flight_phase,
+    starlink_eta_mode,
+    starlink_flight_departure_time_unix,
+    starlink_flight_arrival_time_unix,
+    starlink_time_until_departure_seconds,
+    starlink_route_progress_percent,
+    starlink_current_waypoint_index,
+    starlink_route_has_timing_data,
+    starlink_route_total_duration_seconds,
+    starlink_route_departure_time_unix,
+    starlink_route_arrival_time_unix,
+    starlink_route_segment_count_with_timing,
+    starlink_metrics_last_update_timestamp_seconds,
+) = tuple(FrameGaugeView(FRAME_STORE, definition) for definition in COUPLED_SCHEMA)
+
+
+class _PositionView(Mapping):
+    """Read-only compatibility mapping; snapshot captures all dimensions once."""
+
+    def snapshot(self):
+        state = FRAME_STORE.read()
+        indices = {
+            definition.name: index for index, definition in enumerate(COUPLED_SCHEMA)
+        }
+        return {
+            dimension: (
+                state.frame.families[indices[name]][0][1]
+                if state.frame is not None and state.status == "ready"
+                else float("nan")
+            )
+            for dimension, name in (
+                ("latitude", "starlink_dish_latitude_degrees"),
+                ("longitude", "starlink_dish_longitude_degrees"),
+                ("altitude", "starlink_dish_altitude_feet"),
+            )
+        }
+
+    def __getitem__(self, key):
+        return self.snapshot()[key]
+
+    def __iter__(self):
+        return iter(("latitude", "longitude", "altitude"))
+
+    def __len__(self):
+        return 3
+
+
+_current_position = _PositionView()
+_FRAME_COLLECTOR = TelemetryFrameCollector(FRAME_STORE, COUPLED_SCHEMA)
 
 
 class PositionCollector:
-    """Custom collector that exports position as a single metric with all values.
+    """Compatibility read view; the registered full collector emits this alias."""
 
-    This collector is registered with Prometheus and yields a GaugeMetricFamily
-    containing the current aircraft position with three dimensions (latitude,
-    longitude, altitude). The position data is read from the module-level
-    _current_position dictionary which is updated by metric_updater functions.
-    """
+    def collect(self):
+        for family in _FRAME_COLLECTOR.collect():
+            if family.name == "starlink_aircraft_position":
+                yield family
 
-    def collect(self) -> Generator[GaugeMetricFamily, None, None]:
-        """Collect and yield position metrics for Prometheus scraping.
-
-        Returns:
-            Generator[GaugeMetricFamily, None, None]: A generator yielding a single
-                GaugeMetricFamily with position data labeled by dimension.
-        """
-        # Create a gauge metric with the position data
-        position_metric = GaugeMetricFamily(
-            "starlink_aircraft_position",
-            "Current aircraft position with latitude, longitude, and altitude",
-            labels=["dimension"],
-        )
-
-        position_metric.add_metric(["latitude"], _current_position["latitude"])
-        position_metric.add_metric(["longitude"], _current_position["longitude"])
-        position_metric.add_metric(["altitude"], _current_position["altitude"])
-
-        yield position_metric
-
-
-# Register the custom collector
-REGISTRY.register(PositionCollector())
 
 # ============================================================================
 # Position metrics
@@ -76,60 +243,11 @@ starlink_device_location = Gauge(
     registry=REGISTRY,
 )
 
-starlink_dish_latitude_degrees = Gauge(
-    "starlink_dish_latitude_degrees",
-    "Dish latitude in decimal degrees",
-    registry=REGISTRY,
-)
-
-starlink_dish_longitude_degrees = Gauge(
-    "starlink_dish_longitude_degrees",
-    "Dish longitude in decimal degrees",
-    registry=REGISTRY,
-)
-
-starlink_dish_altitude_feet = Gauge(
-    "starlink_dish_altitude_feet",
-    "Dish altitude in feet above sea level",
-    registry=REGISTRY,
-)
-
-starlink_dish_speed_knots = Gauge(
-    "starlink_dish_speed_knots", "Dish speed in knots", registry=REGISTRY
-)
-
-starlink_dish_heading_degrees = Gauge(
-    "starlink_dish_heading_degrees",
-    "Dish heading in degrees (0=North, 90=East)",
-    registry=REGISTRY,
-)
 
 # ============================================================================
 # Network metrics - Current values (Gauges)
 # ============================================================================
-starlink_network_latency_ms_current = Gauge(
-    "starlink_network_latency_ms_current",
-    "Network round-trip latency in milliseconds (current value)",
-    registry=REGISTRY,
-)
 
-starlink_network_throughput_down_mbps_current = Gauge(
-    "starlink_network_throughput_down_mbps_current",
-    "Download throughput in Megabits per second (current value)",
-    registry=REGISTRY,
-)
-
-starlink_network_throughput_up_mbps_current = Gauge(
-    "starlink_network_throughput_up_mbps_current",
-    "Upload throughput in Megabits per second (current value)",
-    registry=REGISTRY,
-)
-
-starlink_network_packet_loss_percent = Gauge(
-    "starlink_network_packet_loss_percent",
-    "Packet loss as percentage (0-100)",
-    registry=REGISTRY,
-)
 
 starlink_ground_entry_point_latitude_degrees = Gauge(
     "starlink_ground_entry_point_latitude_degrees",
@@ -196,38 +314,12 @@ starlink_network_throughput_up_mbps = Histogram(
 # ============================================================================
 # Obstruction and signal metrics
 # ============================================================================
-starlink_dish_obstruction_percent = Gauge(
-    "starlink_dish_obstruction_percent",
-    "Dish obstruction as percentage (0-100)",
-    registry=REGISTRY,
-)
 
-starlink_signal_quality_percent = Gauge(
-    "starlink_signal_quality_percent",
-    "Signal quality as percentage (0-100)",
-    registry=REGISTRY,
-)
 
 # ============================================================================
 # Status metrics
 # ============================================================================
-starlink_service_info = Gauge(
-    "starlink_service_info",
-    "Starlink service information",
-    ["version", "mode"],
-    registry=REGISTRY,
-)
 
-starlink_mode_info = Gauge(
-    "starlink_mode_info",
-    "Starlink operating mode indicator",
-    labelnames=["mode"],
-    registry=REGISTRY,
-)
-
-starlink_uptime_seconds = Gauge(
-    "starlink_uptime_seconds", "Service uptime in seconds", registry=REGISTRY
-)
 
 starlink_dish_uptime_seconds = Gauge(
     "starlink_dish_uptime_seconds", "Dish uptime in seconds", registry=REGISTRY
@@ -273,107 +365,22 @@ starlink_thermal_events_total = Counter(
 # ============================================================================
 # POI and ETA metrics
 # ============================================================================
-starlink_eta_poi_seconds = Gauge(
-    "starlink_eta_poi_seconds",
-    "Estimated time of arrival to point of interest in seconds (anticipated or estimated)",
-    labelnames=["name", "category", "eta_type"],
-    registry=REGISTRY,
-)
 
-starlink_distance_to_poi_meters = Gauge(
-    "starlink_distance_to_poi_meters",
-    "Distance to point of interest in meters",
-    labelnames=["name", "category", "eta_type"],
-    registry=REGISTRY,
-)
 
 # ============================================================================
 # Flight Status metrics (Phase 0 - ETA Timing Modes)
 # ============================================================================
-starlink_flight_phase = Gauge(
-    "starlink_flight_phase",
-    "Current flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)",
-    registry=REGISTRY,
-)
 
-starlink_eta_mode = Gauge(
-    "starlink_eta_mode",
-    "Current ETA calculation mode (0=anticipated, 1=estimated)",
-    registry=REGISTRY,
-)
-
-starlink_flight_departure_time_unix = Gauge(
-    "starlink_flight_departure_time_unix",
-    "Detected departure time (Unix timestamp), 0 if not yet departed",
-    registry=REGISTRY,
-)
-
-starlink_flight_arrival_time_unix = Gauge(
-    "starlink_flight_arrival_time_unix",
-    "Detected arrival time (Unix timestamp), 0 if not yet arrived",
-    registry=REGISTRY,
-)
-
-starlink_time_until_departure_seconds = Gauge(
-    "starlink_time_until_departure_seconds",
-    "Seconds remaining until scheduled or detected departure (0 once departed, negative if scheduled time is in the past and departure not detected)",
-    registry=REGISTRY,
-)
 
 # ============================================================================
 # Route following metrics (Phase 5 - Simulation mode route following)
 # ============================================================================
-starlink_route_progress_percent = Gauge(
-    "starlink_route_progress_percent",
-    "Current progress along active KML route (0-100%)",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
 
-starlink_current_waypoint_index = Gauge(
-    "starlink_current_waypoint_index",
-    "Index of current waypoint in active route (0-indexed)",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
 
 # ============================================================================
 # Route timing metrics (Phase 3 - ETA Route Timing)
 # ============================================================================
-starlink_route_has_timing_data = Gauge(
-    "starlink_route_has_timing_data",
-    "Binary flag indicating if route has embedded timing data (1=has timing, 0=no timing)",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
 
-starlink_route_total_duration_seconds = Gauge(
-    "starlink_route_total_duration_seconds",
-    "Expected total flight duration for active route in seconds",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
-
-starlink_route_departure_time_unix = Gauge(
-    "starlink_route_departure_time_unix",
-    "Expected departure time for active route (Unix timestamp)",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
-
-starlink_route_arrival_time_unix = Gauge(
-    "starlink_route_arrival_time_unix",
-    "Expected arrival time for active route (Unix timestamp)",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
-
-starlink_route_segment_count_with_timing = Gauge(
-    "starlink_route_segment_count_with_timing",
-    "Number of route segments with calculated expected speeds",
-    labelnames=["route_name"],
-    registry=REGISTRY,
-)
 
 starlink_eta_to_waypoint_seconds = Gauge(
     "starlink_eta_to_waypoint_seconds",
@@ -412,11 +419,6 @@ starlink_metrics_generation_errors_total = Counter(
     registry=REGISTRY,
 )
 
-starlink_metrics_last_update_timestamp_seconds = Gauge(
-    "starlink_metrics_last_update_timestamp_seconds",
-    "Timestamp of last successful metric update (Unix epoch)",
-    registry=REGISTRY,
-)
 
 # ============================================================================
 # Mission planning metrics (Phase 1 Continuation)
@@ -480,3 +482,9 @@ simulation_updates_total = Counter(
 simulation_errors_total = Counter(
     "simulation_errors_total", "Total number of simulation errors", registry=REGISTRY
 )
+
+
+INDEPENDENT_GAUGES = tuple(
+    value for value in tuple(globals().values()) if isinstance(value, Gauge)
+)
+REGISTRY.register(_FRAME_COLLECTOR)

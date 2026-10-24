@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 
 from app.core import eta_service
@@ -148,3 +150,67 @@ def test_get_nearest_poi_metrics_handles_exception(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr(eta_service, "get_eta_calculator", boom)
     assert eta_service.get_nearest_poi_metrics() is None
+
+
+def test_derived_eta_is_detached_from_speed_passage_and_acquisition_state():
+    from datetime import datetime
+
+    from app.models.flight_status import FlightPhase
+    from app.models.poi import POI
+
+    eta_service.initialize_eta_service(DummyPOIManager())
+    calc = eta_service.get_eta_calculator()
+    calc.update_speed(200, sample_time_seconds=100)
+    before = (tuple(calc._speed_history), calc.get_stats(), calc.get_passed_pois())
+    result = eta_service.derive_eta_metrics(
+        40,
+        -73,
+        220,
+        flight_phase=FlightPhase.PRE_DEPARTURE,
+        mission_now=datetime(2026, 1, 1, tzinfo=UTC),
+        pois=[POI(id="here", name="Here", latitude=40, longitude=-73)],
+    )
+    assert result["here"]["passed"] is True
+    assert result["here"]["distance_meters"] == 0
+    assert before == (
+        tuple(calc._speed_history),
+        calc.get_stats(),
+        calc.get_passed_pois(),
+    )
+
+
+def test_explicit_poi_snapshot_avoids_manager_access_and_tracks_only_update():
+    from app.models.poi import POI
+
+    manager = DummyPOIManager()
+    eta_service.initialize_eta_service(manager)
+    poi = POI(id="here", name="Here", latitude=0, longitude=0)
+    eta_service.derive_eta_metrics(0, 0, 0, pois=[poi])
+    assert not eta_service.get_eta_calculator().get_passed_pois()
+    eta_service.update_eta_metrics(0, 0, 200, pois=[poi])
+    assert manager.list_calls == 0
+    assert eta_service.get_eta_calculator().get_passed_pois() == {"here"}
+    assert eta_service.get_eta_calculator().get_stats()["speed_samples"] == 1
+
+
+def test_manager_capture_precedes_computation_guard_and_derived_has_no_passage_log(
+    monkeypatch,
+):
+    from app.models.poi import POI
+
+    class CaptureManager:
+        def list_pois(self):
+            assert eta_service._computation_guard.acquire(blocking=False)
+            eta_service._computation_guard.release()
+            return [POI(id="here", name="Here", latitude=0, longitude=0)]
+
+    eta_service.initialize_eta_service(CaptureManager())
+
+    # A read-only derivation may report proximity, but must not track/log passage.
+    def unexpected_log(*args, **kwargs):
+        raise AssertionError("derived passage tracking")
+
+    monkeypatch.setattr("app.services.eta.projection.logger.info", unexpected_log)
+    result = eta_service.derive_eta_metrics(0, 0, 0)
+    assert result["here"]["passed"] is True
+    assert eta_service.get_eta_calculator().get_stats()["speed_samples"] == 0

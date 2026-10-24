@@ -7,6 +7,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
+from app.api.metrics_export import _record_exposition, get_exposition_error
+from app.core.metrics import prometheus_metrics
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -54,19 +57,9 @@ def _get_metrics_count():
         from app.core.metrics import REGISTRY
 
         return len(list(REGISTRY.collect()))
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ):
+    except Exception as exc:
+        logger.exception("Unable to collect metrics for health")
+        _record_exposition(type(exc).__name__)
         return 0
 
 
@@ -152,6 +145,9 @@ async def health():
         # Get Prometheus scrape status
         last_scrape = get_last_scrape_time()
         metrics_count = _get_metrics_count()
+        publication = prometheus_metrics.FRAME_STORE.read()
+        exposition_error = get_exposition_error()
+        publication_ok = publication.status == "ready" and exposition_error is None
 
         # Determine if Prometheus is actively scraping
         is_scraping = False
@@ -189,7 +185,12 @@ async def health():
             message = "Simulation mode: generating test data"
 
         response = {
-            "status": "ok" if is_scraping else "degraded",
+            "status": "ok" if is_scraping and publication_ok else "degraded",
+            "metrics_publication": {
+                "state": publication.status,
+                "reason": publication.reason,
+                "exposition_error": exposition_error,
+            },
             "uptime_seconds": uptime,
             "mode": actual_mode,
             "message": message,

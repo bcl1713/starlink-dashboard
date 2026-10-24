@@ -5,12 +5,8 @@
 # Splitting would fragment simulation lifecycle. Deferred to v0.4.0.
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from app.core.metrics import (
-    starlink_current_waypoint_index,
-    starlink_route_progress_percent,
-)
 from app.mission.input_admission import model_input_write
 from app.models.config import SimulationConfig
 from app.models.telemetry import (
@@ -18,6 +14,7 @@ from app.models.telemetry import (
     MetricAvailability,
     TelemetryData,
 )
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 from app.services.speed_tracker import SpeedTracker
 from app.simulation.kml_follower import KMLRouteFollower
 from app.simulation.network import NetworkSimulator
@@ -28,7 +25,7 @@ from app.simulation.run_replay import ReplayFrame
 logger = logging.getLogger(__name__)
 
 
-class SimulationCoordinator:
+class SimulationCoordinator(MetricsChangeSource):
     """Orchestrates all simulators and maintains state."""
 
     def __init__(self, config: SimulationConfig):
@@ -136,34 +133,6 @@ class SimulationCoordinator:
                 self.position_sim.set_route_follower(None)
                 self._previous_active_route_id = None
 
-    def _update_route_metrics(self) -> None:
-        """
-        Update route progress metrics in Prometheus.
-
-        Called each cycle if route following is active.
-        """
-        if not self.position_sim.route_follower:
-            # No active route, clear metrics
-            return
-
-        # Get active route info
-        route_name = self.position_sim.route_follower.get_route_name()
-        progress = self.position_sim.progress
-        progress_percent = progress * 100.0
-
-        # Update metrics with route name label
-        starlink_route_progress_percent.labels(route_name=route_name).set(
-            progress_percent
-        )
-
-        # Get waypoint index from the route (based on progress and number of points)
-        total_points = self.position_sim.route_follower.get_point_count()
-        waypoint_index = min(int(progress * (total_points - 1)), total_points - 1)
-
-        starlink_current_waypoint_index.labels(route_name=route_name).set(
-            waypoint_index
-        )
-
     def _generate_telemetry(
         self, replay_frame: ReplayFrame | None = None
     ) -> TelemetryData:
@@ -179,7 +148,7 @@ class SimulationCoordinator:
             if replay_frame
             else self.position_sim.update()
         )
-        position_data.observed_at = datetime.now(timezone.utc)
+        position_data.observed_at = datetime.now(UTC)
         position_data.speed_observed_at = None
 
         # Determine if we should use route timing data or GPS-based speed
@@ -233,12 +202,8 @@ class SimulationCoordinator:
             temperature_celsius=None,  # Could be added to config
         )
 
-        # Update route progress metrics if route following is active
-        if replay_frame is None:
-            self._update_route_metrics()
-
         return TelemetryData(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,
@@ -278,6 +243,7 @@ class SimulationCoordinator:
         return self._last_valid_telemetry
 
     @model_input_write
+    @metrics_changed("SimulationCoordinator:reset")
     def reset(self) -> None:
         """Reset all simulators to initial state."""
         self.pop_lifecycle_token += 1
@@ -298,6 +264,15 @@ class SimulationCoordinator:
         """
         self.position_sim.set_progress(progress)
         self.pop_lifecycle_token += 1
+
+    def route_progress_snapshot(self) -> tuple[float, int] | None:
+        """Read the current accepted simulation progress without advancing it."""
+        follower = self.position_sim.route_follower
+        if follower is None:
+            return None
+        count = follower.get_point_count()
+        progress = self.position_sim.progress
+        return progress * 100, min(int(progress * (count - 1)), count - 1)
 
     def get_uptime_seconds(self) -> float:
         """
@@ -328,6 +303,7 @@ class SimulationCoordinator:
         return self.config
 
     @model_input_write
+    @metrics_changed("SimulationCoordinator:update_config")
     def update_config(self, new_config: SimulationConfig) -> None:
         """
         Update configuration and reinitialize simulators.

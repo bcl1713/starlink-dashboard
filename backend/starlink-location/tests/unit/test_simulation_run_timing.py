@@ -1,6 +1,6 @@
 """Historical mission time and real acquisition freshness stay separate."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -21,7 +21,7 @@ def timing(tmp_path, coordinator, monkeypatch):
     import app.simulation.coordinator as simulator
 
     clocks = Clocks()
-    clocks.utc = datetime.now(timezone.utc)
+    clocks.utc = datetime.now(UTC)
 
     class RealClock(datetime):
         @classmethod
@@ -40,9 +40,9 @@ def timing(tmp_path, coordinator, monkeypatch):
     old = flight.checkpoint()
 
     def publish(telemetry, tick):
-        metrics.update_metrics_from_telemetry(
+        return metrics.prepare_metrics_from_telemetry(
             telemetry,
-            active_route=tick.plan.artifacts.route,
+            active_route=tick.plan.artifacts.route.model_copy(deep=True),
             poi_manager=pois,
             mission_context=mission_time_context(tick.status),
             simulation_plan=tick.plan,
@@ -199,16 +199,14 @@ def test_no_context_keeps_live_eta_and_detection_behavior(timing):
 
 
 def test_metric_publication_failure_propagates_for_paced_frames(timing, monkeypatch):
-    from app.core.metrics import metric_updater
+    from app.core.metrics import frame_builder
 
     service, _clocks, coordinator, publish = timing
 
     def fail(*args, **kwargs):
         raise RuntimeError("ETA publication failure")
 
-    monkeypatch.setattr(
-        metric_updater, "starlink_flight_phase", type("Broken", (), {"set": fail})()
-    )
+    monkeypatch.setattr(frame_builder, "prepare_frame", fail)
     with pytest.raises(RuntimeError):
         service.collect(coordinator, publish)
     assert service.status().state == "failed"
@@ -243,13 +241,14 @@ def test_anticipated_eta_accepts_explicit_mission_now(timing):
 def test_paced_route_and_mission_progress_metrics_follow_candidate(timing):
     from app.core.metrics.prometheus_metrics import (
         mission_phase_state,
-        starlink_route_progress_percent,
     )
 
     service, clocks, coordinator, publish = timing
     clocks.advance(12)
     service.collect(coordinator, publish)
-    assert starlink_route_progress_percent.labels(
-        route_name="Replay"
-    )._value.get() == pytest.approx(20)
+    from app.core.metrics import REGISTRY
+
+    assert REGISTRY.get_sample_value(
+        "starlink_route_progress_percent", {"route_name": "Replay"}
+    ) == pytest.approx(20)
     assert mission_phase_state.labels(mission_id="mission-1")._value.get() == 1

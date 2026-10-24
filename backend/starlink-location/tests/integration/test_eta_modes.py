@@ -106,6 +106,16 @@ def test_metrics_exposes_eta_type_labels(test_client):
     assert poi_resp.status_code == 201
     poi_id = poi_resp.json()["id"]
 
+    # Background tasks are disabled in this fixture; explicitly admit a sample.
+    import main
+    from app.core.metrics import update_metrics_from_telemetry
+
+    update_metrics_from_telemetry(
+        main._coordinator.get_current_telemetry(),
+        main._current_runtime_config(),
+        main.app.state.route_manager.get_active_route(),
+        main.app.state.poi_manager,
+    )
     metrics_resp = test_client.get("/metrics")
     assert metrics_resp.status_code == 200
     body = metrics_resp.text

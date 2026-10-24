@@ -247,10 +247,24 @@ class TestMetricsFormatting:
         assert 'version="0.2.0"' in output
         assert 'mode="simulation"' in output
 
-    def test_metrics_are_numeric(self, coordinator):
-        """Test that metric values are numeric."""
+    def test_metrics_are_numeric(self, coordinator, tmp_path, monkeypatch):
+        """Available observations and derived values have numeric exposition."""
+        from app.core import eta_service
+        from app.models.poi import POICreate
+        from app.services.eta_calculator import ETACalculator
+        from app.services.poi_manager import POIManager
+
+        # The first GPS sample has zero speed. Use explicit available inputs,
+        # including one POI, rather than another test's singleton mission state.
+        manager = POIManager(tmp_path / "numeric-pois.json")
+        manager.create_poi(
+            POICreate(name="Numeric waypoint", latitude=40.72, longitude=-74.0)
+        )
+        monkeypatch.setattr(eta_service, "_poi_manager", manager)
+        monkeypatch.setattr(eta_service, "_eta_calculator", ETACalculator())
         telemetry = coordinator.get_current_telemetry()
-        update_metrics_from_telemetry(telemetry)
+        telemetry.position.speed = 150.0
+        update_metrics_from_telemetry(telemetry, poi_manager=manager)
 
         output = generate_latest(REGISTRY).decode("utf-8")
         lines = output.strip().split("\n")

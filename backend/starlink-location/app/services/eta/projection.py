@@ -6,7 +6,7 @@
 # Deferred to v0.4.0.
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from math import isfinite
 from typing import TYPE_CHECKING, Optional
 
@@ -52,6 +52,7 @@ class ETAProjection:
         flight_phase: FlightPhase | None = None,
         *,
         mission_now: datetime | None = None,
+        track_passage: bool = True,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -125,7 +126,7 @@ class ETAProjection:
             passed = distance < self.calculator._poi_distance_threshold_m
 
             # Track passed POIs
-            if passed and poi.id not in self.calculator._passed_pois:
+            if track_passage and passed and poi.id not in self.calculator._passed_pois:
                 self.calculator._passed_pois.add(poi.id)
                 logger.info(f"POI passed: {poi.name} (ID: {poi.id})")
 
@@ -244,9 +245,7 @@ class ETAProjection:
             return None
 
         try:
-            current_time = (
-                mission_now if mission_now is not None else datetime.now(timezone.utc)
-            )
+            current_time = mission_now if mission_now is not None else datetime.now(UTC)
 
             def anticipated_eta_for_waypoint(waypoint: "RouteWaypoint") -> float | None:
                 if not waypoint.expected_arrival_time:

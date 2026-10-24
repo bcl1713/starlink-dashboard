@@ -7,13 +7,16 @@
 
 import logging
 import math
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Optional
 
+from app.mission.input_admission import model_input_write
 from app.services.position_freshness import position_observation, speed_is_fresh
 
 if TYPE_CHECKING:
     from app.core.config import ConfigManager
+    from app.core.metrics.frames import GaugeFrame
     from app.models.mission_time import MissionTimeContext
     from app.models.route import ParsedRoute
     from app.models.telemetry import TelemetryData
@@ -22,7 +25,6 @@ if TYPE_CHECKING:
     from app.simulation.run_replay import ReplayFrame
 
 from app.core.metrics.prometheus_metrics import (
-    _current_position,
     mission_active_info,
     mission_comm_state,
     mission_critical_seconds,
@@ -31,187 +33,25 @@ from app.core.metrics.prometheus_metrics import (
     mission_phase_state,
     mission_timeline_generated_timestamp,
     simulation_updates_total,
-    starlink_current_waypoint_index,
-    starlink_dish_altitude_feet,
-    starlink_dish_heading_degrees,
-    starlink_dish_latitude_degrees,
-    starlink_dish_longitude_degrees,
-    starlink_dish_obstruction_percent,
     starlink_dish_outage_active,
-    starlink_dish_speed_knots,
     starlink_dish_thermal_throttle,
     starlink_dish_uptime_seconds,
-    starlink_distance_to_poi_meters,
-    starlink_eta_mode,
-    starlink_eta_poi_seconds,
-    starlink_flight_arrival_time_unix,
-    starlink_flight_departure_time_unix,
-    starlink_flight_phase,
-    starlink_mode_info,
     starlink_network_latency_ms,
-    starlink_network_latency_ms_current,
-    starlink_network_packet_loss_percent,
     starlink_network_throughput_down_mbps,
-    starlink_network_throughput_down_mbps_current,
     starlink_network_throughput_up_mbps,
-    starlink_network_throughput_up_mbps_current,
-    starlink_route_progress_percent,
-    starlink_service_info,
-    starlink_signal_quality_percent,
-    starlink_time_until_departure_seconds,
-    starlink_uptime_seconds,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def update_metrics_from_telemetry(
-    telemetry: Optional["TelemetryData"],
-    config: Optional["ConfigManager"] = None,
-    active_route: Optional["ParsedRoute"] = None,
-    poi_manager: Optional["POIManager"] = None,
-    *,
-    flight_events_managed: bool = False,
-    mission_context: Optional["MissionTimeContext"] = None,
-    simulation_plan: Optional["PreparedMissionRun"] = None,
-    simulation_frame: Optional["ReplayFrame"] = None,
-) -> None:
-    """Update all Prometheus metrics from telemetry data.
-
-    This is the primary function for publishing telemetry data to Prometheus. It updates
-    position, network, obstruction, and flight status metrics, and optionally calculates
-    POI/ETA metrics if a route and POI manager are provided. The function performs
-    automatic flight phase transitions (departure/arrival detection) based on speed and
-    position relative to the active route.
-
-    Args:
-        telemetry: TelemetryData instance containing current sensor readings. If None,
-            the function returns early to prevent publishing invalid/stale data.
-        config: Optional ConfigManager for computing mode and status labels applied to
-            histogram metrics (e.g., "simulation" vs "live", "normal" vs "degraded").
-        active_route: Optional ParsedRoute with timing profile for route-aware ETA
-            calculations and automatic arrival detection.
-        poi_manager: Optional POIManager for calculating distances and ETAs to all
-            configured points of interest.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. All errors are logged and handled gracefully to
-        ensure metrics collection continues even if individual updates fail.
-    """
-    # Defensive check: do not publish metrics if telemetry is None
-    # This prevents pollution of Prometheus with zero/invalid values
-    if telemetry is None:
-        from app.services.flight_state import get_flight_state_manager
-
-        get_flight_state_manager().reset_detection()
-        return
-
-    from app.core.labels import get_mode_label, get_telemetry_status_label
-
-    # Compute labels if config provided
-    mode_label = get_mode_label(config) if config else "unknown"
-    status_label = get_telemetry_status_label(telemetry)
-    availability = getattr(telemetry, "metric_availability", None)
-
-    # Position metrics
-    # Update custom collector's position data
-    _current_position["latitude"] = telemetry.position.latitude
-    _current_position["longitude"] = telemetry.position.longitude
-    _current_position["altitude"] = telemetry.position.altitude
-
-    # Also set individual metrics for backward compatibility
-    starlink_dish_latitude_degrees.set(telemetry.position.latitude)
-    starlink_dish_longitude_degrees.set(telemetry.position.longitude)
-    starlink_dish_altitude_feet.set(telemetry.position.altitude)
-    starlink_dish_speed_knots.set(telemetry.position.speed)
-    starlink_dish_heading_degrees.set(telemetry.position.heading)
-
-    # Each observed metric publishes independently; numeric compatibility values
-    # without provenance must never become gauge or histogram observations.
-    for field, value, gauge, histogram in (
-        (
-            "latency_ms",
-            telemetry.network.latency_ms,
-            starlink_network_latency_ms_current,
-            starlink_network_latency_ms,
-        ),
-        (
-            "throughput_down_mbps",
-            telemetry.network.throughput_down_mbps,
-            starlink_network_throughput_down_mbps_current,
-            starlink_network_throughput_down_mbps,
-        ),
-        (
-            "throughput_up_mbps",
-            telemetry.network.throughput_up_mbps,
-            starlink_network_throughput_up_mbps_current,
-            starlink_network_throughput_up_mbps,
-        ),
-        (
-            "packet_loss_percent",
-            telemetry.network.packet_loss_percent,
-            starlink_network_packet_loss_percent,
-            None,
-        ),
-        (
-            "obstruction_percent",
-            telemetry.obstruction.obstruction_percent,
-            starlink_dish_obstruction_percent,
-            None,
-        ),
-    ):
-        observed = getattr(availability, field, False)
-        gauge.set(value if observed else math.nan)
-        if observed and histogram is not None:
-            histogram.labels(mode=mode_label, status=status_label).observe(value)
-
-    # Signal quality retains its independent source semantics.
-    starlink_signal_quality_percent.set(telemetry.environmental.signal_quality_percent)
-
-    # Status metrics
-    starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)
-
-    # Evaluate automatic flight phase transitions and cache current status
-    if simulation_plan is not None and simulation_frame is not None:
-        plan, frame = simulation_plan, simulation_frame
-        route_name = plan.artifacts.route.metadata.name
-        starlink_route_progress_percent.labels(route_name=route_name).set(
-            frame.progress_percent
-        )
-        starlink_current_waypoint_index.labels(route_name=route_name).set(
-            min(
-                int(
-                    frame.progress_percent
-                    / 100
-                    * (len(plan.artifacts.route.points) - 1)
-                ),
-                len(plan.artifacts.route.points) - 1,
-            )
-        )
-        mission_phase_state.labels(mission_id=plan.mission_id).set(
-            2 if frame.phase.value == "post_arrival" else 1
-        )
-        for transport, state in frame.transport_states.items():
-            mission_comm_state.labels(
-                mission_id=plan.mission_id, transport=transport.value
-            ).set({"available": 0, "degraded": 1, "offline": 2}[state.value])
-        conflict = next(
-            (
-                event
-                for event in plan.replay_events[frame.processed_event_count :]
-                if event.severity in ("warning", "critical")
-            ),
-            None,
-        )
-        mission_next_conflict_seconds.labels(mission_id=plan.mission_id).set(
-            (conflict.timestamp - frame.simulation_time).total_seconds()
-            if conflict
-            else -1
-        )
-
+def _observe_flight_status(
+    telemetry,
+    active_route,
+    flight_events_managed,
+    mission_context,
+    simulation_plan,
+    simulation_frame,
+):
     flight_state = None
     flight_status = None
     try:
@@ -220,7 +60,7 @@ def update_metrics_from_telemetry(
         flight_state = get_flight_state_manager()
         if mission_context is not None:
             flight_state.apply_simulation_frame(simulation_plan, simulation_frame)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         observed_at, position_state = position_observation(
             telemetry.position.latitude,
             telemetry.position.longitude,
@@ -314,298 +154,377 @@ def update_metrics_from_telemetry(
             raise
         logger.warning(f"Flight state manager unavailable: {state_error}")
 
-    # Update Flight Status metrics
+    if flight_status is None:
+        from app.services.flight_state import get_flight_state_manager
+
+        flight_status = (
+            get_flight_state_manager().get_status(
+                mission_now=mission_context.simulation_time
+            )
+            if mission_context
+            else get_flight_state_manager().get_status()
+        )
+    if active_route is not None:
+        from app.models.route import RouteTimingProfile
+
+        if active_route.timing_profile is None:
+            active_route.timing_profile = RouteTimingProfile()
+        active_route.timing_profile.flight_status = flight_status.phase.value
+        active_route.timing_profile.actual_departure_time = flight_status.departure_time
+        active_route.timing_profile.actual_arrival_time = flight_status.arrival_time
+    return flight_status
+
+
+def _observe_independent_metrics(telemetry, config, simulation_plan, simulation_frame):
+    from app.core.labels import get_mode_label, get_telemetry_status_label
+
+    mode = get_mode_label(config) if config else "unknown"
+    status = get_telemetry_status_label(telemetry)
+    for field, histogram in (
+        ("latency_ms", starlink_network_latency_ms),
+        ("throughput_down_mbps", starlink_network_throughput_down_mbps),
+        ("throughput_up_mbps", starlink_network_throughput_up_mbps),
+    ):
+        if getattr(getattr(telemetry, "metric_availability", None), field, False):
+            histogram.labels(mode=mode, status=status).observe(
+                getattr(telemetry.network, field)
+            )
+    if simulation_plan is not None and simulation_frame is not None:
+        plan, frame = simulation_plan, simulation_frame
+        mission_phase_state.labels(mission_id=plan.mission_id).set(
+            2 if frame.phase.value == "post_arrival" else 1
+        )
+        for transport, state in frame.transport_states.items():
+            mission_comm_state.labels(
+                mission_id=plan.mission_id, transport=transport.value
+            ).set({"available": 0, "degraded": 1, "offline": 2}[state.value])
+        conflict = next(
+            (
+                event
+                for event in plan.replay_events[frame.processed_event_count :]
+                if event.severity in ("warning", "critical")
+            ),
+            None,
+        )
+        mission_next_conflict_seconds.labels(mission_id=plan.mission_id).set(
+            (conflict.timestamp - frame.simulation_time).total_seconds()
+            if conflict
+            else -1
+        )
+
+
+@model_input_write
+def prepare_metrics_from_telemetry(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    _captured_head=None,
+) -> "GaugeFrame | None":
+    """Account for one accepted observation and return a private complete frame.
+
+    The producer owns repository admission and publication. Replay owners defer
+    publication until runtime commit. No retry or derived refresh calls this API.
+    """
+    return _prepare_metrics_from_telemetry_admitted(
+        telemetry,
+        config,
+        active_route,
+        poi_manager,
+        flight_events_managed=flight_events_managed,
+        mission_context=mission_context,
+        simulation_plan=simulation_plan,
+        simulation_frame=simulation_frame,
+        route_progress=route_progress,
+        coordinator_id=coordinator_id,
+        _captured_head=_captured_head,
+    )
+
+
+def _prepare_metrics_from_telemetry_admitted(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    _captured_head=None,
+) -> "GaugeFrame | None":
+    """Account for one accepted observation and return a private complete frame.
+
+    The producer owns repository admission and publication. Replay owners defer
+    publication until runtime commit. No retry or derived refresh calls this API.
+    """
+    from app.core import eta_service
+    from app.core.metrics.frame_builder import FrameInputs, prepare_frame
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
+
+    if telemetry is None:
+        from app.services.flight_state import get_flight_state_manager
+
+        get_flight_state_manager().reset_detection()
+        return
     try:
-        if flight_status is None:
-            if flight_state is None:
-                from app.services.flight_state import get_flight_state_manager
-
-                flight_state = get_flight_state_manager()
-            flight_status = (
-                flight_state.get_status(mission_now=mission_context.simulation_time)
-                if mission_context
-                else flight_state.get_status()
-            )
-
-        # Map phase to numeric value
-        phase_value = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}.get(
-            flight_status.phase.value, 0
+        _observe_independent_metrics(
+            telemetry, config, simulation_plan, simulation_frame
         )
-
-        # Map ETA mode to numeric value
-        mode_value = {"anticipated": 0, "estimated": 1}.get(
-            flight_status.eta_mode.value, 0
+        flight_status = _observe_flight_status(
+            telemetry,
+            active_route,
+            flight_events_managed,
+            mission_context,
+            simulation_plan,
+            simulation_frame,
         )
-
-        starlink_flight_phase.set(phase_value)
-        starlink_eta_mode.set(mode_value)
-
-        # Set timestamp metrics (0 if not set)
-        if flight_status.departure_time:
-            starlink_flight_departure_time_unix.set(
-                flight_status.departure_time.timestamp()
-            )
-        else:
-            starlink_flight_departure_time_unix.set(0)
-
-        if flight_status.arrival_time:
-            starlink_flight_arrival_time_unix.set(
-                flight_status.arrival_time.timestamp()
-            )
-        else:
-            starlink_flight_arrival_time_unix.set(0)
-
-        # Synchronize active route timing profile with live flight status
-        if active_route is not None and flight_status is not None:
-            try:
-                from app.models.route import (
-                    RouteTimingProfile,
-                )  # Local import to avoid cycle
-
-                timing_profile = active_route.timing_profile
-                if timing_profile is None:
-                    timing_profile = RouteTimingProfile()
-                    active_route.timing_profile = timing_profile
-
-                timing_profile.flight_status = flight_status.phase.value
-                timing_profile.actual_departure_time = flight_status.departure_time
-                timing_profile.actual_arrival_time = flight_status.arrival_time
-            except (
-                RuntimeError,
-                ValueError,
-                OSError,
-                KeyError,
-                TypeError,
-                AttributeError,
-                LookupError,
-                ConnectionError,
-                TimeoutError,
-                ImportError,
-                EOFError,
-            ) as sync_error:  # pragma: no cover - defensive guard
-                logger.debug(
-                    f"Failed to sync route timing profile with flight status: {sync_error}"
-                )
-
-        # Update time-until-departure gauge
-        time_until_departure = 0.0
-        if flight_status is not None:
-            now = (
-                mission_context.simulation_time
-                if mission_context
-                else datetime.now(timezone.utc)
-            )
-
-            departure_time = getattr(flight_status, "departure_time", None)
-            if departure_time:
-                departure_time = (
-                    departure_time.astimezone(timezone.utc)
-                    if departure_time.tzinfo
-                    else departure_time.replace(tzinfo=timezone.utc)
-                )
-                delta = (departure_time - now).total_seconds()
-                time_until_departure = max(0.0, delta)
-            elif (
-                active_route
-                and active_route.timing_profile
-                and active_route.timing_profile.departure_time
-            ):
-                scheduled_departure = active_route.timing_profile.departure_time
-                if scheduled_departure:
-                    scheduled_departure = (
-                        scheduled_departure.astimezone(timezone.utc)
-                        if scheduled_departure.tzinfo
-                        else scheduled_departure.replace(tzinfo=timezone.utc)
-                    )
-                    delta = (scheduled_departure - now).total_seconds()
-                    time_until_departure = delta
-
-        starlink_time_until_departure_seconds.set(time_until_departure)
-
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:
-        if mission_context is not None:
-            raise
-        logger.warning(f"Error updating flight status metrics: {e}")
-
-    # Update POI/ETA metrics
-    try:
-        from app.core.eta_service import update_eta_metrics
-        from app.models.flight_status import ETAMode
-
-        if flight_status is None:
-            if flight_state is None:
-                from app.services.flight_state import get_flight_state_manager
-
-                flight_state = get_flight_state_manager()
-            flight_status = (
-                flight_state.get_status(mission_now=mission_context.simulation_time)
-                if mission_context
-                else flight_state.get_status()
-            )
-
-        current_eta_mode = (
-            flight_status.eta_mode if flight_status else ETAMode.ESTIMATED
+        manager = (
+            poi_manager if poi_manager is not None else eta_service.get_poi_manager()
         )
-
+        pois = manager.list_pois()
+        replay_eta = None
         if simulation_plan is not None and simulation_frame is not None:
             from app.simulation.run_timing import planned_poi_metrics
 
-            eta_metrics = planned_poi_metrics(
-                simulation_plan,
-                simulation_frame,
-                poi_manager.list_pois() if poi_manager else [],
+            replay_eta = planned_poi_metrics(simulation_plan, simulation_frame, pois)
+            count = len(simulation_plan.artifacts.route.points)
+            route_progress = (
+                simulation_frame.progress_percent,
+                min(
+                    int(simulation_frame.progress_percent / 100 * (count - 1)),
+                    count - 1,
+                ),
             )
-        else:
-            eta_metrics = update_eta_metrics(
-                telemetry.position.latitude,
-                telemetry.position.longitude,
-                telemetry.position.speed,
-                active_route=active_route,
-                eta_mode=current_eta_mode,
-                flight_phase=flight_status.phase if flight_status else None,
-                poi_manager=poi_manager,
-            )
+        expected = FRAME_STORE.read()
+        if _captured_head is not None:
+            _captured_head(expected)
+        inputs = FrameInputs(
+            expected,
+            telemetry=telemetry,
+            config=config,
+            active_route=active_route,
+            pois=pois,
+            flight_status=flight_status,
+            mission_context=mission_context,
+            progress=route_progress,
+            replay_eta_metrics=replay_eta,
+            now=datetime.now(UTC),
+            coordinator_id=coordinator_id,
+        )
+        return prepare_frame(inputs, admit_observation=True)
+    finally:
+        # Independent accounting belongs to acceptance, even if optional frame
+        # preparation fails or its eventual CAS loses. Never repeat it on retry.
+        simulation_updates_total.inc()
 
-        # Update Prometheus gauges with ETA data
-        for metrics_data in eta_metrics.values():
-            poi_name = metrics_data.get("poi_name", "unknown")
-            poi_category = metrics_data.get("poi_category", "")
-            eta_seconds = metrics_data.get("eta_seconds", -1)
-            distance_meters = metrics_data.get("distance_meters", 0)
-            eta_type = metrics_data.get(
-                "eta_type", current_eta_mode.value if current_eta_mode else "estimated"
-            )
 
-            # Only set valid ETA values (skip -1 which means no speed)
-            if eta_seconds >= 0:
-                starlink_eta_poi_seconds.labels(
-                    name=poi_name, category=poi_category, eta_type=eta_type
-                ).set(eta_seconds)
-            starlink_distance_to_poi_meters.labels(
-                name=poi_name, category=poi_category, eta_type=eta_type
-            ).set(distance_meters)
+def update_metrics_from_telemetry(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    source_is_current: Callable[[], bool] | None = None,
+) -> None:
+    """Publish one admitted observation; source writers use the same admission.
 
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:
+    Only the FrameStore reference operations take its short pointer mutex.
+    Repository admission serializes accepted calculation with model/source writes;
+    Prometheus readers never enter it. Independent observations are not rolled back.
+    """
+    from app.core.metrics.source_admission import frame_inputs_are_current
+    from app.mission.storage import get_active_leg_lock
+
+    with get_active_leg_lock():
+        if source_is_current is not None and not source_is_current():
+            return
+
+        def final_validation(frame):
+            return (
+                source_is_current is None or source_is_current()
+            ) and frame_inputs_are_current(frame, active_route, poi_manager)
+
+        _update_metrics_from_telemetry_admitted(
+            telemetry,
+            config,
+            active_route,
+            poi_manager,
+            flight_events_managed=flight_events_managed,
+            mission_context=mission_context,
+            simulation_plan=simulation_plan,
+            simulation_frame=simulation_frame,
+            route_progress=route_progress,
+            coordinator_id=coordinator_id,
+            final_validation=final_validation,
+        )
+
+
+def _update_metrics_from_telemetry_admitted(
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+    *,
+    flight_events_managed: bool = False,
+    mission_context: Optional["MissionTimeContext"] = None,
+    simulation_plan: Optional["PreparedMissionRun"] = None,
+    simulation_frame: Optional["ReplayFrame"] = None,
+    route_progress: tuple[float, int] | None = None,
+    coordinator_id: str | None = None,
+    final_validation: Callable[["GaugeFrame"], bool],
+) -> None:
+    """Update under caller-held canonical admission after immediate entry validation."""
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
+
+    expected = FRAME_STORE.read()
+
+    def captured(head):
+        nonlocal expected
+        expected = head
+
+    try:
+        frame = _prepare_metrics_from_telemetry_admitted(
+            telemetry,
+            config,
+            active_route,
+            poi_manager,
+            flight_events_managed=flight_events_managed,
+            mission_context=mission_context,
+            simulation_plan=simulation_plan,
+            simulation_frame=simulation_frame,
+            route_progress=route_progress,
+            coordinator_id=coordinator_id,
+            _captured_head=captured,
+        )
+        if frame is None:
+            return
+        # Recheck immediately before the CAS, under repository admission.
+        if not final_validation(frame):
+            FRAME_STORE.fail(expected, "telemetry source superseded")
+            return
+        FRAME_STORE.publish(expected, frame)
+    except Exception:
+        FRAME_STORE.fail(expected, "telemetry preparation failed")
         if mission_context is not None:
             raise
-        logger.warning(f"Error updating POI/ETA metrics: {e}")
-
-    # Increment update counter
-    simulation_updates_total.inc()
+        logger.exception("Complete metric frame preparation failed")
 
 
-def clear_telemetry_metrics() -> None:
-    """Clear all telemetry metrics by setting them to NaN.
+@model_input_write
+def clear_telemetry_metrics(
+    *,
+    config=None,
+    active_route=None,
+    poi_manager=None,
+    coordinator_id=None,
+) -> None:
+    """Publish an unavailable observation atomically, retaining service/planned state."""
+    from dataclasses import replace
 
-    This is called when the Starlink dish is disconnected in live mode to prevent
-    publishing stale or zero values to Prometheus. NaN is exported as a
-    non-finite sample, not a Prometheus staleness marker or a deletion of history.
-    Overview history drops non-finite evaluation points after they are scraped;
-    finite samples can still be reused before that scrape or within lookback.
+    from app.core.metrics.frame_builder import FrameInputs, prepare_unavailable_frame
+    from app.core.metrics.frames import GaugeFrame
+    from app.core.metrics.prometheus_metrics import COUPLED_SCHEMA, FRAME_STORE
 
-    Note: Service info, uptime, and counter metrics are intentionally NOT cleared
-    because they represent the backend service state rather than dish telemetry.
-    Counters are monotonic and should never decrease, so they continue tracking
-    lifetime totals even during disconnections.
+    expected = FRAME_STORE.read()
+    if config is not None or poi_manager is not None:
+        from app.services.flight_state import get_flight_state_manager
 
-    Args:
-        None
+        try:
+            frame = prepare_unavailable_frame(
+                FrameInputs(
+                    expected,
+                    config=config,
+                    active_route=active_route,
+                    pois=poi_manager.list_pois() if poi_manager is not None else (),
+                    flight_status=get_flight_state_manager().get_status(),
+                    coordinator_id=coordinator_id,
+                    now=datetime.now(UTC),
+                )
+            )
+        except Exception:
+            FRAME_STORE.fail(expected, "unavailable frame preparation failed")
+            raise
+    elif expected.frame is None:
+        frame = prepare_unavailable_frame(FrameInputs(expected))
+    else:
+        old = expected.frame
+        observed = {
+            "starlink_dish_latitude_degrees",
+            "starlink_dish_longitude_degrees",
+            "starlink_dish_altitude_feet",
+            "starlink_dish_speed_knots",
+            "starlink_dish_heading_degrees",
+            "starlink_network_latency_ms_current",
+            "starlink_network_throughput_down_mbps_current",
+            "starlink_network_throughput_up_mbps_current",
+            "starlink_network_packet_loss_percent",
+            "starlink_dish_obstruction_percent",
+            "starlink_signal_quality_percent",
+            "starlink_eta_poi_seconds",
+            "starlink_distance_to_poi_meters",
+        }
+        frame = GaugeFrame(
+            replace(
+                old.identity,
+                observation_id=None,
+                observation_timestamp=None,
+                input_revision=expected.input_revision,
+            ),
+            tuple(
+                tuple(
+                    (labels, math.nan if definition.name in observed else value)
+                    for labels, value in family
+                )
+                for definition, family in zip(COUPLED_SCHEMA, old.families)
+            ),
+            old.last_observation_publication_time,
+        )
+    FRAME_STORE.publish(expected, frame)
+    clear_independent_dish_metrics()
 
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
 
-    Raises:
-        Does not raise exceptions. This is a fire-and-forget operation.
-    """
-    # Position metrics
-    starlink_dish_latitude_degrees.set(math.nan)
-    starlink_dish_longitude_degrees.set(math.nan)
-    starlink_dish_altitude_feet.set(math.nan)
-    starlink_dish_speed_knots.set(math.nan)
-    starlink_dish_heading_degrees.set(math.nan)
-
-    # Network metrics (current values)
-    starlink_network_latency_ms_current.set(math.nan)
-    starlink_network_throughput_down_mbps_current.set(math.nan)
-    starlink_network_throughput_up_mbps_current.set(math.nan)
-    starlink_network_packet_loss_percent.set(math.nan)
-
-    # Obstruction and signal metrics
-    starlink_dish_obstruction_percent.set(math.nan)
-    starlink_signal_quality_percent.set(math.nan)
-
-    # Dish status metrics
-    starlink_dish_uptime_seconds.set(math.nan)
-    starlink_dish_thermal_throttle.set(math.nan)
-    starlink_dish_outage_active.set(math.nan)
-
-    # Clear route metrics when no active route (handled separately by simulator)
-    # Route metrics are only cleared when route is deactivated
-
-    # Clear custom position collector data
-    _current_position["latitude"] = math.nan
-    _current_position["longitude"] = math.nan
-    _current_position["altitude"] = math.nan
+def clear_independent_dish_metrics() -> None:
+    """Retain the existing disconnect/failure clears for dormant dish gauges."""
+    for gauge in (
+        starlink_dish_uptime_seconds,
+        starlink_dish_thermal_throttle,
+        starlink_dish_outage_active,
+    ):
+        gauge.set(math.nan)
 
 
 def set_service_info(version: str, mode: str) -> None:
-    """Set service info metrics for backend service identification.
+    """Source configuration producer; never reuse observations from an old mode."""
+    from types import SimpleNamespace
 
-    This function publishes metadata about the backend service to Prometheus for
-    monitoring and debugging purposes. It sets two related metrics: a composite
-    service info metric with version and mode as labels, and individual mode
-    indicator metrics that can be easily filtered in queries.
+    from app.core.metrics.frame_builder import FrameInputs, prepare_unavailable_frame
+    from app.core.metrics.prometheus_metrics import FRAME_STORE
 
-    The mode indicators use a binary encoding where only the active mode is set
-    to 1, and all other modes are set to 0. This allows Prometheus queries like
-    `starlink_mode_info{mode="simulation"} == 1` to efficiently filter time series.
-
-    Args:
-        version: Service version string (e.g., "1.0.0" or git commit hash).
-        mode: Operating mode, either "simulation" (synthetic data) or "live"
-            (connected to real Starlink dish).
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are silently ignored to prevent
-        disrupting service startup.
-    """
-    # Set composite service info metric with version and mode labels
-    starlink_service_info.labels(version=version, mode=mode).set(1)
-
-    # Set mode indicator metric - only the active mode will be set to 1
-    # This allows easy filtering by mode in Prometheus queries
-    for possible_mode in ["simulation", "live"]:
-        if possible_mode == mode:
-            starlink_mode_info.labels(mode=possible_mode).set(1)
-        else:
-            starlink_mode_info.labels(mode=possible_mode).set(0)
+    expected = FRAME_STORE.invalidate("service source changed")
+    try:
+        frame = prepare_unavailable_frame(
+            FrameInputs(expected, config=SimpleNamespace(mode=mode), version=version)
+        )
+        FRAME_STORE.publish(expected, frame)
+    except Exception:
+        FRAME_STORE.fail(expected, "service metadata preparation failed")
+        raise
 
 
 def update_mission_active_metric(mission_id: str, route_id: str) -> None:

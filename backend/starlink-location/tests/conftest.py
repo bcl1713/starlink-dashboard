@@ -221,103 +221,25 @@ def ensure_eta_service_initialized():
 
 @pytest.fixture(autouse=True)
 def reset_prometheus_registry():
-    """Reset all gauge metrics before each test to prevent NaN pollution from previous tests.
+    """Reset coupled frames explicitly and independent Gauges through public APIs."""
+    from app.core.metrics import prometheus_metrics as metrics
+    from app.core.metrics.frames import FrameIdentity, GaugeFrame
 
-    This addresses test isolation issues where Prometheus metrics from previous
-    tests can interfere with current tests. NaN values that may have been set by
-    clear_telemetry_metrics() in live mode tests will persist across tests if
-    not cleared.
-
-    This fixture clears all gauge metric values (both with and without labels)
-    by setting them to 0.0 before each test runs.
-    """
-    # Before each test, reset all gauge metrics to prevent pollution from NaN values
-    try:
-        from prometheus_client.core import Gauge
-
-        from app.core import metrics
-
-        # Reset the custom position collector data
-        metrics._current_position["latitude"] = 0.0
-        metrics._current_position["longitude"] = 0.0
-        metrics._current_position["altitude"] = 0.0
-
-        # Get the registry and iterate through all collectors
-        # Find all Gauge collectors and reset their values
-        for collector in list(metrics.REGISTRY._collector_to_names.keys()):
-            if isinstance(collector, Gauge):
-                try:
-                    # Gauges without labels: can call set() directly
-                    if not hasattr(collector, "_metrics") or not collector._metrics:
-                        try:
-                            collector.set(0)
-                        except (
-                            RuntimeError,
-                            ValueError,
-                            OSError,
-                            KeyError,
-                            TypeError,
-                            AttributeError,
-                            LookupError,
-                            ConnectionError,
-                            TimeoutError,
-                            ImportError,
-                            EOFError,
-                        ):
-                            pass
-                    # Gauges with labels: need to reset each child metric
-                    else:
-                        for child in collector._metrics.values():
-                            try:
-                                child.set(0)
-                            except (
-                                RuntimeError,
-                                ValueError,
-                                OSError,
-                                KeyError,
-                                TypeError,
-                                AttributeError,
-                                LookupError,
-                                ConnectionError,
-                                TimeoutError,
-                                ImportError,
-                                EOFError,
-                            ):
-                                pass
-                except (
-                    RuntimeError,
-                    ValueError,
-                    OSError,
-                    KeyError,
-                    TypeError,
-                    AttributeError,
-                    LookupError,
-                    ConnectionError,
-                    TimeoutError,
-                    ImportError,
-                    EOFError,
-                ):
-                    # Silently skip any gauges we can't reset
-                    pass
-
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ):
-        # If we can't reset the registry, continue anyway - tests will still run
-        pass
-
+    expected = metrics.FRAME_STORE.invalidate("test reset")
+    frame = GaugeFrame(
+        FrameIdentity(input_revision=expected.input_revision),
+        tuple(
+            () if definition.labelnames else (((), 0.0),)
+            for definition in metrics.COUPLED_SCHEMA
+        ),
+        0.0,
+    )
+    assert metrics.FRAME_STORE.publish(expected, frame)
+    for gauge in metrics.INDEPENDENT_GAUGES:
+        for family in gauge.collect():
+            for sample in family.samples:
+                (gauge.labels(**sample.labels) if sample.labels else gauge).set(0)
     yield
-    # No cleanup needed after test
 
 
 def _clean_directory(directory: Path):

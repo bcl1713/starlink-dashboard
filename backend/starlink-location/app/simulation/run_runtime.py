@@ -7,7 +7,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Literal
 
+from app.mission.input_admission import model_input_write
 from app.models.simulation_run import RunError, RunSnapshot, SimulationRunStatus
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
 from app.simulation.run_plan import PreparedMissionRun
 from app.simulation.run_replay import ReplayFrame, project_run_frame
 
@@ -21,7 +23,7 @@ class RunTick:
     start_monotonic: float
 
 
-class SimulationRunRuntime:
+class SimulationRunRuntime(MetricsChangeSource):
     def __init__(
         self,
         monotonic: Callable[[], float],
@@ -40,6 +42,9 @@ class SimulationRunRuntime:
         self._plan: PreparedMissionRun | None = None
         self._frame: ReplayFrame | None = None
         self._start_monotonic = 0.0
+
+    def _metrics_key(self):
+        return self._status.revision
 
     def prepare_start(self, plan: PreparedMissionRun) -> RunTick:
         if self._status.service_mode != "simulation":
@@ -174,11 +179,15 @@ class SimulationRunRuntime:
     def selected_plan(self) -> PreparedMissionRun | None:
         return self._plan if self._status.state in ("running", "completed") else None
 
+    @model_input_write
+    @metrics_changed("replay:cancel", key="_metrics_key")
     def cancel(self, reason: str) -> SimulationRunStatus:
         if self._status.state in ("running", "completed"):
             self._terminal("cancelled", RunError(code="cancelled", message=reason))
         return self.status()
 
+    @model_input_write
+    @metrics_changed("replay:fail", key="_metrics_key")
     def fail(self, code: str, message: str) -> SimulationRunStatus:
         if self._status.state == "running":
             self._terminal("failed", RunError(code=code, message=message))
@@ -194,6 +203,8 @@ class SimulationRunRuntime:
         self._plan = None
         self._frame = None
 
+    @model_input_write
+    @metrics_changed("replay:clear_selection", key="_metrics_key")
     def clear_selection(self) -> None:
         self._plan = None
         self._frame = None
@@ -201,6 +212,8 @@ class SimulationRunRuntime:
             update={"revision": self._status.revision + 1, "state": "idle", "run": None}
         )
 
+    @model_input_write
+    @metrics_changed("replay:set_service_mode", key="_metrics_key")
     def set_service_mode(self, mode: Literal["simulation", "live"]) -> None:
         if mode != self._status.service_mode:
             self.cancel("Service mode changed")

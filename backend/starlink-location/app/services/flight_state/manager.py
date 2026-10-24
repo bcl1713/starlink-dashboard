@@ -23,6 +23,8 @@ if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from app.simulation.run_plan import PreparedMissionRun
     from app.simulation.run_replay import ReplayFrame
 
+from app.services.metrics_changes import MetricsChangeSource, metrics_changed
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,7 +37,7 @@ def _normalize_to_utc(dt: datetime | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-class FlightStateManager:
+class FlightStateManager(MetricsChangeSource):
     """
     Manages flight state with automatic phase transitions.
 
@@ -113,7 +115,25 @@ class FlightStateManager:
             f"FlightStateManager initialized: {self._status.phase.value} / {self._status.eta_mode.value}"
         )
 
+    def _metrics_key(self):
+        with self._lock:
+            return tuple(
+                getattr(self._status, key)
+                for key in (
+                    "phase",
+                    "eta_mode",
+                    "active_route_id",
+                    "active_route_name",
+                    "has_timing_data",
+                    "scheduled_departure_time",
+                    "scheduled_arrival_time",
+                    "departure_time",
+                    "arrival_time",
+                )
+            )
+
     @model_input_write
+    @metrics_changed("FlightStateManager:apply_simulation_frame", key="_metrics_key")
     def apply_simulation_frame(
         self, plan: "PreparedMissionRun", frame: "ReplayFrame"
     ) -> None:
@@ -150,6 +170,7 @@ class FlightStateManager:
             )
 
     @model_input_write
+    @metrics_changed("FlightStateManager:restore_checkpoint", key="_metrics_key")
     def restore_checkpoint(self, checkpoint: FlightStateCheckpoint) -> None:
         with self._lock:
             self._status = checkpoint.status.model_copy(deep=True)
@@ -215,6 +236,7 @@ class FlightStateManager:
         return status_copy
 
     @model_input_write
+    @metrics_changed("FlightStateManager:check_departure", key="_metrics_key")
     def check_departure(
         self, current_speed_knots: float, *, observed_at: datetime | None = None
     ) -> bool:
@@ -319,6 +341,7 @@ class FlightStateManager:
         self._arrival_distance_at_start = None
 
     @model_input_write
+    @metrics_changed("FlightStateManager:check_arrival", key="_metrics_key")
     def check_arrival(
         self,
         distance_to_destination_m: float,
@@ -391,6 +414,7 @@ class FlightStateManager:
             return False
 
     @model_input_write
+    @metrics_changed("FlightStateManager:transition_phase", key="_metrics_key")
     def transition_phase(
         self, new_phase: FlightPhase, reason: str | None = None
     ) -> bool:
@@ -445,6 +469,7 @@ class FlightStateManager:
             return True
 
     @model_input_write
+    @metrics_changed("FlightStateManager:reset", key="_metrics_key")
     def reset(self) -> None:
         """Reset flight state to initial PRE_DEPARTURE phase.
 
@@ -483,6 +508,7 @@ class FlightStateManager:
     # ------------------------------------------------------------------ #
 
     @model_input_write
+    @metrics_changed("FlightStateManager:update_route_context", key="_metrics_key")
     def update_route_context(
         self,
         route: Optional["ParsedRoute"],
@@ -573,6 +599,7 @@ class FlightStateManager:
             self.transition_phase(FlightPhase.PRE_DEPARTURE, reason=reset_reason)
 
     @model_input_write
+    @metrics_changed("FlightStateManager:clear_route_context", key="_metrics_key")
     def clear_route_context(self, reason: str | None = None) -> None:
         """Convenience wrapper for clearing the active route context.
 
@@ -588,6 +615,7 @@ class FlightStateManager:
     # ------------------------------------------------------------------ #
 
     @model_input_write
+    @metrics_changed("FlightStateManager:trigger_departure", key="_metrics_key")
     def trigger_departure(
         self, timestamp: datetime | None = None, reason: str | None = None
     ) -> bool:
@@ -624,6 +652,7 @@ class FlightStateManager:
         return True
 
     @model_input_write
+    @metrics_changed("FlightStateManager:trigger_arrival", key="_metrics_key")
     def trigger_arrival(
         self, timestamp: datetime | None = None, reason: str | None = None
     ) -> bool:
