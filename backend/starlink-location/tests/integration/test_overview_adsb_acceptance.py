@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 import main
 from app.api import overview_adsb
-from app.services.adsb_lol import AdsbLolProvider
+from app.services.adsb_fi import AdsbFiProvider
 from app.services.overview_adsb_settings import AdsbSettingsStore
 from app.services.overview_adsb_traffic import AdsbTrafficService
 
@@ -20,7 +20,7 @@ def test_normal_lifespan_persists_settings_but_not_contacts(monkeypatch, tmp_pat
     fail = False
 
     def provider(request):
-        assert request.url.host == "api.adsb.lol"
+        assert request.url.host == "opendata.adsb.fi"
         if fail:
             return httpx.Response(503)
         return httpx.Response(
@@ -32,7 +32,7 @@ def test_normal_lifespan_persists_settings_but_not_contacts(monkeypatch, tmp_pat
         )
 
     def client_factory(*args, **kwargs):
-        if kwargs.get("base_url") == "https://api.adsb.lol":
+        if kwargs.get("base_url") == "https://opendata.adsb.fi/api":
             kwargs["transport"] = httpx.MockTransport(provider)
         return original(*args, **kwargs)
 
@@ -75,7 +75,7 @@ async def test_global_workload_and_many_clients_share_one_acquisition(tmp_path):
         return httpx.Response(503)
 
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol", transport=httpx.MockTransport(provider)
+        base_url="https://opendata.adsb.fi/api", transport=httpx.MockTransport(provider)
     ) as upstream:
         store = AdsbSettingsStore(tmp_path / "adsb.json")
         store.update(
@@ -85,7 +85,7 @@ async def test_global_workload_and_many_clients_share_one_acquisition(tmp_path):
             }
         )
         service = AdsbTrafficService(
-            store, AdsbLolProvider(upstream, lambda: now), lambda: now, lambda: now
+            store, AdsbFiProvider(upstream, lambda: now), lambda: now, lambda: now
         )
         overview_adsb.set_overview_adsb_runtime(store, service)
         app = FastAPI()
@@ -101,8 +101,8 @@ async def test_global_workload_and_many_clients_share_one_acquisition(tmp_path):
             assert all(len(r.json()["contacts"]) == 2000 for r in replies)
             assert len({c["hex"] for c in replies[0].json()["contacts"]}) == 2000
             assert requests == [
-                "/v2/mil",
-                "/v2/hex/"
+                "/api/v2/mil",
+                "/api/v2/hex/"
                 + ",".join([f"{i:06X}" for i in range(0, 50, 3)] + ["ABCDEF"]),
             ]
             sources = {s["key"]: s for s in replies[0].json()["sources"]}
@@ -121,7 +121,7 @@ async def test_router_expiry_is_original_observation_age_even_after_repeat(tmp_p
         "ac": [{"hex": "000001", "lat": 38, "lon": -90, "seen_pos": 0, "dbFlags": 0}],
     }
     async with httpx.AsyncClient(
-        base_url="https://api.adsb.lol",
+        base_url="https://opendata.adsb.fi/api",
         transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
     ) as upstream:
         store = AdsbSettingsStore(tmp_path / "adsb.json")
@@ -130,7 +130,7 @@ async def test_router_expiry_is_original_observation_age_even_after_repeat(tmp_p
         )
         service = AdsbTrafficService(
             store,
-            AdsbLolProvider(upstream, lambda: clock[0]),
+            AdsbFiProvider(upstream, lambda: clock[0]),
             lambda: clock[0],
             lambda: clock[0],
         )

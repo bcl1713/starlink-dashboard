@@ -252,7 +252,12 @@ requests. See
 [provider acquisition](../development/adsb-provider-acquisition.md) for the
 verified contract and operator guidance.
 
-Aircraft data: [adsb.lol](https://adsb.lol/),
-[ODbL license](https://opendatacommons.org/licenses/odbl/1-0/). Review provider
-usage before broad enablement. See the
-[API reference](../api/endpoints/overview-adsb.md).
+Aircraft data: [adsb.fi](https://adsb.fi/), using anonymous access for personal,
+noncommercial use under its
+[published terms](https://github.com/adsbfi/opendata/blob/main/README.md).
+Coverage and military metadata depend on the receiver network. The backend keeps
+its 15-second acquisition cycle, sharing requests across viewers, and spaces all
+provider request starts by at least 1.1 seconds under the published one-request-
+per-second ceiling. See
+[provider acquisition](../development/adsb-provider-acquisition.md) for access,
+batching, cooldown and observation-time details.

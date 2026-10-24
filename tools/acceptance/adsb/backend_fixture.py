@@ -6,6 +6,7 @@ ADSB_ACCEPTANCE_FAIL=1 makes subsequent provider acquisition fail after restart.
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -16,14 +17,26 @@ _original_client = httpx.AsyncClient
 
 
 def _respond(request: httpx.Request) -> httpx.Response:
-    if request.url.host != "api.adsb.lol":
-        raise RuntimeError("Acceptance transport must be ADS-B-only")
+    if (
+        request.method != "GET"
+        or request.url.scheme != "https"
+        or request.url.host != "opendata.adsb.fi"
+        or request.url.port not in (None, 443)
+        or request.url.query
+        or re.fullmatch(
+            r"/api/v2/(mil|hex/[0-9A-F]{6}(?:,[0-9A-F]{6})*)", request.url.path
+        )
+        is None
+    ):
+        raise RuntimeError(
+            "Acceptance transport must match the anonymous adsb.fi contract"
+        )
     if os.getenv("ADSB_ACCEPTANCE_FAIL") == "1":
         return httpx.Response(503)
     records = json.loads(Path(__file__).with_name("provider.json").read_text())["ac"]
     selected = (
         records[:1]
-        if request.url.path == "/v2/mil"
+        if request.url.path == "/api/v2/mil"
         else [
             record
             for record in records
@@ -35,7 +48,11 @@ def _respond(request: httpx.Request) -> httpx.Response:
 
 
 def _client(*args, **kwargs):
-    if str(kwargs.get("base_url", "")).rstrip("/") == "https://api.adsb.lol":
+    base = str(kwargs.get("base_url", "")).rstrip("/")
+    agent = httpx.Headers(kwargs.get("headers", {})).get("User-Agent", "")
+    if base == "https://opendata.adsb.fi/api" or "starlink-dashboard" in agent:
+        if base != "https://opendata.adsb.fi/api":
+            raise RuntimeError("Unexpected ADS-B runtime base URL")
         kwargs["transport"] = httpx.MockTransport(_respond)
     return _original_client(*args, **kwargs)
 

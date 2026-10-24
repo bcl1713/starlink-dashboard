@@ -1342,7 +1342,7 @@
       "span_seconds": 0.057709693908691406,
       "teardown": 0.006233907304704189
     },
-    "tests/unit/test_adsb_lol.py": {
+    "tests/unit/test_adsb_fi.py": {
       "call": 0.0169403119944036,
       "cases": 48,
       "phase_seconds": 0.14604953490197659,
@@ -3027,7 +3027,7 @@
     "tests/unit/test_active_x_handoff.py": 4,
     "tests/unit/test_active_x_link.py": 4,
     "tests/unit/test_adjusted_departure.py": 4,
-    "tests/unit/test_adsb_lol.py": 2,
+    "tests/unit/test_adsb_fi.py": 2,
     "tests/unit/test_ar_event_pois.py": 4,
     "tests/unit/test_archive_json_stream.py": 2,
     "tests/unit/test_archive_review_regressions.py": 3,

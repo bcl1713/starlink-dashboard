@@ -57,6 +57,11 @@ async def test_owned_runtime_identifies_application_to_provider(monkeypatch, tmp
         assert [contact.hex for contact in bundle.contacts] == ["00AB12"]
         assert bundle.sources[0].error is None
         assert len(requests) == 1
+        assert str(requests[0].url) == "https://opendata.adsb.fi/api/v2/mil"
+        assert not any(
+            name in requests[0].headers
+            for name in ("authorization", "x-api-key", "api-key")
+        )
     finally:
         overview_adsb.set_overview_adsb_runtime(None, None)
         await main.app.state.overview_adsb_service.aclose()

@@ -125,9 +125,12 @@ and refresh on focus/foreground. Hidden clients resume on return. Clients retain
 the highest confirmed revision, project matching traffic against that revision,
 and expire retained positions locally even if requests fail.
 
-Aircraft data: [adsb.lol](https://adsb.lol/),
-[ODbL license](https://opendatacommons.org/licenses/odbl/1-0/). Provider schema:
-[adsb.lol API](https://api.adsb.lol/api/openapi.json) and
-[readsb JSON](https://github.com/wiedehopf/readsb/blob/dev/README-json.md).
-Before enabling broadly, review provider usage expectations and attribution;
-this implementation does not authorize operational rollout.
+Aircraft data: [adsb.fi](https://adsb.fi/), using anonymous access for personal,
+noncommercial use under its
+[published terms](https://github.com/adsbfi/opendata/blob/main/README.md).
+Coverage and military metadata depend on the receiver network. The backend keeps
+its 15-second acquisition cycle, sharing requests across viewers, and spaces all
+provider request starts by at least 1.1 seconds under the published one-request-
+per-second ceiling. See
+[provider acquisition](../../development/adsb-provider-acquisition.md) for
+access, batching, cooldown and observation-time details.

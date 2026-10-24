@@ -146,20 +146,20 @@ export function OverviewAdsbSettingsCard({
           Aircraft data:{' '}
           <a
             className="underline"
-            href="https://www.adsb.lol/"
+            href="https://adsb.fi/"
             target="_blank"
             rel="noreferrer"
           >
-            adsb.lol
+            adsb.fi
           </a>{' '}
           ·{' '}
           <a
             className="underline"
-            href="https://opendatacommons.org/licenses/odbl/1-0/"
+            href="https://github.com/adsbfi/opendata/blob/main/README.md"
             target="_blank"
             rel="noreferrer"
           >
-            ODbL license
+            Terms of use
           </a>
         </p>
       </div>
