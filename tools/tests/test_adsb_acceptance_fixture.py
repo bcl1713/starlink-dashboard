@@ -1,5 +1,6 @@
 """Controlled acceptance must never silently query an unintended ADS-B source."""
 
+import asyncio
 import runpy
 import sys
 from pathlib import Path
@@ -51,5 +52,31 @@ def test_fixture_rejects_runtime_base_mismatch(provider_fixture):
     with pytest.raises(RuntimeError):
         provider_fixture["_client"](
             base_url="https://api.adsb.lol",
-            headers={"User-Agent": "starlink-dashboard"},
+            headers={
+                "User-Agent": "starlink-dashboard (+https://github.com/bcl1713/starlink-dashboard/issues)"
+            },
         )
+
+
+@pytest.mark.parametrize(
+    "agent",
+    [
+        "starlink-dashboard/aviation-weather-v1",
+        "starlink-dashboard/aviation-weather-gfs",
+    ],
+)
+def test_fixture_preserves_non_adsb_clients_and_transport(provider_fixture, agent):
+    async def fetch():
+        def respond(request):
+            assert request.headers["User-Agent"] == agent
+            return httpx.Response(200, json={"weather": "available"})
+
+        async with provider_fixture["_client"](
+            headers={"User-Agent": agent}, transport=httpx.MockTransport(respond)
+        ) as client:
+            response = await client.get(
+                "https://aviationweather.gov/controlled-fixture"
+            )
+            assert response.json() == {"weather": "available"}
+
+    asyncio.run(fetch())

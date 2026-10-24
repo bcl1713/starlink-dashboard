@@ -50,7 +50,11 @@ def _respond(request: httpx.Request) -> httpx.Response:
 def _client(*args, **kwargs):
     base = str(kwargs.get("base_url", "")).rstrip("/")
     agent = httpx.Headers(kwargs.get("headers", {})).get("User-Agent", "")
-    if base == "https://opendata.adsb.fi/api" or "starlink-dashboard" in agent:
+    if (
+        base == "https://opendata.adsb.fi/api"
+        or agent
+        == "starlink-dashboard (+https://github.com/bcl1713/starlink-dashboard/issues)"
+    ):
         if base != "https://opendata.adsb.fi/api":
             raise RuntimeError("Unexpected ADS-B runtime base URL")
         kwargs["transport"] = httpx.MockTransport(_respond)

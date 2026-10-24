@@ -18,6 +18,9 @@ try {
     editing = await context.newPage();
   await overview.goto("/overview");
   await editing.goto("/configuration");
+  await editing
+    .getByRole("tab", { name: "Aircraft Traffic", exact: true })
+    .click();
   await editing.getByRole("switch", { name: "ADS-B aircraft layer" }).click();
   await expect(
     editing.getByRole("switch", { name: "ADS-B aircraft layer" }),
