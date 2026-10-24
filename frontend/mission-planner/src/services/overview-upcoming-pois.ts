@@ -24,7 +24,7 @@ export interface OverviewUpcomingPoi {
   name: string;
   kind: OverviewPoiKind;
   projected_route_progress: number | null;
-  flight_phase: OverviewFlightPhase;
+  flight_phase: OverviewFlightPhase | null;
   latitude: number;
   longitude: number;
   expected_arrival_time: string | null;
@@ -41,6 +41,8 @@ export type OverviewFlightPhase =
   | 'post_arrival';
 
 export interface OverviewUpcomingPoisResponse {
+  source?: 'mission' | 'manual';
+  speed_observed_at?: string | null;
   movement_state?: string | null;
   movement_uncertain?: boolean;
   movement_observed_at?: string | null;

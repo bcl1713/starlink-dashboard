@@ -43,7 +43,7 @@ class OverviewUpcomingPoi(BaseModel):
         description="calculated_at plus eta_seconds; never a scheduled timestamp.",
     )
     eta_type: Literal["anticipated", "estimated"]
-    flight_phase: str
+    flight_phase: str | None
     upcoming: bool
     map_retained: bool
 
@@ -51,6 +51,8 @@ class OverviewUpcomingPoi(BaseModel):
 class OverviewUpcomingPoisResponse(BaseModel):
     """Overview POIs and their availability state."""
 
+    source: Literal["mission", "manual"] = "mission"
+    speed_observed_at: datetime | None = None
     movement_state: str | None = None
     movement_uncertain: bool = True
     movement_observed_at: datetime | None = None

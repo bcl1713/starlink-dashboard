@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { OverviewUpcomingPoi } from '@/services/overview-upcoming-pois';
-import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
+import {
+  overviewPoiView,
+  urgencyColor,
+  overviewPoiUrgencyColor,
+} from './overview-upcoming-pois';
 
 const now = new Date('2026-09-22T12:00:00.000Z');
 
@@ -130,5 +134,28 @@ describe('overviewPoiView', () => {
         'sixth-upcoming',
       ].filter((poiId) => poiId !== 'invalid-latitude')
     );
+  });
+});
+
+describe('Overview POI urgency clock', () => {
+  it('uses wall-clock urgency for manual destinations after an unrelated mission replay', () => {
+    expect(
+      overviewPoiUrgencyColor(
+        '2026-09-22T12:30:00Z',
+        'manual',
+        now.getTime(),
+        now.getTime() + 2 * 3600_000
+      )
+    ).toBe('#facc15');
+  });
+  it('keeps mission urgency on the mission clock', () => {
+    expect(
+      overviewPoiUrgencyColor(
+        '2026-09-22T12:30:00Z',
+        'mission',
+        now.getTime(),
+        now.getTime() + 2 * 3600_000
+      )
+    ).toBe('#ef4444');
   });
 });

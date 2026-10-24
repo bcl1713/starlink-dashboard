@@ -267,3 +267,50 @@ it('explains missing destination route projection without claiming it was passed
     'Destination route position unavailable'
   );
 });
+
+describe('manual destination arrival', () => {
+  const manual = () =>
+    response({
+      source: 'manual',
+      flight_phase: null,
+      current_route_progress: null,
+      speed_observed_at: new Date(now).toISOString(),
+      movement_state: 'parked',
+      on_blocks_at: new Date(now).toISOString(),
+      pois: [
+        poi('manual-destination', 100, {
+          kind: 'arrival',
+          projected_route_progress: null,
+          name: 'Heathrow',
+        }),
+      ],
+    });
+  it('shows a DESTINATION with direct UTC and countdown using wall clock, regardless of mission phase or replay clock', () => {
+    const view = deriveArrivalPanel(manual(), now, false, now + 2 * 3600_000);
+    expect(view.sections).toHaveLength(1);
+    expect(view.sections[0]).toMatchObject({
+      label: 'DESTINATION',
+      name: 'Heathrow',
+      timing: { utc: '12:39Z', countdown: '39 MIN', anticipated: false },
+    });
+  });
+  it.each([
+    { speed_observed_at: null },
+    { speed_observed_at: new Date(now - 10_000).toISOString() },
+    { position_state: 'stale' as const },
+    { position_observed_at: null },
+    { state: 'unavailable' as const },
+  ])('suppresses countdown with unavailable telemetry %o', (changes) => {
+    const view = deriveArrivalPanel({ ...manual(), ...changes }, now);
+    expect(view.sections[0].name).toBe('Heathrow');
+    expect(view.sections[0].timing).toBeNull();
+  });
+  it('suppresses countdown on failed refresh and between polls', () => {
+    expect(
+      deriveArrivalPanel(manual(), now, true).sections[0].timing
+    ).toBeNull();
+    expect(
+      deriveArrivalPanel(manual(), now + 10_000).sections[0].timing
+    ).toBeNull();
+  });
+});
