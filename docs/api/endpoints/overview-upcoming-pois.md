@@ -198,8 +198,19 @@ expiry can be calculated.
 ## Manual destination fallback
 
 `GET /api/overview/manual-destination` returns shared persistent settings:
-`{"destination": null}` or
-`{"destination": {"name": "Remote stop", "latitude": 0, "longitude": 1, "airport_code": null}}`.
+`{"destination": null}` or a complete destination:
+
+```json
+{
+  "destination": {
+    "name": "Remote stop",
+    "latitude": 0,
+    "longitude": 1,
+    "airport_code": null
+  }
+}
+```
+
 `PUT` to the same path replaces the whole setting with that shape; explicit
 `null` clears it. A destination requires a nonblank name of at most 120
 characters and finite numeric latitude −90…90 and longitude −180…180. Optional

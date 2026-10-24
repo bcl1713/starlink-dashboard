@@ -10,8 +10,7 @@ Shared displays: [controls](system.md#overview-windows-and-display-controls),
 
 ### 1. [Monitoring & Dashboards](./monitoring.md)
 
-Core real-time position tracking, network performance metrics, historical data
-retention, and native Overview details.
+Live position, network metrics, history retention and native Overview details.
 
 ### 2. [Navigation & Timing](./navigation.md)
 
@@ -20,16 +19,14 @@ with real-time ETA, and flight phase detection.
 
 ### 3. [Mission Communication Planning](./mission-planning.md)
 
-Pre-flight predictive planning tools, real-time timeline preview, satellite
-geometry analysis, multi-format briefing exports, and mission timeline
-visualization.
+Predictive pre-flight planning, live timeline previews, satellite geometry,
+briefing exports in multiple formats and mission timeline visualization.
 
 ### 4. Overview Departure and Arrival
 
-The native Overview globe retains generated operational POI markers for the
-active mission. The bottom-center panel fits its content, centers each section's
-text and separates next POI from landing with a vertical divider. Narrow screens
-stack the sections with a horizontal divider. It shows flight timing:
+Overview retains active-mission generated POI markers. Its bottom-center panel
+fits its content and centers text, separating next POI and landing with a
+vertical divider; narrow screens stack sections with a horizontal divider:
 
 - Before departure: **SCHEDULED DEPARTURE** with the imported departure name,
   effective mission schedule in UTC, and remaining hours/minutes. Configured
@@ -44,47 +41,49 @@ stack the sections with a horizontal divider. It shows flight timing:
 - After arrival: **LANDED · destination**, without an ETA or countdown. The
   backend flight phase establishes landing; an expired ETA does not.
 
-Arrival estimates use the exact position observation's collection timestamp.
-Fresh means less than ten seconds old, allowing up to five seconds of future
-clock skew. Network collection and request timestamps cannot renew an old GPS
-observation. Missing/invalid GPS coordinates have no verified observation;
-genuine zero coordinates remain valid. The timestamp describes collection of
-returned coordinates, not a receiver-provided GPS fix timestamp.
+Arrival freshness uses the returned coordinates' collection timestamp, not the
+receiver's GPS fix timestamp. Fresh means under ten seconds old, allowing five
+seconds of future clock skew. Network/request timestamps cannot renew old GPS.
+Missing/invalid coordinates have no verified observation; genuine zero is valid.
 
-In-flight estimates also require a fresh speed observation. Live GPS needs at
-least two verified position samples covering 0.1 seconds before speed is known;
-the initial compatibility zero cannot enable an ETA. A measured stationary zero
-is valid. Missing, stale or failed GPS resets tracking. Automatic flight
-detection also requires verified position and speed. An interval of ten seconds
-or more between verified observations, including a silent collection pause,
-restarts arrival dwell and departure persistence without changing the confirmed
-phase. Reused collection timestamps do not advance detection; backward
-timestamps break continuity.
+In-flight ETA and automatic detection require verified position and fresh speed.
+Live GPS needs two verified samples spanning 0.1 seconds; initial compatibility
+zero cannot enable ETA, while measured stationary zero is valid. Missing, stale
+or failed GPS resets tracking. Gaps ≥10 seconds, including silent pauses,
+restart arrival dwell/departure persistence without changing confirmed phase.
+Reused timestamps do not advance detection; backward timestamps break
+continuity.
 
-Automatic arrival requires continuous verified observations within 100 meters of
-the active route's final waypoint for 60 seconds while in flight. Distance is
-the direct great-circle distance to that waypoint; a position beyond or beside
-the route endpoint cannot establish arrival through projected route progress.
-Leaving the radius restarts dwell. This is a proximity confirmation, with no
-additional altitude or low-speed landing requirement.
+Automatic arrival requires continuous verified in-flight observations within 100
+meters of the active route's final waypoint for 60 seconds. Direct great-circle
+distance governs; projected progress beyond/beside the endpoint cannot establish
+arrival. Leaving the radius restarts dwell. No additional altitude or low-speed
+landing requirement applies to this proximity confirmation.
 
-Stale/invalid position suppresses ETA and countdown, with an explicit reason.
-Known names and map records remain; stale valid coordinates may identify the
-last-known next event, while invalid coordinates cannot establish route
-progress. Failed or expired arrival refreshes also suppress timing. Missing
-mission, route, schedule, destination and estimates remain explicit. Scheduled
-landing times never replace missing estimates, and speed is never invented. UTC
-times use **HH:MMZ**, including the date when on another UTC day. Full UTC
-provenance remains accessible. Longer countdowns use **1 HR 39 MIN**; positive
-intervals under one minute use **<1 MIN**. Arrival stops at **0 MIN**; only
-scheduled departure counts past its target. In constrained panels, long
-countdowns wrap at word boundaries while preserving enlarged text, centered
-alignment and the AGO suffix.
+Stale/invalid position or failed/expired refresh suppresses ETA and countdown
+with an explicit reason. Names and map records remain; stale valid coordinates
+may identify the last-known next event, while invalid coordinates cannot
+establish route progress. Missing mission, route, schedule, destination and
+estimates stay explicit. Scheduled landing never replaces missing estimates;
+speed is never invented. UTC uses **HH:MMZ**, adding the date on another UTC
+day; full provenance remains accessible. Countdowns use **1 HR 39 MIN** or **<1
+MIN** for positive intervals below one minute. Arrival stops at **0 MIN**; only
+scheduled departure counts past its target. In constrained panels, countdowns
+wrap at word boundaries, preserving enlarged, centered text and the AGO suffix.
 
 The [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
 explains timing provenance and map retention. A route-only active route is not
 an active Mission V2 leg (`no_active_mission`). See
 [map labels](overview-labels.md) for aircraft protection and accessible names.
+
+In **Operator → Now → Manual destination**, select an ICAO/IATA/name search
+result or enter **Destination name**, **Latitude** and **Longitude**. **Save
+destination** persists the shared point; **Clear destination** removes it.
+Settings survive restarts. Without an active mission, Overview shows its marker
+and **DESTINATION** UTC/countdown from direct distance and fresh groundspeed.
+Missing, stationary, invalid or stale telemetry suppresses timing. Active
+missions take precedence and retain the point; no uncertainty acknowledgment is
+required.
 
 ### 5. Overview Metric History
 
@@ -297,18 +296,3 @@ The deployment laptop still requires hardware validation.
 See [optional boundaries](overview-boundaries.md), [setup](../setup/README.md),
 [API reference](../api/README.md),
 [troubleshooting](../troubleshooting/README.md) and [README](../../README.md).
-
-### Destination without a mission
-
-In **Operator → Now → Manual destination**, search by ICAO/IATA code or airport
-name, select a result, then **Save destination**. You can also enter a
-**Destination name**, **Latitude**, and **Longitude** directly. **Clear
-destination** removes the saved point. The setting is shared across Overview
-displays and saved across restarts.
-
-With no active mission leg, Overview shows the point using its destination
-marker and a **DESTINATION** arrival section with estimated UTC and countdown.
-The estimate uses direct distance and fresh groundspeed; timing becomes
-unavailable when telemetry is missing, stationary, invalid or stale. An active
-mission takes precedence and leaves the manual destination saved for later. No
-uncertainty acknowledgment is required to save or use this estimate.
