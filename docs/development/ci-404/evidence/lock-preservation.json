@@ -1,0 +1,7 @@
+{
+  "raw_distribution_count": 100,
+  "inventory_exact_multiset_match": true,
+  "unchanged_existing_export_test_source_except_fixture_decorator": true,
+  "unchanged_inventory_python_snippet": true,
+  "lock_sha256": "361de5aa5a1b65e3ea5254de84a2cd3e03dc39cba512f73629f5f28bf2767d13"
+}

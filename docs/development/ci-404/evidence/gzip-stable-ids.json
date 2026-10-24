@@ -1,0 +1,11 @@
+[
+  "tests/unit/test_aviation_weather_transport.py::test_fixed_source_user_agent_and_gzip_bytes_are_preserved",
+  "tests/unit/test_aviation_weather_transport.py::test_redirect_content_encoding_mime_and_body_bounds_fail_closed[302-headers0]",
+  "tests/unit/test_aviation_weather_transport.py::test_redirect_content_encoding_mime_and_body_bounds_fail_closed[200-headers1]",
+  "tests/unit/test_aviation_weather_transport.py::test_redirect_content_encoding_mime_and_body_bounds_fail_closed[200-headers2]",
+  "tests/unit/test_aviation_weather_transport.py::test_redirect_content_encoding_mime_and_body_bounds_fail_closed[200-headers3]",
+  "tests/unit/test_aviation_weather_transport.py::test_redirect_content_encoding_mime_and_body_bounds_fail_closed[429-headers4]",
+  "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[not-gzip]",
+  "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[trailing-member]",
+  "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[truncated]"
+]

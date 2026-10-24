@@ -1,0 +1,15 @@
+{
+  "inventory_distributions": 99,
+  "locked_distributions": 98,
+  "version_changes": {},
+  "ambient_only": {
+    "pip": "26.2.1"
+  },
+  "input_sha256": {
+    "requirements-dev.txt": "31f2596e7c7a7d1713d8861ae196067f80293301f857f44e46fe1f0d837636fb",
+    "requirements.txt": "bf0b6ee7901e0af37ad53870c44607ca67a9df1cc7b1157e7c5168bfe1e47e73",
+    "requirements-gfs.txt": "afddb44adec04e3079735b11c9eb68ea0cdef3e4921159916d258ff7a7237879",
+    ".python-version": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93"
+  },
+  "lock_sha256": "361de5aa5a1b65e3ea5254de84a2cd3e03dc39cba512f73629f5f28bf2767d13"
+}

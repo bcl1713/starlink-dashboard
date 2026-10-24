@@ -22,6 +22,13 @@ jobs:
           python-version-file: backend/starlink-location/.python-version
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: |
+            backend/starlink-location/requirements*.txt
+            backend/starlink-location/.python-version
+          cache-suffix: static-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-uv0.12.19
       - name: Install backend development dependencies
         run: python -m pip install -r backend/starlink-location/requirements-dev.txt
       - name: Set up Node.js
@@ -71,7 +78,41 @@ jobs:
 
   backend:
     name: Backend Test Gate
+    needs: [backend_1, backend_2, backend_3, backend_4]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/starlink-location/.python-version
+      - name: Require successful shard jobs before downloading evidence
+        env:
+          BACKEND_NEEDS: ${{ toJSON(needs) }}
+        run: |
+          python -c 'import os,pathlib; pathlib.Path("backend-needs.json").write_text(os.environ["BACKEND_NEEDS"])'
+          python tools/backend_ci.py check-needs --needs-json "$GITHUB_WORKSPACE/backend-needs.json"
+      - name: Download current backend reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: backend-report-${{ github.run_id }}-${{ github.run_attempt }}-*
+          path: backend-reports
+          merge-multiple: false
+      - name: Validate complete backend evidence
+        env:
+          BACKEND_PR_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: >-
+          python tools/backend_ci.py gate --reports "$GITHUB_WORKSPACE/backend-reports"
+          --needs-json "$GITHUB_WORKSPACE/backend-needs.json"
+          --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT"
+          --pr-head-sha "$BACKEND_PR_HEAD"
+
+  backend_1:
+    name: Backend Shard 1/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -81,12 +122,156 @@ jobs:
         with:
           python-version-file: backend/starlink-location/.python-version
       - name: Set up uv
+        id: uv
         uses: astral-sh/setup-uv@v6
-      - name: Run backend test gate
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: |
+            backend/starlink-location/requirements*.txt
+            backend/starlink-location/.python-version
+          cache-suffix: backend-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-uv0.12.19
+      - name: Run isolated backend shard
         env:
           UV_PYTHON: ${{ steps.python.outputs.python-path }}
           UV_PYTHON_DOWNLOADS: "never"
-        run: timeout --kill-after=10s 20m ./tools/verify backend
+          BACKEND_CI_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BACKEND_CI_CACHE_STATE: ${{ steps.uv.outputs.cache-hit }}
+        run: >-
+          timeout --kill-after=10s 20m ./tools/verify backend --shard 1/4
+          --report "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_1-evidence/backend-report-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-1.json"
+          --run-root "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_1"
+      - name: Upload diagnostics after owned cleanup
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-report-${{ github.run_id }}-${{ github.run_attempt }}-1
+          path: ${{ runner.temp }}/ci404-${{ github.run_id }}-${{ github.run_attempt }}-backend_1-evidence/
+          if-no-files-found: error
+          retention-days: 14
+
+  backend_2:
+    name: Backend Shard 2/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/starlink-location/.python-version
+      - name: Set up uv
+        id: uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: |
+            backend/starlink-location/requirements*.txt
+            backend/starlink-location/.python-version
+          cache-suffix: backend-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-uv0.12.19
+      - name: Run isolated backend shard
+        env:
+          UV_PYTHON: ${{ steps.python.outputs.python-path }}
+          UV_PYTHON_DOWNLOADS: "never"
+          BACKEND_CI_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BACKEND_CI_CACHE_STATE: ${{ steps.uv.outputs.cache-hit }}
+        run: >-
+          timeout --kill-after=10s 20m ./tools/verify backend --shard 2/4
+          --report "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_2-evidence/backend-report-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-2.json"
+          --run-root "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_2"
+      - name: Upload diagnostics after owned cleanup
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-report-${{ github.run_id }}-${{ github.run_attempt }}-2
+          path: ${{ runner.temp }}/ci404-${{ github.run_id }}-${{ github.run_attempt }}-backend_2-evidence/
+          if-no-files-found: error
+          retention-days: 14
+
+  backend_3:
+    name: Backend Shard 3/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/starlink-location/.python-version
+      - name: Set up uv
+        id: uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: |
+            backend/starlink-location/requirements*.txt
+            backend/starlink-location/.python-version
+          cache-suffix: backend-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-uv0.12.19
+      - name: Run isolated backend shard
+        env:
+          UV_PYTHON: ${{ steps.python.outputs.python-path }}
+          UV_PYTHON_DOWNLOADS: "never"
+          BACKEND_CI_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BACKEND_CI_CACHE_STATE: ${{ steps.uv.outputs.cache-hit }}
+        run: >-
+          timeout --kill-after=10s 20m ./tools/verify backend --shard 3/4
+          --report "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_3-evidence/backend-report-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-3.json"
+          --run-root "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_3"
+      - name: Upload diagnostics after owned cleanup
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-report-${{ github.run_id }}-${{ github.run_attempt }}-3
+          path: ${{ runner.temp }}/ci404-${{ github.run_id }}-${{ github.run_attempt }}-backend_3-evidence/
+          if-no-files-found: error
+          retention-days: 14
+
+  backend_4:
+    name: Backend Shard 4/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/starlink-location/.python-version
+      - name: Set up uv
+        id: uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: |
+            backend/starlink-location/requirements*.txt
+            backend/starlink-location/.python-version
+          cache-suffix: backend-${{ runner.os }}-${{ runner.arch }}-${{ steps.python.outputs.python-version }}-uv0.12.19
+      - name: Run isolated backend shard
+        env:
+          UV_PYTHON: ${{ steps.python.outputs.python-path }}
+          UV_PYTHON_DOWNLOADS: "never"
+          BACKEND_CI_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BACKEND_CI_CACHE_STATE: ${{ steps.uv.outputs.cache-hit }}
+        run: >-
+          timeout --kill-after=10s 20m ./tools/verify backend --shard 4/4
+          --report "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_4-evidence/backend-report-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-4.json"
+          --run-root "$RUNNER_TEMP/ci404-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-backend_4"
+      - name: Upload diagnostics after owned cleanup
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-report-${{ github.run_id }}-${{ github.run_attempt }}-4
+          path: ${{ runner.temp }}/ci404-${{ github.run_id }}-${{ github.run_attempt }}-backend_4-evidence/
+          if-no-files-found: error
+          retention-days: 14
 
   frontend:
     name: Frontend Test and Build Gate

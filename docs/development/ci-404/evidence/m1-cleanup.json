@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-10-24T04:09:19.970561+00:00",
+  "recorded_identities": 561,
+  "remaining": [],
+  "runner_cleanup": {
+    "survivors": [],
+    "listeners": []
+  },
+  "private_root_exists": false,
+  "commands": [
+    {
+      "label": "uv-version",
+      "exit_code": 0,
+      "elapsed_seconds": 0.16970956418663263
+    },
+    {
+      "label": "inventory",
+      "exit_code": 0,
+      "elapsed_seconds": 0.5114800478331745
+    },
+    {
+      "label": "serial",
+      "exit_code": 0,
+      "elapsed_seconds": 638.4073821650818
+    },
+    {
+      "label": "unit-collection",
+      "exit_code": 0,
+      "elapsed_seconds": 4.12459733011201
+    },
+    {
+      "label": "integration-collection",
+      "exit_code": 0,
+      "elapsed_seconds": 3.2047424628399312
+    },
+    {
+      "label": "operator-collection",
+      "exit_code": 0,
+      "elapsed_seconds": 3.1376808108761907
+    },
+    {
+      "label": "planning-collection",
+      "exit_code": 0,
+      "elapsed_seconds": 3.16404703585431
+    },
+    {
+      "label": "itinerary_import-collection",
+      "exit_code": 0,
+      "elapsed_seconds": 3.024611596018076
+    }
+  ],
+  "native_session17328_exit": 0
+}

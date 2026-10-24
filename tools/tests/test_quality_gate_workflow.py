@@ -76,6 +76,7 @@ def run_static_gate(
         text=True,
         capture_output=True,
         env={**os.environ, **environment},
+        check=False,
     )
 
 
@@ -90,21 +91,42 @@ def test_workflow_uses_only_canonical_quality_commands():
     assert "ruff check" not in workflow
 
 
-def test_workflow_has_three_named_thin_caller_jobs():
+def test_workflow_has_four_required_shards_and_always_aggregate():
     workflow = workflow_text()
     static = job_block(workflow, "static", "backend")
-    backend = job_block(workflow, "backend", "frontend")
-    frontend = job_block(workflow, "frontend")
-
+    aggregate = job_block(workflow, "backend", "backend_1")
     assert "name: Static Quality Gate" in static
-    assert "name: Backend Test Gate" in backend
-    assert "name: Frontend Test and Build Gate" in frontend
-    assert static.count("./tools/verify") == 1
-    assert backend.count("./tools/verify") == 1
-    assert frontend.count("./tools/verify") == 1
-    assert "./tools/verify static" in static
-    assert "./tools/verify backend" in backend
-    assert "./tools/verify frontend" in frontend
+    assert "name: Backend Test Gate" in aggregate
+    assert "needs: [backend_1, backend_2, backend_3, backend_4]" in aggregate
+    assert "if: ${{ always() }}" in aggregate
+    assert "check-needs --needs-json" in aggregate
+    assert "merge-multiple: false" in aggregate
+    assert "toJSON(needs)" in aggregate
+    assert "backend_ci.py gate" in aggregate
+    assert "--sha" in aggregate and "--pr-head-sha" in aggregate
+    assert "continue-on-error" not in workflow
+    assert "cancel-in-progress" not in workflow
+    for i in range(1, 5):
+        shard = job_block(
+            workflow, f"backend_{i}", f"backend_{i+1}" if i < 4 else "frontend"
+        )
+        assert "timeout-minutes: 25" in shard
+        assert (
+            f"timeout --kill-after=10s 20m ./tools/verify backend --shard {i}/4"
+            in shard
+        )
+        assert "--report" in shard and "--run-root" in shard
+        assert "if: ${{ always() }}" in shard
+        assert "if-no-files-found: error" in shard
+        assert (
+            f"backend-report-${{{{ github.run_id }}}}-${{{{ github.run_attempt }}}}-{i}"
+            in shard
+        )
+        assert 'version: "0.12.19"' in shard
+        assert "cache-suffix: backend-" in shard
+        assert "requirements*.txt" in shard
+        assert "steps.python.outputs.python-version" in shard
+    assert "cache-suffix: static-" in static
 
 
 def test_static_job_installs_its_runner_prerequisites():
@@ -222,7 +244,7 @@ def test_static_runner_invokes_the_markdownlint_executable_ci_installs():
 
 def test_backend_and_frontend_jobs_install_their_runner_prerequisites():
     workflow = workflow_text()
-    backend = job_block(workflow, "backend", "frontend")
+    backend = job_block(workflow, "backend_1", "backend_2")
     frontend = job_block(workflow, "frontend")
 
     assert "actions/setup-python@v5" in backend

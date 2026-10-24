@@ -228,3 +228,85 @@ def test_stale_backend_lock_stops_before_uv(tmp_path, monkeypatch, capsys):
     assert module.main(["tools/verify", "backend"]) == 2
     assert calls == []
     assert "regenerate" in capsys.readouterr().err.lower()
+
+
+def test_reported_backend_rejects_invalid_combinations_before_uv(tmp_path, monkeypatch):
+    module = load_verify()
+    calls = []
+    monkeypatch.setattr(
+        module.subprocess, "run", lambda *args, **kwargs: calls.append(args)
+    )
+    for options in (
+        ["--shard", "1/4"],
+        [
+            "--shard",
+            "0/4",
+            "--report",
+            str(tmp_path / "r.json"),
+            "--run-root",
+            str(tmp_path / "private"),
+        ],
+        ["--report", "relative.json", "--run-root", str(tmp_path / "private")],
+        ["--report", str(tmp_path / "r.json")],
+        ["--run-root", str(tmp_path / "private")],
+        [
+            "--shard",
+            "1/3",
+            "--report",
+            str(tmp_path / "r.json"),
+            "--run-root",
+            str(tmp_path / "private"),
+        ],
+    ):
+        assert module.main(["tools/verify", "backend", *options]) == 2
+    assert calls == []
+    assert (
+        module.main(["tools/verify", "all", "--report", str(tmp_path / "r.json")]) == 2
+    )
+    assert calls == []
+
+
+def test_reported_backend_dispatches_through_owned_source_wrapper(
+    tmp_path, monkeypatch
+):
+    module = load_verify()
+    calls = []
+    monkeypatch.setattr(
+        module, "run_backend", lambda *args, **kwargs: calls.append((args, kwargs))
+    )
+    report, root = tmp_path / "evidence/report.json", tmp_path / "private"
+    assert (
+        module.main(
+            [
+                "tools/verify",
+                "backend",
+                "--shard",
+                "2/4",
+                "--report",
+                str(report),
+                "--run-root",
+                str(root),
+            ]
+        )
+        == 0
+    )
+    assert calls == [
+        (
+            (module.ROOT, module.BACKEND_COMMANDS),
+            {"report": report, "run_root": root, "shard": "2/4"},
+        )
+    ]
+
+
+def test_static_mandatorily_runs_backend_gate_contracts():
+    module = load_verify()
+    pytest_command = next(cmd for cmd, _ in module.STATIC if "pytest" in cmd)
+    for name in (
+        "test_acceptance_platform_typing_policy.py",
+        "test_docs_links.py",
+        "test_backend_ci.py",
+        "test_backend_test_runner.py",
+        "test_verify.py",
+        "test_quality_gate_workflow.py",
+    ):
+        assert f"tools/tests/{name}" in pytest_command

@@ -11,6 +11,7 @@ keeping runtime resources alive.
 - [Release policy](release-policy.md) and
   [release baseline](../release-notes.md)
 - [Managed-cloud Docker and scoped teardown](cloud-docker.md)
+- [Backend CI measurement and exhaustive shards](ci-404/completion.md)
 - [Architecture](../architecture/README.md) and
   [API reference](../api-reference-index.md)
 - [Code quality](../code-quality-standards.md) and
