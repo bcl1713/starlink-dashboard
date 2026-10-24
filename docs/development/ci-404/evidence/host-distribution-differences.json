@@ -1,0 +1,13 @@
+{
+  "ci_only": [
+    "setuptools==79.0.1",
+    "setuptools==79.0.1"
+  ],
+  "local_only": [
+    "setuptools==84.0.0",
+    "setuptools==84.2.1"
+  ],
+  "ci_entries": 100,
+  "local_entries": 100,
+  "limits": "Different host/Python patch/uv; exact distribution differences shown, no causal speedup claim."
+}

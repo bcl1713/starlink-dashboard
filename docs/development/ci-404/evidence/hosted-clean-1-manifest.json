@@ -1,0 +1,32 @@
+{
+  "archive": "hosted-clean-1.tar.gz",
+  "sha256": "b58b10fc95d846cb989a7344ebbf88c8c38e7f64909983fd3cd945c422b86f9f",
+  "bytes": 1326140,
+  "contents": {
+    "run.json": "64221fba112fb31d6dc5a82a45c3f45fd24f23050dca88a855afcd5e3a8b1a30",
+    "jobs.json": "4d33568ed510ab326b53edb21b0f84d720e2ce0625b3d8a79658df85e2a2dbcd",
+    "expected.json": "07ac0a09b2269a1d70b6b8d035942fa36c651de4f071ae122181cb53717e0d68",
+    "audit-summary.json": "152510e01b6eecdd15036eb1d3528b7ee332d1cdfeb3ef82e2cddad38ac21e36",
+    "artifacts/backend-report-40066349301-1-1/backend-report-40066349301-1-1.json": "567f464da6b3f568eb18550eab9fde2e433139ff52a764ecc51eeccc33ae8031",
+    "artifacts/backend-report-40066349301-1-1/backend-report-40066349301-1-1.md": "b428e33ac5d5983aa7cd5f05439a10f594667e5fedea221b0d3f53eb78365ad4",
+    "artifacts/backend-report-40066349301-1-1/inventory.log": "b54327f839d3f30351105c9865ee3cd05590727915e1d4cc6e1d1f9b5ca59718",
+    "artifacts/backend-report-40066349301-1-1/ownership.json": "46dbebe95e997700ebe5a617e5026cea18a85212be41b24b62f2c4b217bfd9aa",
+    "artifacts/backend-report-40066349301-1-1/pytest.log": "04672bfa180131be64080e1d106a0ec2e128c79386b16e5f3fa2f4eca14af45c",
+    "artifacts/backend-report-40066349301-1-2/backend-report-40066349301-1-2.json": "93af6751522f5e53d241a68ad83827d9dc87e776d311f4ae9fe4b697e27de30b",
+    "artifacts/backend-report-40066349301-1-2/backend-report-40066349301-1-2.md": "162ebe68978f277ceac8d0ef703e4bf44281e04db6186a8c74acabc805f5a60c",
+    "artifacts/backend-report-40066349301-1-2/inventory.log": "cef5a588148e392455f5215bfc80cdaeda904fd2d6d3db5fc513e8535a78963c",
+    "artifacts/backend-report-40066349301-1-2/ownership.json": "7d3c16d8798facf19444df864f42f744f65bdaf0140e76eb757e8a2115135ecb",
+    "artifacts/backend-report-40066349301-1-2/pytest.log": "b5c13615279af44b38113cc2e7c503e977ef6ad0ba7388ad1c87e1db83be8f35",
+    "artifacts/backend-report-40066349301-1-3/backend-report-40066349301-1-3.json": "8d8eb2cc790cb7f0c1e7cc8d435cbda5548a352412c1b9c1c3250f369d1d4acc",
+    "artifacts/backend-report-40066349301-1-3/backend-report-40066349301-1-3.md": "3f5a028104efc02a40bac3b9b84d0f0ffeba2db8505405510e44e552fe13ad33",
+    "artifacts/backend-report-40066349301-1-3/inventory.log": "21da9bab2c05cca1d00f6cc01f97a979c81360733ebd0acf892989ef2dd73204",
+    "artifacts/backend-report-40066349301-1-3/ownership.json": "00f3b5e85f65948aa35207e7a776dbf490efded2b38a218e9f6906be9e95cce6",
+    "artifacts/backend-report-40066349301-1-3/pytest.log": "85e9fc5b7fcabfb5c4125b6560aa988a06fe15d32d70849c1a58ed46324d6207",
+    "artifacts/backend-report-40066349301-1-4/backend-report-40066349301-1-4.json": "caf62f8f9eea51d6735522b82b6512bf6446401d6b5fda808bf73eb9e7d8865d",
+    "artifacts/backend-report-40066349301-1-4/backend-report-40066349301-1-4.md": "3334d3ae90d5db19fe283c591d7826eff874702b452e7f17f24551f85d82eda1",
+    "artifacts/backend-report-40066349301-1-4/inventory.log": "dda280e34238a12cb9c3118364e034434850dbe803689fed70e33fd1ca7d5786",
+    "artifacts/backend-report-40066349301-1-4/ownership.json": "9a2498f1ff71fe3d682e9dfd660f3840438e2e46550330d543716d9947598dd6",
+    "artifacts/backend-report-40066349301-1-4/pytest.log": "79387697955498723d64ab1f575e8f48af8076ae155fda777603a794e995b10e"
+  },
+  "note": "Original downloaded report/ownership/log bytes, actual GitHub run/jobs metadata and read-only audit. Review and orchestration workpapers remain external."
+}

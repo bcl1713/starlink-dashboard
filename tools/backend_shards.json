@@ -1,0 +1,3241 @@
+{
+  "allowed_existing_nonpasses": [
+    {
+      "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_upload_route_includes_timing_data_in_response",
+      "outcome": "skipped",
+      "reason": "Skipped: KML upload test requires complex valid KML - covered by other tests"
+    },
+    {
+      "nodeid": "tests/integration/test_route_endpoints_with_timing.py::test_backward_compatibility_routes_without_timing",
+      "outcome": "skipped",
+      "reason": "Skipped: tmp_path not available in integration test context"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_kml_routes_directory_exists",
+      "outcome": "skipped",
+      "reason": "Skipped: KML routes directory not found: ${CHECKOUT}/dev/completed/kml-route-import"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_with_timing",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_departure_time",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_arrival_time",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_duration",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_leg_1_segment_speeds",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_parse_all_legs_without_crash",
+      "outcome": "skipped",
+      "reason": "Skipped: No Leg KML files found"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteTimingIntegration::test_timing_profile_metadata",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestTimingDataAccuracy::test_waypoint_timestamp_format",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestTimingDataAccuracy::test_segment_speed_calculation_math",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestTimingDataAccuracy::test_total_duration_calculation",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteResponseIntegration::test_route_response_includes_timing_flag",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRouteResponseIntegration::test_route_detail_response_includes_profile",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestEdgeCasesAndRobustness::test_handle_missing_waypoint_timestamps",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestEdgeCasesAndRobustness::test_handle_incomplete_timing_data",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestEdgeCasesAndRobustness::test_handle_out_of_order_timestamps",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRealWorldFlight::test_leg_1_is_overwater_flight",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    },
+    {
+      "nodeid": "tests/integration/test_route_eta.py::TestRealWorldFlight::test_segment_speeds_within_flight_envelope",
+      "outcome": "skipped",
+      "reason": "Skipped: Leg 1 KML file not found: ${CHECKOUT}/dev/completed/kml-route-import/Leg 1 Rev 6.kml"
+    }
+  ],
+  "measured_files": {
+    "tests/integration/test_adjusted_departure_integration.py": {
+      "call": 0.4832106791436672,
+      "cases": 9,
+      "phase_seconds": 0.837253937497735,
+      "setup": 0.2150279670022428,
+      "span_seconds": 0.8424685001373291,
+      "teardown": 0.139015291351825
+    },
+    "tests/integration/test_automatic_arrival_proximity.py": {
+      "call": 0.37109100073575974,
+      "cases": 7,
+      "phase_seconds": 0.39231694024056196,
+      "setup": 0.014116459060460329,
+      "span_seconds": 0.395230770111084,
+      "teardown": 0.007109480444341898
+    },
+    "tests/integration/test_config_api.py": {
+      "call": 1.1383619313128293,
+      "cases": 11,
+      "phase_seconds": 1.5329024367965758,
+      "setup": 0.22891386644914746,
+      "span_seconds": 1.5382065773010254,
+      "teardown": 0.16562663903459907
+    },
+    "tests/integration/test_customer_export_responsiveness.py": {
+      "call": 47.78630955796689,
+      "cases": 7,
+      "phase_seconds": 47.7982024285011,
+      "setup": 0.008297589141875505,
+      "span_seconds": 47.801008462905884,
+      "teardown": 0.0035952813923358917
+    },
+    "tests/integration/test_customer_pdf_startup.py": {
+      "call": 0.05141787230968475,
+      "cases": 1,
+      "phase_seconds": 0.05288402969017625,
+      "setup": 0.0010266397148370743,
+      "span_seconds": 0.05308103561401367,
+      "teardown": 0.00043951766565442085
+    },
+    "tests/integration/test_eta_modes.py": {
+      "call": 0.10881685744971037,
+      "cases": 5,
+      "phase_seconds": 0.27277922816574574,
+      "setup": 0.10084753390401602,
+      "span_seconds": 0.2749776840209961,
+      "teardown": 0.06311483681201935
+    },
+    "tests/integration/test_fallback_position.py": {
+      "call": 1.1414866829290986,
+      "cases": 2,
+      "phase_seconds": 1.1468142829835415,
+      "setup": 0.0032513621263206005,
+      "span_seconds": 1.1475117206573486,
+      "teardown": 0.002076237928122282
+    },
+    "tests/integration/test_flight_detection_observation_time.py": {
+      "call": 0.01383453281596303,
+      "cases": 2,
+      "phase_seconds": 0.019075130112469196,
+      "setup": 0.00328345550224185,
+      "span_seconds": 0.019696474075317383,
+      "teardown": 0.0019571417942643166
+    },
+    "tests/integration/test_flight_events_api.py": {
+      "call": 0.6335281259380281,
+      "cases": 1,
+      "phase_seconds": 0.635079808998853,
+      "setup": 0.0010940833017230034,
+      "span_seconds": 0.6352896690368652,
+      "teardown": 0.0004575997591018677
+    },
+    "tests/integration/test_flight_status_api.py": {
+      "call": 0.01061504939571023,
+      "cases": 2,
+      "phase_seconds": 0.09256819589063525,
+      "setup": 0.04542006365954876,
+      "span_seconds": 0.09328985214233398,
+      "teardown": 0.03653308283537626
+    },
+    "tests/integration/test_gps_api.py": {
+      "call": 0.021627888083457947,
+      "cases": 9,
+      "phase_seconds": 0.3585551572032273,
+      "setup": 0.2238952941261232,
+      "span_seconds": 0.3624584674835205,
+      "teardown": 0.11303197499364614
+    },
+    "tests/integration/test_health.py": {
+      "call": 1.5341071942821145,
+      "cases": 10,
+      "phase_seconds": 1.9374937224201858,
+      "setup": 0.23562049586325884,
+      "span_seconds": 1.9422574043273926,
+      "teardown": 0.16776603227481246
+    },
+    "tests/integration/test_kml_poi_integration.py": {
+      "call": 0.033141698222607374,
+      "cases": 11,
+      "phase_seconds": 0.08768842928111553,
+      "setup": 0.03871114365756512,
+      "span_seconds": 0.09125590324401855,
+      "teardown": 0.01583558740094304
+    },
+    "tests/integration/test_live_background_route.py": {
+      "call": 0.24631980899721384,
+      "cases": 8,
+      "phase_seconds": 0.5076091093942523,
+      "setup": 0.16697828099131584,
+      "span_seconds": 0.5113937854766846,
+      "teardown": 0.09431101940572262
+    },
+    "tests/integration/test_live_flight_events.py": {
+      "call": 0.2091770200058818,
+      "cases": 1,
+      "phase_seconds": 0.2113253721036017,
+      "setup": 0.0016863271594047546,
+      "span_seconds": 0.211578369140625,
+      "teardown": 0.0004620249383151531
+    },
+    "tests/integration/test_manual_x_selection.py": {
+      "call": 0.21455589355900884,
+      "cases": 20,
+      "phase_seconds": 0.35318189207464457,
+      "setup": 0.12004485866054893,
+      "span_seconds": 0.3617990016937256,
+      "teardown": 0.018581139855086803
+    },
+    "tests/integration/test_metrics_endpoint.py": {
+      "call": 2.1630622749216855,
+      "cases": 10,
+      "phase_seconds": 2.5585656818002462,
+      "setup": 0.2202594536356628,
+      "span_seconds": 2.5634195804595947,
+      "teardown": 0.175243953242898
+    },
+    "tests/integration/test_mission_routes_v2.py": {
+      "call": 1.5739545915275812,
+      "cases": 30,
+      "phase_seconds": 2.695961573161185,
+      "setup": 0.7884011585265398,
+      "span_seconds": 2.7112765312194824,
+      "teardown": 0.33360582310706377
+    },
+    "tests/integration/test_mission_scenarios.py": {
+      "call": 0.024277063086628914,
+      "cases": 1,
+      "phase_seconds": 0.06394659914076328,
+      "setup": 0.028404201846569777,
+      "span_seconds": 0.06425046920776367,
+      "teardown": 0.011265334207564592
+    },
+    "tests/integration/test_mission_telemetry_archive.py": {
+      "call": 5.980856984388083,
+      "cases": 1,
+      "phase_seconds": 5.983326307032257,
+      "setup": 0.0018369308672845364,
+      "span_seconds": 5.983622789382935,
+      "teardown": 0.0006323917768895626
+    },
+    "tests/integration/test_mission_v2_bug_repro.py": {
+      "call": 0.0156266619451344,
+      "cases": 1,
+      "phase_seconds": 0.053156930953264236,
+      "setup": 0.025947757996618748,
+      "span_seconds": 0.05337882041931152,
+      "teardown": 0.011582511011511087
+    },
+    "tests/integration/test_operator_event_sources.py": {
+      "call": 0.10008060559630394,
+      "cases": 3,
+      "phase_seconds": 0.10569993685930967,
+      "setup": 0.004382302984595299,
+      "span_seconds": 0.10667872428894043,
+      "teardown": 0.0012370282784104347
+    },
+    "tests/integration/test_operator_mission_simulation.py": {
+      "call": 0.463783323764801,
+      "cases": 2,
+      "phase_seconds": 0.4745740946382284,
+      "setup": 0.009541058912873268,
+      "span_seconds": 0.47542333602905273,
+      "teardown": 0.001249711960554123
+    },
+    "tests/integration/test_operator_transport_review.py": {
+      "call": 0.0963734919205308,
+      "cases": 1,
+      "phase_seconds": 0.11250345502048731,
+      "setup": 0.015592444222420454,
+      "span_seconds": 0.11274361610412598,
+      "teardown": 0.0005375188775360584
+    },
+    "tests/integration/test_orbital_catalog_api.py": {
+      "call": 0.37457776814699173,
+      "cases": 2,
+      "phase_seconds": 0.38300317572429776,
+      "setup": 0.005233703646808863,
+      "span_seconds": 0.3838193416595459,
+      "teardown": 0.0031917039304971695
+    },
+    "tests/integration/test_overview_adsb_acceptance.py": {
+      "call": 0.4447365431115031,
+      "cases": 3,
+      "phase_seconds": 0.4515276746824384,
+      "setup": 0.004875026643276215,
+      "span_seconds": 0.4526677131652832,
+      "teardown": 0.0019161049276590347
+    },
+    "tests/integration/test_overview_adsb_batch.py": {
+      "call": 0.17900269059464335,
+      "cases": 19,
+      "phase_seconds": 0.22000216878950596,
+      "setup": 0.029719901271164417,
+      "span_seconds": 0.22782564163208008,
+      "teardown": 0.011279576923698187
+    },
+    "tests/integration/test_overview_adsb_settings_api.py": {
+      "call": 0.12484642071649432,
+      "cases": 24,
+      "phase_seconds": 0.20021515293046832,
+      "setup": 0.05276044877246022,
+      "span_seconds": 0.21084237098693848,
+      "teardown": 0.022608283441513777
+    },
+    "tests/integration/test_overview_adsb_traffic_api.py": {
+      "call": 0.024651343934237957,
+      "cases": 4,
+      "phase_seconds": 0.03142402274534106,
+      "setup": 0.004884819965809584,
+      "span_seconds": 0.03267478942871094,
+      "teardown": 0.0018878588452935219
+    },
+    "tests/integration/test_overview_clock_settings_api.py": {
+      "call": 0.017503028269857168,
+      "cases": 5,
+      "phase_seconds": 0.025430845096707344,
+      "setup": 0.005895442329347134,
+      "span_seconds": 0.027090787887573242,
+      "teardown": 0.0020323744975030422
+    },
+    "tests/integration/test_overview_history_api.py": {
+      "call": 0.029372320976108313,
+      "cases": 8,
+      "phase_seconds": 0.04115667939186096,
+      "setup": 0.00893385848030448,
+      "span_seconds": 0.04358077049255371,
+      "teardown": 0.0028504999354481697
+    },
+    "tests/integration/test_overview_link_settings_api.py": {
+      "call": 0.890192047227174,
+      "cases": 136,
+      "phase_seconds": 1.333356122020632,
+      "setup": 0.30776561982929707,
+      "span_seconds": 1.3927154541015625,
+      "teardown": 0.13539845496416092
+    },
+    "tests/integration/test_overview_speed_recovery.py": {
+      "call": 0.07802069559693336,
+      "cases": 6,
+      "phase_seconds": 0.32966195372864604,
+      "setup": 0.16556942742317915,
+      "span_seconds": 0.33323192596435547,
+      "teardown": 0.08607183070853353
+    },
+    "tests/integration/test_overview_upcoming_pois_api.py": {
+      "call": 0.29994725389406085,
+      "cases": 46,
+      "phase_seconds": 2.1160170040093362,
+      "setup": 1.267069621477276,
+      "span_seconds": 2.1395561695098877,
+      "teardown": 0.5490001286379993
+    },
+    "tests/integration/test_overview_weather_lifecycle.py": {
+      "call": 0.0065091438591480255,
+      "cases": 1,
+      "phase_seconds": 0.009477062616497278,
+      "setup": 0.002426731865853071,
+      "span_seconds": 0.009699821472167969,
+      "teardown": 0.0005411868914961815
+    },
+    "tests/integration/test_planning_policy_preview.py": {
+      "call": 0.2706608106382191,
+      "cases": 7,
+      "phase_seconds": 1.0079098790884018,
+      "setup": 0.7274489672854543,
+      "span_seconds": 1.0118176937103271,
+      "teardown": 0.009800101164728403
+    },
+    "tests/integration/test_poi_stats_endpoints.py": {
+      "call": 0.008181211538612843,
+      "cases": 2,
+      "phase_seconds": 0.09626015042886138,
+      "setup": 0.05239955568686128,
+      "span_seconds": 0.09699463844299316,
+      "teardown": 0.03567938320338726
+    },
+    "tests/integration/test_pois_quick_reference.py": {
+      "call": 0.027569720521569252,
+      "cases": 2,
+      "phase_seconds": 0.10687295068055391,
+      "setup": 0.05425971280783415,
+      "span_seconds": 0.1076059341430664,
+      "teardown": 0.025043517351150513
+    },
+    "tests/integration/test_pop_continuity_status.py": {
+      "call": 0.19879272347316146,
+      "cases": 3,
+      "phase_seconds": 0.21792749967426062,
+      "setup": 0.016682445537298918,
+      "span_seconds": 0.21907997131347656,
+      "teardown": 0.0024523306638002396
+    },
+    "tests/integration/test_pop_status.py": {
+      "call": 0.01618562126532197,
+      "cases": 16,
+      "phase_seconds": 0.08306333981454372,
+      "setup": 0.04812810616567731,
+      "span_seconds": 0.08885717391967773,
+      "teardown": 0.018749612383544445
+    },
+    "tests/integration/test_pop_status_predeparture.py": {
+      "call": 0.019989177584648132,
+      "cases": 9,
+      "phase_seconds": 0.2561817253008485,
+      "setup": 0.1667584776878357,
+      "span_seconds": 0.25993847846984863,
+      "teardown": 0.06943407002836466
+    },
+    "tests/integration/test_route_endpoints_with_timing.py": {
+      "call": 1.2711628354154527,
+      "cases": 12,
+      "phase_seconds": 1.75052769202739,
+      "setup": 0.3215233697555959,
+      "span_seconds": 1.7563927173614502,
+      "teardown": 0.15784148685634136
+    },
+    "tests/integration/test_route_eta.py": {
+      "call": 0.002349965274333954,
+      "cases": 18,
+      "phase_seconds": 0.029953814577311277,
+      "setup": 0.021991004701703787,
+      "span_seconds": 0.036711692810058594,
+      "teardown": 0.005612844601273537
+    },
+    "tests/integration/test_simulation_e2e.py": {
+      "call": 2.898687140084803,
+      "cases": 10,
+      "phase_seconds": 3.332895723171532,
+      "setup": 0.2695051454938948,
+      "span_seconds": 3.3376879692077637,
+      "teardown": 0.16470343759283423
+    },
+    "tests/integration/test_simulation_pop_status.py": {
+      "call": 1.4104886120185256,
+      "cases": 15,
+      "phase_seconds": 1.498461723793298,
+      "setup": 0.074477544054389,
+      "span_seconds": 1.5056467056274414,
+      "teardown": 0.013495567720383406
+    },
+    "tests/integration/test_simulation_run_api.py": {
+      "call": 1.4799205483868718,
+      "cases": 17,
+      "phase_seconds": 1.5685446737334132,
+      "setup": 0.07986389426514506,
+      "span_seconds": 1.5763003826141357,
+      "teardown": 0.008760231081396341
+    },
+    "tests/integration/test_simulation_run_lifecycle.py": {
+      "call": 1.7064803391695023,
+      "cases": 18,
+      "phase_seconds": 1.8010914605110884,
+      "setup": 0.08465244295075536,
+      "span_seconds": 1.8090882301330566,
+      "teardown": 0.009958678390830755
+    },
+    "tests/integration/test_simulation_run_time_apis.py": {
+      "call": 0.38379352213814855,
+      "cases": 4,
+      "phase_seconds": 0.4041271689347923,
+      "setup": 0.018242848105728626,
+      "span_seconds": 0.40561938285827637,
+      "teardown": 0.0020907986909151077
+    },
+    "tests/integration/test_status.py": {
+      "call": 1.473748433869332,
+      "cases": 18,
+      "phase_seconds": 2.201663577929139,
+      "setup": 0.48829506803303957,
+      "span_seconds": 2.210446357727051,
+      "teardown": 0.2396200760267675
+    },
+    "tests/integration/test_v2_lifecycle_write_guards.py": {
+      "call": 3.165511260740459,
+      "cases": 17,
+      "phase_seconds": 3.8790963161736727,
+      "setup": 0.4846140411682427,
+      "span_seconds": 3.8876233100891113,
+      "teardown": 0.22897101426497102
+    },
+    "tests/integration/test_x_constraint_timeline_api.py": {
+      "call": 0.10380900232121348,
+      "cases": 2,
+      "phase_seconds": 0.10878149885684252,
+      "setup": 0.003912844695150852,
+      "span_seconds": 0.1094350814819336,
+      "teardown": 0.0010596518404781818
+    },
+    "tests/itinerary_import/test_ar.py": {
+      "call": 0.32776738004758954,
+      "cases": 9,
+      "phase_seconds": 0.34933330956846476,
+      "setup": 0.018173071090131998,
+      "span_seconds": 0.3521132469177246,
+      "teardown": 0.0033928584307432175
+    },
+    "tests/itinerary_import/test_association.py": {
+      "call": 0.004780933726578951,
+      "cases": 13,
+      "phase_seconds": 0.03701195493340492,
+      "setup": 0.027625093702226877,
+      "span_seconds": 0.04110288619995117,
+      "teardown": 0.004605927504599094
+    },
+    "tests/itinerary_import/test_corrections.py": {
+      "call": 3.6502592731267214,
+      "cases": 1,
+      "phase_seconds": 3.655965767800808,
+      "setup": 0.004326657857745886,
+      "span_seconds": 3.6562340259552,
+      "teardown": 0.0013798368163406849
+    },
+    "tests/itinerary_import/test_creation_api.py": {
+      "call": 54.581976268440485,
+      "cases": 14,
+      "phase_seconds": 54.65903168357909,
+      "setup": 0.059477152302861214,
+      "span_seconds": 54.6652307510376,
+      "teardown": 0.017578262835741043
+    },
+    "tests/itinerary_import/test_migration.py": {
+      "call": 0.018880049232393503,
+      "cases": 3,
+      "phase_seconds": 0.02805570513010025,
+      "setup": 0.007992458529770374,
+      "span_seconds": 0.029072284698486328,
+      "teardown": 0.0011831973679363728
+    },
+    "tests/itinerary_import/test_operations.py": {
+      "call": 0.014857081230729818,
+      "cases": 5,
+      "phase_seconds": 0.026587571017444134,
+      "setup": 0.010004482697695494,
+      "span_seconds": 0.028089523315429688,
+      "teardown": 0.0017260070890188217
+    },
+    "tests/itinerary_import/test_ordinary_edits.py": {
+      "call": 0.8816887345165014,
+      "cases": 6,
+      "phase_seconds": 12.896118679549545,
+      "setup": 12.004675487056375,
+      "span_seconds": 12.898898124694824,
+      "teardown": 0.009754457976669073
+    },
+    "tests/itinerary_import/test_packages.py": {
+      "call": 10.427018792834133,
+      "cases": 4,
+      "phase_seconds": 10.446181463077664,
+      "setup": 0.01429674169048667,
+      "span_seconds": 10.447691440582275,
+      "teardown": 0.004865928553044796
+    },
+    "tests/itinerary_import/test_revisions.py": {
+      "call": 0.00375153124332428,
+      "cases": 6,
+      "phase_seconds": 0.02256316225975752,
+      "setup": 0.016213683877140284,
+      "span_seconds": 0.024771928787231445,
+      "teardown": 0.0025979471392929554
+    },
+    "tests/operator/test_api.py": {
+      "call": 0.2613900415599346,
+      "cases": 7,
+      "phase_seconds": 0.34474916849285364,
+      "setup": 0.07628515036776662,
+      "span_seconds": 0.34763288497924805,
+      "teardown": 0.007073976565152407
+    },
+    "tests/operator/test_api_failures.py": {
+      "call": 0.38424599450081587,
+      "cases": 12,
+      "phase_seconds": 0.5318834455683827,
+      "setup": 0.13499064464122057,
+      "span_seconds": 0.5370907783508301,
+      "teardown": 0.012646806426346302
+    },
+    "tests/operator/test_author_labels.py": {
+      "call": 0.07648183591663837,
+      "cases": 2,
+      "phase_seconds": 0.10238123405724764,
+      "setup": 0.023556874599307775,
+      "span_seconds": 0.10308122634887695,
+      "teardown": 0.002342523541301489
+    },
+    "tests/operator/test_backup.py": {
+      "call": 2.090929849073291,
+      "cases": 7,
+      "phase_seconds": 2.1545831952244043,
+      "setup": 0.06040690187364817,
+      "span_seconds": 2.1574723720550537,
+      "teardown": 0.0032464442774653435
+    },
+    "tests/operator/test_call_api.py": {
+      "call": 0.7334512122906744,
+      "cases": 34,
+      "phase_seconds": 1.1663475940003991,
+      "setup": 0.39507259242236614,
+      "span_seconds": 1.1824066638946533,
+      "teardown": 0.03782378928735852
+    },
+    "tests/operator/test_capability_api.py": {
+      "call": 0.16428975434973836,
+      "cases": 8,
+      "phase_seconds": 0.26556595228612423,
+      "setup": 0.09326380351558328,
+      "span_seconds": 0.2689499855041504,
+      "teardown": 0.008012394420802593
+    },
+    "tests/operator/test_capacity.py": {
+      "call": 0.024721871130168438,
+      "cases": 7,
+      "phase_seconds": 0.0868650209158659,
+      "setup": 0.059159995056688786,
+      "span_seconds": 0.08948779106140137,
+      "teardown": 0.0029831547290086746
+    },
+    "tests/operator/test_commands.py": {
+      "call": 0.1336821294389665,
+      "cases": 14,
+      "phase_seconds": 0.25676860054954886,
+      "setup": 0.11694629676640034,
+      "span_seconds": 0.2625589370727539,
+      "teardown": 0.0061401743441820145
+    },
+    "tests/operator/test_commit_outcome.py": {
+      "call": 0.029358614701777697,
+      "cases": 1,
+      "phase_seconds": 0.04112150613218546,
+      "setup": 0.01072721229866147,
+      "span_seconds": 0.0413355827331543,
+      "teardown": 0.0010356791317462921
+    },
+    "tests/operator/test_concurrency.py": {
+      "call": 0.01390364533290267,
+      "cases": 1,
+      "phase_seconds": 0.023424670565873384,
+      "setup": 0.008946196176111698,
+      "span_seconds": 0.023664474487304688,
+      "teardown": 0.0005748290568590164
+    },
+    "tests/operator/test_conference_actions.py": {
+      "call": 0.1639689551666379,
+      "cases": 5,
+      "phase_seconds": 0.22921956982463598,
+      "setup": 0.05933103524148464,
+      "span_seconds": 0.2314164638519287,
+      "teardown": 0.005919579416513443
+    },
+    "tests/operator/test_conference_api.py": {
+      "call": 0.06427663052454591,
+      "cases": 3,
+      "phase_seconds": 0.10012598149478436,
+      "setup": 0.03230428881943226,
+      "span_seconds": 0.10128903388977051,
+      "teardown": 0.0035450621508061886
+    },
+    "tests/operator/test_deployment_contract.py": {
+      "call": 0.5668175430037081,
+      "cases": 2,
+      "phase_seconds": 0.5711930925026536,
+      "setup": 0.003311579115688801,
+      "span_seconds": 0.5718202590942383,
+      "teardown": 0.0010639703832566738
+    },
+    "tests/operator/test_event_ack.py": {
+      "call": 0.23959213867783546,
+      "cases": 5,
+      "phase_seconds": 0.3179245567880571,
+      "setup": 0.07195952301844954,
+      "span_seconds": 0.32048702239990234,
+      "teardown": 0.0063728950917720795
+    },
+    "tests/operator/test_event_ack_races.py": {
+      "call": 0.08646195288747549,
+      "cases": 3,
+      "phase_seconds": 0.12618801696226,
+      "setup": 0.03597555588930845,
+      "span_seconds": 0.12747526168823242,
+      "teardown": 0.0037505081854760647
+    },
+    "tests/operator/test_event_api.py": {
+      "call": 0.24197480082511902,
+      "cases": 7,
+      "phase_seconds": 0.33475881116464734,
+      "setup": 0.08444551890715957,
+      "span_seconds": 0.338299036026001,
+      "teardown": 0.008338491432368755
+    },
+    "tests/operator/test_event_eligibility.py": {
+      "call": 0.002186841331422329,
+      "cases": 15,
+      "phase_seconds": 0.030982660595327616,
+      "setup": 0.023858525790274143,
+      "span_seconds": 0.03503251075744629,
+      "teardown": 0.004937293473631144
+    },
+    "tests/operator/test_event_identity.py": {
+      "call": 0.021667024586349726,
+      "cases": 5,
+      "phase_seconds": 0.06701261643320322,
+      "setup": 0.04276885557919741,
+      "span_seconds": 0.06919193267822266,
+      "teardown": 0.002576736267656088
+    },
+    "tests/operator/test_event_ledger.py": {
+      "call": 0.010531836189329624,
+      "cases": 3,
+      "phase_seconds": 0.0393613544292748,
+      "setup": 0.027457280084490776,
+      "span_seconds": 0.040522098541259766,
+      "teardown": 0.0013722381554543972
+    },
+    "tests/operator/test_event_policy.py": {
+      "call": 0.0007843812927603722,
+      "cases": 6,
+      "phase_seconds": 0.012246585916727781,
+      "setup": 0.009570639580488205,
+      "span_seconds": 0.0137786865234375,
+      "teardown": 0.0018915650434792042
+    },
+    "tests/operator/test_event_projection.py": {
+      "call": 0.1887088310904801,
+      "cases": 25,
+      "phase_seconds": 0.4321634629741311,
+      "setup": 0.2290205042809248,
+      "span_seconds": 0.44242405891418457,
+      "teardown": 0.014434127602726221
+    },
+    "tests/operator/test_event_publication.py": {
+      "call": 0.0015280847437679768,
+      "cases": 5,
+      "phase_seconds": 0.010544372722506523,
+      "setup": 0.007460480555891991,
+      "span_seconds": 0.011768102645874023,
+      "teardown": 0.0015558074228465557
+    },
+    "tests/operator/test_event_schema.py": {
+      "call": 0.019530534278601408,
+      "cases": 4,
+      "phase_seconds": 0.02712134923785925,
+      "setup": 0.006028659176081419,
+      "span_seconds": 0.028282880783081055,
+      "teardown": 0.0015621557831764221
+    },
+    "tests/operator/test_event_sources.py": {
+      "call": 0.016376144252717495,
+      "cases": 5,
+      "phase_seconds": 0.060169433709234,
+      "setup": 0.041811390314251184,
+      "span_seconds": 0.06202816963195801,
+      "teardown": 0.00198189914226532
+    },
+    "tests/operator/test_integration.py": {
+      "call": 2.3695898428559303,
+      "cases": 2,
+      "phase_seconds": 2.373743171337992,
+      "setup": 0.003284856677055359,
+      "span_seconds": 2.3743410110473633,
+      "teardown": 0.0008684718050062656
+    },
+    "tests/operator/test_issue_activity.py": {
+      "call": 0.047488726675510406,
+      "cases": 3,
+      "phase_seconds": 0.07477566227316856,
+      "setup": 0.025991580449044704,
+      "span_seconds": 0.0758507251739502,
+      "teardown": 0.001295355148613453
+    },
+    "tests/operator/test_issue_api.py": {
+      "call": 0.39997710939496756,
+      "cases": 17,
+      "phase_seconds": 0.6165517023764551,
+      "setup": 0.19878043560311198,
+      "span_seconds": 0.6240687370300293,
+      "teardown": 0.01779415737837553
+    },
+    "tests/operator/test_issue_followup.py": {
+      "call": 0.15257967915385962,
+      "cases": 6,
+      "phase_seconds": 0.23914936324581504,
+      "setup": 0.07993172528222203,
+      "span_seconds": 0.24216675758361816,
+      "teardown": 0.006637958809733391
+    },
+    "tests/operator/test_maintenance_cli.py": {
+      "call": 0.041357021778821945,
+      "cases": 4,
+      "phase_seconds": 0.056393200531601906,
+      "setup": 0.013489523902535439,
+      "span_seconds": 0.057602882385253906,
+      "teardown": 0.001546654850244522
+    },
+    "tests/operator/test_mission_archive.py": {
+      "call": 0.25752062490209937,
+      "cases": 9,
+      "phase_seconds": 0.3251157714985311,
+      "setup": 0.06406676350161433,
+      "span_seconds": 0.32852745056152344,
+      "teardown": 0.0035283830948174
+    },
+    "tests/operator/test_mission_clock.py": {
+      "call": 0.01137320464476943,
+      "cases": 4,
+      "phase_seconds": 0.03442542487755418,
+      "setup": 0.02164072310552001,
+      "span_seconds": 0.03558039665222168,
+      "teardown": 0.001411497127264738
+    },
+    "tests/operator/test_mission_replays.py": {
+      "call": 0.11567855812609196,
+      "cases": 7,
+      "phase_seconds": 0.1770267877727747,
+      "setup": 0.057378383819013834,
+      "span_seconds": 0.18010568618774414,
+      "teardown": 0.003969845827668905
+    },
+    "tests/operator/test_mode_isolation.py": {
+      "call": 2.605651766061783,
+      "cases": 2,
+      "phase_seconds": 2.6101657287217677,
+      "setup": 0.0033220848999917507,
+      "span_seconds": 2.6108639240264893,
+      "teardown": 0.0011918777599930763
+    },
+    "tests/operator/test_model_input_admission.py": {
+      "call": 0.25826384173706174,
+      "cases": 5,
+      "phase_seconds": 0.30711833061650395,
+      "setup": 0.04657943034544587,
+      "span_seconds": 0.30918002128601074,
+      "teardown": 0.0022750585339963436
+    },
+    "tests/operator/test_models.py": {
+      "call": 0.004679503384977579,
+      "cases": 12,
+      "phase_seconds": 0.028566183988004923,
+      "setup": 0.02001846767961979,
+      "span_seconds": 0.03189444541931152,
+      "teardown": 0.0038682129234075546
+    },
+    "tests/operator/test_parity_lifecycle.py": {
+      "call": 0.26962415780872107,
+      "cases": 6,
+      "phase_seconds": 0.342990358825773,
+      "setup": 0.06734851095825434,
+      "span_seconds": 0.345412015914917,
+      "teardown": 0.006017690058797598
+    },
+    "tests/operator/test_production_event_ack.py": {
+      "call": 0.20178560446947813,
+      "cases": 4,
+      "phase_seconds": 0.26448324183002114,
+      "setup": 0.05798793490976095,
+      "span_seconds": 0.26610493659973145,
+      "teardown": 0.004709702450782061
+    },
+    "tests/operator/test_production_event_sources.py": {
+      "call": 0.707645645365119,
+      "cases": 29,
+      "phase_seconds": 1.0657530054450035,
+      "setup": 0.34370160661637783,
+      "span_seconds": 1.0793049335479736,
+      "teardown": 0.014405753463506699
+    },
+    "tests/operator/test_production_live_timing.py": {
+      "call": 0.5193027914501727,
+      "cases": 19,
+      "phase_seconds": 0.7500506434589624,
+      "setup": 0.22149054566398263,
+      "span_seconds": 0.7584288120269775,
+      "teardown": 0.009257306344807148
+    },
+    "tests/operator/test_production_source_edges.py": {
+      "call": 0.1512043448165059,
+      "cases": 5,
+      "phase_seconds": 0.21485998388379812,
+      "setup": 0.06088996818289161,
+      "span_seconds": 0.21703791618347168,
+      "teardown": 0.002765670884400606
+    },
+    "tests/operator/test_projection_compatibility.py": {
+      "call": 0.039641762152314186,
+      "cases": 2,
+      "phase_seconds": 0.0626289970241487,
+      "setup": 0.021602251566946507,
+      "span_seconds": 0.06326556205749512,
+      "teardown": 0.00138498330488801
+    },
+    "tests/operator/test_projection_membership.py": {
+      "call": 0.060023161582648754,
+      "cases": 4,
+      "phase_seconds": 0.09539988217875361,
+      "setup": 0.03371310047805309,
+      "span_seconds": 0.0968632698059082,
+      "teardown": 0.0016636201180517673
+    },
+    "tests/operator/test_projection_provenance.py": {
+      "call": 0.011931570246815681,
+      "cases": 2,
+      "phase_seconds": 0.02969743311405182,
+      "setup": 0.016916991211473942,
+      "span_seconds": 0.03033924102783203,
+      "teardown": 0.0008488716557621956
+    },
+    "tests/operator/test_projections.py": {
+      "call": 0.046245216857641935,
+      "cases": 2,
+      "phase_seconds": 0.06534581631422043,
+      "setup": 0.018147686030715704,
+      "span_seconds": 0.06605315208435059,
+      "teardown": 0.0009529134258627892
+    },
+    "tests/operator/test_provisioning.py": {
+      "call": 0.05661362549290061,
+      "cases": 10,
+      "phase_seconds": 0.07982118800282478,
+      "setup": 0.019195251632481813,
+      "span_seconds": 0.0831451416015625,
+      "teardown": 0.00401231087744236
+    },
+    "tests/operator/test_public_type_races.py": {
+      "call": 0.055921734776347876,
+      "cases": 2,
+      "phase_seconds": 0.08025261387228966,
+      "setup": 0.02219973225146532,
+      "span_seconds": 0.08094549179077148,
+      "teardown": 0.0021311468444764614
+    },
+    "tests/operator/test_queries.py": {
+      "call": 0.21498863119632006,
+      "cases": 24,
+      "phase_seconds": 0.6560206385329366,
+      "setup": 0.4295763405971229,
+      "span_seconds": 0.6664495468139648,
+      "teardown": 0.011455666739493608
+    },
+    "tests/operator/test_read_metadata.py": {
+      "call": 0.20120510272681713,
+      "cases": 10,
+      "phase_seconds": 0.3121050260961056,
+      "setup": 0.10389183787629008,
+      "span_seconds": 0.3162264823913574,
+      "teardown": 0.007008085492998362
+    },
+    "tests/operator/test_recovery.py": {
+      "call": 5.646506331861019,
+      "cases": 20,
+      "phase_seconds": 5.834350942168385,
+      "setup": 0.1776073044165969,
+      "span_seconds": 5.843656301498413,
+      "teardown": 0.010237305890768766
+    },
+    "tests/operator/test_references.py": {
+      "call": 0.05813235230743885,
+      "cases": 4,
+      "phase_seconds": 0.09506982984021306,
+      "setup": 0.03521653590723872,
+      "span_seconds": 0.09668183326721191,
+      "teardown": 0.0017209416255354881
+    },
+    "tests/operator/test_runtime.py": {
+      "call": 0.17525264993309975,
+      "cases": 6,
+      "phase_seconds": 0.21168270194903016,
+      "setup": 0.03356815502047539,
+      "span_seconds": 0.21400976181030273,
+      "teardown": 0.0028618969954550266
+    },
+    "tests/operator/test_save_timing.py": {
+      "call": 0.07193144410848618,
+      "cases": 2,
+      "phase_seconds": 0.1015713564120233,
+      "setup": 0.027071421965956688,
+      "span_seconds": 0.10241317749023438,
+      "teardown": 0.0025684903375804424
+    },
+    "tests/operator/test_schema.py": {
+      "call": 0.08979328721761703,
+      "cases": 14,
+      "phase_seconds": 0.125602584797889,
+      "setup": 0.029442295897752047,
+      "span_seconds": 0.13109159469604492,
+      "teardown": 0.006367001682519913
+    },
+    "tests/operator/test_store_lifecycle.py": {
+      "call": 2.0810049027204514,
+      "cases": 15,
+      "phase_seconds": 2.1162023399956524,
+      "setup": 0.028740178793668747,
+      "span_seconds": 2.121731758117676,
+      "teardown": 0.006457258481532335
+    },
+    "tests/operator/test_transport_api.py": {
+      "call": 0.03547904919832945,
+      "cases": 1,
+      "phase_seconds": 0.04775092005729675,
+      "setup": 0.011279860977083445,
+      "span_seconds": 0.04798722267150879,
+      "teardown": 0.0009920098818838596
+    },
+    "tests/operator/test_transport_catalog.py": {
+      "call": 0.04261180432513356,
+      "cases": 8,
+      "phase_seconds": 0.0911153294146061,
+      "setup": 0.04494666634127498,
+      "span_seconds": 0.0938260555267334,
+      "teardown": 0.0035568587481975555
+    },
+    "tests/operator/test_transport_contract.py": {
+      "call": 0.015271983575075865,
+      "cases": 14,
+      "phase_seconds": 0.05890496680513024,
+      "setup": 0.03903727512806654,
+      "span_seconds": 0.06285953521728516,
+      "teardown": 0.004595708101987839
+    },
+    "tests/operator/test_transport_feed.py": {
+      "call": 0.07430236134678125,
+      "cases": 2,
+      "phase_seconds": 0.09985048742964864,
+      "setup": 0.0238961442373693,
+      "span_seconds": 0.10058832168579102,
+      "teardown": 0.001651981845498085
+    },
+    "tests/operator/test_transport_references.py": {
+      "call": 0.06972220493480563,
+      "cases": 3,
+      "phase_seconds": 0.09919957630336285,
+      "setup": 0.027968372218310833,
+      "span_seconds": 0.10035872459411621,
+      "teardown": 0.0015089991502463818
+    },
+    "tests/operator/test_transport_review.py": {
+      "call": 0.048632130958139896,
+      "cases": 10,
+      "phase_seconds": 0.13071551965549588,
+      "setup": 0.07767118606716394,
+      "span_seconds": 0.13471364974975586,
+      "teardown": 0.004412202630192041
+    },
+    "tests/operator/test_transport_schema.py": {
+      "call": 0.046880919486284256,
+      "cases": 3,
+      "phase_seconds": 0.06168512674048543,
+      "setup": 0.013420050032436848,
+      "span_seconds": 0.06271100044250488,
+      "teardown": 0.001384157221764326
+    },
+    "tests/operator/test_wal.py": {
+      "call": 9.232637199573219,
+      "cases": 22,
+      "phase_seconds": 9.53452184656635,
+      "setup": 0.28569405572488904,
+      "span_seconds": 9.548453569412231,
+      "teardown": 0.016190591268241405
+    },
+    "tests/planning/test_api.py": {
+      "call": 0.7255771807394922,
+      "cases": 8,
+      "phase_seconds": 0.7570232241414487,
+      "setup": 0.027281968388706446,
+      "span_seconds": 0.7601602077484131,
+      "teardown": 0.0041640750132501125
+    },
+    "tests/planning/test_batch_intake.py": {
+      "call": 5.320152077358216,
+      "cases": 6,
+      "phase_seconds": 5.846331745386124,
+      "setup": 0.5229666256345809,
+      "span_seconds": 5.848910093307495,
+      "teardown": 0.0032130423933267593
+    },
+    "tests/planning/test_batch_proposals.py": {
+      "call": 2.747221067547798,
+      "cases": 2,
+      "phase_seconds": 3.7285044915042818,
+      "setup": 0.9801967395469546,
+      "span_seconds": 3.729301691055298,
+      "teardown": 0.0010866844095289707
+    },
+    "tests/planning/test_batch_publication.py": {
+      "call": 13.422051365021616,
+      "cases": 6,
+      "phase_seconds": 16.4174038101919,
+      "setup": 2.9916698783636093,
+      "span_seconds": 16.420364141464233,
+      "teardown": 0.0036825668066740036
+    },
+    "tests/planning/test_canonical.py": {
+      "call": 2.0709074372425675,
+      "cases": 15,
+      "phase_seconds": 2.1225264379754663,
+      "setup": 0.04256190825253725,
+      "span_seconds": 2.1293816566467285,
+      "teardown": 0.009057092480361462
+    },
+    "tests/planning/test_continuity_provenance.py": {
+      "call": 0.9144863034598529,
+      "cases": 2,
+      "phase_seconds": 0.9220040175132453,
+      "setup": 0.006627961527556181,
+      "span_seconds": 0.9226100444793701,
+      "teardown": 0.0008897525258362293
+    },
+    "tests/planning/test_deadlines.py": {
+      "call": 3.6532792528159916,
+      "cases": 8,
+      "phase_seconds": 3.6825749073177576,
+      "setup": 0.02403249265626073,
+      "span_seconds": 3.686311960220337,
+      "teardown": 0.005263161845505238
+    },
+    "tests/planning/test_estimate_acknowledgment.py": {
+      "call": 0.052404680754989386,
+      "cases": 1,
+      "phase_seconds": 0.5482575008645654,
+      "setup": 0.4952895171009004,
+      "span_seconds": 0.5485129356384277,
+      "teardown": 0.0005633030086755753
+    },
+    "tests/planning/test_extract.py": {
+      "call": 10.914845342747867,
+      "cases": 26,
+      "phase_seconds": 11.008537775836885,
+      "setup": 0.07793220831081271,
+      "span_seconds": 11.020952224731445,
+      "teardown": 0.015760224778205156
+    },
+    "tests/planning/test_final_review_regressions.py": {
+      "call": 7.353054197970778,
+      "cases": 11,
+      "phase_seconds": 12.788822113536298,
+      "setup": 5.4298612447455525,
+      "span_seconds": 12.794046878814697,
+      "teardown": 0.005906670819967985
+    },
+    "tests/planning/test_grid.py": {
+      "call": 0.5097530749626458,
+      "cases": 6,
+      "phase_seconds": 0.5295738750137389,
+      "setup": 0.016171672847121954,
+      "span_seconds": 0.5321078300476074,
+      "teardown": 0.0036491272039711475
+    },
+    "tests/planning/test_map_review.py": {
+      "call": 0.6370490812696517,
+      "cases": 5,
+      "phase_seconds": 1.6424336000345647,
+      "setup": 1.0031165657564998,
+      "span_seconds": 1.6442768573760986,
+      "teardown": 0.002267953008413315
+    },
+    "tests/planning/test_match.py": {
+      "call": 1.4207299938425422,
+      "cases": 24,
+      "phase_seconds": 1.4867787430994213,
+      "setup": 0.057929419446736574,
+      "span_seconds": 1.494102954864502,
+      "teardown": 0.008119329810142517
+    },
+    "tests/planning/test_models.py": {
+      "call": 0.053835807368159294,
+      "cases": 55,
+      "phase_seconds": 0.21007442101836205,
+      "setup": 0.137442447245121,
+      "span_seconds": 0.22702336311340332,
+      "teardown": 0.01879616640508175
+    },
+    "tests/planning/test_optimizer.py": {
+      "call": 17.926532226148993,
+      "cases": 28,
+      "phase_seconds": 18.021863577421755,
+      "setup": 0.0799849210307002,
+      "span_seconds": 18.034152030944824,
+      "teardown": 0.015346430242061615
+    },
+    "tests/planning/test_order.py": {
+      "call": 0.00039074337109923363,
+      "cases": 2,
+      "phase_seconds": 0.006219309754669666,
+      "setup": 0.005165604874491692,
+      "span_seconds": 0.006672859191894531,
+      "teardown": 0.0006629615090787411
+    },
+    "tests/planning/test_packages.py": {
+      "call": 14.615142101887614,
+      "cases": 36,
+      "phase_seconds": 18.23831445677206,
+      "setup": 3.6058448823168874,
+      "span_seconds": 18.253939628601074,
+      "teardown": 0.01732747256755829
+    },
+    "tests/planning/test_poi_projection.py": {
+      "call": 0.01638553710654378,
+      "cases": 7,
+      "phase_seconds": 0.04061116650700569,
+      "setup": 0.021675483789294958,
+      "span_seconds": 0.042821407318115234,
+      "teardown": 0.002550145611166954
+    },
+    "tests/planning/test_policy.py": {
+      "call": 0.644322503823787,
+      "cases": 14,
+      "phase_seconds": 0.6925892541185021,
+      "setup": 0.040472893975675106,
+      "span_seconds": 0.6986258029937744,
+      "teardown": 0.00779385631904006
+    },
+    "tests/planning/test_preview_admission.py": {
+      "call": 0.15725412080064416,
+      "cases": 4,
+      "phase_seconds": 0.1707159010693431,
+      "setup": 0.011366202495992184,
+      "span_seconds": 0.17223334312438965,
+      "teardown": 0.002095577772706747
+    },
+    "tests/planning/test_production_inputs.py": {
+      "call": 0.946178836748004,
+      "cases": 5,
+      "phase_seconds": 0.9654527781531215,
+      "setup": 0.017152457032352686,
+      "span_seconds": 0.9672946929931641,
+      "teardown": 0.002121484372764826
+    },
+    "tests/planning/test_proposals.py": {
+      "call": 12.052874731365591,
+      "cases": 28,
+      "phase_seconds": 24.477786676958203,
+      "setup": 12.40993850119412,
+      "span_seconds": 24.490869522094727,
+      "teardown": 0.014973444398492575
+    },
+    "tests/planning/test_relative_package_root.py": {
+      "call": 0.6109855156391859,
+      "cases": 5,
+      "phase_seconds": 0.6321266968734562,
+      "setup": 0.018796298652887344,
+      "span_seconds": 0.6340761184692383,
+      "teardown": 0.00234488258138299
+    },
+    "tests/planning/test_reviewed_save.py": {
+      "call": 17.61196138570085,
+      "cases": 43,
+      "phase_seconds": 39.483040179591626,
+      "setup": 21.847112874034792,
+      "span_seconds": 39.50416159629822,
+      "teardown": 0.023965919855982065
+    },
+    "tests/planning/test_revisions.py": {
+      "call": 11.564745449461043,
+      "cases": 30,
+      "phase_seconds": 25.984719310421497,
+      "setup": 14.40483167860657,
+      "span_seconds": 25.99881100654602,
+      "teardown": 0.015142182353883982
+    },
+    "tests/planning/test_satellite_configuration.py": {
+      "call": 4.699553391430527,
+      "cases": 12,
+      "phase_seconds": 7.688584736082703,
+      "setup": 2.9781017368659377,
+      "span_seconds": 7.693659782409668,
+      "teardown": 0.010929607786238194
+    },
+    "tests/planning/test_simulation.py": {
+      "call": 3.912387728691101,
+      "cases": 11,
+      "phase_seconds": 4.4249649895355105,
+      "setup": 0.5061865723691881,
+      "span_seconds": 4.429696798324585,
+      "teardown": 0.0063906884752213955
+    },
+    "tests/planning/test_source_lifecycle.py": {
+      "call": 27.356862823478878,
+      "cases": 62,
+      "phase_seconds": 27.63203244563192,
+      "setup": 0.24449328146874905,
+      "span_seconds": 27.659562587738037,
+      "teardown": 0.0306763406842947
+    },
+    "tests/planning/test_store.py": {
+      "call": 8.315231289248914,
+      "cases": 32,
+      "phase_seconds": 8.448113698977977,
+      "setup": 0.11892634956166148,
+      "span_seconds": 8.461604833602905,
+      "teardown": 0.013956060167402029
+    },
+    "tests/unit/test_active_mission_context.py": {
+      "call": 0.03739627357572317,
+      "cases": 13,
+      "phase_seconds": 0.07898085843771696,
+      "setup": 0.03696113405749202,
+      "span_seconds": 0.08381104469299316,
+      "teardown": 0.004623450804501772
+    },
+    "tests/unit/test_active_x_handoff.py": {
+      "call": 0.05811443226411939,
+      "cases": 31,
+      "phase_seconds": 0.13943291082978249,
+      "setup": 0.07002175319939852,
+      "span_seconds": 0.14980769157409668,
+      "teardown": 0.011296725366264582
+    },
+    "tests/unit/test_active_x_link.py": {
+      "call": 0.010896432213485241,
+      "cases": 4,
+      "phase_seconds": 0.06181541504338384,
+      "setup": 0.03554884763434529,
+      "span_seconds": 0.06319355964660645,
+      "teardown": 0.015370135195553303
+    },
+    "tests/unit/test_adjusted_departure.py": {
+      "call": 0.0032126475125551224,
+      "cases": 19,
+      "phase_seconds": 0.05181286670267582,
+      "setup": 0.04236631188541651,
+      "span_seconds": 0.057709693908691406,
+      "teardown": 0.006233907304704189
+    },
+    "tests/unit/test_adsb_lol.py": {
+      "call": 0.0169403119944036,
+      "cases": 48,
+      "phase_seconds": 0.14604953490197659,
+      "setup": 0.11068213451653719,
+      "span_seconds": 0.1608901023864746,
+      "teardown": 0.018427088391035795
+    },
+    "tests/unit/test_ar_event_pois.py": {
+      "call": 0.053110288456082344,
+      "cases": 10,
+      "phase_seconds": 0.08019706094637513,
+      "setup": 0.02330464171245694,
+      "span_seconds": 0.08344483375549316,
+      "teardown": 0.003782130777835846
+    },
+    "tests/unit/test_archive_json_stream.py": {
+      "call": 0.00316053070127964,
+      "cases": 2,
+      "phase_seconds": 0.009284534025937319,
+      "setup": 0.00528270099312067,
+      "span_seconds": 0.009902715682983398,
+      "teardown": 0.0008413023315370083
+    },
+    "tests/unit/test_archive_review_regressions.py": {
+      "call": 5.005506333895028,
+      "cases": 3,
+      "phase_seconds": 5.014275498688221,
+      "setup": 0.007184943184256554,
+      "span_seconds": 5.015430927276611,
+      "teardown": 0.0015842216089367867
+    },
+    "tests/unit/test_automatic_flight_detection.py": {
+      "call": 0.09643352869898081,
+      "cases": 15,
+      "phase_seconds": 0.15586373442783952,
+      "setup": 0.047033296432346106,
+      "span_seconds": 0.16132164001464844,
+      "teardown": 0.012396909296512604
+    },
+    "tests/unit/test_aviation_weather_decode.py": {
+      "call": 0.0004035942256450653,
+      "cases": 1,
+      "phase_seconds": 0.0034007178619503975,
+      "setup": 0.0025542830117046833,
+      "span_seconds": 0.003535032272338867,
+      "teardown": 0.0004428406246006489
+    },
+    "tests/unit/test_aviation_weather_models.py": {
+      "call": 0.007691045291721821,
+      "cases": 33,
+      "phase_seconds": 0.09425312373787165,
+      "setup": 0.0759366462007165,
+      "span_seconds": 0.1042168140411377,
+      "teardown": 0.01062543224543333
+    },
+    "tests/unit/test_aviation_weather_normalization.py": {
+      "call": 1.849645294714719,
+      "cases": 77,
+      "phase_seconds": 2.058097846340388,
+      "setup": 0.18209519889205694,
+      "span_seconds": 2.0822455883026123,
+      "teardown": 0.02635735273361206
+    },
+    "tests/unit/test_aviation_weather_runtime.py": {
+      "call": 0.07321205968037248,
+      "cases": 13,
+      "phase_seconds": 0.12083947332575917,
+      "setup": 0.039827823638916016,
+      "span_seconds": 0.12607431411743164,
+      "teardown": 0.00779959000647068
+    },
+    "tests/unit/test_aviation_weather_transport.py": {
+      "call": 0.004028234630823135,
+      "cases": 9,
+      "phase_seconds": 0.03053666977211833,
+      "setup": 0.0228908509016037,
+      "span_seconds": 0.03319406509399414,
+      "teardown": 0.003617584239691496
+    },
+    "tests/unit/test_bootstrap_manager_patches.py": {
+      "call": 4.900241825263947,
+      "cases": 2,
+      "phase_seconds": 4.905959874857217,
+      "setup": 0.004680804442614317,
+      "span_seconds": 4.906603097915649,
+      "teardown": 0.001037245150655508
+    },
+    "tests/unit/test_briefing_clocks.py": {
+      "call": 0.0035874508321285248,
+      "cases": 7,
+      "phase_seconds": 0.0246249632909894,
+      "setup": 0.018620132468640804,
+      "span_seconds": 0.026713848114013672,
+      "teardown": 0.00241737999022007
+    },
+    "tests/unit/test_config.py": {
+      "call": 0.020745628513395786,
+      "cases": 29,
+      "phase_seconds": 0.09624132420867682,
+      "setup": 0.06660174950957298,
+      "span_seconds": 0.10466933250427246,
+      "teardown": 0.008893946185708046
+    },
+    "tests/unit/test_coordinator_route_timing.py": {
+      "call": 0.009068397805094719,
+      "cases": 4,
+      "phase_seconds": 0.019821072928607464,
+      "setup": 0.009530855342745781,
+      "span_seconds": 0.020887374877929688,
+      "teardown": 0.001221819780766964
+    },
+    "tests/unit/test_csv_export.py": {
+      "call": 0.004475634545087814,
+      "cases": 4,
+      "phase_seconds": 0.05460663978010416,
+      "setup": 0.036383077036589384,
+      "span_seconds": 0.05570220947265625,
+      "teardown": 0.013747928198426962
+    },
+    "tests/unit/test_customer_brand_asset.py": {
+      "call": 0.3229752010665834,
+      "cases": 1,
+      "phase_seconds": 0.3267409475520253,
+      "setup": 0.0032888446003198624,
+      "span_seconds": 0.326977014541626,
+      "teardown": 0.0004769018851220608
+    },
+    "tests/unit/test_customer_clocks.py": {
+      "call": 0.0006725993007421494,
+      "cases": 4,
+      "phase_seconds": 0.011907136533409357,
+      "setup": 0.009966996032744646,
+      "span_seconds": 0.012893199920654297,
+      "teardown": 0.0012675411999225616
+    },
+    "tests/unit/test_customer_continuity.py": {
+      "call": 0.06582516292110085,
+      "cases": 17,
+      "phase_seconds": 0.12042288947850466,
+      "setup": 0.04750111047178507,
+      "span_seconds": 0.12671327590942383,
+      "teardown": 0.007096616085618734
+    },
+    "tests/unit/test_customer_continuity_integration.py": {
+      "call": 0.01616303203627467,
+      "cases": 6,
+      "phase_seconds": 0.034334718715399504,
+      "setup": 0.015805214643478394,
+      "span_seconds": 0.03627777099609375,
+      "teardown": 0.0023664720356464386
+    },
+    "tests/unit/test_customer_continuity_outage.py": {
+      "call": 0.0039276257157325745,
+      "cases": 1,
+      "phase_seconds": 0.007037133909761906,
+      "setup": 0.0026703872717916965,
+      "span_seconds": 0.0071828365325927734,
+      "teardown": 0.00043912092223763466
+    },
+    "tests/unit/test_customer_display.py": {
+      "call": 0.0015620030462741852,
+      "cases": 13,
+      "phase_seconds": 0.038116082549095154,
+      "setup": 0.03226469503715634,
+      "span_seconds": 0.04174995422363281,
+      "teardown": 0.004289384465664625
+    },
+    "tests/unit/test_customer_document.py": {
+      "call": 0.1102653294801712,
+      "cases": 28,
+      "phase_seconds": 0.19503662455826998,
+      "setup": 0.07362106628715992,
+      "span_seconds": 0.2049269676208496,
+      "teardown": 0.011150228790938854
+    },
+    "tests/unit/test_customer_evidence.py": {
+      "call": 0.14657099870964885,
+      "cases": 17,
+      "phase_seconds": 0.19873619871214032,
+      "setup": 0.04438216984272003,
+      "span_seconds": 0.20526695251464844,
+      "teardown": 0.007783030159771442
+    },
+    "tests/unit/test_customer_export_job.py": {
+      "call": 0.09538976335898042,
+      "cases": 7,
+      "phase_seconds": 0.12035286612808704,
+      "setup": 0.020390324760228395,
+      "span_seconds": 0.12285351753234863,
+      "teardown": 0.004572778008878231
+    },
+    "tests/unit/test_customer_package.py": {
+      "call": 0.06392956478521228,
+      "cases": 22,
+      "phase_seconds": 0.12991731008514762,
+      "setup": 0.0577125777490437,
+      "span_seconds": 0.1372823715209961,
+      "teardown": 0.008275167550891638
+    },
+    "tests/unit/test_customer_pdf.py": {
+      "call": 0.010194334201514721,
+      "cases": 25,
+      "phase_seconds": 0.08160150097683072,
+      "setup": 0.0633440762758255,
+      "span_seconds": 0.08917236328125,
+      "teardown": 0.0080630904994905
+    },
+    "tests/unit/test_customer_pdf_assembly.py": {
+      "call": 0.022358352784067392,
+      "cases": 4,
+      "phase_seconds": 0.03404510114341974,
+      "setup": 0.010138892102986574,
+      "span_seconds": 0.03528404235839844,
+      "teardown": 0.001547856256365776
+    },
+    "tests/unit/test_customer_pop.py": {
+      "call": 0.015734727028757334,
+      "cases": 4,
+      "phase_seconds": 0.028465712442994118,
+      "setup": 0.01094526145607233,
+      "span_seconds": 0.029874563217163086,
+      "teardown": 0.0017857239581644535
+    },
+    "tests/unit/test_customer_pop_capture.py": {
+      "call": 0.16076295031234622,
+      "cases": 9,
+      "phase_seconds": 0.21012937650084496,
+      "setup": 0.044904915150254965,
+      "span_seconds": 0.2139735221862793,
+      "teardown": 0.004461511038243771
+    },
+    "tests/unit/test_customer_projection.py": {
+      "call": 0.20981351658701897,
+      "cases": 58,
+      "phase_seconds": 0.40319468965753913,
+      "setup": 0.17103997198864818,
+      "span_seconds": 0.42290186882019043,
+      "teardown": 0.022341201081871986
+    },
+    "tests/unit/test_customer_runtime.py": {
+      "call": 1.003451348748058,
+      "cases": 13,
+      "phase_seconds": 1.0500524705275893,
+      "setup": 0.04003363149240613,
+      "span_seconds": 1.0554957389831543,
+      "teardown": 0.006567490287125111
+    },
+    "tests/unit/test_customer_view.py": {
+      "call": 0.01853779936209321,
+      "cases": 9,
+      "phase_seconds": 0.04682270670309663,
+      "setup": 0.0248403106816113,
+      "span_seconds": 0.0498809814453125,
+      "teardown": 0.0034445966593921185
+    },
+    "tests/unit/test_dateline_timeline.py": {
+      "call": 0.027967442758381367,
+      "cases": 7,
+      "phase_seconds": 0.055390069261193275,
+      "setup": 0.024615979753434658,
+      "span_seconds": 0.05791425704956055,
+      "teardown": 0.0028066467493772507
+    },
+    "tests/unit/test_derived_route.py": {
+      "call": 0.003773072734475136,
+      "cases": 11,
+      "phase_seconds": 0.03471978195011616,
+      "setup": 0.027465862687677145,
+      "span_seconds": 0.03799295425415039,
+      "teardown": 0.0034808465279638767
+    },
+    "tests/unit/test_eta_cache_service.py": {
+      "call": 0.0006479653529822826,
+      "cases": 5,
+      "phase_seconds": 0.01395942596718669,
+      "setup": 0.011843792162835598,
+      "span_seconds": 0.015162944793701172,
+      "teardown": 0.0014676684513688087
+    },
+    "tests/unit/test_eta_calculator.py": {
+      "call": 0.00525860907509923,
+      "cases": 32,
+      "phase_seconds": 0.0988452066667378,
+      "setup": 0.08327772049233317,
+      "span_seconds": 0.10848212242126465,
+      "teardown": 0.010308877099305391
+    },
+    "tests/unit/test_eta_projection.py": {
+      "call": 0.009478087536990643,
+      "cases": 46,
+      "phase_seconds": 0.1670316280797124,
+      "setup": 0.1412355601787567,
+      "span_seconds": 0.18239831924438477,
+      "teardown": 0.016317980363965034
+    },
+    "tests/unit/test_eta_service.py": {
+      "call": 0.001932570245116949,
+      "cases": 8,
+      "phase_seconds": 0.030458291061222553,
+      "setup": 0.02558113355189562,
+      "span_seconds": 0.03290081024169922,
+      "teardown": 0.0029445872642099857
+    },
+    "tests/unit/test_export_preparation.py": {
+      "call": 1.8071899972856045,
+      "cases": 19,
+      "phase_seconds": 1.872939135413617,
+      "setup": 0.05671802442520857,
+      "span_seconds": 1.8812062740325928,
+      "teardown": 0.00903111370280385
+    },
+    "tests/unit/test_export_snapshot.py": {
+      "call": 0.8221828383393586,
+      "cases": 34,
+      "phase_seconds": 1.0064691482111812,
+      "setup": 0.1669532866217196,
+      "span_seconds": 1.0213255882263184,
+      "teardown": 0.017333023250102997
+    },
+    "tests/unit/test_flight_event_edges.py": {
+      "call": 0.022488634567707777,
+      "cases": 4,
+      "phase_seconds": 0.03605447383597493,
+      "setup": 0.011803452856838703,
+      "span_seconds": 0.03742384910583496,
+      "teardown": 0.0017623864114284515
+    },
+    "tests/unit/test_flight_event_isolation.py": {
+      "call": 0.0031162812374532223,
+      "cases": 3,
+      "phase_seconds": 0.01303485268726945,
+      "setup": 0.008928084746003151,
+      "span_seconds": 0.013830423355102539,
+      "teardown": 0.000990486703813076
+    },
+    "tests/unit/test_flight_event_models.py": {
+      "call": 0.00028853537514805794,
+      "cases": 2,
+      "phase_seconds": 0.005992270540446043,
+      "setup": 0.005113624036312103,
+      "span_seconds": 0.006376504898071289,
+      "teardown": 0.0005901111289858818
+    },
+    "tests/unit/test_flight_event_store.py": {
+      "call": 0.2733525838702917,
+      "cases": 6,
+      "phase_seconds": 0.2919576442800462,
+      "setup": 0.015917207580059767,
+      "span_seconds": 0.29392099380493164,
+      "teardown": 0.002687852829694748
+    },
+    "tests/unit/test_flight_events.py": {
+      "call": 0.1317725135013461,
+      "cases": 5,
+      "phase_seconds": 0.14830320561304688,
+      "setup": 0.014420239254832268,
+      "span_seconds": 0.15000367164611816,
+      "teardown": 0.0021104528568685055
+    },
+    "tests/unit/test_flight_state_manager.py": {
+      "call": 0.02178822224959731,
+      "cases": 16,
+      "phase_seconds": 0.07105956226587296,
+      "setup": 0.04388107731938362,
+      "span_seconds": 0.07599186897277832,
+      "teardown": 0.005390262696892023
+    },
+    "tests/unit/test_flight_status_models.py": {
+      "call": 0.0005318489857017994,
+      "cases": 4,
+      "phase_seconds": 0.012419709004461765,
+      "setup": 0.010701875202357769,
+      "span_seconds": 0.013405799865722656,
+      "teardown": 0.0011859848164021969
+    },
+    "tests/unit/test_geojson.py": {
+      "call": 0.00307297520339489,
+      "cases": 24,
+      "phase_seconds": 0.07679713284596801,
+      "setup": 0.06614664755761623,
+      "span_seconds": 0.08383941650390625,
+      "teardown": 0.007577510084956884
+    },
+    "tests/unit/test_gfs_acceptance_clock.py": {
+      "call": 0.006214410997927189,
+      "cases": 1,
+      "phase_seconds": 0.00934842275455594,
+      "setup": 0.002719865646213293,
+      "span_seconds": 0.009524345397949219,
+      "teardown": 0.0004141461104154587
+    },
+    "tests/unit/test_gfs_api.py": {
+      "call": 7.265412958338857,
+      "cases": 20,
+      "phase_seconds": 7.346582835540175,
+      "setup": 0.06377737177535892,
+      "span_seconds": 7.355200529098511,
+      "teardown": 0.017392505425959826
+    },
+    "tests/unit/test_gfs_contracts.py": {
+      "call": 0.002050164621323347,
+      "cases": 9,
+      "phase_seconds": 0.02932848408818245,
+      "setup": 0.02449407335370779,
+      "span_seconds": 0.03182077407836914,
+      "teardown": 0.002784246113151312
+    },
+    "tests/unit/test_gfs_decode.py": {
+      "call": 0.08319724630564451,
+      "cases": 7,
+      "phase_seconds": 0.10780275613069534,
+      "setup": 0.02106239413842559,
+      "span_seconds": 0.11063551902770996,
+      "teardown": 0.0035431156866252422
+    },
+    "tests/unit/test_gfs_grid.py": {
+      "call": 0.5667507774196565,
+      "cases": 6,
+      "phase_seconds": 0.5870113396085799,
+      "setup": 0.01747490093111992,
+      "span_seconds": 0.5892481803894043,
+      "teardown": 0.00278566125780344
+    },
+    "tests/unit/test_gfs_inventory.py": {
+      "call": 0.00217006029561162,
+      "cases": 11,
+      "phase_seconds": 0.036019539926201105,
+      "setup": 0.03049950720742345,
+      "span_seconds": 0.03900599479675293,
+      "teardown": 0.0033499724231660366
+    },
+    "tests/unit/test_gfs_ipc.py": {
+      "call": 0.04454024927690625,
+      "cases": 8,
+      "phase_seconds": 0.0708762900903821,
+      "setup": 0.023338678292930126,
+      "span_seconds": 0.0736081600189209,
+      "teardown": 0.002997362520545721
+    },
+    "tests/unit/test_gfs_quota.py": {
+      "call": 0.057523672468960285,
+      "cases": 5,
+      "phase_seconds": 0.07347734458744526,
+      "setup": 0.014184499625116587,
+      "span_seconds": 0.07502937316894531,
+      "teardown": 0.0017691724933683872
+    },
+    "tests/unit/test_gfs_settings.py": {
+      "call": 0.1166251040995121,
+      "cases": 17,
+      "phase_seconds": 0.168140753172338,
+      "setup": 0.04603532329201698,
+      "span_seconds": 0.17322778701782227,
+      "teardown": 0.005480325780808926
+    },
+    "tests/unit/test_gfs_store.py": {
+      "call": 1.0941453031264246,
+      "cases": 7,
+      "phase_seconds": 1.1189015717245638,
+      "setup": 0.021247403230518103,
+      "span_seconds": 1.121764898300171,
+      "teardown": 0.0035088653676211834
+    },
+    "tests/unit/test_gfs_transport.py": {
+      "call": 0.04125305311754346,
+      "cases": 10,
+      "phase_seconds": 0.0771138034760952,
+      "setup": 0.030961192678660154,
+      "span_seconds": 0.08042216300964355,
+      "teardown": 0.004899557679891586
+    },
+    "tests/unit/test_gfs_vertical.py": {
+      "call": 0.6008717720396817,
+      "cases": 24,
+      "phase_seconds": 0.6825438337400556,
+      "setup": 0.07196478312835097,
+      "span_seconds": 0.6910059452056885,
+      "teardown": 0.009707278572022915
+    },
+    "tests/unit/test_gfs_worker.py": {
+      "call": 8.32666847994551,
+      "cases": 9,
+      "phase_seconds": 8.36191695323214,
+      "setup": 0.030235780868679285,
+      "span_seconds": 8.36573076248169,
+      "teardown": 0.005012692417949438
+    },
+    "tests/unit/test_ground_entry_point.py": {
+      "call": 0.0094832181930542,
+      "cases": 25,
+      "phase_seconds": 0.08843259559944272,
+      "setup": 0.07077246299013495,
+      "span_seconds": 0.09604334831237793,
+      "teardown": 0.008176914416253567
+    },
+    "tests/unit/test_ground_entry_point_refresh_policy.py": {
+      "call": 0.01197729166597128,
+      "cases": 6,
+      "phase_seconds": 0.03307759016752243,
+      "setup": 0.018417030572891235,
+      "span_seconds": 0.034909963607788086,
+      "teardown": 0.002683267928659916
+    },
+    "tests/unit/test_kml_follower.py": {
+      "call": 0.003964717965573072,
+      "cases": 20,
+      "phase_seconds": 0.0695356116630137,
+      "setup": 0.059278483502566814,
+      "span_seconds": 0.0753936767578125,
+      "teardown": 0.00629241019487381
+    },
+    "tests/unit/test_kml_parser.py": {
+      "call": 0.00713649857789278,
+      "cases": 16,
+      "phase_seconds": 0.06135869165882468,
+      "setup": 0.04847574792802334,
+      "span_seconds": 0.06633400917053223,
+      "teardown": 0.005746445152908564
+    },
+    "tests/unit/test_kmz_importer.py": {
+      "call": 0.00033149030059576035,
+      "cases": 2,
+      "phase_seconds": 0.00687089329585433,
+      "setup": 0.005933442153036594,
+      "span_seconds": 0.0073163509368896484,
+      "teardown": 0.0006059608422219753
+    },
+    "tests/unit/test_labels.py": {
+      "call": 0.001956675201654434,
+      "cases": 16,
+      "phase_seconds": 0.0539511451497674,
+      "setup": 0.04708395106717944,
+      "span_seconds": 0.058754920959472656,
+      "teardown": 0.004910518880933523
+    },
+    "tests/unit/test_legacy_compatibility_exports.py": {
+      "call": 0.00166038004681468,
+      "cases": 4,
+      "phase_seconds": 0.013871666509658098,
+      "setup": 0.010966339148581028,
+      "span_seconds": 0.014858245849609375,
+      "teardown": 0.0012449473142623901
+    },
+    "tests/unit/test_legacy_export_concurrency.py": {
+      "call": 1.4956269985996187,
+      "cases": 2,
+      "phase_seconds": 1.5047118249349296,
+      "setup": 0.007979424204677343,
+      "span_seconds": 1.5054819583892822,
+      "teardown": 0.0011054021306335926
+    },
+    "tests/unit/test_live_coordinator.py": {
+      "call": 0.03276874218136072,
+      "cases": 23,
+      "phase_seconds": 0.10982634546235204,
+      "setup": 0.06902637099847198,
+      "span_seconds": 0.11765241622924805,
+      "teardown": 0.00803123228251934
+    },
+    "tests/unit/test_main_aviation_weather.py": {
+      "call": 0.1937881768681109,
+      "cases": 5,
+      "phase_seconds": 0.21462892135605216,
+      "setup": 0.018172662239521742,
+      "span_seconds": 0.21665692329406738,
+      "teardown": 0.0026680822484195232
+    },
+    "tests/unit/test_main_lifespan.py": {
+      "call": 0.10318368580192327,
+      "cases": 6,
+      "phase_seconds": 0.12866631569340825,
+      "setup": 0.021947134286165237,
+      "span_seconds": 0.13086199760437012,
+      "teardown": 0.0035354956053197384
+    },
+    "tests/unit/test_main_orbital_catalog.py": {
+      "call": 0.051246143877506256,
+      "cases": 1,
+      "phase_seconds": 0.05586849804967642,
+      "setup": 0.0036871321499347687,
+      "span_seconds": 0.0560758113861084,
+      "teardown": 0.0009352220222353935
+    },
+    "tests/unit/test_main_overview_adsb.py": {
+      "call": 0.08506114548072219,
+      "cases": 3,
+      "phase_seconds": 0.09622045140713453,
+      "setup": 0.00968802161514759,
+      "span_seconds": 0.09715795516967773,
+      "teardown": 0.0014712843112647533
+    },
+    "tests/unit/test_main_overview_clock_settings.py": {
+      "call": 0.08029837487265468,
+      "cases": 3,
+      "phase_seconds": 0.09231796860694885,
+      "setup": 0.010695594362914562,
+      "span_seconds": 0.09331798553466797,
+      "teardown": 0.0013239993713796139
+    },
+    "tests/unit/test_main_overview_history.py": {
+      "call": 0.035570843145251274,
+      "cases": 2,
+      "phase_seconds": 0.044004200492054224,
+      "setup": 0.007558722514659166,
+      "span_seconds": 0.04463005065917969,
+      "teardown": 0.0008746348321437836
+    },
+    "tests/unit/test_main_overview_link_settings.py": {
+      "call": 0.07755289413034916,
+      "cases": 2,
+      "phase_seconds": 0.08512867102399468,
+      "setup": 0.006659297272562981,
+      "span_seconds": 0.085662841796875,
+      "teardown": 0.0009164796210825443
+    },
+    "tests/unit/test_main_pop_startup.py": {
+      "call": 0.03258791705593467,
+      "cases": 1,
+      "phase_seconds": 0.0374123090878129,
+      "setup": 0.004011448938399553,
+      "span_seconds": 0.03765463829040527,
+      "teardown": 0.0008129430934786797
+    },
+    "tests/unit/test_manual_aar_track.py": {
+      "call": 0.16172387171536684,
+      "cases": 11,
+      "phase_seconds": 0.19992492953315377,
+      "setup": 0.034067660104483366,
+      "span_seconds": 0.20343732833862305,
+      "teardown": 0.004133397713303566
+    },
+    "tests/unit/test_map_inputs.py": {
+      "call": 0.02824663696810603,
+      "cases": 15,
+      "phase_seconds": 0.07999749528244138,
+      "setup": 0.046214073430746794,
+      "span_seconds": 0.08504486083984375,
+      "teardown": 0.0055367848835885525
+    },
+    "tests/unit/test_map_real_input_boundaries.py": {
+      "call": 0.04024046054109931,
+      "cases": 6,
+      "phase_seconds": 0.060951306484639645,
+      "setup": 0.018415919039398432,
+      "span_seconds": 0.06286334991455078,
+      "teardown": 0.002294926904141903
+    },
+    "tests/unit/test_metric_validation.py": {
+      "call": 0.019294755067676306,
+      "cases": 12,
+      "phase_seconds": 0.059512585401535034,
+      "setup": 0.03637819364666939,
+      "span_seconds": 0.06349039077758789,
+      "teardown": 0.0038396366871893406
+    },
+    "tests/unit/test_metrics.py": {
+      "call": 0.44472114741802216,
+      "cases": 28,
+      "phase_seconds": 0.5598327061161399,
+      "setup": 0.10249663889408112,
+      "span_seconds": 0.5720610618591309,
+      "teardown": 0.012614919804036617
+    },
+    "tests/unit/test_metrics_export.py": {
+      "call": 0.00783048989251256,
+      "cases": 2,
+      "phase_seconds": 0.016429144423455,
+      "setup": 0.0073662069626152515,
+      "span_seconds": 0.016986370086669922,
+      "teardown": 0.0012324475683271885
+    },
+    "tests/unit/test_mission_clock_dependencies.py": {
+      "call": 0.00022921664640307426,
+      "cases": 1,
+      "phase_seconds": 0.003546427935361862,
+      "setup": 0.0030007101595401764,
+      "span_seconds": 0.0036993026733398438,
+      "teardown": 0.0003165011294186115
+    },
+    "tests/unit/test_mission_clock_endpoints.py": {
+      "call": 0.00022513512521982193,
+      "cases": 2,
+      "phase_seconds": 0.006688565015792847,
+      "setup": 0.005883947480469942,
+      "span_seconds": 0.007086992263793945,
+      "teardown": 0.0005794824101030827
+    },
+    "tests/unit/test_mission_clock_service.py": {
+      "call": 0.0011310749687254429,
+      "cases": 2,
+      "phase_seconds": 0.007676484063267708,
+      "setup": 0.005922082811594009,
+      "span_seconds": 0.008126258850097656,
+      "teardown": 0.0006233262829482555
+    },
+    "tests/unit/test_mission_clock_settings.py": {
+      "call": 0.0005702138878405094,
+      "cases": 4,
+      "phase_seconds": 0.013325285166501999,
+      "setup": 0.011564683634787798,
+      "span_seconds": 0.014297008514404297,
+      "teardown": 0.0011903876438736916
+    },
+    "tests/unit/test_mission_exporter.py": {
+      "call": 1.0584466545842588,
+      "cases": 13,
+      "phase_seconds": 1.1038584592752159,
+      "setup": 0.040697956923395395,
+      "span_seconds": 1.108213186264038,
+      "teardown": 0.004713847767561674
+    },
+    "tests/unit/test_mission_generated_pois.py": {
+      "call": 0.019474747125059366,
+      "cases": 4,
+      "phase_seconds": 0.03300882875919342,
+      "setup": 0.012167921755462885,
+      "span_seconds": 0.03424501419067383,
+      "teardown": 0.0013661598786711693
+    },
+    "tests/unit/test_mission_metrics.py": {
+      "call": 0.003039729315787554,
+      "cases": 12,
+      "phase_seconds": 0.043527085334062576,
+      "setup": 0.036723021417856216,
+      "span_seconds": 0.04721856117248535,
+      "teardown": 0.003764334600418806
+    },
+    "tests/unit/test_mission_models.py": {
+      "call": 0.004200273659080267,
+      "cases": 29,
+      "phase_seconds": 0.10332404868677258,
+      "setup": 0.0902648838236928,
+      "span_seconds": 0.1121366024017334,
+      "teardown": 0.00885889120399952
+    },
+    "tests/unit/test_mission_package_endpoint_pois.py": {
+      "call": 0.03497505793347955,
+      "cases": 3,
+      "phase_seconds": 0.04570561647415161,
+      "setup": 0.009626745712012053,
+      "span_seconds": 0.04661107063293457,
+      "teardown": 0.0011038128286600113
+    },
+    "tests/unit/test_mission_pop_continuity.py": {
+      "call": 0.009993182960897684,
+      "cases": 23,
+      "phase_seconds": 0.08712773909792304,
+      "setup": 0.0700054494664073,
+      "span_seconds": 0.09386396408081055,
+      "teardown": 0.007129106670618057
+    },
+    "tests/unit/test_mission_pop_forecast.py": {
+      "call": 0.07283016294240952,
+      "cases": 23,
+      "phase_seconds": 0.15439043007791042,
+      "setup": 0.07340825721621513,
+      "span_seconds": 0.16196680068969727,
+      "teardown": 0.008152009919285774
+    },
+    "tests/unit/test_mission_retirement_docs.py": {
+      "call": 0.0033840201795101166,
+      "cases": 9,
+      "phase_seconds": 0.034358274191617966,
+      "setup": 0.0281855883076787,
+      "span_seconds": 0.036885738372802734,
+      "teardown": 0.0027886657044291496
+    },
+    "tests/unit/test_mission_state.py": {
+      "call": 0.0009902222082018852,
+      "cases": 6,
+      "phase_seconds": 0.02375669591128826,
+      "setup": 0.020703846123069525,
+      "span_seconds": 0.025582075119018555,
+      "teardown": 0.0020626275800168514
+    },
+    "tests/unit/test_mission_storage.py": {
+      "call": 0.028724930714815855,
+      "cases": 16,
+      "phase_seconds": 0.08451116038486362,
+      "setup": 0.050801236648112535,
+      "span_seconds": 0.08957290649414062,
+      "teardown": 0.0049849930219352245
+    },
+    "tests/unit/test_mission_timeline.py": {
+      "call": 0.1936326683498919,
+      "cases": 31,
+      "phase_seconds": 0.30577793810516596,
+      "setup": 0.10092203877866268,
+      "span_seconds": 0.3162052631378174,
+      "teardown": 0.011223230976611376
+    },
+    "tests/unit/test_network.py": {
+      "call": 0.0023646834306418896,
+      "cases": 11,
+      "phase_seconds": 0.04041516222059727,
+      "setup": 0.034624035470187664,
+      "span_seconds": 0.04353666305541992,
+      "teardown": 0.0034264433197677135
+    },
+    "tests/unit/test_obstructions.py": {
+      "call": 0.0011928947642445564,
+      "cases": 8,
+      "phase_seconds": 0.02973612491041422,
+      "setup": 0.025977205019444227,
+      "span_seconds": 0.03203225135803223,
+      "teardown": 0.0025660251267254353
+    },
+    "tests/unit/test_orbital_catalog.py": {
+      "call": 1.9353901483118534,
+      "cases": 32,
+      "phase_seconds": 2.119106031022966,
+      "setup": 0.11506477789953351,
+      "span_seconds": 2.1315479278564453,
+      "teardown": 0.06865110481157899
+    },
+    "tests/unit/test_orbital_catalog_store.py": {
+      "call": 0.517048180103302,
+      "cases": 4,
+      "phase_seconds": 0.5360927246510983,
+      "setup": 0.016757707577198744,
+      "span_seconds": 0.5380551815032959,
+      "teardown": 0.0022868369705975056
+    },
+    "tests/unit/test_orbital_viewers.py": {
+      "call": 0.0010029710829257965,
+      "cases": 1,
+      "phase_seconds": 0.006027219817042351,
+      "setup": 0.004574292805045843,
+      "span_seconds": 0.006240367889404297,
+      "teardown": 0.00044995592907071114
+    },
+    "tests/unit/test_overview_adsb_selection.py": {
+      "call": 0.0025347121991217136,
+      "cases": 11,
+      "phase_seconds": 0.051053558476269245,
+      "setup": 0.04410229483619332,
+      "span_seconds": 0.05510067939758301,
+      "teardown": 0.004416551440954208
+    },
+    "tests/unit/test_overview_adsb_settings.py": {
+      "call": 0.05705831106752157,
+      "cases": 11,
+      "phase_seconds": 0.09628223441541195,
+      "setup": 0.03558428818359971,
+      "span_seconds": 0.0997152328491211,
+      "teardown": 0.0036396351642906666
+    },
+    "tests/unit/test_overview_adsb_traffic.py": {
+      "call": 0.05411483021453023,
+      "cases": 24,
+      "phase_seconds": 0.16184858046472073,
+      "setup": 0.09534614346921444,
+      "span_seconds": 0.1712188720703125,
+      "teardown": 0.012387606780976057
+    },
+    "tests/unit/test_overview_clock_geography.py": {
+      "call": 0.7581807607784867,
+      "cases": 4,
+      "phase_seconds": 0.7772635277360678,
+      "setup": 0.017044592183083296,
+      "span_seconds": 0.7790365219116211,
+      "teardown": 0.0020381747744977474
+    },
+    "tests/unit/test_overview_clock_location.py": {
+      "call": 0.0013459096662700176,
+      "cases": 11,
+      "phase_seconds": 0.042369929142296314,
+      "setup": 0.03725663339719176,
+      "span_seconds": 0.04574322700500488,
+      "teardown": 0.0037673860788345337
+    },
+    "tests/unit/test_overview_clock_settings.py": {
+      "call": 0.0048006330616772175,
+      "cases": 10,
+      "phase_seconds": 0.04136807983741164,
+      "setup": 0.03323826752603054,
+      "span_seconds": 0.04446125030517578,
+      "teardown": 0.003329179249703884
+    },
+    "tests/unit/test_overview_history_api_cache.py": {
+      "call": 0.010974954813718796,
+      "cases": 3,
+      "phase_seconds": 0.02398522011935711,
+      "setup": 0.011280473787337542,
+      "span_seconds": 0.025027036666870117,
+      "teardown": 0.0017297915183007717
+    },
+    "tests/unit/test_overview_history_cache.py": {
+      "call": 12.224831381812692,
+      "cases": 24,
+      "phase_seconds": 12.33840091759339,
+      "setup": 0.09414117271080613,
+      "span_seconds": 12.38520073890686,
+      "teardown": 0.01942836306989193
+    },
+    "tests/unit/test_overview_history_cache_bounds.py": {
+      "call": 63.22500840295106,
+      "cases": 1,
+      "phase_seconds": 63.27489090198651,
+      "setup": 0.003846209030598402,
+      "span_seconds": 63.275147914886475,
+      "teardown": 0.046036290004849434
+    },
+    "tests/unit/test_overview_history_cache_recovery.py": {
+      "call": 4.082989933434874,
+      "cases": 4,
+      "phase_seconds": 4.103063945658505,
+      "setup": 0.01565751526504755,
+      "span_seconds": 4.110125780105591,
+      "teardown": 0.004416496958583593
+    },
+    "tests/unit/test_overview_history_deployment.py": {
+      "call": 0.0007098005153238773,
+      "cases": 3,
+      "phase_seconds": 0.011997837573289871,
+      "setup": 0.010353465098887682,
+      "span_seconds": 0.012778043746948242,
+      "teardown": 0.0009345719590783119
+    },
+    "tests/unit/test_overview_history_prometheus.py": {
+      "call": 0.17337397672235966,
+      "cases": 36,
+      "phase_seconds": 0.31716742273420095,
+      "setup": 0.12752533284947276,
+      "span_seconds": 0.32962799072265625,
+      "teardown": 0.016268113162368536
+    },
+    "tests/unit/test_overview_history_rollups.py": {
+      "call": 0.07420775620266795,
+      "cases": 29,
+      "phase_seconds": 0.18852679710835218,
+      "setup": 0.10273452382534742,
+      "span_seconds": 0.19812536239624023,
+      "teardown": 0.01158451708033681
+    },
+    "tests/unit/test_overview_history_settings.py": {
+      "call": 0.00087349908426404,
+      "cases": 2,
+      "phase_seconds": 0.00835524033755064,
+      "setup": 0.006853045895695686,
+      "span_seconds": 0.008806705474853516,
+      "teardown": 0.0006286953575909138
+    },
+    "tests/unit/test_overview_link_settings.py": {
+      "call": 0.3736613313667476,
+      "cases": 40,
+      "phase_seconds": 0.5234627202153206,
+      "setup": 0.13628772413358092,
+      "span_seconds": 0.5365750789642334,
+      "teardown": 0.013513664714992046
+    },
+    "tests/unit/test_overview_upcoming_pois.py": {
+      "call": 0.0025995736941695213,
+      "cases": 13,
+      "phase_seconds": 0.0523307197727263,
+      "setup": 0.0453656786121428,
+      "span_seconds": 0.05649065971374512,
+      "teardown": 0.004365467466413975
+    },
+    "tests/unit/test_overview_weather_acquisitions.py": {
+      "call": 0.16430624155327678,
+      "cases": 9,
+      "phase_seconds": 0.21368366619572043,
+      "setup": 0.043188693933188915,
+      "span_seconds": 0.21689343452453613,
+      "teardown": 0.006188730709254742
+    },
+    "tests/unit/test_overview_weather_api.py": {
+      "call": 0.05855954810976982,
+      "cases": 3,
+      "phase_seconds": 0.07219002861529589,
+      "setup": 0.011917714029550552,
+      "span_seconds": 0.07326507568359375,
+      "teardown": 0.0017127664759755135
+    },
+    "tests/unit/test_overview_weather_detail.py": {
+      "call": 0.06853451719507575,
+      "cases": 26,
+      "phase_seconds": 0.18428490590304136,
+      "setup": 0.10364857129752636,
+      "span_seconds": 0.19367074966430664,
+      "teardown": 0.012101817410439253
+    },
+    "tests/unit/test_overview_weather_protocol.py": {
+      "call": 0.003843194805085659,
+      "cases": 9,
+      "phase_seconds": 0.041407488752156496,
+      "setup": 0.0336448778398335,
+      "span_seconds": 0.0441279411315918,
+      "teardown": 0.003919416107237339
+    },
+    "tests/unit/test_overview_weather_service.py": {
+      "call": 0.04439961537718773,
+      "cases": 24,
+      "phase_seconds": 0.15527045959606767,
+      "setup": 0.09901235438883305,
+      "span_seconds": 0.1640632152557373,
+      "teardown": 0.011858489830046892
+    },
+    "tests/unit/test_overview_weather_settings.py": {
+      "call": 0.11493221065029502,
+      "cases": 13,
+      "phase_seconds": 0.16670162696391344,
+      "setup": 0.04731655865907669,
+      "span_seconds": 0.17103290557861328,
+      "teardown": 0.004452857654541731
+    },
+    "tests/unit/test_overview_weather_transport.py": {
+      "call": 0.04340365016832948,
+      "cases": 17,
+      "phase_seconds": 0.11572018871083856,
+      "setup": 0.06461235182359815,
+      "span_seconds": 0.12124896049499512,
+      "teardown": 0.0077041867189109325
+    },
+    "tests/unit/test_package_adjusted_export.py": {
+      "call": 0.024515410885214806,
+      "cases": 3,
+      "phase_seconds": 0.0354876397177577,
+      "setup": 0.009915458969771862,
+      "span_seconds": 0.036283254623413086,
+      "teardown": 0.0010567698627710342
+    },
+    "tests/unit/test_package_export_adjusted_times.py": {
+      "call": 0.0014846967533230782,
+      "cases": 1,
+      "phase_seconds": 0.005317773669958115,
+      "setup": 0.00349190691486001,
+      "span_seconds": 0.005467414855957031,
+      "teardown": 0.0003411700017750263
+    },
+    "tests/unit/test_package_exporter.py": {
+      "call": 0.015038016252219677,
+      "cases": 3,
+      "phase_seconds": 0.026563122868537903,
+      "setup": 0.010397973004728556,
+      "span_seconds": 0.027439355850219727,
+      "teardown": 0.0011271336115896702
+    },
+    "tests/unit/test_performance_metrics.py": {
+      "call": 0.26131168846040964,
+      "cases": 3,
+      "phase_seconds": 0.2737648473121226,
+      "setup": 0.011028642300516367,
+      "span_seconds": 0.2749021053314209,
+      "teardown": 0.0014245165511965752
+    },
+    "tests/unit/test_poi_eta_models.py": {
+      "call": 0.0004412303678691387,
+      "cases": 3,
+      "phase_seconds": 0.011680219322443008,
+      "setup": 0.01032906910404563,
+      "span_seconds": 0.012488126754760742,
+      "teardown": 0.0009099198505282402
+    },
+    "tests/unit/test_poi_manager.py": {
+      "call": 0.06053358409553766,
+      "cases": 32,
+      "phase_seconds": 0.20351678086444736,
+      "setup": 0.13043013820424676,
+      "span_seconds": 0.2148113250732422,
+      "teardown": 0.012553058564662933
+    },
+    "tests/unit/test_pop_capability_identity.py": {
+      "call": 0.001847561914473772,
+      "cases": 2,
+      "phase_seconds": 0.009483152534812689,
+      "setup": 0.006990359164774418,
+      "span_seconds": 0.009952068328857422,
+      "teardown": 0.0006452314555644989
+    },
+    "tests/unit/test_pop_catalog.py": {
+      "call": 0.0053306748159229755,
+      "cases": 19,
+      "phase_seconds": 0.07725229766219854,
+      "setup": 0.06601767987012863,
+      "span_seconds": 0.0827939510345459,
+      "teardown": 0.005903942976146936
+    },
+    "tests/unit/test_pop_continuity.py": {
+      "call": 0.019656116608530283,
+      "cases": 22,
+      "phase_seconds": 0.10577208315953612,
+      "setup": 0.07876581326127052,
+      "span_seconds": 0.11277318000793457,
+      "teardown": 0.007350153289735317
+    },
+    "tests/unit/test_pop_coverage_evidence.py": {
+      "call": 0.0470465081743896,
+      "cases": 15,
+      "phase_seconds": 0.11710888333618641,
+      "setup": 0.06446404522284865,
+      "span_seconds": 0.12249207496643066,
+      "teardown": 0.0055983299389481544
+    },
+    "tests/unit/test_pop_forecast.py": {
+      "call": 0.001349463127553463,
+      "cases": 7,
+      "phase_seconds": 0.02918754331767559,
+      "setup": 0.025637595914304256,
+      "span_seconds": 0.031197309494018555,
+      "teardown": 0.002200484275817871
+    },
+    "tests/unit/test_pop_geometry.py": {
+      "call": 0.004184133838862181,
+      "cases": 17,
+      "phase_seconds": 0.06921740528196096,
+      "setup": 0.05974869104102254,
+      "span_seconds": 0.07433223724365234,
+      "teardown": 0.005284580402076244
+    },
+    "tests/unit/test_pop_live.py": {
+      "call": 0.002625308930873871,
+      "cases": 14,
+      "phase_seconds": 0.054338070563971996,
+      "setup": 0.04736307729035616,
+      "span_seconds": 0.05825638771057129,
+      "teardown": 0.004349684342741966
+    },
+    "tests/unit/test_pop_status_continuity.py": {
+      "call": 0.07266581244766712,
+      "cases": 22,
+      "phase_seconds": 0.16150763118639588,
+      "setup": 0.08093770360574126,
+      "span_seconds": 0.1689457893371582,
+      "teardown": 0.0079041151329875
+    },
+    "tests/unit/test_pop_window_pois.py": {
+      "call": 0.0021575181744992733,
+      "cases": 1,
+      "phase_seconds": 0.006220906041562557,
+      "setup": 0.0036475160159170628,
+      "span_seconds": 0.006426572799682617,
+      "teardown": 0.00041587185114622116
+    },
+    "tests/unit/test_position.py": {
+      "call": 0.007178651634603739,
+      "cases": 11,
+      "phase_seconds": 0.05455487780272961,
+      "setup": 0.04380781715735793,
+      "span_seconds": 0.0580594539642334,
+      "teardown": 0.0035684090107679367
+    },
+    "tests/unit/test_position_freshness.py": {
+      "call": 0.0026579746045172215,
+      "cases": 22,
+      "phase_seconds": 0.08984290109947324,
+      "setup": 0.0801611146889627,
+      "span_seconds": 0.09641027450561523,
+      "teardown": 0.0070238118059933186
+    },
+    "tests/unit/test_pptx_builder.py": {
+      "call": 0.007338725496083498,
+      "cases": 12,
+      "phase_seconds": 0.053668754175305367,
+      "setup": 0.04264144506305456,
+      "span_seconds": 0.05714678764343262,
+      "teardown": 0.003688583616167307
+    },
+    "tests/unit/test_pydantic_warning_regressions.py": {
+      "call": 0.5192635161802173,
+      "cases": 3,
+      "phase_seconds": 0.5317719583399594,
+      "setup": 0.011084962170571089,
+      "span_seconds": 0.5327785015106201,
+      "teardown": 0.0014234799891710281
+    },
+    "tests/unit/test_repository_gate.py": {
+      "call": 0.13373673660680652,
+      "cases": 4,
+      "phase_seconds": 0.15078351739794016,
+      "setup": 0.015445378609001637,
+      "span_seconds": 0.15227818489074707,
+      "teardown": 0.0016014021821320057
+    },
+    "tests/unit/test_route.py": {
+      "call": 0.013694494497030973,
+      "cases": 24,
+      "phase_seconds": 0.11306495731696486,
+      "setup": 0.09093132661655545,
+      "span_seconds": 0.12111401557922363,
+      "teardown": 0.008439136203378439
+    },
+    "tests/unit/test_route_eta_calculator_service.py": {
+      "call": 0.0021046525798738003,
+      "cases": 9,
+      "phase_seconds": 0.0389767587184906,
+      "setup": 0.03392511885613203,
+      "span_seconds": 0.041716575622558594,
+      "teardown": 0.00294698728248477
+    },
+    "tests/unit/test_route_manager.py": {
+      "call": 1.0299109118059278,
+      "cases": 22,
+      "phase_seconds": 1.1448100060224533,
+      "setup": 0.10053101042285562,
+      "span_seconds": 1.1531763076782227,
+      "teardown": 0.014368083793669939
+    },
+    "tests/unit/test_route_models_with_timing.py": {
+      "call": 0.004609464202076197,
+      "cases": 30,
+      "phase_seconds": 0.12892630696296692,
+      "setup": 0.11475881794467568,
+      "span_seconds": 0.13854551315307617,
+      "teardown": 0.009558024816215038
+    },
+    "tests/unit/test_route_sigmets_api.py": {
+      "call": 2.4593876427970827,
+      "cases": 6,
+      "phase_seconds": 2.490141000598669,
+      "setup": 0.025651145726442337,
+      "span_seconds": 2.4925172328948975,
+      "teardown": 0.0051022120751440525
+    },
+    "tests/unit/test_route_sigmets_arcs.py": {
+      "call": 0.001940114889293909,
+      "cases": 8,
+      "phase_seconds": 0.03605232015252113,
+      "setup": 0.03146526450291276,
+      "span_seconds": 0.038631439208984375,
+      "teardown": 0.0026469407603144646
+    },
+    "tests/unit/test_route_sigmets_context.py": {
+      "call": 0.2476188475266099,
+      "cases": 21,
+      "phase_seconds": 0.3351879296824336,
+      "setup": 0.08038774691522121,
+      "span_seconds": 0.3419771194458008,
+      "teardown": 0.007181335240602493
+    },
+    "tests/unit/test_route_sigmets_contracts.py": {
+      "call": 4.669737536460161,
+      "cases": 48,
+      "phase_seconds": 4.866256310138851,
+      "setup": 0.1796094267629087,
+      "span_seconds": 4.882196664810181,
+      "teardown": 0.016909346915781498
+    },
+    "tests/unit/test_route_sigmets_decode.py": {
+      "call": 14.88056913157925,
+      "cases": 15,
+      "phase_seconds": 14.962675743270665,
+      "setup": 0.06549508171156049,
+      "span_seconds": 14.969169855117798,
+      "teardown": 0.016611529979854822
+    },
+    "tests/unit/test_route_sigmets_encounters.py": {
+      "call": 0.0049283974803984165,
+      "cases": 14,
+      "phase_seconds": 0.06359143182635307,
+      "setup": 0.053906519431620836,
+      "span_seconds": 0.06797575950622559,
+      "teardown": 0.00475651491433382
+    },
+    "tests/unit/test_route_sigmets_geometry.py": {
+      "call": 0.10550502687692642,
+      "cases": 25,
+      "phase_seconds": 0.2175068063661456,
+      "setup": 0.10251582507044077,
+      "span_seconds": 0.2267322540283203,
+      "teardown": 0.00948595441877842
+    },
+    "tests/unit/test_route_sigmets_identity.py": {
+      "call": 0.004960843361914158,
+      "cases": 12,
+      "phase_seconds": 0.05608626315370202,
+      "setup": 0.047129970509558916,
+      "span_seconds": 0.05991411209106445,
+      "teardown": 0.003995449282228947
+    },
+    "tests/unit/test_route_sigmets_runtime.py": {
+      "call": 12.839148149825633,
+      "cases": 37,
+      "phase_seconds": 13.043082390446216,
+      "setup": 0.16723760543391109,
+      "span_seconds": 13.05868411064148,
+      "teardown": 0.03669663518667221
+    },
+    "tests/unit/test_route_sigmets_state.py": {
+      "call": 3.038034365978092,
+      "cases": 23,
+      "phase_seconds": 3.151726780924946,
+      "setup": 0.09849954443052411,
+      "span_seconds": 3.1606411933898926,
+      "teardown": 0.015192870516330004
+    },
+    "tests/unit/test_route_timing.py": {
+      "call": 0.0021869931370019913,
+      "cases": 15,
+      "phase_seconds": 0.06314590945839882,
+      "setup": 0.05628452729433775,
+      "span_seconds": 0.06783223152160645,
+      "teardown": 0.004674389027059078
+    },
+    "tests/unit/test_router_integration.py": {
+      "call": 0.015628471970558167,
+      "cases": 6,
+      "phase_seconds": 0.2755180527456105,
+      "setup": 0.17736507300287485,
+      "span_seconds": 0.2781791687011719,
+      "teardown": 0.08252450777217746
+    },
+    "tests/unit/test_satellite_catalog.py": {
+      "call": 0.010083844419568777,
+      "cases": 17,
+      "phase_seconds": 0.08127821888774633,
+      "setup": 0.0657927799038589,
+      "span_seconds": 0.08682703971862793,
+      "teardown": 0.005401594564318657
+    },
+    "tests/unit/test_satellite_coverage.py": {
+      "call": 0.004476872272789478,
+      "cases": 17,
+      "phase_seconds": 0.07717759115621448,
+      "setup": 0.0671196742914617,
+      "span_seconds": 0.0825812816619873,
+      "teardown": 0.005581044591963291
+    },
+    "tests/unit/test_satellite_geometry.py": {
+      "call": 0.005061862990260124,
+      "cases": 21,
+      "phase_seconds": 0.09207927668467164,
+      "setup": 0.08054465940222144,
+      "span_seconds": 0.09848523139953613,
+      "teardown": 0.006472754292190075
+    },
+    "tests/unit/test_satellite_rules.py": {
+      "call": 0.005807823501527309,
+      "cases": 39,
+      "phase_seconds": 0.17359617864713073,
+      "setup": 0.15518053295090795,
+      "span_seconds": 0.18608784675598145,
+      "teardown": 0.012607822194695473
+    },
+    "tests/unit/test_sigmet_live_eta.py": {
+      "call": 0.005972049664705992,
+      "cases": 17,
+      "phase_seconds": 0.07726718299090862,
+      "setup": 0.06592505238950253,
+      "span_seconds": 0.08239316940307617,
+      "teardown": 0.005370080936700106
+    },
+    "tests/unit/test_simulation_availability.py": {
+      "call": 0.005177012179046869,
+      "cases": 5,
+      "phase_seconds": 0.0278085102327168,
+      "setup": 0.020996928215026855,
+      "span_seconds": 0.029374122619628906,
+      "teardown": 0.001634569838643074
+    },
+    "tests/unit/test_simulation_pop.py": {
+      "call": 0.005887320265173912,
+      "cases": 14,
+      "phase_seconds": 0.06872000684961677,
+      "setup": 0.058154750149697065,
+      "span_seconds": 0.07313990592956543,
+      "teardown": 0.004677936434745789
+    },
+    "tests/unit/test_simulation_pop_ambiguous.py": {
+      "call": 0.0035591633059084415,
+      "cases": 3,
+      "phase_seconds": 0.05726146465167403,
+      "setup": 0.052545668091624975,
+      "span_seconds": 0.05832195281982422,
+      "teardown": 0.0011566332541406155
+    },
+    "tests/unit/test_simulation_run_events.py": {
+      "call": 0.005948476027697325,
+      "cases": 2,
+      "phase_seconds": 0.040046519599854946,
+      "setup": 0.033204026985913515,
+      "span_seconds": 0.040741920471191406,
+      "teardown": 0.0008940165862441063
+    },
+    "tests/unit/test_simulation_run_imported_timing.py": {
+      "call": 0.6152957929298282,
+      "cases": 8,
+      "phase_seconds": 0.6533266082406044,
+      "setup": 0.03432811377570033,
+      "span_seconds": 0.6564888954162598,
+      "teardown": 0.003702701535075903
+    },
+    "tests/unit/test_simulation_run_plan.py": {
+      "call": 0.12368444073945284,
+      "cases": 29,
+      "phase_seconds": 0.25232265144586563,
+      "setup": 0.11858863336965442,
+      "span_seconds": 0.26238346099853516,
+      "teardown": 0.010049577336758375
+    },
+    "tests/unit/test_simulation_run_review_routes.py": {
+      "call": 0.0040845428593456745,
+      "cases": 3,
+      "phase_seconds": 0.017461217008531094,
+      "setup": 0.012396428734064102,
+      "span_seconds": 0.018244266510009766,
+      "teardown": 0.000980245415121317
+    },
+    "tests/unit/test_simulation_run_runtime.py": {
+      "call": 0.04253337997943163,
+      "cases": 19,
+      "phase_seconds": 0.3610978703945875,
+      "setup": 0.31051161512732506,
+      "span_seconds": 0.3693385124206543,
+      "teardown": 0.00805287528783083
+    },
+    "tests/unit/test_simulation_run_service.py": {
+      "call": 0.019910775125026703,
+      "cases": 6,
+      "phase_seconds": 0.1349833537824452,
+      "setup": 0.11265311250463128,
+      "span_seconds": 0.13753819465637207,
+      "teardown": 0.0024194661527872086
+    },
+    "tests/unit/test_simulation_run_timing.py": {
+      "call": 0.01631511840969324,
+      "cases": 10,
+      "phase_seconds": 0.19286484038457274,
+      "setup": 0.17111088894307613,
+      "span_seconds": 0.19736170768737793,
+      "teardown": 0.0054388330318033695
+    },
+    "tests/unit/test_simulation_run_wakeup.py": {
+      "call": 0.0014127730391919613,
+      "cases": 1,
+      "phase_seconds": 0.006743966601788998,
+      "setup": 0.00458430266007781,
+      "span_seconds": 0.006930828094482422,
+      "teardown": 0.0007468909025192261
+    },
+    "tests/unit/test_slide_cache.py": {
+      "call": 0.07690261909738183,
+      "cases": 18,
+      "phase_seconds": 0.1609929776750505,
+      "setup": 0.07737284991890192,
+      "span_seconds": 0.16757488250732422,
+      "teardown": 0.0067175086587667465
+    },
+    "tests/unit/test_slide_coordinator.py": {
+      "call": 0.3425617851316929,
+      "cases": 13,
+      "phase_seconds": 0.40570911997929215,
+      "setup": 0.05728790396824479,
+      "span_seconds": 0.41102099418640137,
+      "teardown": 0.005859430879354477
+    },
+    "tests/unit/test_speed_tracker_provenance.py": {
+      "call": 0.00030268775299191475,
+      "cases": 1,
+      "phase_seconds": 0.004975913558155298,
+      "setup": 0.004336168989539146,
+      "span_seconds": 0.0051462650299072266,
+      "teardown": 0.00033705681562423706
+    },
+    "tests/unit/test_starlink_client.py": {
+      "call": 0.09593135863542557,
+      "cases": 107,
+      "phase_seconds": 0.7049499768763781,
+      "setup": 0.5644576828926802,
+      "span_seconds": 0.7710380554199219,
+      "teardown": 0.044560935348272324
+    },
+    "tests/unit/test_telemetry_archive.py": {
+      "call": 4.514996777288616,
+      "cases": 6,
+      "phase_seconds": 4.543509103823453,
+      "setup": 0.025444256141781807,
+      "span_seconds": 4.545889139175415,
+      "teardown": 0.0030680703930556774
+    },
+    "tests/unit/test_telemetry_archive_reader.py": {
+      "call": 0.0008580242283642292,
+      "cases": 1,
+      "phase_seconds": 0.005859149154275656,
+      "setup": 0.004640344996005297,
+      "span_seconds": 0.006049633026123047,
+      "teardown": 0.00036077992990612984
+    },
+    "tests/unit/test_telemetry_package.py": {
+      "call": 0.00146576389670372,
+      "cases": 2,
+      "phase_seconds": 0.010863612871617079,
+      "setup": 0.00870773009955883,
+      "span_seconds": 0.011377573013305664,
+      "teardown": 0.0006901188753545284
+    },
+    "tests/unit/test_telemetry_preparation.py": {
+      "call": 0.010898957960307598,
+      "cases": 2,
+      "phase_seconds": 0.02044601272791624,
+      "setup": 0.008719032630324364,
+      "span_seconds": 0.021074771881103516,
+      "teardown": 0.0008280221372842789
+    },
+    "tests/unit/test_timestamp_extraction.py": {
+      "call": 0.004606312140822411,
+      "cases": 30,
+      "phase_seconds": 0.14043620135635138,
+      "setup": 0.12592207686975598,
+      "span_seconds": 0.15024304389953613,
+      "teardown": 0.009907812345772982
+    },
+    "tests/unit/test_timing_aware_simulation.py": {
+      "call": 0.010102221742272377,
+      "cases": 12,
+      "phase_seconds": 0.0661427304148674,
+      "setup": 0.05185852712020278,
+      "span_seconds": 0.0700387954711914,
+      "teardown": 0.004181981552392244
+    },
+    "tests/unit/test_x_band_warning_pois.py": {
+      "call": 0.17063837870955467,
+      "cases": 15,
+      "phase_seconds": 0.24497868958860636,
+      "setup": 0.06774128507822752,
+      "span_seconds": 0.25098752975463867,
+      "teardown": 0.006599025800824165
+    },
+    "tests/unit/test_x_constraint_propagation.py": {
+      "call": 0.010473827831447124,
+      "cases": 18,
+      "phase_seconds": 0.1037404895760119,
+      "setup": 0.07850435795262456,
+      "span_seconds": 0.1095888614654541,
+      "teardown": 0.014762303791940212
+    }
+  },
+  "overrides": {
+    "tests/integration/test_adjusted_departure_integration.py": 3,
+    "tests/integration/test_automatic_arrival_proximity.py": 4,
+    "tests/integration/test_config_api.py": 3,
+    "tests/integration/test_customer_export_responsiveness.py": 3,
+    "tests/integration/test_customer_pdf_startup.py": 4,
+    "tests/integration/test_eta_modes.py": 3,
+    "tests/integration/test_fallback_position.py": 4,
+    "tests/integration/test_flight_detection_observation_time.py": 3,
+    "tests/integration/test_flight_events_api.py": 2,
+    "tests/integration/test_flight_status_api.py": 1,
+    "tests/integration/test_gps_api.py": 3,
+    "tests/integration/test_health.py": 1,
+    "tests/integration/test_kml_poi_integration.py": 2,
+    "tests/integration/test_live_background_route.py": 1,
+    "tests/integration/test_live_flight_events.py": 3,
+    "tests/integration/test_manual_x_selection.py": 4,
+    "tests/integration/test_metrics_endpoint.py": 3,
+    "tests/integration/test_mission_routes_v2.py": 1,
+    "tests/integration/test_mission_scenarios.py": 1,
+    "tests/integration/test_mission_telemetry_archive.py": 1,
+    "tests/integration/test_mission_v2_bug_repro.py": 1,
+    "tests/integration/test_operator_event_sources.py": 2,
+    "tests/integration/test_operator_mission_simulation.py": 1,
+    "tests/integration/test_operator_transport_review.py": 3,
+    "tests/integration/test_orbital_catalog_api.py": 1,
+    "tests/integration/test_overview_adsb_acceptance.py": 4,
+    "tests/integration/test_overview_adsb_batch.py": 4,
+    "tests/integration/test_overview_adsb_settings_api.py": 3,
+    "tests/integration/test_overview_adsb_traffic_api.py": 3,
+    "tests/integration/test_overview_clock_settings_api.py": 3,
+    "tests/integration/test_overview_history_api.py": 2,
+    "tests/integration/test_overview_link_settings_api.py": 2,
+    "tests/integration/test_overview_speed_recovery.py": 2,
+    "tests/integration/test_overview_upcoming_pois_api.py": 2,
+    "tests/integration/test_overview_weather_lifecycle.py": 2,
+    "tests/integration/test_planning_policy_preview.py": 3,
+    "tests/integration/test_poi_stats_endpoints.py": 3,
+    "tests/integration/test_pois_quick_reference.py": 1,
+    "tests/integration/test_pop_continuity_status.py": 2,
+    "tests/integration/test_pop_status.py": 2,
+    "tests/integration/test_pop_status_predeparture.py": 4,
+    "tests/integration/test_route_endpoints_with_timing.py": 4,
+    "tests/integration/test_route_eta.py": 2,
+    "tests/integration/test_simulation_e2e.py": 2,
+    "tests/integration/test_simulation_pop_status.py": 3,
+    "tests/integration/test_simulation_run_api.py": 1,
+    "tests/integration/test_simulation_run_lifecycle.py": 2,
+    "tests/integration/test_simulation_run_time_apis.py": 2,
+    "tests/integration/test_status.py": 1,
+    "tests/integration/test_v2_lifecycle_write_guards.py": 2,
+    "tests/integration/test_x_constraint_timeline_api.py": 1,
+    "tests/itinerary_import/test_ar.py": 1,
+    "tests/itinerary_import/test_association.py": 1,
+    "tests/itinerary_import/test_corrections.py": 3,
+    "tests/itinerary_import/test_creation_api.py": 2,
+    "tests/itinerary_import/test_migration.py": 2,
+    "tests/itinerary_import/test_operations.py": 3,
+    "tests/itinerary_import/test_ordinary_edits.py": 4,
+    "tests/itinerary_import/test_packages.py": 4,
+    "tests/itinerary_import/test_revisions.py": 2,
+    "tests/operator/test_api.py": 2,
+    "tests/operator/test_api_failures.py": 1,
+    "tests/operator/test_author_labels.py": 4,
+    "tests/operator/test_backup.py": 3,
+    "tests/operator/test_call_api.py": 4,
+    "tests/operator/test_capability_api.py": 2,
+    "tests/operator/test_capacity.py": 4,
+    "tests/operator/test_commands.py": 1,
+    "tests/operator/test_commit_outcome.py": 1,
+    "tests/operator/test_concurrency.py": 1,
+    "tests/operator/test_conference_actions.py": 4,
+    "tests/operator/test_conference_api.py": 1,
+    "tests/operator/test_deployment_contract.py": 4,
+    "tests/operator/test_event_ack.py": 3,
+    "tests/operator/test_event_ack_races.py": 1,
+    "tests/operator/test_event_api.py": 1,
+    "tests/operator/test_event_eligibility.py": 2,
+    "tests/operator/test_event_identity.py": 1,
+    "tests/operator/test_event_ledger.py": 3,
+    "tests/operator/test_event_policy.py": 1,
+    "tests/operator/test_event_projection.py": 3,
+    "tests/operator/test_event_publication.py": 4,
+    "tests/operator/test_event_schema.py": 1,
+    "tests/operator/test_event_sources.py": 3,
+    "tests/operator/test_integration.py": 2,
+    "tests/operator/test_issue_activity.py": 3,
+    "tests/operator/test_issue_api.py": 2,
+    "tests/operator/test_issue_followup.py": 2,
+    "tests/operator/test_maintenance_cli.py": 4,
+    "tests/operator/test_mission_archive.py": 1,
+    "tests/operator/test_mission_clock.py": 4,
+    "tests/operator/test_mission_replays.py": 1,
+    "tests/operator/test_mode_isolation.py": 2,
+    "tests/operator/test_model_input_admission.py": 4,
+    "tests/operator/test_models.py": 3,
+    "tests/operator/test_parity_lifecycle.py": 3,
+    "tests/operator/test_production_event_ack.py": 3,
+    "tests/operator/test_production_event_sources.py": 4,
+    "tests/operator/test_production_live_timing.py": 3,
+    "tests/operator/test_production_source_edges.py": 1,
+    "tests/operator/test_projection_compatibility.py": 1,
+    "tests/operator/test_projection_membership.py": 2,
+    "tests/operator/test_projection_provenance.py": 3,
+    "tests/operator/test_projections.py": 4,
+    "tests/operator/test_provisioning.py": 1,
+    "tests/operator/test_public_type_races.py": 3,
+    "tests/operator/test_queries.py": 3,
+    "tests/operator/test_read_metadata.py": 3,
+    "tests/operator/test_recovery.py": 4,
+    "tests/operator/test_references.py": 3,
+    "tests/operator/test_runtime.py": 1,
+    "tests/operator/test_save_timing.py": 2,
+    "tests/operator/test_schema.py": 3,
+    "tests/operator/test_store_lifecycle.py": 3,
+    "tests/operator/test_transport_api.py": 3,
+    "tests/operator/test_transport_catalog.py": 4,
+    "tests/operator/test_transport_contract.py": 2,
+    "tests/operator/test_transport_feed.py": 1,
+    "tests/operator/test_transport_references.py": 2,
+    "tests/operator/test_transport_review.py": 1,
+    "tests/operator/test_transport_schema.py": 2,
+    "tests/operator/test_wal.py": 3,
+    "tests/planning/test_api.py": 1,
+    "tests/planning/test_batch_intake.py": 2,
+    "tests/planning/test_batch_proposals.py": 4,
+    "tests/planning/test_batch_publication.py": 3,
+    "tests/planning/test_canonical.py": 4,
+    "tests/planning/test_continuity_provenance.py": 2,
+    "tests/planning/test_deadlines.py": 1,
+    "tests/planning/test_estimate_acknowledgment.py": 3,
+    "tests/planning/test_extract.py": 1,
+    "tests/planning/test_final_review_regressions.py": 3,
+    "tests/planning/test_grid.py": 3,
+    "tests/planning/test_map_review.py": 2,
+    "tests/planning/test_match.py": 1,
+    "tests/planning/test_models.py": 1,
+    "tests/planning/test_optimizer.py": 4,
+    "tests/planning/test_order.py": 4,
+    "tests/planning/test_packages.py": 1,
+    "tests/planning/test_poi_projection.py": 4,
+    "tests/planning/test_policy.py": 2,
+    "tests/planning/test_preview_admission.py": 4,
+    "tests/planning/test_production_inputs.py": 4,
+    "tests/planning/test_proposals.py": 2,
+    "tests/planning/test_relative_package_root.py": 1,
+    "tests/planning/test_reviewed_save.py": 4,
+    "tests/planning/test_revisions.py": 3,
+    "tests/planning/test_satellite_configuration.py": 4,
+    "tests/planning/test_simulation.py": 3,
+    "tests/planning/test_source_lifecycle.py": 4,
+    "tests/planning/test_store.py": 1,
+    "tests/unit/test_active_mission_context.py": 3,
+    "tests/unit/test_active_x_handoff.py": 4,
+    "tests/unit/test_active_x_link.py": 4,
+    "tests/unit/test_adjusted_departure.py": 4,
+    "tests/unit/test_adsb_lol.py": 2,
+    "tests/unit/test_ar_event_pois.py": 4,
+    "tests/unit/test_archive_json_stream.py": 2,
+    "tests/unit/test_archive_review_regressions.py": 3,
+    "tests/unit/test_automatic_flight_detection.py": 3,
+    "tests/unit/test_aviation_weather_decode.py": 4,
+    "tests/unit/test_aviation_weather_models.py": 2,
+    "tests/unit/test_aviation_weather_normalization.py": 4,
+    "tests/unit/test_aviation_weather_runtime.py": 4,
+    "tests/unit/test_aviation_weather_transport.py": 1,
+    "tests/unit/test_bootstrap_manager_patches.py": 1,
+    "tests/unit/test_briefing_clocks.py": 4,
+    "tests/unit/test_config.py": 1,
+    "tests/unit/test_coordinator_route_timing.py": 3,
+    "tests/unit/test_csv_export.py": 3,
+    "tests/unit/test_customer_brand_asset.py": 4,
+    "tests/unit/test_customer_clocks.py": 2,
+    "tests/unit/test_customer_continuity.py": 2,
+    "tests/unit/test_customer_continuity_integration.py": 4,
+    "tests/unit/test_customer_continuity_outage.py": 1,
+    "tests/unit/test_customer_display.py": 2,
+    "tests/unit/test_customer_document.py": 4,
+    "tests/unit/test_customer_evidence.py": 2,
+    "tests/unit/test_customer_export_job.py": 4,
+    "tests/unit/test_customer_package.py": 4,
+    "tests/unit/test_customer_pdf.py": 3,
+    "tests/unit/test_customer_pdf_assembly.py": 1,
+    "tests/unit/test_customer_pop.py": 1,
+    "tests/unit/test_customer_pop_capture.py": 4,
+    "tests/unit/test_customer_projection.py": 3,
+    "tests/unit/test_customer_runtime.py": 2,
+    "tests/unit/test_customer_view.py": 3,
+    "tests/unit/test_dateline_timeline.py": 4,
+    "tests/unit/test_derived_route.py": 1,
+    "tests/unit/test_eta_cache_service.py": 1,
+    "tests/unit/test_eta_calculator.py": 4,
+    "tests/unit/test_eta_projection.py": 2,
+    "tests/unit/test_eta_service.py": 4,
+    "tests/unit/test_export_preparation.py": 3,
+    "tests/unit/test_export_snapshot.py": 1,
+    "tests/unit/test_flight_event_edges.py": 2,
+    "tests/unit/test_flight_event_isolation.py": 2,
+    "tests/unit/test_flight_event_models.py": 3,
+    "tests/unit/test_flight_event_store.py": 4,
+    "tests/unit/test_flight_events.py": 2,
+    "tests/unit/test_flight_state_manager.py": 3,
+    "tests/unit/test_flight_status_models.py": 3,
+    "tests/unit/test_geojson.py": 2,
+    "tests/unit/test_gfs_acceptance_clock.py": 3,
+    "tests/unit/test_gfs_api.py": 3,
+    "tests/unit/test_gfs_contracts.py": 4,
+    "tests/unit/test_gfs_decode.py": 4,
+    "tests/unit/test_gfs_grid.py": 3,
+    "tests/unit/test_gfs_inventory.py": 3,
+    "tests/unit/test_gfs_ipc.py": 4,
+    "tests/unit/test_gfs_quota.py": 1,
+    "tests/unit/test_gfs_settings.py": 1,
+    "tests/unit/test_gfs_store.py": 1,
+    "tests/unit/test_gfs_transport.py": 4,
+    "tests/unit/test_gfs_vertical.py": 1,
+    "tests/unit/test_gfs_worker.py": 2,
+    "tests/unit/test_ground_entry_point.py": 2,
+    "tests/unit/test_ground_entry_point_refresh_policy.py": 3,
+    "tests/unit/test_kml_follower.py": 2,
+    "tests/unit/test_kml_parser.py": 3,
+    "tests/unit/test_kmz_importer.py": 4,
+    "tests/unit/test_labels.py": 3,
+    "tests/unit/test_legacy_compatibility_exports.py": 1,
+    "tests/unit/test_legacy_export_concurrency.py": 4,
+    "tests/unit/test_live_coordinator.py": 2,
+    "tests/unit/test_main_aviation_weather.py": 2,
+    "tests/unit/test_main_lifespan.py": 2,
+    "tests/unit/test_main_orbital_catalog.py": 1,
+    "tests/unit/test_main_overview_adsb.py": 4,
+    "tests/unit/test_main_overview_clock_settings.py": 4,
+    "tests/unit/test_main_overview_history.py": 4,
+    "tests/unit/test_main_overview_link_settings.py": 1,
+    "tests/unit/test_main_pop_startup.py": 1,
+    "tests/unit/test_manual_aar_track.py": 3,
+    "tests/unit/test_map_inputs.py": 2,
+    "tests/unit/test_map_real_input_boundaries.py": 1,
+    "tests/unit/test_metric_validation.py": 4,
+    "tests/unit/test_metrics.py": 4,
+    "tests/unit/test_metrics_export.py": 2,
+    "tests/unit/test_mission_clock_dependencies.py": 4,
+    "tests/unit/test_mission_clock_endpoints.py": 2,
+    "tests/unit/test_mission_clock_service.py": 1,
+    "tests/unit/test_mission_clock_settings.py": 4,
+    "tests/unit/test_mission_exporter.py": 3,
+    "tests/unit/test_mission_generated_pois.py": 2,
+    "tests/unit/test_mission_metrics.py": 1,
+    "tests/unit/test_mission_models.py": 3,
+    "tests/unit/test_mission_package_endpoint_pois.py": 2,
+    "tests/unit/test_mission_pop_continuity.py": 3,
+    "tests/unit/test_mission_pop_forecast.py": 4,
+    "tests/unit/test_mission_retirement_docs.py": 3,
+    "tests/unit/test_mission_state.py": 2,
+    "tests/unit/test_mission_storage.py": 1,
+    "tests/unit/test_mission_timeline.py": 1,
+    "tests/unit/test_network.py": 3,
+    "tests/unit/test_obstructions.py": 1,
+    "tests/unit/test_orbital_catalog.py": 1,
+    "tests/unit/test_orbital_catalog_store.py": 2,
+    "tests/unit/test_orbital_viewers.py": 2,
+    "tests/unit/test_overview_adsb_selection.py": 2,
+    "tests/unit/test_overview_adsb_settings.py": 3,
+    "tests/unit/test_overview_adsb_traffic.py": 1,
+    "tests/unit/test_overview_clock_geography.py": 1,
+    "tests/unit/test_overview_clock_location.py": 3,
+    "tests/unit/test_overview_clock_settings.py": 1,
+    "tests/unit/test_overview_history_api_cache.py": 1,
+    "tests/unit/test_overview_history_cache.py": 2,
+    "tests/unit/test_overview_history_cache_bounds.py": 1,
+    "tests/unit/test_overview_history_cache_recovery.py": 1,
+    "tests/unit/test_overview_history_deployment.py": 4,
+    "tests/unit/test_overview_history_prometheus.py": 2,
+    "tests/unit/test_overview_history_rollups.py": 3,
+    "tests/unit/test_overview_history_settings.py": 4,
+    "tests/unit/test_overview_link_settings.py": 2,
+    "tests/unit/test_overview_upcoming_pois.py": 1,
+    "tests/unit/test_overview_weather_acquisitions.py": 4,
+    "tests/unit/test_overview_weather_api.py": 1,
+    "tests/unit/test_overview_weather_detail.py": 2,
+    "tests/unit/test_overview_weather_protocol.py": 4,
+    "tests/unit/test_overview_weather_service.py": 1,
+    "tests/unit/test_overview_weather_settings.py": 3,
+    "tests/unit/test_overview_weather_transport.py": 2,
+    "tests/unit/test_package_adjusted_export.py": 2,
+    "tests/unit/test_package_export_adjusted_times.py": 3,
+    "tests/unit/test_package_exporter.py": 4,
+    "tests/unit/test_performance_metrics.py": 2,
+    "tests/unit/test_poi_eta_models.py": 3,
+    "tests/unit/test_poi_manager.py": 2,
+    "tests/unit/test_pop_capability_identity.py": 3,
+    "tests/unit/test_pop_catalog.py": 2,
+    "tests/unit/test_pop_continuity.py": 4,
+    "tests/unit/test_pop_coverage_evidence.py": 1,
+    "tests/unit/test_pop_forecast.py": 4,
+    "tests/unit/test_pop_geometry.py": 2,
+    "tests/unit/test_pop_live.py": 1,
+    "tests/unit/test_pop_status_continuity.py": 4,
+    "tests/unit/test_pop_window_pois.py": 1,
+    "tests/unit/test_position.py": 2,
+    "tests/unit/test_position_freshness.py": 3,
+    "tests/unit/test_pptx_builder.py": 2,
+    "tests/unit/test_pydantic_warning_regressions.py": 4,
+    "tests/unit/test_repository_gate.py": 3,
+    "tests/unit/test_route.py": 3,
+    "tests/unit/test_route_eta_calculator_service.py": 4,
+    "tests/unit/test_route_manager.py": 2,
+    "tests/unit/test_route_models_with_timing.py": 3,
+    "tests/unit/test_route_sigmets_api.py": 4,
+    "tests/unit/test_route_sigmets_arcs.py": 4,
+    "tests/unit/test_route_sigmets_context.py": 4,
+    "tests/unit/test_route_sigmets_contracts.py": 2,
+    "tests/unit/test_route_sigmets_decode.py": 2,
+    "tests/unit/test_route_sigmets_encounters.py": 3,
+    "tests/unit/test_route_sigmets_geometry.py": 3,
+    "tests/unit/test_route_sigmets_identity.py": 3,
+    "tests/unit/test_route_sigmets_runtime.py": 1,
+    "tests/unit/test_route_sigmets_state.py": 4,
+    "tests/unit/test_route_timing.py": 2,
+    "tests/unit/test_router_integration.py": 1,
+    "tests/unit/test_satellite_catalog.py": 4,
+    "tests/unit/test_satellite_coverage.py": 1,
+    "tests/unit/test_satellite_geometry.py": 1,
+    "tests/unit/test_satellite_rules.py": 4,
+    "tests/unit/test_sigmet_live_eta.py": 4,
+    "tests/unit/test_simulation_availability.py": 2,
+    "tests/unit/test_simulation_pop.py": 3,
+    "tests/unit/test_simulation_pop_ambiguous.py": 2,
+    "tests/unit/test_simulation_run_events.py": 2,
+    "tests/unit/test_simulation_run_imported_timing.py": 4,
+    "tests/unit/test_simulation_run_plan.py": 1,
+    "tests/unit/test_simulation_run_review_routes.py": 4,
+    "tests/unit/test_simulation_run_runtime.py": 2,
+    "tests/unit/test_simulation_run_service.py": 1,
+    "tests/unit/test_simulation_run_timing.py": 1,
+    "tests/unit/test_simulation_run_wakeup.py": 3,
+    "tests/unit/test_slide_cache.py": 2,
+    "tests/unit/test_slide_coordinator.py": 2,
+    "tests/unit/test_speed_tracker_provenance.py": 2,
+    "tests/unit/test_starlink_client.py": 4,
+    "tests/unit/test_telemetry_archive.py": 4,
+    "tests/unit/test_telemetry_archive_reader.py": 1,
+    "tests/unit/test_telemetry_package.py": 1,
+    "tests/unit/test_telemetry_preparation.py": 4,
+    "tests/unit/test_timestamp_extraction.py": 3,
+    "tests/unit/test_timing_aware_simulation.py": 4,
+    "tests/unit/test_x_band_warning_pois.py": 3,
+    "tests/unit/test_x_constraint_propagation.py": 3
+  },
+  "provenance": {
+    "algorithm": "longest phase sum first; path then lowest shard number breaks ties",
+    "cases": 4295,
+    "collection_seconds": 1.1144058522768319,
+    "files": 346,
+    "limits": "One local sample. Phase sums do not include full independent-run setup/collection/cleanup and cannot prove hosted speedup or isolation. Raw serial report retained; no test changes in baseline.",
+    "observer_sha256": "302b5c5bfbf7ce2ac5fdaa105ad09408a75c24ab349714557620bdfd439c2a96",
+    "phase_seconds": 631.2743427981623,
+    "phase_sums": [
+      157.81843981239945,
+      157.81784577853978,
+      157.8181696939282,
+      157.81988751329482
+    ],
+    "runner_sha256": "b2258520bf568ce435dc2eb6129632d00ae2f9609cfbfde58025dadd38618962",
+    "source_sha": "2bf2fb12b8db85ab8599a452c0b693c67910d0a7"
+  },
+  "schema_version": 1,
+  "shard_count": 4
+}

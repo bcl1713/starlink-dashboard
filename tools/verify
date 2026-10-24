@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import io
 import os
 import re
@@ -12,6 +13,16 @@ import time
 import tokenize
 from collections.abc import Mapping
 from pathlib import Path
+
+# SourceFileLoader callers need the same helper lookup as the executable script.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from backend_ci import (
+    backend_commands,
+    parse_shard,
+    reject_pytest_overrides,
+    validate_backend_lock,
+)
+from backend_test_runner import run_backend
 
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend/starlink-location"
@@ -78,41 +89,18 @@ STATIC: list[Command] = [
             "-q",
             "tools/tests/test_acceptance_platform_typing_policy.py",
             "tools/tests/test_docs_links.py",
+            "tools/tests/test_backend_ci.py",
+            "tools/tests/test_backend_test_runner.py",
+            "tools/tests/test_verify.py",
+            "tools/tests/test_quality_gate_workflow.py",
         ],
         ROOT,
     ),
 ]
 # Both commands share uv's requirement-keyed cached environment. The first
 # separates dependency setup/inventory time from pytest execution.
-BACKEND_UV = [
-    "uv",
-    "run",
-    "--python",
-    PYTHON,
-    "--with-requirements",
-    str(BACKEND / "requirements-dev.txt"),
-    "--with-requirements",
-    str(BACKEND / "requirements-gfs.txt"),
-]
-BACKEND_COMMANDS: list[Command] = [
-    (
-        [
-            *BACKEND_UV,
-            "python",
-            "-c",
-            "import sys; from importlib.metadata import distributions; "
-            "print('Python:', sys.version, 'executable:', sys.executable, flush=True); "
-            "assert sys.version_info[:2] == (3, 11), 'backend requires Python 3.11'; "
-            "print('Installed distributions:\\n' + '\\n'.join(sorted("
-            "d.metadata['Name'] + '==' + d.version for d in distributions())))",
-        ],
-        BACKEND,
-    ),
-    (
-        [*BACKEND_UV, "pytest", "tests/", "-q", "--durations=50", "--durations-min=0"],
-        BACKEND,
-    ),
-]
+BACKEND_COMMANDS: list[Command] = backend_commands(ROOT, PYTHON)
+
 FRONTEND: list[Command] = [
     (["npm", "--prefix", "frontend/mission-planner", "run", "test:unit"], ROOT),
     (["npm", "--prefix", "frontend/mission-planner", "run", "build"], ROOT),
@@ -241,9 +229,31 @@ def tier_commands(tier: str) -> list[Command]:
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv if argv is None else argv
-    if len(args) != 2 or args[1] not in {"static", "backend", "frontend", "all"}:
+    if len(args) < 2 or args[1] not in {"static", "backend", "frontend", "all"}:
         print("usage: tools/verify {static|backend|frontend|all}", file=sys.stderr)
         return 2
+    options = None
+    if len(args) > 2:
+        if args[1] != "backend":
+            print("backend options are only valid for backend", file=sys.stderr)
+            return 2
+        parser = argparse.ArgumentParser(prog="tools/verify backend")
+        parser.add_argument("--shard")
+        parser.add_argument("--report", type=Path)
+        parser.add_argument("--run-root", type=Path)
+        try:
+            options = parser.parse_args(args[2:])
+            parse_shard(options.shard)
+            if not options.report or not options.run_root:
+                raise ValueError(
+                    "reported/shard backend requires both --report and --run-root"
+                )
+            if not options.report.is_absolute() or not options.run_root.is_absolute():
+                raise ValueError("report and run-root must be absolute")
+            reject_pytest_overrides(os.environ)
+        except (ValueError, SystemExit) as error:
+            print(f"backend arguments error: {error}", file=sys.stderr)
+            return 2
 
     if args[1] in {"static", "all"}:
         try:
@@ -254,6 +264,27 @@ def main(argv: list[str] | None = None) -> int:
         if violations:
             print(*violations, sep="\n", file=sys.stderr)
             return 1
+
+    if args[1] in {"backend", "all"}:
+        try:
+            validate_backend_lock(ROOT)
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+
+    if options is not None:
+        try:
+            run_backend(
+                ROOT,
+                BACKEND_COMMANDS,
+                report=options.report,
+                run_root=options.run_root,
+                shard=options.shard,
+            )
+        except (ValueError, OSError, RuntimeError) as error:
+            print(f"reported backend error: {error}", file=sys.stderr)
+            return 2
+        return 0
 
     for command, cwd in tier_commands(args[1]):
         print(f"({cwd}) $ {' '.join(command)}", flush=True)

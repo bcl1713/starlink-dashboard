@@ -1,0 +1,352 @@
+{
+  "run_id": 40066349301,
+  "attempt": 1,
+  "feature_head": "0ce08bf034ac356544ddf49088fea63326e0d9a3",
+  "checkout_sha": "b629c1d1fe6d023e7cb9ded75056b4f2e4497b2c",
+  "conclusion": "success",
+  "gate": {
+    "cases": 4300,
+    "outcomes": {
+      "passed": 4280,
+      "skipped": 20
+    },
+    "shards": [
+      {
+        "shard": 1,
+        "cases": 936,
+        "collection_seconds": 9.307445312999995,
+        "pytest_seconds": 213.443019601,
+        "phase_seconds": 203.50962786700057
+      },
+      {
+        "shard": 2,
+        "cases": 1225,
+        "collection_seconds": 6.058258136999996,
+        "pytest_seconds": 141.895186836,
+        "phase_seconds": 135.41958659999992
+      },
+      {
+        "shard": 3,
+        "cases": 989,
+        "collection_seconds": 7.610613803999996,
+        "pytest_seconds": 166.36098617199997,
+        "phase_seconds": 158.10885751699945
+      },
+      {
+        "shard": 4,
+        "cases": 1150,
+        "collection_seconds": 8.067040417999998,
+        "pytest_seconds": 195.97760884299998,
+        "phase_seconds": 187.33647590000047
+      }
+    ]
+  },
+  "case_counts": {
+    "passed": 4280,
+    "skipped": 20
+  },
+  "baseline_original_cases": 4295,
+  "explicit_case_renames": 2,
+  "added_offline_cases": 5,
+  "exact_original_outcomes_preserved": true,
+  "job_seconds": {
+    "Backend Shard 4/4": 226.0,
+    "Frontend Test and Build Gate": 198.0,
+    "Backend Shard 3/4": 191.0,
+    "Backend Shard 2/4": 163.0,
+    "Backend Shard 1/4": 238.0,
+    "Static Quality Gate": 177.0,
+    "Backend Test Gate": 10.0
+  },
+  "runner_minutes": 20.05,
+  "rounded_job_minutes_not_a_bill": 23,
+  "backend_critical_seconds": 250.0,
+  "workflow_execution_seconds": 250.0,
+  "common_shard_overlap_seconds": 163.0,
+  "cache_states": {
+    "1": "true",
+    "2": "true",
+    "3": "true",
+    "4": "true"
+  },
+  "platforms": {
+    "1": {
+      "cpu_count": 4,
+      "image_os": "ubuntu24",
+      "image_version": "20261012.334.1",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "release": "6.17.0-1022-azure",
+      "runner_arch": "X64",
+      "runner_os": "Linux",
+      "system": "Linux",
+      "version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026"
+    },
+    "2": {
+      "cpu_count": 4,
+      "image_os": "ubuntu24",
+      "image_version": "20261012.334.1",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "release": "6.17.0-1022-azure",
+      "runner_arch": "X64",
+      "runner_os": "Linux",
+      "system": "Linux",
+      "version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026"
+    },
+    "3": {
+      "cpu_count": 4,
+      "image_os": "ubuntu24",
+      "image_version": "20261012.334.1",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "release": "6.17.0-1022-azure",
+      "runner_arch": "X64",
+      "runner_os": "Linux",
+      "system": "Linux",
+      "version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026"
+    },
+    "4": {
+      "cpu_count": 4,
+      "image_os": "ubuntu24",
+      "image_version": "20261012.334.1",
+      "machine": "x86_64",
+      "processor": "x86_64",
+      "release": "6.17.0-1022-azure",
+      "runner_arch": "X64",
+      "runner_os": "Linux",
+      "system": "Linux",
+      "version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026"
+    }
+  },
+  "runtime_identity": {
+    "observer_sha256": "fdaa4ba85d604e024e9249f4e84059dc09a7c095cad9a056451cdbe55635d370",
+    "runner_sha256": "cbf2e5b7260f49d15f6168e900fc423b739dc4b563b629933e6d7c3ce5c05467",
+    "verify_sha256": "87e3623f20d7f72c89fc392620fc4f1259e65de3f6e71a8a56e44dea0e79520e",
+    "config_sha256": "ef0ba4b75d30ce07b32d8804ccc900a025c36262891d6c2355b7cacbcfa19c83",
+    "input_sha256": {
+      "backend/starlink-location/.python-version": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93",
+      "backend/starlink-location/pytest.ini": "3fa3373416c60c6f987fcfe53e9b918efa23e691a8f37dd5905bfe7fbf7f8e51",
+      "backend/starlink-location/requirements-ci.txt": "361de5aa5a1b65e3ea5254de84a2cd3e03dc39cba512f73629f5f28bf2767d13",
+      "backend/starlink-location/requirements-dev.txt": "31f2596e7c7a7d1713d8861ae196067f80293301f857f44e46fe1f0d837636fb",
+      "backend/starlink-location/requirements-gfs.txt": "afddb44adec04e3079735b11c9eb68ea0cdef3e4921159916d258ff7a7237879",
+      "backend/starlink-location/requirements.txt": "bf0b6ee7901e0af37ad53870c44607ca67a9df1cc7b1157e7c5168bfe1e47e73"
+    },
+    "backend_tree": "21e10981ccfa434bf41513d6f5f428a60c311f07",
+    "uv_version": "uv 0.12.19 (x86_64-unknown-linux-gnu)",
+    "distributions": [
+      "Cartopy==0.26.0",
+      "Deprecated==1.3.1",
+      "PyYAML==6.0.3",
+      "Pygments==2.21.0",
+      "adjustText==1.4.0",
+      "annotated-doc==0.0.5",
+      "annotated-types==0.8.0",
+      "anyio==4.15.1",
+      "arrow==1.4.0",
+      "attrs==26.1.0",
+      "black==26.5.1",
+      "certifi==2026.10.23",
+      "cffi==2.1.1",
+      "click==8.5.0",
+      "contourpy==1.3.3",
+      "coverage==7.17.0",
+      "cycler==0.12.1",
+      "dnspython==2.9.0",
+      "eccodes==2.49.0",
+      "eccodeslib==2.49.0.30",
+      "eckitlib==2.3.0.30",
+      "et_xmlfile==2.0.0",
+      "fastapi==0.162.0",
+      "fastkml==1.4.0",
+      "filelock==4.0.12",
+      "findlibs==0.1.3",
+      "flatbuffers==25.12.19",
+      "fonttools==4.67.0",
+      "geojson==3.3.0",
+      "grpcio-reflection==1.84.1",
+      "grpcio-tools==1.84.1",
+      "grpcio==1.84.1",
+      "h11==0.16.0",
+      "h3==4.5.0",
+      "httpcore2==2.16.0",
+      "httpcore==1.0.9",
+      "httptools==0.9.0",
+      "httpx2==2.16.0",
+      "httpx==0.28.1",
+      "idna==3.20",
+      "iniconfig==2.3.1",
+      "kiwisolver==1.5.1",
+      "limits==5.8.0",
+      "lxml==6.1.3",
+      "matplotlib==3.11.2",
+      "mypy_extensions==1.1.0",
+      "numpy==2.4.6",
+      "openpyxl==3.1.5",
+      "opentelemetry-api==1.45.1",
+      "packaging==26.3",
+      "pandas==3.1.0",
+      "pathspec==1.1.1",
+      "pillow==13.0.0",
+      "pip==26.2.1",
+      "platformdirs==4.13.5",
+      "pluggy==1.7.0",
+      "prometheus_client==0.26.0",
+      "protobuf==7.36.2",
+      "psutil==7.2.2",
+      "pycparser==3.12",
+      "pydantic-settings==2.16.1",
+      "pydantic==2.13.5",
+      "pydantic_core==2.46.5",
+      "pygeoif==1.6.0",
+      "pyparsing==3.3.3",
+      "pypdf==6.21.2",
+      "pyproj==3.7.2",
+      "pyshp==3.1.6",
+      "pytest-asyncio==1.4.0",
+      "pytest-cov==7.1.0",
+      "pytest==9.1.1",
+      "python-dateutil==3.0.0",
+      "python-dotenv==1.2.4",
+      "python-multipart==0.0.32",
+      "python-pptx==1.0.2",
+      "pytokens==0.4.1",
+      "reverse_geocoder==1.5.1",
+      "ruff==0.16.8",
+      "scipy==1.17.1",
+      "setuptools==79.0.1",
+      "setuptools==84.2.1",
+      "shapely==2.2.0",
+      "six==1.17.0",
+      "slowapi==0.1.10",
+      "starlette==1.9.0",
+      "starlink-grpc-core==1.2.5",
+      "timezonefinder-data==3.2026.3.post1",
+      "timezonefinder==9.0.0",
+      "truststore==0.10.5",
+      "typing-inspection==0.4.4",
+      "typing_extensions==4.16.0",
+      "tzdata==2026.5",
+      "uvicorn==0.54.0",
+      "uvloop==0.23.0",
+      "watchdog==6.0.0",
+      "watchfiles==1.3.0",
+      "websockets==17.3",
+      "wrapt==2.5.1",
+      "xlsxwriter==3.3.0",
+      "yagrc==1.1.3"
+    ],
+    "distribution_sha256": "e3852bafc424f5ac8309c1f36fdad2886c27bae2e48cf482bd0604ad9bfcf722",
+    "python": {
+      "version": "3.11.17 (main, Oct  1 2026, 14:32:31) [GCC 13.3.0]",
+      "implementation": "CPython"
+    }
+  },
+  "phase_seconds": {
+    "1": {
+      "setup": 13.87907866399982,
+      "call": 188.2378643340006,
+      "teardown": 1.3926848690001705
+    },
+    "2": {
+      "setup": 16.287422176999286,
+      "call": 118.19618901500027,
+      "teardown": 0.9359754080003597
+    },
+    "3": {
+      "setup": 30.331100462998933,
+      "call": 126.96552808700031,
+      "teardown": 0.812228967000209
+    },
+    "4": {
+      "setup": 51.98437381400014,
+      "call": 134.27552018900033,
+      "teardown": 1.076581897000004
+    }
+  },
+  "command_records": {
+    "1": [
+      {
+        "label": "inventory",
+        "elapsed_seconds": 1.920658244000002,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      },
+      {
+        "label": "pytest",
+        "elapsed_seconds": 224.400144037,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      }
+    ],
+    "2": [
+      {
+        "label": "inventory",
+        "elapsed_seconds": 1.2996671679999992,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      },
+      {
+        "label": "pytest",
+        "elapsed_seconds": 149.295509749,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      }
+    ],
+    "3": [
+      {
+        "label": "inventory",
+        "elapsed_seconds": 1.3701409279999837,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      },
+      {
+        "label": "pytest",
+        "elapsed_seconds": 175.31778064500003,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      }
+    ],
+    "4": [
+      {
+        "label": "inventory",
+        "elapsed_seconds": 2.3823134470000014,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      },
+      {
+        "label": "pytest",
+        "elapsed_seconds": 205.59114569300002,
+        "exit_code": 0,
+        "subprocess_returncode": 0
+      }
+    ]
+  },
+  "source_head_at_audit": "0ce08bf034ac356544ddf49088fea63326e0d9a3",
+  "source_identity_at_audit": {
+    "observer_sha256": "fdaa4ba85d604e024e9249f4e84059dc09a7c095cad9a056451cdbe55635d370",
+    "runner_sha256": "cbf2e5b7260f49d15f6168e900fc423b739dc4b563b629933e6d7c3ce5c05467",
+    "verify_sha256": "87e3623f20d7f72c89fc392620fc4f1259e65de3f6e71a8a56e44dea0e79520e",
+    "config_sha256": "ef0ba4b75d30ce07b32d8804ccc900a025c36262891d6c2355b7cacbcfa19c83",
+    "input_sha256": {
+      "backend/starlink-location/.python-version": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93",
+      "backend/starlink-location/pytest.ini": "3fa3373416c60c6f987fcfe53e9b918efa23e691a8f37dd5905bfe7fbf7f8e51",
+      "backend/starlink-location/requirements-ci.txt": "361de5aa5a1b65e3ea5254de84a2cd3e03dc39cba512f73629f5f28bf2767d13",
+      "backend/starlink-location/requirements-dev.txt": "31f2596e7c7a7d1713d8861ae196067f80293301f857f44e46fe1f0d837636fb",
+      "backend/starlink-location/requirements-gfs.txt": "afddb44adec04e3079735b11c9eb68ea0cdef3e4921159916d258ff7a7237879",
+      "backend/starlink-location/requirements.txt": "bf0b6ee7901e0af37ad53870c44607ca67a9df1cc7b1157e7c5168bfe1e47e73"
+    },
+    "backend_tree": "21e10981ccfa434bf41513d6f5f428a60c311f07"
+  },
+  "artifact_sha256": {
+    "artifacts/backend-report-40066349301-1-4/ownership.json": "9a2498f1ff71fe3d682e9dfd660f3840438e2e46550330d543716d9947598dd6",
+    "artifacts/backend-report-40066349301-1-4/backend-report-40066349301-1-4.json": "caf62f8f9eea51d6735522b82b6512bf6446401d6b5fda808bf73eb9e7d8865d",
+    "artifacts/backend-report-40066349301-1-2/ownership.json": "7d3c16d8798facf19444df864f42f744f65bdaf0140e76eb757e8a2115135ecb",
+    "artifacts/backend-report-40066349301-1-2/backend-report-40066349301-1-2.json": "93af6751522f5e53d241a68ad83827d9dc87e776d311f4ae9fe4b697e27de30b",
+    "artifacts/backend-report-40066349301-1-1/ownership.json": "46dbebe95e997700ebe5a617e5026cea18a85212be41b24b62f2c4b217bfd9aa",
+    "artifacts/backend-report-40066349301-1-1/backend-report-40066349301-1-1.json": "567f464da6b3f568eb18550eab9fde2e433139ff52a764ecc51eeccc33ae8031",
+    "artifacts/backend-report-40066349301-1-3/ownership.json": "00f3b5e85f65948aa35207e7a776dbf490efded2b38a218e9f6906be9e95cce6",
+    "artifacts/backend-report-40066349301-1-3/backend-report-40066349301-1-3.json": "8d8eb2cc790cb7f0c1e7cc8d435cbda5548a352412c1b9c1c3250f369d1d4acc"
+  },
+  "limitations": "Job intervals are execution runner-minutes, not billed dollars. Historical serial host/dependency/tool differences remain documented; two samples are not a statistical claim."
+}

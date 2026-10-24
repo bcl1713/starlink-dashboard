@@ -415,3 +415,7 @@ def mock_starlink_client_factory():
         return mock_client
 
     return create_mock_client
+
+
+# Cartography remains explicit opt-in; HTTP and loopback tests keep normal I/O.
+pytest_plugins = ["tests.fixtures.cartography"]

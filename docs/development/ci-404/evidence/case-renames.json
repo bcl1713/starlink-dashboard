@@ -1,0 +1,12 @@
+[
+  {
+    "original_nodeid": "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[\\x1f\\x8b\\x08\\x00\\xbe+\\xdcj\\x02\\xff\\xab\\x00\\x00\\x83\\x16\\xdc\\x8c\\x01\\x00\\x00\\x00\\x1f\\x8b\\x08\\x00\\xbe+\\xdcj\\x02\\xff\\xab\\x04\\x00\\x15&\\xdb\\xfb\\x01\\x00\\x00\\x00]",
+    "new_nodeid": "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[trailing-member]",
+    "reason": "Same concatenated gzip-member rejection; fixed synthetic gzip header metadata and explicit ID"
+  },
+  {
+    "original_nodeid": "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[\\x1f\\x8b\\x08\\x00\\xbe+\\xdcj\\x02\\xff\\xab\\x00\\x00\\x83\\x16\\xdc\\x8c\\x01\\x00]",
+    "new_nodeid": "tests/unit/test_aviation_weather_transport.py::test_expansion_rejects_invalid_trailing_and_truncated_gzip[truncated]",
+    "reason": "Same truncated-gzip rejection; fixed synthetic gzip header metadata and explicit ID"
+  }
+]

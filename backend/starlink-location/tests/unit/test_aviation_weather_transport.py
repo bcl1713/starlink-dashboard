@@ -76,7 +76,14 @@ async def test_redirect_content_encoding_mime_and_body_bounds_fail_closed(
 
 @pytest.mark.parametrize(
     "body",
-    [b"not-gzip", gzip.compress(b"x") + gzip.compress(b"y"), gzip.compress(b"x")[:-2]],
+    [
+        b"not-gzip",
+        pytest.param(
+            gzip.compress(b"x", mtime=0) + gzip.compress(b"y", mtime=0),
+            id="trailing-member",
+        ),
+        pytest.param(gzip.compress(b"x", mtime=0)[:-2], id="truncated"),
+    ],
 )
 def test_expansion_rejects_invalid_trailing_and_truncated_gzip(body):
     with pytest.raises((ValueError, zlib.error)):

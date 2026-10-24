@@ -13,8 +13,11 @@ continuous integration. Run the commands from the repository root.
   `requirements-dev.txt` (including application requirements) and
   `requirements-gfs.txt`. Static retains its development dependency install
   for root policy tests; Black and Ruff use uv with the same Python selection.
-  Existing requirement pins/ranges and setup-uv cache behavior are unchanged;
-  these manifests are not a fully locked dependency set.
+  Backend commands also consume the generated hashed `requirements-ci.txt` and
+  reject stale source fingerprints before uv. CI pins uv 0.12.19 and uses
+  separate static/backend caches keyed by OS, architecture, actual Python patch,
+  uv, all backend requirements, and tracked Python. See the
+  [measurement and regeneration guide](../development/ci-404/completion.md).
 - Use Node 22.22.2 or a newer Node 22 patch. CI uses 22.22.2, and the frontend
   package declares that Node 22 range. Older patches do not satisfy the locked
   jsdom dependency requirements. Install locked frontend dependencies with
@@ -51,7 +54,9 @@ request is ready, run the applicable tier or `./tools/verify all`.
   executable/version and installed distribution versions using the same uv
   requirement inputs, then reports the 50 slowest pytest phases (including
   setup/teardown). Each command prints elapsed seconds and its exit status.
-  CI bounds this tier to 20 minutes with a ten-second termination grace period.
+  CI runs four isolated whole-file shards, each with a 20-minute command limit,
+  ten-second forced-kill grace, and 25-minute job cap. The reported-run owner
+  cleans private stores and verified descendants before evidence upload.
   Compare environment/inventory time separately from pytest time and the
   GitHub job setup/post steps; pytest retains collection/pass/skip totals.
 - `frontend` runs Vitest with `npm run test:unit` and then the frontend
@@ -84,9 +89,19 @@ an external service. CI continues to call the same canonical static command.
 
 ## CI Mapping
 
-Normal CI runs the static, backend, and frontend tiers as separate required
-jobs. The repository-owned commands above are the shared command interface for
-contributors and CI.
+Normal CI keeps Static Quality Gate, Backend Test Gate, and Frontend Test and
+Build Gate. Four explicit `backend_1` through `backend_4` jobs run the complete
+collection and retain their disjoint whole-file assignments. Backend Test Gate
+always evaluates all four prerequisites and requires complete matching artifacts,
+coverage, outcomes, runtime identities, and cleanup; uploaded diagnostics cannot
+turn failed execution green. Static also runs the mandatory source-controlled
+backend shard, gate CLI, verifier, workflow, and lifecycle contracts.
+
+For isolated local shard and aggregate commands, report identity, private-root
+ownership, measured timing limits, and rollback to serial, see
+[backend CI completion](../development/ci-404/completion.md). Use separate full
+worktrees and fresh roots for concurrent local shards. Plain `backend` and `all`
+remain complete serial fallback commands.
 
 ## Browser and Runtime Boundary
 
