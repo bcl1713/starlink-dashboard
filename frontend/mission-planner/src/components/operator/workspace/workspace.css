@@ -560,17 +560,20 @@
    Only the chronology rows scroll; its heading, controls and navigation stay put. */
 @media (max-width: 900px) and (min-height: 501px) {
   .ws-awareness {
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* Keep the collapsed heading/control row above adjacent advisories. */
+    grid-template-rows: minmax(0, auto) minmax(4.75rem, 1fr) minmax(0, auto);
     max-height: min(45dvh, calc(100% - 12rem));
     overflow: hidden;
   }
   .ws-now,
   .ws-next {
+    min-height: 0;
     max-height: 9rem;
     overflow-y: auto;
   }
   .ws-attention,
   .ws-advisories {
+    min-height: 0;
     max-height: 6rem;
     overflow-y: auto;
   }
