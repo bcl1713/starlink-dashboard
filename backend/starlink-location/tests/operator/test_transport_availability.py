@@ -321,3 +321,44 @@ def test_selected_replay_projects_capability_events_and_link_without_live_leak(
         )
     finally:
         runtime.close()
+
+
+@pytest.mark.parametrize("transport,label", EVENT_TRANSPORTS)
+def test_capture_started_before_restore_keeps_future_cues(
+    production, clock, monkeypatch, transport, label
+):
+    runtime, adapter = lifecycle_runtime(production, clock)
+    build_snapshot(runtime, "demo-mission", adapter)
+    fail(storage.load_mission_v2("demo-mission"), clock, transport)
+    started_at = clock.now()
+    build_snapshot(runtime, "demo-mission", adapter)
+    clock.advance(1)
+    fail(storage.load_mission_v2("demo-mission"), clock, transport, restore=True)
+    capture = adapter.capture
+    # A request can enter before restore and acquire repository admission after it.
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            adapter,
+            "capture",
+            lambda mission_id, *, as_of: capture(mission_id, as_of=started_at),
+        )
+        build_snapshot(runtime, "demo-mission", adapter)
+    # The accepted revision is cached. A normal subsequent read must still recover
+    # future cues with live timing, without repeating preparation or emitting overdue.
+    result = build_snapshot(runtime, "demo-mission", adapter)
+    future = [
+        event
+        for event in result.events
+        if event.transport == label
+        and event.active
+        and event.due_at
+        and event.due_at > clock.now()
+    ]
+    assert future
+    assert any(
+        event.freshness == "fresh" and event.state == "upcoming" for event in future
+    )
+    assert not any(
+        event.state == "overdue" and event.notification.eligible
+        for event in result.events
+    )

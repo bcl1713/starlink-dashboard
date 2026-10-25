@@ -110,7 +110,11 @@ def compact_event_model(model):
         )
         if key in model
     }
-    result["_restriction_windows"] = tuple(restriction_windows(model))
+    # Cache canonical windows. Request-time eligibility can change while a read
+    # waits for a restoration command; filtering here would lose future cues.
+    result["_restriction_windows"] = tuple(
+        restriction_windows({**model, "transport_availability": None})
+    )
     return result
 
 
