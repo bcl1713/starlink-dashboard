@@ -84,6 +84,93 @@ class PopStatusService:
         self._last_now = None
         self._last_lifecycle = None
         self._published_snapshot = None
+        self._replay_capability_cache = None
+
+    def _replay_capabilities(self, active, context, catalog, availability):
+        """Own one detached capability projection for the selected replay inputs."""
+        from app.mission.exporter.snapshot_inputs import SourcePayload
+        from app.mission.exporter.snapshot_views import RouteView
+        from app.mission.pop_capabilities import capability_input_revision
+        from app.mission.pop_coverage_evidence import current_coverage_snapshot
+        from app.mission.timeline_preparation import prepare_mission_timeline
+
+        try:
+            route, projector = context["route"], context["projector"]
+            current_route = prepare_effective_route(
+                active.leg, self.route_manager, normalize_for_simulation=True
+            )
+            # Flight-state publication updates this observation on the source
+            # route. It does not alter accepted replay geometry or timing.
+            current_route.timing_profile.flight_status = (
+                route.timing_profile.flight_status
+            )
+            coverage = current_coverage_snapshot()
+            if (
+                (context.get("mission_id"), context.get("leg_id"))
+                != (active.parent_mission_id, active.leg.id)
+                or route.model_dump() != current_route.model_dump()
+                or projector.route_snapshot != route.model_dump()
+                or coverage is None
+            ):
+                self._replay_capability_cache = None
+                return None
+            revision = capability_input_revision(
+                active.leg, route, ka_snapshot=coverage, availability=availability
+            )
+            key = (
+                context["simulation_run_id"],
+                active.parent_mission_id,
+                active.leg.id,
+                revision,
+                catalog.fingerprint if catalog else None,
+            )
+            if self._replay_capability_cache is not None:
+                cached_key, captured = self._replay_capability_cache
+                if cached_key == key:
+                    return captured
+            supplied = context.get("call_capabilities")
+            if supplied is not None and supplied.input_revision == revision:
+                captured = copy.deepcopy(supplied)
+            else:
+                source = self.route_manager.get_route(active.leg.route_id).model_copy(
+                    deep=True
+                )
+                source.timing_profile.flight_status = route.timing_profile.flight_status
+                routes = RouteView(
+                    (
+                        SourcePayload(
+                            "route/" + active.leg.route_id,
+                            source.model_dump_json().encode(),
+                        ),
+                    )
+                )
+                artifacts = prepare_mission_timeline(
+                    active.leg,
+                    routes,
+                    parent_mission_id=active.parent_mission_id,
+                    normalize_for_simulation=True,
+                    pop_catalog=catalog,
+                    availability=availability,
+                )
+                captured = artifacts.call_capabilities
+                if (
+                    artifacts.route.model_dump() != route.model_dump()
+                    or captured.input_revision != revision
+                    or current_coverage_snapshot() != coverage
+                ):
+                    self._replay_capability_cache = None
+                    return None
+            self._replay_capability_cache = (key, captured)
+            return captured
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            AttributeError,
+            TimelineComputationError,
+        ):
+            self._replay_capability_cache = None
+            return None
 
     def reconcile(self, forecast, observation, *, catalog, nearest_id, next_id, now):
         """Reject results captured before a route/reset/mode revision superseded them."""
@@ -392,7 +479,23 @@ class PopStatusService:
                 run_id=context.get("simulation_run_id"),
             )
             context["enabled"] = availability.resolve(context["now"])[Transport.KU]
-        if active_context is not None and context.get("call_capabilities") is not None:
+        selected_replay = (
+            config.mode == "simulation"
+            and active_context is not None
+            and context.get("simulation_run_id") is not None
+            and context.get("projector") is not None
+        )
+        if selected_replay:
+            context["call_capabilities"] = self._replay_capabilities(
+                active_context, context, catalog, availability
+            )
+        else:
+            self._replay_capability_cache = None
+        if (
+            not selected_replay
+            and active_context is not None
+            and context.get("call_capabilities") is not None
+        ):
             from app.mission.pop_capabilities import (
                 capability_input_revision,
                 saved_call_capabilities,

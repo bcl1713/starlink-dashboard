@@ -1,0 +1,307 @@
+"""Real paced replay status retains selected capability after equipment actions."""
+
+import json
+
+import pytest
+
+from app.mission import storage
+from app.mission.planning.service import PlanningService
+from app.mission.planning.store import PlanningStore
+from tests.integration import test_simulation_pop_status as source
+
+api = source.api
+pop_api = source.pop_api
+
+
+@pytest.fixture
+def availability_status(pop_api, monkeypatch, tmp_path):
+    client, service, clocks, pops, sites = pop_api
+    monkeypatch.chdir(tmp_path)
+    coverage = tmp_path / "data/sat_coverage"
+    coverage.mkdir(parents=True)
+    (coverage / "commka.geojson").write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {"satellite_id": "AOR"},
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [
+                                [[-5, -5], [5, -5], [5, 5], [-5, 5], [-5, -5]]
+                            ],
+                        },
+                    }
+                ],
+            }
+        )
+    )
+    monkeypatch.setattr("app.mission.timeline_service._COVERAGE_SAMPLER", None)
+    app = client.app
+    app.state.route_manager = service.route_manager
+    app.state.poi_manager = service.poi_manager
+    app.state.coordinator = service.coordinator
+    app.state.planning_service = PlanningService(
+        PlanningStore(storage.MISSIONS_DIR, service.route_manager, service.poi_manager)
+    )
+    source.start_paced(client, 1)
+    return client, service, clocks, pops, sites
+
+
+def command(client, transport, action, key):
+    path = "/api/v2/missions/mission-1/availability"
+    current = client.get(path).json()
+    result = client.post(
+        path + "/actions",
+        json={
+            "expected_revision": current["revision"],
+            "command_id": key,
+            "transport": transport,
+            "action": action,
+            "expected_simulation_run_id": current["simulation_run_id"],
+        },
+    )
+    assert result.status_code == 200, result.text
+    return result.json()
+
+
+@pytest.mark.parametrize("transport", ["X", "Ka", "Ku"])
+def test_paced_status_keeps_selected_continuity_after_failure_and_restore(
+    availability_status, transport
+):
+    client, service, _, pops, _ = availability_status
+    accepted = service.runtime.selected_plan()
+    accepted_revision = accepted.artifacts.call_capabilities.input_revision
+    accepted_route = accepted.artifacts.route.model_dump()
+    baseline = client.get("/api/status").json()
+    assert baseline["pop_forecast"]["status"] == "ready"
+    assert baseline["call_continuity"] is not None
+    assert (
+        command(client, transport, "unavailable", "fail-" + transport)["effective"][
+            transport
+        ]
+        is False
+    )
+    failed = client.get("/api/status").json()
+    assert failed["transport_availability"][transport] is False
+    assert failed["call_continuity"] is not None
+    field = {"X": "x", "Ka": "ka", "Ku": "starshield"}[transport]
+    assert all(
+        getattr(span, field) == "unavailable"
+        for span in pops._replay_capability_cache[1].spans
+        if span.end_utc > service.status().run.simulation_time
+    )
+    intervals = failed["call_continuity"]["intervals"]
+    assert intervals and all(
+        transport not in i["usable_alternatives"] for i in intervals
+    )
+    canonical = client.get("/api/v2/missions/mission-1/legs/leg-1/timeline").json()
+    assert (
+        canonical["statistics"]["_transport_availability"]["simulation_run_id"] is None
+    )
+    assert canonical["statistics"]["_transport_availability"]["failures"] == []
+    command(client, transport, "restore", "restore-" + transport)
+    restored = client.get("/api/status").json()
+    assert restored["transport_availability"][transport] is True
+    assert restored["call_continuity"] is not None
+    assert service.runtime.selected_plan() is accepted
+    assert accepted.artifacts.call_capabilities.input_revision == accepted_revision
+    assert accepted.artifacts.route.model_dump() == accepted_route
+
+
+def test_selected_status_cache_reuses_and_invalidates_real_inputs(
+    availability_status, monkeypatch
+):
+    from app.mission import timeline_preparation, timeline_service
+    from app.satellites.coverage import CoverageSampler
+
+    client, service, clocks, pops, sites = availability_status
+    calls = []
+    prepare = timeline_preparation.prepare_mission_timeline
+
+    def counted(*args, **kwargs):
+        calls.append(True)
+        return prepare(*args, **kwargs)
+
+    monkeypatch.setattr(timeline_preparation, "prepare_mission_timeline", counted)
+    first = client.get("/api/status").json()
+    assert first["call_continuity"] is not None
+    # Real adjusted departure and phase publication leave the accepted projector valid.
+    plan = service.runtime.selected_plan()
+    assert (
+        plan.artifacts.projector.start_time
+        == storage.load_mission_v2("mission-1").legs[0].adjusted_departure_time
+    )
+    assert plan.artifacts.projector.start_time.hour == 1
+    command(client, "Ka", "unavailable", "cache-fail")
+    calls.clear()
+    failed = client.get("/api/status").json()
+    assert failed["call_continuity"] is not None
+    assert len(calls) == 1
+    assert (
+        service.route_manager.get_route("replay").timing_profile.flight_status
+        == "in_flight"
+    )
+    assert plan.artifacts.route.timing_profile.flight_status == "pre_departure"
+    for _ in range(4):
+        assert (
+            client.get("/api/status").json()["call_continuity"]
+            == failed["call_continuity"]
+        )
+    clocks.advance(10)
+    service.collect(service.coordinator, service.publish)
+    advanced = client.get("/api/status").json()
+    assert advanced["call_continuity"] is not None
+    assert advanced["call_continuity"]["intervals"][0][
+        "start_utc"
+    ] == service.status().run.simulation_time.isoformat().replace("+00:00", "Z")
+    assert len(calls) == 1
+    command(client, "Ka", "restore", "cache-restore")
+    calls.clear()
+    restored = client.get("/api/status").json()
+    assert restored["call_continuity"] is not None
+    assert any(
+        "Ka" in i["usable_alternatives"]
+        for i in restored["call_continuity"]["intervals"]
+    )
+    assert len(calls) == 1
+    client.get("/api/status")
+    assert len(calls) == 1
+    sites([("a", 0, -1), ("b", 0, 2)])
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    assert len(calls) == 2
+    # Current source content changes invalidate RF capability even with unchanged commands.
+    from pathlib import Path
+
+    coverage = Path("data/sat_coverage/commka.geojson")
+    old_sampler = CoverageSampler(coverage)
+    raw = json.loads(coverage.read_text())
+    raw["features"][0]["geometry"]["coordinates"][0][1][0] = 6
+    coverage.write_text(json.dumps(raw))
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", old_sampler)
+    assert client.get("/api/status").json()["call_continuity"] is None
+    assert pops._replay_capability_cache is None
+    assert len(calls) == 2
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", None)
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    assert len(calls) == 3
+    client.get("/api/status")
+    assert len(calls) == 3
+
+
+@pytest.mark.parametrize("field", ["geometry", "timing"])
+def test_selected_status_rejects_changed_accepted_route_inputs(
+    availability_status, field
+):
+    from datetime import timedelta
+
+    client, service, _, pops, _ = availability_status
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    route = service.route_manager.get_route("replay")
+    original = route.model_copy(deep=True)
+    if field == "geometry":
+        route.points[1].latitude += 0.1
+    else:
+        route.points[1].expected_arrival_time += timedelta(seconds=1)
+    changed = client.get("/api/status").json()
+    assert changed["call_continuity"] is None
+    assert pops._replay_capability_cache is None
+    service.route_manager._routes["replay"] = original
+    assert client.get("/api/status").json()["call_continuity"] is not None
+
+
+def test_selected_status_new_run_and_real_mode_switch_discard_old_projection(
+    availability_status, monkeypatch
+):
+    from app.api import config as config_api
+
+    client, service, _, pops, _ = availability_status
+    command(client, "Ka", "unavailable", "old-run-fail")
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    previous_run = service.status().run.run_id
+    previous_cache = pops._replay_capability_cache
+    source.start_paced(client, 2)
+    assert service.status().run.run_id != previous_run
+    status = client.get("/api/status").json()
+    assert status["transport_availability"]["Ka"] is True
+    assert status["call_continuity"] is not None
+    assert pops._replay_capability_cache[0] != previous_cache[0]
+    monkeypatch.setattr(config_api, "_coordinator", service.coordinator)
+    client.app.include_router(config_api.router)
+    config = service.coordinator.config.model_dump(mode="json")
+    switched = client.post("/api/config", json={**config, "mode": "live"})
+    assert switched.status_code == 200
+    live = client.get("/api/status").json()
+    assert live["transport_availability"]["Ka"] is True
+    assert live["pop_observation"]["source"] == "live"
+    assert pops._replay_capability_cache is None
+    canonical = client.get("/api/v2/missions/mission-1/legs/leg-1/timeline").json()
+    assert (
+        canonical["statistics"]["_transport_availability"]["simulation_run_id"] is None
+    )
+    live_failure = command(client, "Ka", "unavailable", "live-run-failure")
+    assert live_failure["simulation_run_id"] is None
+    assert client.get("/api/status").json()["transport_availability"]["Ka"] is False
+    assert (
+        client.post("/api/config", json={**config, "mode": "simulation"}).status_code
+        == 200
+    )
+    source.start_paced(client, 1)
+    restarted = client.get("/api/status").json()
+    assert restarted["call_continuity"] is not None
+    assert restarted["transport_availability"]["Ka"] is True
+    canonical = client.get("/api/v2/missions/mission-1/legs/leg-1/timeline").json()
+    snapshot = canonical["statistics"]["_transport_availability"]
+    assert snapshot["simulation_run_id"] is None
+    assert len(snapshot["failures"]) == 1
+    assert snapshot["failures"][0]["transport"] == "Ka"
+    assert snapshot["failures"][0]["end"] is None
+
+
+def test_selected_status_missing_sources_remain_unknown(
+    availability_status, monkeypatch
+):
+    from pathlib import Path
+
+    from app.mission import timeline_service
+
+    client, service, _, pops, _ = availability_status
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    Path("data/sat_coverage/commka.geojson").unlink()
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", None)
+    missing_ka = client.get("/api/status").json()
+    assert missing_ka["call_continuity"] is not None
+    assert all(
+        "Ka" not in i["usable_alternatives"]
+        for i in missing_ka["call_continuity"]["intervals"]
+    )
+    assert any(span.ka == "unknown" for span in pops._replay_capability_cache[1].spans)
+    service.coordinator.config.pop.catalog_path.write_text('{"sites": []}')
+    missing_pop = client.get("/api/status").json()
+    assert missing_pop["pop_forecast"]["status"] == "unavailable"
+    assert missing_pop["call_continuity"] is None
+
+
+def test_all_failed_status_classifies_remaining_outage_and_ka_restore(
+    availability_status,
+):
+    client, _, _, _, _ = availability_status
+    for key in ["X", "Ka", "Ku"]:
+        command(client, key, "unavailable", "all-" + key)
+    down = client.get("/api/status").json()
+    assert down["call_continuity"] is not None
+    assert down["call_continuity"]["intervals"]
+    assert all(
+        i["classification"] == "existing_outage"
+        for i in down["call_continuity"]["intervals"]
+    )
+    command(client, "Ka", "restore", "all-restore-Ka")
+    restored = client.get("/api/status").json()
+    assert restored["call_continuity"] is not None
+    assert all(
+        "Ka" in i["usable_alternatives"]
+        for i in restored["call_continuity"]["intervals"]
+    )
+    assert restored["call_continuity"]["planned_communications_outage_seconds"] == 0

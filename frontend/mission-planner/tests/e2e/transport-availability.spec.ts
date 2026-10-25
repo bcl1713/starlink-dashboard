@@ -740,7 +740,15 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   // Normal authoritative replay activation; its failures cannot leak into live planning.
   await json(
     await request.post('/api/config', {
-      data: { ...config, mode: 'simulation' },
+      data: {
+        ...config,
+        pop: {
+          ...config.pop,
+          catalog_path:
+            '/app/data/operator/transport-availability/availability-pops.json',
+        },
+        mode: 'simulation',
+      },
     })
   );
   const pacing = { mode: 'multiplier', multiplier: 1 };
@@ -761,9 +769,33 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   );
   const simulation = await read();
   expect(simulation.simulation_run_id).toBeTruthy();
+  const simulatedStatusBefore = await json<{
+    pop_forecast: { status: string };
+    call_continuity: CallContinuityProjection | null;
+  }>(await request.get('/api/status'));
+  expect(simulatedStatusBefore.pop_forecast.status).toBe('ready');
+  expect(simulatedStatusBefore.call_continuity).not.toBeNull();
   const failedSimulation = await change('Ka', 'unavailable');
   expect(failedSimulation.effective?.Ka).toBe(false);
   expect(failedSimulation.legs[0].planning_effective?.Ka).toBe(true);
+  const simulatedStatusAfter = await json<{
+    transport_availability: { Ka: boolean };
+    pop_forecast: { status: string };
+    call_continuity: CallContinuityProjection | null;
+  }>(await request.get('/api/status'));
+  expect(simulatedStatusAfter.transport_availability.Ka).toBe(false);
+  expect(simulatedStatusAfter.pop_forecast.status).toBe('ready');
+  expect(simulatedStatusAfter.call_continuity).not.toBeNull();
+  expect(
+    simulatedStatusAfter.call_continuity!.intervals.length
+  ).toBeGreaterThan(0);
+  expect(
+    simulatedStatusAfter.call_continuity!.intervals.every(
+      (interval) => !interval.usable_alternatives.includes('Ka')
+    )
+  ).toBe(true);
+  snapshots.push({ simulatedStatusBefore, simulatedStatusAfter });
+
   const canonicalDuringReplay = await timeline();
   expect(
     canonicalDuringReplay.statistics._transport_availability.simulation_run_id
