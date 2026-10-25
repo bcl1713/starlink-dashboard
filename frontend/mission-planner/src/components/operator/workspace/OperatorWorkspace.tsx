@@ -589,15 +589,36 @@ export function OperatorWorkspace() {
         <WorkspaceAwareness
           snapshot={events.snapshot}
           timeline={timeline}
-          onOpenTimelineSource={(event) =>
+          onOpenTimelineSource={(event) => {
+            if (
+              event.kind === 'issue_followup' ||
+              event.kind.startsWith('call_')
+            ) {
+              const record = loaded.find(
+                (record) => record.record_id === event.source_ref
+              );
+              if (record) {
+                openRecord(record);
+                return;
+              }
+              if (event.source_ref) {
+                setHistoryId(event.source_ref);
+                return;
+              }
+            } else if (event.leg_id) {
+              navigate(
+                `/missions/${encodeURIComponent(event.mission_id)}/legs/${encodeURIComponent(event.leg_id)}`
+              );
+              return;
+            }
             navigateView(
               event.kind === 'issue_followup'
                 ? 'Issues'
                 : event.kind.startsWith('call_')
                   ? 'Communications'
                   : 'Transport'
-            )
-          }
+            );
+          }}
           next={nextRequirement(events.snapshot)}
           records={currentLoaded}
           recordsIncomplete={incomplete}

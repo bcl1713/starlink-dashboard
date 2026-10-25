@@ -148,6 +148,27 @@ test('whole mission chronology and usable workspace on phones, with retained dra
         await page.keyboard.press('Escape');
         await expect(launch).toBeFocused();
       }
+      // Open the actual later leg, then return without losing the parked draft.
+      if (phone) await launch.click();
+      const sourcePanel = phone
+        ? page.getByRole('dialog', { name: 'Mission timeline', exact: true })
+        : page.getByRole('region', { name: 'Mission timeline', exact: true });
+      const laterWindow = sourcePanel
+        .locator('.ws-timeline-row')
+        .filter({ hasText: 'Synthetic Leg 2' })
+        .filter({
+          has: page.getByRole('heading', {
+            name: 'X modeled unavailable',
+            exact: true,
+          }),
+        })
+        .first();
+      await laterWindow.getByText('Details', { exact: true }).click();
+      await laterWindow.getByRole('button', { name: 'Open source' }).click();
+      await expect(page).toHaveURL(
+        /\/missions\/synthetic-mission-a\/legs\/synthetic-leg-2/
+      );
+      await page.goBack();
       await navigation
         .getByRole('button', { name: 'Communications', exact: true })
         .click();

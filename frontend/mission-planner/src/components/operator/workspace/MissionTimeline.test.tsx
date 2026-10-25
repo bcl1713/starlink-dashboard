@@ -36,6 +36,52 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
+it('marks an individually stale next event as last known in the phone summary', () => {
+  vi.stubGlobal('matchMedia', () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  render(
+    <MissionTimeline
+      timeline={state([
+        eventFixture({ freshness: 'stale', due_at: '2026-10-17T17:00:00Z' }),
+      ])}
+    />
+  );
+  expect(
+    screen.getByRole('button', { name: 'Open mission timeline' }).textContent
+  ).toContain('Last known');
+});
+it('keeps inactive future requirements visibly inactive rather than past', () => {
+  render(
+    <MissionTimeline
+      timeline={state([
+        eventFixture({
+          state: 'inactive',
+          active: false,
+          due_at: '2026-10-17T17:00:00Z',
+          end_at: null,
+        }),
+      ])}
+    />
+  );
+  expect(screen.getByText('Inactive')).toBeTruthy();
+  expect(screen.queryByText('Past scheduled time')).toBeNull();
+  expect(screen.queryByText(/^In /)).toBeNull();
+});
+it('shows a last-known leg without anchors as a visible timing gap', () => {
+  const query = state([]);
+  query.snapshot.legs[0].coverage = 'last_known' as 'available';
+  render(<MissionTimeline timeline={query} />);
+  expect(screen.getByText('Route timing unavailable')).toBeTruthy();
+});
+it('dates the Now marker even when the final known event was yesterday', () => {
+  const query = state();
+  query.snapshot.as_of = '2026-10-18T00:05:00Z';
+  render(<MissionTimeline timeline={query} />);
+  expect(screen.getByText('Now · 2026-10-18 00:05 UTC')).toBeTruthy();
+});
 it('shows the complete mission in time order, including earlier events without expansion', () => {
   const events = [
     eventFixture({

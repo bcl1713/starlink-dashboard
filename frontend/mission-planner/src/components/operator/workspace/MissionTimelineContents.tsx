@@ -57,13 +57,14 @@ export function MissionTimelineContents({
     if (
       !leg.scheduled_departure_at &&
       !leg.scheduled_arrival_at &&
-      leg.coverage === 'unavailable'
+      (leg.coverage === 'unavailable' || leg.coverage === 'last_known')
     )
       entries.push({
         id: `unavailable:${leg.leg_id}`,
         at: null,
         title: 'Route timing unavailable',
         leg: leg.name,
+        lastKnown: leg.coverage === 'last_known',
       });
   }
   entries.sort(
@@ -78,7 +79,7 @@ export function MissionTimelineContents({
     <li className="ws-timeline-now" ref={nowMarker} key="now">
       Now
       {Number.isFinite(now)
-        ? ` · ${timelineTime(new Date(now).toISOString())}`
+        ? ` · ${eventUtc(new Date(now).toISOString()).slice(0, 16)} UTC`
         : ''}
     </li>
   );
@@ -86,10 +87,15 @@ export function MissionTimelineContents({
     const event = entry.event;
     const elapsed =
       event &&
-      (event.state === 'inactive' ||
+      ((event.state === 'inactive' &&
+        !!event.due_at &&
+        Date.parse(event.due_at) <= now) ||
         (!!event.end_at && Date.parse(event.end_at) <= now));
     const started =
-      event?.due_at && Date.parse(event.due_at) <= now && !elapsed;
+      event?.due_at &&
+      Date.parse(event.due_at) <= now &&
+      !elapsed &&
+      event.state !== 'inactive';
     const lastKnown =
       stale || entry.lastKnown || (event && event.freshness !== 'fresh');
     const unavailable = event?.time_basis === 'live_unavailable' || !entry.at;
@@ -149,6 +155,8 @@ export function MissionTimelineContents({
                 ? 'Elapsed estimate'
                 : 'Past scheduled time'}
             </p>
+          ) : event?.state === 'inactive' ? (
+            <p className="ws-meta">Inactive</p>
           ) : (
             event &&
             !unavailable &&

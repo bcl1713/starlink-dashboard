@@ -60,7 +60,7 @@ export function MissionTimeline({
     ? stale
       ? 'Last known timeline'
       : next
-        ? `Next ${timelineTime(next.due_at!, snapshot.as_of)} · ${next.title}`
+        ? `${next.freshness === 'fresh' ? 'Next' : 'Last known'} ${timelineTime(next.due_at!, snapshot.as_of)} · ${next.title}`
         : `${snapshot.events.length} events · ${snapshot.legs.length} legs`
     : timeline?.loading
       ? 'Loading mission timeline…'

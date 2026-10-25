@@ -588,6 +588,7 @@
   color: #a5f3fc;
 }
 .ws-timeline-dialog {
+  animation: none;
   top: 0;
   left: 0;
   transform: none;
@@ -629,10 +630,9 @@
 }
 @media (max-width: 900px) {
   .ws-content {
-    grid-template: 'awareness' auto 'navigation' auto 'body' minmax(
-        0,
-        1fr
-      ) / minmax(0, 1fr);
+    grid-template:
+      'awareness' auto 'navigation' auto 'body' minmax(0, 1fr)
+      / minmax(0, 1fr);
   }
   .ws-awareness {
     display: grid;

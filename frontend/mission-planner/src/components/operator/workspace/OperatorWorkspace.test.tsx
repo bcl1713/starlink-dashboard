@@ -15,6 +15,7 @@ import { OperatorJournalPage } from '@/pages/OperatorJournalPage';
 import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
 import { conferenceDraft } from '../conferenceCommands';
+import { callDraft } from '../callDraft';
 import * as api from '@/services/operator';
 import * as eventsApi from '@/services/operatorEvents';
 import * as timelineApi from '@/services/missionTimeline';
@@ -449,6 +450,41 @@ it('offers manual destination in Now without a mission or ready operator journal
   const save = await screen.findByRole('button', { name: 'Save destination' });
   expect((save as HTMLButtonElement).disabled).toBe(false);
   expect(screen.getByLabelText('Destination name')).toBeTruthy();
+});
+
+it('opens the referenced call from the mission timeline', async () => {
+  const input = callDraft(undefined, 'planned', 'mission-a');
+  const call = {
+    ...record,
+    ...input,
+    time: { ...record.time, planned_start_at: '2026-10-17T17:00:00Z' },
+    payload: {
+      ...input.payload,
+      title: 'Specific briefing',
+      status: 'scheduled' as const,
+      prep_lead_minutes: 10,
+    },
+  };
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([call]));
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([call]).items[0]);
+  vi.spyOn(timelineApi, 'readMissionTimeline').mockResolvedValue({
+    ...eventSnapshot({
+      events: [
+        eventFixture({ title: 'Briefing due', source_ref: call.record_id }),
+      ],
+    }),
+    legs: [],
+  });
+  const { registry } = mount('/operator?mission_id=mission-a', true);
+  await screen.findByText('Specific briefing');
+  const row = (await screen.findByText('Briefing due')).closest('li')!;
+  fireEvent.click(within(row).getByText('Details'));
+  fireEvent.click(within(row).getByRole('button', { name: 'Open source' }));
+  await screen.findByRole('dialog', { name: 'Edit call' });
+  expect(registry.listDrafts()[0].target.recordId).toBe(call.record_id);
+  expect(registry.listDrafts()[0].input.payload.title).toBe(
+    'Specific briefing'
+  );
 });
 
 it('keeps the full timeline across operating views and retains the editor draft', async () => {
