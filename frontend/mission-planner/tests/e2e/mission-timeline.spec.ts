@@ -169,6 +169,16 @@ test('whole mission chronology and usable workspace on phones, with retained dra
         /\/missions\/synthetic-mission-a\/legs\/synthetic-leg-2/
       );
       await page.goBack();
+      if (phone) {
+        await page.getByRole('button', { name: 'Tools', exact: true }).click();
+        await page
+          .getByRole('button', { name: 'Follow active mission', exact: true })
+          .click();
+        await expect(
+          page.getByRole('combobox', { name: 'Mission', exact: true })
+        ).toHaveValue(mission);
+        await expect(page).not.toHaveURL(/mission_id=/);
+      }
       await navigation
         .getByRole('button', { name: 'Communications', exact: true })
         .click();

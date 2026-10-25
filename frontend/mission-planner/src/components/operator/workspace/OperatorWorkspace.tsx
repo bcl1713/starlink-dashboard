@@ -309,6 +309,14 @@ export function OperatorWorkspace() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const noteButton = useRef<HTMLButtonElement>(null);
+  function returnToActiveMission() {
+    setMobileTools(false);
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete('mission_id');
+      return next;
+    });
+  }
   function navigateView(view: View) {
     setParams((previous) => {
       const next = new URLSearchParams(previous);
@@ -499,23 +507,31 @@ export function OperatorWorkspace() {
           }
         />
         <div className="ws-meta" aria-label="Operating context">
-          <p>
+          <p className="ws-operating-context-full">
             {active.isError
               ? 'Active context unavailable'
               : active.data?.mission_name
                 ? `Active: ${active.data.mission_name} · ${active.data.leg_name ?? 'Leg unavailable'} · ${active.data.phase?.replaceAll('_', ' ') ?? 'Phase unavailable'}`
                 : 'No active mission or leg'}
           </p>
+          <p className="ws-mobile-only ws-operating-context-compact">
+            <span>
+              {active.isError
+                ? 'Active context unavailable'
+                : active.data?.mission_id === missionId
+                  ? (active.data.leg_name ?? 'Active leg unavailable')
+                  : active.data?.mission_name
+                    ? `Active: ${active.data.mission_name} · ${active.data.leg_name ?? 'Leg unavailable'}`
+                    : 'No active mission or leg'}
+            </span>
+            {active.data?.phase && (
+              <span>· {active.data.phase.replaceAll('_', ' ')}</span>
+            )}
+          </p>
           {params.has('mission_id') && (
             <button
-              className="ws-button"
-              onClick={() =>
-                setParams((previous) => {
-                  const next = new URLSearchParams(previous);
-                  next.delete('mission_id');
-                  return next;
-                })
-              }
+              className="ws-button ws-context-return"
+              onClick={returnToActiveMission}
             >
               Return to active mission
             </button>
@@ -547,6 +563,14 @@ export function OperatorWorkspace() {
             id="operator-tool-controls"
             data-open={mobileTools}
           >
+            {params.has('mission_id') && (
+              <button
+                className="ws-button ws-mobile-only"
+                onClick={returnToActiveMission}
+              >
+                Follow active mission
+              </button>
+            )}
             {missionId && (
               <Link
                 className="ws-button"
