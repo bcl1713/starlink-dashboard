@@ -395,10 +395,13 @@ def _load_export_timeline(
         return SnapshotViews(snapshot).timeline(leg.id)
     if route_manager and leg.route_id:
         try:
+            from app.mission.availability_context import snapshot_for_leg
+
             prepared = prepare_mission_timeline(
                 mission=leg,
                 route_manager=route_manager,
                 poi_manager=poi_manager,
+                availability=snapshot_for_leg(mission, leg),
             )
             return prepared.timeline
         except (

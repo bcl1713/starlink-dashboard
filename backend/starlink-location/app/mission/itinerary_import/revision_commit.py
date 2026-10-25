@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from app.mission import storage
 from app.mission.models import Mission
-from app.mission.availability import resolved_leg_availability
+from app.mission.availability_context import snapshot_for_leg
 from app.mission.planning.identity import planning_identity
 from app.mission.planning.journal import json_bytes
 from app.mission.timeline_preparation import prepare_mission_timeline
@@ -64,14 +64,14 @@ def commit_prepared_revision(service, id, generation, resolutions):
             leg,
             manager,
             service.poi_manager,
-            availability=resolved_leg_availability(mission, leg),
+            availability=snapshot_for_leg(mission, leg),
         )
         artifacts = prepare_mission_timeline(
             leg,
             manager,
             service.poi_manager,
             parent_mission_id=mission.id,
-            availability=resolved_leg_availability(mission, leg),
+            availability=snapshot_for_leg(mission, leg),
         )
         files[storage.get_leg_timeline_path(leg.id, mission.id)] = json_bytes(
             artifacts.timeline.model_dump(mode="json")

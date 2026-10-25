@@ -378,6 +378,36 @@ class PopStatusService:
         }
         if config.mode == "simulation" and self.snapshot_context_provider is not None:
             context.update(self.snapshot_context_provider())
+        availability = None
+        if (
+            active_context is not None
+            and getattr(active_context, "parent_mission", None) is not None
+        ):
+            from app.mission.availability_context import snapshot_for_leg
+            from app.mission.models import Transport
+
+            availability = snapshot_for_leg(
+                active_context.parent_mission,
+                active_context.leg,
+                run_id=context.get("simulation_run_id"),
+            )
+            context["enabled"] = availability.resolve(context["now"])[Transport.KU]
+        if active_context is not None and context.get("call_capabilities") is not None:
+            from app.mission.pop_capabilities import (
+                capability_input_revision,
+                saved_call_capabilities,
+            )
+
+            supplied = context["call_capabilities"]
+            if supplied.input_revision != capability_input_revision(
+                active_context.leg, context["route"], availability=availability
+            ):
+                context["call_capabilities"] = saved_call_capabilities(
+                    active_context.leg,
+                    active_context.parent_mission_id,
+                    context["route"],
+                    availability=availability,
+                )
         if (
             active_context is not None
             and context["flight_phase"] == "pre_departure"
@@ -387,8 +417,17 @@ class PopStatusService:
 
             try:
                 context["call_capabilities"] = saved_call_capabilities(
-                    active_context.leg, active_context.parent_mission_id, route
+                    active_context.leg,
+                    active_context.parent_mission_id,
+                    route,
+                    availability=availability,
                 )
             except (OSError, ValueError, TypeError, AttributeError):
                 context["call_capabilities"] = None
-        return self.snapshot(telemetry, **context)
+        result = self.snapshot(telemetry, **context)
+        if availability is not None:
+            result["transport_availability"] = {
+                k.value: v for k, v in availability.resolve(context["now"]).items()
+            }
+            result["availability_revision"] = availability.revision
+        return result

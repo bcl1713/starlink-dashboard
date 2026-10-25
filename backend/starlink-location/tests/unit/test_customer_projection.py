@@ -783,3 +783,24 @@ def test_x_down_windows_end_at_the_exact_clear_event(start_kind, end_kind, reaso
     assert down[0].physical_posture == "Degraded"
     assert down[0].physical_remaining_transports == ("Commercial Ka", "Starshield")
     assert all(i.decisions[2].value == "Up" for i in leg.intervals if i not in down)
+
+
+def test_explicit_parent_eligibility_supersedes_legacy_starshield_flag():
+    from app.mission.availability_models import LegAvailability
+    from app.mission.exporter.customer_projection import project_briefing_leg
+
+    data = fixture("f01")
+    transports = data["mission"]["legs"][0]["transports"]
+    transports["starshield_enabled"] = False
+    transports["planning_policy"] = "prefer_starshield_v1"
+    availability = LegAvailability(
+        mission_id="m",
+        leg_id=data["mission"]["legs"][0]["id"],
+        revision=1,
+        planned=tuple((key, True) for key in Transport),
+    )
+    data["timeline"].setdefault("statistics", {})["_transport_availability"] = (
+        availability.model_dump(mode="json")
+    )
+    projected = project_briefing_leg(snapshot(data))
+    assert all(i.decisions[1].value == "Up" for i in projected.intervals)

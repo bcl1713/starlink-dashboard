@@ -10,7 +10,9 @@ def _time(value):
 def restriction_windows(model):
     """Yield the exact transport/cause windows emitted by the event feed."""
     if "_restriction_windows" in model:
-        yield from model["_restriction_windows"]
+        for window in model["_restriction_windows"]:
+            if transport_event_allowed(model, window[0], window[3]):
+                yield window
         return
     spans = []
     for interval in (model.get("call_continuity") or {}).get("intervals", []):
@@ -72,7 +74,7 @@ def restriction_windows(model):
     # Combine adjacent same-cause restrictions before assigning ordered occurrence.
     groups = {}
     for transport, severity, causes, start, end in spans:
-        if end <= start:
+        if end <= start or not transport_event_allowed(model, transport, start):
             continue
         groups.setdefault((transport, causes), []).append((start, end, severity))
     for (transport, causes), windows in groups.items():
@@ -91,6 +93,9 @@ def compact_event_model(model):
     result = {
         key: model[key]
         for key in (
+            "transport_generations",
+            "transport_availability",
+            "transport_as_of",
             "_leg_id",
             "_event_source_ref",
             "route_geometry_identity",
@@ -107,3 +112,39 @@ def compact_event_model(model):
     }
     result["_restriction_windows"] = tuple(restriction_windows(model))
     return result
+
+
+def transport_event_allowed(model, transport, at):
+    if transport is None or model.get("transport_availability") is None:
+        return True
+    from app.mission.availability_models import LegAvailability
+    from app.mission.models import Transport
+
+    snapshot = LegAvailability.model_validate(model["transport_availability"])
+    key = Transport.KU if transport == "Starshield" else Transport(transport)
+    from datetime import datetime
+
+    raw = model.get("transport_as_of")
+    now = (
+        datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if isinstance(raw, str)
+        else raw
+    )
+    return (now is None or snapshot.resolve(now)[key]) and (
+        at is None or snapshot.resolve(at)[key]
+    )
+
+
+def transport_event_generation(model, transport):
+    """Only that transport's changed eligibility renews future occurrences."""
+    if transport is None or model.get("transport_availability") is None:
+        return None
+    from .event_ledger import identity
+
+    key = "Ku" if transport == "Starshield" else transport
+    raw = model["transport_availability"]
+    failures = [f for f in raw.get("failures", []) if f["transport"] == key]
+    configured = model.get("transport_generations", {}).get(key)
+    if not failures and configured is None:
+        return None
+    return identity(key, failures, configured)

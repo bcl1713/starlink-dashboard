@@ -212,6 +212,13 @@ async def get_overview_upcoming_pois(
         and longitude is not None
         else None
     )
+    from app.mission.availability_context import snapshot_for_leg
+
+    availability = snapshot_for_leg(
+        resolution.context.parent_mission,
+        resolution.context.leg,
+        run_id=context.run_id if context else None,
+    )
     response = project_overview_upcoming_pois(
         pois=generated_pois,
         eta_results=eta_results,
@@ -219,6 +226,7 @@ async def get_overview_upcoming_pois(
         current_progress=current_progress,
         calculated_at=calculated_at,
         mission_time=context,
+        availability=availability,
     )
     departures = [poi for poi in generated_pois if poi.kind == "departure"]
     response.scheduled_departure_time = (

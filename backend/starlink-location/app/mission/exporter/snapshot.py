@@ -246,6 +246,10 @@ def capture_export_snapshot(
 def prepare_export_snapshot(metadata, sources, warnings=()):
     """Prepare copied inputs in a cancellable background process."""
     mission = Mission.model_validate_json(metadata)
+    from app.mission.availability_context import snapshot_for_leg
+    from app.mission.models import Transport
+    from app.mission.availability_pois import merge_retained_pois
+    from app.services.poi.manager import _route_geometry_hash
     from app.mission.storage import mission_leg_order
 
     order = mission_leg_order(mission)
@@ -262,6 +266,7 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
         sampler, coverage_error = None, type(exc).__name__
     legs = []
     for leg in mission.legs:
+        availability = snapshot_for_leg(mission, leg)
         leg_json = canonical_json(leg.model_dump(mode="json"))
         notes = []
         timeline, effective_route, bounds = None, None, None
@@ -281,6 +286,7 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
                 satellite_catalog=catalog,
                 constraint_config=config,
                 pop_catalog=pop_catalog,
+                availability=availability,
             )
             timeline, effective_route = artifacts.timeline, artifacts.route
             bounds = (
@@ -292,6 +298,24 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
             restrictions = _restrictions(leg, artifacts, config)
             # The map only reads names/coordinates; prepared markers need no
             # publication, persistent IDs, or storage-side projection.
+            retained = [
+                p
+                for p in pois.list_pois(route_id=leg.route_id, mission_id=mission.id)
+                if p.generated_source == "mission-timeline"
+                and (
+                    not p.planned_route_geometry_hash
+                    or p.planned_route_geometry_hash
+                    == _route_geometry_hash(artifacts.route)
+                )
+            ]
+            markers = merge_retained_pois(
+                artifacts.generated_pois, retained, availability
+            )
+            from app.mission.models import TimelineMapPoi
+
+            timeline.map_pois = [
+                TimelineMapPoi.model_validate(p.model_dump()) for p in markers
+            ]
             map_pois = tuple(
                 canonical_json(
                     POI(
@@ -300,7 +324,7 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
                         generated_source="mission-timeline",
                     ).model_dump(mode="json")
                 )
-                for index, poi in enumerate(artifacts.generated_pois)
+                for index, poi in enumerate(markers)
             )
             origin = "rebuilt"
         except (
@@ -376,6 +400,15 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
         if timeline is not None and origin != "rebuilt":
             # A rebased forecast cannot inherit classifications from stale inputs.
             timeline.call_continuity = None
+            timeline.statistics["_transport_availability"] = availability.model_dump(
+                mode="json"
+            )
+            from app.mission.availability_pois import apply_poi_availability
+
+            if timeline.map_pois is not None:
+                timeline.map_pois = [
+                    apply_poi_availability(p, availability) for p in timeline.map_pois
+                ]
             for metric in (
                 "planned_communications_outage_seconds",
                 "pop_call_outage_seconds",
@@ -397,7 +430,10 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
                     revision=mission_forecast_revision(
                         effective_route, projector, pop_catalog
                     ),
-                    starshield_enabled=leg.transports.starshield_enabled is not False,
+                    starshield_enabled=any(
+                        availability.resolve(t)[Transport.KU]
+                        for t in (bounds[0], *availability.boundaries(*bounds))
+                    ),
                 )
             else:
                 timeline.pop_forecast = PopForecast(

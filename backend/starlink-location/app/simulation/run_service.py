@@ -61,6 +61,14 @@ class SimulationRunService:
         self, mission_id: str, leg: MissionLeg, pacing: PacingInput
     ) -> PreparedMissionRun:
         self._assert_mode()
+        from app.mission.availability_context import snapshot_for_leg
+
+        parent = load_mission_v2(mission_id)
+        availability = (
+            snapshot_for_leg(parent, leg, run_id="simulation-preview")
+            if parent is not None
+            else None
+        )
         try:
             return prepare_mission_run(
                 mission_id,
@@ -69,6 +77,7 @@ class SimulationRunService:
                 self.route_manager,
                 self.poi_manager,
                 self.coverage_sampler,
+                availability=availability,
             )
         except SimulationValidationError as exc:
             raise HTTPException(

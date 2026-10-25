@@ -16,7 +16,7 @@ status calculation or response builders.
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.poi import (
@@ -66,6 +66,7 @@ async def list_pois(
     ] = True,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+    request: Request = None,
 ) -> POIListResponse:
     """Get list of all POIs, optionally filtered by route.
 
@@ -115,6 +116,17 @@ async def list_pois(
         # No route or mission specified, get all POIs.
         pois = poi_manager.list_pois()
 
+    from app.mission.availability_pois import project_current_pois
+
+    pois = project_current_pois(
+        pois,
+        route_manager,
+        run_service=(
+            getattr(request.app.state, "simulation_run_service", None)
+            if request
+            else None
+        ),
+    )
     responses = []
     for poi in pois:
         # Calculate active status for this POI
@@ -124,7 +136,7 @@ async def list_pois(
         )
 
         # If filtering is active, skip inactive POIs before creating the response object
-        if active_only and not active_status:
+        if active_only and (not active_status or not poi.transport_active):
             continue
 
         responses.append(
@@ -140,6 +152,8 @@ async def list_pois(
                 route_id=poi.route_id,
                 mission_id=poi.mission_id,
                 kind=poi.kind,
+                transport_active=poi.transport_active,
+                inactive_reason=poi.inactive_reason,
                 expected_arrival_time=poi.expected_arrival_time,
                 created_at=poi.created_at,
                 updated_at=poi.updated_at,
@@ -203,6 +217,8 @@ async def get_poi(
         route_id=poi.route_id,
         mission_id=poi.mission_id,
         kind=poi.kind,
+        transport_active=poi.transport_active,
+        inactive_reason=poi.inactive_reason,
         expected_arrival_time=poi.expected_arrival_time,
         created_at=poi.created_at,
         updated_at=poi.updated_at,
@@ -289,6 +305,8 @@ async def create_poi(
             route_id=poi.route_id,
             mission_id=poi.mission_id,
             kind=poi.kind,
+            transport_active=poi.transport_active,
+            inactive_reason=poi.inactive_reason,
             expected_arrival_time=poi.expected_arrival_time,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
@@ -375,6 +393,8 @@ async def update_poi(
             route_id=updated_poi.route_id,
             mission_id=updated_poi.mission_id,
             kind=updated_poi.kind,
+            transport_active=updated_poi.transport_active,
+            inactive_reason=updated_poi.inactive_reason,
             expected_arrival_time=updated_poi.expected_arrival_time,
             created_at=updated_poi.created_at,
             updated_at=updated_poi.updated_at,

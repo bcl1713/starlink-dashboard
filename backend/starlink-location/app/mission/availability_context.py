@@ -66,3 +66,31 @@ def selection_context(mission, card, route_manager, draft=None):
     return dict(
         availability=expected_snapshot(mission, card, draft), start=start, end=end
     )
+
+
+def snapshot_for_leg(mission, leg, *, run_id=None):
+    """Installed canonical configuration in its stable expected-card namespace."""
+    snapshot = resolved_leg_availability(for_run(mission, run_id), leg)
+    if not (
+        mission.availability.revision
+        or mission.availability.defaults
+        or mission.availability.history
+    ):
+        from app.mission.availability_planning import leg_snapshot
+
+        snapshot = leg_snapshot(leg)
+    raw = mission.metadata.get("itinerary_planning")
+    if raw:
+        from app.mission.planning.models import PlanningManifest
+
+        card = next(
+            (
+                card
+                for card in PlanningManifest.model_validate(raw).expected_legs
+                if card.installed_leg_id == leg.id and not card.retired
+            ),
+            None,
+        )
+        if card is not None:
+            snapshot = snapshot.model_copy(update={"leg_id": card.id})
+    return snapshot

@@ -467,6 +467,8 @@ class POIManager(MetricsChangeSource):
             route_id=poi_create.route_id,
             mission_id=poi_create.mission_id,
             kind=poi_create.kind,
+            transport_active=poi_create.transport_active,
+            inactive_reason=poi_create.inactive_reason,
             generated_source=generated_source,
             planned_route_segment_index=(
                 route_segment_index if generated_source == "mission-timeline" else None
@@ -544,6 +546,50 @@ class POIManager(MetricsChangeSource):
         self._save_pois()
         logger.info(f"Created POI: {poi.id}")
         return poi.model_copy(deep=True)
+
+    @_poi_access
+    def reconcile_mission_pois(self, generated, route, mission_id, route_id):
+        """Replace obsolete generated geometry while preserving matching records and IDs."""
+        from app.mission.availability_pois import cue_identity
+
+        owned = {
+            key: poi
+            for key, poi in self._pois.items()
+            if poi.mission_id == mission_id
+            and poi.route_id == route_id
+            and poi.generated_source == "mission-timeline"
+        }
+        unmatched = set(owned)
+        for value in generated:
+            previous = next(
+                (
+                    poi
+                    for key, poi in owned.items()
+                    if key in unmatched and cue_identity(poi) == cue_identity(value)
+                ),
+                None,
+            )
+            if previous is None:
+                self.create_poi(
+                    value,
+                    active_route=route,
+                    generated_source="mission-timeline",
+                    route_segment_index=value._route_segment_index,
+                )
+                continue
+            unmatched.remove(previous.id)
+            # Geometry and projection remain owned by the same canonical cue.
+            self._pois[previous.id] = previous.model_copy(
+                update={
+                    **value.model_dump(),
+                    "updated_at": datetime.now(timezone.utc),
+                    "planned_route_segment_index": value._route_segment_index,
+                    "planned_route_geometry_hash": _route_geometry_hash(route),
+                }
+            )
+        for key in unmatched:
+            self._pois.pop(key, None)
+        self._save_pois()
 
     @_poi_access
     def update_poi(self, poi_id: str, poi_update: POIUpdate) -> POI | None:

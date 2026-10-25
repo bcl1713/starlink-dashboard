@@ -77,7 +77,16 @@ def live_pop_events(adapter, inputs, leg, *, as_of):
             ),
         )
         adapter.live_sources.add(source_ref)
+        from app.mission.availability_context import snapshot_for_leg
+
         model = {
+            "transport_availability": snapshot_for_leg(
+                inputs.mission, leg, run_id=source_run(health)
+            ).model_dump(mode="json"),
+            "transport_generations": inputs.mission.metadata.get(
+                "transport_cue_generations", {}
+            ).get(leg.id, {}),
+            "transport_as_of": as_of.isoformat(),
             "_leg_id": leg.id,
             "_event_source_ref": source_ref,
             "pop_forecast": result["pop_forecast"],

@@ -44,6 +44,8 @@ class ModelInputs:
         from app.mission.timeline_preparation import prepare_mission_timeline
         from app.satellites.rules import ConstraintConfig
 
+        from app.mission.availability_context import snapshot_for_leg
+
         return prepare_mission_timeline(
             leg,
             RouteView(self.sources),
@@ -54,6 +56,9 @@ class ModelInputs:
             satellite_catalog=captured_catalog(self.sources),
             constraint_config=ConstraintConfig(),
             pop_catalog=self.pop_catalog,
+            availability=snapshot_for_leg(
+                self.mission, leg, run_id=self.context.get("simulation_run_id")
+            ),
         )
 
 

@@ -681,6 +681,8 @@ class TimelineMapPoi(BaseModel):
 
     name: str
     kind: MissionPoiKind
+    transport_active: bool = True
+    inactive_reason: str | None = None
     latitude: float
     longitude: float
     expected_arrival_time: datetime | None = None

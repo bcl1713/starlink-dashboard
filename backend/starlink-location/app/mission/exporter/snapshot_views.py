@@ -158,9 +158,26 @@ class SnapshotViews:
         """Replace prepared markers privately, preserving committed POI exports."""
         from app.mission.timeline_builder.pois import MISSION_POI_KINDS
 
-        if self._leg(leg_id).preparation_origin != "rebuilt":
-            return self.poi_manager
         leg = self.leg(leg_id)
+        if self._leg(leg_id).preparation_origin != "rebuilt":
+            from app.mission.availability_context import snapshot_for_leg
+            from app.mission.availability_pois import apply_poi_availability
+
+            availability = snapshot_for_leg(self.mission(), leg)
+            return POIView(
+                tuple(
+                    (
+                        apply_poi_availability(p, availability)
+                        if p.generated_source == "mission-timeline"
+                        and p.mission_id == self.snapshot.mission_id
+                        and p.route_id == leg.route_id
+                        else p
+                    )
+                    .model_dump_json()
+                    .encode()
+                    for p in self.poi_manager.list_pois()
+                )
+            )
         committed = self.poi_manager.list_pois()
         return POIView(
             tuple(

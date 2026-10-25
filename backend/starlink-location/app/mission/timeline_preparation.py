@@ -46,7 +46,7 @@ from app.mission.timeline_builder.events import (
     apply_manual_outages,
     apply_x_azimuth_events,
 )
-from app.mission.timeline_builder.pois import MISSION_POI_KINDS, construct_mission_pois
+from app.mission.timeline_builder.pois import construct_mission_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
     annotate_aar_markers,
@@ -55,7 +55,7 @@ from app.mission.timeline_builder.stats import (
 )
 from app.models.poi import POICreate
 from app.models.route import ParsedRoute
-from app.satellites.catalog import SatelliteCatalog, get_satellite_catalog
+from app.satellites.catalog import SatelliteCatalog
 from app.satellites.coverage import CoverageSampler
 from app.satellites.rules import ConstraintConfig, MissionEvent, RuleEngine
 from app.services.poi_manager import POIManager
@@ -405,6 +405,15 @@ def prepare_mission_timeline(
         TimelineMapPoi.model_validate(p.model_dump()) for p in pop_pois
     )
 
+    from app.mission.availability_pois import apply_poi_availability
+
+    generated_pois = tuple(
+        apply_poi_availability(p, availability) for p in generated_pois
+    )
+    timeline.map_pois = [
+        TimelineMapPoi.model_validate(p.model_dump()) for p in generated_pois
+    ]
+
     from app.mission.pop_capabilities import (
         capability_input_revision,
         capture_call_capabilities,
@@ -500,20 +509,33 @@ def publish_mission_pois(
     route_id: str,
 ) -> None:
     """Publish prepared POIs only after a mutation path accepts the plan."""
-    catalog = get_satellite_catalog()
-    poi_manager.delete_scoped_pois_by_names(
-        {sat.satellite_id for sat in catalog.list_all()}
-    )
-    poi_manager.delete_leg_pois(
-        route_id=route_id,
-        mission_id=mission_id,
-        kinds=MISSION_POI_KINDS,
-        generated_source="mission-timeline",
-    )
-    for poi in artifacts.generated_pois:
-        poi_manager.create_poi(
-            poi,
-            active_route=artifacts.route,
-            generated_source="mission-timeline",
-            route_segment_index=poi._route_segment_index,
-        )
+    from app.mission.availability_models import LegAvailability
+    from app.mission.availability_pois import merge_retained_pois, poi_transport
+    from app.services.poi.manager import _route_geometry_hash
+    from app.mission.models import TimelineMapPoi
+
+    generated = artifacts.generated_pois
+    raw = artifacts.timeline.statistics.get("_transport_availability")
+    if raw:
+        snapshot = LegAvailability.model_validate(raw)
+        retained = [
+            p
+            for p in poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
+            if p.generated_source == "mission-timeline"
+            and poi_transport(p.kind) is not None
+            and (
+                not p.planned_route_geometry_hash
+                or p.planned_route_geometry_hash
+                == _route_geometry_hash(artifacts.route)
+            )
+            and (
+                not p.transport_active
+                or p.expected_arrival_time is not None
+                and not snapshot.resolve(p.expected_arrival_time)[poi_transport(p.kind)]
+            )
+        ]
+        generated = merge_retained_pois(generated, retained, snapshot)
+        artifacts.timeline.map_pois = [
+            TimelineMapPoi.model_validate(p.model_dump()) for p in generated
+        ]
+    poi_manager.reconcile_mission_pois(generated, artifacts.route, mission_id, route_id)

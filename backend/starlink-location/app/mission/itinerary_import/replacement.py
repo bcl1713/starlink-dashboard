@@ -5,7 +5,7 @@ import hashlib
 from fastapi import HTTPException
 
 from app.mission import storage
-from app.mission.availability import resolved_leg_availability
+from app.mission.availability_context import snapshot_for_leg
 from app.mission.planning.deadlines import run_bounded
 from app.mission.planning.identity import planning_identity
 from app.mission.planning.journal import json_bytes
@@ -59,14 +59,14 @@ def replace_route(service, mission_id, leg_id, data, filename):
             leg,
             manager,
             service.poi_manager,
-            availability=resolved_leg_availability(mission, leg),
+            availability=snapshot_for_leg(mission, leg),
         )
         artifacts = prepare_mission_timeline(
             leg,
             manager,
             service.poi_manager,
             parent_mission_id=mission_id,
-            availability=resolved_leg_availability(mission, leg),
+            availability=snapshot_for_leg(mission, leg),
         )
         accepted, files = sources.acceptance_files(source, mission_id, data)
         mission.metadata["itinerary_import"].setdefault("source_records", []).append(

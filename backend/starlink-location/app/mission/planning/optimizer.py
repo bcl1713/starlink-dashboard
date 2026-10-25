@@ -158,6 +158,7 @@ def _canonical(inputs, draft, context):
         discover_coverage=False,
         satellite_catalog=catalog,
         constraint_config=ConstraintConfig(**json.loads(inputs.constraints_json)),
+        availability=inputs.availability,
     ).planning_evaluation
 
 

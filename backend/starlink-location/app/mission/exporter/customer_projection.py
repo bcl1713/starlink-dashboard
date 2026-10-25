@@ -503,6 +503,7 @@ def _collect_sources(
     transports = committed.get("transports") or {}
     if (
         transports.get("planning_policy")
+        and not timeline.get("statistics", {}).get("_transport_availability")
         and transports.get("starshield_enabled") is False
         and leg.utc_bounds
     ):
@@ -594,6 +595,37 @@ def _collect_sources(
                         "planning_policy",
                     )
                 )
+    raw_availability = timeline.get("statistics", {}).get("_transport_availability")
+    if raw_availability and leg.utc_bounds:
+        from app.mission.availability_models import LegAvailability
+
+        availability = LegAvailability.model_validate(raw_availability)
+        start, end = leg.utc_bounds
+        edges = (start, *availability.boundaries(start, end), end)
+        for a, b in pairwise(edges):
+            for transport, eligible in availability.resolve(a).items():
+                if not eligible:
+                    label = (
+                        "Starshield" if transport == Transport.KU else transport.value
+                    )
+                    sources.append(
+                        _source(
+                            {
+                                "source_id": f"transport-availability:{transport.value}:{a.isoformat()}",
+                                "transport": transport.value,
+                                "start_time": a.isoformat(),
+                                "end_time": b.isoformat(),
+                                "state": "offline",
+                                "reason": f"{label} unavailable",
+                                "metadata": {
+                                    "availability_revision": availability.revision
+                                },
+                            },
+                            leg.leg_id,
+                            revision,
+                            "transport_availability",
+                        )
+                    )
     for kind, key in (
         ("advisory", "advisories"),
         ("coverage_detail", "coverage_events"),
@@ -706,6 +738,12 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
 
     continuity = captured_continuity(timeline, forecast, leg.utc_bounds)
     sources = _collect_sources(leg, committed, timeline)
+    from app.mission.availability_models import LegAvailability
+
+    raw_availability = timeline.get("statistics", {}).get("_transport_availability")
+    availability = (
+        LegAvailability.model_validate(raw_availability) if raw_availability else None
+    )
     notes = list(leg.warnings)
     guidance = "Absolute conditions can shift relative to the aircraft after departure changes; re-export when assumptions or predictions change."
     if leg.utc_bounds is None:
@@ -744,6 +782,7 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
             "availability_basis",
             "transport_state",
             "planning_policy",
+            "transport_availability",
         }
         and s.start_time
         and s.end_time
@@ -787,7 +826,7 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
             active = tuple(
                 s
                 for s in active
-                if s.source_type == "configured_outage"
+                if s.source_type in {"configured_outage", "transport_availability"}
                 or (
                     leg.preparation_origin == "cached"
                     and s.source_digest
@@ -797,6 +836,15 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
                         if c.source_type == "cached_segment"
                     }
                 )
+            )
+        if availability is not None:
+            eligible = availability.resolve(a)
+            active = tuple(
+                s
+                for s in active
+                if s.transport is None
+                or eligible[s.transport]
+                or s.source_type == "transport_availability"
             )
         decisions = _decisions(active, current)
         context = tuple(r for r in restrictions if r.start_time <= a < r.end_time)
@@ -834,8 +882,15 @@ def project_briefing_leg(leg: LegSnapshot) -> BriefingLeg:
         full,
         forecast,
         continuity,
-        starshield_enabled=committed.get("transports", {}).get("starshield_enabled")
-        is not False,
+        availability=availability,
+        starshield_enabled=(
+            any(
+                availability.resolve(t)[Transport.KU]
+                for t in (start, *availability.boundaries(start, end))
+            )
+            if availability is not None
+            else committed.get("transports", {}).get("starshield_enabled") is not False
+        ),
     )
     rows = tuple(
         i

@@ -39,6 +39,28 @@ def retire_inactive(adapter, captured, mission, *, as_of):
     )
     for ref in retired:
         adapter.publication.invalidate(ref)
+    from app.mission.availability_context import snapshot_for_leg
+    from .replay_context import source_run
+
+    current_models = dict(captured.models)
+    health = adapter.service.store.health()
+    for key, model in current_models.items():
+        leg_id = model.get("_leg_id", key)
+        leg = (
+            next((leg for leg in mission.legs if leg.id == leg_id), None)
+            if mission
+            else None
+        )
+        if leg is not None:
+            model = dict(model)
+            model["transport_availability"] = snapshot_for_leg(
+                mission, leg, run_id=source_run(health)
+            ).model_dump(mode="json")
+            model["transport_generations"] = mission.metadata.get(
+                "transport_cue_generations", {}
+            ).get(leg.id, {})
+            model["transport_as_of"] = as_of.isoformat()
+            current_models[key] = model
     revision = identity(mission.model_dump(mode="json") if mission else None)
     lifecycle = SourceCapture(
         source="planning:lifecycle:" + captured.mission_id,
@@ -62,7 +84,7 @@ def retire_inactive(adapter, captured, mission, *, as_of):
             captured,
             models={
                 key: model
-                for key, model in captured.models.items()
+                for key, model in current_models.items()
                 if model.get("_event_source_ref", "model:" + key) not in retired
             },
             sources=[

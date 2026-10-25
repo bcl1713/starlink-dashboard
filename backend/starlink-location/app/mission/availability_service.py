@@ -169,6 +169,22 @@ class AvailabilityService:
         from app.mission.planning.grid import build_context
         from app.mission.effective_route import prepare_effective_route
 
+        from app.mission.availability_context import snapshot_for_leg
+        from app.mission.availability_pois import (
+            merge_retained_pois,
+            apply_poi_availability,
+            cue_identity,
+        )
+        from app.models.poi import POI
+        from uuid import uuid4
+        from app.mission.models import TimelineMapPoi
+        from app.services.poi.manager import _route_geometry_hash
+
+        scope = {
+            "mission_id": mission.id,
+            "route_ids": sorted({leg.route_id for leg in mission.legs}),
+        }
+        records = read_scope(self.store.poi_manager.pois_file, scope)
         files = {}
         raw = mission.metadata.get("itinerary_planning")
         manifest = PlanningManifest.model_validate(raw) if raw else None
@@ -195,9 +211,7 @@ class AvailabilityService:
                 if manifest
                 else None
             )
-            snapshot = resolved_leg_availability(for_run(mission, run_id), leg)
-            if card:
-                snapshot = snapshot.model_copy(update={"leg_id": card.id})
+            snapshot = snapshot_for_leg(mission, leg, run_id=run_id)
             if leg.route_id:
                 if leg.transports.planning_policy is not None:
                     if card is not None:
@@ -267,6 +281,66 @@ class AvailabilityService:
                     constraint_config=self.store.planning_constraints_provider(),
                     availability=snapshot,
                 )
+                retained = [
+                    POI.model_validate(record)
+                    for record in records.values()
+                    if record.get("route_id") == leg.route_id
+                    and (
+                        not record.get("planned_route_geometry_hash")
+                        or record["planned_route_geometry_hash"]
+                        == _route_geometry_hash(artifacts.route)
+                    )
+                ]
+                merged = merge_retained_pois(
+                    artifacts.generated_pois, retained, snapshot
+                )
+                artifacts.timeline.map_pois = [
+                    TimelineMapPoi.model_validate(p.model_dump()) for p in merged
+                ]
+                existing = {cue_identity(p): p for p in retained}
+                for value in merged:
+                    if cue_identity(value) in existing:
+                        continue
+                    point = POI(
+                        id=str(uuid4()),
+                        **value.model_dump(),
+                        generated_source="mission-timeline",
+                        planned_route_segment_index=value._route_segment_index,
+                        planned_route_geometry_hash=_route_geometry_hash(
+                            artifacts.route
+                        )
+                    )
+                    from app.services.route_eta_calculator import RouteETACalculator
+
+                    projection = RouteETACalculator(
+                        artifacts.route
+                    ).project_poi_to_route(
+                        point.latitude,
+                        point.longitude,
+                        route_segment_index=value._route_segment_index,
+                    )
+                    point.projected_latitude = projection["projected_lat"]
+                    point.projected_longitude = projection["projected_lon"]
+                    point.projected_waypoint_index = projection[
+                        "projected_waypoint_index"
+                    ]
+                    point.projected_route_progress = projection[
+                        "projected_route_progress"
+                    ]
+                    record = point.model_dump(mode="json")
+                    record.update(
+                        generated_source="mission-timeline",
+                        planned_route_segment_index=point.planned_route_segment_index,
+                        planned_route_geometry_hash=point.planned_route_geometry_hash,
+                    )
+                    records[point.id] = record
+                    existing[cue_identity(point)] = point
+                for previous_poi in retained:
+                    projected = apply_poi_availability(previous_poi, snapshot)
+                    records[projected.id].update(
+                        transport_active=projected.transport_active,
+                        inactive_reason=projected.inactive_reason,
+                    )
                 files[storage.get_leg_timeline_path(leg.id, mission.id).resolve()] = (
                     json_bytes(artifacts.timeline.model_dump(mode="json"))
                 )
@@ -278,7 +352,7 @@ class AvailabilityService:
         files[storage.get_mission_file_path(mission.id).resolve()] = json_bytes(
             mission.model_copy(update={"legs": []}).model_dump(mode="json")
         )
-        return files
+        return files, records
 
     def command(self, mission_id, request, *, action=False):
         with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
@@ -389,12 +463,36 @@ class AvailabilityService:
                     history=history,
                     simulation_run_id=None,
                 )
+                # Planned toggles need a new future occurrence on re-enablement;
+                # unchanged transports retain their acknowledgments/generations.
+                generations = candidate.metadata.setdefault(
+                    "transport_cue_generations", {}
+                )
+                for leg in candidate.legs:
+                    before_leg = next(
+                        item for item in mission.legs if item.id == leg.id
+                    )
+                    before = dict(
+                        resolved_leg_availability(
+                            for_run(mission, run_id), before_leg
+                        ).planned
+                    )
+                    after = dict(
+                        resolved_leg_availability(
+                            for_run(candidate, run_id), leg
+                        ).planned
+                    )
+                    changed = [key.value for key in before if before[key] != after[key]]
+                    if changed:
+                        generations.setdefault(leg.id, {}).update(
+                            {key: candidate.availability.revision for key in changed}
+                        )
                 candidate.updated_at = datetime.now(timezone.utc)
                 candidate.metadata[RECEIPTS] = [
                     *receipts,
                     {"id": request.command_id, "identity": identity},
                 ]
-                files = self._prepare(candidate, mission, run_id=run_id)
+                files, pois = self._prepare(candidate, mission, run_id=run_id)
             except ValueError as exc:
                 raise PlanningFailure(
                     422, "availability_regeneration_failed", str(exc)
@@ -404,7 +502,6 @@ class AvailabilityService:
                 "mission_id": mission_id,
                 "route_ids": sorted({leg.route_id for leg in candidate.legs}),
             }
-            pois = read_scope(self.store.poi_manager.pois_file, scope)
             try:
                 self.store.journal.commit(files, poi_scope=scope, pois=pois)
             finally:
