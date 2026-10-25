@@ -27,6 +27,8 @@ const transports = [
 ] as const;
 interface Poi {
   id: string;
+  latitude: number;
+  longitude: number;
   kind?: string;
   transport_active?: boolean;
   expected_arrival_time?: string;
@@ -604,6 +606,19 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       );
   }
   expect(new Set(restored.map((p) => p.id)).size).toBe(restored.length);
+  const restoredCues = restored.filter((p) =>
+    transports.some((transport) => p.kind?.startsWith(transport.prefix))
+  );
+  const cueKeys = restoredCues.map((p) =>
+    JSON.stringify([
+      p.route_id,
+      p.kind,
+      p.expected_arrival_time,
+      p.latitude,
+      p.longitude,
+    ])
+  );
+  expect(new Set(cueKeys).size).toBe(restoredCues.length);
   const events = await json<EventSnapshot>(
     await request.get(
       `/api/v2/operator/events?mission_id=${missionId}&include_history=true`

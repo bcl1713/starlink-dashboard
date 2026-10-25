@@ -32,9 +32,37 @@ for leg in snapshot.legs:
     future_intervals = [
         interval
         for interval in briefing.intervals
-        if interval.start_time >= datetime.fromisoformat(after)
+        if interval.end_time > datetime.fromisoformat(after)
     ]
+    interval_evidence = [
+        {
+            "start": interval.start_time.isoformat(),
+            "end": interval.end_time.isoformat(),
+            "decisions": [decision.value for decision in interval.decisions],
+        }
+        for interval in briefing.intervals
+    ]
+    print(
+        json.dumps(
+            {
+                "diagnostic": "actual production snapshot/customer intervals",
+                "leg_id": leg.leg_id,
+                "cutoff": after,
+                "bounds": [value.isoformat() for value in leg.utc_bounds],
+                "origin": leg.preparation_origin,
+                "intervals": interval_evidence,
+            }
+        ),
+        file=sys.stderr,
+        flush=True,
+    )
     assert future_intervals
+    assert future_intervals[0].start_time <= datetime.fromisoformat(after)
+    assert future_intervals[-1].end_time == leg.utc_bounds[1]
+    assert all(
+        left.end_time == right.start_time
+        for left, right in zip(future_intervals, future_intervals[1:])
+    )
     assert all(
         all(decision.value == "Down" for decision in interval.decisions)
         for interval in future_intervals
@@ -44,6 +72,7 @@ for leg in snapshot.legs:
             "leg_id": leg.leg_id,
             "origin": leg.preparation_origin,
             "timeline": timeline,
+            "customer_intervals": interval_evidence,
             "map_pois": [json.loads(raw) for raw in leg.map_pois],
         }
     )
