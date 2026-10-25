@@ -4,19 +4,21 @@ import type { ExpectedLeg, PlanningDraft } from '../types/planning';
 export function planningSourceReady(
   leg: ExpectedLeg,
   draft: PlanningDraft = leg.draft ?? {},
-  section = leg.ar_section_status
+  section = leg.ar_section_status,
+  xAvailable = true
 ) {
   const permitted = draft.permitted_satellite_ids ?? [];
   const confirmed = draft.access_confirmation;
   if (
     !leg.route ||
     section === 'unrecognized' ||
-    !permitted.length ||
-    !confirmed?.confirmed ||
-    confirmed.satellite_ids.length !== permitted.length ||
-    confirmed.satellite_ids.some((id) => !permitted.includes(id)) ||
+    (xAvailable &&
+      (!permitted.length ||
+        !confirmed?.confirmed ||
+        confirmed.satellite_ids.length !== permitted.length ||
+        confirmed.satellite_ids.some((id) => !permitted.includes(id)))) ||
     draft.unresolved_aar_windows?.length ||
-    draft.unresolved_x_transitions?.length
+    (xAvailable && draft.unresolved_x_transitions?.length)
   )
     return false;
   const rows = draft.ar_corrections?.length

@@ -1,3 +1,4 @@
+import { OperatorTransportAvailability } from './OperatorTransportAvailability';
 import { LegacySaveRecovery } from './LegacySaveRecovery';
 import { operatorTiming } from '@/lib/operatorTiming';
 import { readTrainingProviderEvidence } from '../training/trainingProviderEvidence';
@@ -965,6 +966,12 @@ export function OperatorWorkspace() {
             </section>
           ) : (
             <>
+              {view === 'Now' && (
+                <OperatorTransportAvailability
+                  key={missionId}
+                  missionId={missionId}
+                />
+              )}
               <div className="ws-quick-actions" hidden={view === 'Transport'}>
                 <button
                   className="ws-button ws-primary"

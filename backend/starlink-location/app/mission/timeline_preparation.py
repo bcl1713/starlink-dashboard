@@ -5,13 +5,20 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.mission.planning.models import PlanningEvaluation
 
+from app.mission.availability_models import LegAvailability
+from app.mission.availability_planning import (
+    apply_timeline_availability,
+    eligible,
+    leg_snapshot,
+    usable_during,
+)
 from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.derived_route import (
     build_derived_route_estimate,
@@ -39,7 +46,7 @@ from app.mission.timeline_builder.events import (
     apply_manual_outages,
     apply_x_azimuth_events,
 )
-from app.mission.timeline_builder.pois import MISSION_POI_KINDS, construct_mission_pois
+from app.mission.timeline_builder.pois import construct_mission_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
     annotate_aar_markers,
@@ -48,7 +55,7 @@ from app.mission.timeline_builder.stats import (
 )
 from app.models.poi import POICreate
 from app.models.route import ParsedRoute
-from app.satellites.catalog import SatelliteCatalog, get_satellite_catalog
+from app.satellites.catalog import SatelliteCatalog
 from app.satellites.coverage import CoverageSampler
 from app.satellites.rules import ConstraintConfig, MissionEvent, RuleEngine
 from app.services.poi_manager import POIManager
@@ -87,6 +94,7 @@ def prepare_mission_timeline(
     satellite_catalog: SatelliteCatalog | None = None,
     constraint_config: ConstraintConfig | None = None,
     pop_catalog=_CONFIGURED_POP_CATALOG,
+    availability: LegAvailability | None = None,
 ) -> TimelineArtifacts:
     """Prepare effective geometry, canonical events and POIs without publishing."""
 
@@ -102,6 +110,15 @@ def prepare_mission_timeline(
         ),
     )
 
+    availability = (
+        availability
+        or (
+            mission.transports.planning_inputs.availability
+            if mission.transports.planning_inputs is not None
+            else None
+        )
+        or leg_snapshot(mission)
+    )
     planning_evaluation = None
     if mission.transports.planning_policy is not None:
         from app.mission.planning.evaluate import evaluate_context
@@ -116,7 +133,12 @@ def prepare_mission_timeline(
             )
         try:
             inputs, draft, context = canonical_inputs(
-                mission, route, constraint_config, satellite_catalog, poi_manager
+                mission,
+                route,
+                constraint_config,
+                satellite_catalog,
+                poi_manager,
+                availability=availability,
             )
             planning_evaluation = evaluate_context(inputs, draft, context)
         except ValueError as exc:
@@ -149,6 +171,7 @@ def prepare_mission_timeline(
         ).available
     )
     mission_start, mission_end = derive_mission_window(route)
+    x_usable = usable_during(availability, Transport.X, mission_start, mission_end)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 
     coverage_path = Path("data/sat_coverage/commka.geojson")
@@ -160,12 +183,33 @@ def prepare_mission_timeline(
 
     build_start = time.perf_counter()
     sample_start = build_start
+    availability_edges = availability.boundaries(mission_start, mission_end)
     samples = generate_timeline_samples(
         projector,
         coverage_sampler=resolved_sampler,
         interval_seconds=TIMELINE_SAMPLE_INTERVAL_SECONDS,
         boundaries=(
-            planning_evaluation.context.boundaries if planning_evaluation else None
+            planning_evaluation.context.boundaries
+            if planning_evaluation
+            else (
+                sorted(
+                    {
+                        mission_start,
+                        mission_end,
+                        *availability_edges,
+                        *[
+                            mission_start + timedelta(seconds=n)
+                            for n in range(
+                                0,
+                                int((mission_end - mission_start).total_seconds()),
+                                TIMELINE_SAMPLE_INTERVAL_SECONDS,
+                            )
+                        ],
+                    }
+                )
+                if availability_edges
+                else None
+            )
         ),
     )
     if planning_evaluation is not None:
@@ -206,20 +250,30 @@ def prepare_mission_timeline(
         manual_tracks.append(selected_track)
     apply_manual_aar_tracks(rule_engine, manual_tracks, projector)
 
-    transition_schedule = apply_x_transitions(
-        rule_engine,
-        mission,
-        projector,
-        aar_windows,
-        anchor_route=(
-            ParsedRoute.model_validate_json(inputs.anchor_route_json)
-            if planning_evaluation
-            else None
-        ),
+    transition_schedule = (
+        apply_x_transitions(
+            rule_engine,
+            mission,
+            projector,
+            aar_windows,
+            anchor_route=(
+                ParsedRoute.model_validate_json(inputs.anchor_route_json)
+                if planning_evaluation
+                else None
+            ),
+        )
+        if x_usable
+        else []
     )
 
     capability_ka_sampler = resolved_sampler
-    coverage_samples = samples
+    # Failure boundaries split eligibility, not the independently sampled Ka
+    # coverage estimate. Preserve all pre-failure coverage interpolation.
+    coverage_samples = (
+        generate_timeline_samples(projector, resolved_sampler)
+        if availability_edges and planning_evaluation is None
+        else samples
+    )
     coverage_enabled = resolved_sampler is not None
     if planning_evaluation is not None:
         import json
@@ -244,11 +298,16 @@ def prepare_mission_timeline(
     )
     apply_ka_events(rule_engine, coverage_result)
     export_x_conditions = [] if capture_x_conditions else None
+    x_samples = [
+        sample
+        for sample in samples
+        if x_usable and eligible(availability, Transport.X, sample.timestamp)
+    ]
     warning_boundaries = apply_x_azimuth_events(
         rule_engine,
         mission,
         route,
-        samples,
+        samples if planning_evaluation else x_samples,
         aar_windows,
         transition_schedule,
         poi_manager,
@@ -309,6 +368,7 @@ def prepare_mission_timeline(
         from app.mission.planning.evaluate import timeline_segments
 
         timeline.segments = timeline_segments(planning_evaluation, mission.id)
+    apply_timeline_availability(timeline, availability)
     normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
 
@@ -319,7 +379,9 @@ def prepare_mission_timeline(
         timeline.pop_forecast = configured_forecast_for_mission(
             route,
             projector,
-            starshield_enabled=mission.transports.starshield_enabled is not False,
+            starshield_enabled=usable_during(
+                availability, Transport.KU, mission_start, mission_end
+            ),
         )
     else:
         from app.mission.pop_forecast import (
@@ -332,7 +394,9 @@ def prepare_mission_timeline(
             projector,
             pop_catalog,
             revision=mission_forecast_revision(route, projector, pop_catalog),
-            starshield_enabled=mission.transports.starshield_enabled is not False,
+            starshield_enabled=usable_during(
+                availability, Transport.KU, mission_start, mission_end
+            ),
         )
 
     from app.mission.pop_pois import transition_window_pois
@@ -344,6 +408,15 @@ def prepare_mission_timeline(
     timeline.map_pois.extend(
         TimelineMapPoi.model_validate(p.model_dump()) for p in pop_pois
     )
+
+    from app.mission.availability_pois import apply_poi_availability
+
+    generated_pois = tuple(
+        apply_poi_availability(p, availability) for p in generated_pois
+    )
+    timeline.map_pois = [
+        TimelineMapPoi.model_validate(p.model_dump()) for p in generated_pois
+    ]
 
     from app.mission.pop_capabilities import (
         capability_input_revision,
@@ -366,6 +439,9 @@ def prepare_mission_timeline(
             planning=planning_evaluation is not None,
         ),
     )
+    evidence["starshield_enabled"] = usable_during(
+        availability, Transport.KU, mission_start, mission_end
+    )
     timeline.statistics["_call_capability_evidence"] = evidence
     timeline.call_capability_revision = capability_input_revision(
         mission,
@@ -373,6 +449,7 @@ def prepare_mission_timeline(
         constraint_config,
         satellite_catalog,
         ka_snapshot=evidence["ka_snapshot"],
+        availability=availability,
     )
     attach_call_continuity(timeline)
     call_capabilities = capture_call_capabilities(timeline, route, projector)
@@ -436,20 +513,33 @@ def publish_mission_pois(
     route_id: str,
 ) -> None:
     """Publish prepared POIs only after a mutation path accepts the plan."""
-    catalog = get_satellite_catalog()
-    poi_manager.delete_scoped_pois_by_names(
-        {sat.satellite_id for sat in catalog.list_all()}
-    )
-    poi_manager.delete_leg_pois(
-        route_id=route_id,
-        mission_id=mission_id,
-        kinds=MISSION_POI_KINDS,
-        generated_source="mission-timeline",
-    )
-    for poi in artifacts.generated_pois:
-        poi_manager.create_poi(
-            poi,
-            active_route=artifacts.route,
-            generated_source="mission-timeline",
-            route_segment_index=poi._route_segment_index,
-        )
+    from app.mission.availability_models import LegAvailability
+    from app.mission.availability_pois import merge_retained_pois, poi_transport
+    from app.mission.models import TimelineMapPoi
+    from app.services.poi.manager import _route_geometry_hash
+
+    generated = artifacts.generated_pois
+    raw = artifacts.timeline.statistics.get("_transport_availability")
+    if raw:
+        snapshot = LegAvailability.model_validate(raw)
+        retained = [
+            p
+            for p in poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
+            if p.generated_source == "mission-timeline"
+            and poi_transport(p.kind) is not None
+            and (
+                not p.planned_route_geometry_hash
+                or p.planned_route_geometry_hash
+                == _route_geometry_hash(artifacts.route)
+            )
+            and (
+                not p.transport_active
+                or p.expected_arrival_time is not None
+                and not snapshot.resolve(p.expected_arrival_time)[poi_transport(p.kind)]
+            )
+        ]
+        generated = merge_retained_pois(generated, retained, snapshot)
+        artifacts.timeline.map_pois = [
+            TimelineMapPoi.model_validate(p.model_dump()) for p in generated
+        ]
+    poi_manager.reconcile_mission_pois(generated, artifacts.route, mission_id, route_id)

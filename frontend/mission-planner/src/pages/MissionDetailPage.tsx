@@ -1,3 +1,4 @@
+import { TransportAvailabilityControls } from '@/components/planning/TransportAvailabilityControls';
 import { useState } from 'react';
 import { MissionFlightEvents } from './MissionFlightEvents';
 import { ImportDialog } from '../components/itinerary-import/ImportDialog';
@@ -258,6 +259,10 @@ export function MissionDetailPage() {
           />
         </div>
       )}
+      <TransportAvailabilityControls
+        key={`availability-${mission.id}`}
+        missionId={mission.id}
+      />
       <MissionSimulationStatus missionId={mission.id} legs={mission.legs} />
       <MissionFlightEvents
         key={mission.id}

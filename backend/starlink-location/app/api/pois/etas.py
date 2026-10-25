@@ -285,6 +285,9 @@ async def get_pois_with_etas(
             )
 
         pois = poi_manager.list_pois(route_id=route_id)
+        from app.mission.availability_pois import project_current_pois
+
+        pois = project_current_pois(pois, route_manager, run_service=run_service)
 
         # Calculate ETA and distance for each POI
         from app.core.eta_service import get_eta_calculator
@@ -461,7 +464,7 @@ async def get_pois_with_etas(
             )
 
             # If filtering is active, skip inactive POIs before creating the response object
-            if active_only and not active_status:
+            if active_only and (not active_status or not poi.transport_active):
                 continue
 
             pois_with_eta.append(
@@ -473,6 +476,8 @@ async def get_pois_with_etas(
                     category=poi.category,
                     icon=poi.icon,
                     active=active_status,
+                    transport_active=poi.transport_active,
+                    inactive_reason=poi.inactive_reason,
                     eta_seconds=eta_seconds,
                     eta_type=eta_type,
                     is_pre_departure=is_pre_departure,

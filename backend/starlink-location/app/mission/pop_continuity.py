@@ -133,6 +133,21 @@ def capabilities_from_timeline(
             x, fallback = "unknown", False
         if evidence.get("starshield_enabled") is False:
             starshield = "unavailable"
+        eligibility = (interval or {}).get("transport_availability")
+        snapshot = timeline.statistics.get("_transport_availability")
+        if snapshot:
+            from app.mission.availability_models import LegAvailability
+
+            eligibility = LegAvailability.model_validate(snapshot).resolve(
+                segment.start_time
+            )
+        if eligibility:
+            if not eligibility["X"]:
+                x, fallback = "unavailable", False
+            if not eligibility["Ka"]:
+                ka = "unavailable"
+            if not eligibility["Ku"]:
+                starshield = "unavailable"
         result.append(
             CapabilitySpan(
                 start_utc=segment.start_time,

@@ -73,6 +73,7 @@ def project_overview_upcoming_pois(
     current_progress: float | None,
     calculated_at: datetime,
     mission_time=None,
+    availability=None,
 ) -> OverviewUpcomingPoisResponse:
     """Project generated POIs with route-relative in-flight eligibility."""
     if calculated_at.tzinfo is None:
@@ -84,6 +85,12 @@ def project_overview_upcoming_pois(
     eta_type = "estimated" if flight_phase == "in_flight" else "anticipated"
     projected: list[OverviewUpcomingPoi] = []
     for poi in pois:
+        if availability is not None and poi.generated_source == "mission-timeline":
+            from app.mission.availability_pois import apply_poi_availability
+
+            poi = apply_poi_availability(poi, availability, now=mission_now)
+        if not poi.transport_active:
+            continue
         if poi.kind is None or not _is_valid_coordinate(poi.latitude, poi.longitude):
             continue
 

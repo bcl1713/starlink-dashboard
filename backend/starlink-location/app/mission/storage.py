@@ -186,6 +186,25 @@ def save_mission_v2(mission: Mission) -> dict:
     # twice while coordinating a broader v2 operation.
     with get_active_leg_lock():
         previous = load_mission_v2(mission.id)
+        if previous:
+            mission = mission.model_copy(deep=True)
+            if (
+                previous.availability.revision > 0
+                or "availability" not in mission.model_fields_set
+            ):
+                mission.availability = previous.availability
+            if previous.availability.revision > 0:
+                owned = {
+                    leg.id: leg.transports.availability_overrides
+                    for leg in previous.legs
+                }
+                for leg in mission.legs:
+                    if leg.id in owned:
+                        leg.transports.availability_overrides = owned[leg.id]
+            from app.mission.availability_service import RECEIPTS
+
+            if RECEIPTS in previous.metadata:
+                mission.metadata[RECEIPTS] = previous.metadata[RECEIPTS]
         if previous and "itinerary_planning" in previous.metadata:
             mission = mission.model_copy(deep=True)
             mission.metadata["itinerary_planning"] = previous.metadata[

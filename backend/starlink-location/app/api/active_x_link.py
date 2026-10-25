@@ -72,7 +72,15 @@ async def get_active_x_link(
                 poi_manager=poi_manager,
                 state_filter=state,
                 manual_satellite_id=manual_id,
-                **({"paced_context": selection[1].x_context} if selection else {}),
+                **(
+                    {
+                        "paced_context": selection[1].x_context,
+                        "run_id": selection[2].run_id,
+                        "operating_time": selection[2].simulation_time,
+                    }
+                    if selection
+                    else {}
+                ),
             )
             if manual_unavailable:
                 response["manual_selection_unavailable"] = True

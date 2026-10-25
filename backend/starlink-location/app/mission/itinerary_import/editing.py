@@ -22,9 +22,20 @@ from app.satellites.rules import ConstraintConfig
 
 
 def refresh_context(
-    mission, route, config=None, satellite_catalog=None, poi_manager=None
+    mission,
+    route,
+    config=None,
+    satellite_catalog=None,
+    poi_manager=None,
+    *,
+    availability=None
 ):
     """Current manual fields are authoritative; the optimizer is never invoked."""
+    availability = availability or (
+        mission.transports.planning_inputs.availability
+        if mission.transports.planning_inputs
+        else None
+    )
     start, end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, start, end)
     windows = resolve_aar_windows(mission, route, projector)
@@ -98,6 +109,7 @@ def refresh_context(
         permitted_satellite_ids=sorted(ids),
         initial_x_satellite_id=mission.transports.initial_x_satellite_id,
         starshield_enabled=mission.transports.starshield_enabled,
+        availability_overrides=mission.transports.availability_overrides,
         swaps=swaps,
         ar_corrections=rows,
         manual_aar_tracks=mission.transports.manual_aar_tracks,
@@ -126,18 +138,21 @@ def refresh_context(
         SimpleNamespace(get_route=lambda _: route),
         poi_manager,
         config or ConstraintConfig(),
+        availability=availability,
     )
     context = build_context(inputs, draft)
     return inputs, draft, context
 
 
-def refresh_leg(leg, route_manager, poi_manager=None):
+def refresh_leg(leg, route_manager, poi_manager=None, *, availability=None):
     from app.mission.effective_route import prepare_effective_route
 
     if not leg.import_provenance:
         return leg
     route = prepare_effective_route(leg, route_manager)
-    inputs, _draft, context = refresh_context(leg, route, poi_manager=poi_manager)
+    inputs, _draft, context = refresh_context(
+        leg, route, poi_manager=poi_manager, availability=availability
+    )
     leg.transports.planning_inputs = inputs
     leg.transports.evaluation_context = context
     return leg

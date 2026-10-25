@@ -39,6 +39,8 @@ export interface Timeline {
   pop_forecast?: PopForecast | null;
   call_continuity?: CallContinuityProjection | null;
   map_pois?: Array<{
+    transport_active?: boolean;
+    inactive_reason?: string | null;
     name: string;
     kind: OverviewPoiKind;
     latitude: number;

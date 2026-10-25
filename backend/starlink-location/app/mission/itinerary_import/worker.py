@@ -67,6 +67,7 @@ def build_leg(leg_data, route_data, positions, constraints, mission_root, missio
         satellite_catalog=captured,
         constraint_config=ConstraintConfig(**constraints),
         discover_coverage=False,
+        availability=inputs.availability,
     )
     return {
         "leg": ordinary.model_dump(mode="json"),

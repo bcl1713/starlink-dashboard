@@ -5,6 +5,7 @@ from dataclasses import asdict
 from uuid import UUID, uuid4
 
 from app.mission import storage
+from app.mission.availability_context import selection_context
 
 from .deadlines import run_bounded
 from .errors import PlanningFailure, conflict
@@ -17,7 +18,7 @@ from .optimizer import optimize
 from .store import leg_identity, selection_errors
 
 
-def environment_identity(store, leg, constraints):
+def environment_identity(store, leg, constraints, *, mission=None, availability=None):
     """Cheap live dependency capture under the same gate as acceptance/activation.
 
     No geometry or optimizer work happens here. Hash source bytes so a coverage
@@ -29,21 +30,47 @@ def environment_identity(store, leg, constraints):
         raise ValueError("A bound route and draft are required")
     from .service import PlanningService
 
-    PlanningService(store).validate_selection(leg.draft)
+    context = (
+        selection_context(mission, leg, store.route_manager)
+        if mission is not None
+        else {
+            "availability": availability,
+            "start": leg.departure_time,
+            "end": leg.arrival_time,
+        }
+    )
+    PlanningService(store).validate_selection(leg.draft, **context)
+    from app.mission.availability_models import Transport
+    from app.mission.availability_planning import usable_during
+
+    x_required = usable_during(
+        context["availability"], Transport.X, context["start"], context["end"]
+    )
     store.sources.resolve_profile(leg.route.route_id)
     route = store.route_manager.get_route(leg.route.route_id)
     if route is None or route.content_hash != leg.route.content_hash:
         raise ValueError("Bound route is missing or changed")
-    return planning_identity(
-        {
-            "route": route_record(route),
-            "positions": resolve_positions(
-                leg.draft.permitted_satellite_ids, store.poi_manager
-            ),
-            "constraints": asdict(constraints),
-            "coverage": [(s.name, s.digest) for s in _coverage_inputs()],
-        }
-    )
+    record = {
+        "route": route_record(route),
+        "positions": (
+            resolve_positions(leg.draft.permitted_satellite_ids, store.poi_manager)
+            if x_required
+            else ()
+        ),
+        "constraints": asdict(constraints),
+        "coverage": [(source.name, source.digest) for source in _coverage_inputs()],
+    }
+    # Preserve the prefeature dependency identity only for untouched defaults.
+    explicit = bool(leg.draft.availability_overrides) or availability is not None
+    if mission is not None:
+        explicit = explicit or bool(
+            mission.availability.revision
+            or mission.availability.defaults
+            or mission.availability.history
+        )
+    if explicit:
+        record["availability"] = context["availability"]
+    return planning_identity(record)
 
 
 class ProposalService:
@@ -64,17 +91,27 @@ class ProposalService:
         from .service import PlanningService
 
         with storage.get_active_leg_lock():
-            _, manifest, leg = self.store.checked(
+            mission, manifest, leg = self.store.checked(
                 mission_id, leg_id, request.expected_revision, request.input_identity
             )
-            errors = selection_errors(leg.draft)
+            context = selection_context(mission, leg, self.store.route_manager)
+            errors = selection_errors(leg.draft, **context)
             if errors:
                 raise PlanningFailure(422, errors[0].code, errors[0].message)
-            PlanningService(self.store).validate_selection(leg.draft)
+            PlanningService(self.store).validate_selection(leg.draft, **context)
             constraints = self.constraints_provider()
-            environment = environment_identity(self.store, leg, constraints)
+            environment = environment_identity(
+                self.store, leg, constraints, mission=mission
+            )
             snapshot = leg.model_copy(deep=True)
-            return snapshot, constraints, environment, manifest
+            return (
+                snapshot,
+                constraints,
+                environment,
+                manifest,
+                context["availability"],
+                mission,
+            )
 
     def _path(self, mission_id, proposal_id):
         try:
@@ -121,7 +158,7 @@ class ProposalService:
             )
         return result
 
-    def status(self, leg, reference, revision):
+    def status(self, leg, reference, revision, *, mission=None):
         if reference.state == "stale" or (
             reference.applied_input_identity
             if reference.state == "applied"
@@ -130,7 +167,9 @@ class ProposalService:
             return "stale"
         try:
             if (
-                environment_identity(self.store, leg, self.constraints_provider())
+                environment_identity(
+                    self.store, leg, self.constraints_provider(), mission=mission
+                )
                 != reference.environment_identity
             ):
                 return "stale"
@@ -139,12 +178,14 @@ class ProposalService:
         return reference.state
 
     def generate(self, mission_id, leg_id, request, *, cancel_event=None):
-        leg, constraints, environment, manifest = self._snapshot(
+        leg, constraints, environment, manifest, availability, parent = self._snapshot(
             mission_id, leg_id, request
         )
         from .prerequisites import validate_generation
 
-        validate_generation(leg)
+        validate_generation(
+            leg, **selection_context(parent, leg, self.store.route_manager)
+        )
         key = (
             hashlib.sha256(request.idempotency_key.encode()).hexdigest()
             if request.idempotency_key
@@ -157,7 +198,8 @@ class ProposalService:
             if previous:
                 if (
                     previous.leg_id != leg_id
-                    or self.status(leg, previous, manifest.revision) != "ready"
+                    or self.status(leg, previous, manifest.revision, mission=parent)
+                    != "ready"
                 ):
                     raise conflict(
                         "Idempotency key was used for different or stale inputs"
@@ -169,6 +211,7 @@ class ProposalService:
             self.store.route_manager,
             self.store.poi_manager,
             constraints,
+            availability=availability,
         )
         context = build_context(inputs, leg.draft)
         # A capture raced by live configuration must not even launch a solver.
@@ -186,6 +229,7 @@ class ProposalService:
             self.store.route_manager,
             self.store.poi_manager,
             self.constraints_provider(),
+            availability=availability,
         )
         if input_identity(fresh) != input_identity(inputs):
             raise conflict("Planning structural inputs changed; recalculate")
@@ -221,7 +265,10 @@ class ProposalService:
                 if previous:
                     if (
                         previous.leg_id != leg_id
-                        or self.status(leg, previous, manifest.revision) != "ready"
+                        or self.status(
+                            leg, previous, manifest.revision, mission=mission
+                        )
+                        != "ready"
                     ):
                         raise conflict("Idempotency key was used for different inputs")
                     return self._payload(mission_id, previous)
@@ -242,7 +289,7 @@ class ProposalService:
             )
             try:
                 fresh = environment_identity(
-                    self.store, leg, self.constraints_provider()
+                    self.store, leg, self.constraints_provider(), mission=mission
                 )
             except (ValueError, PlanningFailure) as exc:
                 raise conflict(
@@ -254,9 +301,13 @@ class ProposalService:
 
     def get(self, mission_id, leg_id, proposal_id):
         with storage.get_active_leg_lock():
-            _, manifest = self.store._load(mission_id)
+            mission, manifest = self.store._load(mission_id)
             leg = next(
-                (l for l in manifest.expected_legs if l.id == leg_id and not l.retired),
+                (
+                    item
+                    for item in manifest.expected_legs
+                    if item.id == leg_id and not item.retired
+                ),
                 None,
             )
             ref = next(
@@ -274,7 +325,7 @@ class ProposalService:
             result = self._payload(mission_id, ref)
             return result.model_copy(
                 update={
-                    "state": self.status(leg, ref, manifest.revision),
+                    "state": self.status(leg, ref, manifest.revision, mission=mission),
                     "applied_input_identity": ref.applied_input_identity,
                 }
             )
@@ -302,7 +353,7 @@ class ProposalService:
                 raise PlanningFailure(
                     404, "proposal_not_found", "Proposal not found for this leg"
                 )
-            if self.status(leg, ref, manifest.revision) != "ready":
+            if self.status(leg, ref, manifest.revision, mission=mission) != "ready":
                 raise conflict("Proposal inputs changed; recalculate before applying")
             proposal = self._payload(mission_id, ref)
             if proposal.proposed_draft is None:

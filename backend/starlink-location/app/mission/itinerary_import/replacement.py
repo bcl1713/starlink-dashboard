@@ -5,6 +5,7 @@ import hashlib
 from fastapi import HTTPException
 
 from app.mission import storage
+from app.mission.availability_context import snapshot_for_leg
 from app.mission.planning.deadlines import run_bounded
 from app.mission.planning.identity import planning_identity
 from app.mission.planning.journal import json_bytes
@@ -23,7 +24,7 @@ def replace_route(service, mission_id, leg_id, data, filename):
         mission = storage.load_mission_v2(mission_id)
         if mission is None:
             raise HTTPException(404, "Mission not found")
-        leg = next((l for l in mission.legs if l.id == leg_id), None)
+        leg = next((item for item in mission.legs if item.id == leg_id), None)
         if leg is None:
             raise HTTPException(404, "Leg not found")
         if leg.is_active:
@@ -43,9 +44,9 @@ def replace_route(service, mission_id, leg_id, data, filename):
         # named/position evidence can retain a route-bound occurrence.
         old_route = service.route_manager.get_route(
             next(
-                l.route_id
-                for l in storage.load_mission_v2(mission_id).legs
-                if l.id == leg_id
+                item.route_id
+                for item in storage.load_mission_v2(mission_id).legs
+                if item.id == leg_id
             )
         )
         from .rebind import rebind_leg
@@ -54,9 +55,18 @@ def replace_route(service, mission_id, leg_id, data, filename):
         from types import SimpleNamespace
 
         manager = SimpleNamespace(get_route=lambda _: route)
-        refresh_leg(leg, manager, service.poi_manager)
+        refresh_leg(
+            leg,
+            manager,
+            service.poi_manager,
+            availability=snapshot_for_leg(mission, leg),
+        )
         artifacts = prepare_mission_timeline(
-            leg, manager, service.poi_manager, parent_mission_id=mission_id
+            leg,
+            manager,
+            service.poi_manager,
+            parent_mission_id=mission_id,
+            availability=snapshot_for_leg(mission, leg),
         )
         accepted, files = sources.acceptance_files(source, mission_id, data)
         mission.metadata["itinerary_import"].setdefault("source_records", []).append(

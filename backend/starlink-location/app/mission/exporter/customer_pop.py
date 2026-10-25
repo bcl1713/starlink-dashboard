@@ -38,7 +38,12 @@ def captured_continuity(timeline, forecast, bounds):
 
 
 def partition_pop_windows(
-    intervals, forecast: PopForecast | None, continuity=None, *, starshield_enabled=True
+    intervals,
+    forecast: PopForecast | None,
+    continuity=None,
+    *,
+    starshield_enabled=True,
+    availability=None,
 ):
     """Clip display bounds only; preserve every original decision and restriction."""
     if (
@@ -67,6 +72,7 @@ def partition_pop_windows(
                 t.crossing.id
                 for t in transitions
                 if t.window_start_utc <= low < t.window_end_utc
+                and (availability is None or availability.resolve(low)["Ku"])
             )
             call = next((c for c in calls if c.start_utc <= low < c.end_utc), None)
             classification = call.classification if call else "unknown"

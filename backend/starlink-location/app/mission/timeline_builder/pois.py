@@ -50,19 +50,9 @@ def sync_mission_pois(
     )
     if not mission.route_id:
         return
-    poi_manager.delete_leg_pois(
-        route_id=mission.route_id,
-        mission_id=parent_mission_id or mission.id,
-        kinds=MISSION_POI_KINDS,
-        generated_source="mission-timeline",
+    poi_manager.reconcile_mission_pois(
+        generated, route, parent_mission_id or mission.id, mission.route_id
     )
-    for poi in generated:
-        poi_manager.create_poi(
-            poi,
-            active_route=route,
-            generated_source="mission-timeline",
-            route_segment_index=poi._route_segment_index,
-        )
 
 
 def construct_mission_pois(

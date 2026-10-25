@@ -11,6 +11,10 @@ import { afterEach, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  transportAvailabilityApi,
+  type AvailabilityView,
+} from '@/services/transportAvailability';
 import { planningApi } from '../../services/planning';
 import { routesApi } from '../../services/routes';
 import type { ExpectedLegCard, PlanningView } from '../../types/planning';
@@ -47,7 +51,7 @@ const view = {
 function Location() {
   return <output aria-label="Current route">{useLocation().pathname}</output>;
 }
-function setup(initial = view) {
+function setup(initial = view, availability?: AvailabilityView) {
   vi.spyOn(planningApi, 'generateProposal').mockImplementation(
     async (_m, _l, request) => ({
       id: 'proposal',
@@ -69,6 +73,10 @@ function setup(initial = view) {
     defaultOptions: { queries: { retry: false } },
   });
   client.setQueryData(['planning', 'm'], initial);
+  if (availability) {
+    client.setQueryData(['transport-availability', 'm'], availability);
+    vi.spyOn(transportAvailabilityApi, 'read').mockResolvedValue(availability);
+  }
   vi.spyOn(planningApi, 'read').mockResolvedValue(initial);
   vi.spyOn(planningApi, 'satelliteOptions').mockResolvedValue({
     satellites: [
@@ -1018,4 +1026,108 @@ it('does not blindly retry a failed autosave and retains the edited prerequisite
   } finally {
     vi.useRealTimers();
   }
+});
+
+it('reviews_a_wholly_failed_X_leg_without_satellites_or_extra_confirmation', async () => {
+  const ready = structuredClone(view);
+  const leg = ready.expected_legs[0].leg;
+  leg.route = {
+    route_id: 'r',
+    source_id: 's',
+    content_hash: 'route',
+    filename: 'route.kml',
+  };
+  leg.draft = {
+    no_ars_confirmed: true,
+    permitted_satellite_ids: [],
+    access_confirmation: null,
+    initial_x_satellite_id: null,
+  };
+  const availability: AvailabilityView = {
+    mission_id: 'm',
+    revision: 1,
+    defaults: {},
+    leg_overrides: {},
+    history: [],
+    simulation_run_id: null,
+    as_of: '2026-10-25T12:00:00Z',
+    active_leg_id: null,
+    effective: null,
+    operator_actions_allowed: false,
+    operator_actions_unavailable_reason: 'No active leg',
+    legs: [
+      {
+        leg_id: 'stable-3',
+        planned: { X: true, Ka: true, Ku: true },
+        effective: { X: false, Ka: true, Ku: true },
+        overrides: {},
+        x_configuration_required: false,
+      },
+    ],
+  };
+  setup(ready, availability);
+  const save = vi
+    .spyOn(planningApi, 'saveReviewed')
+    .mockResolvedValue({ ...ready, revision: 8 });
+  await waitFor(() => expect(planningApi.previewDraft).toHaveBeenCalled());
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Save reviewed plan' })
+    ).toBeEnabled()
+  );
+  expect(screen.queryByLabelText(/I confirm this satellite plan/)).toBeNull();
+  expect(screen.queryByLabelText(/I confirm service access/)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Save reviewed plan' }));
+  await waitFor(() =>
+    expect(save).toHaveBeenCalledWith(
+      'm',
+      'stable-3',
+      expect.objectContaining({ satellite_plan_confirmed: false })
+    )
+  );
+});
+
+it('simulation_only_failure_does_not_waive_canonical_live_X_prerequisites', async () => {
+  const ready = structuredClone(view);
+  ready.expected_legs[0].leg.route = {
+    route_id: 'r',
+    source_id: 's',
+    content_hash: 'route',
+    filename: 'route.kml',
+  };
+  ready.expected_legs[0].leg.draft = {
+    no_ars_confirmed: true,
+    permitted_satellite_ids: [],
+    initial_x_satellite_id: null,
+  };
+  setup(ready, {
+    mission_id: 'm',
+    revision: 1,
+    defaults: {},
+    leg_overrides: {},
+    history: [],
+    simulation_run_id: 'simulation',
+    as_of: '2026-10-25T12:00:00Z',
+    active_leg_id: null,
+    effective: null,
+    operator_actions_allowed: false,
+    operator_actions_unavailable_reason: 'Inactive',
+    legs: [
+      {
+        leg_id: 'stable-3',
+        planned: { X: true, Ka: true, Ku: true },
+        effective: { X: false, Ka: true, Ku: true },
+        planning_effective: { X: true, Ka: true, Ku: true },
+        overrides: {},
+        x_configuration_required: true,
+      },
+    ],
+  });
+  await screen.findByText(
+    /Select permitted X-band satellites before optimization/
+  );
+  expect(
+    screen.getByRole('button', { name: 'Save reviewed plan' })
+  ).toBeDisabled();
+  expect(planningApi.previewDraft).not.toHaveBeenCalled();
 });

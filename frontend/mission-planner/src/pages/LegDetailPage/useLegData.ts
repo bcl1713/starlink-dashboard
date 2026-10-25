@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { SatelliteConfig } from '../../types/satellite';
 import type { AARConfig } from '../../types/aar';
 import type { KaTransition } from '../../types/timeline';
@@ -14,6 +14,7 @@ import { poisService, type POI } from '../../services/pois';
 interface UseLegDataProps {
   routeId?: string;
   missionId?: string;
+  legId?: string;
   legTransports?: TransportConfig;
 }
 
@@ -72,17 +73,9 @@ function initializeAARConfig(legTransports?: TransportConfig): AARConfig {
 export function useLegData({
   routeId,
   missionId,
+  legId,
   legTransports,
 }: UseLegDataProps): UseLegDataReturn {
-  // State for configurations
-  const [satelliteConfig, setSatelliteConfig] = useState<SatelliteConfig>(() =>
-    initializeSatelliteConfig(legTransports)
-  );
-
-  const [aarConfig, setAARConfig] = useState<AARConfig>(() =>
-    initializeAARConfig(legTransports)
-  );
-
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>(
     []
   );
@@ -90,7 +83,69 @@ export function useLegData({
   const [waypointNames, setWaypointNames] = useState<string[]>([]);
   const [availableSatellites, setAvailableSatellites] = useState<string[]>([]);
   const [kaTransitions, setKaTransitions] = useState<KaTransition[]>([]);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const configScope = `${missionId ?? ''}:${legId ?? ''}`;
+  const [dirtyState, setDirtyState] = useState({
+    scope: configScope,
+    value: false,
+  });
+  const hasUnsavedChanges =
+    dirtyState.scope === configScope && dirtyState.value;
+  const setHasUnsavedChanges: React.Dispatch<React.SetStateAction<boolean>> = (
+    value
+  ) => {
+    setDirtyState((current) => ({
+      scope: configScope,
+      value:
+        typeof value === 'function'
+          ? value(current.scope === configScope && current.value)
+          : value,
+    }));
+  };
+
+  // Confirmed props remain separate from a local draft for this mission/leg.
+  // Changing availability may refresh props without replacing pending edits.
+  const confirmedConfig = useMemo(
+    () => ({
+      scope: configScope,
+      base: legTransports,
+      satellite: initializeSatelliteConfig(legTransports),
+      aar: initializeAARConfig(legTransports),
+    }),
+    [configScope, legTransports]
+  );
+  const [localConfig, setLocalConfig] = useState<typeof confirmedConfig | null>(
+    null
+  );
+  const currentConfig = (candidate: typeof localConfig) =>
+    candidate?.scope === configScope &&
+    (candidate.base === legTransports || hasUnsavedChanges)
+      ? candidate
+      : confirmedConfig;
+  const config = currentConfig(localConfig);
+  const satelliteConfig = config.satellite;
+  const aarConfig = config.aar;
+  const setSatelliteConfig: React.Dispatch<
+    React.SetStateAction<SatelliteConfig>
+  > = (value) => {
+    setLocalConfig((current) => {
+      const base = currentConfig(current);
+      return {
+        ...base,
+        satellite: typeof value === 'function' ? value(base.satellite) : value,
+      };
+    });
+  };
+  const setAARConfig: React.Dispatch<React.SetStateAction<AARConfig>> = (
+    value
+  ) => {
+    setLocalConfig((current) => {
+      const base = currentConfig(current);
+      return {
+        ...base,
+        aar: typeof value === 'function' ? value(base.aar) : value,
+      };
+    });
+  };
 
   // Convert Ka transition POIs to KaTransition format for map display
   const convertPoiToKaTransition = (poi: POI): KaTransition | null => {
@@ -186,6 +241,7 @@ export function useLegData({
         // Filter for Ka transition POIs that belong to THIS mission AND route
         const kaPois = pois.filter(
           (poi) =>
+            poi.transport_active !== false &&
             poi.category === 'mission-event' &&
             poi.icon === 'satellite' &&
             poi.name.toLowerCase().includes('ka transition') &&
@@ -207,12 +263,6 @@ export function useLegData({
       setKaTransitions([]);
     };
   }, [routeId, missionId]);
-
-  // Sync state when leg transports data changes
-  useEffect(() => {
-    setSatelliteConfig(initializeSatelliteConfig(legTransports));
-    setAARConfig(initializeAARConfig(legTransports));
-  }, [legTransports]);
 
   return {
     satelliteConfig,

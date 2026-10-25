@@ -14,26 +14,19 @@ import itertools
 from datetime import datetime, timezone
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StrictBool, field_validator
 
 from app.models.poi import MissionPoiKind
 from app.services.pop.continuity_models import CallContinuityProjection
 from app.services.pop.models import PopForecast
 
+from .availability_models import MissionAvailability, Transport
 from .planning.types import (
     EvaluationContext,
     PlanningInputSnapshot,
     PlanningPolicy,
     RouteAnchor,
 )
-
-
-class Transport(str, Enum):
-    """Enumeration of available communication transports."""
-
-    X = "X"  # Fixed geostationary satellite
-    KA = "Ka"  # Three geostationary satellites
-    KU = "Ku"  # Always-on LEO constellation
 
 
 class TransportState(str, Enum):
@@ -308,6 +301,7 @@ class KuOutageOverride(BaseModel):
 class TransportConfig(BaseModel):
     """Configuration for all three transports in the mission."""
 
+    availability_overrides: dict[Transport, StrictBool] | None = None
     starshield_enabled: bool | None = None
     planning_policy: PlanningPolicy | None = None
     evaluation_context: EvaluationContext | None = None
@@ -540,6 +534,7 @@ class Mission(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="When mission was last updated (UTC, ISO-8601)",
     )
+    availability: MissionAvailability = Field(default_factory=MissionAvailability)
     metadata: dict = Field(default_factory=dict, description="Custom metadata fields")
 
     @field_validator("id")
@@ -685,6 +680,8 @@ class TimelineMapPoi(BaseModel):
 
     name: str
     kind: MissionPoiKind
+    transport_active: bool = True
+    inactive_reason: str | None = None
     latitude: float
     longitude: float
     expected_arrival_time: datetime | None = None

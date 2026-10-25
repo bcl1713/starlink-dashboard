@@ -20,8 +20,9 @@ def attach_boundary_geometry(model, artifacts):
     times = set()
     # Available samples and internal boundaries of one merged restriction never
     # produce events. Only project endpoints that the feed actually consumes.
+    # Geometry belongs to canonical windows, including temporarily inactive cues.
     for _transport, _causes, _index, start, end, _severity in restriction_windows(
-        model
+        {**model, "transport_availability": None}
     ):
         times.update((start, end))
     boundaries = {}

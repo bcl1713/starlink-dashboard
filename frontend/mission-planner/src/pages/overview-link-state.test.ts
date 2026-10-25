@@ -315,3 +315,11 @@ describe('independent Overview link state', () => {
     expect(deriveOverviewLinkState(input).xBandFlow).toEqual(state.xBandFlow);
   });
 });
+
+it('hides unavailable RF links while retaining compatible absent-field behavior', () => {
+  const input = fixture();
+  input.status!.transport_availability = { X: false, Ka: true, Ku: false };
+  const state = assertActivity(input, false, false);
+  expect(state.starshieldVisible).toBe(false);
+  expect(state.xBandVisible).toBe(false);
+});

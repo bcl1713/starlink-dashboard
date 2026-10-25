@@ -830,7 +830,7 @@ def _generate_route_map(
             for poi in pois:
                 # Only label mission events (AAR, swaps, transitions),
                 # not KML waypoints or satellites
-                if poi.category != "mission-event":
+                if poi.category != "mission-event" or not poi.transport_active:
                     continue
                 key = (poi.name, round(poi.latitude, 4), round(poi.longitude, 4))
                 if key in seen_pois:

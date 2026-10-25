@@ -45,6 +45,20 @@ export function TransportCatalogManager({
       </div>
       <p className="ws-meta">
         Shared across missions. Archived entries remain in history.
+        {kind === 'transports' && (
+          <>
+            {' '}
+            For mission equipment failures, use{' '}
+            <a
+              className="underline"
+              href="#mission-transport-availability"
+              onClick={onClose}
+            >
+              Transport availability
+            </a>{' '}
+            to mark unavailable or restore.
+          </>
+        )}
       </p>
       <form
         className="flex min-w-0 flex-wrap gap-2"

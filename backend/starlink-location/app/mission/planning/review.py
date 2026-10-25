@@ -4,6 +4,7 @@ from dataclasses import replace
 from uuid import uuid4
 
 from app.mission import storage
+from app.mission.availability_context import expected_snapshot
 from app.mission.timeline_preparation import prepare_mission_timeline
 
 from .errors import PlanningFailure, conflict
@@ -14,16 +15,26 @@ from .proposals import environment_identity
 from .store import selection_errors
 
 
-def validate_review(leg, request, evaluation=None):
+def validate_review(
+    leg, request, evaluation=None, *, availability=None, start=None, end=None
+):
     draft = leg.draft
     rows = draft.ar_corrections or leg.ar_rows
     confirmed = {row.id for row in rows if row.match_status != "excluded"}
     excluded = {row.id for row in rows if row.match_status == "excluded"}
+    from app.mission.availability_models import Transport
+    from app.mission.availability_planning import usable_during
+
+    x_required = (
+        usable_during(availability, Transport.X, start, end)
+        if start is not None and end is not None
+        else (draft.availability_overrides or {}).get(Transport.X) is not False
+    )
     invalid = (
-        selection_errors(draft)
+        selection_errors(draft, availability=availability, start=start, end=end)
         or draft.starshield_enabled is None
-        or not request.satellite_plan_confirmed
-        or not draft.initial_x_satellite_id
+        or (x_required and not request.satellite_plan_confirmed)
+        or (x_required and not draft.initial_x_satellite_id)
         or leg.ar_section_status == "unrecognized"
         or set(request.confirmed_ar_ids) != confirmed
         or set(request.excluded_ar_ids) != excluded
@@ -51,7 +62,7 @@ def validate_review(leg, request, evaluation=None):
         )
 
 
-def preview(service, mission_id, leg_id, request):
+def preview(service, mission_id, leg_id, request, *, availability=None):
     store = service.store
 
     # Read-only work uses detached generations and optimistic rechecks. Holding
@@ -61,15 +72,26 @@ def preview(service, mission_id, leg_id, request):
             return store.checked_inputs(mission_id, leg_id, request.input_identity)
         return store.checked(mission_id, leg_id, request.expected_revision)
 
-    _, _, source = check()
+    parent, _, source = check()
     leg = source.model_copy(deep=True)
     leg.draft = request.draft.model_copy(deep=True)
+    if source.draft is not None and (
+        parent.availability.revision > 0
+        or "availability_overrides" not in request.draft.model_fields_set
+    ):
+        leg.draft.availability_overrides = source.draft.availability_overrides
     if request.ar_section_status is not None:
         leg.ar_section_status = request.ar_section_status
+    availability = availability or expected_snapshot(parent, leg)
     constraints = store.planning_constraints_provider()
-    environment = environment_identity(store, leg, constraints)
+    environment = environment_identity(store, leg, constraints, mission=parent)
     inputs = build_inputs(
-        leg, leg.draft, store.route_manager, store.poi_manager, constraints
+        leg,
+        leg.draft,
+        store.route_manager,
+        store.poi_manager,
+        constraints,
+        availability=availability,
     )
     context = build_context(inputs, leg.draft)
     evaluation = evaluate_context(inputs, leg.draft, context)
@@ -90,31 +112,46 @@ def preview(service, mission_id, leg_id, request):
             parent_mission_id=mission_id,
             constraint_config=constraints,
             capture_x_conditions=True,
+            availability=availability,
         )
         evaluation.map_diagnostics = list(
             check_prepared_map(candidate, artifacts, constraints, store.poi_manager)
         )
-    check()
+    fresh_parent, _, _ = check()
     if (
-        environment_identity(store, leg, store.planning_constraints_provider())
+        environment_identity(
+            store, leg, store.planning_constraints_provider(), mission=fresh_parent
+        )
         != environment
     ):
         raise conflict("Planning dependencies changed; preview again")
     return evaluation
 
 
-def prepare_reviewed_leg(service, mission_id, leg_id, request):
+def prepare_reviewed_leg(service, mission_id, leg_id, request, *, availability=None):
     store = service.store
-    leg, constraints, environment, _ = service.proposals._snapshot(
-        mission_id, leg_id, request
+    leg, constraints, environment, _, captured_availability, _ = (
+        service.proposals._snapshot(mission_id, leg_id, request)
     )
-    validate_review(leg, request)
+    availability = availability or captured_availability
     inputs = build_inputs(
-        leg, leg.draft, store.route_manager, store.poi_manager, constraints
+        leg,
+        leg.draft,
+        store.route_manager,
+        store.poi_manager,
+        constraints,
+        availability=availability,
     )
     context = build_context(inputs, leg.draft)
     evaluation = evaluate_context(inputs, leg.draft, context)
-    validate_review(leg, request, evaluation)
+    validate_review(
+        leg,
+        request,
+        evaluation,
+        availability=inputs.availability,
+        start=inputs.start_time,
+        end=inputs.end_time,
+    )
     if request.evaluation_identity != context.input_identity:
         raise conflict("Reviewed evaluation changed; preview and approve again")
     installed = draft_to_mission_leg(
@@ -151,6 +188,7 @@ def prepare_reviewed_leg(service, mission_id, leg_id, request):
         parent_mission_id=mission_id,
         constraint_config=constraints,
         capture_x_conditions=True,
+        availability=availability,
     )
     if artifacts.planning_evaluation != evaluation:
         raise conflict("Canonical timeline changed; preview again")

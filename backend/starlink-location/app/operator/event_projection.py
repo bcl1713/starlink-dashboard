@@ -4,7 +4,11 @@ from datetime import timedelta
 
 from .event_ledger import identity
 from .event_models import EventNotification, OperationalEvent
-from .restriction_windows import restriction_windows
+from .restriction_windows import (
+    restriction_windows,
+    transport_event_allowed,
+    transport_event_generation,
+)
 from .time_models import utc_timestamp
 
 
@@ -199,6 +203,8 @@ def derive_events(inputs, *, as_of, policy):
             start, end = _time(window["window_start_utc"]), _time(
                 window["window_end_utc"]
             )
+            if not transport_event_allowed(model, "Starshield", start):
+                continue
             event = OperationalEvent(
                 **common,
                 event_id=key,
@@ -209,13 +215,19 @@ def derive_events(inputs, *, as_of, policy):
                 transport="Starshield",
                 significance="advisory",
                 **_window_state(start, end, as_of, source),
-                schedule_key=key,
+                schedule_key=(
+                    identity(key, transport_event_generation(model, "Starshield"))
+                    if transport_event_generation(model, "Starshield")
+                    else key
+                ),
             )
             _protect(event, inputs.records)
             events.append(event)
         # #348 publishes observation/overdue advisories independently of its
         # future-window list. Missing observed PoP never means service down.
         for advisory in model.get("pop_advisories", []):
+            if not transport_event_allowed(model, "Starshield", as_of):
+                continue
             kind = advisory.get("kind")
             if kind not in ("observation_unknown", "mismatch", "overdue"):
                 continue
@@ -298,7 +310,11 @@ def derive_events(inputs, *, as_of, policy):
                     if start and end
                     else {"active": True, "state": "unknown"}
                 ),
-                schedule_key=key,
+                schedule_key=(
+                    identity(key, transport_event_generation(model, transport))
+                    if transport_event_generation(model, transport)
+                    else key
+                ),
                 family_key=identity(
                     mission_id,
                     model_key,

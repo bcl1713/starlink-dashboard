@@ -68,7 +68,17 @@ class PlanningService:
             )
         )
 
-    def validate_selection(self, selection):
+    def validate_selection(self, selection, *, availability=None, start=None, end=None):
+        from app.mission.availability_models import Transport
+        from app.mission.availability_planning import usable_during
+
+        if (
+            availability is not None
+            and start is not None
+            and end is not None
+            and not usable_during(availability, Transport.X, start, end)
+        ):
+            return
         eligible = {
             sat.id for sat in self.satellite_options().satellites if sat.eligible
         }

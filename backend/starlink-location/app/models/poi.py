@@ -68,6 +68,8 @@ class POI(BaseModel):
         exclude=True,
         description="Internal geometry identity for the planned route segment",
     )
+    transport_active: bool = True
+    inactive_reason: str | None = None
     expected_arrival_time: datetime | None = Field(
         default=None, description="Scheduled timeline time for this POI"
     )
@@ -135,6 +137,8 @@ class POICreate(BaseModel):
     kind: MissionPoiKind | None = Field(
         default=None, description="Typed mission timeline event, when generated"
     )
+    transport_active: bool = True
+    inactive_reason: str | None = None
     expected_arrival_time: datetime | None = Field(
         default=None, description="Scheduled timeline time for this POI"
     )
@@ -228,6 +232,8 @@ class POIResponse(BaseModel):
     route_id: str | None
     mission_id: str | None = None
     kind: MissionPoiKind | None = None
+    transport_active: bool = True
+    inactive_reason: str | None = None
     expected_arrival_time: datetime | None = None
     created_at: datetime
     updated_at: datetime
@@ -297,6 +303,8 @@ class POIWithETA(BaseModel):
         ...,
         description="Whether this POI is currently active (based on associated route/mission active status)",
     )
+    transport_active: bool = True
+    inactive_reason: str | None = None
     eta_seconds: float = Field(
         ..., description="Estimated time to arrival in seconds (-1 if no speed)"
     )

@@ -34,6 +34,12 @@ class StaticRouteManager:
     def get_active_route(self) -> ParsedRoute | None:
         return self.route
 
+    def get_active_route_id(self):
+        return Path(self.route.metadata.file_path).stem if self.route else None
+
+    def get_route(self, route_id):
+        return self.route if route_id == self.get_active_route_id() else None
+
 
 class StaticPOIManager:
     def __init__(self, pois: list[POI]):

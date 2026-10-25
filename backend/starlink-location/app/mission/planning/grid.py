@@ -3,6 +3,8 @@
 import json
 from datetime import timedelta
 
+from app.mission.availability_models import Transport
+from app.mission.availability_planning import usable_during
 from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.models.route import ParsedRoute
 
@@ -22,6 +24,11 @@ def _route(inputs):
 
 
 def swap_times(inputs, draft):
+    # Keep the saved schedule for restoration without resolving inactive X anchors.
+    if not usable_during(
+        inputs.availability, Transport.X, inputs.start_time, inputs.end_time
+    ):
+        return []
     route = ParsedRoute.model_validate_json(inputs.anchor_route_json)
     return [resolve_anchor(s.anchor, route) for s in draft.swaps]
 
@@ -83,6 +90,8 @@ def _context(inputs, seeds):
     route = _route(inputs)
     projector = RouteTemporalProjector(route, start, end)
     candidates = {start, end, *seeds}
+    if inputs.availability:
+        candidates.update(inputs.availability.boundaries(start, end))
     t = start
     while t < end:
         candidates.add(t)
@@ -176,9 +185,20 @@ def validate_context(inputs, draft, context):
     times = swap_times(inputs, draft)
     if any(t not in context.candidate_times for t in times):
         raise ValueError("Manual swap timing changed; create a new evaluation context")
+    # Retain assignments and locks for restoration while X is inactive.
+    if not usable_during(
+        inputs.availability, Transport.X, inputs.start_time, inputs.end_time
+    ):
+        return
     permitted = {s.satellite_id for s in inputs.satellites}
+    assignments = sorted(zip(times, draft.swaps), key=lambda item: item[0])
+    # A swap selected during failure may still own X when the equipment returns.
+    ends = [time for time, _ in assignments[1:]] + [inputs.end_time]
     if draft.initial_x_satellite_id not in permitted or any(
-        s.target_satellite_id not in permitted for s in draft.swaps
+        swap.target_satellite_id not in permitted
+        and time < end
+        and usable_during(inputs.availability, Transport.X, time, end)
+        for (time, swap), end in zip(assignments, ends)
     ):
         raise ValueError("Selected satellite is not in the permitted position snapshot")
     at = {}

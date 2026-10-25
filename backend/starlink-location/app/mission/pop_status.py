@@ -71,6 +71,7 @@ class PopStatusService:
         observation_provider: ObservationProvider | None = None,
         snapshot_context_provider=None,
         capability_provider=None,
+        poi_manager=None,
     ):
         self.route_manager = route_manager
         self.config_provider = config_provider or (lambda: ConfigManager().get_config())
@@ -78,12 +79,135 @@ class PopStatusService:
         self.snapshot_context_provider = snapshot_context_provider
         # Optional local producer for one route/config/clock-aligned sample.
         self.capability_provider = capability_provider
+        self.poi_manager = poi_manager
         self.state = PopLiveState(revision="")
         self._revision = ""
         self._epoch = 0
         self._last_now = None
         self._last_lifecycle = None
         self._published_snapshot = None
+        self._replay_capability_cache = None
+
+    def _replay_capabilities(self, active, context, catalog, availability):
+        """Own one detached capability projection for the selected replay inputs."""
+        from app.mission.exporter.snapshot_inputs import SourcePayload
+        from app.mission.exporter.snapshot_views import POIView, RouteView
+        from app.mission.pop_capabilities import capability_input_revision
+        from app.mission.pop_coverage_evidence import current_coverage_snapshot
+        from app.mission.timeline_preparation import prepare_mission_timeline
+
+        try:
+            route, projector = context["route"], context["projector"]
+            current_route = prepare_effective_route(
+                active.leg, self.route_manager, normalize_for_simulation=True
+            )
+            # Flight-state publication updates this observation on the source
+            # route. It does not alter accepted replay geometry or timing.
+            current_route.timing_profile.flight_status = (
+                route.timing_profile.flight_status
+            )
+            coverage = current_coverage_snapshot()
+            if (
+                (context.get("mission_id"), context.get("leg_id"))
+                != (active.parent_mission_id, active.leg.id)
+                or route.model_dump() != current_route.model_dump()
+                or projector.route_snapshot != route.model_dump()
+                or coverage is None
+            ):
+                self._replay_capability_cache = None
+                return None
+            revision = capability_input_revision(
+                active.leg, route, ka_snapshot=coverage, availability=availability
+            )
+            assignments = {
+                active.leg.transports.initial_x_satellite_id,
+                *(
+                    item.target_satellite_id
+                    for item in active.leg.transports.x_transitions
+                ),
+            }
+            if active.leg.transports.planning_inputs is not None:
+                assignments.update(
+                    item.satellite_id
+                    for item in active.leg.transports.planning_inputs.satellites
+                )
+            names = {name.strip().casefold() for name in assignments if name}
+            poi_payloads = (
+                tuple(
+                    point.model_dump_json().encode()
+                    for point in self.poi_manager.list_pois()
+                    if point.mission_id is None
+                    and point.route_id is None
+                    and point.name.strip().casefold() in names
+                )
+                if self.poi_manager is not None
+                else None
+            )
+            key = (
+                context["simulation_run_id"],
+                active.parent_mission_id,
+                active.leg.id,
+                revision,
+                catalog.fingerprint if catalog else None,
+                poi_payloads,
+            )
+            if self._replay_capability_cache is not None:
+                cached_key, captured = self._replay_capability_cache
+                if cached_key == key:
+                    return captured
+            supplied = context.get("call_capabilities")
+            # Accepted RF identity predates POI fallback-source capture. Rebuild
+            # once per key when that provider participates, then reuse our copy.
+            if (
+                self.poi_manager is None
+                and supplied is not None
+                and supplied.input_revision == revision
+            ):
+                captured = copy.deepcopy(supplied)
+            else:
+                source = self.route_manager.get_route(active.leg.route_id).model_copy(
+                    deep=True
+                )
+                if source.timing_profile is not None:
+                    source.timing_profile.flight_status = (
+                        route.timing_profile.flight_status
+                    )
+                routes = RouteView(
+                    (
+                        SourcePayload(
+                            "route/" + active.leg.route_id,
+                            source.model_dump_json().encode(),
+                        ),
+                    )
+                )
+                artifacts = prepare_mission_timeline(
+                    active.leg,
+                    routes,
+                    POIView(poi_payloads) if poi_payloads is not None else None,
+                    parent_mission_id=active.parent_mission_id,
+                    normalize_for_simulation=True,
+                    pop_catalog=catalog,
+                    availability=availability,
+                )
+                captured = artifacts.call_capabilities
+                if (
+                    artifacts.route.model_dump() != route.model_dump()
+                    or captured.input_revision != revision
+                    or current_coverage_snapshot() != coverage
+                ):
+                    self._replay_capability_cache = None
+                    return None
+            self._replay_capability_cache = (key, captured)
+            return captured
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            AttributeError,
+            TimelineComputationError,
+        ):
+            self._replay_capability_cache = None
+            return None
 
     def reconcile(self, forecast, observation, *, catalog, nearest_id, next_id, now):
         """Reject results captured before a route/reset/mode revision superseded them."""
@@ -379,6 +503,52 @@ class PopStatusService:
         }
         if config.mode == "simulation" and self.snapshot_context_provider is not None:
             context.update(self.snapshot_context_provider())
+        availability = None
+        if (
+            active_context is not None
+            and getattr(active_context, "parent_mission", None) is not None
+        ):
+            from app.mission.availability_context import snapshot_for_leg
+            from app.mission.models import Transport
+
+            availability = snapshot_for_leg(
+                active_context.parent_mission,
+                active_context.leg,
+                run_id=context.get("simulation_run_id"),
+            )
+            context["enabled"] = availability.resolve(context["now"])[Transport.KU]
+        selected_replay = (
+            config.mode == "simulation"
+            and active_context is not None
+            and context.get("simulation_run_id") is not None
+            and context.get("projector") is not None
+        )
+        if selected_replay:
+            context["call_capabilities"] = self._replay_capabilities(
+                active_context, context, catalog, availability
+            )
+        else:
+            self._replay_capability_cache = None
+        if (
+            not selected_replay
+            and active_context is not None
+            and context.get("call_capabilities") is not None
+        ):
+            from app.mission.pop_capabilities import (
+                capability_input_revision,
+                saved_call_capabilities,
+            )
+
+            supplied = context["call_capabilities"]
+            if supplied.input_revision != capability_input_revision(
+                active_context.leg, context["route"], availability=availability
+            ):
+                context["call_capabilities"] = saved_call_capabilities(
+                    active_context.leg,
+                    active_context.parent_mission_id,
+                    context["route"],
+                    availability=availability,
+                )
         if (
             active_context is not None
             and context["flight_phase"] == "pre_departure"
@@ -388,8 +558,17 @@ class PopStatusService:
 
             try:
                 context["call_capabilities"] = saved_call_capabilities(
-                    active_context.leg, active_context.parent_mission_id, route
+                    active_context.leg,
+                    active_context.parent_mission_id,
+                    route,
+                    availability=availability,
                 )
             except (OSError, ValueError, TypeError, AttributeError):
                 context["call_capabilities"] = None
-        return self.snapshot(telemetry, **context)
+        result = self.snapshot(telemetry, **context)
+        if availability is not None:
+            result["transport_availability"] = {
+                k.value: v for k, v in availability.resolve(context["now"]).items()
+            }
+            result["availability_revision"] = availability.revision
+        return result

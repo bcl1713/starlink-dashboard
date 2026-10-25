@@ -1,3 +1,5 @@
+import { useTransportAvailability } from '@/hooks/api/useTransportAvailability';
+import { legAvailability } from '@/services/transportAvailability';
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { PlanningView } from '../../types/planning';
@@ -13,6 +15,11 @@ import { Button } from '../ui/button';
 
 export function ItineraryFinalReview({ view }: { view: PlanningView }) {
   const missionId = view.mission.id;
+  const availability = useTransportAvailability(missionId);
+  const xAvailable = (id: string) => {
+    const row = legAvailability(availability.data, id);
+    return row?.x_configuration_required ?? row?.planned.X !== false;
+  };
   const controller = usePlanningMissionController(missionId);
   usePlanningEditEpoch(controller);
   const [excluded, setExcluded] = useState<string[]>([]);
@@ -35,8 +42,13 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
     selected.length > 0 &&
     selected.every(
       (card) =>
-        planningSourceReady(card.leg) &&
-        !!card.leg.draft?.initial_x_satellite_id
+        planningSourceReady(
+          card.leg,
+          card.leg.draft ?? {},
+          card.leg.ar_section_status,
+          xAvailable(card.leg.id)
+        ) &&
+        (!xAvailable(card.leg.id) || !!card.leg.draft?.initial_x_satellite_id)
     );
   const preview = useQuery({
     queryKey: [
@@ -197,9 +209,15 @@ export function ItineraryFinalReview({ view }: { view: PlanningView }) {
                 ? 'No ARs confirmed'
                 : 'AR intervals confirmed'}{' '}
               · Initial X-band{' '}
-              {card.leg.draft?.initial_x_satellite_id ?? 'not applied'} ·
-              Starshield{' '}
-              {card.leg.draft?.starshield_enabled ? 'enabled' : 'disabled'}
+              {xAvailable(card.leg.id)
+                ? (card.leg.draft?.initial_x_satellite_id ?? 'not applied')
+                : 'unavailable for this leg'}{' '}
+              · Starshield{' '}
+              {(legAvailability(availability.data, card.leg.id)?.planned.Ku ??
+              card.leg.draft?.starshield_enabled ??
+              true)
+                ? 'available'
+                : 'unavailable'}
             </p>
             {evaluation && (
               <p>

@@ -12,6 +12,8 @@ from pydantic import (
     model_validator,
 )
 
+from app.mission.availability_models import LegAvailability
+
 
 def utc_timestamp(value: datetime) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
@@ -123,6 +125,7 @@ class PlanningInputSnapshot(PlanningRecord):
 
     model_config = ConfigDict(frozen=True)
     version: Literal["planning_v1"] = "planning_v1"
+    availability: LegAvailability | None = None
     route_json: str
     anchor_route_json: str
     structural_draft_json: str

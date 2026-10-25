@@ -12,13 +12,20 @@ __all__ = ["api", "pop_api"]
 
 
 def test_replay_status_reuses_immutable_prepared_capabilities(pop_api, monkeypatch):
-    client, service, _, _, _ = pop_api
+    client, service, _, pops, _ = pop_api
     monkeypatch.setattr(
         ConfigManager, "get_config", lambda self: service.coordinator.config
     )
     start_paced(client, 10)
     artifacts = service.runtime.selected_plan().artifacts
     assert artifacts.call_capabilities is not None
+
+    # Capture the current POI fallback sources once. Subsequent polls must reuse
+    # that detached projection until its real inputs change.
+    first = client.get("/api/status")
+    assert first.status_code == 200
+    assert first.json()["call_continuity"] is not None
+    captured = pops._replay_capability_cache[1]
 
     def forbidden(*args, **kwargs):
         pytest.fail("Status must reuse captured capability inputs")
@@ -39,6 +46,7 @@ def test_replay_status_reuses_immutable_prepared_capabilities(pop_api, monkeypat
             payload["call_continuity"]["revision"]
             == payload["pop_forecast"]["revision"]
         )
+    assert pops._replay_capability_cache[1] is captured
     assert artifacts.timeline.call_continuity.model_dump() == saved
 
 

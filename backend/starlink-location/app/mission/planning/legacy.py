@@ -3,6 +3,7 @@
 from uuid import uuid4
 
 from app.mission import storage
+from app.mission.availability_context import expected_snapshot
 from app.mission.timeline_preparation import prepare_mission_timeline
 from app.models.poi import POI
 from app.services.poi.manager import _route_geometry_hash
@@ -32,6 +33,7 @@ def reconcile(card, installed, incoming):
         )
     for name in (
         "initial_x_satellite_id",
+        "availability_overrides",
         "starshield_enabled",
         "ka_outages",
         "ku_overrides",
@@ -136,11 +138,16 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
         if card is None:
             raise PlanningFailure(404, "leg_not_found", "Managed leg not found")
         store.checked(mission_id, card.id, revision, identity, allow_active=True)
-        installed = next(l for l in mission.legs if l.id == installed_id)
+        installed = next(leg for leg in mission.legs if leg.id == installed_id)
         if incoming.id != installed_id:
             raise PlanningFailure(422, "leg_id_mismatch", "Leg ID must match the URL")
         if incoming.route_id != installed.route_id:
             raise conflict("Use staged route upload to replace a managed route")
+        if mission.availability.revision > 0:
+            incoming = incoming.model_copy(deep=True)
+            incoming.transports.availability_overrides = (
+                installed.transports.availability_overrides
+            )
         draft, changed = reconcile(card, installed, incoming)
         if changed:
             store.checked(mission_id, card.id, revision, identity)
@@ -148,8 +155,11 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
         candidate.draft = draft
         constraints = store.planning_constraints_provider()
         environment = (
-            environment_identity(store, candidate, constraints) if changed else None
+            environment_identity(store, candidate, constraints, mission=mission)
+            if changed
+            else None
         )
+        availability = expected_snapshot(mission, candidate)
         output = installed.model_copy(deep=True)
         for name in ("name", "description"):
             if name in incoming.model_fields_set:
@@ -161,7 +171,12 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
         and not draft.unresolved_aar_windows
     ):
         inputs = build_inputs(
-            candidate, draft, store.route_manager, store.poi_manager, constraints
+            candidate,
+            draft,
+            store.route_manager,
+            store.poi_manager,
+            constraints,
+            availability=availability,
         )
         context = build_context(inputs, draft)
         evaluation = evaluate_context(inputs, draft, context)
@@ -180,6 +195,7 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
                 store.poi_manager,
                 parent_mission_id=mission_id,
                 constraint_config=constraints,
+                availability=availability,
             )
     files = {}
     pois = None
@@ -210,7 +226,10 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
         if changed:
             try:
                 fresh = environment_identity(
-                    store, candidate, store.planning_constraints_provider()
+                    store,
+                    candidate,
+                    store.planning_constraints_provider(),
+                    mission=mission,
                 )
             except (ValueError, PlanningFailure) as exc:
                 raise conflict("Planning dependencies changed; reload") from exc
@@ -235,7 +254,9 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
             json_bytes(output.model_dump(mode="json"))
         )
         manifest.revision += 1
-        mission.legs = [output if l.id == installed_id else l for l in mission.legs]
+        mission.legs = [
+            output if leg.id == installed_id else leg for leg in mission.legs
+        ]
         store.persist(
             mission,
             manifest,

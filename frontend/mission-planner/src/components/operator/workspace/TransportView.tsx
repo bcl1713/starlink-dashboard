@@ -1,3 +1,5 @@
+import { OperatorTransportAvailability } from './OperatorTransportAvailability';
+import { useTransportAvailability } from '@/hooks/api/useTransportAvailability';
 import { useEffect, useState } from 'react';
 import type { OperatorEventsState } from '@/hooks/api/useOperatorEvents';
 import type { SavedRecord } from '@/types/operator';
@@ -30,6 +32,7 @@ export function TransportView({
   onHistory: (id: string) => void;
   onTransition: (record: SavedRecord) => void;
 }) {
+  const availability = useTransportAvailability(missionId);
   const [expired, setExpired] = useState<number | null>(null);
   useEffect(() => {
     const timer = window.setTimeout(
@@ -44,6 +47,7 @@ export function TransportView({
       id="operator-transport"
       className="space-y-4"
     >
+      <OperatorTransportAvailability missionId={missionId} />
       <h2>Service transport</h2>
       <p className="ws-meta">
         Record the transport each service is reported to be using.
@@ -53,7 +57,10 @@ export function TransportView({
         identity={identity}
         records={records}
         legId={legId}
-        disabled={disabled}
+        availability={availability.data?.effective ?? undefined}
+        disabled={
+          disabled || availability.isError || !availability.data?.effective
+        }
         onApply={onApply}
       />
       <details>

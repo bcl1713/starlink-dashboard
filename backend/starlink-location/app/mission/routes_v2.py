@@ -27,6 +27,8 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 
 from app.core.limiter import limiter
+from app.mission.availability_context import snapshot_for_leg
+from app.mission.availability_routes import router as availability_router
 from app.mission.dependencies import (
     get_optional_simulation_run_service,
     get_overview_clock_settings_store,
@@ -80,6 +82,7 @@ MISSION_PACKAGE_MAX_ENTRIES = 10000
 MISSION_PACKAGE_ENDPOINT_MARKER = "Imported by mission-package endpoint sync"
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
+router.include_router(availability_router)
 
 # Global manager instances (set by main.py during startup)
 _coverage_sampler: CoverageSampler | None = None
@@ -134,6 +137,7 @@ async def create_mission(
                             poi_manager=poi_manager,
                             coverage_sampler=_coverage_sampler,
                             parent_mission_id=mission.id,
+                            availability=snapshot_for_leg(mission, leg),
                         )
                         save_mission_timeline(
                             leg.id, timeline, parent_mission_id=mission.id
@@ -1017,6 +1021,7 @@ def _generate_timelines_for_imported_legs(
                     poi_manager=poi_manager,
                     coverage_sampler=coverage_sampler,
                     parent_mission_id=mission.id,
+                    availability=snapshot_for_leg(mission, leg),
                 )
                 save_mission_timeline(leg.id, timeline, parent_mission_id=mission.id)
                 logger.info(f"Timeline generated and saved for imported leg {leg.id}")
@@ -1157,6 +1162,31 @@ async def import_mission(
                             "action": "Deactivate the leg, re-import the mission package, then activate the leg again.",
                         },
                     )
+                # A manual archive may predate commands retained by this mission.
+                # Preserve that work through the existing collision/clone path.
+                if target is not None:
+                    from app.mission.availability_service import RECEIPTS
+
+                    command_owned = (
+                        target.availability.revision
+                        or target.availability.history
+                        or target.metadata.get(RECEIPTS)
+                    )
+                    retained_overrides = {
+                        leg.id: leg.transports.availability_overrides or {}
+                        for leg in target.legs
+                    }
+                    incoming_overrides = {
+                        leg.id: leg.transports.availability_overrides or {}
+                        for leg in incoming.legs
+                    }
+                    if command_owned and (
+                        target.availability != incoming.availability
+                        or target.metadata.get(RECEIPTS)
+                        != incoming.metadata.get(RECEIPTS)
+                        or retained_overrides != incoming_overrides
+                    ):
+                        target = None
             app = request.scope.get("app")
             service = getattr(app.state, "planning_service", None) if app else None
             store = service.store if service else None
@@ -1280,6 +1310,7 @@ async def add_leg_to_mission(
                         poi_manager=poi_manager,
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
+                        availability=snapshot_for_leg(mission, leg),
                     )
                     save_mission_timeline(
                         leg.id, timeline, parent_mission_id=mission_id
@@ -1453,6 +1484,14 @@ async def update_leg(
             # route upload may replace an active route. Full PUT remains available
             # for ordinary active-leg field updates.
             stored_leg = mission.legs[leg_index]
+            if (
+                mission.availability.revision > 0
+                or "availability_overrides"
+                not in updated_leg.transports.model_fields_set
+            ):
+                updated_leg.transports.availability_overrides = (
+                    stored_leg.transports.availability_overrides
+                )
             updated_leg.is_active = stored_leg.is_active
             if stored_leg.is_active:
                 updated_leg.route_id = stored_leg.route_id
@@ -1468,7 +1507,12 @@ async def update_leg(
                         stored_leg.transports.starshield_enabled
                     )
                 try:
-                    refresh_leg(updated_leg, route_manager, poi_manager)
+                    refresh_leg(
+                        updated_leg,
+                        route_manager,
+                        poi_manager,
+                        availability=snapshot_for_leg(mission, updated_leg),
+                    )
                 except ValueError as exc:
                     raise HTTPException(422, str(exc)) from exc
             # Update leg
@@ -1490,6 +1534,7 @@ async def update_leg(
                         poi_manager=poi_manager,
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
+                        availability=snapshot_for_leg(mission, updated_leg),
                     )
                     # Log the timeline start time to verify it was adjusted
                     if timeline.segments:
@@ -1870,12 +1915,14 @@ async def activate_leg(
                     and route_manager.get_active_route_id() != active_leg.route_id
                 ):
                     raise RuntimeError("Target route could not be activated")
+
                 timeline, _summary = build_mission_timeline(
                     mission=active_leg,
                     route_manager=route_manager,
                     poi_manager=poi_manager,
                     coverage_sampler=_coverage_sampler,
                     parent_mission_id=mission_id,
+                    availability=snapshot_for_leg(mission, active_leg),
                 )
                 save_mission_timeline(leg_id, timeline, parent_mission_id=mission_id)
             except (
@@ -2538,6 +2585,7 @@ async def update_leg_route(
                         poi_manager=poi_manager,
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
+                        availability=snapshot_for_leg(mission, leg),
                     )
                     save_mission_timeline(
                         leg_id, timeline, parent_mission_id=mission_id
@@ -2744,6 +2792,7 @@ async def preview_leg_timeline(
             coverage_sampler=_coverage_sampler,
             parent_mission_id=mission_id,
             include_samples=True,
+            availability=snapshot_for_leg(mission, preview_leg),
         )
 
         response = timeline.model_dump(mode="json")

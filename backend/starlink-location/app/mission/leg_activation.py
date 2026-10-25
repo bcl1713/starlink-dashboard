@@ -4,6 +4,7 @@ import logging
 
 from fastapi import HTTPException
 
+from app.mission.availability_context import snapshot_for_leg
 from app.mission.storage import (
     get_active_leg_lock,
     get_leg_timeline_path,
@@ -13,7 +14,10 @@ from app.mission.storage import (
     save_mission_timeline,
     save_mission_v2,
 )
-from app.mission.timeline_preparation import publish_mission_pois
+from app.mission.timeline_preparation import (
+    prepare_mission_timeline,
+    publish_mission_pois,
+)
 from app.models.simulation_run import SimulationStart
 from app.services.flight_state import get_flight_state_manager
 from app.services.mission_clock_service import (
@@ -90,9 +94,15 @@ def activate_leg_transaction(
                 and route_manager.get_active_route_id() != leg.route_id
             ):
                 raise RuntimeError("Target route could not be activated")
-            publish_mission_pois(
-                tick.plan.artifacts, poi_manager, mission_id, leg.route_id
+            canonical = prepare_mission_timeline(
+                leg,
+                route_manager,
+                poi_manager,
+                coverage_sampler,
+                parent_mission_id=mission_id,
+                availability=snapshot_for_leg(mission, leg),
             )
+            publish_mission_pois(canonical, poi_manager, mission_id, leg.route_id)
             # POIManager's legacy writer logs failures; verify durable publication.
             persisted = poi_manager.pois_file.read_text()
             import json
@@ -101,7 +111,7 @@ def activate_leg_transaction(
             if set(saved) != {poi.id for poi in poi_manager.list_pois()}:
                 raise OSError("Generated POIs were not persisted")
             save_mission_timeline(
-                leg_id, tick.plan.artifacts.timeline, parent_mission_id=mission_id
+                leg_id, canonical.timeline, parent_mission_id=mission_id
             )
             telemetry = coordinator.update(replay_frame=tick.frame)
             flight.apply_simulation_frame(tick.plan, tick.frame)

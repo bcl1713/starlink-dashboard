@@ -3,6 +3,8 @@
 import json
 from dataclasses import asdict
 
+from app.mission.availability_models import Transport
+from app.mission.availability_planning import usable_during
 from app.mission.models import AARWindow, MissionLeg, TransportConfig, XTransition
 from app.models.route import ParsedRoute
 
@@ -35,7 +37,8 @@ def draft_to_mission_leg(
         route_id=route.route_id,
         adjusted_departure_time=draft.adjusted_departure_time,
         transports=TransportConfig(
-            initial_x_satellite_id=draft.initial_x_satellite_id,
+            initial_x_satellite_id=draft.initial_x_satellite_id or "",
+            availability_overrides=draft.availability_overrides,
             starshield_enabled=draft.starshield_enabled,
             planning_policy=draft.planning_policy,
             evaluation_context=context,
@@ -60,7 +63,13 @@ def draft_to_mission_leg(
 
 
 def canonical_inputs(
-    mission, route, constraints=None, satellite_catalog=None, poi_manager=None
+    mission,
+    route,
+    constraints=None,
+    satellite_catalog=None,
+    poi_manager=None,
+    *,
+    availability=None
 ):
     """Reject changed route/transport payloads before using persisted geometry."""
     from .models import AnchoredSwap
@@ -69,7 +78,12 @@ def canonical_inputs(
         from app.mission.itinerary_import.editing import refresh_context
 
         return refresh_context(
-            mission, route, constraints, satellite_catalog, poi_manager
+            mission,
+            route,
+            constraints,
+            satellite_catalog,
+            poi_manager,
+            availability=availability,
         )
     inputs = PlanningInputs.model_validate(
         mission.transports.planning_inputs.model_dump()
@@ -82,7 +96,11 @@ def canonical_inputs(
         inputs.constraints_json
     ):
         raise ValueError("Planning constraints changed; rebuild evaluation context")
-    if satellite_catalog is not None or poi_manager is not None:
+    effective_availability = availability or inputs.availability
+    x_usable = usable_during(
+        effective_availability, Transport.X, inputs.start_time, inputs.end_time
+    )
+    if x_usable and (satellite_catalog is not None or poi_manager is not None):
         positions = resolve_positions(
             [s.satellite_id for s in inputs.satellites], poi_manager, satellite_catalog
         )
@@ -116,4 +134,10 @@ def canonical_inputs(
         raise ValueError(
             "Planning transport inputs changed; rebuild evaluation context"
         )
+    if availability is not None and inputs.availability != availability:
+        from .grid import build_context
+
+        inputs = inputs.model_copy(update={"availability": availability})
+        draft.evaluation_context = None
+        context = build_context(inputs, draft)
     return inputs, draft, context

@@ -100,7 +100,21 @@ def build_snapshot(runtime, mission_id, adapter):
                     e.notification.preview and e.family_key == previous.family_key
                     for e in events
                 )
-                if (
+                from .restriction_windows import transport_event_allowed
+
+                model = next(
+                    (
+                        m
+                        for key, m in inputs.models.items()
+                        if m.get("_event_source_ref", "model:" + key)
+                        == previous.source_ref
+                    ),
+                    {},
+                )
+                suppressed = not transport_event_allowed(
+                    model, previous.transport, previous.due_at
+                )
+                if not suppressed and (
                     waiting
                     or source is None
                     or source.freshness in ("stale", "unknown")

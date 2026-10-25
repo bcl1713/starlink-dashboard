@@ -6,9 +6,14 @@ from .errors import PlanningFailure
 from .store import selection_errors
 
 
-def validate_generation(leg):
+def validate_generation(leg, *, availability=None, start=None, end=None):
     draft = leg.draft
-    errors = selection_errors(draft)
+    errors = selection_errors(
+        draft,
+        availability=availability,
+        start=start or leg.departure_time,
+        end=end or leg.arrival_time,
+    )
     if errors:
         raise PlanningFailure(422, errors[0].code, errors[0].message)
     rows = draft.ar_corrections or leg.ar_rows

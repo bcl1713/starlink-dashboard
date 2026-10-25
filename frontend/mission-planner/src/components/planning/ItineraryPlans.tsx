@@ -1,3 +1,5 @@
+import { useTransportAvailability } from '@/hooks/api/useTransportAvailability';
+import { legAvailability } from '@/services/transportAvailability';
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
@@ -18,6 +20,11 @@ import { Button } from '../ui/button';
 
 export function ItineraryPlans({ view }: { view: PlanningView }) {
   const missionId = view.mission.id;
+  const availability = useTransportAvailability(missionId);
+  const xAvailable = (id: string) => {
+    const row = legAvailability(availability.data, id);
+    return row?.x_configuration_required ?? row?.planned.X !== false;
+  };
   const controller = usePlanningMissionController(missionId);
   usePlanningEditEpoch(controller);
   const [generated, setGenerated] = useState<Record<string, PlanningProposal>>(
@@ -89,7 +96,13 @@ export function ItineraryPlans({ view }: { view: PlanningView }) {
     !controller.hasLocalEdits(cards.map((card) => card.leg.id)) &&
     cards.length > 0 &&
     cards.every(
-      (card) => planningSourceReady(card.leg) && !card.errors?.length
+      (card) =>
+        planningSourceReady(
+          card.leg,
+          card.leg.draft ?? {},
+          card.leg.ar_section_status,
+          xAvailable(card.leg.id)
+        ) && !card.errors?.length
     );
   const targets = cards.filter(
     (card) =>
@@ -116,7 +129,14 @@ export function ItineraryPlans({ view }: { view: PlanningView }) {
             async (current) => {
               controller.requireSavedSources([legId]);
               const card = currentLeg(current, legId);
-              if (!planningSourceReady(card.leg))
+              if (
+                !planningSourceReady(
+                  card.leg,
+                  card.leg.draft ?? {},
+                  card.leg.ar_section_status,
+                  xAvailable(card.leg.id)
+                )
+              )
                 throw new Error(
                   'Complete source review before generating plans'
                 );

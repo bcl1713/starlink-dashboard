@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
@@ -50,6 +51,9 @@ def build_active_x_link(
     state_filter: LinkState | None = None,
     paced_context: ActiveXContext | None = None,
     manual_satellite_id: str | None = None,
+    availability=None,
+    operating_time=None,
+    run_id=None,
 ) -> dict[str, Any]:
     """Build a two-point route from aircraft to active X-band satellite.
 
@@ -61,7 +65,7 @@ def build_active_x_link(
     relative-azimuth rule window (135°–225°).
     """
     route = route_manager.get_active_route() if route_manager else None
-    active_leg = find_active_mission_leg(route)
+    parent_mission, active_leg = _find_active_mission_leg(route)
     manual_poi = (
         _find_satellite_poi(poi_manager, manual_satellite_id)
         if manual_satellite_id
@@ -93,7 +97,24 @@ def build_active_x_link(
         logger.debug("Active X link unavailable: telemetry missing: %s", exc)
         telemetry = None
 
+    # Eligibility is current operational state; sensor timestamps still own geometry.
+    availability_time = operating_time or datetime.now(timezone.utc)
     if active_leg is not None:
+        from app.mission.availability_context import snapshot_for_leg
+        from app.mission.models import Transport
+
+        if availability is None:
+            availability = snapshot_for_leg(parent_mission, active_leg, run_id=run_id)
+        if (
+            availability is not None
+            and not availability.resolve(availability_time)[Transport.X]
+        ):
+            return {
+                **empty_active_x_link(state_filter),
+                **selection,
+                "transport_active": False,
+                "inactive_reason": "transport_unavailable",
+            }
         active_context = (
             paced_context
             if paced_context is not None
@@ -127,7 +148,12 @@ def build_active_x_link(
         satellite_ids.append(active_context.pending_satellite_id)
 
     links = _build_satellite_links(
-        telemetry, poi_manager, satellite_ids, mission=active_leg
+        telemetry,
+        poi_manager,
+        satellite_ids,
+        mission=active_leg,
+        availability=availability,
+        availability_time=availability_time,
     )
     if not links:
         return empty
@@ -168,12 +194,17 @@ def build_active_x_link(
 
 
 def find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | None:
+    return _find_active_mission_leg(route)[1]
+
+
+def _find_active_mission_leg(route):
+    """Keep mission ownership with selection, even when route context is missing."""
     missions_dir = storage.MISSIONS_DIR
     if not missions_dir.exists():
-        return None
+        return None, None
 
     active_route_id = _route_id(route) if route is not None else None
-    first_active_leg: MissionLeg | None = None
+    first_active = (None, None)
     for mission_dir in sorted(missions_dir.iterdir()):
         if not mission_dir.is_dir():
             continue
@@ -183,11 +214,11 @@ def find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | No
         for leg in mission.legs:
             if not leg.is_active:
                 continue
-            if first_active_leg is None:
-                first_active_leg = leg
+            if first_active[1] is None:
+                first_active = (mission, leg)
             if active_route_id is not None and leg.route_id == active_route_id:
-                return leg
-    return first_active_leg
+                return mission, leg
+    return first_active
 
 
 def _route_id(route: ParsedRoute) -> str | None:
@@ -203,6 +234,8 @@ def _build_satellite_links(
     satellite_ids: list[str],
     *,
     mission: MissionLeg | None = None,
+    availability=None,
+    availability_time=None,
 ) -> list[dict[str, Any]]:
     aircraft = telemetry.position
     links: list[dict[str, Any]] = []
@@ -211,7 +244,11 @@ def _build_satellite_links(
         if satellite is None:
             continue
         link_state, color, relative_azimuth, in_forbidden = _evaluate_link_state(
-            telemetry, satellite, mission=mission
+            telemetry,
+            satellite,
+            mission=mission,
+            availability=availability,
+            availability_time=availability_time,
         )
         common = {
             "satellite_id": satellite_id,
@@ -263,7 +300,12 @@ def _find_satellite_poi(poi_manager: Any, satellite_id: str) -> POI | None:
 
 
 def _evaluate_link_state(
-    telemetry: TelemetryData, satellite: POI, *, mission: MissionLeg | None = None
+    telemetry: TelemetryData,
+    satellite: POI,
+    *,
+    mission: MissionLeg | None = None,
+    availability=None,
+    availability_time=None,
 ) -> tuple[str, str, float, bool]:
     rule_engine = RuleEngine()
     aircraft = telemetry.position
@@ -290,7 +332,14 @@ def _evaluate_link_state(
 
         raw = ["x_aft_cone"] if in_forbidden else []
         physical = "degraded" if _debug.get("elevation_below_min") else "available"
-        usable = mission.transports.starshield_enabled is not False and not any(
+        enabled = mission.transports.starshield_enabled is not False
+        if availability is not None:
+            from app.mission.models import Transport
+
+            enabled = availability.resolve(
+                availability_time or datetime.now(timezone.utc)
+            )[Transport.KU]
+        usable = enabled and not any(
             x.start_time
             <= telemetry.timestamp
             < x.start_time + timedelta(seconds=x.duration_seconds)

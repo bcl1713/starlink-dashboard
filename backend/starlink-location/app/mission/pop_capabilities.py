@@ -60,15 +60,28 @@ def capability_input_revision(
     constraint_config=None,
     satellite_catalog=None,
     *,
-    ka_snapshot=_CURRENT_COVERAGE
+    ka_snapshot=_CURRENT_COVERAGE,
+    availability=None,
 ):
     """Identify execution inputs using the already prepared effective route."""
+    from app.mission.availability_planning import leg_snapshot
+
+    availability = (
+        availability
+        or (
+            leg.transports.planning_inputs.availability
+            if leg.transports.planning_inputs
+            else None
+        )
+        or leg_snapshot(leg)
+    )
     catalog = satellite_catalog or get_satellite_catalog(read_only=True)
     if ka_snapshot is _CURRENT_COVERAGE:
         ka_snapshot = current_coverage_snapshot()
     return _digest(
         [
             ka_snapshot,
+            availability.model_dump(mode="json") if availability else None,
             _effective_leg_record(leg),
             route.model_dump(mode="json"),
             asdict(constraint_config or ConstraintConfig()),
@@ -191,7 +204,7 @@ def status_call_continuity(
     )
 
 
-def saved_call_capabilities(leg, parent_id, route):
+def saved_call_capabilities(leg, parent_id, route, *, availability=None):
     """Read an already prepared local timeline; never evaluate capability per poll."""
     from app.mission.storage import load_mission_timeline
     from app.mission.timeline_builder.calculator import (
@@ -210,7 +223,9 @@ def saved_call_capabilities(leg, parent_id, route):
         not in ("default_file", "application_cache", "planning_snapshot", "missing")
         or evidence.get("ka_snapshot") != current
         or timeline.call_capability_revision
-        != capability_input_revision(leg, route, ka_snapshot=current)
+        != capability_input_revision(
+            leg, route, ka_snapshot=current, availability=availability
+        )
     ):
         return None
     start, end = derive_mission_window(route)

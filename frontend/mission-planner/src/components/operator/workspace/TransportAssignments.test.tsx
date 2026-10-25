@@ -19,6 +19,8 @@ vi.mock('@/services/transportCatalog', () => ({
     services: [{ id: 'svc', name: 'Data', enabled: true, archived: false }],
     transports: [
       { id: 'custom', name: 'Terrestrial', enabled: true, archived: false },
+      { id: 'X', name: 'Renamed RF', enabled: true, archived: false },
+      { id: 'Starshield', name: 'LEO', enabled: true, archived: false },
     ],
   }),
   saveTransportCatalog: vi.fn(async (data) => ({
@@ -66,7 +68,9 @@ it('changes dropdown only on Apply and renders accepted assignment immediately',
   ).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Manage transports' }));
   const manager = screen.getByRole('region', { name: 'Manage transports' });
-  expect(within(manager).getByRole('button', { name: 'Archive' })).toBeTruthy();
+  expect(
+    within(manager).getAllByRole('button', { name: 'Archive' })[0]
+  ).toBeTruthy();
 });
 it('does not show a rejected save as an assignment', async () => {
   const client = new QueryClient();
@@ -92,4 +96,40 @@ it('does not show a rejected save as an assignment', async () => {
     'Unconfirmed'
   );
   expect(within(card).getByText('Not reported')).toBeTruthy();
+});
+
+it('unavailable_transport_not_offered_for_assignment_but_report_is_retained', async () => {
+  const accepted = {
+    ...record,
+    ...assignmentInput(
+      'mission-a',
+      { id: 'svc', name: 'Data' },
+      { id: 'X', name: 'Renamed RF' },
+      '2026-10-19T12:00:00Z',
+      null
+    ),
+  };
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <TransportAssignments
+        records={[accepted]}
+        legId={null}
+        disabled={false}
+        onApply={async () => {}}
+        availability={{ X: false, Ka: true, Ku: false }}
+      />
+    </QueryClientProvider>
+  );
+  const card = await screen.findByRole('article', { name: 'Data' });
+  expect(
+    within(card).getByText('Renamed RF', { selector: 'strong' })
+  ).toBeTruthy();
+  expect(within(card).getByText(/unavailable for this mission/)).toBeTruthy();
+  expect(
+    within(card).getByRole('option', { name: 'Renamed RF (unavailable)' })
+  ).toHaveProperty('disabled', true);
+  expect(within(card).queryByRole('option', { name: 'LEO' })).toBeNull();
+  expect(
+    within(card).getByRole('option', { name: 'Terrestrial' })
+  ).toBeTruthy();
 });

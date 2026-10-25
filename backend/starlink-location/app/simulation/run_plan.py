@@ -72,6 +72,8 @@ def prepare_mission_run(
     route_manager: RouteManager,
     poi_manager: POIManager,
     coverage_sampler: CoverageSampler | None = None,
+    *,
+    availability=None,
 ) -> PreparedMissionRun:
     try:
         artifacts = prepare_mission_timeline(
@@ -81,6 +83,7 @@ def prepare_mission_run(
             coverage_sampler,
             parent_mission_id=mission_id,
             normalize_for_simulation=True,
+            availability=availability,
         )
     except (TimelineComputationError, ValueError, OverflowError) as exc:
         raise SimulationValidationError("route", str(exc)) from exc
@@ -101,6 +104,7 @@ def prepare_mission_run(
         "starshield_enabled": leg.transports.starshield_enabled is not False,
         "x_assignments": artifacts.x_assignments,
         "events": [vars(event) for event in artifacts.events],
+        "availability": availability.model_dump(mode="json") if availability else None,
     }
     token = hashlib.sha256(
         json.dumps(semantic, sort_keys=True, default=str, allow_nan=False).encode()
@@ -109,7 +113,7 @@ def prepare_mission_run(
         **normalized.model_dump(),
         plan_token=token,
         planned_departure=projector.start_time,
-        planned_arrival=projector.end_time
+        planned_arrival=projector.end_time,
     )
     replay_events = tuple(
         copy.deepcopy(e) for e in artifacts.events if e.timestamp <= projector.end_time

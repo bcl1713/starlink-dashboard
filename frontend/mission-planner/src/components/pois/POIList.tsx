@@ -86,7 +86,9 @@ export function POIList({
           comparison = a.latitude - b.latitude || a.longitude - b.longitude;
           break;
         case 'status':
-          comparison = (a.active ? 1 : 0) - (b.active ? 1 : 0);
+          comparison =
+            (a.active && a.transport_active !== false ? 1 : 0) -
+            (b.active && b.transport_active !== false ? 1 : 0);
           break;
         case 'created':
           comparison =
@@ -231,12 +233,16 @@ export function POIList({
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-sm ${
-                        poi.active
+                        poi.active && poi.transport_active !== false
                           ? 'status-nominal'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {poi.active ? 'Active' : 'Inactive'}
+                      {poi.transport_active === false
+                        ? 'Inactive · transport unavailable'
+                        : poi.active
+                          ? 'Active'
+                          : 'Inactive'}
                     </span>
                   </TableCell>
                   {hasEtaData && (

@@ -8,6 +8,7 @@ from app.mission.planning.journal import atomic_write, json_bytes
 from .models import RevisionConflict, RevisionPreview
 
 DERIVED = {
+    "availability_overrides",
     "planning_inputs",
     "evaluation_context",
     "created_at",
@@ -49,9 +50,9 @@ def prepare_revision(operation, current_mission, baseline, incoming, resolutions
         )
         return cur
 
-    old = {l.id: l.model_dump(mode="json") for l in baseline.legs}
-    cur = {l.id: l.model_dump(mode="json") for l in current_mission.legs}
-    new = {l.id: l.model_dump(mode="json") for l in incoming.legs}
+    old = {item.id: item.model_dump(mode="json") for item in baseline.legs}
+    cur = {item.id: item.model_dump(mode="json") for item in current_mission.legs}
+    new = {item.id: item.model_dump(mode="json") for item in incoming.legs}
     legs = []
     for id in dict.fromkeys([*new, *cur]):
         value = merge("legs." + id, old.get(id), cur.get(id), new.get(id))
@@ -112,7 +113,7 @@ def align_revision(current, prepared):
             incoming_rows = [r for r in new_rows if r["track"].strip().upper() == track]
             if len(previous) == len(incoming_rows):
                 ids.update((n["id"], o["id"]) for n, o in zip(incoming_rows, previous))
-    old_routes = {l.id: l.route_id for l in current.legs}
+    old_routes = {item.id: item.route_id for item in current.legs}
     for leg in incoming.legs:
         old_id = ids.get(leg.id)
         if old_id not in old_routes:

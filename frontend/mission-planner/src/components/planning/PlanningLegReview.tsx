@@ -1,3 +1,6 @@
+import { useTransportAvailability } from '@/hooks/api/useTransportAvailability';
+import { legAvailability } from '@/services/transportAvailability';
+import { TransportAvailabilityControls } from '@/components/planning/TransportAvailabilityControls';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -72,6 +75,11 @@ function ReviewEditor({
 }) {
   const navigate = useNavigate();
   const leg = card.leg;
+  const availability = useTransportAvailability(view.mission.id);
+  const availableTransports = legAvailability(availability.data, leg.id);
+  const xAvailable =
+    availableTransports?.x_configuration_required ??
+    availableTransports?.planned.X !== false;
   const [tab, setTab] = useState('ar');
   const arTab = useRef<HTMLButtonElement>(null);
   const routeInput = useRef<HTMLInputElement>(null);
@@ -121,6 +129,7 @@ function ReviewEditor({
     view,
     planning,
     satelliteOptions: options.data,
+    xAvailable,
     navigate,
     onAcceptedRoute: () => {
       setTab('ar');
@@ -133,6 +142,10 @@ function ReviewEditor({
       disabled={pending}
       aria-label="Leg planning draft"
     >
+      <TransportAvailabilityControls
+        missionId={view.mission.id}
+        legId={leg.id}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="page-title">
@@ -263,6 +276,13 @@ function ReviewEditor({
       {options.data ? (
         <PermittedSatellites
           options={options.data}
+          xAvailable={xAvailable}
+          starshieldAvailability={
+            availability.data?.defaults.Ku !== undefined ||
+            availableTransports?.overrides.Ku !== undefined
+              ? availableTransports?.planned.Ku
+              : undefined
+          }
           value={draft}
           onChange={change}
         />
@@ -400,6 +420,10 @@ function ReviewEditor({
           kaTransitions={[]}
           waypointNames={[]}
           availableWaypoints={coordinates.data.waypoints ?? []}
+          transportAvailability={
+            availableTransports?.planning_effective ??
+            availableTransports?.planned ?? { X: false, Ka: false, Ku: false }
+          }
           planningLeg={leg}
           planningDraft={draft}
         />
@@ -410,14 +434,16 @@ function ReviewEditor({
           satellite access before reviewed save.
         </p>
       )}
-      <label className="flex min-h-11 items-center gap-2">
-        <input
-          type="checkbox"
-          checked={planConfirmed}
-          onChange={(e) => setPlanConfirmed(e.target.checked)}
-        />
-        I confirm this satellite plan and Starshield enablement
-      </label>
+      {xAvailable && (
+        <label className="flex min-h-11 items-center gap-2">
+          <input
+            type="checkbox"
+            checked={planConfirmed}
+            onChange={(e) => setPlanConfirmed(e.target.checked)}
+          />
+          I confirm this satellite plan and Starshield enablement
+        </label>
+      )}
       {dirty && <p>Draft changes are pending save before final review.</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" onClick={returnToMission}>
@@ -435,7 +461,7 @@ function ReviewEditor({
             pending ||
             dirty ||
             !!invalid ||
-            !planConfirmed ||
+            (xAvailable && !planConfirmed) ||
             !evaluation ||
             !!evaluation.errors?.length
           }
@@ -449,7 +475,7 @@ function ReviewEditor({
             pending ||
             dirty ||
             !!invalid ||
-            !planConfirmed ||
+            (xAvailable && !planConfirmed) ||
             !evaluation ||
             !!evaluation.errors?.length
           }

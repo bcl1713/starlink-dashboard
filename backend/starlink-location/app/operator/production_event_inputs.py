@@ -41,6 +41,7 @@ class ModelInputs:
     pop_unavailable: bool = False
 
     def prepare(self, leg):
+        from app.mission.availability_context import snapshot_for_leg
         from app.mission.timeline_preparation import prepare_mission_timeline
         from app.satellites.rules import ConstraintConfig
 
@@ -54,6 +55,9 @@ class ModelInputs:
             satellite_catalog=captured_catalog(self.sources),
             constraint_config=ConstraintConfig(),
             pop_catalog=self.pop_catalog,
+            availability=snapshot_for_leg(
+                self.mission, leg, run_id=self.context.get("simulation_run_id")
+            ),
         )
 
 

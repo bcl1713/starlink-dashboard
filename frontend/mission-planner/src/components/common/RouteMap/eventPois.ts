@@ -6,6 +6,8 @@ import type { OverviewPoiKind } from '@/services/overview-upcoming-pois';
 import type { KaOutage, KuOutageOverride } from '@/types/satellite';
 
 export interface MapEventPoi {
+  transport_active?: boolean;
+  inactive_reason?: string | null;
   name: string;
   kind: OverviewPoiKind;
   latitude: number;

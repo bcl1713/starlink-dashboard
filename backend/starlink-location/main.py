@@ -452,6 +452,7 @@ async def startup_event():
                     _pop_lifecycle_token
                 ),
                 snapshot_context_provider=_simulation_pop_context,
+                poi_manager=poi_manager,
             )
             status.set_pop_service(app.state.pop_status_service)
             if _simulation_config.mode == "simulation":

@@ -31,13 +31,42 @@ Communications and modeled restrictions show the existing event feed's current
 snapshot. Airborne restrictions use its live route ETA; preflight can use
 planned UTC. Unknown/stale context stays explicit. Warnings about active
 customer communications are advisory and never require acknowledgment before
-saving. Overview and mission planning behavior are unchanged.
+saving. Overview retains its map and brief advisories; planning settings live on
+the mission and leg pages.
 
 A linked call/conference cannot be removed or moved to another mission while an
 active decision references it. Correct the decision to unlink it, or remove the
 decision first. Historical links remain in history. Restore revalidates targets;
 restore/reconcile targets before restoring a dependent decision. The same rules
 apply after restart and recovery.
+
+## Equipment availability for the current mission
+
+Use **Transport availability** in Operator Now or Transport to mark X-band,
+Ka or Starshield **Unavailable for rest of mission**. An optional reason helps
+other operators. Wait for the confirmed result. Failures apply from now across
+later legs and survive restart. **Restore** releases the equipment failure and
+returns to planned settings; a planned-unavailable transport stays unavailable.
+These controls remain available independently of journal readiness, when the
+active mission, route and clock provide a valid action context.
+
+Simulation actions apply only to the selected replay run. Changing runs requires
+a fresh confirmed view. History identifies live and simulation actions. If
+another operator changed the revision, or the action is not confirmed, refresh
+and review the confirmed state before retrying. Retrying the same accepted
+command is safe.
+
+New service assignment choices omit unavailable X-band, Ka and Starshield.
+Existing reported assignments stay visible with unavailable labels; no report
+is rewritten and no automatic equipment reroute is implied. Installation-wide
+catalog enable/archive settings remain separate from mission availability.
+
+Map points are retained while unavailable, with their transport cues inactive.
+Relevant future cues return after restoration, without duplicate or overdue
+notifications. Detailed history remains in Operator and mission planning.
+Overview keeps its distance-readable map presentation. See
+[mission availability](../missions/itinerary-planning.md#transport-availability)
+for defaults, inheritance and planning assumptions.
 
 ## Deployment and backout
 

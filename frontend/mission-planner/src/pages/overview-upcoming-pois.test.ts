@@ -159,3 +159,12 @@ describe('Overview POI urgency clock', () => {
     ).toBe('#ef4444');
   });
 });
+
+it('never presents inactive transport POIs as upcoming or retained map markers', () => {
+  expect(
+    overviewPoiView([
+      poi('inactive', { transport_active: false }),
+      poi('eligible'),
+    ]).markers.map((row) => row.poi_id)
+  ).toEqual(['eligible']);
+});

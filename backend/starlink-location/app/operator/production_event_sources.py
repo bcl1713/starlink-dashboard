@@ -102,6 +102,7 @@ class ProductionEventSources(EventSourceAdapter):
 
     def capture(self, mission_id, *, as_of):
         captured = super().capture(mission_id, as_of=as_of)
+        mission = None
         try:
             with storage.get_active_leg_lock():
                 mission = storage.load_mission_v2(mission_id)
@@ -126,6 +127,17 @@ class ProductionEventSources(EventSourceAdapter):
                         span.model_dump(mode="json")
                         for span in artifacts.call_capabilities.spans
                     ]
+                    from app.mission.availability_context import snapshot_for_leg
+
+                    model["transport_availability"] = snapshot_for_leg(
+                        inputs.mission,
+                        leg,
+                        run_id=inputs.context.get("simulation_run_id"),
+                    ).model_dump(mode="json")
+                    model["transport_generations"] = inputs.mission.metadata.get(
+                        "transport_cue_generations", {}
+                    ).get(leg.id, {})
+                    model["transport_as_of"] = as_of.isoformat()
                     model["route_geometry_identity"] = identity(
                         leg.route_id, route_geometry_fingerprint(artifacts.route.points)
                     )
@@ -164,6 +176,7 @@ class ProductionEventSources(EventSourceAdapter):
                     model, timing_available = refresh_boundary_times(
                         item[2], inputs, as_of=timing_as_of
                     )
+                    model["transport_as_of"] = timing_as_of.isoformat()
                     timed_source = item[1].model_copy(
                         update={
                             "revision": identity(item[1].revision, model["time_basis"]),
@@ -262,10 +275,30 @@ class ProductionEventSources(EventSourceAdapter):
                     for s in sources
                 ):
                     self.publication.invalidate(source.source)
+                    from app.mission.availability_context import snapshot_for_leg
+
+                    from .replay_context import source_run
+
+                    current_leg = (
+                        next((leg for leg in mission.legs if leg.id == leg_id), None)
+                        if mission
+                        else None
+                    )
+                    current_model = dict(model)
+                    if current_leg is not None:
+                        current_model["transport_availability"] = snapshot_for_leg(
+                            mission,
+                            current_leg,
+                            run_id=source_run(self.service.store.health()),
+                        ).model_dump(mode="json")
+                        current_model["transport_generations"] = mission.metadata.get(
+                            "transport_cue_generations", {}
+                        ).get(current_leg.id, {})
+                        current_model["transport_as_of"] = as_of.isoformat()
                     models[leg_id] = dict(
                         {
                             k: v
-                            for k, v in model.items()
+                            for k, v in current_model.items()
                             if k not in ("pop_forecast", "pop_advisories")
                         },
                         time_basis="live_unavailable",

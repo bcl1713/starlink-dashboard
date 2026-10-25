@@ -115,3 +115,102 @@ it('renders named-waypoint and manual-track AR endpoints', () => {
     container.querySelectorAll('.leaflet-marker-icon[title="AR End"]')
   ).toHaveLength(2);
 });
+
+it.each([false, true])(
+  'inactive_pois_hidden_in_all_route_maps saved=%s',
+  (saved) => {
+    const { container } = render(
+      <RouteMap
+        coordinates={[
+          [0, 0],
+          [0, 10],
+        ]}
+        transportAvailability={{ X: false, Ka: false, Ku: false }}
+        xbandTransitions={[
+          { id: 'x', latitude: 0, longitude: 4, target_satellite_id: 'X-2' },
+        ]}
+        kaTransitions={[
+          {
+            latitude: 0,
+            longitude: 5,
+            fromSatellite: 'POR',
+            toSatellite: 'AOR',
+            timestamp: '2026-10-25T12:00:00Z',
+          },
+        ]}
+        timelinePreview={
+          saved
+            ? {
+                mission_leg_id: 'l',
+                created_at: 'now',
+                segments: [],
+                map_pois: [
+                  {
+                    name: 'Inactive X',
+                    kind: 'x_band_transition',
+                    latitude: 0,
+                    longitude: 4,
+                    transport_active: false,
+                  },
+                  {
+                    name: 'Arrival',
+                    kind: 'arrival',
+                    latitude: 0,
+                    longitude: 10,
+                  },
+                ],
+              }
+            : null
+        }
+      />
+    );
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(
+      saved ? 1 : 2
+    );
+    expect(
+      container.querySelector('.leaflet-marker-icon[title="X-Band Transition"]')
+    ).toBeNull();
+    expect(
+      container.querySelector('.leaflet-marker-icon[title="Ka Transition"]')
+    ).toBeNull();
+  }
+);
+
+it('retains_prepared_historical_eligible_pois_while_suppressing_inactive_future_cues', () => {
+  const { container } = render(
+    <RouteMap
+      coordinates={[
+        [0, 0],
+        [0, 10],
+      ]}
+      transportAvailability={{ X: false }}
+      timelinePreview={{
+        mission_leg_id: 'l',
+        created_at: 'now',
+        segments: [],
+        map_pois: [
+          {
+            name: 'Past X',
+            kind: 'x_band_transition',
+            latitude: 0,
+            longitude: 1,
+            transport_active: true,
+          },
+          {
+            name: 'Future X',
+            kind: 'x_band_transition',
+            latitude: 0,
+            longitude: 8,
+            transport_active: false,
+          },
+        ],
+      }}
+    />
+  );
+  expect(
+    container.querySelector('.leaflet-marker-icon[title="Past X"]')
+  ).not.toBeNull();
+  expect(
+    container.querySelector('.leaflet-marker-icon[title="Future X"]')
+  ).toBeNull();
+});

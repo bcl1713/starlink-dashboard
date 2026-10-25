@@ -41,7 +41,9 @@ def client(tmp_path, monkeypatch, coordinator):
     app.state.x_band_selection_store = XBandSelectionStore(tmp_path / "selection.json")
     app.state.coordinator = coordinator
     app.dependency_overrides[get_route_manager] = lambda: SimpleNamespace(
-        get_active_route=lambda: None
+        get_active_route=lambda: None,
+        get_active_route_id=lambda: None,
+        get_route=lambda route_id: None,
     )
     app.dependency_overrides[get_poi_manager] = lambda: pois
     app.include_router(active_x_link.router)
@@ -231,3 +233,36 @@ def test_mission_selection_survives_unreadable_manual_settings(
     assert (tmp_path / "selection.json").read_text() == contents
     set_mission(False)
     assert client.get(URL).status_code == 503
+
+
+@pytest.mark.parametrize("failed", [False, True], ids=["planned", "equipment-failure"])
+def test_x_unavailability_applies_without_route_context(client, failed):
+    """Missing route geometry cannot undo mission-owned equipment state."""
+    from datetime import datetime, timezone
+
+    from app.mission.availability_models import AvailabilityChange, MissionAvailability
+
+    set_mission(True)
+    mission = storage.load_mission_v2("manual-test")
+    mission.availability = MissionAvailability(
+        defaults={} if failed else {"X": False},
+        history=(
+            (
+                AvailabilityChange(
+                    id="failure",
+                    transport="X",
+                    unavailable=True,
+                    effective_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
+                ),
+            )
+            if failed
+            else ()
+        ),
+    )
+    storage.save_mission_v2(mission)
+    response = client.get(URL)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["selection_source"] == "mission"
+    assert data["transport_active"] is False
+    assert data["links"] == []

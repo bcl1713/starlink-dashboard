@@ -7,6 +7,8 @@ import type {
 } from '@/types/pop';
 
 export interface StatusResponse {
+  transport_availability?: import('./transportAvailability').TransportEligibility;
+  availability_revision?: number;
   metric_source?: 'observed' | 'simulated' | 'unavailable' | 'unknown';
   pop_forecast?: PopForecast | null;
   call_continuity?: CallContinuityProjection | null;

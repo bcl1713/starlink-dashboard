@@ -3,6 +3,10 @@ import type {
   PlanningPolicy,
   PlanningInputSnapshot,
 } from './planning';
+import type {
+  AvailabilityOverrides,
+  AvailabilityChange,
+} from '@/services/transportAvailability';
 import type { XBandTransition, KaOutage, KuOutageOverride } from './satellite';
 import type { AARSegment, ManualAARTrack, ManualRouteSplice } from './aar';
 
@@ -14,9 +18,16 @@ export interface Mission {
   created_at: string;
   updated_at: string;
   metadata: Record<string, unknown>;
+  availability?: {
+    revision: number;
+    defaults: AvailabilityOverrides;
+    history: AvailabilityChange[];
+    simulation_run_id?: string | null;
+  };
 }
 
 export interface TransportConfig {
+  availability_overrides?: AvailabilityOverrides | null;
   starshield_enabled?: boolean | null;
   planning_policy?: PlanningPolicy | null;
   evaluation_context?: EvaluationContext | null;
