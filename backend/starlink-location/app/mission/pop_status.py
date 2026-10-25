@@ -172,7 +172,10 @@ class PopStatusService:
                 source = self.route_manager.get_route(active.leg.route_id).model_copy(
                     deep=True
                 )
-                source.timing_profile.flight_status = route.timing_profile.flight_status
+                if source.timing_profile is not None:
+                    source.timing_profile.flight_status = (
+                        route.timing_profile.flight_status
+                    )
                 routes = RouteView(
                     (
                         SourcePayload(

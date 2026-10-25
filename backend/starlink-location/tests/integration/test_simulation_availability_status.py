@@ -60,6 +60,8 @@ def availability_status(pop_api, monkeypatch, tmp_path, request):
         mission = storage.load_mission_v2("mission-1")
         mission.legs[0].transports.initial_x_satellite_id = "Custom-status-X"
         storage.save_mission_v2(mission)
+    if getattr(request, "param", None) == "missing-profile":
+        service.route_manager.get_route("replay").timing_profile = None
     source.start_paced(client, 1)
     return client, service, clocks, pops, sites
 
@@ -82,13 +84,21 @@ def command(client, transport, action, key):
 
 
 @pytest.mark.parametrize("transport", ["X", "Ka", "Ku"])
+@pytest.mark.parametrize(
+    "availability_status",
+    [None, "missing-profile"],
+    indirect=True,
+    ids=["profile", "timed-points-only"],
+)
 def test_paced_status_keeps_selected_continuity_after_failure_and_restore(
     availability_status, transport
 ):
-    client, service, _, pops, _ = availability_status
+    client, service, clocks, pops, _ = availability_status
     accepted = service.runtime.selected_plan()
     accepted_revision = accepted.artifacts.call_capabilities.input_revision
     accepted_route = accepted.artifacts.route.model_dump()
+    raw_route = service.route_manager.get_route("replay").model_dump()
+    assert accepted.artifacts.route.timing_profile is not None
     baseline = client.get("/api/status").json()
     assert baseline["pop_forecast"]["status"] == "ready"
     assert baseline["call_continuity"] is not None
@@ -128,9 +138,20 @@ def test_paced_status_keeps_selected_continuity_after_failure_and_restore(
         (span.start_utc, span.end_utc, getattr(span, field))
         for span in pops._replay_capability_cache[1].spans
     ] == baseline_capability
+    if raw_route["timing_profile"] is None:
+        cached_key = pops._replay_capability_cache[0]
+        clocks.advance(10)
+        service.collect(service.coordinator, service.publish)
+        continued = client.get("/api/status").json()
+        assert continued["call_continuity"] is not None
+        assert pops._replay_capability_cache[0] == cached_key
+        assert continued["call_continuity"]["intervals"][0][
+            "start_utc"
+        ] == service.status().run.simulation_time.isoformat().replace("+00:00", "Z")
     assert service.runtime.selected_plan() is accepted
     assert accepted.artifacts.call_capabilities.input_revision == accepted_revision
     assert accepted.artifacts.route.model_dump() == accepted_route
+    assert service.route_manager.get_route("replay").model_dump() == raw_route
 
 
 def test_selected_status_cache_reuses_and_invalidates_real_inputs(
