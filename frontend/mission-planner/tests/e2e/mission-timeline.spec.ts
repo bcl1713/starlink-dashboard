@@ -160,6 +160,18 @@ test('persistent chronology and retained draft at desktop and narrow widths usin
       }
       const headingBounds = await timelineHeading.boundingBox();
       const navigationBounds = await navigation.boundingBox();
+      const mainBody = page.locator('.ws-body');
+      const bodyBounds = await mainBody.boundingBox();
+      await expect
+        .soft(
+          mainBody,
+          'The main workspace has its own on-screen scrolling area'
+        )
+        .toBeInViewport({ ratio: 0.99 });
+      expect(
+        bodyBounds?.height,
+        'Keep at least three touch-target rows available for main-body work'
+      ).toBeGreaterThanOrEqual(132);
       const geometry = await panel
         .locator('.ws-timeline-body')
         .evaluate((element) => ({
@@ -188,6 +200,7 @@ test('persistent chronology and retained draft at desktop and narrow widths usin
             geometry,
             headingBounds,
             navigationBounds,
+            bodyBounds,
             viewportIntersectionCheckedAfterDraftScroll: true,
             persistentAcross: ['Communications', 'Transport', 'Issues'],
             draftRetained: true,

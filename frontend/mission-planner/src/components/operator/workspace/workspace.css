@@ -16,7 +16,7 @@
   column-gap: 1.25rem;
   min-height: 0;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 .ws-header {
   position: relative;
@@ -129,8 +129,8 @@
   grid-area: body;
   min-height: 0;
   min-width: 0;
-  overflow: visible;
-  overscroll-behavior: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0 0.25rem 1.5rem 0;
 }
 .ws-body h2 {
@@ -484,9 +484,10 @@
   }
 }
 
-/* The full chronology stays beside the editor and scrolls within its column. */
+/* The main body and awareness column own their scroll independently. */
 .ws-awareness {
   align-self: stretch;
+  max-height: 100%;
   overscroll-behavior: contain;
 }
 .ws-timeline {
@@ -552,5 +553,34 @@
   }
   .ws-timeline-body {
     max-height: 38dvh;
+  }
+}
+
+/* Reserve a useful body viewport when the narrow chronology is expanded.
+   Only the chronology rows scroll; its heading, controls and navigation stay put. */
+@media (max-width: 900px) and (min-height: 501px) {
+  .ws-awareness {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    max-height: min(45dvh, calc(100% - 12rem));
+    overflow: hidden;
+  }
+  .ws-now,
+  .ws-next {
+    max-height: 9rem;
+    overflow-y: auto;
+  }
+  .ws-attention,
+  .ws-advisories {
+    max-height: 6rem;
+    overflow-y: auto;
+  }
+  .ws-timeline {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    min-height: 0;
+  }
+  .ws-timeline-body {
+    min-height: 0;
+    max-height: 100%;
   }
 }
