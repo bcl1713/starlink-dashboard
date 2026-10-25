@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 
 from app.mission.availability_models import Transport
-from app.mission.availability_planning import eligible, usable_during
+from app.mission.availability_planning import usable_during
 from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.models.route import ParsedRoute
 
@@ -191,10 +191,14 @@ def validate_context(inputs, draft, context):
     ):
         return
     permitted = {s.satellite_id for s in inputs.satellites}
+    assignments = sorted(zip(times, draft.swaps), key=lambda item: item[0])
+    # A swap selected during failure may still own X when the equipment returns.
+    ends = [time for time, _ in assignments[1:]] + [inputs.end_time]
     if draft.initial_x_satellite_id not in permitted or any(
-        s.target_satellite_id not in permitted
-        and eligible(inputs.availability, Transport.X, t)
-        for t, s in zip(times, draft.swaps)
+        swap.target_satellite_id not in permitted
+        and time < end
+        and usable_during(inputs.availability, Transport.X, time, end)
+        for (time, swap), end in zip(assignments, ends)
     ):
         raise ValueError("Selected satellite is not in the permitted position snapshot")
     at = {}

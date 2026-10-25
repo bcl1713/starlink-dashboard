@@ -234,3 +234,63 @@ def test_unavailable_x_keeps_inactive_lock_without_an_initial_selection(monkeypa
     assert proposal.proposed_draft.initial_x_satellite_id is None
     assert proposal.proposed_draft.locks == [lock]
     assert proposal.proposed_draft.swaps == []
+
+
+@pytest.mark.parametrize("replaced_before_restore", [False, True])
+def test_swap_during_failure_is_validated_over_its_assignment_window(
+    monkeypatch, replaced_before_restore
+):
+    from app.mission.planning.grid import validate_context
+    from app.mission.planning.match import _candidates
+    from app.mission.planning.models import AnchoredSwap
+    from app.models.route import ParsedRoute
+
+    inputs, draft, _, manager, pois, snapshot = prepared(
+        monkeypatch,
+        history=(
+            AvailabilityChange(
+                id="fail",
+                transport="X",
+                unavailable=True,
+                effective_at=START + timedelta(seconds=20),
+            ),
+            AvailabilityChange(
+                id="restore",
+                transport="X",
+                unavailable=False,
+                effective_at=START + timedelta(seconds=80),
+            ),
+        ),
+    )
+    route = ParsedRoute.model_validate_json(inputs.anchor_route_json)
+    draft.swaps = [
+        AnchoredSwap(
+            id="retained",
+            target_satellite_id="MISSING",
+            anchor=_candidates(START + timedelta(seconds=40), "second", route)[0],
+        )
+    ]
+    if replaced_before_restore:
+        draft.swaps.append(
+            AnchoredSwap(
+                id="usable",
+                target_satellite_id="SOUTH",
+                anchor=_candidates(START + timedelta(seconds=60), "second", route)[0],
+            )
+        )
+    _, _, _, _, _, _, card = scenario(monkeypatch)
+    inputs = build_inputs(
+        card, draft, manager, pois, ConstraintConfig(), availability=snapshot
+    )
+    context = build_context(inputs, draft)
+    if replaced_before_restore:
+        result = evaluate_context(inputs, draft, context)
+        assert result.intervals
+        assert all(
+            i.satellite_id == "SOUTH"
+            for i in result.intervals
+            if i.start_time >= START + timedelta(seconds=80)
+        )
+    else:
+        with pytest.raises(ValueError, match="permitted position snapshot"):
+            validate_context(inputs, draft, context)
