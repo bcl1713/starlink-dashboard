@@ -341,7 +341,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     overviewDuring.getByRole('list', { name: 'Map POIs', exact: true })
   ).toBeAttached();
   await expect(
-    overviewDuring.locator('[data-poi-label]').first()
+    overviewDuring.locator('[data-poi-label]:visible').first()
   ).toBeVisible();
   await overviewDuring.screenshot({
     path: `${evidence}/baseline-map-1920x1080.png`,
@@ -432,7 +432,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     ).toEqual([]);
     await overviewDuring.goto('/overview');
     await expect(
-      overviewDuring.locator('[data-poi-label]').first()
+      overviewDuring.locator('[data-poi-label]:visible').first()
     ).toBeVisible();
     for (const poi of retained)
       await expect(
