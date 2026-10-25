@@ -73,10 +73,11 @@ def test_all_legs_include_more_than_24_hours_and_missing_leg_is_explicit(
     )
     assert x_window(snapshot, "leg-b")["time_basis"] == "planned_utc"
     assert [leg["coverage"] for leg in snapshot["legs"]] == [
-        "available",
+        "partial",
         "available",
         "unavailable",
     ]
+    assert "PoP timing unavailable" in snapshot["legs"][0]["reason"]
     assert snapshot["legs"][2]["reason"]
     assert x_window(snapshot)["time_basis"] == "live_route_eta"
 
@@ -147,8 +148,9 @@ def test_missing_ka_coverage_does_not_make_known_x_eta_stale(api, production):
     assert event["freshness"] == "fresh"
 
 
+@pytest.mark.parametrize("change", ["route", "config"])
 def test_static_preparation_is_cached_but_input_change_during_work_is_rejected(
-    api, production, monkeypatch
+    api, production, monkeypatch, change
 ):
     from app.operator.production_event_inputs import ModelInputs
 
@@ -167,9 +169,14 @@ def test_static_preparation_is_cached_but_input_change_during_work_is_rejected(
 
     def moving(self, leg):
         result = prepare(self, leg)
-        route = production[4].get_route("route-a").model_copy(deep=True)
-        route.points[-1].longitude += 0.2
-        production[4].add_route("route-a", route)
+        if change == "route":
+            route = production[4].get_route("route-a").model_copy(deep=True)
+            route.points[-1].longitude += 0.2
+            production[4].add_route("route-a", route)
+        else:
+            production[3].pop.catalog_path = production[6].with_name(
+                "missing-catalog.json"
+            )
         return result
 
     monkeypatch.setattr(ModelInputs, "prepare", moving)
@@ -180,10 +187,13 @@ def test_static_preparation_is_cached_but_input_change_during_work_is_rejected(
     assert response.json()["error"]["code"] == "event_snapshot_changed"
 
 
+@pytest.mark.parametrize("phase", ["pre_departure", "in_flight"])
 @pytest.mark.parametrize("failure", ["route_file", "owned_profile"])
-def test_unaccepted_route_file_only_marks_its_leg_unavailable(api, production, failure):
+def test_unaccepted_route_file_only_marks_its_leg_unavailable(
+    api, production, failure, phase
+):
     context = production[0].context_provider
-    production[0].context_provider = lambda: context() | {"phase": "pre_departure"}
+    production[0].context_provider = lambda: context() | {"phase": phase}
     mission = storage.load_mission_v2("demo-mission")
     second = mission.legs[0].model_copy(
         update={
@@ -213,9 +223,13 @@ def test_unaccepted_route_file_only_marks_its_leg_unavailable(api, production, f
             '{"id":"route-b","content_hash":"broken"}'
         )
     snapshot = read(api, production)
-    assert snapshot["legs"][0]["coverage"] == "available"
     assert snapshot["legs"][1]["coverage"] == "unavailable"
-    assert x_window(snapshot)["due_at"]
+    event = x_window(snapshot)
+    assert event["due_at"] and event["end_at"]
+    assert event["time_basis"] == (
+        "live_route_eta" if phase == "in_flight" else "planned_utc"
+    )
+    assert event["freshness"] == "fresh"
 
 
 def test_pop_publication_uses_observation_clock_and_rejects_old_replay_lifecycle(
@@ -269,8 +283,9 @@ def test_pop_publication_uses_observation_clock_and_rejects_old_replay_lifecycle
     )
 
 
+@pytest.mark.parametrize("phase", ["pre_departure", "in_flight"])
 def test_schedule_ignores_corrupt_export_archive_but_keeps_per_leg_route_gaps(
-    api, production
+    api, production, phase
 ):
     from app.mission.slide_cache.capture import capture_raw, normalize_capture
 
@@ -303,11 +318,17 @@ def test_schedule_ignores_corrupt_export_archive_but_keeps_per_leg_route_gaps(
     with storage.get_active_leg_lock():
         storage._save_mission_v2_unlocked(mission)
     context = production[0].context_provider
-    production[0].context_provider = lambda: context() | {"phase": "pre_departure"}
-    production[2]["telemetry"] = None
+    production[0].context_provider = lambda: context() | {"phase": phase}
+    if phase == "pre_departure":
+        production[2]["telemetry"] = None
     snapshot = read(api, production)
-    assert [leg["coverage"] for leg in snapshot["legs"]] == ["available", "unavailable"]
-    assert x_window(snapshot)["time_basis"] == "planned_utc"
+    assert snapshot["legs"][1]["coverage"] == "unavailable"
+    event = x_window(snapshot)
+    assert event["time_basis"] == (
+        "live_route_eta" if phase == "in_flight" else "planned_utc"
+    )
+    assert event["due_at"] and event["end_at"]
+    assert event["freshness"] == "fresh"
     # Export defaults still enforce the retained archival contract.
     raw = capture_raw("demo-mission", production[4], None)
     with pytest.raises(OSError):
@@ -372,3 +393,132 @@ def test_position_is_recaptured_after_expensive_preparation(
     assert event["time_basis"] == "live_route_eta"
     assert event["state"] == "inactive"
     assert not event["active"]
+
+
+def test_missing_live_pop_is_explicit_without_aging_known_x(api, production):
+    snapshot = read(api, production)
+    assert snapshot["legs"][0]["coverage"] == "partial"
+    assert "PoP timing unavailable" in snapshot["legs"][0]["reason"]
+    event = x_window(snapshot)
+    assert event["time_basis"] == "live_route_eta" and event["freshness"] == "fresh"
+    assert event["due_at"] and event["end_at"]
+
+
+def test_ready_empty_and_deliberately_disabled_pop_have_no_gap(api, production, clock):
+    import json
+
+    from app.mission.pop_status import PopStatusService
+
+    catalog = json.loads(production[6].read_text())
+    catalog["sites"] = catalog["sites"][:1]
+    production[6].write_text(json.dumps(catalog))
+    adapter = production[0]
+    adapter.pop_service = PopStatusService(production[4], lambda: production[3])
+    adapter.pop_service.status_payload(production[2]["telemetry"], now=clock.now())
+    publication = adapter.pop_service.read_publication()
+    assert publication["payload"]["pop_forecast"]["status"] == "ready"
+    assert not publication["payload"]["pop_forecast"]["transitions"]
+    assert read(api, production)["legs"][0]["coverage"] == "available"
+    mission = storage.load_mission_v2("demo-mission")
+    mission.legs[0].transports.starshield_enabled = False
+    storage.save_mission_v2(mission)
+    adapter.pop_service = None
+    disabled = read(api, production)
+    assert disabled["legs"][0]["coverage"] == "available"
+    assert any(
+        source["freshness"] == "disabled" and source["source"].endswith(":live-pop")
+        for source in disabled["sources"]
+    )
+
+
+def test_rejected_seek_publication_reports_current_leg_pop_gap(
+    production, clock, monkeypatch
+):
+    from app.mission.pop_status import PopStatusService
+    from app.operator.mission_timeline import build_mission_timeline
+    from app.operator.production_event_inputs import capture_current
+    from app.operator.runtime import OperatorRuntime
+
+    adapter = production[0]
+    inputs = capture_current(adapter, "demo-mission", as_of=clock.now(), scheduled=True)
+    health = adapter.service.store.health().model_copy(
+        update={"source_mode": "simulation", "simulation_run_id": "replay-a"}
+    )
+    monkeypatch.setattr(adapter.service.store, "health", lambda: health)
+    production[3].mode = "simulation"
+    context = adapter.context_provider
+    adapter.context_provider = lambda: context() | {
+        "source_mode": "simulation",
+        "simulation_run_id": "replay-a",
+        "lifecycle": "seek-two",
+    }
+    adapter.pop_service = PopStatusService()
+    adapter.pop_service.snapshot(
+        production[2]["telemetry"],
+        route=production[4].get_route("route-a"),
+        catalog=inputs.pop_catalog,
+        enabled=True,
+        mode="simulation",
+        now=clock.now(),
+        observed_now=clock.now(),
+        mission_id="demo-mission",
+        leg_id="leg-a",
+        simulation_run_id="replay-a",
+        lifecycle_token="seek-one",
+    )
+    runtime = OperatorRuntime(adapter.service.store.settings, clock)
+    runtime.service = adapter.service
+    snapshot = build_mission_timeline(runtime, "demo-mission", adapter).model_dump(
+        mode="json"
+    )
+    assert snapshot["legs"][0]["coverage"] == "partial"
+    assert "PoP timing unavailable" in snapshot["legs"][0]["reason"]
+    assert not any(event["kind"] == "pop_advisory" for event in snapshot["events"])
+    assert x_window(snapshot)["freshness"] == "fresh"
+
+
+@pytest.mark.parametrize("invalid", ["stale", "wrong_route", "ambiguous_active"])
+def test_active_timing_rejects_stale_or_wrong_association(
+    api, production, clock, invalid
+):
+    if invalid == "stale":
+        clock.advance(31)
+    elif invalid == "wrong_route":
+        context = production[0].context_provider
+        production[0].context_provider = lambda: context() | {
+            "active_route_id": "other-route"
+        }
+    else:
+        other = storage.load_mission_v2("other-mission")
+        other.legs[0].is_active = True
+        storage.save_mission_v2(other)
+    event = x_window(read(api, production))
+    assert event["time_basis"] == "live_unavailable"
+    assert event["due_at"] is None and event["end_at"] is None
+
+
+def test_active_timing_rejects_store_epoch_change_during_position_capture(
+    api, production, monkeypatch
+):
+    adapter = production[0]
+    health = adapter.service.store.health()
+    changed = {"value": False}
+    monkeypatch.setattr(
+        adapter.service.store,
+        "health",
+        lambda: (
+            health.model_copy(update={"api_epoch": "different-epoch"})
+            if changed["value"]
+            else health
+        ),
+    )
+    telemetry = adapter.telemetry_provider
+
+    def switching():
+        changed["value"] = True
+        return telemetry()
+
+    adapter.telemetry_provider = switching
+    event = x_window(read(api, production))
+    assert event["time_basis"] == "live_unavailable"
+    assert event["due_at"] is None and event["end_at"] is None

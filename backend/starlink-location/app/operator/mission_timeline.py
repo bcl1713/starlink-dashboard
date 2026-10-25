@@ -12,6 +12,7 @@ from .event_ledger import identity
 from .event_models import EventNotification, SourceCapture
 from .event_projection import derive_events
 from .event_sources import EventSourceAdapter
+from .mission_timeline_inputs import capture_active_timing, require_leg_route
 from .mission_timeline_models import MissionTimelineSnapshot, TimelineLeg
 from .production_event_inputs import capture_current
 from .production_live_timing import attach_boundary_geometry, refresh_boundary_times
@@ -30,21 +31,7 @@ _FAILURES = (
 
 
 def _prepare(adapter, inputs, leg):
-    if any(
-        source.name == "route_profile_unavailable/" + leg.route_id
-        for source in inputs.sources
-    ):
-        raise OperatorError("event_source_unavailable", retryable=True)
-    route_file = next(
-        (source for source in inputs.sources if source.name == "kml/" + leg.route_id),
-        None,
-    )
-    if (
-        route_file is not None
-        and adapter.route_manager.source_file_revision(leg.route_id)
-        != route_file.digest
-    ):
-        raise OperatorError("event_source_unavailable", retryable=True)
+    require_leg_route(adapter, inputs, leg)
     cache = getattr(adapter, "mission_timeline_cache", None)
     if cache is None:
         cache = adapter.mission_timeline_cache = {}
@@ -189,19 +176,24 @@ def build_mission_timeline(runtime, mission_id, adapter):
                 "Saved plan; current-input alignment unavailable",
             )
         if model is not None:
-            active = bool(
-                leg.is_active
-                and scheduled
-                and leg.route_id == scheduled.context.get("active_route_id")
-            )
+            active = bool(leg.is_active and scheduled)
             # Unknown/stale airborne timing never becomes a scheduled countdown.
             if active and scheduled.context.get("phase") != "pre_departure":
                 try:
                     # Preparation can outlast the position freshness window.
                     # Time accepted boundaries using the newest admitted sample.
                     with storage.get_active_leg_lock():
-                        live = capture_current(
-                            adapter, mission_id, as_of=runtime.clock.now()
+                        live = capture_active_timing(
+                            adapter,
+                            scheduled,
+                            leg,
+                            as_of=runtime.clock.now(),
+                            expected_identity=(
+                                captured.store_id,
+                                captured.api_epoch,
+                                captured.source_mode,
+                                captured.simulation_run_id,
+                            ),
                         )
                 except _FAILURES:
                     live = None
@@ -236,20 +228,41 @@ def build_mission_timeline(runtime, mission_id, adapter):
                     model.pop("pop_advisories", None)
             models[leg.id] = model
             if active and scheduled.context.get("phase") != "pre_departure":
-                try:
-                    pop = _current_pop(
-                        adapter,
-                        scheduled,
-                        leg,
-                        runtime.clock.now(),
-                        live_available=live is not None,
+                pop_ref = "model:" + leg.id + ":live-pop"
+                gap = None
+                if leg.transports.starshield_enabled is False:
+                    sources.append(
+                        SourceCapture(
+                            source=pop_ref,
+                            freshness="disabled",
+                            reason="PoP advisories deliberately disabled with Starshield",
+                        )
                     )
+                else:
+                    pop = None
+                    try:
+                        pop = _current_pop(
+                            adapter,
+                            scheduled,
+                            leg,
+                            runtime.clock.now(),
+                            live_available=live is not None,
+                        )
+                    except _FAILURES:
+                        pass
                     if pop:
                         model_key, pop_model, pop_source = pop
                         models[model_key] = pop_model
                         sources.append(pop_source)
-                except _FAILURES:
-                    pass
+                        if pop_source.freshness != "fresh":
+                            gap = "PoP timing unavailable; transition advisories are last known"
+                    else:
+                        gap = "PoP timing unavailable; current transition advisory evidence unavailable"
+                        sources.append(SourceCapture(source=pop_ref, reason=gap))
+                if gap:
+                    if coverage == "available":
+                        coverage = "partial"
+                    reason = "; ".join(value for value in (reason, gap) if value)
         legs.append(
             TimelineLeg(leg_id=leg.id, name=leg.name, coverage=coverage, reason=reason)
         )

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { readMissionTimeline } from '@/services/missionTimeline';
+import type { MissionTimelineSnapshot } from '@/types/missionTimeline';
+
+interface TimelineResult {
+  snapshot: MissionTimelineSnapshot;
+  receivedAt: number;
+  quarantined: boolean;
+}
 
 class TimelineSourceChanged extends Error {}
 
@@ -10,7 +17,7 @@ export function useMissionTimeline(missionId: string, identity: string | null) {
   const query = useQuery({
     queryKey: ['mission-timeline', missionId, identity],
     enabled: !!missionId && !!identity,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, queryKey }) => {
       const snapshot = await readMissionTimeline(missionId, signal);
       const source = JSON.stringify([
         snapshot.store_id,
@@ -23,12 +30,15 @@ export function useMissionTimeline(missionId: string, identity: string | null) {
         snapshot.mission_id !== missionId ||
         source !== identity
       ) {
+        client.setQueryData<TimelineResult>(queryKey, (previous) =>
+          previous ? { ...previous, quarantined: true } : undefined
+        );
         void client.invalidateQueries({ queryKey: ['operator-health'] });
         throw new TimelineSourceChanged(
           'Mission timeline source changed; waiting for current context'
         );
       }
-      return { snapshot, receivedAt: performance.now() };
+      return { snapshot, receivedAt: performance.now(), quarantined: false };
     },
     refetchInterval: visible ? 15000 : false,
     refetchIntervalInBackground: false,
@@ -71,9 +81,7 @@ export function useMissionTimeline(missionId: string, identity: string | null) {
   );
   return {
     snapshot:
-      identity && !(query.error instanceof TimelineSourceChanged)
-        ? query.data?.snapshot
-        : undefined,
+      identity && !query.data?.quarantined ? query.data?.snapshot : undefined,
     receivedAt: query.data?.receivedAt ?? -Infinity,
     loading: !!identity && query.isPending,
     failed: query.isError,

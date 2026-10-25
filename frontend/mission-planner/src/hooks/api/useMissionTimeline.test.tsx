@@ -128,3 +128,39 @@ it.each([false, true])(
     vi.useRealTimers();
   }
 );
+
+it.each(['manual', 'focus', 'online'])(
+  'keeps a contradicted snapshot quarantined through %s offline refresh until validation succeeds',
+  async (trigger) => {
+    const read = vi
+      .spyOn(api, 'readMissionTimeline')
+      .mockResolvedValueOnce(snapshot())
+      .mockResolvedValueOnce({
+        ...snapshot(),
+        simulation_run_id: 'foreign-replay',
+      })
+      .mockRejectedValue(new Error('offline'));
+    const hook = renderHook(() => useMissionTimeline('mission-a', identity), {
+      wrapper: wrapper(),
+    });
+    await waitFor(() => expect(hook.result.current.snapshot).toBeDefined());
+    act(() => hook.result.current.refresh());
+    await waitFor(() => expect(hook.result.current.failed).toBe(true));
+    expect(hook.result.current.snapshot).toBeUndefined();
+    act(() =>
+      trigger === 'manual'
+        ? hook.result.current.refresh()
+        : window.dispatchEvent(new Event(trigger))
+    );
+    await waitFor(() =>
+      expect(read.mock.calls.length).toBeGreaterThanOrEqual(3)
+    );
+    await waitFor(() => expect(hook.result.current.refreshing).toBe(false));
+    expect(hook.result.current.snapshot).toBeUndefined();
+    read.mockResolvedValue(snapshot());
+    act(() => hook.result.current.refresh());
+    await waitFor(() =>
+      expect(hook.result.current.snapshot?.mission_id).toBe('mission-a')
+    );
+  }
+);

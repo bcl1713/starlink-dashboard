@@ -27,10 +27,9 @@ export function MissionTimeline({
   );
   const [monotonicNow, setMonotonicNow] = useState(() => performance.now());
   useEffect(() => {
-    const timer = window.setInterval(
-      () => setMonotonicNow(performance.now()),
-      1000
-    );
+    const timer = window.setInterval(() => {
+      if (!timeline?.failed) setMonotonicNow(performance.now());
+    }, 1000);
     const media = globalThis.matchMedia?.('(max-width: 900px)');
     const resize = (event: MediaQueryListEvent) => setExpanded(!event.matches);
     media?.addEventListener('change', resize);
@@ -38,14 +37,14 @@ export function MissionTimeline({
       clearInterval(timer);
       media?.removeEventListener('change', resize);
     };
-  }, []);
+  }, [timeline?.failed]);
   const snapshot = timeline?.snapshot;
   const elapsed = Math.max(
     0,
     monotonicNow - (timeline?.receivedAt ?? -Infinity)
   );
   const stale = !!timeline?.failed || elapsed >= 30000;
-  const now = Date.parse(snapshot?.as_of ?? '') + (stale ? 0 : elapsed);
+  const now = Date.parse(snapshot?.as_of ?? '') + Math.min(elapsed, 30000);
   const events = [...(snapshot?.events ?? [])].sort((a, b) => {
     const first = a.due_at ? Date.parse(a.due_at) : Infinity;
     const second = b.due_at ? Date.parse(b.due_at) : Infinity;

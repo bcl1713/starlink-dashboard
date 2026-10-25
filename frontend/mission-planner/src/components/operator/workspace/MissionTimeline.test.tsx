@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -33,6 +34,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 it('sorts by current times, groups passed windows and shows start and recovery together', () => {
   const events = [
@@ -186,5 +188,35 @@ it.each([
     expect(screen.getByText(new RegExp(`^${label}`))).toBeTruthy();
     expect(screen.getByText(countdown)).toBeTruthy();
     expect(screen.queryByText(/Recovery in/)).toBeNull();
+  }
+);
+
+it.each(['age', 'failure'])(
+  'never rewinds an elapsed window back out of Past on %s',
+  (reason) => {
+    vi.useFakeTimers();
+    let monotonic = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => monotonic);
+    const query = state([
+      eventFixture({
+        title: 'Elapsed X',
+        kind: 'restriction',
+        due_at: '2026-10-17T16:00:05Z',
+        end_at: '2026-10-17T16:00:20Z',
+        state: 'upcoming',
+      }),
+    ]);
+    const view = render(<MissionTimeline timeline={query} />);
+    monotonic = 29000;
+    act(() => vi.advanceTimersByTime(29000));
+    expect(screen.getByText('Past · 1')).toBeTruthy();
+    if (reason === 'failure')
+      view.rerender(<MissionTimeline timeline={{ ...query, failed: true }} />);
+    monotonic = 31000;
+    act(() => vi.advanceTimersByTime(2000));
+    expect(screen.getByText('Past · 1')).toBeTruthy();
+    expect(screen.queryByText(/Recovery in/)).toBeNull();
+    view.unmount();
+    vi.useRealTimers();
   }
 );
