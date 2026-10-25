@@ -19,6 +19,7 @@ export function usePlanningLegWorkflow({
   view,
   planning,
   satelliteOptions,
+  xAvailable = true,
   navigate,
   onAcceptedRoute,
 }: {
@@ -26,6 +27,7 @@ export function usePlanningLegWorkflow({
   view: PlanningView;
   planning: ReturnType<typeof usePlanning>;
   satelliteOptions?: PlanningSatelliteOptions;
+  xAvailable?: boolean;
   navigate: (path: string) => void;
   onAcceptedRoute: () => void;
 }) {
@@ -103,7 +105,7 @@ export function usePlanningLegWorkflow({
     setMessage('');
   };
   useEffect(() => {
-    if (!leg.route || !draft.initial_x_satellite_id) return;
+    if (!leg.route || (xAvailable && !draft.initial_x_satellite_id)) return;
     let current = true;
     const abort = new AbortController();
     const token = controller.beginPreview(
@@ -145,6 +147,7 @@ export function usePlanningLegWorkflow({
     };
   }, [
     controller,
+    xAvailable,
     draft,
     expectedRevision,
     inputIdentity,
@@ -295,7 +298,7 @@ export function usePlanningLegWorkflow({
     }
   };
   const optimize = async () => {
-    if (!planningSourceReady(leg, draft, section)) return;
+    if (!planningSourceReady(leg, draft, section, xAvailable)) return;
     setSequencePending(true);
     setError('');
     const saved = dirty ? await save() : view;
@@ -405,21 +408,22 @@ export function usePlanningLegWorkflow({
       setSequencePending(false);
     }
   };
-  const readyToGenerate = planningSourceReady(leg, draft, section);
+  const readyToGenerate = planningSourceReady(leg, draft, section, xAvailable);
   const invalid =
     !leg.route ||
-    !draft.initial_x_satellite_id ||
-    !draft.access_confirmation?.confirmed ||
-    !draft.permitted_satellite_ids?.length ||
-    satelliteOptions?.satellites
-      .filter((s) => s.eligible)
-      .every((s) => !draft.permitted_satellite_ids?.includes(s.id)) ||
-    draft.permitted_satellite_ids?.some(
-      (id) =>
-        !satelliteOptions?.satellites.some((s) => s.id === id && s.eligible)
-    ) ||
+    (xAvailable &&
+      (!draft.initial_x_satellite_id ||
+        !draft.access_confirmation?.confirmed ||
+        !draft.permitted_satellite_ids?.length ||
+        satelliteOptions?.satellites
+          .filter((s) => s.eligible)
+          .every((s) => !draft.permitted_satellite_ids?.includes(s.id)) ||
+        draft.permitted_satellite_ids?.some(
+          (id) =>
+            !satelliteOptions?.satellites.some((s) => s.id === id && s.eligible)
+        ))) ||
     section === 'unrecognized' ||
-    !!draft.unresolved_x_transitions?.length ||
+    (xAvailable && !!draft.unresolved_x_transitions?.length) ||
     !!draft.unresolved_aar_windows?.length ||
     (draft.ar_corrections ?? []).some(
       (r) =>

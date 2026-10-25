@@ -1,3 +1,4 @@
+import type { AvailabilityOverrides } from '@/services/transportAvailability';
 import { RouteMap } from '../../components/common/RouteMap';
 import type { SatelliteConfig } from '../../types/satellite';
 import type { AARConfig } from '../../types/aar';
@@ -8,6 +9,7 @@ import type { ExpectedLeg, PlanningDraft } from '../../types/planning';
 import { arRouteSpan } from '../../services/planning';
 
 interface LegMapVisualizationProps {
+  transportAvailability?: AvailabilityOverrides;
   routeCoordinates: [number, number][];
   satelliteConfig: SatelliteConfig;
   aarConfig: AARConfig;
@@ -21,6 +23,7 @@ interface LegMapVisualizationProps {
 
 /** Displays the route and operational overlays without changing planning data. */
 export function LegMapVisualization({
+  transportAvailability,
   routeCoordinates,
   satelliteConfig,
   aarConfig,
@@ -58,6 +61,7 @@ export function LegMapVisualization({
         </p>
       )}
       <RouteMap
+        transportAvailability={transportAvailability}
         anchoredARSpans={planningDraft?.ar_corrections
           ?.filter((row) => row.match_status !== 'excluded')
           .map((row) => ({

@@ -1,3 +1,7 @@
+import {
+  catalogTransportKey,
+  type TransportEligibility,
+} from '@/services/transportAvailability';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -18,9 +22,11 @@ export function TransportAssignments({
   onApply,
   missionId,
   identity,
+  availability,
 }: {
   missionId?: string;
   identity?: string | null;
+  availability?: TransportEligibility;
   records: SavedRecord[];
   legId: string | null;
   disabled: boolean;
@@ -140,6 +146,7 @@ export function TransportAssignments({
                 key={service.id}
                 service={service}
                 catalog={query.data!}
+                availability={availability}
                 assignment={latestAssignment(assignments, service, legId)}
                 disabled={
                   disabled ||
@@ -160,12 +167,14 @@ export function TransportAssignments({
 function AssignmentCard({
   service,
   catalog,
+  availability,
   assignment,
   disabled,
   onApply,
 }: {
   service: CatalogItem;
   catalog: TransportCatalog;
+  availability?: TransportEligibility;
   assignment: ReturnType<typeof latestAssignment>;
   disabled: boolean;
   onApply: (service: CatalogItem, transport: CatalogItem) => Promise<void>;
@@ -184,7 +193,13 @@ function AssignmentCard({
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const choices = catalog.transports.filter((t) => t.enabled && !t.archived);
+  const usable = (id: string) => {
+    const key = catalogTransportKey(id);
+    return !key || availability?.[key] !== false;
+  };
+  const choices = catalog.transports.filter(
+    (t) => t.enabled && !t.archived && usable(t.id)
+  );
   const previous = catalog.transports.find((t) => t.id === current);
   return (
     <article
@@ -195,6 +210,7 @@ function AssignmentCard({
       <p className="break-words">
         Current reported transport:{' '}
         <strong>{assignment?.transport ?? 'Not reported'}</strong>
+        {current && !usable(current) && ' (unavailable for this mission)'}
         {previous?.archived
           ? ' (archived)'
           : previous && !previous.enabled

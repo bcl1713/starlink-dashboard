@@ -1,3 +1,4 @@
+import type { AvailabilityOverrides } from '@/services/transportAvailability';
 import { useState } from 'react';
 import {
   MapContainer,
@@ -51,6 +52,7 @@ function eventIcon(kind: string) {
 }
 
 interface RouteMapProps {
+  transportAvailability?: AvailabilityOverrides;
   anchoredARSpans?: Array<{
     id: string;
     label: string;
@@ -71,6 +73,7 @@ interface RouteMapProps {
 }
 
 export function RouteMap({
+  transportAvailability,
   anchoredARSpans = [],
   coordinates,
   height = '400px',
@@ -166,12 +169,16 @@ export function RouteMap({
           <RouteLayer
             routeSegments={routeSegments}
             xbandTransitions={
-              resolvedPois || poiVisibility.x_band_events_enabled === false
+              resolvedPois ||
+              transportAvailability?.X === false ||
+              poiVisibility.x_band_events_enabled === false
                 ? []
                 : normalizedXBandTransitions
             }
             kaTransitions={
-              resolvedPois || poiVisibility.ka_events_enabled === false
+              resolvedPois ||
+              transportAvailability?.Ka === false ||
+              poiVisibility.ka_events_enabled === false
                 ? []
                 : normalizedKaTransitions
             }
@@ -184,7 +191,29 @@ export function RouteMap({
             derivedRouteEstimate={derivedRouteEstimate}
           />
           {eventPois
-            .filter((poi) => missionPoiVisible(poi.kind, poiVisibility))
+            .filter((poi) => {
+              if (poi.transport_active === false) return false;
+              const layer = missionPoiLayer(poi.kind);
+              if (
+                !resolvedPois &&
+                layer === 'x_band_events_enabled' &&
+                transportAvailability?.X === false
+              )
+                return false;
+              if (
+                !resolvedPois &&
+                layer === 'ka_events_enabled' &&
+                transportAvailability?.Ka === false
+              )
+                return false;
+              if (
+                !resolvedPois &&
+                layer === 'starshield_events_enabled' &&
+                transportAvailability?.Ku === false
+              )
+                return false;
+              return missionPoiVisible(poi.kind, poiVisibility);
+            })
             .map((poi, index) => (
               <Marker
                 key={`${poi.kind}-${index}`}

@@ -1,3 +1,6 @@
+import { useTransportAvailability } from '@/hooks/api/useTransportAvailability';
+import { legAvailability } from '@/services/transportAvailability';
+import { TransportAvailabilityControls } from '@/components/planning/TransportAvailabilityControls';
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
@@ -60,7 +63,7 @@ export function LegDetailPage() {
         </p>
       </div>
     );
-  return <ManualLegDetailPage />;
+  return <ManualLegDetailPage key={`${missionId}:${legId}`} />;
 }
 
 function ManualLegDetailPage() {
@@ -74,6 +77,8 @@ function ManualLegDetailPage() {
   );
   const { data: timeline } = useTimeline(missionId || '', legId || '');
   const updateLegMutation = useUpdateLeg(missionId || '', legId || '');
+  const availability = useTransportAvailability(missionId || '');
+  const availableTransports = legAvailability(availability.data, legId || '');
 
   // Find the current leg
   const leg = mission?.legs.find((l) => l.id === legId);
@@ -101,6 +106,7 @@ function ManualLegDetailPage() {
   } = useLegData({
     routeId: leg?.route_id,
     missionId: missionId,
+    legId,
     legTransports: leg?.transports,
   });
 
@@ -320,6 +326,11 @@ function ManualLegDetailPage() {
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
         {/* Left Column: Configuration Tabs */}
         <div className="min-w-0 space-y-6">
+          <TransportAvailabilityControls
+            key={`${missionId}:${legId}`}
+            missionId={missionId || ''}
+            legId={legId}
+          />
           <TimingSection
             leg={leg}
             timeline={timeline || null}
@@ -376,6 +387,10 @@ function ManualLegDetailPage() {
           waypointNames={waypointNames}
           availableWaypoints={availableWaypoints}
           timelinePreview={preview}
+          transportAvailability={
+            availableTransports?.planning_effective ??
+            availableTransports?.planned ?? { X: false, Ka: false, Ku: false }
+          }
         />
       </div>
     </div>

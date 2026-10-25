@@ -1,4 +1,10 @@
 /** @vitest-environment jsdom */
+vi.mock('../hooks/api/useTransportAvailability', () => ({
+  useTransportAvailability: () => ({ data: undefined }),
+}));
+vi.mock('../components/planning/TransportAvailabilityControls', () => ({
+  TransportAvailabilityControls: () => null,
+}));
 import {
   cleanup,
   fireEvent,

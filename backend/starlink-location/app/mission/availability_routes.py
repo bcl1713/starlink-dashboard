@@ -25,6 +25,7 @@ class AvailabilitySettings(AvailabilityCommand):
 
 
 class AvailabilityAction(AvailabilityCommand):
+    expected_simulation_run_id: str | None = Field(default=None, min_length=1)
     transport: Transport
     action: Literal["unavailable", "restore"]
     reason: str | None = Field(default=None, max_length=2000)

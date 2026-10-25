@@ -55,13 +55,16 @@ export function deriveOverviewLinkState(
   );
   const starshieldVisible = Boolean(
     settings?.starshield_link_enabled &&
+      status?.transport_availability?.Ku !== false &&
       freshPosition &&
       input.hasTrafficGeometry
   );
   // Retain the existing configured line/warning geometry while cached. Only
   // activity requires fresh position and an available current normal selection.
   const xBandVisible = Boolean(
-    settings?.x_band_link_enabled && input.hasXBandGeometry
+    settings?.x_band_link_enabled &&
+      status?.transport_availability?.X !== false &&
+      input.hasXBandGeometry
   );
 
   return {

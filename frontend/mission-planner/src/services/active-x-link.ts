@@ -6,6 +6,8 @@ import apiClient from './api-client';
  */
 export interface ActiveXLinkSelectionResponse {
   satellite_id: string | null;
+  transport_active?: boolean;
+  inactive_reason?: string | null;
   state?: 'normal' | 'warning' | null;
   selection_source?: 'mission' | 'manual' | 'none';
   manual_satellite_id?: string | null;

@@ -101,6 +101,9 @@ export interface PlanningLock {
 }
 
 export interface PlanningDraft {
+  availability_overrides?:
+    | import('@/services/transportAvailability').AvailabilityOverrides
+    | null;
   no_ars_confirmed?: boolean;
   permitted_satellite_ids?: string[];
   access_confirmation?: AccessConfirmation | null;

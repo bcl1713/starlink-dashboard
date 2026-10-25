@@ -87,19 +87,53 @@ class AvailabilityService:
             return leg, run_id, None, "The mission clock is unavailable"
         return leg, run_id, aware_utc(now), reason
 
+    def _x_configuration_required(self, snapshot, item, *, mission=None):
+        """Require X inputs only when eligible somewhere in the actual leg window."""
+        from app.mission.availability_context import selection_context
+        from app.mission.availability_models import Transport
+        from app.mission.availability_planning import usable_during
+        from app.mission.effective_route import prepare_effective_route
+        from app.mission.timeline_builder.calculator import derive_mission_window
+
+        if not dict(snapshot.planned)[Transport.X]:
+            return False
+        try:
+            if mission is None:
+                start, end = derive_mission_window(
+                    prepare_effective_route(item, self.store.route_manager)
+                )
+            else:
+                context = selection_context(mission, item, self.store.route_manager)
+                start, end = context["start"], context["end"]
+            return usable_during(snapshot, Transport.X, start, end)
+        except ValueError:
+            # Missing/invalid route timing is still a genuine source validation
+            # requirement; never infer whole-window unavailability from it.
+            return True
+
     def _view(self, mission):
         leg, run_id, now, reason = self._context(mission)
         selected = for_run(mission, run_id)
+        canonical = for_run(mission, None)
+        live_now = self.clock.now()
+        live_now = aware_utc(live_now) if live_now is not None else None
         legs = []
         for item in mission.legs:
             snapshot = resolved_leg_availability(selected, item)
+            planning_snapshot = resolved_leg_availability(canonical, item)
             legs.append(
-                dict(
-                    leg_id=item.id,
-                    overrides=item.transports.availability_overrides or {},
-                    planned=dict(snapshot.planned),
-                    effective=snapshot.resolve(now) if now else None,
-                )
+                {
+                    "leg_id": item.id,
+                    "x_configuration_required": self._x_configuration_required(
+                        planning_snapshot, item
+                    ),
+                    "planning_effective": (
+                        planning_snapshot.resolve(live_now) if live_now else None
+                    ),
+                    "overrides": item.transports.availability_overrides or {},
+                    "planned": dict(snapshot.planned),
+                    "effective": snapshot.resolve(now) if now else None,
+                }
             )
         overrides = {
             item.id: item.transports.availability_overrides or {}
@@ -107,8 +141,8 @@ class AvailabilityService:
         }
         raw = mission.metadata.get("itinerary_planning")
         if raw:
-            from app.mission.planning.models import PlanningManifest
             from app.mission.availability_context import expected_snapshot
+            from app.mission.planning.models import PlanningManifest
 
             cards = [
                 card
@@ -119,39 +153,46 @@ class AvailabilityService:
             legs = [row for row in legs if row["leg_id"] not in managed]
             for card in cards:
                 snapshot = expected_snapshot(mission, card, run_id=run_id)
+                planning_snapshot = expected_snapshot(mission, card, run_id=None)
                 partial = card.draft.availability_overrides or {} if card.draft else {}
                 overrides[card.id] = partial
                 if card.installed_leg_id:
                     overrides[card.installed_leg_id] = partial
                 legs.append(
-                    dict(
-                        leg_id=card.id,
-                        installed_leg_id=card.installed_leg_id,
-                        overrides=partial,
-                        planned=dict(snapshot.planned),
-                        effective=snapshot.resolve(now) if now else None,
-                    )
+                    {
+                        "leg_id": card.id,
+                        "x_configuration_required": self._x_configuration_required(
+                            planning_snapshot, card, mission=canonical
+                        ),
+                        "planning_effective": (
+                            planning_snapshot.resolve(live_now) if live_now else None
+                        ),
+                        "installed_leg_id": card.installed_leg_id,
+                        "overrides": partial,
+                        "planned": dict(snapshot.planned),
+                        "effective": snapshot.resolve(now) if now else None,
+                    }
                 )
-        return dict(
-            mission_id=mission.id,
-            revision=mission.availability.revision,
-            defaults=mission.availability.defaults,
-            leg_overrides=overrides,
-            history=[
+        return {
+            "mission_id": mission.id,
+            "revision": mission.availability.revision,
+            "defaults": mission.availability.defaults,
+            "leg_overrides": overrides,
+            "history": [
                 item.model_dump(mode="json") for item in mission.availability.history
             ],
-            simulation_run_id=run_id,
-            as_of=now,
-            active_leg_id=leg.id if leg else None,
-            effective=(
+            "simulation_run_id": run_id,
+            "as_of": now,
+            "active_leg_id": leg.id if leg else None,
+            "effective": (
                 resolved_leg_availability(selected, leg).resolve(now)
                 if leg and now
                 else None
             ),
-            operator_actions_allowed=reason is None,
-            operator_actions_unavailable_reason=reason,
-            legs=legs,
-        )
+            "operator_actions_allowed": reason is None,
+            "operator_actions_unavailable_reason": reason,
+            "legs": legs,
+        }
 
     def read(self, mission_id):
         with storage.get_active_leg_lock():
@@ -159,25 +200,25 @@ class AvailabilityService:
 
     def _prepare(self, mission, previous, *, run_id=None):
         """Prepare only detached candidate values; no mutable parent reads in calculators."""
+        from uuid import uuid4
+
         from app.mission import timeline_preparation
-        from app.mission.planning.models import PlanningManifest
+        from app.mission.availability_context import snapshot_for_leg
+        from app.mission.availability_pois import (
+            apply_poi_availability,
+            cue_identity,
+            merge_retained_pois,
+        )
+        from app.mission.effective_route import prepare_effective_route
+        from app.mission.models import TimelineMapPoi
+        from app.mission.planning.grid import build_context
         from app.mission.planning.inputs import (
             build_inputs,
             canonical_inputs,
             draft_to_mission_leg,
         )
-        from app.mission.planning.grid import build_context
-        from app.mission.effective_route import prepare_effective_route
-
-        from app.mission.availability_context import snapshot_for_leg
-        from app.mission.availability_pois import (
-            merge_retained_pois,
-            apply_poi_availability,
-            cue_identity,
-        )
+        from app.mission.planning.models import PlanningManifest
         from app.models.poi import POI
-        from uuid import uuid4
-        from app.mission.models import TimelineMapPoi
         from app.services.poi.manager import _route_geometry_hash
 
         scope = {
@@ -357,14 +398,21 @@ class AvailabilityService:
     def command(self, mission_id, request, *, action=False):
         with storage.get_active_leg_lock(), storage.get_mission_lock(mission_id):
             mission = self._load(mission_id)
-            active, run_id, now, reason = (
+            _active, run_id, now, reason = (
                 self._context(mission) if action else (None, None, None, None)
             )
             identity = planning_identity(
                 {
                     "action": action,
                     **request.model_dump(
-                        mode="json", exclude={"expected_revision", "command_id"}
+                        mode="json",
+                        exclude={"expected_revision", "command_id"}
+                        | (
+                            {"expected_simulation_run_id"}
+                            if "expected_simulation_run_id"
+                            not in request.model_fields_set
+                            else set()
+                        ),
                     ),
                 }
             )
@@ -391,6 +439,15 @@ class AvailabilityService:
             defaults = dict(candidate.availability.defaults)
             history = candidate.availability.history
             if action:
+                if (
+                    "expected_simulation_run_id" in request.model_fields_set
+                    and request.expected_simulation_run_id != run_id
+                ):
+                    raise PlanningFailure(
+                        409,
+                        "availability_action_unavailable",
+                        "Mission run changed; refresh availability before recording an action",
+                    )
                 if reason:
                     raise PlanningFailure(
                         409, "availability_action_unavailable", reason

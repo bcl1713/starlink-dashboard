@@ -11,6 +11,8 @@ export interface POI {
   route_id?: string | null;
   mission_id?: string | null;
   active: boolean;
+  transport_active?: boolean;
+  inactive_reason?: string | null;
   created_at: string;
   updated_at: string;
 }

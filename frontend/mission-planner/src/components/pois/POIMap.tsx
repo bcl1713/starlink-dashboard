@@ -73,6 +73,7 @@ export function POIMap({
   focusPOI,
 }: POIMapProps) {
   const mapRef = useRef(null);
+  const activePois = pois.filter((poi) => poi.transport_active !== false);
 
   // Build projection lookup from ETA data
   const projectionMap = new Map<
@@ -120,7 +121,7 @@ export function POIMap({
       )}
 
       {/* Projection lines from POIs to their projected route points */}
-      {pois?.map((poi) => {
+      {activePois.map((poi) => {
         const projection = projectionMap.get(poi.id);
         if (!projection) return null;
         return (
@@ -141,7 +142,7 @@ export function POIMap({
         );
       })}
 
-      {pois?.map((poi) => (
+      {activePois.map((poi) => (
         <Marker
           key={poi.id}
           position={[poi.latitude, poi.longitude]}

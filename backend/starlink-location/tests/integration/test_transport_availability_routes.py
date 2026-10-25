@@ -270,8 +270,8 @@ def test_inactive_actions_rejected_but_settings_allowed(availability_api):
 
 
 def test_itinerary_revision_preserves_availability(availability_api):
-    from app.mission.itinerary_import.revisions import prepare_revision
     from app.mission.availability import resolved_leg_availability
+    from app.mission.itinerary_import.revisions import prepare_revision
 
     client, _, _, mission = availability_api
     assert command(client).status_code == 200
@@ -303,7 +303,8 @@ def test_itinerary_revision_preserves_availability(availability_api):
 def test_package_roundtrip_keeps_state_and_import_inactive(availability_api):
     import io
     from zipfile import ZipFile
-    from app.mission.planning.packages import stage_package, commit_package
+
+    from app.mission.planning.packages import commit_package, stage_package
 
     client, _, store, mission = availability_api
     assert command(client).status_code == 200
@@ -340,7 +341,7 @@ def test_operator_journal_disabled_does_not_prevent_commands(availability_api):
 def test_publication_write_failure_compensates_all_owned_state(
     availability_api, monkeypatch
 ):
-    client, _, store, mission = availability_api
+    client, _, store, _mission = availability_api
     before = {p: p.read_bytes() for p in store.root.rglob("*.json")}
     before_pois = store.poi_manager.pois_file.read_bytes()
     original = store.journal.commit
@@ -537,3 +538,118 @@ def test_metrics_invalidate_only_after_committed_availability(
     assert len(notifications) == 1
     assert command(client).status_code == 200
     assert len(notifications) == 1
+
+
+@pytest.mark.parametrize("restored", [False, True])
+def test_x_configuration_requirement_uses_actual_leg_window(availability_api, restored):
+    from app.mission.availability_models import AvailabilityChange
+
+    client, _, _, mission = availability_api
+    stored = storage.load_mission_v2(mission.id)
+    history = [
+        AvailabilityChange(
+            id="failure",
+            transport="X",
+            unavailable=True,
+            effective_at=NOW + timedelta(minutes=10),
+        )
+    ]
+    if restored:
+        history.append(
+            AvailabilityChange(
+                id="restore",
+                transport="X",
+                unavailable=False,
+                effective_at=NOW + timedelta(hours=2, minutes=30),
+            )
+        )
+    stored.availability = MissionAvailability(defaults={"X": True}, history=history)
+    stored.legs[1].adjusted_departure_time = NOW + timedelta(hours=2)
+    storage.save_mission_v2(stored)
+    response = client.get(f"/api/v2/missions/{mission.id}/availability")
+    assert response.status_code == 200
+    rows = response.json()["legs"]
+    assert rows[0]["planned"]["X"] is True
+    assert rows[0]["effective"]["X"] is False
+    assert rows[0]["x_configuration_required"] is True
+    assert rows[1]["x_configuration_required"] is restored
+
+
+def test_action_run_guard_rejects_changed_run_but_preserves_accepted_retry(
+    availability_api,
+):
+    client, app, _, mission = availability_api
+    app.state.availability_source_mode = "simulation"
+    run = SimpleNamespace(
+        run_id="run-a", mission_id=mission.id, leg_id="leg-1", simulation_time=NOW
+    )
+    app.state.simulation_run_service = SimpleNamespace(
+        status=lambda: SimpleNamespace(state="running", run=run)
+    )
+    path = f"/api/v2/missions/{mission.id}/availability/actions"
+    request = {
+        "expected_revision": 0,
+        "command_id": "guarded-run",
+        "transport": "Ka",
+        "action": "unavailable",
+        "expected_simulation_run_id": "run-a",
+    }
+    first = client.post(path, json=request)
+    assert first.status_code == 200
+    run.run_id = "run-b"
+    repeated = client.post(path, json=request)
+    assert repeated.status_code == 200
+    assert repeated.json()["effective"]["Ka"] is True
+    rejected = client.post(
+        path, json={**request, "command_id": "new-stale-run", "expected_revision": 1}
+    )
+    assert rejected.status_code == 409
+    assert rejected.json()["detail"]["code"] == "availability_action_unavailable"
+    assert len(storage.load_mission_v2(mission.id).availability.history) == 1
+    accepted = client.post(
+        path,
+        json={
+            **request,
+            "command_id": "new-current-run",
+            "expected_revision": 1,
+            "expected_simulation_run_id": "run-b",
+        },
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["effective"]["Ka"] is False
+
+
+@pytest.mark.parametrize("failure_run", [None, "run-a"])
+def test_simulation_failure_keeps_canonical_live_X_configuration_required(
+    availability_api, failure_run
+):
+    from app.mission.availability_models import AvailabilityChange
+
+    client, app, _, mission = availability_api
+    stored = storage.load_mission_v2(mission.id)
+    stored.availability = MissionAvailability(
+        defaults={"X": True},
+        history=[
+            AvailabilityChange(
+                id="simulation-X",
+                transport="X",
+                unavailable=True,
+                effective_at=NOW - timedelta(minutes=1),
+                simulation_run_id=failure_run,
+            )
+        ],
+    )
+    storage.save_mission_v2(stored)
+    app.state.availability_source_mode = "simulation"
+    run = SimpleNamespace(
+        run_id="run-a", mission_id=mission.id, leg_id="leg-1", simulation_time=NOW
+    )
+    app.state.simulation_run_service = SimpleNamespace(
+        status=lambda: SimpleNamespace(state="running", run=run)
+    )
+    response = client.get(f"/api/v2/missions/{mission.id}/availability")
+    assert response.status_code == 200
+    row = response.json()["legs"][0]
+    assert row["effective"]["X"] is (failure_run != "run-a")
+    assert row["planning_effective"]["X"] is (failure_run is not None)
+    assert row["x_configuration_required"] is (failure_run is not None)

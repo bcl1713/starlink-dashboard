@@ -1,3 +1,5 @@
+import { useTransportAvailability } from '@/hooks/api/useTransportAvailability';
+import { legAvailability } from '@/services/transportAvailability';
 import { useQuery } from '@tanstack/react-query';
 import type { ExpectedLegCard, PlanningView } from '../../types/planning';
 import { usePlanning } from '../../hooks/api/usePlanning';
@@ -32,6 +34,11 @@ function SourceLeg({
   view: PlanningView;
 }) {
   const planning = usePlanning(view.mission.id, false);
+  const availability = useTransportAvailability(view.mission.id);
+  const availableTransports = legAvailability(availability.data, card.leg.id);
+  const xAvailable =
+    availableTransports?.x_configuration_required ??
+    availableTransports?.planned.X !== false;
   const options = useQuery({
     queryKey: ['planning-satellite-options'],
     queryFn: planningApi.satelliteOptions,
@@ -47,6 +54,7 @@ function SourceLeg({
     view,
     planning,
     satelliteOptions: options.data,
+    xAvailable,
     navigate: () => {},
     onAcceptedRoute: () => {},
   });
@@ -65,10 +73,16 @@ function SourceLeg({
       </legend>
       <p>
         Permitted X-band:{' '}
-        {(workflow.draft.permitted_satellite_ids ?? []).join(', ') ||
-          'not configured'}{' '}
+        {xAvailable
+          ? (workflow.draft.permitted_satellite_ids ?? []).join(', ') ||
+            'not configured'
+          : 'unavailable for this leg'}{' '}
         · Starshield{' '}
-        {workflow.draft.starshield_enabled ? 'enabled' : 'disabled'}
+        {(availableTransports?.planned.Ku ??
+        workflow.draft.starshield_enabled ??
+        true)
+          ? 'available'
+          : 'unavailable'}
       </p>
       {workflow.error && <p role="alert">{workflow.error}</p>}
       {workflow.error && workflow.dirty && (

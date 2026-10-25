@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -16,6 +17,10 @@ import { DraftRegistry } from './draftRegistry';
 import { conferenceDraft } from '../conferenceCommands';
 import * as api from '@/services/operator';
 import * as eventsApi from '@/services/operatorEvents';
+import {
+  transportAvailabilityApi,
+  type AvailabilityView,
+} from '@/services/transportAvailability';
 import { health, page, record } from '@/test/operator-fixtures';
 const missionState = vi.hoisted(() => ({
   pending: false,
@@ -441,4 +446,45 @@ it('offers manual destination in Now without a mission or ready operator journal
   const save = await screen.findByRole('button', { name: 'Save destination' });
   expect((save as HTMLButtonElement).disabled).toBe(false);
   expect(screen.getByLabelText('Destination name')).toBeTruthy();
+});
+
+it('keeps_now_view_availability_actions_usable_with_the_journal_disabled', async () => {
+  const state: AvailabilityView = {
+    mission_id: 'mission-a',
+    revision: 0,
+    defaults: {},
+    leg_overrides: {},
+    history: [],
+    simulation_run_id: null,
+    as_of: '2026-10-25T12:00:00Z',
+    active_leg_id: 'l',
+    effective: { X: true, Ka: true, Ku: true },
+    operator_actions_allowed: true,
+    operator_actions_unavailable_reason: null,
+    legs: [],
+  };
+  vi.spyOn(transportAvailabilityApi, 'read').mockResolvedValue(state);
+  const action = vi
+    .spyOn(transportAvailabilityApi, 'action')
+    .mockResolvedValue({ ...state, revision: 1 });
+  mount('/operator?workspace=1&mission_id=mission-a&view=now', false, {
+    ...health,
+    enabled: false,
+  });
+  const row = await screen.findByRole('group', { name: 'X-band availability' });
+  const button = within(row).getByRole('button', {
+    name: 'Unavailable for rest of mission',
+  });
+  expect(button).toHaveProperty('disabled', false);
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(action).toHaveBeenCalledWith(
+      'mission-a',
+      expect.objectContaining({
+        transport: 'X',
+        action: 'unavailable',
+        expected_simulation_run_id: null,
+      })
+    )
+  );
 });

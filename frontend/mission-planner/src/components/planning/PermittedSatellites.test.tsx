@@ -62,3 +62,31 @@ it('persists the operational Starshield toggle independently of catalog display'
     '"starshield_enabled":false'
   );
 });
+it('does not demand satellite access when X is unavailable throughout the leg', () => {
+  render(
+    <PermittedSatellites
+      options={{ satellites: [] }}
+      value={{}}
+      onChange={() => {}}
+      xAvailable={false}
+    />
+  );
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.queryByLabelText(/confirm service access/i)).toBeNull();
+});
+it('shows explicit Starshield availability instead of a contradictory legacy toggle', () => {
+  render(
+    <PermittedSatellites
+      options={{ satellites: [] }}
+      value={{ starshield_enabled: true }}
+      onChange={() => {}}
+      starshieldAvailability={false}
+    />
+  );
+  expect(
+    screen.queryByLabelText('Starshield enabled for this plan')
+  ).toBeNull();
+  expect(
+    screen.getByText(/Starshield planned unavailable/)
+  ).toBeInTheDocument();
+});

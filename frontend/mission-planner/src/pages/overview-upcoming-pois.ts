@@ -85,7 +85,15 @@ export function overviewPoiView(
 } {
   return {
     markers: records.filter(
-      ({ latitude, longitude, map_retained, estimated_arrival_time, kind }) =>
+      ({
+        latitude,
+        longitude,
+        map_retained,
+        estimated_arrival_time,
+        kind,
+        transport_active,
+      }) =>
+        transport_active !== false &&
         map_retained &&
         missionPoiVisible(kind, visibility) &&
         Number.isFinite(latitude) &&

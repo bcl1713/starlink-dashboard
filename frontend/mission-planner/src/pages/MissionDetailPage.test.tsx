@@ -1,4 +1,7 @@
 /** @vitest-environment jsdom */
+vi.mock('../components/planning/TransportAvailabilityControls', () => ({
+  TransportAvailabilityControls: () => null,
+}));
 import {
   cleanup,
   fireEvent,

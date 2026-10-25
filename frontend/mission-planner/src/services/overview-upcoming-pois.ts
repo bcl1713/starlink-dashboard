@@ -20,6 +20,8 @@ export type OverviewPoiKind =
   | 'starshield_transition_end';
 
 export interface OverviewUpcomingPoi {
+  transport_active?: boolean;
+  inactive_reason?: string | null;
   poi_id: string;
   name: string;
   kind: OverviewPoiKind;
