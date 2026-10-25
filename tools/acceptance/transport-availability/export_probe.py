@@ -13,9 +13,17 @@ from app.services.route_manager import RouteManager
 
 storage.MISSIONS_DIR = Path("/app/data/operator/transport-availability/missions")
 mission_id, after = sys.argv[1:]
-snapshot = capture_export_snapshot(mission_id, RouteManager(), POIManager())
+routes = RouteManager()
+routes.reload_all_routes()
+snapshot = capture_export_snapshot(mission_id, routes, POIManager())
 result = []
 for leg in snapshot.legs:
+    assert leg.preparation_origin == "rebuilt", (
+        leg.leg_id,
+        leg.preparation_origin,
+        leg.warnings,
+    )
+    assert leg.utc_bounds is not None
     timeline = json.loads(leg.timeline_json)
     future = [
         segment
