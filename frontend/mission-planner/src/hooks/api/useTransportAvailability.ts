@@ -1,3 +1,4 @@
+import { operatorFailure } from '@/services/operator';
 import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClientId } from '@/lib/clientId';
@@ -126,10 +127,7 @@ export function useTransportAvailability(missionId: string) {
           );
         return response;
       } catch (error) {
-        if (
-          (error as { response?: { status?: number } }).response?.status === 409
-        )
-          receipt.current = null;
+        if (operatorFailure(error).status === 409) receipt.current = null;
         try {
           await receive(await transportAvailabilityApi.read(missionId));
         } catch {

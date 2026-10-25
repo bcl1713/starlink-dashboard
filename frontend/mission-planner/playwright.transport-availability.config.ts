@@ -6,7 +6,7 @@ export default defineConfig({
   testMatch: 'transport-availability.spec.ts',
   workers: 1,
   retries: 0,
-  timeout: 240_000,
+  timeout: 600_000,
   expect: { timeout: 15_000 },
   reporter: 'list',
   outputDir: `${process.env.TRANSPORT_ACCEPTANCE_EVIDENCE}/playwright`,

@@ -311,6 +311,16 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     items: Array<{ record: { record_id: string } }>;
   }>(await request.get(`/api/v2/operator/records?mission_id=${missionId}`));
   const overviewDuring = await context.newPage();
+  await overviewDuring.goto('/overview');
+  await expect(
+    overviewDuring.getByRole('list', { name: 'Map POIs', exact: true })
+  ).toBeAttached();
+  await expect(
+    overviewDuring.locator('[data-poi-label]').first()
+  ).toBeVisible();
+  await overviewDuring.screenshot({
+    path: `${evidence}/baseline-map-1920x1080.png`,
+  });
   const beforeEvents = await json<EventSnapshot>(
     await request.get(
       `/api/v2/operator/events?mission_id=${missionId}&include_history=true`
@@ -384,6 +394,9 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       )
     ).toEqual([]);
     await overviewDuring.goto('/overview');
+    await expect(
+      overviewDuring.locator('[data-poi-label]').first()
+    ).toBeVisible();
     for (const poi of retained)
       await expect(
         overviewDuring.locator(`[data-poi-label="${poi.id}"]`)

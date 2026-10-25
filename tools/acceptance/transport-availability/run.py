@@ -2,6 +2,7 @@
 """Exact committed production/Nginx availability acceptance with owned cleanup."""
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -42,8 +43,6 @@ class AvailabilityOwner(OriginalOwner):
 
 def qualify(owner):
     fixture = ROOT / "tools/acceptance/transport-availability/availability_fixture.py"
-    import hashlib
-
     owner.ownership["fixtureSha256"] = hashlib.sha256(fixture.read_bytes()).hexdigest()
     owner.persist()
     env = owner.env | {
@@ -85,11 +84,20 @@ if __name__ == "__main__":
     parser.add_argument("--evidence", type=Path, required=True)
     args = parser.parse_args()
     journal.Owner = AvailabilityOwner
-    print(
-        json.dumps(
-            journal.run(
-                args.candidate, args.project, args.evidence, qualification=qualify
-            ),
-            indent=2,
+    try:
+        report = journal.run(
+            args.candidate, args.project, args.evidence, qualification=qualify
         )
-    )
+    finally:
+        summary = args.evidence / "summary.json"
+        if summary.exists():
+            report = json.loads(summary.read_text())
+            report["fixture"] = (
+                "Synthetic raw KML, RF catalogs and controlled input clock starting 2035-03-01T12:00:00Z; genuine product live-mode and authoritative simulation-run paths; no aircraft claims"
+            )
+            summary.write_text(json.dumps(report, indent=2))
+            hashes = args.evidence / "hashes.json"
+            values = json.loads(hashes.read_text())
+            values["summary.json"] = hashlib.sha256(summary.read_bytes()).hexdigest()
+            hashes.write_text(json.dumps(values, indent=2))
+    print(json.dumps(report, indent=2))

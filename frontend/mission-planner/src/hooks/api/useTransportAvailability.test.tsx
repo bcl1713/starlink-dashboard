@@ -88,3 +88,33 @@ it('does_not_report_success_for_a_response_from_a_replaced_run', async () => {
   );
   expect(result.current.data?.effective?.Ka).toBe(true);
 });
+it('refreshes_guarded_receipt_after_wrapped_http_conflict_but_keeps_network_retries', async () => {
+  let current = initial;
+  vi.mocked(transportAvailabilityApi.read).mockImplementation(
+    async () => current
+  );
+  const wrapped = new Error('stale revision');
+  wrapped.cause = { response: { status: 409 } };
+  vi.mocked(transportAvailabilityApi.update)
+    .mockImplementationOnce(async () => {
+      current = { ...initial, revision: 1 };
+      throw wrapped;
+    })
+    .mockRejectedValueOnce(new Error('connection lost'))
+    .mockImplementationOnce(async () => ({ ...current, revision: 2 }));
+  const { result } = mount();
+  await waitFor(() => expect(result.current.data).toBeTruthy());
+  for (const message of ['stale revision', 'connection lost'])
+    await act(async () => {
+      await expect(
+        result.current.savePlanned({ defaults: { X: false } })
+      ).rejects.toThrow(message);
+    });
+  await act(async () => {
+    await result.current.savePlanned({ defaults: { X: false } });
+  });
+  const calls = vi.mocked(transportAvailabilityApi.update).mock.calls;
+  expect(calls[1][1].command_id).not.toBe(calls[0][1].command_id);
+  expect(calls[1][1].expected_revision).toBe(1);
+  expect(calls[2][1]).toEqual(calls[1][1]);
+});
