@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
@@ -96,9 +97,9 @@ def build_active_x_link(
         logger.debug("Active X link unavailable: telemetry missing: %s", exc)
         telemetry = None
 
+    # Eligibility is current operational state; sensor timestamps still own geometry.
+    availability_time = operating_time or datetime.now(timezone.utc)
     if active_leg is not None:
-        from datetime import datetime, timezone
-
         from app.mission.availability_context import snapshot_for_leg
         from app.mission.models import Transport
 
@@ -108,10 +109,10 @@ def build_active_x_link(
                 if parent and any(leg.id == active_leg.id for leg in parent.legs):
                     availability = snapshot_for_leg(parent, active_leg, run_id=run_id)
                     break
-        at = operating_time or (
-            telemetry.timestamp if telemetry else datetime.now(timezone.utc)
-        )
-        if availability is not None and not availability.resolve(at)[Transport.X]:
+        if (
+            availability is not None
+            and not availability.resolve(availability_time)[Transport.X]
+        ):
             return {
                 **empty_active_x_link(state_filter),
                 **selection,
@@ -156,6 +157,7 @@ def build_active_x_link(
         satellite_ids,
         mission=active_leg,
         availability=availability,
+        availability_time=availability_time,
     )
     if not links:
         return empty
@@ -232,6 +234,7 @@ def _build_satellite_links(
     *,
     mission: MissionLeg | None = None,
     availability=None,
+    availability_time=None,
 ) -> list[dict[str, Any]]:
     aircraft = telemetry.position
     links: list[dict[str, Any]] = []
@@ -240,7 +243,11 @@ def _build_satellite_links(
         if satellite is None:
             continue
         link_state, color, relative_azimuth, in_forbidden = _evaluate_link_state(
-            telemetry, satellite, mission=mission, availability=availability
+            telemetry,
+            satellite,
+            mission=mission,
+            availability=availability,
+            availability_time=availability_time,
         )
         common = {
             "satellite_id": satellite_id,
@@ -297,6 +304,7 @@ def _evaluate_link_state(
     *,
     mission: MissionLeg | None = None,
     availability=None,
+    availability_time=None,
 ) -> tuple[str, str, float, bool]:
     rule_engine = RuleEngine()
     aircraft = telemetry.position
@@ -323,16 +331,19 @@ def _evaluate_link_state(
 
         raw = ["x_aft_cone"] if in_forbidden else []
         physical = "degraded" if _debug.get("elevation_below_min") else "available"
-        usable = mission.transports.starshield_enabled is not False and not any(
+        enabled = mission.transports.starshield_enabled is not False
+        if availability is not None:
+            from app.mission.models import Transport
+
+            enabled = availability.resolve(
+                availability_time or datetime.now(timezone.utc)
+            )[Transport.KU]
+        usable = enabled and not any(
             x.start_time
             <= telemetry.timestamp
             < x.start_time + timedelta(seconds=x.duration_seconds)
             for x in mission.transports.ku_overrides
         )
-        if availability is not None:
-            from app.mission.models import Transport
-
-            usable = usable and availability.resolve(telemetry.timestamp)[Transport.KU]
         # This overlay uses observed position/heading/altitude; planned interval
         # geometry is never substituted for live observations.
         state, _ = operating_x_state(raw, physical, usable)

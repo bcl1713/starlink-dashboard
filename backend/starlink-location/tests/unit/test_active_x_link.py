@@ -239,3 +239,124 @@ def test_active_x_link_marks_warning_inside_normal_forbidden_window(
     assert result["state"] == "warning"
     assert result["color"] == "yellow"
     assert result["in_forbidden_window"] is True
+
+
+def _availability_link(
+    monkeypatch,
+    *,
+    transport="X",
+    restored=False,
+    explicit_time=False,
+    legacy=True,
+    override_outage=False,
+    satellite_longitude=30,
+):
+    from datetime import timedelta
+
+    from app.mission.availability_models import (
+        FailureWindow,
+        LegAvailability,
+        Transport,
+    )
+
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(seconds=90 if restored else 30)
+    end = now - timedelta(seconds=30) if restored else None
+    observed = now - timedelta(seconds=60)
+    leg = MissionLeg(
+        id="clock-leg",
+        name="Clock leg",
+        route_id="test-route",
+        is_active=True,
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
+            starshield_enabled=legacy,
+            planning_policy="prefer_starshield_v1" if transport == "Ku" else None,
+            ku_overrides=(
+                [
+                    {
+                        "id": "independent",
+                        "start_time": observed - timedelta(seconds=1),
+                        "duration_seconds": 120,
+                    }
+                ]
+                if override_outage
+                else []
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        "app.services.active_x_link.find_active_mission_leg", lambda route=None: leg
+    )
+    snapshot = LegAvailability(
+        mission_id="clock-mission",
+        leg_id=leg.id,
+        revision=2,
+        planned=tuple((key, True) for key in Transport),
+        failures=(
+            ()
+            if not legacy
+            else (FailureWindow(transport=transport, start=start, end=end),)
+        ),
+    )
+    return build_active_x_link(
+        StaticCoordinator(_telemetry(0, 0, 270 if transport == "Ku" else 90, observed)),
+        StaticRouteManager(_route()),
+        StaticPOIManager([_satellite("X-1", satellite_longitude)]),
+        availability=snapshot,
+        **({"operating_time": observed} if explicit_time else {}),
+    )
+
+
+def test_live_x_failure_suppresses_link_before_next_sensor_sample(monkeypatch):
+    result = _availability_link(monkeypatch)
+    assert result["transport_active"] is False
+    assert result["coordinates"] == []
+
+
+def test_live_x_restore_releases_link_before_next_sensor_sample(monkeypatch):
+    result = _availability_link(monkeypatch, restored=True)
+    assert result["satellite_id"] == "X-1"
+    assert len(result["coordinates"]) == 2
+
+
+def test_explicit_replay_time_keeps_captured_x_failure(monkeypatch):
+    result = _availability_link(monkeypatch, restored=True, explicit_time=True)
+    assert result["transport_active"] is False
+
+
+def test_live_ku_failure_releases_concurrency_with_stale_sensor_sample(monkeypatch):
+    result = _availability_link(monkeypatch, transport="Ku")
+    assert result["in_forbidden_window"] is True
+    assert result["state"] == "normal"
+
+
+def test_live_ku_restore_applies_concurrency_before_next_sensor_sample(monkeypatch):
+    result = _availability_link(monkeypatch, transport="Ku", restored=True)
+    assert result["state"] == "warning"
+
+
+def test_explicit_ku_setting_supersedes_legacy_disabled_for_link_concurrency(
+    monkeypatch,
+):
+    result = _availability_link(monkeypatch, transport="Ku", legacy=False)
+    assert result["state"] == "warning"
+
+
+def test_explicit_replay_time_preserves_ku_concurrency_state(monkeypatch):
+    result = _availability_link(
+        monkeypatch, transport="Ku", restored=True, explicit_time=True
+    )
+    assert result["state"] == "normal"
+
+
+def test_independent_ku_override_still_releases_link_concurrency(monkeypatch):
+    result = _availability_link(
+        monkeypatch, transport="Ku", legacy=False, override_outage=True
+    )
+    assert result["state"] == "normal"
+
+
+def test_unavailable_ku_does_not_release_physical_x_block(monkeypatch):
+    result = _availability_link(monkeypatch, transport="Ku", satellite_longitude=150)
+    assert result["state"] == "warning"

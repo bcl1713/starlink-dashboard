@@ -183,15 +183,21 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   await defaults
     .getByLabel('X-band', { exact: true })
     .selectOption('unavailable');
+  await defaults.getByLabel('Ka', { exact: true }).selectOption('unavailable');
+  await defaults
+    .getByLabel('Starshield', { exact: true })
+    .selectOption('unavailable');
   await defaults
     .getByRole('button', { name: 'Save availability', exact: true })
     .click();
   await expect(defaults.getByRole('status')).toContainText(
     'Profiles regenerated'
   );
-  expect((await read()).legs.every((leg) => leg.planned.X === false)).toBe(
-    true
-  );
+  expect(
+    (await read()).legs.every((leg) =>
+      Object.values(leg.planned).every((value) => !value)
+    )
+  ).toBe(true);
   await page.screenshot({
     path: `${evidence}/mission-defaults-1920x1080.png`,
     fullPage: true,
@@ -232,6 +238,9 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   await page.goto(`/missions/${missionId}`);
   await defaults
     .getByLabel('X-band', { exact: true })
+    .selectOption('available');
+  await defaults
+    .getByLabel('Starshield', { exact: true })
     .selectOption('available');
   const stale = await read();
   await json(
@@ -458,8 +467,8 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   const recordsAfter = await json<{
     items: Array<{ record: { record_id: string } }>;
   }>(await request.get(`/api/v2/operator/records?mission_id=${missionId}`));
-  expect(recordsAfter.items.map((record) => record.record.record_id)).toEqual(
-    recordsBefore.items.map((record) => record.record.record_id)
+  expect(recordsAfter.items.map((record) => record.record)).toEqual(
+    recordsBefore.items.map((record) => record.record)
   );
   const allDownView = await read();
   const allDownAt = allDownView.history
@@ -565,6 +574,12 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
         exact: true,
       })
   ).toBeVisible();
+  const restoredXLink = await json<{
+    coordinates: unknown[];
+    transport_active?: boolean;
+  }>(await request.get('/api/active-x-link'));
+  expect(restoredXLink.transport_active).not.toBe(false);
+  expect(restoredXLink.coordinates.length).toBeGreaterThan(0);
   for (const key of ['Ka', 'Ku'] as const) await change(key, 'restore');
   expect((await read()).effective).toEqual({ X: true, Ka: true, Ku: true });
   const restoredView = await read();
@@ -611,6 +626,15 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     expect(Date.parse(event.end_at ?? event.due_at!)).toBeGreaterThan(
       Date.parse(restoredAt)
     );
+  expect(
+    events.events.some(
+      (event) =>
+        event.provenance === 'modeled' &&
+        event.active &&
+        event.due_at &&
+        Date.parse(event.due_at) > Date.parse(restoredAt)
+    )
+  ).toBe(true);
   snapshots.push({
     restored,
     events,

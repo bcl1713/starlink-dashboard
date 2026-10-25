@@ -109,6 +109,7 @@ async def inputs(body: dict):
     clock.elapsed = float(seconds)
     service = app.state.simulation_run_service
     sample = main._coordinator.get_current_telemetry().model_copy(deep=True)
+    sample.timestamp = clock.now()
     sample.position.latitude = 0
     sample.position.longitude = -10 + min(clock.elapsed, 3600) / 180
     sample.position.speed = 600
