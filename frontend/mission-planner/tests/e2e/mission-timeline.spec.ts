@@ -122,6 +122,44 @@ test('persistent chronology and retained draft at desktop and narrow widths usin
       await page
         .getByRole('button', { name: 'Keep draft and return', exact: true })
         .click();
+      // This scroll reproduces the draft interaction that previously moved
+      // the entire awareness column out of view while CSS visibility stayed true.
+      const drafts = page.getByRole('region', { name: 'Retained drafts' });
+      await drafts.scrollIntoViewIfNeeded();
+      await expect(
+        drafts.getByRole('heading', { name: 'Drafts', exact: true })
+      ).toBeInViewport();
+      const timelineHeading = panel.getByRole('heading', {
+        name: 'Mission timeline',
+        exact: true,
+      });
+      await expect
+        .soft(
+          timelineHeading,
+          `Timeline heading remains on screen at ${viewport.width}px after draft/body scrolling`
+        )
+        .toBeInViewport({ ratio: 1 });
+      const navigation = page.getByRole('navigation', {
+        name: 'Operator workspace',
+      });
+      await expect
+        .soft(
+          navigation,
+          `Workspace navigation remains on screen at ${viewport.width}px`
+        )
+        .toBeInViewport();
+      if (viewport.width < 900) {
+        await expect
+          .soft(
+            panel.getByRole('button', {
+              name: /^(Expand|Collapse) mission timeline$/,
+            }),
+            'Narrow-screen timeline control remains on screen after draft/body scrolling'
+          )
+          .toBeInViewport({ ratio: 1 });
+      }
+      const headingBounds = await timelineHeading.boundingBox();
+      const navigationBounds = await navigation.boundingBox();
       const geometry = await panel
         .locator('.ws-timeline-body')
         .evaluate((element) => ({
@@ -148,6 +186,9 @@ test('persistent chronology and retained draft at desktop and narrow widths usin
             mockedBrowserData: false,
             viewport,
             geometry,
+            headingBounds,
+            navigationBounds,
+            viewportIntersectionCheckedAfterDraftScroll: true,
             persistentAcross: ['Communications', 'Transport', 'Issues'],
             draftRetained: true,
           },
