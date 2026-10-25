@@ -115,7 +115,14 @@ not release hard X restrictions. An unavailable X or Ka cannot protect a
 Starshield transition window. Remaining usable Ka or coordinated
 concurrency-only X still protect the plan under the existing continuity rules.
 
-Generate events and POIs only for actions that remain meaningful while that
+Retain generated POIs and their identities when availability changes. Mark
+transport-related points inactive and hide them from active maps and upcoming
+lists while their transport is unavailable. Restoring a transport makes its
+still-relevant points eligible again without duplicate records. Recalculate
+their applicability against the current route and plan; a past point must not
+become an upcoming action just because the equipment was restored.
+
+Publish active events only for actions that remain meaningful while that
 transport is eligible. Suppress future X swaps and geometry warnings, Ka
 coverage and handover events, and Starshield transition events within
 unavailable windows. Do not delete the configured route, satellite records,
@@ -154,6 +161,10 @@ concurrent writes. Verify unavailable assignments and impact indications without
 changing historical service reports. Confirm pre-failure intervals and
 historical events remain intact and no future transport-specific POIs, events,
 or alert cues leak from saved or cached inputs.
+
+Explicitly verify a fail/restore cycle keeps the affected POI records and stable
+identities, changes their active applicability, and restores future applicable
+points without duplicates or revived overdue alerts.
 
 Use focused backend and frontend checks during implementation, followed by the
 repository-required production-image and rendered-browser acceptance. Use an
