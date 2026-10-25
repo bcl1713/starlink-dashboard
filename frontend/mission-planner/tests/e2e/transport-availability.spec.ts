@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import {
@@ -260,7 +261,8 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
         ...config,
         pop: {
           ...config.pop,
-          catalog_path: '/app/data/availability-pops.json',
+          catalog_path:
+            '/app/data/operator/transport-availability/availability-pops.json',
         },
         mode: 'live',
       },
@@ -458,6 +460,35 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     path: `${evidence}/all-unavailable-1920x1080.png`,
     fullPage: true,
   });
+  const exportProof = execFileSync(
+    'timeout',
+    [
+      '--kill-after=10s',
+      '2m',
+      'docker',
+      'compose',
+      '-p',
+      process.env.TRANSPORT_ACCEPTANCE_PROJECT!,
+      '-f',
+      `${process.env.OPERATOR_SOURCE_ROOT}/tools/acceptance/transport-availability/compose.yml`,
+      'exec',
+      '-T',
+      '--user',
+      'appuser',
+      'starlink-location',
+      'python',
+      '/transport-acceptance/export_probe.py',
+      missionId,
+      at(30),
+    ],
+    { env: process.env, encoding: 'utf8', timeout: 135000 }
+  );
+  const exportResult = JSON.parse(exportProof.trim().split('\n').at(-1)!);
+  expect(exportResult.legs).toHaveLength(2);
+  await writeFile(
+    `${evidence}/all-down-export-snapshot.json`,
+    JSON.stringify(exportResult, null, 2)
+  );
   // Ordinary later-leg activation must retain mission-wide live history.
   await json(await request.post(`${path}/legs/${legs[1].id}/activate`));
   expect((await read()).effective).toEqual({ X: false, Ka: false, Ku: false });
@@ -582,7 +613,8 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
         ...config,
         pop: {
           ...config.pop,
-          catalog_path: '/app/data/availability-pops.json',
+          catalog_path:
+            '/app/data/operator/transport-availability/availability-pops.json',
         },
         mode: 'live',
       },

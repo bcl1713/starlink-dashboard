@@ -49,6 +49,7 @@ def qualify(owner):
     env = owner.env | {
         "TRANSPORT_ACCEPTANCE_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
         "TRANSPORT_ACCEPTANCE_EVIDENCE": str(owner.root),
+        "TRANSPORT_ACCEPTANCE_PROJECT": owner.project,
         "PLAYWRIGHT_BROWSERS_PATH": os.environ.get(
             "PLAYWRIGHT_BROWSERS_PATH", "/home/oracle-worker/.cache/ms-playwright"
         ),

@@ -17,6 +17,7 @@ from app.operator.store import OperatorStore
 if os.getenv("OPERATOR_ACCEPTANCE_FIXTURE") != "synthetic-local-only":
     raise RuntimeError("Private synthetic deployment required")
 root = Path(os.environ["OPERATOR_ACCEPTANCE_ROOT"])
+root.mkdir(parents=True, exist_ok=True)
 storage.MISSIONS_DIR = root / "missions"
 os.environ["OPERATOR_ROOT"] = str(root / "operator")
 
@@ -33,7 +34,7 @@ class InputClock:
 
 
 clock = InputClock()
-coverage = root / "sat_coverage"
+coverage = Path("/app/data/sat_coverage")
 coverage.mkdir(parents=True, exist_ok=True)
 (coverage / "commka.geojson").write_text(
     json.dumps(
