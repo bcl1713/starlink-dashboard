@@ -37,6 +37,7 @@ import {
   operatorIdentity,
   useOperatorHealth,
 } from '@/hooks/api/operatorReadSession';
+import { useMissionTimeline } from '@/hooks/api/useMissionTimeline';
 import { useOperatorEvents } from '@/hooks/api/useOperatorEvents';
 import { readOperatorRecords, readOperatorRecord } from '@/services/operator';
 import type {
@@ -167,6 +168,10 @@ export function OperatorWorkspace() {
   const events = useOperatorEvents(
     missionId,
     !health.isError ? identity : null
+  );
+  const timeline = useMissionTimeline(
+    missionId,
+    !health.isError && !contextMismatch ? identity : null
   );
   const alerts = useEventAlerts(events);
   const mission = useMission(missionId);
@@ -299,11 +304,20 @@ export function OperatorWorkspace() {
   };
   const [mobileTools, setMobileTools] = useState(false);
   const [sources, setSources] = useState(false);
+  const [operationalAlerts, setOperationalAlerts] = useState(false);
   const [activityId, setActivityId] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const noteButton = useRef<HTMLButtonElement>(null);
+  function returnToActiveMission() {
+    setMobileTools(false);
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete('mission_id');
+      return next;
+    });
+  }
   function navigateView(view: View) {
     setParams((previous) => {
       const next = new URLSearchParams(previous);
@@ -494,23 +508,31 @@ export function OperatorWorkspace() {
           }
         />
         <div className="ws-meta" aria-label="Operating context">
-          <p>
+          <p className="ws-operating-context-full">
             {active.isError
               ? 'Active context unavailable'
               : active.data?.mission_name
                 ? `Active: ${active.data.mission_name} · ${active.data.leg_name ?? 'Leg unavailable'} · ${active.data.phase?.replaceAll('_', ' ') ?? 'Phase unavailable'}`
                 : 'No active mission or leg'}
           </p>
+          <p className="ws-mobile-only ws-operating-context-compact">
+            <span>
+              {active.isError
+                ? 'Active context unavailable'
+                : active.data?.mission_id === missionId
+                  ? (active.data.leg_name ?? 'Active leg unavailable')
+                  : active.data?.mission_name
+                    ? `Active: ${active.data.mission_name} · ${active.data.leg_name ?? 'Leg unavailable'}`
+                    : 'No active mission or leg'}
+            </span>
+            {!active.isError && active.data?.phase && (
+              <span>· {active.data.phase.replaceAll('_', ' ')}</span>
+            )}
+          </p>
           {params.has('mission_id') && (
             <button
-              className="ws-button"
-              onClick={() =>
-                setParams((previous) => {
-                  const next = new URLSearchParams(previous);
-                  next.delete('mission_id');
-                  return next;
-                })
-              }
+              className="ws-button ws-context-return"
+              onClick={returnToActiveMission}
             >
               Return to active mission
             </button>
@@ -542,6 +564,14 @@ export function OperatorWorkspace() {
             id="operator-tool-controls"
             data-open={mobileTools}
           >
+            {params.has('mission_id') && (
+              <button
+                className="ws-button ws-mobile-only"
+                onClick={returnToActiveMission}
+              >
+                Follow active mission
+              </button>
+            )}
             {missionId && (
               <Link
                 className="ws-button"
@@ -583,12 +613,43 @@ export function OperatorWorkspace() {
       <div className="ws-content">
         <WorkspaceAwareness
           snapshot={events.snapshot}
+          timeline={timeline}
+          onOpenTimelineSource={(event) => {
+            if (
+              event.kind === 'issue_followup' ||
+              event.kind.startsWith('call_')
+            ) {
+              const record = loaded.find(
+                (record) => record.record_id === event.source_ref
+              );
+              if (record) {
+                openRecord(record);
+                return;
+              }
+              if (event.source_ref) {
+                setHistoryId(event.source_ref);
+                return;
+              }
+            } else if (event.leg_id) {
+              navigate(
+                `/missions/${encodeURIComponent(event.mission_id)}/legs/${encodeURIComponent(event.leg_id)}`
+              );
+              return;
+            }
+            navigateView(
+              event.kind === 'issue_followup'
+                ? 'Issues'
+                : event.kind.startsWith('call_')
+                  ? 'Communications'
+                  : 'Transport'
+            );
+          }}
           next={nextRequirement(events.snapshot)}
           records={currentLoaded}
           recordsIncomplete={incomplete}
           failed={events.failed || health.isError}
           onOpenRecord={openRecord}
-          onOpenEvents={() => navigateView('Now')}
+          onOpenEvents={() => setOperationalAlerts(true)}
           onOpenNext={() => {
             const next = nextRequirement(events.snapshot);
             const record = loaded.find(
@@ -1008,24 +1069,6 @@ export function OperatorWorkspace() {
                       )
                     }
                   />
-                  {view === 'Now' && (
-                    <section aria-label="Mission activity">
-                      <h2>Mission activity</h2>
-                      <OperatorEventFeed
-                        events={events}
-                        onClose={() => undefined}
-                        onOpenSource={(event) =>
-                          navigateView(
-                            event.kind === 'issue_followup'
-                              ? 'Issues'
-                              : event.kind.startsWith('call_')
-                                ? 'Communications'
-                                : 'Transport'
-                          )
-                        }
-                      />
-                    </section>
-                  )}
                 </>
               ) : view === 'Transport' ? (
                 <TransportView
@@ -1416,6 +1459,28 @@ export function OperatorWorkspace() {
             owns global settings. All times are UTC; unknown times remain
             unknown.
           </p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={operationalAlerts} onOpenChange={setOperationalAlerts}>
+        <DialogContent className="ws-editor">
+          <DialogTitle>Operational alerts</DialogTitle>
+          <DialogDescription>
+            Current operational alert window. Optional acknowledgment changes
+            alerts only.
+          </DialogDescription>
+          <OperatorEventFeed
+            events={events}
+            onClose={() => setOperationalAlerts(false)}
+            onOpenSource={(event) =>
+              navigateView(
+                event.kind === 'issue_followup'
+                  ? 'Issues'
+                  : event.kind.startsWith('call_')
+                    ? 'Communications'
+                    : 'Transport'
+              )
+            }
+          />
         </DialogContent>
       </Dialog>
       <Dialog open={sources} onOpenChange={setSources}>

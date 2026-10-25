@@ -443,6 +443,7 @@ class PopStatusService:
             "mission_id": mission_id,
             "leg_id": leg_id,
             "simulation_run_id": simulation_run_id,
+            "lifecycle_token": copy.deepcopy(lifecycle_token),
         }
         return result
 

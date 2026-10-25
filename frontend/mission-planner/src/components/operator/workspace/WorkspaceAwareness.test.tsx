@@ -174,3 +174,11 @@ it('does not claim there is no future requirement when event pages are incomplet
     screen.getByText('Next requirement unavailable in loaded events.')
   ).toBeTruthy();
 });
+
+it('keeps a mission chronology available when event alerts have no snapshot', () => {
+  render(
+    <WorkspaceAwareness records={[]} recordsIncomplete={false} failed={false} />
+  );
+  expect(screen.getByRole('region', { name: 'Mission timeline' })).toBeTruthy();
+  expect(screen.getByText('Mission timeline unavailable.')).toBeTruthy();
+});

@@ -321,6 +321,9 @@ class ProductionEventSources(EventSourceAdapter):
             self.publication.invalidate(source.source)
         self.cache.clear()
         self.saved_projections.clear()
+        getattr(self, "mission_timeline_cache", {}).clear()
+        self._scheduled_capture = None
+        self._scheduled_static_capture = None
         self._static_capture = None
         self._validated_capture = None
         for source_ref in self.live_sources | self.lifecycle_sources:
