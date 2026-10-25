@@ -76,11 +76,17 @@ export function MissionTimeline({
         onClick={() => {
           const marker = nowMarker.current;
           const body = marker?.closest('.ws-timeline-body');
-          if (marker && body)
+          if (marker && body) {
+            const bodyTop = body.getBoundingClientRect().top;
+            const visibleHeight = Math.max(
+              0,
+              Math.min(body.clientHeight, window.innerHeight - bodyTop)
+            );
             body.scrollTop +=
               marker.getBoundingClientRect().top -
-              body.getBoundingClientRect().top -
-              body.clientHeight * 0.65;
+              bodyTop -
+              visibleHeight * 0.65;
+          }
         }}
       >
         Jump to now
