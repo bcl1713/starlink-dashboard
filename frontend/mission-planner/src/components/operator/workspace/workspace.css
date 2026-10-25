@@ -559,10 +559,14 @@
 /* Reserve a useful body viewport when the narrow chronology is expanded.
    Only the chronology rows scroll; its heading, controls and navigation stay put. */
 @media (max-width: 900px) and (min-height: 501px) {
+  .ws-content {
+    grid-template-rows: fit-content(45dvh) auto minmax(8.25rem, 1fr);
+  }
   .ws-awareness {
     /* Keep the collapsed heading/control row above adjacent advisories. */
     grid-template-rows: minmax(0, auto) minmax(4.75rem, 1fr) minmax(0, auto);
-    max-height: min(45dvh, calc(100% - 12rem));
+    height: 100%;
+    max-height: none;
     overflow: hidden;
   }
   .ws-now,
@@ -585,5 +589,27 @@
   .ws-timeline-body {
     min-height: 0;
     max-height: 100%;
+  }
+}
+
+/* A short portrait viewport focuses expanded chronology; collapse restores
+   customer/next summaries. Optional advisory details remain in Alerts. */
+@media (max-width: 900px) and (min-height: 501px) and (max-height: 760px) {
+  .ws-awareness {
+    grid-template-rows: minmax(0, auto) minmax(4.75rem, 1fr);
+  }
+  .ws-awareness > .ws-attention,
+  .ws-awareness > .ws-advisories {
+    display: none;
+  }
+  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) > .ws-now,
+  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) > .ws-next {
+    display: none;
+  }
+  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) > .ws-timeline {
+    grid-row: 1;
   }
 }

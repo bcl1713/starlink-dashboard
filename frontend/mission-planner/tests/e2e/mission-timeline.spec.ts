@@ -53,6 +53,7 @@ test('persistent chronology and retained draft at desktop and narrow widths usin
   for (const viewport of [
     { width: 1920, height: 1080 },
     { width: 390, height: 844 },
+    { width: 390, height: 600 },
   ]) {
     const context = await browser.newContext({ viewport });
     try {
@@ -187,11 +188,17 @@ test('persistent chronology and retained draft at desktop and narrow widths usin
         )
       ).toBe(true);
       await page.screenshot({
-        path: join(evidence, `mission-timeline-${viewport.width}.png`),
+        path: join(
+          evidence,
+          `mission-timeline-${viewport.width}x${viewport.height}.png`
+        ),
         fullPage: true,
       });
       writeFileSync(
-        join(evidence, `mission-timeline-${viewport.width}.json`),
+        join(
+          evidence,
+          `mission-timeline-${viewport.width}x${viewport.height}.json`
+        ),
         JSON.stringify(
           {
             rawProductionInputs: true,
