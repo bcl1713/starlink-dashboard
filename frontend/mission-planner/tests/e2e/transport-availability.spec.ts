@@ -21,10 +21,48 @@ let departure = '';
 const at = (minutes: number) =>
   new Date(Date.parse(departure) + minutes * 60000).toISOString();
 const transports = [
-  { key: 'X', label: 'X-band', prefix: 'x_', state: 'x_state' },
-  { key: 'Ka', label: 'Ka', prefix: 'ka_', state: 'ka_state' },
-  { key: 'Ku', label: 'Starshield', prefix: 'starshield_', state: 'ku_state' },
+  {
+    key: 'X',
+    label: 'X-band',
+    eventLabel: 'X',
+    prefix: 'x_',
+    state: 'x_state',
+  },
+  {
+    key: 'Ka',
+    label: 'Ka',
+    eventLabel: 'Ka',
+    prefix: 'ka_',
+    state: 'ka_state',
+  },
+  {
+    key: 'Ku',
+    label: 'Starshield',
+    eventLabel: 'Starshield',
+    prefix: 'starshield_',
+    state: 'ku_state',
+  },
 ] as const;
+function transportHeads(events: EventSnapshot['events'], label: string) {
+  return events.filter(
+    (event) =>
+      event.transport === label &&
+      event.active &&
+      event.kind !== 'call_start' &&
+      event.kind !== 'call_prep'
+  );
+}
+function assertTransportRetired(
+  events: EventSnapshot['events'],
+  label: string
+) {
+  expect(transportHeads(events, label)).toEqual([]);
+  expect(
+    events.filter(
+      (event) => event.transport === label && event.notification.eligible
+    )
+  ).toEqual([]);
+}
 interface Poi {
   id: string;
   latitude: number;
@@ -359,11 +397,17 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       `/api/v2/operator/events?mission_id=${missionId}&include_history=true`
     )
   );
-  expect(
-    beforeEvents.events.some(
-      (event) => event.provenance === 'modeled' && event.active
-    )
-  ).toBe(true);
+  for (const transport of transports) {
+    const baseline = transportHeads(beforeEvents.events, transport.eventLabel);
+    expect(
+      baseline.length,
+      `${transport.eventLabel} active event baseline`
+    ).toBeGreaterThan(0);
+    // Use genuine current event records to prove the suppression assertion rejects leaks.
+    expect(() =>
+      assertTransportRetired(baseline, transport.eventLabel)
+    ).toThrow();
+  }
   const snapshots: unknown[] = [];
   for (const transport of transports) {
     const field = controls.getByRole('group', {
@@ -423,21 +467,22 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
         `/api/v2/operator/events?mission_id=${missionId}&include_history=true`
       )
     );
-    expect(
-      failedEvents.events.filter(
-        (event) =>
-          event.transport === transport.key &&
-          event.active &&
-          event.kind !== 'call_start' &&
-          event.kind !== 'call_prep'
-      )
-    ).toEqual([]);
-    expect(
-      failedEvents.events.filter(
-        (event) =>
-          event.transport === transport.key && event.notification.eligible
-      )
-    ).toEqual([]);
+    assertTransportRetired(failedEvents.events, transport.eventLabel);
+    for (const original of transportHeads(
+      beforeEvents.events,
+      transport.eventLabel
+    )) {
+      expect(
+        failedEvents.events.some(
+          (event) =>
+            event.event_id === original.event_id &&
+            event.notification.generation ===
+              original.notification.generation &&
+            event.notification.retired
+        ),
+        `retained ${transport.eventLabel} event history`
+      ).toBe(true);
+    }
     await overviewDuring.goto('/overview');
     await expect(
       overviewDuring.locator('[data-poi-label]:visible').first()
@@ -647,15 +692,33 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     expect(Date.parse(event.end_at ?? event.due_at!)).toBeGreaterThan(
       Date.parse(restoredAt)
     );
-  expect(
-    events.events.some(
+  for (const transport of transports) {
+    const futureHeads = transportHeads(
+      events.events,
+      transport.eventLabel
+    ).filter(
       (event) =>
         event.provenance === 'modeled' &&
-        event.active &&
         event.due_at &&
         Date.parse(event.due_at) > Date.parse(restoredAt)
-    )
-  ).toBe(true);
+    );
+    expect(
+      futureHeads.length,
+      `${transport.eventLabel} future restored heads`
+    ).toBeGreaterThan(0);
+    const priorGenerations = new Set(
+      transportHeads(beforeEvents.events, transport.eventLabel).map(
+        (event) => event.notification.generation
+      )
+    );
+    expect(
+      futureHeads.every(
+        (event) =>
+          !event.notification.retired &&
+          !priorGenerations.has(event.notification.generation)
+      )
+    ).toBe(true);
+  }
   snapshots.push({
     restored,
     events,
