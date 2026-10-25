@@ -276,6 +276,14 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   );
   await json(await request.post(`${path}/legs/${legs[0].id}/activate`));
   await json(
+    await request.post('/api/flight-status/depart', {
+      data: {
+        timestamp: departure,
+        reason: 'Synthetic acceptance raw departure input',
+      },
+    })
+  );
+  await json(
     await request.post('/api/_synthetic/transport-inputs', {
       data: { elapsed_seconds: 1800 },
     })
@@ -442,7 +450,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   await expect(assignment).toContainText('unavailable for this mission');
   await expect(
     assignment.getByRole('combobox').locator('option[value="X"]')
-  ).toBeDisabled();
+  ).toHaveAttribute('disabled', '');
   for (const key of ['Ka', 'Starshield'])
     await expect(
       assignment.getByRole('combobox').locator(`option[value="${key}"]`)
@@ -530,6 +538,14 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   );
   // Ordinary later-leg activation must retain mission-wide live history.
   await json(await request.post(`${path}/legs/${legs[1].id}/activate`));
+  await json(
+    await request.post('/api/flight-status/depart', {
+      data: {
+        timestamp: departure,
+        reason: 'Synthetic acceptance subsequent-leg departure input',
+      },
+    })
+  );
   expect((await read()).effective).toEqual({ X: false, Ka: false, Ku: false });
   await json(
     await request.post('/api/_synthetic/transport-inputs', {

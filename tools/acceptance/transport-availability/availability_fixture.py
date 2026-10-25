@@ -93,7 +93,6 @@ async def lifespan(application):
         service = app.state.simulation_run_service
         service.runtime._monotonic = clock.monotonic
         service.runtime._utc_now = clock.now
-        app.state.availability_clock = clock
         yield
 
 
@@ -117,21 +116,6 @@ async def inputs(body: dict):
     sample.position.observed_at = clock.now()
     sample.position.speed_observed_at = clock.now()
     main._coordinator.restore_telemetry(sample)
-    if service.status().service_mode == "live":
-        from dataclasses import replace
-        from app.models.flight_status import ETAMode, FlightPhase
-        from app.services.flight_state import get_flight_state_manager
-
-        flight = get_flight_state_manager()
-        checkpoint = flight.checkpoint()
-        status = checkpoint.status.model_copy(
-            update={
-                "phase": FlightPhase.IN_FLIGHT,
-                "eta_mode": ETAMode.ESTIMATED,
-                "departure_time": clock.start,
-            }
-        )
-        flight.restore_checkpoint(replace(checkpoint, status=status))
     if service.status().state == "running":
         await asyncio.to_thread(
             service.collect, main._coordinator, main._publish_replay_telemetry
