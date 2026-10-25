@@ -55,6 +55,7 @@ def merge_retained_pois(generated, retained, availability):
 def project_current_pois(pois, route_manager, *, run_service=None, now=None):
     """Capture current parent/run once for active APIs; manual records remain intact."""
     from datetime import datetime, timezone
+
     from app.mission.active_context import resolve_active_mission_leg_context
     from app.mission.availability_context import snapshot_for_leg
     from app.simulation.run_timing import published_replay

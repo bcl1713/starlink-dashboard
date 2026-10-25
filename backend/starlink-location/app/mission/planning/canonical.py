@@ -3,9 +3,9 @@
 import json
 from dataclasses import asdict
 
-from app.mission.models import AARWindow, MissionLeg, TransportConfig, XTransition
-from app.mission.availability_planning import usable_during
 from app.mission.availability_models import Transport
+from app.mission.availability_planning import usable_during
+from app.mission.models import AARWindow, MissionLeg, TransportConfig, XTransition
 from app.models.route import ParsedRoute
 
 from .identity import planning_identity

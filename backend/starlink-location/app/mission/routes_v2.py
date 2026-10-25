@@ -27,14 +27,14 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 
 from app.core.limiter import limiter
+from app.mission.availability_context import snapshot_for_leg
+from app.mission.availability_routes import router as availability_router
 from app.mission.dependencies import (
     get_optional_simulation_run_service,
     get_overview_clock_settings_store,
     get_poi_manager,
     get_route_manager,
 )
-from app.mission.availability_context import snapshot_for_leg
-from app.mission.availability_routes import router as availability_router
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.leg_activation import activate_leg_transaction
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
@@ -1162,6 +1162,31 @@ async def import_mission(
                             "action": "Deactivate the leg, re-import the mission package, then activate the leg again.",
                         },
                     )
+                # A manual archive may predate commands retained by this mission.
+                # Preserve that work through the existing collision/clone path.
+                if target is not None:
+                    from app.mission.availability_service import RECEIPTS
+
+                    command_owned = (
+                        target.availability.revision
+                        or target.availability.history
+                        or target.metadata.get(RECEIPTS)
+                    )
+                    retained_overrides = {
+                        leg.id: leg.transports.availability_overrides or {}
+                        for leg in target.legs
+                    }
+                    incoming_overrides = {
+                        leg.id: leg.transports.availability_overrides or {}
+                        for leg in incoming.legs
+                    }
+                    if command_owned and (
+                        target.availability != incoming.availability
+                        or target.metadata.get(RECEIPTS)
+                        != incoming.metadata.get(RECEIPTS)
+                        or retained_overrides != incoming_overrides
+                    ):
+                        target = None
             app = request.scope.get("app")
             service = getattr(app.state, "planning_service", None) if app else None
             store = service.store if service else None

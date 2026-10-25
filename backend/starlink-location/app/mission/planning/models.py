@@ -13,7 +13,6 @@ from pydantic import (
 )
 
 from app.mission.availability_models import Transport
-
 from app.mission.models import (
     AARWindow,
     KaOutage,

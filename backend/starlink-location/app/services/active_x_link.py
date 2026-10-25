@@ -98,6 +98,7 @@ def build_active_x_link(
 
     if active_leg is not None:
         from datetime import datetime, timezone
+
         from app.mission.availability_context import snapshot_for_leg
         from app.mission.models import Transport
 

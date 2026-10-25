@@ -32,8 +32,8 @@ def leg_identity(leg):
 
 
 def selection_errors(draft, *, availability=None, start=None, end=None):
-    from app.mission.availability_planning import usable_during
     from app.mission.availability_models import Transport
+    from app.mission.availability_planning import usable_during
 
     if draft is not None and (
         (

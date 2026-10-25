@@ -40,6 +40,7 @@ def retire_inactive(adapter, captured, mission, *, as_of):
     for ref in retired:
         adapter.publication.invalidate(ref)
     from app.mission.availability_context import snapshot_for_leg
+
     from .replay_context import source_run
 
     current_models = dict(captured.models)

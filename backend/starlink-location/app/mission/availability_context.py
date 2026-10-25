@@ -63,9 +63,11 @@ def selection_context(mission, card, route_manager, draft=None):
             ),
         )
         start, end = derive_mission_window(prepare_effective_route(leg, route_manager))
-    return dict(
-        availability=expected_snapshot(mission, card, draft), start=start, end=end
-    )
+    return {
+        "availability": expected_snapshot(mission, card, draft),
+        "start": start,
+        "end": end,
+    }
 
 
 def snapshot_for_leg(mission, leg, *, run_id=None):

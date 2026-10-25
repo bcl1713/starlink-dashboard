@@ -9,6 +9,7 @@ from app.mission.planning.models import (
     SaveDraft,
     SaveReviewed,
 )
+
 from . import test_proposals
 
 service = test_proposals.service
@@ -227,6 +228,7 @@ def test_old_preview_payload_keeps_saved_leg_override(prepared):
 
 def test_generation_uses_actual_adjusted_window_for_failure_guard(prepared):
     from datetime import timedelta
+
     from app.mission.availability_models import AvailabilityChange, MissionAvailability
     from app.mission.timeline_builder.calculator import derive_mission_window
 
@@ -271,8 +273,8 @@ def test_generation_uses_actual_adjusted_window_for_failure_guard(prepared):
 
 def test_stale_override_context_is_not_saved_after_override_preservation(prepared):
     from app.mission.availability_context import expected_snapshot
-    from app.mission.planning.inputs import build_inputs
     from app.mission.planning.grid import build_context
+    from app.mission.planning.inputs import build_inputs
 
     service, view = prepared
     AvailabilityService(service.store).command(
@@ -349,11 +351,13 @@ def test_legacy_absent_override_keeps_literal_review_input_identity():
 
 def test_legacy_environment_review_survives_until_real_availability_edit(prepared):
     from dataclasses import asdict
-    from .test_reviewed_save import review
+
     from app.mission.exporter.snapshot_inputs import _coverage_inputs
     from app.mission.planning.identity import planning_identity
-    from app.mission.planning.inputs import route_record, resolve_positions
+    from app.mission.planning.inputs import resolve_positions, route_record
     from app.mission.planning.proposals import environment_identity
+
+    from .test_reviewed_save import review
 
     service, view = prepared
     service.save_reviewed(view.mission.id, "card-1", review(service, view))

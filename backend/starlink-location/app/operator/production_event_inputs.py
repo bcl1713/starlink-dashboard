@@ -41,10 +41,9 @@ class ModelInputs:
     pop_unavailable: bool = False
 
     def prepare(self, leg):
+        from app.mission.availability_context import snapshot_for_leg
         from app.mission.timeline_preparation import prepare_mission_timeline
         from app.satellites.rules import ConstraintConfig
-
-        from app.mission.availability_context import snapshot_for_leg
 
         return prepare_mission_timeline(
             leg,

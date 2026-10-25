@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 
 from app.mission import storage
-from app.mission.models import Mission
 from app.mission.availability_context import snapshot_for_leg
+from app.mission.models import Mission
 from app.mission.planning.identity import planning_identity
 from app.mission.planning.journal import json_bytes
 from app.mission.timeline_preparation import prepare_mission_timeline

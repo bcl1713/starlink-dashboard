@@ -3,8 +3,6 @@
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
-from app.mission.availability_models import LegAvailability
-
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -13,6 +11,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+from app.mission.availability_models import LegAvailability
 
 
 def utc_timestamp(value: datetime) -> datetime:

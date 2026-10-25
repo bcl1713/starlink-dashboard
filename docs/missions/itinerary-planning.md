@@ -38,6 +38,34 @@ KMLs totaling 40 MiB. Operations have a 20-minute overall deadline and bounded
 worker execution. Existing itinerary missions are converted on server startup,
 preserving accepted legs and unfinished source records for revision recovery.
 
+## Transport availability
+
+Set X-band, Ka and Starshield defaults in **Transport availability** on the
+mission page. Legs inherit these settings unless their leg editor selects an
+explicit override. Choose **Inherit mission** to return a leg to the defaults.
+Save availability regenerates affected profiles, coverage, fallback and call
+continuity. New legs inherit the current mission defaults. Starshield remains
+available unless explicitly disabled or marked unavailable.
+
+An equipment failure recorded in Operator applies from that time through the
+rest of the mission, including later legs, until restored. Restore returns to
+the planned defaults and overrides; it does not enable a deliberately disabled
+transport. Simulation failures belong to that replay run and do not change live
+planning. Availability history and earlier mission evidence remain retained.
+
+Unavailable transports keep their configured points, but their map cues,
+upcoming actions and traffic links become inactive. Restoration reactivates
+relevant future cues without replaying expired alerts. Unknown Starshield
+location or handover timing alone does not mean an outage. Transition windows
+remain map advisories; planning treats the full window as an outage only when
+Starshield is the sole usable transport. Usable Ka or coordinated X fallback
+protects the plan.
+
+Outputs are best estimates. Saving does not require uncertainty, predicted
+outage or backup-gap acknowledgments. Invalid or missing route/configuration
+inputs still need correction. If a save is not confirmed, keep your edits,
+refresh the confirmed state and retry after checking concurrent changes.
+
 ## Packages and retained sources
 
 Mission ZIP packages preserve planning sources and revision history. Importing a

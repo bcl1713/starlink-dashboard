@@ -178,8 +178,8 @@ def test_export_map_uses_captured_parent_availability(cues):
 
 def test_ineligible_active_x_link_is_empty(cues):
     _, _, store, _, _ = cues
-    from app.services.active_x_link import build_active_x_link
     from app.services.active_x_handoff import ActiveXContext, empty_handoff_context
+    from app.services.active_x_link import build_active_x_link
 
     store.poi_manager.create_poi(
         POICreate(name="X-1", category="satellite", icon="X", latitude=0, longitude=0)
@@ -197,9 +197,9 @@ def test_ineligible_active_x_link_is_empty(cues):
 
 
 def test_transport_events_suppressed_but_shared_call_outage_remains():
-    from app.operator.restriction_windows import restriction_windows
-    from app.mission.models import Mission, MissionLeg, TransportConfig
     from app.mission.availability_context import snapshot_for_leg
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+    from app.operator.restriction_windows import restriction_windows
 
     mission = Mission(
         id="events",
@@ -372,9 +372,9 @@ def test_delayed_upcoming_cue_returns_after_restore(cues):
 
 def test_future_x_swap_during_failure_is_audit_only_in_briefing(cues):
     client, _, store, mission, _ = cues
-    from app.mission.models import XTransition
-    from app.mission.exporter.snapshot import capture_export_snapshot
     from app.mission.exporter.customer_projection import project_briefing_leg
+    from app.mission.exporter.snapshot import capture_export_snapshot
+    from app.mission.models import XTransition
 
     parent = storage.load_mission_v2(mission.id)
     parent.availability = parent.availability.model_copy(update={"defaults": {}})

@@ -3,9 +3,9 @@
 import json
 from datetime import timedelta
 
-from app.mission.timeline_builder.calculator import RouteTemporalProjector
-from app.mission.availability_planning import eligible, usable_during
 from app.mission.availability_models import Transport
+from app.mission.availability_planning import eligible, usable_during
+from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.models.route import ParsedRoute
 
 from .identity import planning_identity

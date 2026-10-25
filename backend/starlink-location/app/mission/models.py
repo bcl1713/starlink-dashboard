@@ -21,7 +21,6 @@ from app.services.pop.continuity_models import CallContinuityProjection
 from app.services.pop.models import PopForecast
 
 from .availability_models import MissionAvailability, Transport
-
 from .planning.types import (
     EvaluationContext,
     PlanningInputSnapshot,

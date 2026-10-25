@@ -212,7 +212,7 @@ def test_simulation_failures_are_isolated_from_live_and_other_runs():
     "payload", [{"transport": "invalid"}, {"effective_at": NOW.replace(tzinfo=None)}]
 )
 def test_invalid_failure_input(payload):
-    data = dict(id="failure", transport="X", unavailable=True, effective_at=NOW)
+    data = {"id": "failure", "transport": "X", "unavailable": True, "effective_at": NOW}
     data.update(payload)
     with pytest.raises(ValidationError):
         AvailabilityChange(**data)

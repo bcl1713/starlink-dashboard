@@ -996,6 +996,7 @@ def test_partial_equipment_failure_preserves_elapsed_timeline(
     monkeypatch, transport, field
 ):
     from types import SimpleNamespace
+
     from app.mission.availability import resolved_leg_availability
     from app.mission.availability_models import AvailabilityChange, MissionAvailability
     from app.mission.timeline_preparation import prepare_mission_timeline

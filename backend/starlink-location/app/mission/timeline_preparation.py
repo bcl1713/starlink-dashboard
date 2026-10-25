@@ -12,11 +12,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.mission.planning.models import PlanningEvaluation
 
-from app.mission.call_availability import normalize_call_availability_timeline
-from app.mission.derived_route import (
-    build_derived_route_estimate,
-)
-from app.mission.models import MissionLeg, MissionLegTimeline, Transport
 from app.mission.availability_models import LegAvailability
 from app.mission.availability_planning import (
     apply_timeline_availability,
@@ -24,6 +19,11 @@ from app.mission.availability_planning import (
     leg_snapshot,
     usable_during,
 )
+from app.mission.call_availability import normalize_call_availability_timeline
+from app.mission.derived_route import (
+    build_derived_route_estimate,
+)
+from app.mission.models import MissionLeg, MissionLegTimeline, Transport
 from app.mission.pop_capabilities import CapturedCallCapabilities
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
@@ -511,8 +511,8 @@ def publish_mission_pois(
     """Publish prepared POIs only after a mutation path accepts the plan."""
     from app.mission.availability_models import LegAvailability
     from app.mission.availability_pois import merge_retained_pois, poi_transport
-    from app.services.poi.manager import _route_geometry_hash
     from app.mission.models import TimelineMapPoi
+    from app.services.poi.manager import _route_geometry_hash
 
     generated = artifacts.generated_pois
     raw = artifacts.timeline.statistics.get("_transport_availability")

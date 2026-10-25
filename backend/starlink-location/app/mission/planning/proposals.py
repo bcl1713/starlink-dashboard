@@ -33,9 +33,11 @@ def environment_identity(store, leg, constraints, *, mission=None, availability=
     context = (
         selection_context(mission, leg, store.route_manager)
         if mission is not None
-        else dict(
-            availability=availability, start=leg.departure_time, end=leg.arrival_time
-        )
+        else {
+            "availability": availability,
+            "start": leg.departure_time,
+            "end": leg.arrival_time,
+        }
     )
     PlanningService(store).validate_selection(leg.draft, **context)
     from app.mission.availability_models import Transport

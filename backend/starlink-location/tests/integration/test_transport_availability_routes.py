@@ -653,3 +653,86 @@ def test_simulation_failure_keeps_canonical_live_X_configuration_required(
     assert row["effective"]["X"] is (failure_run != "run-a")
     assert row["planning_effective"]["X"] is (failure_run is not None)
     assert row["x_configuration_required"] is (failure_run is not None)
+
+
+@pytest.fixture
+def manual_archive(availability_api):
+    from app.mission.package.__main__ import export_mission_package
+
+    client, _app, store, mission = availability_api
+    path = store.route_manager.routes_dir / "route-one.kml"
+    path.write_text(
+        '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>'
+        "<Placemark><name>Departure</name><description>"
+        "Time Over Waypoint: 2035-03-01 12:00:00Z</description>"
+        "<Point><coordinates>0,0,1000</coordinates></Point></Placemark>"
+        "<Placemark><name>Arrival</name><description>"
+        "Time Over Waypoint: 2035-03-01 13:00:00Z</description>"
+        "<Point><coordinates>0,1,1000</coordinates></Point></Placemark>"
+        "<Placemark><LineString><coordinates>0,0,1000 0,1,1000</coordinates>"
+        "</LineString></Placemark></Document></kml>"
+    )
+    with export_mission_package(
+        mission.id, store.route_manager, store.poi_manager
+    ) as handle:
+        package = handle.read()
+    return client, store, mission, package
+
+
+def import_manual(client, package):
+    return client.post(
+        "/api/v2/missions/import",
+        files={"file": ("earlier.zip", package, "application/zip")},
+    )
+
+
+@pytest.mark.parametrize("change", ["failure", "defaults", "leg_override"])
+def test_older_manual_archive_clones_to_preserve_availability(manual_archive, change):
+    client, _store, mission, package = manual_archive
+    if change == "failure":
+        assert command(client).status_code == 200
+    else:
+        update = (
+            {"defaults": {"Ka": False}}
+            if change == "defaults"
+            else {"leg_overrides": {"leg-2": {"Ka": False}}}
+        )
+        response = client.put(
+            f"/api/v2/missions/{mission.id}/availability",
+            json={"expected_revision": 0, "command_id": "planned", **update},
+        )
+        assert response.status_code == 200
+    stored = storage.load_mission_v2(mission.id)
+    for leg in stored.legs:
+        leg.is_active = False
+    storage.save_mission_v2(stored)
+    before = storage.load_mission_v2(mission.id).model_dump(mode="json")
+    response = import_manual(client, package)
+    assert response.status_code == 200, response.text
+    assert response.json()["mission_id"] != mission.id
+    assert storage.load_mission_v2(mission.id).model_dump(mode="json") == before
+    imported = storage.load_mission_v2(response.json()["mission_id"])
+    assert imported.availability.revision == 0
+    assert imported.availability.history == ()
+    assert all(not leg.is_active for leg in imported.legs)
+
+
+def test_untouched_manual_archive_still_replaces_same_id(manual_archive):
+    client, _, mission, package = manual_archive
+    stored = storage.load_mission_v2(mission.id)
+    for leg in stored.legs:
+        leg.is_active = False
+    storage.save_mission_v2(stored)
+    response = import_manual(client, package)
+    assert response.status_code == 200, response.text
+    assert response.json()["mission_id"] == mission.id
+
+
+def test_active_manual_archive_still_rejected(manual_archive):
+    client, _, mission, package = manual_archive
+    assert command(client).status_code == 200
+    before = storage.load_mission_v2(mission.id).model_dump(mode="json")
+    response = import_manual(client, package)
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "ACTIVE_MISSION_IMPORT_FORBIDDEN"
+    assert storage.load_mission_v2(mission.id).model_dump(mode="json") == before

@@ -93,10 +93,11 @@ def test_restore_returns_future_events_with_fresh_occurrence(production, clock):
 
 
 def test_same_geometry_restoration_renews_only_affected_transport(service, clock):
+    from datetime import timedelta
+
     from app.mission.availability_context import snapshot_for_leg
     from app.mission.availability_models import FailureWindow
     from tests.operator.test_event_projection import derive
-    from datetime import timedelta
 
     parent = storage.load_mission_v2("demo-mission")
     snapshot = snapshot_for_leg(parent, parent.legs[0])

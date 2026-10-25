@@ -1,5 +1,7 @@
 """Pure eligibility helpers shared by captured planning and legacy timelines."""
 
+import itertools
+
 from app.mission.availability_models import LegAvailability, Transport
 
 
@@ -35,7 +37,7 @@ def apply_timeline_availability(timeline, snapshot: LegAvailability):
             *snapshot.boundaries(source.start_time, source.end_time),
             source.end_time,
         )
-        for start, end in zip(edges, edges[1:]):
+        for start, end in itertools.pairwise(edges):
             state = snapshot.resolve(start)
             segment = source.model_copy(
                 deep=True, update={"start_time": start, "end_time": end}

@@ -23,6 +23,7 @@ from app.satellites.catalog import SatelliteCatalog
 from app.satellites.rules import ConstraintConfig
 from app.services.pop.continuity import project_call_continuity
 from tests.unit.test_pop_continuity import forecast
+
 from .test_policy import START, scenario
 
 

@@ -247,10 +247,10 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
     """Prepare copied inputs in a cancellable background process."""
     mission = Mission.model_validate_json(metadata)
     from app.mission.availability_context import snapshot_for_leg
-    from app.mission.models import Transport
     from app.mission.availability_pois import merge_retained_pois
-    from app.services.poi.manager import _route_geometry_hash
+    from app.mission.models import Transport
     from app.mission.storage import mission_leg_order
+    from app.services.poi.manager import _route_geometry_hash
 
     order = mission_leg_order(mission)
     routes, pois = RouteView(sources), captured_pois(sources)

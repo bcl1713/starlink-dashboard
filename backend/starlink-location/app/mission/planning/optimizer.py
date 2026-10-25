@@ -13,9 +13,9 @@ from datetime import timedelta
 from types import SimpleNamespace
 from uuid import NAMESPACE_URL, uuid5
 
-from app.models.route import ParsedRoute
 from app.mission.availability_models import Transport
 from app.mission.availability_planning import eligible, usable_during
+from app.models.route import ParsedRoute
 from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.satellites.rules import ConstraintConfig
 

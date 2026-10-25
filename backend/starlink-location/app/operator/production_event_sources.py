@@ -276,6 +276,7 @@ class ProductionEventSources(EventSourceAdapter):
                 ):
                     self.publication.invalidate(source.source)
                     from app.mission.availability_context import snapshot_for_leg
+
                     from .replay_context import source_run
 
                     current_leg = (
