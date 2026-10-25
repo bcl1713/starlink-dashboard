@@ -32,6 +32,7 @@ def reconcile(card, installed, incoming):
         )
     for name in (
         "initial_x_satellite_id",
+        "availability_overrides",
         "starshield_enabled",
         "ka_outages",
         "ku_overrides",
@@ -136,7 +137,7 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
         if card is None:
             raise PlanningFailure(404, "leg_not_found", "Managed leg not found")
         store.checked(mission_id, card.id, revision, identity, allow_active=True)
-        installed = next(l for l in mission.legs if l.id == installed_id)
+        installed = next(leg for leg in mission.legs if leg.id == installed_id)
         if incoming.id != installed_id:
             raise PlanningFailure(422, "leg_id_mismatch", "Leg ID must match the URL")
         if incoming.route_id != installed.route_id:
@@ -235,7 +236,9 @@ def update_leg(service, mission_id, installed_id, incoming, revision, identity):
             json_bytes(output.model_dump(mode="json"))
         )
         manifest.revision += 1
-        mission.legs = [output if l.id == installed_id else l for l in mission.legs]
+        mission.legs = [
+            output if leg.id == installed_id else leg for leg in mission.legs
+        ]
         store.persist(
             mission,
             manifest,

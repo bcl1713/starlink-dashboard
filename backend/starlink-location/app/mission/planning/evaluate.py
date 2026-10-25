@@ -3,6 +3,7 @@
 import json
 from datetime import timedelta
 
+from app.mission.availability_planning import eligible
 from app.mission.models import (
     TimelineSegment,
     TimelineStatus,
@@ -61,26 +62,33 @@ def evaluate_context(
         for time, swap in assignments:
             if time <= t:
                 selected = swap.target_satellite_id
-        sat = positions[selected]
-        azimuth, elevation = look_angles(
-            sample.latitude, sample.longitude, height.height_meters, sat.longitude
-        )
-        if sample.heading is None:
-            raise ValueError("Route heading is unavailable for shared X geometry")
-        relative = (azimuth - sample.heading) % 360
+        x_eligible = eligible(inputs.availability, Transport.X, t)
+        ka_eligible = eligible(inputs.availability, Transport.KA, t)
+        ku_eligible = eligible(inputs.availability, Transport.KU, t)
         raw, physical, policy = [], [], []
-        if is_in_azimuth_range(
-            relative, config.normal_azimuth_min, config.normal_azimuth_max
-        ):
-            raw.append("x_aft_cone")
-        if elevation < config.elevation_min_degrees:
-            raw.append("x_elevation")
-            physical.append("x_elevation")
-        if active(inputs.ar_windows, t) and is_in_azimuth_range(
-            relative, config.aar_azimuth_min, config.aar_azimuth_max
-        ):
-            raw.append("x_ar_cone")
-            physical.append("x_ar_cone")
+        if x_eligible:
+            sat = positions[selected]
+            azimuth, elevation = look_angles(
+                sample.latitude, sample.longitude, height.height_meters, sat.longitude
+            )
+            if sample.heading is None:
+                raise ValueError("Route heading is unavailable for shared X geometry")
+            relative = (azimuth - sample.heading) % 360
+            if is_in_azimuth_range(
+                relative, config.normal_azimuth_min, config.normal_azimuth_max
+            ):
+                raw.append("x_aft_cone")
+            if elevation < config.elevation_min_degrees:
+                raw.append("x_elevation")
+                physical.append("x_elevation")
+            if active(inputs.ar_windows, t) and is_in_azimuth_range(
+                relative, config.aar_azimuth_min, config.aar_azimuth_max
+            ):
+                raw.append("x_ar_cone")
+                physical.append("x_ar_cone")
+        else:
+            raw.append("x_unavailable")
+            physical.append("X unavailable")
         physical.extend(s.reason for s in active(inputs.overlays, t))
         physical.extend(
             f"swap:{swap.id}"
@@ -88,21 +96,33 @@ def evaluate_context(
             if time - buffer <= t < time + buffer
         )
         raw.extend(r for r in physical if r not in raw)
-        physical_x = "degraded" if physical else "available"
-        ku = "offline" if active(inputs.ku_outages, t) else "available"
+        physical_x = (
+            "offline" if not x_eligible else "degraded" if physical else "available"
+        )
+        ku = (
+            "offline"
+            if not ku_eligible or active(inputs.ku_outages, t)
+            else "available"
+        )
         ka = (
             "offline"
-            if active(inputs.ka_outages, t)
+            if not ka_eligible or active(inputs.ka_outages, t)
             else "degraded" if active(inputs.ka_coverage_windows, t) else "available"
         )
         physical.extend(s.reason for s in active(inputs.ka_coverage_windows, t))
-        effective_ku = ku if inputs.starshield_enabled else "offline"
+        effective_ku = (
+            ku
+            if inputs.availability is not None or inputs.starshield_enabled
+            else "offline"
+        )
         effective_x, shutdown = operating_x_state(
             raw, physical_x, effective_ku == "available"
         )
         if shutdown:
             policy.append("prefer_starshield:x_aft_cone")
-        if not inputs.starshield_enabled:
+        if not ku_eligible or (
+            inputs.availability is None and not inputs.starshield_enabled
+        ):
             policy.append("starshield_disabled")
         physical.extend(
             s.reason
@@ -110,9 +130,12 @@ def evaluate_context(
         )
         intervals.append(
             EvaluationInterval(
+                transport_availability=(
+                    inputs.availability.resolve(t) if inputs.availability else None
+                ),
                 start_time=t,
                 end_time=end,
-                satellite_id=selected,
+                satellite_id=selected or None,
                 latitude=sample.latitude,
                 longitude=sample.longitude,
                 altitude_meters=height.height_meters,

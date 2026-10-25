@@ -3,6 +3,8 @@
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
+from app.mission.availability_models import LegAvailability
+
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -123,6 +125,7 @@ class PlanningInputSnapshot(PlanningRecord):
 
     model_config = ConfigDict(frozen=True)
     version: Literal["planning_v1"] = "planning_v1"
+    availability: LegAvailability | None = None
     route_json: str
     anchor_route_json: str
     structural_draft_json: str

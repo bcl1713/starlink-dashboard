@@ -14,6 +14,8 @@ from types import SimpleNamespace
 from uuid import NAMESPACE_URL, uuid5
 
 from app.models.route import ParsedRoute
+from app.mission.availability_models import Transport
+from app.mission.availability_planning import eligible, usable_during
 from app.satellites.catalog import Satellite, SatelliteCatalog
 from app.satellites.rules import ConstraintConfig
 
@@ -160,6 +162,22 @@ def _canonical(inputs, draft, context):
 
 
 def optimize(inputs, draft, context, *, configured_satellite_ids=None):
+    if not usable_during(
+        inputs.availability, Transport.X, inputs.start_time, inputs.end_time
+    ):
+        result = evaluate_context(inputs, draft, context)
+        return PlanningProposal(
+            id=str(uuid5(NAMESPACE_URL, context.input_identity)),
+            expected_revision=1,
+            input_identity=context.input_identity,
+            context=context,
+            proposed_draft=draft.model_copy(deep=True),
+            baseline_evaluation=result,
+            candidate_evaluation=result,
+            state="ready",
+            baseline_kind="current",
+            retained_current_draft=True,
+        )
     if configured_satellite_ids is not None and set(configured_satellite_ids) != set(
         draft.permitted_satellite_ids
     ):
@@ -260,6 +278,7 @@ def optimize(inputs, draft, context, *, configured_satellite_ids=None):
         t
         for t in context.candidate_times
         if start < t < end
+        and eligible(inputs.availability, Transport.X, t)
         and start <= t - buffer
         and t + buffer <= end
         and t not in fixed_times

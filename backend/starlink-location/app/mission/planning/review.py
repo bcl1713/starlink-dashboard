@@ -14,16 +14,26 @@ from .proposals import environment_identity
 from .store import selection_errors
 
 
-def validate_review(leg, request, evaluation=None):
+def validate_review(
+    leg, request, evaluation=None, *, availability=None, start=None, end=None
+):
     draft = leg.draft
     rows = draft.ar_corrections or leg.ar_rows
     confirmed = {row.id for row in rows if row.match_status != "excluded"}
     excluded = {row.id for row in rows if row.match_status == "excluded"}
+    from app.mission.availability_models import Transport
+    from app.mission.availability_planning import usable_during
+
+    x_required = (
+        usable_during(availability, Transport.X, start, end)
+        if start is not None and end is not None
+        else (draft.availability_overrides or {}).get(Transport.X) is not False
+    )
     invalid = (
-        selection_errors(draft)
+        selection_errors(draft, availability=availability, start=start, end=end)
         or draft.starshield_enabled is None
-        or not request.satellite_plan_confirmed
-        or not draft.initial_x_satellite_id
+        or (x_required and not request.satellite_plan_confirmed)
+        or (x_required and not draft.initial_x_satellite_id)
         or leg.ar_section_status == "unrecognized"
         or set(request.confirmed_ar_ids) != confirmed
         or set(request.excluded_ar_ids) != excluded
@@ -51,7 +61,7 @@ def validate_review(leg, request, evaluation=None):
         )
 
 
-def preview(service, mission_id, leg_id, request):
+def preview(service, mission_id, leg_id, request, *, availability=None):
     store = service.store
 
     # Read-only work uses detached generations and optimistic rechecks. Holding
@@ -69,7 +79,12 @@ def preview(service, mission_id, leg_id, request):
     constraints = store.planning_constraints_provider()
     environment = environment_identity(store, leg, constraints)
     inputs = build_inputs(
-        leg, leg.draft, store.route_manager, store.poi_manager, constraints
+        leg,
+        leg.draft,
+        store.route_manager,
+        store.poi_manager,
+        constraints,
+        availability=availability,
     )
     context = build_context(inputs, leg.draft)
     evaluation = evaluate_context(inputs, leg.draft, context)
@@ -103,18 +118,29 @@ def preview(service, mission_id, leg_id, request):
     return evaluation
 
 
-def prepare_reviewed_leg(service, mission_id, leg_id, request):
+def prepare_reviewed_leg(service, mission_id, leg_id, request, *, availability=None):
     store = service.store
     leg, constraints, environment, _ = service.proposals._snapshot(
         mission_id, leg_id, request
     )
-    validate_review(leg, request)
     inputs = build_inputs(
-        leg, leg.draft, store.route_manager, store.poi_manager, constraints
+        leg,
+        leg.draft,
+        store.route_manager,
+        store.poi_manager,
+        constraints,
+        availability=availability,
     )
     context = build_context(inputs, leg.draft)
     evaluation = evaluate_context(inputs, leg.draft, context)
-    validate_review(leg, request, evaluation)
+    validate_review(
+        leg,
+        request,
+        evaluation,
+        availability=inputs.availability,
+        start=inputs.start_time,
+        end=inputs.end_time,
+    )
     if request.evaluation_identity != context.input_identity:
         raise conflict("Reviewed evaluation changed; preview and approve again")
     installed = draft_to_mission_leg(

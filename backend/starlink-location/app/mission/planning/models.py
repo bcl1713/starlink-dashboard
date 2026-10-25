@@ -3,7 +3,16 @@
 from pathlib import PurePosixPath
 from typing import Literal
 
-from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    StrictBool,
+    computed_field,
+    field_validator,
+    model_validator,
+)
+
+from app.mission.availability_models import Transport
 
 from app.mission.models import (
     AARWindow,
@@ -189,6 +198,7 @@ class PlanningLock(PlanningRecord):
 
 
 class PlanningDraft(SatelliteSelection):
+    availability_overrides: dict[Transport, StrictBool] | None = None
     no_ars_confirmed: bool = False
     initial_x_satellite_id: str | None = None
     swaps: list[AnchoredSwap] = Field(default_factory=list)
@@ -308,6 +318,7 @@ class SourceRevision(PlanningRecord):
 
 
 class EvaluationInterval(PlanningRecord):
+    transport_availability: dict[Transport, bool] | None = None
     start_time: UTCTimestamp
     end_time: UTCTimestamp
     satellite_id: str | None = None

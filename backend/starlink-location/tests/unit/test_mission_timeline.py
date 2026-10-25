@@ -987,3 +987,77 @@ def test_elapsed_aar_override_preserves_route_duration_and_shifts_end_time():
     assert len(windows) == 1
     assert windows[0].start_time == BASE + timedelta(minutes=30)
     assert windows[0].end_time == BASE + timedelta(minutes=90)
+
+
+@pytest.mark.parametrize(
+    "transport,field", [("X", "x_state"), ("Ka", "ka_state"), ("Ku", "ku_state")]
+)
+def test_partial_equipment_failure_preserves_elapsed_timeline(
+    monkeypatch, transport, field
+):
+    from types import SimpleNamespace
+    from app.mission.availability import resolved_leg_availability
+    from app.mission.availability_models import AvailabilityChange, MissionAvailability
+    from app.mission.timeline_preparation import prepare_mission_timeline
+
+    end = BASE + timedelta(minutes=2)
+    failed_at = BASE + timedelta(seconds=37)
+    restored_at = BASE + timedelta(seconds=83)
+    route = ParsedRoute(
+        route_id="availability-route",
+        metadata=RouteMetadata(
+            name="Equipment failure", file_path="synthetic.kml", point_count=2
+        ),
+        points=[
+            RoutePoint(
+                latitude=0,
+                longitude=lon,
+                altitude=10000,
+                sequence=i,
+                expected_arrival_time=t,
+            )
+            for i, (lon, t) in enumerate([(0, BASE), (1, end)])
+        ],
+        timing_profile=RouteTimingProfile(departure_time=BASE, arrival_time=end),
+    )
+    leg = MissionLeg(
+        id="availability-leg",
+        name="Leg",
+        route_id=route.route_id,
+        transports=TransportConfig(initial_x_satellite_id=""),
+    )
+    parent = Mission(
+        id="availability-mission",
+        name="Mission",
+        legs=[leg],
+        availability=MissionAvailability(
+            history=(
+                AvailabilityChange(
+                    id="fail",
+                    transport=transport,
+                    unavailable=True,
+                    effective_at=failed_at,
+                ),
+                AvailabilityChange(
+                    id="restore",
+                    transport=transport,
+                    unavailable=False,
+                    effective_at=restored_at,
+                ),
+            )
+        ),
+    )
+    artifacts = prepare_mission_timeline(
+        leg,
+        SimpleNamespace(get_route=lambda _: route),
+        discover_coverage=False,
+        availability=resolved_leg_availability(parent, leg),
+    )
+    assert any(s.start_time == failed_at for s in artifacts.timeline.segments)
+    assert any(s.start_time == restored_at for s in artifacts.timeline.segments)
+    for segment in artifacts.timeline.segments:
+        assert getattr(segment, field) == (
+            TransportState.OFFLINE
+            if failed_at <= segment.start_time < restored_at
+            else TransportState.AVAILABLE
+        )

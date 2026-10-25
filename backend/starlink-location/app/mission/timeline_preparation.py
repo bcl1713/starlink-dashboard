@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,6 +17,13 @@ from app.mission.derived_route import (
     build_derived_route_estimate,
 )
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
+from app.mission.availability_models import LegAvailability
+from app.mission.availability_planning import (
+    apply_timeline_availability,
+    eligible,
+    leg_snapshot,
+    usable_during,
+)
 from app.mission.pop_capabilities import CapturedCallCapabilities
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
@@ -87,6 +94,7 @@ def prepare_mission_timeline(
     satellite_catalog: SatelliteCatalog | None = None,
     constraint_config: ConstraintConfig | None = None,
     pop_catalog=_CONFIGURED_POP_CATALOG,
+    availability: LegAvailability | None = None,
 ) -> TimelineArtifacts:
     """Prepare effective geometry, canonical events and POIs without publishing."""
 
@@ -102,6 +110,15 @@ def prepare_mission_timeline(
         ),
     )
 
+    availability = (
+        availability
+        or (
+            mission.transports.planning_inputs.availability
+            if mission.transports.planning_inputs is not None
+            else None
+        )
+        or leg_snapshot(mission)
+    )
     planning_evaluation = None
     if mission.transports.planning_policy is not None:
         from app.mission.planning.evaluate import evaluate_context
@@ -116,7 +133,12 @@ def prepare_mission_timeline(
             )
         try:
             inputs, draft, context = canonical_inputs(
-                mission, route, constraint_config, satellite_catalog, poi_manager
+                mission,
+                route,
+                constraint_config,
+                satellite_catalog,
+                poi_manager,
+                availability=availability,
             )
             planning_evaluation = evaluate_context(inputs, draft, context)
         except ValueError as exc:
@@ -160,12 +182,33 @@ def prepare_mission_timeline(
 
     build_start = time.perf_counter()
     sample_start = build_start
+    availability_edges = availability.boundaries(mission_start, mission_end)
     samples = generate_timeline_samples(
         projector,
         coverage_sampler=resolved_sampler,
         interval_seconds=TIMELINE_SAMPLE_INTERVAL_SECONDS,
         boundaries=(
-            planning_evaluation.context.boundaries if planning_evaluation else None
+            planning_evaluation.context.boundaries
+            if planning_evaluation
+            else (
+                sorted(
+                    {
+                        mission_start,
+                        mission_end,
+                        *availability_edges,
+                        *[
+                            mission_start + timedelta(seconds=n)
+                            for n in range(
+                                0,
+                                int((mission_end - mission_start).total_seconds()),
+                                TIMELINE_SAMPLE_INTERVAL_SECONDS,
+                            )
+                        ],
+                    }
+                )
+                if availability_edges
+                else None
+            )
         ),
     )
     if planning_evaluation is not None:
@@ -219,7 +262,13 @@ def prepare_mission_timeline(
     )
 
     capability_ka_sampler = resolved_sampler
-    coverage_samples = samples
+    # Failure boundaries split eligibility, not the independently sampled Ka
+    # coverage estimate. Preserve all pre-failure coverage interpolation.
+    coverage_samples = (
+        generate_timeline_samples(projector, resolved_sampler)
+        if availability_edges and planning_evaluation is None
+        else samples
+    )
     coverage_enabled = resolved_sampler is not None
     if planning_evaluation is not None:
         import json
@@ -244,11 +293,17 @@ def prepare_mission_timeline(
     )
     apply_ka_events(rule_engine, coverage_result)
     export_x_conditions = [] if capture_x_conditions else None
+    x_usable = usable_during(availability, Transport.X, mission_start, mission_end)
+    x_samples = [
+        sample
+        for sample in samples
+        if x_usable and eligible(availability, Transport.X, sample.timestamp)
+    ]
     warning_boundaries = apply_x_azimuth_events(
         rule_engine,
         mission,
         route,
-        samples,
+        samples if planning_evaluation else x_samples,
         aar_windows,
         transition_schedule,
         poi_manager,
@@ -309,6 +364,7 @@ def prepare_mission_timeline(
         from app.mission.planning.evaluate import timeline_segments
 
         timeline.segments = timeline_segments(planning_evaluation, mission.id)
+    apply_timeline_availability(timeline, availability)
     normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
 
@@ -319,7 +375,9 @@ def prepare_mission_timeline(
         timeline.pop_forecast = configured_forecast_for_mission(
             route,
             projector,
-            starshield_enabled=mission.transports.starshield_enabled is not False,
+            starshield_enabled=usable_during(
+                availability, Transport.KU, mission_start, mission_end
+            ),
         )
     else:
         from app.mission.pop_forecast import (
@@ -332,7 +390,9 @@ def prepare_mission_timeline(
             projector,
             pop_catalog,
             revision=mission_forecast_revision(route, projector, pop_catalog),
-            starshield_enabled=mission.transports.starshield_enabled is not False,
+            starshield_enabled=usable_during(
+                availability, Transport.KU, mission_start, mission_end
+            ),
         )
 
     from app.mission.pop_pois import transition_window_pois
@@ -366,6 +426,9 @@ def prepare_mission_timeline(
             planning=planning_evaluation is not None,
         ),
     )
+    evidence["starshield_enabled"] = usable_during(
+        availability, Transport.KU, mission_start, mission_end
+    )
     timeline.statistics["_call_capability_evidence"] = evidence
     timeline.call_capability_revision = capability_input_revision(
         mission,
@@ -373,6 +436,7 @@ def prepare_mission_timeline(
         constraint_config,
         satellite_catalog,
         ka_snapshot=evidence["ka_snapshot"],
+        availability=availability,
     )
     attach_call_continuity(timeline)
     call_capabilities = capture_call_capabilities(timeline, route, projector)

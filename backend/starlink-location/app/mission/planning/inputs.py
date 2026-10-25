@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 from app.mission import storage
+from app.mission.availability_planning import leg_snapshot, usable_during
 from app.mission.effective_route import prepare_effective_route
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.timeline_builder.aar import apply_manual_aar_tracks
@@ -69,6 +70,8 @@ def structural_draft(draft):
             "no_ars_confirmed",
         },
     )
+    if draft.availability_overrides is None:
+        record.pop("availability_overrides", None)
     for ar in record["ar_corrections"]:
         ar.pop("confirmed", None)
         ar.pop("unit_origin", None)
@@ -77,6 +80,8 @@ def structural_draft(draft):
 
 def input_identity(inputs):
     record = inputs.model_dump(mode="json")
+    if inputs.availability is None:
+        record.pop("availability", None)
     for field in (
         "route_json",
         "anchor_route_json",
@@ -95,6 +100,8 @@ def build_inputs(
     route_manager: "RouteManager",
     poi_manager: "POIManager",
     constraints: ConstraintConfig,
+    *,
+    availability=None,
 ) -> PlanningInputs:
     if draft.unresolved_x_transitions or draft.unresolved_aar_windows:
         raise ValueError(
@@ -114,7 +121,7 @@ def build_inputs(
         source = source.model_copy(deep=True)
         if len(source.points) < 2:
             raise ValueError("Planning requires at least two timed route positions")
-        positions = resolve_positions(draft.permitted_satellite_ids, poi_manager)
+        positions = ()  # Resolve only if X can operate in the effective window.
         configuration = ConstraintConfig(**asdict(constraints))
         from app.mission.exporter.snapshot_inputs import (
             _coverage_inputs,
@@ -142,6 +149,8 @@ def build_inputs(
         adjusted_departure_time=draft.adjusted_departure_time,
         transports=TransportConfig(
             initial_x_satellite_id=draft.initial_x_satellite_id or "",
+            starshield_enabled=draft.starshield_enabled,
+            availability_overrides=draft.availability_overrides,
             manual_aar_tracks=draft.manual_aar_tracks,
             manual_route_splice=draft.manual_route_splice,
         ),
@@ -150,6 +159,12 @@ def build_inputs(
     route = prepare_effective_route(preliminary, view)
     anchor_route = route_with_adjusted_departure(source, draft.adjusted_departure_time)
     start, end = derive_mission_window(route)
+    availability = availability or leg_snapshot(preliminary)
+    from app.mission.models import Transport
+
+    if usable_during(availability, Transport.X, start, end):
+        with storage.get_active_leg_lock():
+            positions = resolve_positions(draft.permitted_satellite_ids, poi_manager)
     projector = RouteTemporalProjector(route, start, end)
     ar_windows, unresolved, assumptions = (
         [],
@@ -304,6 +319,7 @@ def build_inputs(
             "Ka coverage input unavailable; legacy configured-outages-only capability assumption retained."
         )
     return PlanningInputs(
+        availability=availability,
         coverage_json=coverage_json,
         ka_coverage_windows=ka_windows,
         ka_coverage_events_json=_json(
@@ -336,8 +352,21 @@ def draft_to_mission_leg(
 
 
 def canonical_inputs(
-    mission, route, constraints=None, satellite_catalog=None, poi_manager=None
+    mission,
+    route,
+    constraints=None,
+    satellite_catalog=None,
+    poi_manager=None,
+    *,
+    availability=None,
 ):
     from .canonical import canonical_inputs as validate
 
-    return validate(mission, route, constraints, satellite_catalog, poi_manager)
+    return validate(
+        mission,
+        route,
+        constraints,
+        satellite_catalog,
+        poi_manager,
+        availability=availability,
+    )

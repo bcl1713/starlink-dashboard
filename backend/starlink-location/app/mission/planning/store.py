@@ -28,7 +28,34 @@ def leg_identity(leg):
     )
 
 
-def selection_errors(draft):
+def selection_errors(draft, *, availability=None, start=None, end=None):
+    from app.mission.availability_planning import usable_during
+    from app.mission.availability_models import Transport
+
+    if draft is not None and (
+        (
+            availability is not None
+            and start is not None
+            and end is not None
+            and not usable_during(availability, Transport.X, start, end)
+        )
+        or (
+            availability is None
+            and (draft.availability_overrides or {}).get(Transport.X) is False
+        )
+    ):
+        return (
+            [
+                PlanningError(
+                    code="unresolved_aar_windows",
+                    field="unresolved_aar_windows",
+                    message="Resolve pending legacy AR windows using accepted timed endpoints",
+                )
+            ]
+            if draft.unresolved_aar_windows
+            else []
+        )
+
     if draft is None or not draft.permitted_satellite_ids:
         return [
             PlanningError(
@@ -340,7 +367,10 @@ class PlanningStore:
             unchanged = previous is not None and structural_draft(
                 previous
             ) == structural_draft(incoming)
-            timing = lambda d: [(s.id, s.anchor.model_dump()) for s in d.swaps]
+
+            def timing(draft):
+                return [(swap.id, swap.anchor.model_dump()) for swap in draft.swaps]
+
             same_timing = previous is not None and timing(previous) == timing(incoming)
             incoming.evaluation_context = (
                 previous.evaluation_context

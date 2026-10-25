@@ -4,6 +4,8 @@ import json
 from datetime import timedelta
 
 from app.mission.timeline_builder.calculator import RouteTemporalProjector
+from app.mission.availability_planning import eligible, usable_during
+from app.mission.availability_models import Transport
 from app.models.route import ParsedRoute
 
 from .identity import planning_identity
@@ -83,6 +85,8 @@ def _context(inputs, seeds):
     route = _route(inputs)
     projector = RouteTemporalProjector(route, start, end)
     candidates = {start, end, *seeds}
+    if inputs.availability:
+        candidates.update(inputs.availability.boundaries(start, end))
     t = start
     while t < end:
         candidates.add(t)
@@ -176,9 +180,16 @@ def validate_context(inputs, draft, context):
     times = swap_times(inputs, draft)
     if any(t not in context.candidate_times for t in times):
         raise ValueError("Manual swap timing changed; create a new evaluation context")
+    # Retain assignments and locks for restoration while X is inactive.
+    if not usable_during(
+        inputs.availability, Transport.X, inputs.start_time, inputs.end_time
+    ):
+        return
     permitted = {s.satellite_id for s in inputs.satellites}
     if draft.initial_x_satellite_id not in permitted or any(
-        s.target_satellite_id not in permitted for s in draft.swaps
+        s.target_satellite_id not in permitted
+        and eligible(inputs.availability, Transport.X, t)
+        for t, s in zip(times, draft.swaps)
     ):
         raise ValueError("Selected satellite is not in the permitted position snapshot")
     at = {}
