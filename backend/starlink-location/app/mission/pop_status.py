@@ -126,12 +126,19 @@ class PopStatusService:
                     for item in active.leg.transports.x_transitions
                 ),
             }
+            if active.leg.transports.planning_inputs is not None:
+                assignments.update(
+                    item.satellite_id
+                    for item in active.leg.transports.planning_inputs.satellites
+                )
+            names = {name.strip().casefold() for name in assignments if name}
             poi_payloads = (
                 tuple(
                     point.model_dump_json().encode()
-                    for name in sorted(name for name in assignments if name)
-                    if (point := self.poi_manager.find_global_poi_by_name(name))
-                    is not None
+                    for point in self.poi_manager.list_pois()
+                    if point.mission_id is None
+                    and point.route_id is None
+                    and point.name.strip().casefold() in names
                 )
                 if self.poi_manager is not None
                 else None

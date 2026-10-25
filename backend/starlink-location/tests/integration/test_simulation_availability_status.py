@@ -8,9 +8,12 @@ from app.mission import storage
 from app.mission.planning.service import PlanningService
 from app.mission.planning.store import PlanningStore
 from tests.integration import test_simulation_pop_status as source
+from tests.planning import test_proposals as managed
 
 api = source.api
 pop_api = source.pop_api
+service = managed.service
+prepared = managed.prepared
 
 
 @pytest.fixture
@@ -404,3 +407,72 @@ def test_selected_refresh_preserves_custom_poi_x_geometry(
     assert all(span.x == "unknown" for span in pops._replay_capability_cache[1].spans)
     client.get("/api/status")
     assert len(calls) == 2
+
+
+def test_managed_projection_keeps_permitted_poi_sources_and_duplicate_validation(
+    prepared,
+):
+    from app.mission.active_context import resolve_active_mission_leg_context
+    from app.mission.availability_context import snapshot_for_leg
+    from app.mission.pop_status import PopStatusService
+    from app.models.poi import POICreate
+    from app.models.simulation_run import MultiplierPacing
+    from app.simulation.run_runtime import SimulationRunRuntime
+    from app.simulation.run_service import SimulationRunService
+    from tests.planning.test_reviewed_save import review
+    from tests.unit.simulation_run_fixtures import Clocks
+
+    planner, view = prepared
+    points = planner.store.poi_manager
+    points.create_poi(
+        POICreate(name="SOUTH", latitude=0, longitude=0, category="satellite", icon="X")
+    )
+    points.create_poi(
+        POICreate(
+            name="WEST", latitude=0, longitude=-25, category="satellite", icon="X"
+        )
+    )
+    view = planner.store.read(view.mission.id)
+    published = planner.save_reviewed(view.mission.id, "card-1", review(planner, view))
+    parent = published.mission
+    leg = parent.legs[0]
+    assert leg.transports.initial_x_satellite_id == "SOUTH"
+    assert leg.transports.x_transitions == []
+    assert {s.satellite_id for s in leg.transports.planning_inputs.satellites} == {
+        "SOUTH",
+        "WEST",
+    }
+    leg.is_active = True
+    storage.save_mission_v2(parent)
+    planner.store.route_manager.activate_route(leg.route_id)
+    clocks = Clocks()
+    runtime = SimulationRunRuntime(clocks.monotonic, clocks.utc_now, "simulation")
+    run_service = SimulationRunService(runtime, planner.store.route_manager, points)
+    try:
+        plan = run_service.prepare_plan(
+            parent.id, leg, MultiplierPacing(mode="multiplier", multiplier=1)
+        )
+        runtime.commit_tick(runtime.prepare_start(plan))
+        run_id = runtime.status().run.run_id
+        context = {
+            "route": plan.artifacts.route,
+            "projector": plan.artifacts.projector,
+            "simulation_run_id": run_id,
+            "mission_id": parent.id,
+            "leg_id": leg.id,
+        }
+        active = resolve_active_mission_leg_context(planner.store.route_manager).context
+        selected = snapshot_for_leg(active.parent_mission, active.leg, run_id=run_id)
+        pops = PopStatusService(planner.store.route_manager, poi_manager=points)
+        assert pops._replay_capabilities(active, context, None, selected) is not None
+        duplicate = points.create_poi(
+            POICreate(
+                name="west", latitude=0, longitude=-25, category="satellite", icon="X"
+            )
+        )
+        assert pops._replay_capabilities(active, context, None, selected) is None
+        assert pops._replay_capability_cache is None
+        assert points.delete_poi(duplicate.id)
+        assert pops._replay_capabilities(active, context, None, selected) is not None
+    finally:
+        run_service.close()
