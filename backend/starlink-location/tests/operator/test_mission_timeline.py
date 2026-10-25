@@ -38,6 +38,10 @@ def test_preflight_without_telemetry_is_current_schedule_and_never_writes_ledger
     assert event["time_basis"] == "planned_utc"
     assert event["due_at"] and event["end_at"]
     assert snapshot["legs"][0]["coverage"] == "available"
+    assert (
+        snapshot["legs"][0]["scheduled_departure_at"] == "2026-10-17T16:00:00.000000Z"
+    )
+    assert snapshot["legs"][0]["scheduled_arrival_at"] == "2026-10-17T16:40:00.000000Z"
     assert not any(
         e["notification"]["eligible"] or e["notification"]["acknowledgment_available"]
         for e in snapshot["events"]
@@ -95,6 +99,110 @@ def test_live_eta_moves_and_unavailable_never_falls_back_to_plan(api, production
     assert unavailable["time_basis"] == "live_unavailable"
     assert unavailable["due_at"] is None and unavailable["end_at"] is None
     assert unavailable["planned_due_at"] == first["planned_due_at"]
+
+
+def test_flight_progress_retimes_x_boundaries_without_moving_fixed_utc_events(
+    api, production, service, record_data, clock, record_property
+):
+    import json
+
+    from app.operator.time_models import utc_timestamp
+    from tests.operator.service_helpers import create
+    from tests.operator.test_call_api import call_data
+    from tests.operator.test_issue_api import issue_data
+
+    create(service, call_data(record_data, prep_lead_minutes=10))
+    create(
+        service,
+        issue_data(record_data, follow_up_at="2026-10-17T17:10:00Z"),
+    )
+    position = production[2]["telemetry"].position
+    position.speed = 600
+    evidence = []
+
+    def sample(stage, *, seconds=0, longitude=None, speed=None):
+        clock.advance(seconds)
+        if longitude is not None:
+            position.longitude = longitude
+        if speed is not None:
+            position.speed = speed
+        position.observed_at = position.speed_observed_at = clock.now()
+        snapshot = read(api, production)
+        event = x_window(snapshot)
+        fixed = {
+            e["kind"]: (e["event_id"], e["due_at"], e["end_at"])
+            for e in snapshot["events"]
+            if e["kind"] in {"call_start", "call_prep", "issue_followup"}
+        }
+        evidence.append(
+            {
+                "stage": stage,
+                "as_of": snapshot["as_of"],
+                "longitude": position.longitude,
+                "speed": position.speed,
+                "x_start": event["due_at"],
+                "x_recovery": event["end_at"],
+                "x_state": event["state"],
+                "fixed": fixed,
+            }
+        )
+        return event, fixed
+
+    initial, fixed = sample("initial")
+    assert initial["time_basis"] == "live_route_eta"
+    assert utc_timestamp(initial["due_at"]) > clock.now()
+    assert fixed["call_start"][1] == "2026-10-17T17:00:00.000000Z"
+    assert fixed["call_prep"][1] == "2026-10-17T16:50:00.000000Z"
+    assert fixed["issue_followup"][1] == "2026-10-17T17:10:00.000000Z"
+
+    # A minute with no progress delays spatial boundaries by a minute; it
+    # cannot move a customer's assigned clock time by that same minute.
+    delayed, delayed_fixed = sample("no_progress", seconds=60)
+    for field in ("due_at", "end_at"):
+        assert utc_timestamp(delayed[field]) - utc_timestamp(
+            initial[field]
+        ) == timedelta(seconds=60)
+    assert delayed_fixed == fixed
+
+    advanced, advanced_fixed = sample("position_advanced", seconds=30, longitude=-9.4)
+    assert advanced["due_at"] < delayed["due_at"]
+    assert advanced["end_at"] < delayed["end_at"]
+    assert advanced_fixed == fixed
+
+    slower, slower_fixed = sample("speed_reduced", speed=300)
+    assert slower["due_at"] > advanced["due_at"]
+    assert slower["end_at"] > advanced["end_at"]
+    assert slower_fixed == fixed
+    for event in (delayed, advanced, slower):
+        assert event["event_id"] == initial["event_id"]
+        assert event["planned_due_at"] == initial["planned_due_at"]
+        assert event["planned_end_at"] == initial["planned_end_at"]
+
+    inside, inside_fixed = sample("inside_window", seconds=600, longitude=0, speed=600)
+    assert inside["active"] and inside["state"] == "active"
+    assert utc_timestamp(inside["due_at"]) <= clock.now()
+    assert utc_timestamp(inside["end_at"]) > clock.now()
+    assert inside_fixed == fixed
+
+    passed, passed_fixed = sample("past_window", seconds=1800, longitude=10)
+    assert not passed["active"] and passed["state"] == "inactive"
+    assert utc_timestamp(passed["end_at"]) <= clock.now()
+    assert passed["event_id"] == initial["event_id"]
+    assert passed_fixed == fixed
+
+    production[2]["telemetry"] = None
+    unavailable_snapshot = read(api, production)
+    unavailable = x_window(unavailable_snapshot)
+    assert unavailable["time_basis"] == "live_unavailable"
+    assert unavailable["due_at"] is None and unavailable["end_at"] is None
+    assert unavailable["planned_due_at"] == initial["planned_due_at"]
+    assert unavailable["planned_end_at"] == initial["planned_end_at"]
+    assert {
+        e["kind"]: (e["event_id"], e["due_at"], e["end_at"])
+        for e in unavailable_snapshot["events"]
+        if e["kind"] in fixed
+    } == fixed
+    record_property("flight_progress_evidence", json.dumps(evidence))
 
 
 def test_schedule_cache_changes_with_inputs_and_context_isolation(api, production):

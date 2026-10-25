@@ -36,7 +36,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
-it('sorts by current times, groups passed windows and shows start and recovery together', () => {
+it('shows the complete mission in time order, including earlier events without expansion', () => {
   const events = [
     eventFixture({
       event_id: 'later',
@@ -75,19 +75,23 @@ it('sorts by current times, groups passed windows and shows start and recovery t
   ];
   render(<MissionTimeline timeline={state(events)} />);
   const rows = within(
-    screen.getByRole('list', { name: 'Current and upcoming events' })
-  ).getAllByRole('listitem');
+    screen.getByRole('list', { name: 'Mission events from start to finish' })
+  )
+    .getAllByRole('listitem')
+    .filter((row) => row.classList.contains('ws-timeline-row'));
   expect(
     rows.map((row) => within(row).getByRole('heading').textContent)
-  ).toEqual(['X restriction', 'Prepare call', 'Ka restriction']);
-  expect(within(rows[0]).getByText('Recovery in 12 min')).toBeTruthy();
-  expect(within(rows[0]).getByText(/Live route ETA/)).toBeTruthy();
-  expect(within(rows[2]).getByText(/2026-10-18 00:05:00 UTC/)).toBeTruthy();
-  expect(within(rows[2]).getByText(/2026-10-18 00:10:00 UTC/)).toBeTruthy();
-  expect(within(rows[2]).getByText('Atlantic leg')).toBeTruthy();
-  const past = screen.getByText(/Past · 1/).closest('details');
-  expect(past?.open).toBe(false);
-  expect(screen.getByText('Now')).toBeTruthy();
+  ).toEqual([
+    'Earlier window',
+    'X restriction',
+    'Prepare call',
+    'Ka restriction',
+  ]);
+  expect(within(rows[1]).getByText('Recovery in 12 min')).toBeTruthy();
+  expect(within(rows[1]).getByText(/Live route ETA/)).toBeTruthy();
+  expect(within(rows[3]).getByText('Atlantic leg')).toBeTruthy();
+  expect(screen.getByText('Earlier window').closest('details')).toBeNull();
+  expect(screen.getByText(/^Now ·/)).toBeTruthy();
 });
 it('shows every family and source navigation without offering timeline-only acknowledgments', () => {
   const open = vi.fn();
@@ -152,7 +156,7 @@ it.each(['failed', 'aged', 'source'] as const)(
     expect(screen.queryByText(/Recovery in/)).toBeNull();
   }
 );
-it('expands on a narrow screen without replacing an open editor draft', () => {
+it('opens a phone dialog and returns to the retained draft when closed', () => {
   vi.stubGlobal('matchMedia', () => ({
     matches: true,
     addEventListener: vi.fn(),
@@ -167,11 +171,12 @@ it('expands on a narrow screen without replacing an open editor draft', () => {
   const input = screen.getByRole('textbox');
   fireEvent.change(input, { target: { value: 'Keep this draft' } });
   const toggle = screen.getByRole('button', {
-    name: 'Expand mission timeline',
+    name: 'Open mission timeline',
   });
-  expect(toggle.getAttribute('aria-expanded')).toBe('false');
   fireEvent.click(toggle);
-  expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  expect(screen.getByRole('dialog', { name: 'Mission timeline' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
   expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe(
     'Keep this draft'
   );
@@ -209,12 +214,12 @@ it.each(['age', 'failure'])(
     const view = render(<MissionTimeline timeline={query} />);
     monotonic = 29000;
     act(() => vi.advanceTimersByTime(29000));
-    expect(screen.getByText('Past · 1')).toBeTruthy();
+    expect(screen.getByText('Elapsed estimate')).toBeTruthy();
     if (reason === 'failure')
       view.rerender(<MissionTimeline timeline={{ ...query, failed: true }} />);
     monotonic = 31000;
     act(() => vi.advanceTimersByTime(2000));
-    expect(screen.getByText('Past · 1')).toBeTruthy();
+    expect(screen.getByText('Elapsed estimate')).toBeTruthy();
     expect(screen.queryByText(/Recovery in/)).toBeNull();
     view.unmount();
     vi.useRealTimers();

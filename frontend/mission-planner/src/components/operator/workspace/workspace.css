@@ -484,7 +484,7 @@
   }
 }
 
-/* The main body and awareness column own their scroll independently. */
+/* Desktop retains the awareness column; phones open the chronology separately. */
 .ws-awareness {
   align-self: stretch;
   max-height: 100%;
@@ -493,25 +493,28 @@
 .ws-timeline {
   min-width: 0;
   border-top: 1px solid var(--ws-border);
-  padding-top: 0.75rem;
+  padding-top: 0.65rem;
 }
 .ws-timeline-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
 }
-.ws-timeline-toggle {
-  display: none;
+.ws-timeline-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+.ws-timeline-controls .ws-button {
+  font-size: 0.8rem;
+  padding-inline: 0.6rem;
 }
 .ws-timeline-body {
-  max-height: min(60dvh, 46rem);
+  max-height: min(65dvh, 48rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-right: 0.25rem;
-}
-.ws-timeline-body[hidden] {
-  display: none;
+  min-height: 0;
 }
 .ws-timeline-now {
   position: sticky;
@@ -519,13 +522,21 @@
   z-index: 1;
   background: var(--background);
   color: #67e8f9;
-  border-bottom: 1px solid #22d3ee;
-  padding: 0.4rem 0;
-  font-size: 0.8rem;
+  border-block: 1px solid #22d3ee;
+  padding: 0.65rem 0.5rem;
+  font-size: 0.85rem;
   font-weight: 650;
 }
+.ws-timeline-date {
+  padding: 0.8rem 0 0.3rem;
+  font-weight: 650;
+  font-size: 0.85rem;
+}
 .ws-timeline-row {
-  padding: 0.65rem 0;
+  display: grid;
+  grid-template-columns: 4.8rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.7rem 0;
   border-bottom: 1px solid var(--ws-border);
 }
 .ws-timeline-row h3 {
@@ -533,83 +544,154 @@
   font-weight: 600;
 }
 .ws-timeline-row[data-active='true'] {
+  background: #164e6333;
   border-left: 3px solid #22d3ee;
-  padding-left: 0.6rem;
+  padding-left: 0.35rem;
+}
+.ws-timeline-time {
+  font-size: 0.8rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 .ws-timeline-relative {
-  font-size: 0.8rem;
   color: #a5f3fc;
+  font-size: 0.8rem;
 }
 .ws-timeline-row summary {
   font-size: 0.8rem;
 }
-@media (max-width: 900px) {
-  .ws-timeline {
-    grid-column: 1 / -1;
-    padding-top: 0.4rem;
-  }
-  .ws-timeline-toggle {
-    display: inline-flex;
-  }
-  .ws-timeline-body {
-    max-height: 38dvh;
-  }
+.ws-timeline-sources {
+  margin-top: 0.5rem;
 }
-
-/* Reserve a useful body viewport when the narrow chronology is expanded.
-   Only the chronology rows scroll; its heading, controls and navigation stay put. */
-@media (max-width: 900px) and (min-height: 501px) {
+.ws-timeline-launch {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+  gap: 0.5rem;
+}
+.ws-timeline-launch > span:first-child {
+  min-width: 0;
+}
+.ws-timeline-launch strong,
+.ws-timeline-launch .ws-meta {
+  display: block;
+}
+.ws-timeline-launch .ws-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-timeline-launch > span:last-child {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: #a5f3fc;
+}
+.ws-timeline-dialog {
+  top: 0;
+  left: 0;
+  transform: none;
+  translate: none;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  padding: 0;
+  gap: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.ws-timeline-dialog-header {
+  padding: max(1rem, env(safe-area-inset-top)) 3.5rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--ws-border, #64748b);
+}
+.ws-timeline-dialog .ws-timeline-body {
+  max-height: none;
+  padding: 0 1rem max(1rem, env(safe-area-inset-bottom));
+}
+.ws-timeline-dialog .ws-timeline-row {
+  grid-template-columns: 5rem minmax(0, 1fr);
+}
+.ws-timeline-dialog .ws-timeline-row summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.ws-timeline-dialog > button:last-child {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: max(0.5rem, env(safe-area-inset-top));
+}
+@media (max-width: 900px) {
   .ws-content {
-    grid-template-rows: fit-content(45dvh) auto minmax(8.25rem, 1fr);
+    grid-template: 'awareness' auto 'navigation' auto 'body' minmax(
+        0,
+        1fr
+      ) / minmax(0, 1fr);
   }
   .ws-awareness {
-    /* Keep the collapsed heading/control row above adjacent advisories. */
-    grid-template-rows: minmax(0, auto) minmax(4.75rem, 1fr) minmax(0, auto);
-    height: 100%;
-    max-height: none;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: auto auto;
+    gap: 0.35rem 0.5rem;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--ws-border);
+  }
+  .ws-timeline {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    border: 0;
+    padding: 0;
+  }
+  .ws-now {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .ws-next {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 0.2rem 0.4rem;
   }
   .ws-now,
   .ws-next {
     min-height: 0;
-    max-height: 9rem;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
   }
+  .ws-now h2,
+  .ws-customers,
+  .ws-next > .ws-meta:last-child:not(:nth-child(3)),
   .ws-attention,
   .ws-advisories {
-    min-height: 0;
-    max-height: 6rem;
-    overflow-y: auto;
+    display: none;
   }
-  .ws-timeline {
-    display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr);
-    min-height: 0;
+  .ws-now > .ws-meta {
+    margin-top: 0.4rem;
   }
-  .ws-timeline-body {
+  .ws-next h2 {
+    font-size: 0.75rem;
+  }
+  .ws-next-name {
     min-height: 0;
-    max-height: 100%;
+    -webkit-line-clamp: 1;
+    margin: 0;
+  }
+  .ws-next-open {
+    min-height: 24px;
   }
 }
-
-/* A short portrait viewport focuses expanded chronology; collapse restores
-   customer/next summaries. Optional advisory details remain in Alerts. */
-@media (max-width: 900px) and (min-height: 501px) and (max-height: 760px) {
+@media (max-width: 900px) and (max-height: 500px) {
   .ws-awareness {
-    grid-template-rows: minmax(0, auto) minmax(4.75rem, 1fr);
+    grid-template-rows: auto;
   }
-  .ws-awareness > .ws-attention,
-  .ws-awareness > .ws-advisories {
+  .ws-now,
+  .ws-next {
     display: none;
-  }
-  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) {
-    grid-template-rows: minmax(0, 1fr);
-  }
-  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) > .ws-now,
-  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) > .ws-next {
-    display: none;
-  }
-  .ws-awareness:has(.ws-timeline-toggle[aria-expanded='true']) > .ws-timeline {
-    grid-row: 1;
   }
 }

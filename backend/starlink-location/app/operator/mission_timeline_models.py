@@ -14,6 +14,8 @@ class TimelineLeg(StrictModel):
     name: str
     coverage: Literal["available", "partial", "last_known", "unavailable"]
     reason: str | None = None
+    scheduled_departure_at: UtcTimestamp | None = None
+    scheduled_arrival_at: UtcTimestamp | None = None
 
 
 class MissionTimelineSnapshot(StrictModel):

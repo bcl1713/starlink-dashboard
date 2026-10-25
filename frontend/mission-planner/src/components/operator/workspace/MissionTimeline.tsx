@@ -1,16 +1,15 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import type { MissionTimelineState } from '@/hooks/api/useMissionTimeline';
 import type { OperationalEvent } from '@/types/operatorEvents';
-import { eventUtc } from '../eventFormatting';
-
-function relative(target: number, now: number) {
-  const seconds = Math.max(0, Math.round((target - now) / 1000));
-  if (seconds < 60) return 'less than 1 min';
-  if (seconds < 3600) return `${Math.ceil(seconds / 60)} min`;
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.ceil((seconds % 3600) / 60);
-  return `${hours} hr${minutes ? ` ${minutes} min` : ''}`;
-}
+import { MissionTimelineContents } from './MissionTimelineContents';
+import { timelineTime } from '../eventFormatting';
 
 export function MissionTimeline({
   timeline,
@@ -21,17 +20,21 @@ export function MissionTimeline({
   onOpenSource?: (event: OperationalEvent) => void;
   onOpenAlerts?: () => void;
 }) {
-  const bodyId = useId();
-  const [expanded, setExpanded] = useState(
-    () => !globalThis.matchMedia?.('(max-width: 900px)').matches
+  const [narrow, setNarrow] = useState(
+    () => !!globalThis.matchMedia?.('(max-width: 900px)').matches
   );
+  const [open, setOpen] = useState(false);
   const [monotonicNow, setMonotonicNow] = useState(() => performance.now());
+  const nowMarker = useRef<HTMLLIElement>(null);
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (!timeline?.failed) setMonotonicNow(performance.now());
     }, 1000);
     const media = globalThis.matchMedia?.('(max-width: 900px)');
-    const resize = (event: MediaQueryListEvent) => setExpanded(!event.matches);
+    const resize = (event: MediaQueryListEvent) => {
+      setNarrow(event.matches);
+      setOpen(false);
+    };
     media?.addEventListener('change', resize);
     return () => {
       clearInterval(timer);
@@ -45,185 +48,113 @@ export function MissionTimeline({
   );
   const stale = !!timeline?.failed || elapsed >= 30000;
   const now = Date.parse(snapshot?.as_of ?? '') + Math.min(elapsed, 30000);
-  const events = [...(snapshot?.events ?? [])].sort((a, b) => {
-    const first = a.due_at ? Date.parse(a.due_at) : Infinity;
-    const second = b.due_at ? Date.parse(b.due_at) : Infinity;
-    return first - second || a.event_id.localeCompare(b.event_id);
-  });
-  const past = (event: OperationalEvent) =>
-    event.state === 'inactive' ||
-    (event.end_at != null && Date.parse(event.end_at) <= now);
-  const active = (event: OperationalEvent) =>
-    !past(event) && event.due_at != null && Date.parse(event.due_at) <= now;
-  const pastEvents = events.filter(past);
-  const current = [
-    ...events.filter(active),
-    ...events.filter((event) => !past(event) && !active(event)),
-  ];
-  function row(event: OperationalEvent) {
-    const unavailable =
-      event.time_basis === 'live_unavailable' || !event.due_at;
-    const lastKnown = stale || event.freshness !== 'fresh';
-    const started = active(event);
-    const leg = snapshot?.legs.find((leg) => leg.leg_id === event.leg_id);
-    const endLabel =
-      event.kind === 'restriction'
-        ? 'Expected recovery'
-        : event.kind === 'pop_advisory'
-          ? 'Expected window end'
-          : 'Planned end';
-    const endRelative =
-      event.kind === 'restriction'
-        ? 'Recovery in'
-        : event.kind === 'pop_advisory'
-          ? 'Window ends in'
-          : 'Ends in';
-    const label = unavailable
-      ? 'Timing unavailable'
-      : event.time_basis === 'live_route_eta'
-        ? 'Live route ETA'
-        : 'Scheduled';
-    return (
-      <li
-        key={event.event_id}
-        className="ws-timeline-row"
-        data-active={started}
-      >
-        <h3>{event.title}</h3>
-        {leg && <p className="ws-meta">{leg.name}</p>}
-        <p className="ws-meta">
-          {label}
-          {lastKnown ? ' · Last known' : ''}
-        </p>
-        {!unavailable && (
-          <>
-            <p className="ws-meta">
-              {event.kind === 'restriction' || event.kind === 'pop_advisory'
-                ? 'Start '
-                : ''}
-              {eventUtc(event.due_at)}
-            </p>
-            {event.end_at && (
-              <p className="ws-meta">
-                {endLabel} {eventUtc(event.end_at)}
-              </p>
-            )}
-            {!lastKnown && !past(event) && (
-              <p className="ws-timeline-relative">
-                {started && event.end_at
-                  ? `${endRelative} ${relative(Date.parse(event.end_at), now)}`
-                  : started
-                    ? 'Due now / overdue'
-                    : `In ${relative(Date.parse(event.due_at!), now)}`}
-              </p>
-            )}
-          </>
-        )}
-        <details>
-          <summary>Details</summary>
-          {event.planned_due_at && (
-            <p className="ws-meta">
-              Schedule reference: {eventUtc(event.planned_due_at)}
-              {event.planned_end_at
-                ? ` to ${eventUtc(event.planned_end_at)}`
-                : ''}
-            </p>
-          )}
-          <p className="ws-meta">
-            {event.confidence ?? 'Mission estimate'} · {event.freshness}
-          </p>
-          {event.source_captured_at && (
-            <p className="ws-meta">
-              Source captured {eventUtc(event.source_captured_at)}
-            </p>
-          )}
-          {event.kind === 'pop_advisory' && (
-            <p className="ws-meta">
-              Transition advisory; does not establish a service outage.
-            </p>
-          )}
-          {onOpenSource && (
-            <button className="ws-button" onClick={() => onOpenSource(event)}>
-              Open source
-            </button>
-          )}
-        </details>
-      </li>
-    );
+  const next = [...(snapshot?.events ?? [])]
+    .filter(
+      (event) =>
+        event.state !== 'inactive' &&
+        event.due_at &&
+        Date.parse(event.due_at) > now
+    )
+    .sort((a, b) => Date.parse(a.due_at!) - Date.parse(b.due_at!))[0];
+  const summary = snapshot
+    ? stale
+      ? 'Last known timeline'
+      : next
+        ? `Next ${timelineTime(next.due_at!, snapshot.as_of)} · ${next.title}`
+        : `${snapshot.events.length} events · ${snapshot.legs.length} legs`
+    : timeline?.loading
+      ? 'Loading mission timeline…'
+      : 'Mission timeline unavailable.';
+  function source(event: OperationalEvent) {
+    setOpen(false);
+    onOpenSource?.(event);
   }
+  const controls = (
+    <div className="ws-timeline-controls">
+      <button
+        className="ws-button"
+        onClick={() => nowMarker.current?.scrollIntoView({ block: 'center' })}
+      >
+        Jump to now
+      </button>
+      {timeline && (
+        <button
+          className="ws-button"
+          disabled={timeline.refreshing}
+          onClick={timeline.refresh}
+        >
+          Refresh timeline
+        </button>
+      )}
+      {onOpenAlerts && (
+        <button
+          className="ws-button"
+          onClick={() => {
+            setOpen(false);
+            onOpenAlerts();
+          }}
+          aria-label="Open operational alerts"
+        >
+          Alerts
+        </button>
+      )}
+    </div>
+  );
+  const contents = (
+    <MissionTimelineContents
+      snapshot={snapshot}
+      now={now}
+      stale={stale}
+      nowMarker={nowMarker}
+      onOpenSource={onOpenSource ? source : undefined}
+    />
+  );
   return (
     <section className="ws-timeline" aria-label="Mission timeline">
-      <div className="ws-timeline-header">
-        <h2>Mission timeline</h2>
-        {onOpenAlerts && (
-          <button
-            className="ws-button"
-            onClick={onOpenAlerts}
-            aria-label="Open operational alerts"
-          >
-            Alerts
-          </button>
-        )}
-        <button
-          className="ws-button ws-timeline-toggle"
-          aria-label={
-            expanded ? 'Collapse mission timeline' : 'Expand mission timeline'
-          }
-          aria-expanded={expanded}
-          aria-controls={bodyId}
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded ? 'Collapse' : 'Expand'}
-        </button>
-      </div>
-      <p className="ws-meta">
-        {snapshot
-          ? `${current.length} current / upcoming · ${snapshot.legs.length} legs`
-          : timeline?.loading
-            ? 'Loading mission timeline…'
-            : 'Mission timeline unavailable.'}
-      </p>
-      <div id={bodyId} hidden={!expanded} className="ws-timeline-body">
-        {snapshot && stale && (
-          <p role="status" className="ws-meta">
-            Last known timeline · current timing unavailable. Refresh to resume
-            countdowns.
+      {narrow ? (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <button
+              className="ws-timeline-launch ws-button"
+              aria-label="Open mission timeline"
+            >
+              <span>
+                <strong>Mission timeline</strong>
+                <span className="ws-meta">{summary}</span>
+              </span>
+              <span aria-hidden="true">View all →</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="ws-timeline-dialog">
+            <div className="ws-timeline-dialog-header">
+              <DialogTitle>Mission timeline</DialogTitle>
+              <DialogDescription>
+                Whole mission · times in UTC
+              </DialogDescription>
+              {controls}
+            </div>
+            <div className="ws-timeline-body">
+              {!snapshot && (
+                <p role="status" className="ws-meta">
+                  {summary}
+                </p>
+              )}
+              {contents}
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <>
+          <div className="ws-timeline-header">
+            <h2>Mission timeline</h2>
+          </div>
+          <p className="ws-meta">
+            {snapshot ? 'Whole mission · UTC' : summary}
           </p>
-        )}
-        {snapshot?.legs
-          .filter((leg) => leg.coverage !== 'available')
-          .map((leg) => (
-            <p className="ws-meta" key={leg.leg_id}>
-              {leg.name} · {leg.coverage.replace('_', ' ')}
-              {leg.reason ? `: ${leg.reason}` : ''}
-            </p>
-          ))}
-        {timeline && (
-          <button
-            className="ws-button"
-            disabled={timeline.refreshing}
-            onClick={timeline.refresh}
-          >
-            Refresh timeline
-          </button>
-        )}
-        {snapshot && (
-          <>
-            <p className="ws-timeline-now">Now</p>
-            <ol aria-label="Current and upcoming events">{current.map(row)}</ol>
-            {!current.length && (
-              <p className="ws-meta">No known current or upcoming events.</p>
-            )}
-            <details className="ws-timeline-past">
-              <summary>Past · {pastEvents.length}</summary>
-              <p className="ws-meta">
-                Elapsed estimates, not observed outage history.
-              </p>
-              <ol aria-label="Past events">{pastEvents.map(row)}</ol>
-            </details>
-          </>
-        )}
-      </div>
+          {controls}
+          <div className="ws-timeline-body">{contents}</div>
+        </>
+      )}
     </section>
   );
 }

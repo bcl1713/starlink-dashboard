@@ -20,11 +20,12 @@ existing route-aware ETA calculations where applicable.
 
 Extend the existing operator awareness column with a clearly titled **Mission
 timeline**. Keep reported connected customers and the next customer requirement
-available. Show active windows first, followed by a chronological upcoming list
-with a clear Now marker. Earlier events are available in a collapsed Past
-section in the same panel. The operator can scroll the timeline independently
-without losing the workspace navigation or editor. Do not duplicate the existing
-large Mission activity feed below Communications on the Now view.
+available. Show one chronological list from the start of the mission to its
+finish, including earlier events, dated groups, and a clear Now marker. Include
+scheduled route departure and arrival anchors without claiming observed flight
+events. The operator can scroll the timeline independently without losing the
+workspace navigation or editor. Do not duplicate the existing large Mission
+activity feed below Communications on the Now view.
 
 Rows show a concise event name, leg name when relevant, UTC, and a relative time
 such as “in 12 min.” Transport windows show both start and expected recovery,
@@ -49,9 +50,12 @@ propagate current-leg delays across later legs without an existing supported
 calculation. Show leg-specific unavailable information instead of silently
 dropping a leg. Scheduled or elapsed estimates are not observed outage history.
 
-On narrow screens keep a compact Mission timeline summary and direct expand
-control available across views. Expanding it reveals the same full chronology
-without discarding unsaved work. Desktop displays the panel expanded by default.
+On narrow screens keep a compact Mission timeline summary available across
+views. Open the full chronology in a full-height dialog with one scrolling list,
+a clear close control and Jump to now. Closing restores focus and unsaved work.
+Do not reserve a large expanded timeline area above the phone workspace. Keep
+customer count and next requirement concise. Desktop displays the panel expanded
+by default.
 
 ## Current implementation and data changes
 
@@ -126,6 +130,7 @@ the PR is open.
 The builder may choose the precise read-only API shape, cache placement,
 pagination strategy, row components, compact-screen expansion mechanism and
 accessible styling within the existing Python/React application. Those choices
-must preserve the behavior and isolation described above. The full-mission
-scope, contextual route anchors and collapsed Past presentation are proposals
-made here, not additional user instructions.
+must preserve the behavior and isolation described above. The full-mission scope
+and contextual route anchors support the user's request for a clear
+start-to-finish chronology. The phone expansion mechanism remains an
+implementation choice within the persistent-workspace placement.

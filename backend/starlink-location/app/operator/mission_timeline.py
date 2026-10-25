@@ -59,7 +59,14 @@ def _prepare(adapter, inputs, leg):
             missing.append("PoP catalog")
         if inputs.coverage_sampler is None:
             missing.append("Ka coverage")
-        cache[key] = compact_event_model(model), missing
+        compact = compact_event_model(model)
+        compact["scheduled_departure_at"] = artifacts.projector.sample_at_distance(
+            0
+        ).timestamp
+        compact["scheduled_arrival_at"] = artifacts.projector.sample_at_distance(
+            artifacts.projector.total_distance
+        ).timestamp
+        cache[key] = compact, missing
         while len(cache) > 32:
             cache.pop(next(iter(cache)))
     return deepcopy(cache[key])
@@ -264,7 +271,14 @@ def build_mission_timeline(runtime, mission_id, adapter):
                         coverage = "partial"
                     reason = "; ".join(value for value in (reason, gap) if value)
         legs.append(
-            TimelineLeg(leg_id=leg.id, name=leg.name, coverage=coverage, reason=reason)
+            TimelineLeg(
+                leg_id=leg.id,
+                name=leg.name,
+                coverage=coverage,
+                reason=reason,
+                scheduled_departure_at=(model or {}).get("scheduled_departure_at"),
+                scheduled_arrival_at=(model or {}).get("scheduled_arrival_at"),
+            )
         )
         sources.append(
             SourceCapture(

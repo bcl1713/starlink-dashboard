@@ -5,6 +5,8 @@ export interface MissionTimelineLeg {
   name: string;
   coverage: 'available' | 'partial' | 'last_known' | 'unavailable';
   reason: string | null;
+  scheduled_departure_at?: string | null;
+  scheduled_arrival_at?: string | null;
 }
 
 export interface MissionTimelineSnapshot {
