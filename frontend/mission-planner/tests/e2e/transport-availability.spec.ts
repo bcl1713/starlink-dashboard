@@ -306,7 +306,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   });
   await assignment.getByRole('combobox').selectOption('X');
   await assignment.getByRole('button', { name: 'Apply', exact: true }).click();
-  await expect(assignment.getByText('X-band', { exact: true })).toBeVisible();
+  await expect(assignment.locator('strong').filter({ hasText: 'X-band' })).toBeVisible();
   const recordsBefore = await json<{
     items: Array<{ record: { record_id: string } }>;
   }>(await request.get(`/api/v2/operator/records?mission_id=${missionId}`));
