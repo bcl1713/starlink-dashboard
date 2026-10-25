@@ -31,7 +31,8 @@ Communications and modeled restrictions show the existing event feed's current
 snapshot. Airborne restrictions use its live route ETA; preflight can use
 planned UTC. Unknown/stale context stays explicit. Warnings about active
 customer communications are advisory and never require acknowledgment before
-saving. Overview retains its map and brief advisories; planning settings live on the mission and leg pages.
+saving. Overview retains its map and brief advisories; planning settings live on
+the mission and leg pages.
 
 A linked call/conference cannot be removed or moved to another mission while an
 active decision references it. Correct the decision to unlink it, or remove the
