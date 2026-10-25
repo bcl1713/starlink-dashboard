@@ -1,5 +1,7 @@
 import type { EventSnapshot, OperationalEvent } from '@/types/operatorEvents';
 import type { SavedRecord } from '@/types/operator';
+import { MissionTimeline } from './MissionTimeline';
+import type { MissionTimelineState } from '@/hooks/api/useMissionTimeline';
 import { eventUtc } from '../eventFormatting';
 
 function Timing({ event, asOf }: { event: OperationalEvent; asOf?: string }) {
@@ -25,6 +27,8 @@ function Timing({ event, asOf }: { event: OperationalEvent; asOf?: string }) {
 
 export function WorkspaceAwareness({
   snapshot,
+  timeline,
+  onOpenTimelineSource,
   next,
   records,
   recordsIncomplete,
@@ -34,6 +38,8 @@ export function WorkspaceAwareness({
   onOpenNext,
 }: {
   snapshot?: EventSnapshot;
+  timeline?: MissionTimelineState;
+  onOpenTimelineSource?: (event: OperationalEvent) => void;
   next?: OperationalEvent;
   records: SavedRecord[];
   recordsIncomplete: boolean;
@@ -123,6 +129,11 @@ export function WorkspaceAwareness({
           </p>
         )}
       </section>
+      <MissionTimeline
+        timeline={timeline}
+        onOpenSource={onOpenTimelineSource}
+        onOpenAlerts={onOpenEvents}
+      />
       <details className="ws-attention">
         <summary>
           Attention · {attention.length}
@@ -186,11 +197,6 @@ export function WorkspaceAwareness({
             </p>
           ))}
         </details>
-        {onOpenEvents && (
-          <button className="ws-button" onClick={onOpenEvents}>
-            Open timeline
-          </button>
-        )}
       </div>
     </section>
   );

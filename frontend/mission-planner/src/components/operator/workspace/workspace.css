@@ -483,3 +483,74 @@
     grid-row: 2;
   }
 }
+
+/* The full chronology stays beside the editor and scrolls within its column. */
+.ws-awareness {
+  align-self: stretch;
+  overscroll-behavior: contain;
+}
+.ws-timeline {
+  min-width: 0;
+  border-top: 1px solid var(--ws-border);
+  padding-top: 0.75rem;
+}
+.ws-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.ws-timeline-toggle {
+  display: none;
+}
+.ws-timeline-body {
+  max-height: min(60dvh, 46rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+}
+.ws-timeline-body[hidden] {
+  display: none;
+}
+.ws-timeline-now {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background);
+  color: #67e8f9;
+  border-bottom: 1px solid #22d3ee;
+  padding: 0.4rem 0;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.ws-timeline-row {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--ws-border);
+}
+.ws-timeline-row h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.ws-timeline-row[data-active='true'] {
+  border-left: 3px solid #22d3ee;
+  padding-left: 0.6rem;
+}
+.ws-timeline-relative {
+  font-size: 0.8rem;
+  color: #a5f3fc;
+}
+.ws-timeline-row summary {
+  font-size: 0.8rem;
+}
+@media (max-width: 900px) {
+  .ws-timeline {
+    grid-column: 1 / -1;
+    padding-top: 0.4rem;
+  }
+  .ws-timeline-toggle {
+    display: inline-flex;
+  }
+  .ws-timeline-body {
+    max-height: 38dvh;
+  }
+}

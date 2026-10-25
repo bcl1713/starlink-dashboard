@@ -4,7 +4,7 @@ from app.mission.exporter.snapshot_inputs import canonical_json
 from app.mission.slide_cache import capture
 
 
-def capture_static(adapter, mission_id):
+def capture_static(adapter, mission_id, *, scheduled=False):
     """Caller holds repository admission; telemetry is never cached here."""
     raw = capture.capture_raw(mission_id, adapter.route_manager, adapter.poi_manager)
     # File tokens alone miss accepted in-memory route/POI edits. Include their
@@ -35,15 +35,20 @@ def capture_static(adapter, mission_id):
         canonical_json(routes),
         canonical_json(pois),
     )
-    cached = getattr(adapter, "_static_capture", None)
+    cache_name = "_scheduled_static_capture" if scheduled else "_static_capture"
+    cached = getattr(adapter, cache_name, None)
     if cached is not None and cached[0] == key:
         return cached[1]
     metadata, sources, _warnings, _ = capture.normalize_capture(
-        raw, persisted=True, fingerprints=False, include_timeline_cache=False
+        raw,
+        persisted=True,
+        fingerprints=False,
+        include_timeline_cache=False,
+        scheduled_inputs=scheduled,
     )
     # Bytes and SourcePayloads contain no mutable mission/preparation objects.
     result = metadata, sources
-    adapter._static_capture = key, result
+    setattr(adapter, cache_name, (key, result))
     return result
 
 

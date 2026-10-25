@@ -1,15 +1,46 @@
 # Operator events and local alerts
 
-Operator provides one UTC timeline of call preparation and customer
-requirements, issue follow-ups, existing PoP advisories and modeled transport
-restrictions. Open events from the compact strip while working in
-Communications, Issues, Journal or Display Tools. The drawer preserves unsaved
-editor drafts.
+Operator keeps a **Mission timeline** beside the workspace across Now,
+Communications, Transport and Issues. It includes call preparation and customer
+requirements, issue follow-ups, PoP transition advisories, modeled X, Ka and
+Starshield restrictions, and customer communications continuity windows. The
+panel shows every mission leg, including scheduled events more than 24 hours
+away. Each transport window pairs its start with expected recovery. Current
+windows appear above upcoming events, with elapsed estimates in expandable
+Past. Elapsed model estimates are not observed outage history.
+
+Desktop shows the panel expanded with its own scroll area. Narrow screens keep
+a compact summary and Expand control; expanding and changing workspace views
+preserve retained editor drafts. Rows link to the relevant operational view.
+The persistent Alerts control opens optional acknowledgments, pending retries
+and operational alert details. The full mission chronology does not create alerts
+or acknowledgment obligations; the existing alert window and cue rules remain
+unchanged.
 
 Events remain visible when cues are muted or unavailable. Acknowledgment records
 notification disposition only: it does not complete a call, resolve an issue,
 change customer participation or authorize a transport change. Recent history
 shows superseded occurrences; source record history retains earlier edits.
+
+## Timeline timing and coverage
+
+Before departure the timeline prepares current scheduled inputs without needing
+live position telemetry. During flight, only the active leg uses the existing
+route-aware ETA calculation for restriction start and recovery; other legs keep
+their schedules. An active window emphasizes time until recovery. Rows label
+Scheduled, Live route ETA, or Timing unavailable and show dated UTC, including
+across midnight. Expanded details retain the original schedule as reference.
+Unknown live timing never falls back to a scheduled countdown. Airborne PoP
+advisories reuse the current producer publication without advancing it.
+
+The visible tab refreshes every 15 seconds. Relative times use backend UTC plus
+elapsed browser monotonic time. After a failed refresh or 30 seconds without a
+new snapshot, last-known rows remain labeled and current countdowns stop.
+Stale individual sources also suppress their countdowns. Missing prerequisites
+for one transport do not suppress current known timing on another transport.
+Each leg reports unavailable or partial coverage separately; saved plans that
+cannot be validated against current inputs are explicitly last known. No
+confidence acknowledgment is required to use these mission estimates.
 
 ## Timing and delivery
 
