@@ -71,6 +71,7 @@ class PopStatusService:
         observation_provider: ObservationProvider | None = None,
         snapshot_context_provider=None,
         capability_provider=None,
+        poi_manager=None,
     ):
         self.route_manager = route_manager
         self.config_provider = config_provider or (lambda: ConfigManager().get_config())
@@ -78,6 +79,7 @@ class PopStatusService:
         self.snapshot_context_provider = snapshot_context_provider
         # Optional local producer for one route/config/clock-aligned sample.
         self.capability_provider = capability_provider
+        self.poi_manager = poi_manager
         self.state = PopLiveState(revision="")
         self._revision = ""
         self._epoch = 0
@@ -89,7 +91,7 @@ class PopStatusService:
     def _replay_capabilities(self, active, context, catalog, availability):
         """Own one detached capability projection for the selected replay inputs."""
         from app.mission.exporter.snapshot_inputs import SourcePayload
-        from app.mission.exporter.snapshot_views import RouteView
+        from app.mission.exporter.snapshot_views import POIView, RouteView
         from app.mission.pop_capabilities import capability_input_revision
         from app.mission.pop_coverage_evidence import current_coverage_snapshot
         from app.mission.timeline_preparation import prepare_mission_timeline
@@ -117,19 +119,47 @@ class PopStatusService:
             revision = capability_input_revision(
                 active.leg, route, ka_snapshot=coverage, availability=availability
             )
+            assignments = {
+                active.leg.transports.initial_x_satellite_id,
+                *(
+                    item.target_satellite_id
+                    for item in active.leg.transports.x_transitions
+                ),
+            }
+            poi_payloads = (
+                tuple(
+                    point.model_dump_json().encode()
+                    for name in sorted(name for name in assignments if name)
+                    if (point := self.poi_manager.find_global_poi_by_name(name))
+                    is not None
+                )
+                if self.poi_manager is not None
+                else None
+            )
             key = (
                 context["simulation_run_id"],
                 active.parent_mission_id,
                 active.leg.id,
                 revision,
                 catalog.fingerprint if catalog else None,
+                (
+                    hashlib.sha256(b"\0".join(poi_payloads)).hexdigest()
+                    if poi_payloads is not None
+                    else None
+                ),
             )
             if self._replay_capability_cache is not None:
                 cached_key, captured = self._replay_capability_cache
                 if cached_key == key:
                     return captured
             supplied = context.get("call_capabilities")
-            if supplied is not None and supplied.input_revision == revision:
+            # Accepted RF identity predates POI fallback-source capture. Rebuild
+            # once per key when that provider participates, then reuse our copy.
+            if (
+                self.poi_manager is None
+                and supplied is not None
+                and supplied.input_revision == revision
+            ):
                 captured = copy.deepcopy(supplied)
             else:
                 source = self.route_manager.get_route(active.leg.route_id).model_copy(
@@ -147,6 +177,7 @@ class PopStatusService:
                 artifacts = prepare_mission_timeline(
                     active.leg,
                     routes,
+                    POIView(poi_payloads) if poi_payloads is not None else None,
                     parent_mission_id=active.parent_mission_id,
                     normalize_for_simulation=True,
                     pop_catalog=catalog,

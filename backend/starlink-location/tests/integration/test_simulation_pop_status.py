@@ -64,6 +64,7 @@ def pop_api(api, monkeypatch, tmp_path):
             main._pop_lifecycle_token
         ),
         snapshot_context_provider=main._simulation_pop_context,
+        poi_manager=service.poi_manager,
     )
     monkeypatch.setattr(main.app.state, "pop_status_service", pops, raising=False)
     monkeypatch.setattr(status_api, "_coordinator", service.coordinator)

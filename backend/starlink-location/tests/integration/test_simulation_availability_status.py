@@ -14,7 +14,7 @@ pop_api = source.pop_api
 
 
 @pytest.fixture
-def availability_status(pop_api, monkeypatch, tmp_path):
+def availability_status(pop_api, monkeypatch, tmp_path, request):
     client, service, clocks, pops, sites = pop_api
     monkeypatch.chdir(tmp_path)
     coverage = tmp_path / "data/sat_coverage"
@@ -46,6 +46,17 @@ def availability_status(pop_api, monkeypatch, tmp_path):
     app.state.planning_service = PlanningService(
         PlanningStore(storage.MISSIONS_DIR, service.route_manager, service.poi_manager)
     )
+    if getattr(request, "param", None) == "custom-x":
+        from app.models.poi import POICreate
+
+        service.poi_manager.create_poi(
+            POICreate(
+                name="Custom-status-X", latitude=0, longitude=180, category="satellite"
+            )
+        )
+        mission = storage.load_mission_v2("mission-1")
+        mission.legs[0].transports.initial_x_satellite_id = "Custom-status-X"
+        storage.save_mission_v2(mission)
     source.start_paced(client, 1)
     return client, service, clocks, pops, sites
 
@@ -78,6 +89,11 @@ def test_paced_status_keeps_selected_continuity_after_failure_and_restore(
     baseline = client.get("/api/status").json()
     assert baseline["pop_forecast"]["status"] == "ready"
     assert baseline["call_continuity"] is not None
+    field = {"X": "x", "Ka": "ka", "Ku": "starshield"}[transport]
+    baseline_capability = [
+        (span.start_utc, span.end_utc, getattr(span, field))
+        for span in pops._replay_capability_cache[1].spans
+    ]
     assert (
         command(client, transport, "unavailable", "fail-" + transport)["effective"][
             transport
@@ -87,7 +103,6 @@ def test_paced_status_keeps_selected_continuity_after_failure_and_restore(
     failed = client.get("/api/status").json()
     assert failed["transport_availability"][transport] is False
     assert failed["call_continuity"] is not None
-    field = {"X": "x", "Ka": "ka", "Ku": "starshield"}[transport]
     assert all(
         getattr(span, field) == "unavailable"
         for span in pops._replay_capability_cache[1].spans
@@ -106,6 +121,10 @@ def test_paced_status_keeps_selected_continuity_after_failure_and_restore(
     restored = client.get("/api/status").json()
     assert restored["transport_availability"][transport] is True
     assert restored["call_continuity"] is not None
+    assert [
+        (span.start_utc, span.end_utc, getattr(span, field))
+        for span in pops._replay_capability_cache[1].spans
+    ] == baseline_capability
     assert service.runtime.selected_plan() is accepted
     assert accepted.artifacts.call_capabilities.input_revision == accepted_revision
     assert accepted.artifacts.route.model_dump() == accepted_route
@@ -305,3 +324,83 @@ def test_all_failed_status_classifies_remaining_outage_and_ka_restore(
         for i in restored["call_continuity"]["intervals"]
     )
     assert restored["call_continuity"]["planned_communications_outage_seconds"] == 0
+
+
+@pytest.mark.parametrize("availability_status", ["custom-x"], indirect=True)
+def test_selected_refresh_preserves_custom_poi_x_geometry(
+    availability_status, monkeypatch
+):
+    from app.mission.availability_context import snapshot_for_leg
+    from app.mission.timeline_preparation import prepare_mission_timeline
+    from app.services.pop.catalog import load_catalog
+
+    client, service, _, pops, _ = availability_status
+    plan = service.runtime.selected_plan()
+    assert any(
+        span.x == "unavailable" for span in plan.artifacts.call_capabilities.spans
+    )
+    command(client, "Ka", "unavailable", "custom-x-refresh")
+    status = client.get("/api/status").json()
+    assert status["call_continuity"] is not None
+    mission = storage.load_mission_v2("mission-1")
+    selected = snapshot_for_leg(
+        mission, mission.legs[0], run_id=service.status().run.run_id
+    )
+    direct = prepare_mission_timeline(
+        mission.legs[0],
+        service.route_manager,
+        service.poi_manager,
+        parent_mission_id=mission.id,
+        normalize_for_simulation=True,
+        availability=selected,
+        pop_catalog=load_catalog(service.coordinator.config.pop.catalog_path),
+    )
+    assert any(span.x == "unavailable" for span in direct.call_capabilities.spans)
+    assert [
+        (s.start_utc, s.end_utc, s.x) for s in pops._replay_capability_cache[1].spans
+    ] == [(s.start_utc, s.end_utc, s.x) for s in direct.call_capabilities.spans]
+
+    from app.mission import timeline_preparation
+    from app.models.poi import POIUpdate
+
+    calls = []
+    prepare = timeline_preparation.prepare_mission_timeline
+
+    def counted(*args, **kwargs):
+        calls.append(True)
+        return prepare(*args, **kwargs)
+
+    monkeypatch.setattr(timeline_preparation, "prepare_mission_timeline", counted)
+    for _ in range(2):
+        assert client.get("/api/status").json()["call_continuity"] is not None
+    assert calls == []
+    old_key = pops._replay_capability_cache[0]
+    point = service.poi_manager.find_global_poi_by_name("Custom-status-X")
+    service.poi_manager.update_poi(point.id, POIUpdate(longitude=20))
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    assert len(calls) == 1
+    assert pops._replay_capability_cache[0] != old_key
+    # POI-only geometry remains unknown when no independent catalog certifies Up.
+    assert all(span.x == "unknown" for span in pops._replay_capability_cache[1].spans)
+    changed = prepare_mission_timeline(
+        mission.legs[0],
+        service.route_manager,
+        service.poi_manager,
+        parent_mission_id=mission.id,
+        normalize_for_simulation=True,
+        availability=selected,
+        pop_catalog=load_catalog(service.coordinator.config.pop.catalog_path),
+    )
+    assert [
+        (s.start_utc, s.end_utc, s.x) for s in pops._replay_capability_cache[1].spans
+    ] == [(s.start_utc, s.end_utc, s.x) for s in changed.call_capabilities.spans]
+    client.get("/api/status")
+    assert len(calls) == 1
+    edited_key = pops._replay_capability_cache[0]
+    assert service.poi_manager.delete_poi(point.id)
+    assert client.get("/api/status").json()["call_continuity"] is not None
+    assert len(calls) == 2
+    assert pops._replay_capability_cache[0] != edited_key
+    assert all(span.x == "unknown" for span in pops._replay_capability_cache[1].spans)
+    client.get("/api/status")
+    assert len(calls) == 2
