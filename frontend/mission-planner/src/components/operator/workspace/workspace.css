@@ -686,7 +686,7 @@
     min-height: 24px;
   }
 }
-@media (max-width: 900px) and (max-height: 500px) {
+@media (max-width: 900px) and (max-height: 760px) {
   .ws-awareness {
     grid-template-rows: auto;
   }
