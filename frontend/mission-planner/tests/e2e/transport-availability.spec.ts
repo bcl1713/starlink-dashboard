@@ -17,7 +17,7 @@ import type { TransportCatalog } from '../../src/services/transportCatalog';
 import type { CallContinuityProjection } from '../../src/types/pop';
 
 const evidence = process.env.TRANSPORT_ACCEPTANCE_EVIDENCE!;
-const departure = '2035-03-01T12:00:00Z';
+let departure = '';
 const at = (minutes: number) =>
   new Date(Date.parse(departure) + minutes * 60000).toISOString();
 const transports = [
@@ -48,6 +48,10 @@ async function json<T>(response: APIResponse): Promise<T> {
   return response.json();
 }
 async function seed(request: APIRequestContext) {
+  const input = await json<{ departure: string }>(
+    await request.post('/api/_synthetic/transport-inputs', { data: {} })
+  );
+  departure = input.departure;
   const missionId = `availability-${randomUUID()}`;
   for (const [name, longitude] of [
     ['Availability-X-1', 20],
@@ -141,9 +145,11 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   const read = () =>
     request.get(`${path}/availability`).then((r) => json<AvailabilityView>(r));
   const allPois = async () =>
-    (await json<{ pois: Poi[] }>(await request.get('/api/pois'))).pois.filter(
-      (p) => p.mission_id === missionId
-    );
+    (
+      await json<{ pois: Poi[] }>(
+        await request.get('/api/pois?active_only=false')
+      )
+    ).pois.filter((p) => p.mission_id === missionId);
   const timeline = (leg = legs[0].id) =>
     request.get(`${path}/legs/${leg}/timeline`).then((r) =>
       json<{
@@ -306,7 +312,9 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   });
   await assignment.getByRole('combobox').selectOption('X');
   await assignment.getByRole('button', { name: 'Apply', exact: true }).click();
-  await expect(assignment.locator('strong').filter({ hasText: 'X-band' })).toBeVisible();
+  await expect(
+    assignment.locator('strong').filter({ hasText: 'X-band' })
+  ).toBeVisible();
   const recordsBefore = await json<{
     items: Array<{ record: { record_id: string } }>;
   }>(await request.get(`/api/v2/operator/records?mission_id=${missionId}`));
@@ -346,7 +354,11 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     await expect(
       field.getByRole('button', { name: 'Restore', exact: true })
     ).toBeVisible();
-    expect((await read()).effective?.[transport.key]).toBe(false);
+    const accepted = await read();
+    expect(accepted.effective?.[transport.key]).toBe(false);
+    const failedAt = accepted.history
+      .filter((entry) => entry.transport === transport.key && entry.unavailable)
+      .at(-1)!.effective_at;
     const failedPois = await allPois();
     const retained = before.filter(
       (p) =>
@@ -357,9 +369,17 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       expect(current, `retained ${transport.key} POI ${poi.id}`).toBeTruthy();
       expect(current?.transport_active).toBe(false);
     }
+    const activePois = await json<{ pois: Poi[] }>(
+      await request.get('/api/pois')
+    );
+    expect(
+      activePois.pois.filter((p) =>
+        retained.some((original) => original.id === p.id)
+      )
+    ).toEqual([]);
     const failedTimeline = await timeline();
     const future = failedTimeline.segments.filter(
-      (s) => Date.parse(s.start_time) >= Date.parse(at(30))
+      (s) => Date.parse(s.start_time) >= Date.parse(failedAt)
     );
     expect(future.length).toBeGreaterThan(0);
     expect(future.every((s) => s[transport.state] === 'offline')).toBe(true);
@@ -367,7 +387,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       expect(
         failedTimeline.call_continuity.intervals
           .filter(
-            (interval) => Date.parse(interval.start_utc) >= Date.parse(at(30))
+            (interval) => Date.parse(interval.start_utc) >= Date.parse(failedAt)
           )
           .every(
             (interval) => !interval.usable_alternatives.includes(transport.key)
@@ -405,6 +425,8 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       transport: transport.key,
       failedPois,
       failedTimeline,
+      failedEvents,
+      failedAt,
       availability: await read(),
     });
     await page.screenshot({
@@ -431,12 +453,16 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   expect(recordsAfter.items.map((record) => record.record.record_id)).toEqual(
     recordsBefore.items.map((record) => record.record.record_id)
   );
+  const allDownView = await read();
+  const allDownAt = allDownView.history
+    .filter((entry) => entry.unavailable)
+    .at(-1)!.effective_at;
   const allDown = await timeline();
   expect(allDown.call_continuity).not.toBeNull();
   expect(
     allDown
       .call_continuity!.intervals.filter(
-        (interval) => Date.parse(interval.start_utc) >= Date.parse(at(30))
+        (interval) => Date.parse(interval.start_utc) >= Date.parse(allDownAt)
       )
       .every(
         (interval) =>
@@ -446,7 +472,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   ).toBe(true);
   expect(
     allDown.segments
-      .filter((s) => Date.parse(s.start_time) >= Date.parse(at(30)))
+      .filter((s) => Date.parse(s.start_time) >= Date.parse(allDownAt))
       .every(
         (s) =>
           s.x_state === 'offline' &&
@@ -492,7 +518,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       'python',
       '/transport-acceptance/export_probe.py',
       missionId,
-      at(30),
+      allDownAt,
     ],
     { env: process.env, encoding: 'utf8', timeout: 135000 }
   );
@@ -525,6 +551,10 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   ).toBeVisible();
   for (const key of ['Ka', 'Ku'] as const) await change(key, 'restore');
   expect((await read()).effective).toEqual({ X: true, Ka: true, Ku: true });
+  const restoredView = await read();
+  const restoredAt = restoredView.history
+    .filter((entry) => !entry.unavailable)
+    .at(-1)!.effective_at;
   const restored = await allPois();
   for (const transport of transports) {
     const original = before.filter(
@@ -534,7 +564,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     const future = original.filter(
       (p) =>
         p.expected_arrival_time &&
-        Date.parse(p.expected_arrival_time) > Date.parse(at(31))
+        Date.parse(p.expected_arrival_time) > Date.parse(restoredAt)
     );
     expect(future.length).toBeGreaterThan(0);
     for (const poi of future)
@@ -563,7 +593,7 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
       event.due_at
   ))
     expect(Date.parse(event.end_at ?? event.due_at!)).toBeGreaterThan(
-      Date.parse(at(31))
+      Date.parse(restoredAt)
     );
   snapshots.push({
     restored,

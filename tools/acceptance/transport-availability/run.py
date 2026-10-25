@@ -93,7 +93,7 @@ if __name__ == "__main__":
         if summary.exists():
             report = json.loads(summary.read_text())
             report["fixture"] = (
-                "Synthetic raw KML, RF catalogs and controlled input clock starting 2035-03-01T12:00:00Z; genuine product live-mode and authoritative simulation-run paths; no aircraft claims"
+                "Synthetic raw KML/RF catalogs/positions; live wall clock with route departure thirty minutes before fixture startup; controlled monotonic input to genuine authoritative simulation runtime; normal MissionClock source selection; no aircraft claims"
             )
             summary.write_text(json.dumps(report, indent=2))
             hashes = args.evidence / "hashes.json"

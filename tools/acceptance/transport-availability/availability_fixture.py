@@ -24,10 +24,10 @@ os.environ["OPERATOR_ROOT"] = str(root / "operator")
 
 class InputClock:
     elapsed = 0.0
-    start = datetime(2035, 3, 1, 12, tzinfo=timezone.utc)
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=30)
 
     def now(self):
-        return self.start + timedelta(seconds=self.elapsed)
+        return datetime.now(timezone.utc)
 
     def monotonic(self):
         return self.elapsed
@@ -77,14 +77,6 @@ coverage.mkdir(parents=True, exist_ok=True)
     )
 )
 main = importlib.import_module("main")
-original_binding = main.OperatorRuntimeBinding
-
-
-def controlled_binding(**kwargs):
-    return original_binding(**(kwargs | {"clock": clock}))
-
-
-main.OperatorRuntimeBinding = controlled_binding
 app = main.app
 original_lifespan = app.router.lifespan_context
 
@@ -148,5 +140,6 @@ async def inputs(body: dict):
         "synthetic": True,
         "raw_inputs_only": True,
         "now": clock.now(),
+        "departure": clock.start,
         "run": service.status(),
     }
