@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -72,7 +73,11 @@ def availability_api(tmp_path, monkeypatch):
     )
     app.state.availability_source_mode = "live"
     app.include_router(router)
-    with TestClient(app, raise_server_exceptions=False) as client:
+    with TestClient(
+        app,
+        raise_server_exceptions=False,
+        client=(f"availability-{uuid4()}", 50000),
+    ) as client:
         yield client, app, store, mission
 
 
