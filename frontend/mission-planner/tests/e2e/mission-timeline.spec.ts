@@ -122,11 +122,10 @@ test('whole mission chronology and usable workspace on phones, with retained dra
       await timeline.getByRole('button', { name: 'Jump to now' }).click();
       await expect(timeline.locator('.ws-timeline-now')).toBeInViewport();
       await expect(
-        timeline
-          .locator('.ws-timeline-row')
-          .filter({ hasText: 'Live route ETA' })
-          .first()
-          .getByRole('heading')
+        timeline.getByRole('heading', {
+          name: 'Customer requirement: Synthetic customer alpha',
+          exact: true,
+        })
       ).toBeInViewport();
       await page.screenshot({
         path: join(
@@ -321,6 +320,38 @@ test('automatic refresh follows moving flight while scheduled UTC events stay fi
         path: join(evidence, `flight-${snapshots.length}.png`),
       });
     }
+    expect(
+      (
+        await request.post(`${origin}/api/_synthetic/operator-model-inputs`, {
+          data: { now: '2026-10-17T16:20:00Z', longitude: 0, speed: 600 },
+        })
+      ).ok()
+    ).toBe(true);
+    const active = await read();
+    snapshots.push(active);
+    expect(fixed(active)).toEqual(reference);
+    expect(x(active).state).toBe('active');
+    await page.setViewportSize({ width: 844, height: 390 });
+    const activeRow = timeline
+      .locator('.ws-timeline-row')
+      .filter({ hasText: 'Live route ETA' })
+      .first();
+    await expect(activeRow.locator('.ws-timeline-time time')).toHaveAttribute(
+      'datetime',
+      x(active).due_at!,
+      { timeout: 25000 }
+    );
+    await timeline
+      .getByRole('heading', { name: 'Scheduled arrival', exact: true })
+      .last()
+      .scrollIntoViewIfNeeded();
+    await timeline.getByRole('button', { name: 'Jump to now' }).click();
+    await expect(timeline.locator('.ws-timeline-now')).toBeInViewport();
+    await expect(activeRow.getByRole('heading')).toBeInViewport();
+    await expect(activeRow.getByText(/^Recovery in/)).toBeInViewport();
+    await page.screenshot({
+      path: join(evidence, 'active-window-landscape.png'),
+    });
     writeFileSync(
       join(evidence, 'moving-flight-proof.json'),
       JSON.stringify(

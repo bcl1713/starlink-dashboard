@@ -79,7 +79,8 @@ export function MissionTimeline({
           if (marker && body)
             body.scrollTop +=
               marker.getBoundingClientRect().top -
-              body.getBoundingClientRect().top;
+              body.getBoundingClientRect().top -
+              body.clientHeight * 0.65;
         }}
       >
         Jump to now

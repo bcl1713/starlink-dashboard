@@ -105,7 +105,9 @@ export function MissionTimelineContents({
         ? 'Route schedule'
         : event.time_basis === 'live_route_eta'
           ? 'Live route ETA'
-          : 'Fixed time';
+          : event.kind === 'restriction' || event.kind === 'pop_advisory'
+            ? 'Scheduled route time'
+            : 'Fixed time';
     const endLabel =
       event?.kind === 'restriction'
         ? 'Expected recovery'

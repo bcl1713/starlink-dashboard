@@ -36,6 +36,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
+it('labels a route-based scheduled restriction separately from fixed UTC requirements', () => {
+  render(
+    <MissionTimeline
+      timeline={state([
+        eventFixture({ kind: 'restriction', time_basis: 'planned_utc' }),
+      ])}
+    />
+  );
+  expect(screen.getByText('Scheduled route time')).toBeTruthy();
+  expect(screen.queryByText('Fixed time')).toBeNull();
+});
 it('marks an individually stale next event as last known in the phone summary', () => {
   vi.stubGlobal('matchMedia', () => ({
     matches: true,
