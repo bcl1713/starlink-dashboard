@@ -4,6 +4,7 @@ from dataclasses import replace
 from uuid import uuid4
 
 from app.mission import storage
+from app.mission.availability_context import expected_snapshot
 from app.mission.timeline_preparation import prepare_mission_timeline
 
 from .errors import PlanningFailure, conflict
@@ -71,13 +72,19 @@ def preview(service, mission_id, leg_id, request, *, availability=None):
             return store.checked_inputs(mission_id, leg_id, request.input_identity)
         return store.checked(mission_id, leg_id, request.expected_revision)
 
-    _, _, source = check()
+    parent, _, source = check()
     leg = source.model_copy(deep=True)
     leg.draft = request.draft.model_copy(deep=True)
+    if source.draft is not None and (
+        parent.availability.revision > 0
+        or "availability_overrides" not in request.draft.model_fields_set
+    ):
+        leg.draft.availability_overrides = source.draft.availability_overrides
     if request.ar_section_status is not None:
         leg.ar_section_status = request.ar_section_status
+    availability = availability or expected_snapshot(parent, leg)
     constraints = store.planning_constraints_provider()
-    environment = environment_identity(store, leg, constraints)
+    environment = environment_identity(store, leg, constraints, mission=parent)
     inputs = build_inputs(
         leg,
         leg.draft,
@@ -105,13 +112,16 @@ def preview(service, mission_id, leg_id, request, *, availability=None):
             parent_mission_id=mission_id,
             constraint_config=constraints,
             capture_x_conditions=True,
+            availability=availability,
         )
         evaluation.map_diagnostics = list(
             check_prepared_map(candidate, artifacts, constraints, store.poi_manager)
         )
-    check()
+    fresh_parent, _, _ = check()
     if (
-        environment_identity(store, leg, store.planning_constraints_provider())
+        environment_identity(
+            store, leg, store.planning_constraints_provider(), mission=fresh_parent
+        )
         != environment
     ):
         raise conflict("Planning dependencies changed; preview again")
@@ -120,9 +130,10 @@ def preview(service, mission_id, leg_id, request, *, availability=None):
 
 def prepare_reviewed_leg(service, mission_id, leg_id, request, *, availability=None):
     store = service.store
-    leg, constraints, environment, _ = service.proposals._snapshot(
-        mission_id, leg_id, request
+    leg, constraints, environment, _, captured_availability, _ = (
+        service.proposals._snapshot(mission_id, leg_id, request)
     )
+    availability = availability or captured_availability
     inputs = build_inputs(
         leg,
         leg.draft,
@@ -177,6 +188,7 @@ def prepare_reviewed_leg(service, mission_id, leg_id, request, *, availability=N
         parent_mission_id=mission_id,
         constraint_config=constraints,
         capture_x_conditions=True,
+        availability=availability,
     )
     if artifacts.planning_evaluation != evaluation:
         raise conflict("Canonical timeline changed; preview again")

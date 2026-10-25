@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from app.mission import storage
+from app.mission.availability_context import selection_context
 from app.models.poi import POI
 from app.services.poi.manager import _route_geometry_hash
 
@@ -23,9 +24,11 @@ from .sources import SourceStore
 
 def leg_identity(leg):
     # Review identity must not hash itself or publication bookkeeping.
-    return planning_identity(
-        leg.model_dump(exclude={"review", "installed_leg_id", "retired"})
-    )
+    record = leg.model_dump(exclude={"review", "installed_leg_id", "retired"})
+    # Hydrating an older card must retain its persisted approval identity.
+    if record.get("draft") is not None and leg.draft.availability_overrides is None:
+        record["draft"].pop("availability_overrides", None)
+    return planning_identity(record)
 
 
 def selection_errors(draft, *, availability=None, start=None, end=None):
@@ -164,7 +167,9 @@ class PlanningStore:
             ExpectedLegCard(
                 leg=leg.model_copy(deep=True),
                 input_identity=leg_identity(leg),
-                errors=selection_errors(leg.draft),
+                errors=selection_errors(
+                    leg.draft, **selection_context(mission, leg, self.route_manager)
+                ),
             )
             for leg in sorted(manifest.expected_legs, key=lambda leg: leg.ordinal)
             if not leg.retired
@@ -185,7 +190,10 @@ class PlanningStore:
 
                 try:
                     current = environment_identity(
-                        self, card.leg, self.planning_constraints_provider()
+                        self,
+                        card.leg,
+                        self.planning_constraints_provider(),
+                        mission=mission,
                     )
                 except (ValueError, PlanningFailure):
                     current = None
@@ -197,8 +205,16 @@ class PlanningStore:
                             message="Planning dependencies changed; preview and review again",
                         )
                     )
+            from app.mission.availability_models import Transport
+            from app.mission.availability_planning import usable_during
+
+            context = selection_context(mission, card.leg, self.route_manager)
+            x_required = usable_during(
+                context["availability"], Transport.X, context["start"], context["end"]
+            )
             if (
-                card.leg.draft
+                x_required
+                and card.leg.draft
                 and set(card.leg.draft.permitted_satellite_ids) - eligible
             ):
                 card.errors.append(
@@ -213,7 +229,7 @@ class PlanningStore:
             ]
             if references:
                 card.computation_status = proposals.status(
-                    card.leg, references[-1], manifest.revision
+                    card.leg, references[-1], manifest.revision, mission=mission
                 )
             if card.review_status == "reviewed" and card.computation_status in {
                 "idle",
@@ -328,25 +344,36 @@ class PlanningStore:
             from .inputs import build_inputs
 
             with storage.get_active_leg_lock():
-                _, _, source_leg = self.checked(
+                source_parent, _, source_leg = self.checked(
                     mission_id, leg_id, request.expected_revision
                 )
                 source_leg = source_leg.model_copy(deep=True)
+            captured_draft = request.draft.model_copy(deep=True)
+            if source_leg.draft is not None and (
+                source_parent.availability.revision > 0
+                or "availability_overrides" not in request.draft.model_fields_set
+            ):
+                captured_draft.availability_overrides = (
+                    source_leg.draft.availability_overrides
+                )
             # Accept a new client-supplied context only after validating all
             # captured inputs and exact current seeds outside commit locks.
             try:
                 inputs = build_inputs(
                     source_leg,
-                    request.draft,
+                    captured_draft,
                     self.route_manager,
                     self.poi_manager,
                     self.planning_constraints_provider(),
+                    availability=selection_context(
+                        source_parent, source_leg, self.route_manager, captured_draft
+                    )["availability"],
                 )
                 validate_context(
-                    inputs, request.draft, request.draft.evaluation_context
+                    inputs, captured_draft, request.draft.evaluation_context
                 )
                 if request.draft.evaluation_context.seed_times == sorted(
-                    set(swap_times(inputs, request.draft))
+                    set(swap_times(inputs, captured_draft))
                 ):
                     validated_context = request.draft.evaluation_context.model_copy(
                         deep=True
@@ -362,6 +389,11 @@ class PlanningStore:
             previous_identity = leg_identity(leg)
             previous = leg.draft
             incoming = request.draft.model_copy(deep=True)
+            if previous is not None and (
+                mission.availability.revision > 0
+                or "availability_overrides" not in request.draft.model_fields_set
+            ):
+                incoming.availability_overrides = previous.availability_overrides
             # Context is server-owned. Explicit manual timing edits always reseed,
             # including moving a swap onto an already existing candidate instant.
             unchanged = previous is not None and structural_draft(
@@ -614,7 +646,10 @@ class PlanningStore:
                         unchanged_environment = (
                             old.review.environment_identity
                             == environment_identity(
-                                self, old, self.planning_constraints_provider()
+                                self,
+                                old,
+                                self.planning_constraints_provider(),
+                                mission=mission,
                             )
                         )
                     except (PlanningFailure, ValueError):

@@ -31,6 +31,8 @@ def build_mission_timeline(
     coverage_sampler: CoverageSampler | None = None,
     parent_mission_id: str | None = None,
     include_samples: bool = False,
+    *,
+    availability=None,
 ) -> tuple[MissionLegTimeline, TimelineSummary]:
     artifacts = prepare_mission_timeline(
         mission,
@@ -39,6 +41,7 @@ def build_mission_timeline(
         coverage_sampler or _get_default_coverage_sampler(),
         parent_mission_id,
         include_samples,
+        availability=availability,
     )
     if poi_manager:
         publish_mission_pois(

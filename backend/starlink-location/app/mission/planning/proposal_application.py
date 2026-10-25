@@ -30,7 +30,7 @@ def _selection(api, mission_id, request):
             raise PlanningFailure(
                 404, "proposal_not_found", "Selected proposal is unavailable"
             )
-        if api.status(leg, reference, manifest.revision) != "ready":
+        if api.status(leg, reference, manifest.revision, mission=mission) != "ready":
             raise conflict("A selected proposal changed; refresh and compare again")
         captured.append((entry, reference.model_copy(deep=True)))
     return mission, manifest, captured

@@ -96,7 +96,14 @@ def commit_reviewed_batch(store, mission_id, request, prepared):
             service.proposals._recheck(
                 mission_id, leg.id, captured.review, captured.environment_identity
             )
-            validate_review(leg, captured.review, captured.evaluation)
+            from app.mission.availability_context import selection_context
+
+            validate_review(
+                leg,
+                captured.review,
+                captured.evaluation,
+                **selection_context(mission, leg, store.route_manager)
+            )
             artifacts = captured.artifacts
             installed = artifacts.validated_leg.model_copy(deep=True)
             if (

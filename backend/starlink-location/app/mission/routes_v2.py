@@ -33,6 +33,8 @@ from app.mission.dependencies import (
     get_poi_manager,
     get_route_manager,
 )
+from app.mission.availability import resolved_leg_availability
+from app.mission.availability_routes import router as availability_router
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.leg_activation import activate_leg_transaction
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
@@ -80,6 +82,7 @@ MISSION_PACKAGE_MAX_ENTRIES = 10000
 MISSION_PACKAGE_ENDPOINT_MARKER = "Imported by mission-package endpoint sync"
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
+router.include_router(availability_router)
 
 # Global manager instances (set by main.py during startup)
 _coverage_sampler: CoverageSampler | None = None
@@ -134,6 +137,7 @@ async def create_mission(
                             poi_manager=poi_manager,
                             coverage_sampler=_coverage_sampler,
                             parent_mission_id=mission.id,
+                            availability=resolved_leg_availability(mission, leg),
                         )
                         save_mission_timeline(
                             leg.id, timeline, parent_mission_id=mission.id
@@ -1017,6 +1021,7 @@ def _generate_timelines_for_imported_legs(
                     poi_manager=poi_manager,
                     coverage_sampler=coverage_sampler,
                     parent_mission_id=mission.id,
+                    availability=resolved_leg_availability(mission, leg),
                 )
                 save_mission_timeline(leg.id, timeline, parent_mission_id=mission.id)
                 logger.info(f"Timeline generated and saved for imported leg {leg.id}")
@@ -1280,6 +1285,7 @@ async def add_leg_to_mission(
                         poi_manager=poi_manager,
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
+                        availability=resolved_leg_availability(mission, leg),
                     )
                     save_mission_timeline(
                         leg.id, timeline, parent_mission_id=mission_id
@@ -1453,6 +1459,14 @@ async def update_leg(
             # route upload may replace an active route. Full PUT remains available
             # for ordinary active-leg field updates.
             stored_leg = mission.legs[leg_index]
+            if (
+                mission.availability.revision > 0
+                or "availability_overrides"
+                not in updated_leg.transports.model_fields_set
+            ):
+                updated_leg.transports.availability_overrides = (
+                    stored_leg.transports.availability_overrides
+                )
             updated_leg.is_active = stored_leg.is_active
             if stored_leg.is_active:
                 updated_leg.route_id = stored_leg.route_id
@@ -1468,7 +1482,12 @@ async def update_leg(
                         stored_leg.transports.starshield_enabled
                     )
                 try:
-                    refresh_leg(updated_leg, route_manager, poi_manager)
+                    refresh_leg(
+                        updated_leg,
+                        route_manager,
+                        poi_manager,
+                        availability=resolved_leg_availability(mission, updated_leg),
+                    )
                 except ValueError as exc:
                     raise HTTPException(422, str(exc)) from exc
             # Update leg
@@ -1490,6 +1509,7 @@ async def update_leg(
                         poi_manager=poi_manager,
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
+                        availability=resolved_leg_availability(mission, updated_leg),
                     )
                     # Log the timeline start time to verify it was adjusted
                     if timeline.segments:
@@ -2538,6 +2558,7 @@ async def update_leg_route(
                         poi_manager=poi_manager,
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
+                        availability=resolved_leg_availability(mission, leg),
                     )
                     save_mission_timeline(
                         leg_id, timeline, parent_mission_id=mission_id
@@ -2744,6 +2765,7 @@ async def preview_leg_timeline(
             coverage_sampler=_coverage_sampler,
             parent_mission_id=mission_id,
             include_samples=True,
+            availability=resolved_leg_availability(mission, preview_leg),
         )
 
         response = timeline.model_dump(mode="json")

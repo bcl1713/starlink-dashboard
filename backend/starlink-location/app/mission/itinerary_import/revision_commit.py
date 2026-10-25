@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 from app.mission import storage
 from app.mission.models import Mission
+from app.mission.availability import resolved_leg_availability
 from app.mission.planning.identity import planning_identity
 from app.mission.planning.journal import json_bytes
 from app.mission.timeline_preparation import prepare_mission_timeline
@@ -52,22 +53,31 @@ def commit_prepared_revision(service, id, generation, resolutions):
     )
     files = {}
     for leg in mission.legs:
-        old = next((l for l in current.legs if l.id == leg.id), None)
+        old = next((item for item in current.legs if item.id == leg.id), None)
         if old and old == leg:
             continue
         if old and old.is_active:
             raise HTTPException(
                 409, "Deactivate affected legs before applying itinerary changes"
             )
-        refresh_leg(leg, manager, service.poi_manager)
+        refresh_leg(
+            leg,
+            manager,
+            service.poi_manager,
+            availability=resolved_leg_availability(mission, leg),
+        )
         artifacts = prepare_mission_timeline(
-            leg, manager, service.poi_manager, parent_mission_id=mission.id
+            leg,
+            manager,
+            service.poi_manager,
+            parent_mission_id=mission.id,
+            availability=resolved_leg_availability(mission, leg),
         )
         files[storage.get_leg_timeline_path(leg.id, mission.id)] = json_bytes(
             artifacts.timeline.model_dump(mode="json")
         )
     for old in current.legs:
-        if not any(l.id == old.id for l in mission.legs):
+        if not any(item.id == old.id for item in mission.legs):
             if old.is_active:
                 raise HTTPException(
                     409, "Deactivate affected legs before applying itinerary changes"
@@ -89,7 +99,7 @@ def commit_prepared_revision(service, id, generation, resolutions):
     ]
     provenance["baseline"] = {
         "name": mission.name,
-        "legs": [l.model_dump(mode="json") for l in incoming.legs],
+        "legs": [item.model_dump(mode="json") for item in incoming.legs],
     }
     sources, records = source_files(service, op, prepared)
     files.update(sources)
