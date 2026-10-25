@@ -236,7 +236,8 @@ def test_simulation_failure_does_not_affect_live_mission(availability_api):
     stored = storage.load_mission_v2(mission.id)
     assert stored.availability.simulation_run_id is None
     timeline = storage.load_mission_timeline("leg-1", mission.id)
-    assert all(segment.ka_state == "offline" for segment in timeline.segments)
+    assert timeline.statistics["_transport_availability"]["simulation_run_id"] is None
+    assert all(segment.ka_state != "offline" for segment in timeline.segments)
     app.state.availability_source_mode = "live"
     assert (
         client.get(f"/api/v2/missions/{mission.id}/availability").json()["effective"][

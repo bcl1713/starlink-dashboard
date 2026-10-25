@@ -401,3 +401,95 @@ def test_legacy_environment_review_survives_until_real_availability_edit(prepare
     assert (
         service.store.read(mission.id).expected_legs[0].review_status == "needs_review"
     )
+
+
+def test_simulation_commands_preserve_managed_live_inputs_context_and_map(prepared):
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    from app.mission.availability_context import snapshot_for_leg
+    from app.mission.availability_routes import AvailabilityAction
+    from app.mission.planning.inputs import canonical_inputs
+    from app.mission.timeline_preparation import prepare_mission_timeline
+
+    from .test_reviewed_save import review
+
+    service, view = prepared
+    service.save_reviewed(view.mission.id, "card-1", review(service, view))
+    parent = storage.load_mission_v2(view.mission.id)
+    leg = parent.legs[0]
+    leg.is_active = True
+    storage.save_mission_v2(parent)
+    service.store.route_manager.activate_route(leg.route_id)
+    now = leg.transports.planning_inputs.start_time + timedelta(minutes=10)
+    run = SimpleNamespace(
+        run_id="managed-run-one",
+        mission_id=parent.id,
+        leg_id=leg.id,
+        simulation_time=now,
+    )
+    mode = ["simulation"]
+    availability = AvailabilityService(
+        service.store,
+        clock=SimpleNamespace(now=lambda: now),
+        source_mode=lambda: mode[0],
+        run_service=SimpleNamespace(
+            status=lambda: SimpleNamespace(state="running", run=run)
+        ),
+    )
+    for index, action in enumerate(("unavailable", "restore", "unavailable")):
+        response = availability.command(
+            parent.id,
+            AvailabilityAction(
+                expected_revision=index,
+                command_id=f"managed-{index}",
+                transport="Ka",
+                action=action,
+                expected_simulation_run_id=run.run_id,
+            ),
+            action=True,
+        )
+        assert response["effective"]["Ka"] is (action == "restore")
+        current = storage.load_mission_v2(parent.id)
+        installed = current.legs[0]
+        inputs = installed.transports.planning_inputs
+        assert inputs.availability.simulation_run_id is None
+        assert inputs.availability.resolve(now)["Ka"] is True
+        assert inputs.availability.failures == ()
+        route = service.store.route_manager.get_route(installed.route_id)
+        canonical_inputs(
+            installed,
+            route,
+            poi_manager=service.store.poi_manager,
+            availability=snapshot_for_leg(current, installed),
+        )
+        saved = storage.load_mission_timeline(installed.id, parent.id)
+        assert saved.statistics["_transport_availability"]["simulation_run_id"] is None
+        assert all(
+            p.transport_active
+            for p in (saved.map_pois or [])
+            if p.kind.startswith("ka_")
+        )
+        selected = snapshot_for_leg(current, installed, run_id=run.run_id)
+        projected = prepare_mission_timeline(
+            installed,
+            service.store.route_manager,
+            service.store.poi_manager,
+            parent_mission_id=parent.id,
+            availability=selected,
+        )
+        assert (
+            projected.timeline.statistics["_transport_availability"][
+                "simulation_run_id"
+            ]
+            == run.run_id
+        )
+        assert selected.resolve(now)["Ka"] is (action == "restore")
+    run.run_id = "managed-run-two"
+    assert availability.read(parent.id)["effective"]["Ka"] is True
+    mode[0] = "live"
+    reopened = AvailabilityService(
+        service.store, clock=SimpleNamespace(now=lambda: now), source_mode="live"
+    )
+    assert reopened.read(parent.id)["effective"]["Ka"] is True
+    assert len(storage.load_mission_v2(parent.id).availability.history) == 3

@@ -198,8 +198,8 @@ class AvailabilityService:
         with storage.get_active_leg_lock():
             return self._view(self._load(mission_id))
 
-    def _prepare(self, mission, previous, *, run_id=None):
-        """Prepare only detached candidate values; no mutable parent reads in calculators."""
+    def _prepare(self, mission, previous):
+        """Publish canonical live/base artifacts; replay state is projected on read."""
         from uuid import uuid4
 
         from app.mission import timeline_preparation
@@ -252,7 +252,7 @@ class AvailabilityService:
                 if manifest
                 else None
             )
-            snapshot = snapshot_for_leg(mission, leg, run_id=run_id)
+            snapshot = snapshot_for_leg(mission, leg)
             if leg.route_id:
                 if leg.transports.planning_policy is not None:
                     if card is not None:
@@ -549,7 +549,7 @@ class AvailabilityService:
                     *receipts,
                     {"id": request.command_id, "identity": identity},
                 ]
-                files, pois = self._prepare(candidate, mission, run_id=run_id)
+                files, pois = self._prepare(candidate, mission)
             except ValueError as exc:
                 raise PlanningFailure(
                     422, "availability_regeneration_failed", str(exc)

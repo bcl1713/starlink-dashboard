@@ -158,6 +158,12 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
         segments: Segment[];
         map_pois: Poi[];
         call_continuity: CallContinuityProjection | null;
+        statistics: {
+          _transport_availability: {
+            simulation_run_id: string | null;
+            failures: Array<{ end: string | null }>;
+          };
+        };
       }>(r)
     );
   const change = async (
@@ -695,6 +701,20 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
   const failedSimulation = await change('Ka', 'unavailable');
   expect(failedSimulation.effective?.Ka).toBe(false);
   expect(failedSimulation.legs[0].planning_effective?.Ka).toBe(true);
+  const canonicalDuringReplay = await timeline();
+  expect(
+    canonicalDuringReplay.statistics._transport_availability.simulation_run_id
+  ).toBeNull();
+  expect(
+    canonicalDuringReplay.statistics._transport_availability.failures.every(
+      (window) => window.end !== null
+    )
+  ).toBe(true);
+  expect(
+    canonicalDuringReplay.map_pois.some(
+      (poi) => poi.kind?.startsWith('ka_') && poi.transport_active !== false
+    )
+  ).toBe(true);
   const rejectedRun = await request.post(`${path}/availability/actions`, {
     data: {
       expected_revision: failedSimulation.revision,
@@ -719,6 +739,9 @@ test('mission defaults, live failures, retained cues, restoration and authoritat
     })
   );
   expect((await read()).effective?.Ka).toBe(true);
+  expect(
+    (await timeline()).statistics._transport_availability.simulation_run_id
+  ).toBeNull();
   const overview = await context.newPage();
   await overview.goto('/overview');
   await expect(

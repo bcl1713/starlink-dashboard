@@ -285,7 +285,7 @@ def test_new_simulation_plan_excludes_live_failure(cues):
     assert snapshot["failures"] == []
 
 
-def test_live_export_fallback_does_not_trust_simulation_poi_flags(cues, monkeypatch):
+def test_live_export_fallback_uses_canonical_pois_during_simulation(cues, monkeypatch):
     client, app, store, mission, points = cues
     from app.mission.exporter.snapshot import capture_export_snapshot
     from app.mission.exporter.snapshot_views import SnapshotViews
@@ -303,8 +303,18 @@ def test_live_export_fallback_does_not_trust_simulation_poi_flags(cues, monkeypa
         )
     )
     assert command(client).status_code == 200
+    canonical = store.poi_manager.get_poi(points["ka_transition"].id)
+    assert canonical.transport_active is True
+    from app.mission.availability_context import snapshot_for_leg
+    from app.mission.availability_pois import apply_poi_availability
+
+    parent = storage.load_mission_v2(mission.id)
+    selected = snapshot_for_leg(parent, parent.legs[0], run_id="simulation-one")
     assert (
-        store.poi_manager.get_poi(points["ka_transition"].id).transport_active is False
+        apply_poi_availability(
+            canonical, selected, now=NOW + timedelta(minutes=10)
+        ).transport_active
+        is False
     )
 
     def unavailable(*args, **kwargs):
