@@ -65,7 +65,7 @@ def build_active_x_link(
     relative-azimuth rule window (135°–225°).
     """
     route = route_manager.get_active_route() if route_manager else None
-    active_leg = find_active_mission_leg(route)
+    parent_mission, active_leg = _find_active_mission_leg(route)
     manual_poi = (
         _find_satellite_poi(poi_manager, manual_satellite_id)
         if manual_satellite_id
@@ -103,18 +103,8 @@ def build_active_x_link(
         from app.mission.availability_context import snapshot_for_leg
         from app.mission.models import Transport
 
-        if availability is None and route_manager is not None:
-            from app.mission.active_context import resolve_active_mission_leg_context
-
-            context = resolve_active_mission_leg_context(route_manager).context
-            if (
-                context is not None
-                and context.leg.id == active_leg.id
-                and context.route_id == active_leg.route_id
-            ):
-                availability = snapshot_for_leg(
-                    context.parent_mission, context.leg, run_id=run_id
-                )
+        if availability is None:
+            availability = snapshot_for_leg(parent_mission, active_leg, run_id=run_id)
         if (
             availability is not None
             and not availability.resolve(availability_time)[Transport.X]
@@ -204,12 +194,17 @@ def build_active_x_link(
 
 
 def find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | None:
+    return _find_active_mission_leg(route)[1]
+
+
+def _find_active_mission_leg(route):
+    """Keep mission ownership with selection, even when route context is missing."""
     missions_dir = storage.MISSIONS_DIR
     if not missions_dir.exists():
-        return None
+        return None, None
 
     active_route_id = _route_id(route) if route is not None else None
-    first_active_leg: MissionLeg | None = None
+    first_active = (None, None)
     for mission_dir in sorted(missions_dir.iterdir()):
         if not mission_dir.is_dir():
             continue
@@ -219,11 +214,11 @@ def find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | No
         for leg in mission.legs:
             if not leg.is_active:
                 continue
-            if first_active_leg is None:
-                first_active_leg = leg
+            if first_active[1] is None:
+                first_active = (mission, leg)
             if active_route_id is not None and leg.route_id == active_route_id:
-                return leg
-    return first_active_leg
+                return mission, leg
+    return first_active
 
 
 def _route_id(route: ParsedRoute) -> str | None:

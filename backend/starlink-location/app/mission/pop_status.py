@@ -149,11 +149,7 @@ class PopStatusService:
                 active.leg.id,
                 revision,
                 catalog.fingerprint if catalog else None,
-                (
-                    hashlib.sha256(b"\0".join(poi_payloads)).hexdigest()
-                    if poi_payloads is not None
-                    else None
-                ),
+                poi_payloads,
             )
             if self._replay_capability_cache is not None:
                 cached_key, captured = self._replay_capability_cache

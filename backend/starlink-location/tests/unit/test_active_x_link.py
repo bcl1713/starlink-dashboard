@@ -295,7 +295,8 @@ def _availability_link(
         ),
     )
     monkeypatch.setattr(
-        "app.services.active_x_link.find_active_mission_leg", lambda route=None: leg
+        "app.services.active_x_link._find_active_mission_leg",
+        lambda route=None: (None, leg),
     )
     snapshot = LegAvailability(
         mission_id="clock-mission",

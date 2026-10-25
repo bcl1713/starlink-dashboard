@@ -13,7 +13,18 @@ from tests.planning import test_proposals as managed
 api = source.api
 pop_api = source.pop_api
 service = managed.service
-prepared = managed.prepared
+
+
+@pytest.fixture
+def prepared(service, tmp_path, monkeypatch):
+    # This imported planning fixture runs outside planning/conftest.py's scope.
+    from app.mission.planning.deadlines import shutdown_workers, start_workers
+
+    start_workers()
+    try:
+        yield managed.prepared.__wrapped__(service, tmp_path, monkeypatch)
+    finally:
+        shutdown_workers()
 
 
 @pytest.fixture

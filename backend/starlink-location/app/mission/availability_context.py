@@ -27,6 +27,11 @@ def expected_snapshot(mission, card, draft=None, *, run_id=None):
             availability_overrides=draft.availability_overrides if draft else None,
         ),
     )
+    return _snapshot(mission, leg, run_id=run_id)
+
+
+def _snapshot(mission, leg, *, run_id=None):
+    # Preserve standalone planning identities until availability is explicitly set.
     if not (
         mission.availability.revision
         or mission.availability.defaults
@@ -34,7 +39,6 @@ def expected_snapshot(mission, card, draft=None, *, run_id=None):
     ):
         from app.mission.availability_planning import leg_snapshot
 
-        leg.id = card.id
         return leg_snapshot(leg)
     return resolved_leg_availability(for_run(mission, run_id), leg)
 
@@ -72,15 +76,7 @@ def selection_context(mission, card, route_manager, draft=None):
 
 def snapshot_for_leg(mission, leg, *, run_id=None):
     """Installed canonical configuration in its stable expected-card namespace."""
-    snapshot = resolved_leg_availability(for_run(mission, run_id), leg)
-    if not (
-        mission.availability.revision
-        or mission.availability.defaults
-        or mission.availability.history
-    ):
-        from app.mission.availability_planning import leg_snapshot
-
-        snapshot = leg_snapshot(leg)
+    snapshot = _snapshot(mission, leg, run_id=run_id)
     raw = mission.metadata.get("itinerary_planning")
     if raw:
         from app.mission.planning.models import PlanningManifest
