@@ -73,7 +73,14 @@ export function MissionTimeline({
     <div className="ws-timeline-controls">
       <button
         className="ws-button"
-        onClick={() => nowMarker.current?.scrollIntoView({ block: 'center' })}
+        onClick={() => {
+          const marker = nowMarker.current;
+          const body = marker?.closest('.ws-timeline-body');
+          if (marker && body)
+            body.scrollTop +=
+              marker.getBoundingClientRect().top -
+              body.getBoundingClientRect().top;
+        }}
       >
         Jump to now
       </button>

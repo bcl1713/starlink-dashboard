@@ -535,9 +535,6 @@
   min-height: 0;
 }
 .ws-timeline-now {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   background: var(--background);
   color: #67e8f9;
   border-block: 1px solid #22d3ee;

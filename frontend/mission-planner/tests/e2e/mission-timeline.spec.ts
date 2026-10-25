@@ -121,6 +121,13 @@ test('whole mission chronology and usable workspace on phones, with retained dra
       ).toBeInViewport();
       await timeline.getByRole('button', { name: 'Jump to now' }).click();
       await expect(timeline.locator('.ws-timeline-now')).toBeInViewport();
+      await expect(
+        timeline
+          .locator('.ws-timeline-row')
+          .filter({ hasText: 'Live route ETA' })
+          .first()
+          .getByRole('heading')
+      ).toBeInViewport();
       await page.screenshot({
         path: join(
           evidence,

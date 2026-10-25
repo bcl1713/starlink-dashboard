@@ -524,7 +524,7 @@ export function OperatorWorkspace() {
                     ? `Active: ${active.data.mission_name} · ${active.data.leg_name ?? 'Leg unavailable'}`
                     : 'No active mission or leg'}
             </span>
-            {active.data?.phase && (
+            {!active.isError && active.data?.phase && (
               <span>· {active.data.phase.replaceAll('_', ' ')}</span>
             )}
           </p>
