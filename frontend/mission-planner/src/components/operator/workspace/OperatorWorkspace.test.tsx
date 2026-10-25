@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -14,8 +15,11 @@ import { OperatorJournalPage } from '@/pages/OperatorJournalPage';
 import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
 import { DraftRegistry } from './draftRegistry';
 import { conferenceDraft } from '../conferenceCommands';
+import { callDraft } from '../callDraft';
 import * as api from '@/services/operator';
 import * as eventsApi from '@/services/operatorEvents';
+import * as timelineApi from '@/services/missionTimeline';
+import { eventSnapshot, eventFixture } from '@/test/operator-event-fixtures';
 import { health, page, record } from '@/test/operator-fixtures';
 const missionState = vi.hoisted(() => ({
   pending: false,
@@ -58,9 +62,14 @@ function mount(route = '/operator', ready = false, source = health) {
       source_mode: 'live',
       replay_run_id: null,
     });
-  vi.spyOn(eventsApi, 'readEventSnapshot').mockRejectedValue(
-    new Error('Optional feed unavailable')
-  );
+  if (!vi.isMockFunction(timelineApi.readMissionTimeline))
+    vi.spyOn(timelineApi, 'readMissionTimeline').mockRejectedValue(
+      new Error('Optional timeline unavailable')
+    );
+  if (!vi.isMockFunction(eventsApi.readEventSnapshot))
+    vi.spyOn(eventsApi, 'readEventSnapshot').mockRejectedValue(
+      new Error('Optional feed unavailable')
+    );
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue({
     ...source,
     ready,
@@ -331,9 +340,9 @@ it.each(['now', 'communications'])(
       const headings = screen
         .getAllByRole('heading')
         .map((heading) => heading.textContent);
-      expect(headings.indexOf('Active Bridges')).toBeLessThan(
-        headings.indexOf('Mission activity')
-      );
+      expect(headings).toContain('Active Bridges');
+      expect(headings).toContain('Mission timeline');
+      expect(headings).not.toContain('Mission activity');
     }
   }
 );
@@ -441,4 +450,113 @@ it('offers manual destination in Now without a mission or ready operator journal
   const save = await screen.findByRole('button', { name: 'Save destination' });
   expect((save as HTMLButtonElement).disabled).toBe(false);
   expect(screen.getByLabelText('Destination name')).toBeTruthy();
+});
+
+it('opens the referenced call from the mission timeline', async () => {
+  const input = callDraft(undefined, 'planned', 'mission-a');
+  const call = {
+    ...record,
+    ...input,
+    time: { ...record.time, planned_start_at: '2026-10-17T17:00:00Z' },
+    payload: {
+      ...input.payload,
+      title: 'Specific briefing',
+      status: 'scheduled' as const,
+      prep_lead_minutes: 10,
+    },
+  };
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([call]));
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([call]).items[0]);
+  vi.spyOn(timelineApi, 'readMissionTimeline').mockResolvedValue({
+    ...eventSnapshot({
+      events: [
+        eventFixture({ title: 'Briefing due', source_ref: call.record_id }),
+      ],
+    }),
+    legs: [],
+  });
+  const { registry } = mount('/operator?mission_id=mission-a', true);
+  await screen.findByText('Specific briefing');
+  const row = (await screen.findByText('Briefing due')).closest('li')!;
+  fireEvent.click(within(row).getByText('Details'));
+  fireEvent.click(within(row).getByRole('button', { name: 'Open source' }));
+  await screen.findByRole('dialog', { name: 'Edit call' });
+  expect(registry.listDrafts()[0].target.recordId).toBe(call.record_id);
+  expect(registry.listDrafts()[0].input.payload.title).toBe(
+    'Specific briefing'
+  );
+});
+
+it('keeps the full timeline across operating views and retains the editor draft', async () => {
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+  vi.spyOn(timelineApi, 'readMissionTimeline').mockResolvedValue({
+    ...eventSnapshot({
+      events: [
+        eventFixture({ title: 'Persistent X window', kind: 'restriction' }),
+      ],
+    }),
+    legs: [],
+  });
+  const { registry } = mount('/operator?mission_id=mission-a', true);
+  await screen.findByText('Persistent X window');
+  for (const view of ['Communications', 'Transport', 'Issues', 'Now']) {
+    fireEvent.click(screen.getByRole('button', { name: view }));
+    expect(
+      screen.getByRole('region', { name: 'Mission timeline' })
+    ).toBeTruthy();
+    expect(screen.getByText('Persistent X window')).toBeTruthy();
+    expect(
+      screen.queryByRole('region', { name: 'Mission activity' })
+    ).toBeNull();
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+  fireEvent.change(screen.getByLabelText('Title'), {
+    target: { value: 'Unsaved mission note' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Keep draft and return' })
+  );
+  const draft = registry.listDrafts()[0];
+  expect(draft.input.payload.title).toBe('Unsaved mission note');
+  fireEvent.click(screen.getByRole('button', { name: 'Transport' }));
+  expect(registry.listDrafts()[0].input.payload.title).toBe(
+    'Unsaved mission note'
+  );
+  expect(screen.getByText('Persistent X window')).toBeTruthy();
+});
+
+it('keeps optional alert acknowledgment and pending reconciliation available in its drawer', async () => {
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+  vi.spyOn(eventsApi, 'readEventSnapshot').mockResolvedValue(eventSnapshot());
+  sessionStorage.setItem(
+    'operator-event-pending:mission-a',
+    JSON.stringify({
+      missionId: 'mission-a',
+      identity: JSON.stringify(['store', 'epoch-a', 'live', null]),
+      epoch: 'epoch-a',
+      key: 'retained-key',
+      body: {
+        schema_version: 1,
+        occurrence_id: 'occurrence-a',
+        severity_generation: 2,
+        snapshot_token: 'snapshot-token',
+      },
+    })
+  );
+  mount('/operator?mission_id=mission-a&view=transport', true);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Open operational alerts' })
+  );
+  const drawer = await screen.findByRole('dialog', {
+    name: 'Operational alerts',
+  });
+  expect(
+    await within(drawer).findByRole('button', { name: 'Acknowledge' })
+  ).toBeTruthy();
+  expect(
+    within(drawer).getByRole('button', { name: 'Retry acknowledgment' })
+  ).toBeTruthy();
+  expect(
+    within(drawer).getByRole('button', { name: 'Dismiss request and refresh' })
+  ).toBeTruthy();
 });

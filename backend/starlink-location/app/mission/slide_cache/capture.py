@@ -106,7 +106,12 @@ def capture_is_current(raw):
 
 
 def normalize_capture(
-    raw, *, persisted=True, fingerprints=True, include_timeline_cache=True
+    raw,
+    *,
+    persisted=True,
+    fingerprints=True,
+    include_timeline_cache=True,
+    scheduled_inputs=False,
 ):
     import json
 
@@ -121,6 +126,8 @@ def normalize_capture(
     options = {"persisted": True} if persisted else {}
     if not include_timeline_cache:
         options["include_timeline_cache"] = False
+    if scheduled_inputs:
+        options["scheduled_inputs"] = True
     first = _read_dependencies(mission, raw.route_manager, raw.poi_manager, **options)
     second = _read_dependencies(mission, raw.route_manager, raw.poi_manager, **options)
     if first != second or not capture_is_current(raw):

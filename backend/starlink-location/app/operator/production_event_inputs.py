@@ -71,7 +71,9 @@ def require_fresh_position(position, as_of):
         )
 
 
-def capture_current(adapter, mission_id, *, as_of, validation_only=False):
+def capture_current(
+    adapter, mission_id, *, as_of, validation_only=False, scheduled=False
+):
     """Caller holds repository admission; detached models never consult live inputs."""
     config = adapter.config_provider().model_copy(deep=True)
     context = dict(adapter.context_provider())
@@ -81,32 +83,39 @@ def capture_current(adapter, mission_id, *, as_of, validation_only=False):
         source_run(health),
     ) or config.mode != health.source_mode:
         raise OperatorError("event_source_unavailable", retryable=True)
-    telemetry = adapter.telemetry_provider()
-    if telemetry is None:
-        raise OperatorError("event_source_unavailable", retryable=True)
-    position = deepcopy(telemetry.position)
-    require_fresh_position(position, observation_now(adapter.clock))
-    metadata, sources = capture_static(adapter, mission_id)
+    position = None
+    if not scheduled:
+        telemetry = adapter.telemetry_provider()
+        if telemetry is None:
+            raise OperatorError("event_source_unavailable", retryable=True)
+        position = deepcopy(telemetry.position)
+        require_fresh_position(position, observation_now(adapter.clock))
+    metadata, sources = capture_static(adapter, mission_id, scheduled=scheduled)
     try:
         content = config.pop.catalog_path.read_bytes()
     except OSError:
         content = b"null"
     key = validation_key(adapter, metadata, sources, config, context, content)
-    sample_revision = identity(
-        position.latitude,
-        position.longitude,
-        position.speed,
-        position.observed_at,
-        position.speed_observed_at,
+    sample_revision = (
+        identity(
+            position.latitude,
+            position.longitude,
+            position.speed,
+            position.observed_at,
+            position.speed_observed_at,
+        )
+        if position is not None
+        else "scheduled"
     )
-    cached = getattr(adapter, "_validated_capture", None)
+    cache_name = "_scheduled_capture" if scheduled else "_validated_capture"
+    cached = getattr(adapter, cache_name, None)
     if validation_only and cached is not None and cached[0] == key:
         return replace(cached[1], position=position, sample_revision=sample_revision)
     mission = Mission.model_validate_json(metadata)
     from app.mission.active_context import resolve_active_mission_leg_context
 
     active = resolve_active_mission_leg_context(adapter.route_manager).context
-    if active is None or active.parent_mission_id != mission_id:
+    if not scheduled and (active is None or active.parent_mission_id != mission_id):
         raise OperatorError(
             "event_source_unavailable",
             retryable=True,
@@ -115,7 +124,8 @@ def capture_current(adapter, mission_id, *, as_of, validation_only=False):
     for leg in mission.legs:
         file = next((s for s in sources if s.name == "kml/" + leg.route_id), None)
         if (
-            file is not None
+            not scheduled
+            and file is not None
             and adapter.route_manager.source_file_revision(leg.route_id) != file.digest
         ):
             raise OperatorError(
@@ -125,7 +135,7 @@ def capture_current(adapter, mission_id, *, as_of, validation_only=False):
                     "source": "Route file changed; awaiting accepted route publication"
                 },
             )
-    if not any(
+    if not scheduled and not any(
         leg.is_active and leg.route_id == context.get("active_route_id")
         for leg in mission.legs
     ):
@@ -185,5 +195,5 @@ def capture_current(adapter, mission_id, *, as_of, validation_only=False):
         sample_revision,
         catalog is None,
     )
-    adapter._validated_capture = key, result
+    setattr(adapter, cache_name, (key, result))
     return result

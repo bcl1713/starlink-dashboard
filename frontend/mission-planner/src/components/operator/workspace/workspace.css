@@ -16,7 +16,7 @@
   column-gap: 1.25rem;
   min-height: 0;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 .ws-header {
   position: relative;
@@ -129,8 +129,8 @@
   grid-area: body;
   min-height: 0;
   min-width: 0;
-  overflow: visible;
-  overscroll-behavior: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0 0.25rem 1.5rem 0;
 }
 .ws-body h2 {
@@ -459,6 +459,24 @@
   .operator-workspace .ws-replay-note {
     display: none;
   }
+  .operator-workspace .ws-operating-context-full,
+  .operator-workspace .ws-context-return {
+    display: none;
+  }
+  .ws-operating-context-compact {
+    min-width: 0;
+    max-width: 100%;
+    gap: 0.35rem;
+  }
+  .ws-operating-context-compact > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .ws-operating-context-compact > span + span {
+    flex-shrink: 0;
+  }
   .ws-tool-controls[data-open='true'] {
     max-width: calc(100vw - 1.5rem);
   }
@@ -481,5 +499,227 @@
   }
   .operator-workspace [aria-label='Operating context'] {
     grid-row: 2;
+  }
+}
+
+/* Desktop retains the awareness column; phones open the chronology separately. */
+.ws-awareness {
+  align-self: stretch;
+  max-height: 100%;
+  overscroll-behavior: contain;
+}
+.ws-timeline {
+  min-width: 0;
+  border-top: 1px solid var(--ws-border);
+  padding-top: 0.65rem;
+}
+.ws-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ws-timeline-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+.ws-timeline-controls .ws-button {
+  font-size: 0.8rem;
+  padding-inline: 0.6rem;
+}
+.ws-timeline-body {
+  max-height: min(65dvh, 48rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.ws-timeline-now {
+  background: var(--background);
+  color: #67e8f9;
+  border-block: 1px solid #22d3ee;
+  padding: 0.65rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.ws-timeline-date {
+  padding: 0.8rem 0 0.3rem;
+  font-weight: 650;
+  font-size: 0.85rem;
+}
+.ws-timeline-row {
+  display: grid;
+  grid-template-columns: 4.8rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--ws-border);
+}
+.ws-timeline-row h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.ws-timeline-row[data-active='true'] {
+  background: #164e6333;
+  border-left: 3px solid #22d3ee;
+  padding-left: 0.35rem;
+}
+.ws-timeline-time {
+  font-size: 0.8rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.ws-timeline-relative {
+  color: #a5f3fc;
+  font-size: 0.8rem;
+}
+.ws-timeline-row summary {
+  font-size: 0.8rem;
+}
+.ws-timeline-sources {
+  margin-top: 0.5rem;
+}
+.ws-timeline-launch {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+  gap: 0.5rem;
+}
+.ws-timeline-launch > span:first-child {
+  min-width: 0;
+}
+.ws-timeline-launch strong,
+.ws-timeline-launch .ws-meta {
+  display: block;
+}
+.ws-timeline-launch .ws-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-timeline-launch > span:last-child {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: #a5f3fc;
+}
+.ws-timeline-dialog {
+  animation: none;
+  top: 0;
+  left: 0;
+  transform: none;
+  translate: none;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  padding: 0;
+  gap: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.ws-timeline-dialog-header {
+  padding: max(1rem, env(safe-area-inset-top)) 3.5rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--ws-border, #64748b);
+}
+.ws-timeline-dialog .ws-timeline-body {
+  max-height: none;
+  padding: 0 1rem max(1rem, env(safe-area-inset-bottom));
+}
+.ws-timeline-dialog .ws-timeline-row {
+  grid-template-columns: 5rem minmax(0, 1fr);
+}
+.ws-timeline-dialog .ws-timeline-row summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.ws-timeline-dialog > button:last-child {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: max(0.5rem, env(safe-area-inset-top));
+}
+@media (max-width: 900px) {
+  .ws-content {
+    grid-template:
+      'awareness' auto 'navigation' auto 'body' minmax(0, 1fr)
+      / minmax(0, 1fr);
+  }
+  .ws-awareness {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: auto auto;
+    gap: 0.35rem 0.5rem;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--ws-border);
+  }
+  .ws-timeline {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    border: 0;
+    padding: 0;
+  }
+  .ws-now {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .ws-next {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 0.2rem 0.4rem;
+  }
+  .ws-now,
+  .ws-next {
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+  .ws-now h2,
+  .ws-customers,
+  .ws-next > .ws-meta:last-child:not(:nth-child(3)),
+  .ws-attention,
+  .ws-advisories {
+    display: none;
+  }
+  .ws-now > .ws-meta {
+    margin-top: 0.4rem;
+  }
+  .ws-next h2 {
+    font-size: 0.75rem;
+  }
+  .ws-next-name {
+    min-height: 0;
+    -webkit-line-clamp: 1;
+    margin: 0;
+  }
+  .ws-next-open {
+    min-height: 24px;
+  }
+}
+@media (max-width: 900px) and (max-height: 760px) {
+  .ws-awareness {
+    grid-template-rows: auto;
+  }
+  .ws-now,
+  .ws-next {
+    display: none;
+  }
+}
+@media (min-width: 600px) and (max-width: 900px) and (max-height: 500px) {
+  .ws-content {
+    grid-template:
+      'awareness navigation' auto 'awareness body' minmax(0, 1fr)
+      / 14rem minmax(0, 1fr);
+  }
+  .ws-awareness {
+    display: block;
+    border-bottom: 0;
+    border-right: 1px solid var(--ws-border);
+    padding-right: 0.5rem;
   }
 }

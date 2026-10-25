@@ -49,6 +49,17 @@ def events(
         )
 
 
+def mission_timeline(request: Request, mission_id: Identifier):
+    from app.api.operator import require_service
+    from app.operator.mission_timeline import build_mission_timeline
+
+    with runtime_for(request) as runtime:
+        require_service(runtime)
+        return build_mission_timeline(
+            runtime, mission_id, event_adapter(request, runtime)
+        )
+
+
 def acknowledge_event(
     request: Request,
     body: AckRequest,
@@ -76,5 +87,6 @@ def make_router():
 
     router = APIRouter(route_class=OperatorRoute)
     router.add_api_route("/events", events, methods=["GET"])
+    router.add_api_route("/events/mission-timeline", mission_timeline, methods=["GET"])
     router.add_api_route("/events/acknowledge", acknowledge_event, methods=["POST"])
     return router

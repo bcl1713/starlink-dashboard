@@ -85,6 +85,7 @@ def _read_dependencies(
     *,
     persisted: bool = False,
     include_timeline_cache: bool = True,
+    scheduled_inputs: bool = False,
 ) -> tuple[SourcePayload, ...]:
     from .snapshot_pop import capture_pop_catalog
 
@@ -92,9 +93,10 @@ def _read_dependencies(
     from app.mission.planning.models import PlanningManifest
     from app.mission.planning.sources import SourceStore, _records, source_closure
 
-    raw = mission.metadata.get("itinerary_planning")
+    # Timeline scheduling needs accepted executable inputs, not export archives.
+    raw = None if scheduled_inputs else mission.metadata.get("itinerary_planning")
     manifest = PlanningManifest.model_validate(raw) if raw is not None else None
-    closure = source_closure(mission, manifest)
+    closure = () if scheduled_inputs else source_closure(mission, manifest)
     if closure and route_manager is None:
         raise SnapshotCaptureError("Planning source storage is unavailable")
     if closure:
@@ -131,9 +133,10 @@ def _read_dependencies(
             )
     from app.mission.itinerary_import.history import capture_history
 
-    sources.extend(
-        SourcePayload(name, content) for name, content in capture_history(mission)
-    )
+    if not scheduled_inputs:
+        sources.extend(
+            SourcePayload(name, content) for name, content in capture_history(mission)
+        )
     route_ids = dict.fromkeys(leg.route_id for leg in mission.legs if leg.route_id)
     if closure:
         route_ids.update(
@@ -168,6 +171,34 @@ def _read_dependencies(
         )
         if manifest and not (kml and kml.exists()):
             raise SnapshotCaptureError(f"Retained route {route_id} is missing")
+        if scheduled_inputs and route_manager is not None:
+            from app.services.kml_parser import KMLParseError
+
+            try:
+                profile = SourceStore(
+                    storage.MISSIONS_DIR, route_manager.routes_dir
+                ).resolve_profile(route_id)
+                if (profile == "planning_v1") != (
+                    getattr(route, "ingestion_profile", None) == "planning_v1"
+                ):
+                    raise ValueError(
+                        "Accepted route profile differs from current profile"
+                    )
+                if profile == "planning_v1" and (
+                    not kml
+                    or not kml.exists()
+                    or route.content_hash != sha256(kml.read_bytes()).hexdigest()
+                ):
+                    raise ValueError(
+                        "Accepted route content differs from current profile"
+                    )
+                sources.append(
+                    SourcePayload(f"route_profile/{route_id}", canonical_json(profile))
+                )
+            except (OSError, ValueError, TypeError, AttributeError, KMLParseError):
+                sources.append(
+                    SourcePayload(f"route_profile_unavailable/{route_id}", b"null")
+                )
     # All POIs are necessary: mission exports include global satellite POIs and
     # preparation resolves global X positions as well as mission-scoped markers.
     sources.append(
