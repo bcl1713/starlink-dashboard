@@ -103,9 +103,9 @@ def build_inputs(
     *,
     availability=None,
 ) -> PlanningInputs:
-    if draft.unresolved_x_transitions or draft.unresolved_aar_windows:
+    if draft.unresolved_aar_windows:
         raise ValueError(
-            "Resolve pending legacy X transitions and AR windows using accepted timed route occurrences before computing"
+            "Resolve pending legacy AR windows using accepted timed route occurrences before computing"
         )
     # These caller-owned records are already detached from canonical storage.
     # Their potentially large evaluation contexts must not extend the gate.
@@ -163,6 +163,10 @@ def build_inputs(
     from app.mission.models import Transport
 
     if usable_during(availability, Transport.X, start, end):
+        if draft.unresolved_x_transitions:
+            raise ValueError(
+                "Resolve pending legacy X transitions using accepted timed route occurrences before computing"
+            )
         with storage.get_active_leg_lock():
             positions = resolve_positions(draft.permitted_satellite_ids, poi_manager)
     projector = RouteTemporalProjector(route, start, end)

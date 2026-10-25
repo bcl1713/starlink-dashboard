@@ -171,6 +171,7 @@ def prepare_mission_timeline(
         ).available
     )
     mission_start, mission_end = derive_mission_window(route)
+    x_usable = usable_during(availability, Transport.X, mission_start, mission_end)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 
     coverage_path = Path("data/sat_coverage/commka.geojson")
@@ -249,16 +250,20 @@ def prepare_mission_timeline(
         manual_tracks.append(selected_track)
     apply_manual_aar_tracks(rule_engine, manual_tracks, projector)
 
-    transition_schedule = apply_x_transitions(
-        rule_engine,
-        mission,
-        projector,
-        aar_windows,
-        anchor_route=(
-            ParsedRoute.model_validate_json(inputs.anchor_route_json)
-            if planning_evaluation
-            else None
-        ),
+    transition_schedule = (
+        apply_x_transitions(
+            rule_engine,
+            mission,
+            projector,
+            aar_windows,
+            anchor_route=(
+                ParsedRoute.model_validate_json(inputs.anchor_route_json)
+                if planning_evaluation
+                else None
+            ),
+        )
+        if x_usable
+        else []
     )
 
     capability_ka_sampler = resolved_sampler
@@ -293,7 +298,6 @@ def prepare_mission_timeline(
     )
     apply_ka_events(rule_engine, coverage_result)
     export_x_conditions = [] if capture_x_conditions else None
-    x_usable = usable_during(availability, Transport.X, mission_start, mission_end)
     x_samples = [
         sample
         for sample in samples

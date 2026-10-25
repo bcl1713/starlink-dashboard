@@ -24,6 +24,11 @@ def _route(inputs):
 
 
 def swap_times(inputs, draft):
+    # Keep the saved schedule for restoration without resolving inactive X anchors.
+    if not usable_during(
+        inputs.availability, Transport.X, inputs.start_time, inputs.end_time
+    ):
+        return []
     route = ParsedRoute.model_validate_json(inputs.anchor_route_json)
     return [resolve_anchor(s.anchor, route) for s in draft.swaps]
 
