@@ -103,12 +103,18 @@ def build_active_x_link(
         from app.mission.availability_context import snapshot_for_leg
         from app.mission.models import Transport
 
-        if availability is None:
-            for metadata in storage.list_mission_metadata_v2():
-                parent = storage.load_mission_v2(metadata.id)
-                if parent and any(leg.id == active_leg.id for leg in parent.legs):
-                    availability = snapshot_for_leg(parent, active_leg, run_id=run_id)
-                    break
+        if availability is None and route_manager is not None:
+            from app.mission.active_context import resolve_active_mission_leg_context
+
+            context = resolve_active_mission_leg_context(route_manager).context
+            if (
+                context is not None
+                and context.leg.id == active_leg.id
+                and context.route_id == active_leg.route_id
+            ):
+                availability = snapshot_for_leg(
+                    context.parent_mission, context.leg, run_id=run_id
+                )
         if (
             availability is not None
             and not availability.resolve(availability_time)[Transport.X]

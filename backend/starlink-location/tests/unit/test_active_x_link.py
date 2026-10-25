@@ -1,4 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
 
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.storage import save_mission_v2
@@ -29,6 +32,12 @@ class StaticRouteManager:
 
     def get_active_route(self) -> ParsedRoute | None:
         return self.route
+
+    def get_active_route_id(self):
+        return Path(self.route.metadata.file_path).stem if self.route else None
+
+    def get_route(self, route_id):
+        return self.route if route_id == self.get_active_route_id() else None
 
 
 class StaticPOIManager:
@@ -360,3 +369,126 @@ def test_independent_ku_override_still_releases_link_concurrency(monkeypatch):
 def test_unavailable_ku_does_not_release_physical_x_block(monkeypatch):
     result = _availability_link(monkeypatch, transport="Ku", satellite_longitude=150)
     assert result["state"] == "warning"
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+@pytest.mark.parametrize("explicit", [False, True])
+def test_same_leg_id_uses_actual_active_parent(tmp_path, enabled, explicit):
+    from app.mission.availability_context import snapshot_for_leg
+
+    routes, pois, active, _inactive = _same_leg_parents(
+        tmp_path, {"X": enabled}, {"X": not enabled}
+    )
+    result = build_active_x_link(
+        StaticCoordinator(_telemetry(0, 0, 90)),
+        routes,
+        pois,
+        **(
+            {"availability": snapshot_for_leg(active, active.legs[0])}
+            if explicit
+            else {}
+        ),
+    )
+    assert len(result["coordinates"]) == (2 if enabled else 0)
+    assert (
+        result.get("transport_active") is not False
+        if enabled
+        else result["transport_active"] is False
+    )
+
+
+def _same_leg_parents(
+    tmp_path,
+    active_defaults,
+    inactive_defaults,
+    *,
+    policy=None,
+    active_history=(),
+    inactive_history=(),
+):
+    from app.mission import storage
+    from app.mission.active_context import resolve_active_mission_leg_context
+    from app.mission.availability_models import MissionAvailability
+    from app.models.poi import POICreate
+    from app.services.poi_manager import POIManager
+    from app.services.route_manager import RouteManager
+
+    routes = RouteManager(tmp_path / "routes")
+    routes.add_route("test-route", _route())
+    routes.activate_route("test-route")
+    pois = POIManager(tmp_path / "pois.json")
+    pois.create_poi(
+        POICreate(name="X-1", category="satellite", icon="X", latitude=0, longitude=30)
+    )
+    active = Mission(
+        id="z-active-parent",
+        name="Active",
+        availability=MissionAvailability(
+            defaults=active_defaults, history=active_history
+        ),
+        legs=[
+            MissionLeg(
+                id="leg-1",
+                name="Active leg",
+                route_id="test-route",
+                is_active=True,
+                transports=TransportConfig(
+                    initial_x_satellite_id="X-1", planning_policy=policy
+                ),
+            )
+        ],
+    )
+    inactive = Mission(
+        id="a-inactive-parent",
+        name="Inactive",
+        availability=MissionAvailability(
+            defaults=inactive_defaults, history=inactive_history
+        ),
+        legs=[
+            MissionLeg(
+                id="leg-1",
+                name="Other leg",
+                route_id="other-route",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    storage.save_mission_v2(active)
+    storage.save_mission_v2(inactive)
+    assert storage.list_mission_metadata_v2()[0].id == inactive.id
+    assert (
+        resolve_active_mission_leg_context(routes).context.parent_mission_id
+        == active.id
+    )
+    return routes, pois, active, inactive
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_same_leg_parent_owns_ku_concurrency(tmp_path, enabled):
+    routes, pois, _, _ = _same_leg_parents(
+        tmp_path, {"Ku": enabled}, {"Ku": not enabled}, policy="prefer_starshield_v1"
+    )
+    result = build_active_x_link(StaticCoordinator(_telemetry(0, 0, 270)), routes, pois)
+    assert result["in_forbidden_window"] is True
+    assert result["state"] == ("warning" if enabled else "normal")
+
+
+@pytest.mark.parametrize("failure_in_active", [True, False])
+def test_same_leg_parent_owns_failure_history(tmp_path, failure_in_active):
+    from app.mission.availability_models import AvailabilityChange
+
+    failure = AvailabilityChange(
+        id="parent-failure",
+        transport="X",
+        unavailable=True,
+        effective_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+    )
+    routes, pois, _, _ = _same_leg_parents(
+        tmp_path,
+        {},
+        {},
+        active_history=(failure,) if failure_in_active else (),
+        inactive_history=() if failure_in_active else (failure,),
+    )
+    result = build_active_x_link(StaticCoordinator(_telemetry(0, 0, 90)), routes, pois)
+    assert len(result["coordinates"]) == (0 if failure_in_active else 2)
