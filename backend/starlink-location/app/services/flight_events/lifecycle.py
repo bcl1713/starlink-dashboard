@@ -1,16 +1,16 @@
 """Application-owned live recording lifecycle and sanitized recovery status."""
 
 import errno
+import logging
 import os
 import sqlite3
 import time
 from pathlib import Path
 from threading import RLock
 
-from app.core.logging import get_logger
 from app.services.flight_events.live_adapter import FlightEventRuntime
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 RECOVERABLE = (OSError, sqlite3.Error, ValueError)
 MESSAGES = {
     "storage_permissions": "Check flight archive directory and database permissions for the application user.",
@@ -84,34 +84,43 @@ class FlightEventLifecycle:
         if changed:
             # Never log exception text: validation errors can contain raw env
             # input. Preserve actionable cause, stage and safe SQLite detail.
-            logger.warning_json(
+            logger.warning(
                 (
                     "Live recording unavailable"
                     if stage == "initialization"
                     else "Live recording pending recovery"
                 ),
-                extra_fields={
-                    "stage": stage,
-                    "cause": category,
-                    "error": type(error).__name__,
-                    "sqlite_error": getattr(error, "sqlite_errorname", None),
-                    "errno": getattr(error, "errno", None),
-                    "action": MESSAGES[category],
+                extra={
+                    "extra_fields": {
+                        "stage": stage,
+                        "cause": category,
+                        "error": type(error).__name__,
+                        "sqlite_error": getattr(error, "sqlite_errorname", None),
+                        "errno": getattr(error, "errno", None),
+                        "action": MESSAGES[category],
+                    }
                 },
             )
 
     def _run(self, stage, action):
         try:
-            action()
+            completed = action()
         except RECOVERABLE as error:
             self._failed(stage, error)
             return False
-        self.failures.pop(stage, None)
+        if completed is not False:
+            self.failures.pop(stage, None)
         return True
+
+    def report_failure(self, stage, error):
+        """Read-side storage failures share the same sanitized stage health."""
+        with self.lock:
+            self._failed(stage, error)
 
     def tick(self):
         with self.lock:
-            runtime = self.reconcile(self.mode)
+            self.reconcile(self.mode)
+            runtime = self.state.flight_event_runtime if not self.closed else None
             if runtime is not None:
                 self._run("maintenance", runtime.tick)
 

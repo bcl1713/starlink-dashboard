@@ -40,6 +40,12 @@ def advance_detection(
             and altitude_time <= state.last_altitude_observed_at
         ):
             state.uncertain = True
+            destination = observation.destination_distance_m
+            if speed >= policy.landing_knots or not (
+                destination is not None
+                and 0 <= destination <= policy.destination_radius_m
+            ):
+                state.candidate = None
             return _changes(result, prior_candidate)
         state.last_altitude_observed_at = altitude_time
     kind = None

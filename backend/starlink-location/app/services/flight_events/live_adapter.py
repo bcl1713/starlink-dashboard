@@ -191,16 +191,17 @@ class FlightEventRuntime:
                 ]
             )
 
-    def tick(self, now: datetime | None = None) -> None:
+    def tick(self, now: datetime | None = None) -> bool:
         from app.services.telemetry_archive.reader import ArchiveReader
 
         now = now or datetime.now(timezone.utc)
         if time.monotonic() - self.last_recovery < 10:
-            return
+            return False
         self.last_recovery = time.monotonic()
         self.capture.recover(now)
         self.capture.backfill_one(ArchiveReader(self.client), now)
         self.archive.gc(now, self.events.earliest_pin())
+        return True
 
     def close(self):
         self.client.close()

@@ -76,6 +76,48 @@ def test_corrupt_database_stays_explicit_without_replacing_evidence(tmp_path):
         owner.close()
 
 
+def test_throttled_tick_cannot_clear_failed_maintenance(tmp_path, monkeypatch):
+    import app.services.flight_events.live_adapter as adapter
+
+    clock = [100]
+    monkeypatch.setattr(adapter.time, "monotonic", lambda: clock[0])
+    owner = lifecycle(tmp_path, clock)
+    runtime = owner.reconcile("live")
+    recover = runtime.capture.recover
+    try:
+
+        def fail(_):
+            raise sqlite3.OperationalError("disk full")
+
+        monkeypatch.setattr(runtime.capture, "recover", fail)
+        owner.tick()
+        assert not owner.status()["recording_available"]
+        clock[0] = 101
+        monkeypatch.setattr(runtime.capture, "recover", recover)
+        owner.tick()
+        assert not owner.status()["recording_available"]
+        clock[0] = 110
+        owner.tick()
+        assert owner.status()["recording_available"]
+    finally:
+        owner.close()
+
+
+def test_retained_capture_maintenance_continues_in_simulation(tmp_path, monkeypatch):
+    owner = lifecycle(tmp_path)
+    runtime = owner.reconcile("live")
+    calls = []
+    monkeypatch.setattr(runtime, "tick", lambda: calls.append("maintained"))
+    try:
+        owner.reconcile("simulation")
+        owner.tick()
+        assert calls == ["maintained"]
+        assert owner.status()["state"] == "inactive"
+        assert not owner.status()["recording_available"]
+    finally:
+        owner.close()
+
+
 def test_sample_write_failure_does_not_suppress_detector(tmp_path, monkeypatch):
     from app.models.flight_status import FlightPhase
     from app.models.telemetry import TelemetryData

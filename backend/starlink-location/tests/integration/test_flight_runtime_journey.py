@@ -149,6 +149,33 @@ async def test_restored_live_journey_lands_parks_and_exports_outside_endpoint(
             for poi in overview["pois"]
             if poi["kind"] == "arrival"
         )
+        # A failed inference tick must not leave the last fresh movement looking
+        # certain, even though the committed ledger is still readable.
+        import sqlite3
+
+        original_observe = recording.observe_live
+
+        def fail_detection(*args, **kwargs):
+            raise sqlite3.OperationalError("event persistence unavailable")
+
+        monkeypatch.setattr(recording, "observe_live", fail_detection)
+        runtime.clock[0] += timedelta(seconds=1)
+        sample[0] = sample[0].model_copy(deep=True)
+        sample[0].timestamp = runtime.clock[0]
+        sample[0].position.observed_at = runtime.clock[0]
+        sample[0].position.speed_observed_at = runtime.clock[0]
+        sample[0].position.altitude_observed_at = runtime.clock[0]
+        await asyncio.to_thread(
+            main._background_update_tick, main.app.state.poi_manager, 1, 711, 0
+        )
+        uncertain = (
+            await client.get("/api/v2/missions/journey/legs/leg/flight-events")
+        ).json()
+        assert uncertain["status"]["movement_uncertain"]
+        assert (await client.get("/api/overview/upcoming-pois")).json()[
+            "movement_uncertain"
+        ]
+        monkeypatch.setattr(recording, "observe_live", original_observe)
         recording.capture.recover(runtime.clock[0])
         capture = recording.archive.capture_summary("journey", "leg")
         assert (
@@ -166,12 +193,17 @@ async def test_restored_live_journey_lands_parks_and_exports_outside_endpoint(
         assert capture["state"] == "recording"  # never seal at touchdown
         end = runtime.origin + timedelta(seconds=2211)
         recording.capture.max_retries = 1
-        recording.capture.recover(end)
+        config["mode"] = "simulation"
+        assert (await client.post("/api/config", json=config)).status_code == 200
+        runtime.clock[0] = end
+        recording.last_recovery = 0
+        main.app.state.flight_event_lifecycle.tick()
         from app.services.telemetry_archive.reader import ArchiveReader
 
         for _ in range(30):
             recording.capture.backfill_one(ArchiveReader(recording.client), end)
-        recording.capture.recover(end)
+        recording.last_recovery = 0
+        main.app.state.flight_event_lifecycle.tick()
         final = recording.archive.capture("journey", "leg")
         assert final["state"] == "sealed"
         assert final["revision"] == capture["revision"]

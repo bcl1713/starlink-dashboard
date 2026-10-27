@@ -14,6 +14,7 @@ from app.models.overview_upcoming_pois import (
     OverviewUpcomingPoi,
     OverviewUpcomingPoisResponse,
 )
+from app.services.flight_events.lifecycle import RECOVERABLE
 from app.services.flight_state import get_flight_state_manager
 from app.services.manual_destination import ManualDestination
 from app.services.overview_upcoming_pois import (
@@ -235,9 +236,30 @@ def get_overview_upcoming_pois(
     response.position_observed_at = observed_at
     response.position_state = position_state
     runtime = getattr(request.app.state, "flight_event_runtime", None)
+    lifecycle = getattr(request.app.state, "flight_event_lifecycle", None)
     if runtime is not None and not selection:
-        for key, value in runtime.status(mission_id, resolution.context.leg.id).items():
-            setattr(response, key, value)
+        try:
+            for key, value in runtime.event_status(
+                mission_id, resolution.context.leg.id
+            ).items():
+                setattr(response, key, value)
+        except RECOVERABLE as error:
+            response.movement_uncertain = True
+            if lifecycle is not None:
+                lifecycle.report_failure("detection", error)
+        try:
+            capture = runtime.archive.capture_summary(
+                mission_id, resolution.context.leg.id
+            )
+            response.capture_state = (
+                capture["state"] if capture else "awaiting_off_blocks"
+            )
+        except RECOVERABLE as error:
+            response.capture_state = "unavailable"
+            if lifecycle is not None:
+                lifecycle.report_failure("maintenance", error)
+        if lifecycle is not None and not lifecycle.status()["detection_available"]:
+            response.movement_uncertain = True
     if timing_unavailable:
         response.state = "unavailable"
     return response

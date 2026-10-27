@@ -70,3 +70,22 @@ def test_landing_candidate_uses_total_altitude_range():
         )
         state = result.state
         assert not result.emitted_events
+
+
+@pytest.mark.parametrize("discontinuity", ["acceleration", "outside_destination"])
+def test_repeated_altitude_does_not_hide_go_around(discontinuity):
+    state = DetectionState(movement="airborne", max_airborne_altitude=10000)
+    for second in range(19):
+        state = advance_detection(
+            state, observation(second, speed=25), DetectionPolicy()
+        ).state
+    disrupted = observation(
+        19,
+        speed=100 if discontinuity == "acceleration" else 25,
+        distance=50000 if discontinuity == "outside_destination" else 1000,
+        altitude_observed_at=START + timedelta(seconds=18),
+    )
+    state = advance_detection(state, disrupted, DetectionPolicy()).state
+    result = advance_detection(state, observation(20, speed=25), DetectionPolicy())
+    assert not result.emitted_events
+    assert result.state.candidate.since == START + timedelta(seconds=20)
