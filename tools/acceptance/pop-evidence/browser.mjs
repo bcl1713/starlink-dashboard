@@ -62,10 +62,6 @@ try {
   assert.match(csv, /Invented Domestic City/);
   assert.match(csv, /operator_static_cidr/);
   await writeFile(evidence + "/synthetic-timeline.csv", csv);
-  const metrics = await (await api.get(origin + "/metrics")).text();
-  assert.match(metrics, /city="Tokyo"/);
-  assert.match(metrics, /identity_source="operator_static_cidr"/);
-  await writeFile(evidence + "/synthetic-metrics.txt", metrics);
   await page.goto(origin + "/operator");
   const panel = page.getByLabel("PoP evidence", { exact: true });
   await panel.locator("summary").first().click();

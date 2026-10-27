@@ -57,6 +57,25 @@ def qualify(owner):
         ],
         timeout=240,
     )
+    # Prometheus /metrics is an internal backend endpoint; Nginx proxies /api/.
+    metrics = owner.compose(
+        "exec",
+        "-T",
+        "starlink-location",
+        "curl",
+        "--fail",
+        "--silent",
+        "http://127.0.0.1:8000/metrics",
+        timeout=30,
+    )
+    (owner.root / "synthetic-metrics.txt").write_text(metrics)
+    if (
+        'city="Tokyo"' not in metrics
+        or 'identity_source="operator_static_cidr"' not in metrics
+    ):
+        raise AssertionError(
+            "Internal metrics did not retain the canonical Tokyo identity"
+        )
     return json.loads((owner.root / "browser.json").read_text())
 
 
