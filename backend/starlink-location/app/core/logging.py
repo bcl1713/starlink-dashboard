@@ -149,6 +149,12 @@ def setup_logging(
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
 
+    # Polling emits many successful HTTP requests per second. Keep those in
+    # debug sessions while retaining HTTP client warnings in normal operation.
+    logging.getLogger("httpx").setLevel(
+        logging.DEBUG if root_logger.isEnabledFor(logging.DEBUG) else logging.WARNING
+    )
+
     # Remove existing handlers
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)

@@ -285,7 +285,7 @@ def load_mission_v2(mission_id: str) -> Mission | None:
     mission_data = json.loads(metadata)
     mission_data["legs"] = [MissionLeg.model_validate_json(data) for data in payloads]
     mission = _ordered_mission(Mission.model_validate(mission_data))
-    logger.info(f"Mission {mission_id} loaded with {len(mission.legs)} legs")
+    logger.debug(f"Mission {mission_id} loaded with {len(mission.legs)} legs")
     return mission
 
 

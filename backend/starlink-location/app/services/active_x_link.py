@@ -206,7 +206,7 @@ def _find_active_mission_leg(route):
     active_route_id = _route_id(route) if route is not None else None
     first_active = (None, None)
     for mission_dir in sorted(missions_dir.iterdir()):
-        if not mission_dir.is_dir():
+        if not mission_dir.is_dir() or not (mission_dir / "mission.json").is_file():
             continue
         mission = storage.load_mission_v2(mission_dir.name)
         if mission is None:

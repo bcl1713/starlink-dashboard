@@ -86,6 +86,7 @@ def _read_dependencies(
     persisted: bool = False,
     include_timeline_cache: bool = True,
     scheduled_inputs: bool = False,
+    ground_entry_payload: bytes | None = None,
 ) -> tuple[SourcePayload, ...]:
     from .snapshot_pop import capture_pop_catalog
 
@@ -253,11 +254,15 @@ def _read_dependencies(
     )
     from app.services.ground_entry_point import get_cached_ground_entry_point
 
-    ground_entry = get_cached_ground_entry_point()
+    if ground_entry_payload is None:
+        ground_entry = get_cached_ground_entry_point()
+        ground_entry_payload = canonical_json(
+            asdict(ground_entry) if ground_entry else None
+        )
     sources.append(
         SourcePayload(
             "ground_entry",
-            canonical_json(asdict(ground_entry) if ground_entry else None),
+            ground_entry_payload,
         )
     )
     sources.extend(

@@ -673,6 +673,7 @@ async def export_mission(
             job.model_dump(mode="json"), status_code=202, headers={"Location": location}
         )
     except (RuntimeError, OSError, sqlite3.Error, OperatorError):
+        logger.exception("Mission %s export capture failed", mission_id)
         raise HTTPException(503, detail="Mission export preparation is unavailable")
 
 
