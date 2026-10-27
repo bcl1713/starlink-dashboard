@@ -114,7 +114,12 @@ def leg_inputs(metadata, sources, leg_id, revision):
     dependencies = []
     for source in selected:
         try:
-            content = canonical_json(effective(json.loads(source.content)))
+            value = json.loads(source.content)
+            if source.name == "ground_entry":
+                from app.mission.exporter.egress_snapshot import egress_identity
+
+                value = egress_identity(value)
+            content = canonical_json(effective(value))
         except (ValueError, UnicodeDecodeError):
             content = source.content
         dependencies.append([source.name, sha256(content).hexdigest()])

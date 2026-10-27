@@ -28,6 +28,18 @@ _FIELDS = (
 EGRESS_SNAPSHOT_COLUMNS = tuple(_PREFIX + field for field in _FIELDS)
 
 
+def egress_identity(value: dict | None) -> dict | None:
+    """Ignore polling times for invalidation; retain identity and confidence changes."""
+    if value is None:
+        return None
+    result = {k: v for k, v in value.items() if k not in {"sampled_at", "lookup_at"}}
+    if result.get("provider_geoip") is not None:
+        result["provider_geoip"] = {
+            k: v for k, v in result["provider_geoip"].items() if k != "lookup_at"
+        }
+    return result
+
+
 def snapshot_egress_values(entry: GroundEntryPoint | None) -> dict:
     values = dict.fromkeys(_FIELDS, "")
     values["Scope"] = "Snapshot only; not leg-time history"

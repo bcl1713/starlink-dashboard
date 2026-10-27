@@ -1,5 +1,6 @@
 """Preparation is explicit; downloads only open already owned ready files."""
 
+import logging
 import sqlite3
 from typing import Literal
 
@@ -12,6 +13,7 @@ from .export_job import download_response
 from .preparation_store import ExportPreparation
 
 router = APIRouter(prefix="/api/v2/missions", tags=["Mission export preparation"])
+logger = logging.getLogger(__name__)
 
 
 def get_export_preparation_service(request, job_id=None, artifact_kind="planning"):
@@ -54,6 +56,7 @@ def start_preparation(
             else service.start(mission_id)
         )
     except (OperatorError, RuntimeError, OSError, sqlite3.Error) as error:
+        logger.exception("Mission %s archive capture failed", mission_id)
         raise HTTPException(
             503, detail="Mission archive capture unavailable; retry after recovery"
         ) from error

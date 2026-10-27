@@ -1,15 +1,19 @@
 """Copy committed bytes under the gate; validate and encode after releasing it."""
 
+import json
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from app.mission import storage
+from app.mission.exporter.egress_snapshot import egress_identity
 from app.mission.exporter.snapshot_inputs import SnapshotCaptureError, canonical_json
 from app.mission.models import Mission
 
 
-def dependency_token(mission_id, route_manager, poi_manager):
+def dependency_token(
+    mission_id, route_manager, poi_manager, *, ground_entry_payload=None
+):
     roots = [
         storage.get_mission_directory(mission_id),
         storage.MISSIONS_DIR / ".planning/sources",
@@ -44,11 +48,15 @@ def dependency_token(mission_id, route_manager, poi_manager):
     from app.satellites.rules import ConstraintConfig
     from app.services.ground_entry_point import get_cached_ground_entry_point
 
-    ground = get_cached_ground_entry_point()
+    if ground_entry_payload is None:
+        ground = get_cached_ground_entry_point()
+        ground_data = asdict(ground) if ground else None
+    else:
+        ground_data = json.loads(ground_entry_payload)
     return tuple(tokens), canonical_json(
         [
             asdict(ConstraintConfig()),
-            asdict(ground) if ground else None,
+            egress_identity(ground_data),
             catalog_dependency_token(),
         ]
     )
@@ -64,6 +72,7 @@ class RawCapture:
     poi_manager: object
     renderer_revision: str
     stage_timings: tuple[tuple[str, float], ...] = ()
+    ground_entry_payload: bytes = b"null"
 
 
 def capture_raw(mission_id, route_manager, poi_manager, revision=""):
@@ -83,7 +92,16 @@ def capture_raw(mission_id, route_manager, poi_manager, revision=""):
                 storage.get_mission_legs_dir(mission_id)
             )
         )
-        token = dependency_token(mission_id, route_manager, poi_manager)
+        from app.services.ground_entry_point import get_cached_ground_entry_point
+
+        ground = get_cached_ground_entry_point()
+        ground_entry_payload = canonical_json(asdict(ground) if ground else None)
+        token = dependency_token(
+            mission_id,
+            route_manager,
+            poi_manager,
+            ground_entry_payload=ground_entry_payload,
+        )
     return RawCapture(
         mission_id,
         metadata,
@@ -96,6 +114,7 @@ def capture_raw(mission_id, route_manager, poi_manager, revision=""):
             ("lock_wait", captured_at - started),
             ("raw_capture", time.monotonic() - captured_at),
         ),
+        ground_entry_payload,
     )
 
 
@@ -123,7 +142,9 @@ def normalize_capture(
     metadata["legs"] = [json.loads(leg) for leg in raw.legs]
     mission = storage._ordered_mission(Mission.model_validate(metadata))
     metadata = canonical_json(mission.model_dump(mode="json"))
-    options = {"persisted": True} if persisted else {}
+    options = {"ground_entry_payload": raw.ground_entry_payload}
+    if persisted:
+        options["persisted"] = True
     if not include_timeline_cache:
         options["include_timeline_cache"] = False
     if scheduled_inputs:
