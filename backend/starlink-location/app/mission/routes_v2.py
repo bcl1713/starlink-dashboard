@@ -609,7 +609,14 @@ async def delete_mission_endpoint(
             mission_dir = get_mission_directory(mission_id)
             if mission_dir.exists():
                 try:
-                    shutil.rmtree(mission_dir)
+                    from app.services.metrics_changes import mission_metrics_changes
+
+                    try:
+                        shutil.rmtree(mission_dir)
+                    finally:
+                        mission_metrics_changes._notify_metrics_changed(
+                            "mission deletion"
+                        )
                     logger.info(f"Deleted mission directory: {mission_dir}")
                 except OSError:
                     logger.exception(

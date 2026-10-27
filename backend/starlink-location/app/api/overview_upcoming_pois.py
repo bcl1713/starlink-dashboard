@@ -114,7 +114,7 @@ def _manual_destination_response(
 
 
 @router.get("/upcoming-pois", response_model=OverviewUpcomingPoisResponse)
-async def get_overview_upcoming_pois(
+def get_overview_upcoming_pois(
     request: Request,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)],
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)],

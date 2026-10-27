@@ -268,3 +268,106 @@ async def test_live_background_does_not_invent_arrival_without_bound_mission(
     # or verified airborne/landing evidence. Endpoint dwell alone must not land.
     assert final.phase == FlightPhase.IN_FLIGHT
     assert final.arrival_time is None
+
+
+@pytest.mark.parametrize("background_runtime", ["live"], indirect=True)
+async def test_125_live_ticks_reuse_mission_without_json_reads(
+    background_runtime, monkeypatch
+):
+    import builtins
+    import io
+    from app.mission import storage
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+    from app.mission.active_context_cache import get_active_mission_snapshot
+
+    mission = Mission(
+        id="cached-live",
+        name="Cached live",
+        legs=[
+            MissionLeg(
+                id="cached-leg",
+                name="Cached leg",
+                route_id="first",
+                is_active=True,
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    storage.save_mission_v2(mission)
+    background_runtime.route_manager.activate_route("first")
+    get_active_mission_snapshot(background_runtime.route_manager)
+    reads = []
+    real_open, real_io_open = builtins.open, io.open
+
+    def record_open(opener):
+        def opened(path, *args, **kwargs):
+            if str(path).endswith(".json") and str(storage.MISSIONS_DIR) in str(path):
+                reads.append(str(path))
+            return opener(path, *args, **kwargs)
+
+        return opened
+
+    monkeypatch.setattr(builtins, "open", record_open(real_open))
+    monkeypatch.setattr(io, "open", record_open(real_io_open))
+    observations = []
+    runtime = SimpleNamespace(
+        record_live=lambda _: None,
+        observe_live=lambda telemetry, context: observations.append(
+            (telemetry.timestamp, context.parent_mission_id, context.leg.id)
+        ),
+        sync_legacy_phase=lambda *_: None,
+    )
+    existing = main.app.state.flight_event_runtime
+    monkeypatch.setattr(existing, "record_live", runtime.record_live)
+    monkeypatch.setattr(existing, "observe_live", runtime.observe_live)
+    monkeypatch.setattr(existing, "sync_legacy_phase", runtime.sync_legacy_phase)
+    for count in range(125):
+        background_runtime.clock[0] += timedelta(seconds=1)
+        main._background_update_tick(main.app.state.poi_manager, 1, count, 0)
+    assert len(observations) == 125
+    assert {(mission_id, leg_id) for _, mission_id, leg_id in observations} == {
+        ("cached-live", "cached-leg")
+    }
+    assert len({timestamp for timestamp, *_ in observations}) == 125
+    assert reads == []
+
+
+@pytest.mark.parametrize("background_runtime", ["live"], indirect=True)
+async def test_mission_switch_during_recording_cannot_observe_prior_leg(
+    background_runtime, monkeypatch
+):
+    from app.mission import storage
+    from app.mission.models import Mission, MissionLeg, TransportConfig
+
+    mission = Mission(
+        id="switch-live",
+        name="Switch live",
+        legs=[
+            MissionLeg(
+                id="old-leg",
+                name="Old",
+                route_id="first",
+                is_active=True,
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    storage.save_mission_v2(mission)
+    background_runtime.route_manager.activate_route("first")
+    observations = []
+
+    def record(_):
+        mission.legs[0].is_active = False
+        storage.save_mission_v2(mission)
+
+    runtime = SimpleNamespace(
+        record_live=record,
+        observe_live=lambda *args: observations.append(args),
+        sync_legacy_phase=lambda *_: None,
+    )
+    existing = main.app.state.flight_event_runtime
+    monkeypatch.setattr(existing, "record_live", runtime.record_live)
+    monkeypatch.setattr(existing, "observe_live", runtime.observe_live)
+    monkeypatch.setattr(existing, "sync_legacy_phase", runtime.sync_legacy_phase)
+    main._background_update_tick(main.app.state.poi_manager, 1, 0, 0)
+    assert observations == []

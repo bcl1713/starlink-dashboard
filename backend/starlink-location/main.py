@@ -9,13 +9,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -104,6 +97,12 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -622,6 +621,13 @@ async def startup_event():
         await owner.refresh_without_collection(force=True)
 
         if _background_updates_enabled:
+            from app.mission.active_context_owner import ActiveContextOwner
+
+            context_owner = ActiveContextOwner(
+                _route_manager, lambda: _current_runtime_config().mode
+            )
+            app.state.active_context_owner = context_owner
+            await context_owner.start()
             run_service.wakeup = ReplayWakeup()
             logger.info_json("Starting background update task")
             _background_task = asyncio.create_task(_background_update_loop(poi_manager))
@@ -704,6 +710,11 @@ async def _shutdown_resources():
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
             _background_task = None
+
+        context_owner = getattr(app.state, "active_context_owner", None)
+        if context_owner is not None:
+            await context_owner.close()
+            del app.state.active_context_owner
 
         from app.core.metrics.prometheus_metrics import FRAME_STORE
 
@@ -1005,7 +1016,21 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
         frame_inputs_are_current,
         route_source_identity,
     )
+    from app.mission.active_context_cache import (
+        active_mission_snapshot_is_current,
+        get_active_mission_snapshot,
+    )
     from app.mission.storage import get_active_leg_lock
+
+    # The lifespan reconciler owns scans in production. Standalone/manual ticks
+    # without that owner reconcile on this worker, never on the event loop.
+    unmanaged_context = (
+        _route_manager is not None
+        and _current_runtime_config().mode == "live"
+        and not getattr(_route_manager, "_active_mission_context_owner", None)
+    )
+    if unmanaged_context:
+        get_active_mission_snapshot(_route_manager)
 
     with get_active_leg_lock():
         source_expected = FRAME_STORE.read()
@@ -1034,7 +1059,11 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             else None
         )
 
-    source_mission = None
+    source_mission = (
+        get_active_mission_snapshot(source_routes, reconcile=False)
+        if source_routes is not None and current_config.mode == "live"
+        else None
+    )
 
     def source_is_current(frame: GaugeFrame | None = None) -> bool:
         # Legacy adapters use the application fallback configuration and may not
@@ -1045,12 +1074,16 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                 _coordinator is coordinator
                 and _current_runtime_config() is current_config
                 and (
+                    source_mission is None
+                    or active_mission_snapshot_is_current(
+                        _route_manager, source_mission
+                    )
+                )
+                and (
                     frame is None
                     or frame_inputs_are_current(frame, active_route, poi_manager)
                 )
             )
-        from app.core.metrics.source_admission import model_identity
-
         checked_routes = _route_manager
         checked_route = checked_routes.get_active_route() if checked_routes else None
 
@@ -1078,8 +1111,7 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             and revision == source_revision
             and (
                 source_mission is None
-                or model_identity(mission_storage.load_mission_v2(source_mission[0]))
-                == source_mission[1]
+                or active_mission_snapshot_is_current(checked_routes, source_mission)
             )
             and (
                 coordinator.get_current_telemetry() is telemetry
@@ -1127,6 +1159,10 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
         if not paced:
             _publish_pop_observation(telemetry)
         update_count += 1
+        if unmanaged_context:
+            # A slow unowned acquisition may cross the reconciliation schedule.
+            # Expiry schedules a check; it does not itself change source identity.
+            get_active_mission_snapshot(source_routes)
 
         # Retained acquisition: refresh planned values and freshness without
         # observation accounting, source generation, or detection side effects.
@@ -1177,28 +1213,20 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                         return update_count
 
                     if live_events:
-                        from app.mission.active_context import (
-                            resolve_active_mission_leg_context,
-                        )
                         from app.services.flight_state import get_flight_state_manager
 
-                        resolution = resolve_active_mission_leg_context(_route_manager)
-                        if resolution.context is not None:
-                            from app.core.metrics.source_admission import model_identity
-
-                            source_mission = (
-                                resolution.context.parent_mission_id,
-                                model_identity(resolution.context.parent_mission),
-                            )
+                        snapshot = source_mission
+                        context = snapshot.binding if snapshot is not None else None
                         flight_events_managed = True
                         try:
                             runtime.record_live(telemetry)
-                            if resolution.context is not None:
-                                runtime.observe_live(telemetry, resolution.context)
+                            if context is not None and source_is_current():
+                                runtime.observe_live(telemetry, context)
+                            if context is not None and source_is_current():
                                 runtime.sync_legacy_phase(
                                     get_flight_state_manager(),
-                                    resolution.context.parent_mission_id,
-                                    resolution.context.leg.id,
+                                    context.parent_mission_id,
+                                    context.leg.id,
                                 )
                         except (OSError, sqlite3.Error, ValueError) as archive_error:
                             logger.warning_json(
