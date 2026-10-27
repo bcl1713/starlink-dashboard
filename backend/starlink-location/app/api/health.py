@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.metrics_export import _record_exposition, get_exposition_error
 from app.core.metrics import prometheus_metrics
@@ -129,7 +129,7 @@ def _safe_isoformat(dt: datetime | None) -> str | None:
 
 
 @router.get("/health")
-async def health():
+async def health(request: Request = None):
     """
     Health check endpoint with Prometheus monitoring status.
 
@@ -199,6 +199,11 @@ async def health():
             "prometheus_last_scrape": scrape_iso_time,
             "metrics_count": metrics_count,
         }
+        if request is not None:
+            recording = flight_recording_status(request)
+            response["flight_recording"] = recording
+            if actual_mode == "live" and recording["state"] != "ready":
+                response["status"] = "degraded"
 
         if dish_connected is not None:
             response["dish_connected"] = dish_connected
@@ -339,3 +344,22 @@ async def health():
         EOFError,
     ) as e:
         raise HTTPException(status_code=500, detail=f"Health check failed: {e!s}")
+
+
+@router.get("/api/flight-recording/status")
+def flight_recording_status(request: Request):
+    """Read readiness without constructing clients or changing archive state."""
+    lifecycle = getattr(request.app.state, "flight_event_lifecycle", None)
+    if lifecycle is not None:
+        return lifecycle.status()
+    return {
+        "state": "unavailable",
+        "mode": getattr(_coordinator, "mode", "unknown"),
+        "detection_available": False,
+        "recording_available": False,
+        "history_available": False,
+        "cause": "runtime_unavailable",
+        "failures": {},
+        "message": "Live flight detection and recording are unavailable; review service startup diagnostics.",
+        "retry_in_seconds": None,
+    }

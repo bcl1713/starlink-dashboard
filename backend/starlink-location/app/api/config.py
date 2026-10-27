@@ -1,6 +1,7 @@
 """Configuration management endpoint handler."""
 
 from fastapi import APIRouter, HTTPException, Request
+from starlette.concurrency import run_in_threadpool
 
 from app.models.config import SimulationConfig
 
@@ -103,15 +104,7 @@ async def update_config(new_config: SimulationConfig, request: Request):
         raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
-        # Validate the new config (Pydantic will do this automatically)
-        from app.mission.storage import get_active_leg_lock
-
-        with get_active_leg_lock():
-            _coordinator.update_config(new_config)
-            service = getattr(request.app.state, "simulation_run_service", None)
-            if service:
-                service.runtime.cancel("Configuration replaced")
-                service.runtime.set_service_mode(new_config.mode)
+        await run_in_threadpool(_apply_configuration, new_config, request)
         return new_config.model_dump()
     except (
         RuntimeError,
@@ -145,15 +138,7 @@ async def replace_config(new_config: SimulationConfig, request: Request):
         raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
-        # Validate the new config (Pydantic will do this automatically)
-        from app.mission.storage import get_active_leg_lock
-
-        with get_active_leg_lock():
-            _coordinator.update_config(new_config)
-            service = getattr(request.app.state, "simulation_run_service", None)
-            if service:
-                service.runtime.cancel("Configuration replaced")
-                service.runtime.set_service_mode(new_config.mode)
+        await run_in_threadpool(_apply_configuration, new_config, request)
         return new_config.model_dump()
     except (
         RuntimeError,
@@ -171,3 +156,18 @@ async def replace_config(new_config: SimulationConfig, request: Request):
         raise HTTPException(
             status_code=400, detail=f"Failed to update configuration: {e!s}"
         )
+
+
+def _apply_configuration(new_config, request):
+    from app.mission.storage import get_active_leg_lock
+
+    with get_active_leg_lock():
+        apply_config = getattr(request.app.state, "apply_runtime_config", None)
+        if apply_config is not None:
+            apply_config(new_config)
+        else:
+            _coordinator.update_config(new_config)
+        service = getattr(request.app.state, "simulation_run_service", None)
+        if service:
+            service.runtime.cancel("Configuration replaced")
+            service.runtime.set_service_mode(new_config.mode)

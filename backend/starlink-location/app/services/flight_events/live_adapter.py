@@ -16,40 +16,52 @@ from app.services.kml.geometry import haversine_distance
 class FlightEventRuntime:
     def __init__(self, root: Path):
         self.root = root
+        # Validate before opening clients or starting resumed export work.
+        self.policy = DetectionPolicy.model_validate_json(
+            os.getenv("FLIGHT_DETECTION_POLICY", "{}")
+        )
         self.events = FlightEventStore(root / "events.db")
         from app.services.telemetry_archive.coordinator import CaptureCoordinator
         from app.services.telemetry_archive.store import ArchiveStore
 
         self.archive = ArchiveStore(root / "archive.db")
         self.capture = CaptureCoordinator(self.events, self.archive)
-        self.client = httpx.Client(
-            base_url=os.getenv("STARLINK_PROMETHEUS_URL", "http://prometheus:9090"),
-            timeout=3,
-        )
         from app.mission.storage import load_mission_v2
         from app.services.telemetry_archive.preparation import (
             TelemetryPreparationService,
         )
 
-        self.preparations = TelemetryPreparationService(
-            root, self.archive, load_mission_v2
+        self.client = httpx.Client(
+            base_url=os.getenv("STARLINK_PROMETHEUS_URL", "http://prometheus:9090"),
+            timeout=3,
         )
+        try:
+            self.preparations = TelemetryPreparationService(
+                root, self.archive, load_mission_v2
+            )
+        except BaseException:
+            self.client.close()
+            raise
         self.last_recovery = 0.0
-        self.policy = DetectionPolicy.model_validate_json(
-            os.getenv("FLIGHT_DETECTION_POLICY", "{}")
-        )
 
     def changed(self, mission_id: str, leg_id: str) -> None:
         """Consume durable ledger notifications; acknowledgement follows commit."""
         self.capture.recover(datetime.now(timezone.utc))
 
-    def accept(self, observation: FlightObservation):
+    def accept(self, observation: FlightObservation, *, recover_capture=True):
         result = self.events.apply_observation(observation, self.policy)
-        if result.emitted_events:
+        if recover_capture and result.emitted_events:
             self.capture.recover(observation.observed_at)
         return result
 
     def status(self, mission_id: str, leg_id: str) -> dict:
+        result = self.event_status(mission_id, leg_id)
+        capture = self.archive.capture_summary(mission_id, leg_id)
+        result["capture_state"] = capture["state"] if capture else "awaiting_off_blocks"
+        return result
+
+    def event_status(self, mission_id: str, leg_id: str) -> dict:
+        """Read committed movement independently of raw archive availability."""
         state = self.events.state(mission_id, leg_id)
         events = self.events.events(mission_id, leg_id)
         result = {
@@ -70,12 +82,12 @@ class FlightEventRuntime:
             }.get(event.kind)
             if field and (field != "off_blocks_at" or result[field] is None):
                 result[field] = event.occurred_at
-        capture = self.archive.capture_summary(mission_id, leg_id)
-        result["capture_state"] = capture["state"] if capture else "awaiting_off_blocks"
         return result
 
     def record_live(self, telemetry) -> None:
         """Persist accepted live observations even before a leg starts moving."""
+        if telemetry.metric_source == "simulated":
+            return
         from app.services.position_freshness import (
             observation_time,
             position_observation,
@@ -194,7 +206,11 @@ class FlightEventRuntime:
         self.client.close()
         self.preparations.close()
 
-    def observe_live(self, telemetry, context, *, now: datetime | None = None):
+    def observe_live(
+        self, telemetry, context, *, now: datetime | None = None, recover_capture=True
+    ):
+        if telemetry.metric_source == "simulated":
+            return None
         position = telemetry.position
         destination = context.route.points[-1] if context.route.points else None
         observation = FlightObservation(
@@ -224,10 +240,10 @@ class FlightEventRuntime:
                 else None
             ),
         )
-        return self.accept(observation)
+        return self.accept(observation, recover_capture=recover_capture)
 
     def sync_legacy_phase(self, manager, mission_id: str, leg_id: str) -> None:
-        status = self.status(mission_id, leg_id)
+        status = self.event_status(mission_id, leg_id)
         movement = status["movement_state"]
         if movement in ("probable_landed_rollout", "taxi_in", "parked_at_stop") or (
             movement == "parked" and status["on_blocks_at"]
