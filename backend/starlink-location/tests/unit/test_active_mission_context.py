@@ -588,3 +588,16 @@ def test_stalled_reconciliation_owner_fails_closed(
     assert cache.get_active_mission_snapshot(route_manager, reconcile=False) is None
     assert not cache.active_mission_snapshot_is_current(route_manager, previous)
     assert cache.get_active_mission_snapshot(route_manager) is previous
+
+
+def test_failed_owner_cannot_keep_publishing_old_binding(route_manager, v2_mission):
+    from types import SimpleNamespace
+    from app.mission import active_context_cache as cache
+
+    v2_mission.legs[0].is_active = True
+    save_mission_v2(v2_mission)
+    route_manager.activate_route("route-a")
+    accepted = cache.get_active_mission_snapshot(route_manager)
+    route_manager._active_mission_context_owner = SimpleNamespace(failed=True)
+    assert cache.get_active_mission_snapshot(route_manager, reconcile=False) is None
+    assert not cache.active_mission_snapshot_is_current(route_manager, accepted)

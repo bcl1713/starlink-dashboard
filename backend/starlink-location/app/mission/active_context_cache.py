@@ -168,6 +168,8 @@ class ActiveContextCache:
         elif self.local_generation != mission_metrics_changes.generation:
             return None
         owner = getattr(manager, "_active_mission_context_owner", None)
+        if not reconcile and owner is not None and getattr(owner, "failed", False):
+            return None
         if (
             not reconcile
             and owner
