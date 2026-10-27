@@ -8,11 +8,13 @@ class MetricsChangeSource:
     """One lifespan-owned subscriber; managers remain usable without metrics."""
 
     _metrics_change_callback: Callable[[str], None] | None = None
+    generation: int = 0
 
     def set_metrics_change_callback(self, callback: Callable[[str], None] | None):
         self._metrics_change_callback = callback
 
     def _notify_metrics_changed(self, reason: str):
+        self.generation += 1
         if self._metrics_change_callback is not None:
             self._metrics_change_callback(reason)
 

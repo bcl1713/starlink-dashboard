@@ -1,0 +1,476 @@
+{
+  "original": [
+    {
+      "missions": 0,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 223.87194,
+        "median": 226.191864,
+        "max": 230.44279600000002
+      },
+      "wall_p95_us": {
+        "min": 251.797,
+        "median": 267.375,
+        "max": 271.614
+      },
+      "json_reads_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "bytes_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 22.0,
+        "median": 22.0,
+        "max": 22.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 1,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 1485.8401999999999,
+        "median": 1516.722588,
+        "max": 1526.602768
+      },
+      "wall_p95_us": {
+        "min": 1602.295,
+        "median": 1648.504,
+        "max": 1692.54
+      },
+      "json_reads_per_op": {
+        "min": 17.0,
+        "median": 17.0,
+        "max": 17.0
+      },
+      "bytes_per_op": {
+        "min": 7473.0,
+        "median": 7473.0,
+        "max": 7473.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 77.0,
+        "median": 77.0,
+        "max": 77.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 5.0,
+        "median": 5.0,
+        "max": 5.0
+      },
+      "info_logs_per_op": {
+        "min": 3.0,
+        "median": 3.0,
+        "max": 3.0
+      }
+    },
+    {
+      "missions": 10,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 6087.373212,
+        "median": 6160.6673200000005,
+        "max": 6383.348068
+      },
+      "wall_p95_us": {
+        "min": 6533.203,
+        "median": 6664.317,
+        "max": 6970.12
+      },
+      "json_reads_per_op": {
+        "min": 80.0,
+        "median": 80.0,
+        "max": 80.0
+      },
+      "bytes_per_op": {
+        "min": 31917.0,
+        "median": 31917.0,
+        "max": 31917.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 320.0,
+        "median": 320.0,
+        "max": 320.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 23.0,
+        "median": 23.0,
+        "max": 23.0
+      },
+      "info_logs_per_op": {
+        "min": 12.0,
+        "median": 12.0,
+        "max": 12.0
+      }
+    },
+    {
+      "missions": 100,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 54026.316472000006,
+        "median": 55797.033299999996,
+        "max": 55908.138416
+      },
+      "wall_p95_us": {
+        "min": 65144.418,
+        "median": 67384.687,
+        "max": 69200.368
+      },
+      "json_reads_per_op": {
+        "min": 710.0,
+        "median": 710.0,
+        "max": 710.0
+      },
+      "bytes_per_op": {
+        "min": 276897.0,
+        "median": 276897.0,
+        "max": 276897.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 2750.0,
+        "median": 2750.0,
+        "max": 2750.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 203.0,
+        "median": 203.0,
+        "max": 203.0
+      },
+      "info_logs_per_op": {
+        "min": 102.0,
+        "median": 102.0,
+        "max": 102.0
+      }
+    }
+  ],
+  "preceding": [
+    {
+      "missions": 0,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 214.622696,
+        "median": 227.789624,
+        "max": 228.78258
+      },
+      "wall_p95_us": {
+        "min": 225.109,
+        "median": 242.618,
+        "max": 262.264
+      },
+      "json_reads_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "bytes_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 22.0,
+        "median": 22.0,
+        "max": 22.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 1,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 1426.9673759999998,
+        "median": 1504.306252,
+        "max": 1526.238624
+      },
+      "wall_p95_us": {
+        "min": 1531.384,
+        "median": 1628.713,
+        "max": 1642.226
+      },
+      "json_reads_per_op": {
+        "min": 17.0,
+        "median": 17.0,
+        "max": 17.0
+      },
+      "bytes_per_op": {
+        "min": 8243.0,
+        "median": 8243.0,
+        "max": 8243.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 77.0,
+        "median": 77.0,
+        "max": 77.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 5.0,
+        "median": 5.0,
+        "max": 5.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 10,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 5832.922052,
+        "median": 6191.221764000001,
+        "max": 6227.918944
+      },
+      "wall_p95_us": {
+        "min": 6190.334,
+        "median": 6612.556,
+        "max": 6760.065
+      },
+      "json_reads_per_op": {
+        "min": 80.0,
+        "median": 80.0,
+        "max": 80.0
+      },
+      "bytes_per_op": {
+        "min": 35981.0,
+        "median": 35981.0,
+        "max": 35981.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 320.0,
+        "median": 320.0,
+        "max": 320.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 23.0,
+        "median": 23.0,
+        "max": 23.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 100,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 52091.779124,
+        "median": 54895.412255999996,
+        "max": 55380.754711999994
+      },
+      "wall_p95_us": {
+        "min": 64287.318,
+        "median": 66945.301,
+        "max": 67401.378
+      },
+      "json_reads_per_op": {
+        "min": 710.0,
+        "median": 710.0,
+        "max": 710.0
+      },
+      "bytes_per_op": {
+        "min": 313901.0,
+        "median": 313901.0,
+        "max": 313901.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 2750.0,
+        "median": 2750.0,
+        "max": 2750.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 203.0,
+        "median": 203.0,
+        "max": 203.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    }
+  ],
+  "candidate": [
+    {
+      "missions": 0,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 114.317112,
+        "median": 115.977796,
+        "max": 121.25026
+      },
+      "wall_p95_us": {
+        "min": 120.553,
+        "median": 124.259,
+        "max": 135.12
+      },
+      "json_reads_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "bytes_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 10.0,
+        "median": 10.0,
+        "max": 10.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 1,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 347.300248,
+        "median": 351.75635600000004,
+        "max": 359.58038799999997
+      },
+      "wall_p95_us": {
+        "min": 354.476,
+        "median": 359.712,
+        "max": 411.953
+      },
+      "json_reads_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "bytes_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 30.0,
+        "median": 30.0,
+        "max": 30.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 10,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 350.85,
+        "median": 354.681012,
+        "max": 375.55170400000003
+      },
+      "wall_p95_us": {
+        "min": 360.306,
+        "median": 361.482,
+        "max": 459.641
+      },
+      "json_reads_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "bytes_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 30.0,
+        "median": 30.0,
+        "max": 30.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "missions": 100,
+      "iterations": 250,
+      "thread_cpu_mean_us": {
+        "min": 349.731436,
+        "median": 353.321292,
+        "max": 365.47659600000003
+      },
+      "wall_p95_us": {
+        "min": 357.042,
+        "median": 360.248,
+        "max": 423.892
+      },
+      "json_reads_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "bytes_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "os_stat_lstat_per_op": {
+        "min": 30.0,
+        "median": 30.0,
+        "max": 30.0
+      },
+      "directory_enumerations_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "info_logs_per_op": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      }
+    }
+  ]
+}

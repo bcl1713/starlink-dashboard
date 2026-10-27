@@ -1,0 +1,366 @@
+{
+  "production-path-r1": {
+    "candidate_sha": "83d8ce08e91f880b600b291c14d93e3436be06ac",
+    "harness_sha": "83d8ce08e91f880b600b291c14d93e3436be06ac",
+    "status": "measured",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true,
+      "prometheusListenerRemoved": true
+    },
+    "failures": [],
+    "browser_cleanup": {
+      "started": true,
+      "pid": 1815792,
+      "pgid": 1815792,
+      "remaining": []
+    }
+  },
+  "acceptance-workspace-r1": {
+    "candidateSha": "03d7f5391f98c24f3fd3e47d84f836694bf8eee0",
+    "checksPassed": false,
+    "error": "Command failed (1): /tmp/issue392-evidence/acceptance-workspace-r1/command-019.log",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    }
+  },
+  "acceptance-workspace-baseline": {
+    "candidateSha": "a0cdcfbe0b6923f18f77854d43edcf94ad16f5b0",
+    "checksPassed": false,
+    "error": "Command failed (1): /tmp/issue392-evidence/acceptance-workspace-baseline/command-019.log",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    }
+  },
+  "production-final-r1": {
+    "candidate_sha": "6d8308592fe8d3a6530ce92ac42490a481445929",
+    "harness_sha": "6d8308592fe8d3a6530ce92ac42490a481445929",
+    "status": "failed",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true,
+      "prometheusListenerRemoved": true
+    },
+    "failure": "Synthetic history must have 11 dense finite series",
+    "phase": "final"
+  },
+  "production-final-r2": {
+    "candidate_sha": "6d8308592fe8d3a6530ce92ac42490a481445929",
+    "harness_sha": "6d8308592fe8d3a6530ce92ac42490a481445929",
+    "status": "failed",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true,
+      "prometheusListenerRemoved": true
+    },
+    "failure": "Synthetic history must have 11 dense finite series",
+    "phase": "initial",
+    "captured_history": [
+      {
+        "start": 1793109637,
+        "end": 1793109937,
+        "step": 1,
+        "series": {
+          "starlink_dish_altitude_feet": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_dish_heading_degrees": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_dish_latitude_degrees": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_dish_longitude_degrees": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_dish_obstruction_percent": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_dish_speed_knots": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_network_latency_ms_current": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_network_packet_loss_percent": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_network_throughput_down_mbps_current": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_network_throughput_up_mbps_current": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          },
+          "starlink_signal_quality_percent": {
+            "points": 300,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793109937
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "production-baseline-history-r1": {
+    "candidate_sha": "a0cdcfbe0b6923f18f77854d43edcf94ad16f5b0",
+    "harness_sha": "6d8308592fe8d3a6530ce92ac42490a481445929",
+    "status": "failed",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true,
+      "prometheusListenerRemoved": true
+    },
+    "failure": "Synthetic history must have 11 dense finite series",
+    "phase": "final",
+    "captured_history": [
+      {
+        "start": 1793109702,
+        "end": 1793110002,
+        "step": 1,
+        "series": {
+          "starlink_dish_altitude_feet": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_dish_heading_degrees": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_dish_latitude_degrees": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_dish_longitude_degrees": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_dish_obstruction_percent": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_dish_speed_knots": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_network_latency_ms_current": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_network_packet_loss_percent": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_network_throughput_down_mbps_current": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_network_throughput_up_mbps_current": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          },
+          "starlink_signal_quality_percent": {
+            "points": 301,
+            "nonfinite_or_null": 0,
+            "missing": []
+          }
+        }
+      },
+      {
+        "start": 1793109824,
+        "end": 1793110124,
+        "step": 1,
+        "series": {
+          "starlink_dish_latitude_degrees": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_dish_obstruction_percent": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_signal_quality_percent": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_dish_longitude_degrees": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_dish_altitude_feet": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_dish_speed_knots": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_network_throughput_down_mbps_current": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_dish_heading_degrees": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_network_throughput_up_mbps_current": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_network_latency_ms_current": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          },
+          "starlink_network_packet_loss_percent": {
+            "points": 299,
+            "nonfinite_or_null": 0,
+            "missing": [
+              1793110003,
+              1793110004
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

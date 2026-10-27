@@ -1,0 +1,18 @@
+{
+  "preceding": {
+    "retained_timestamps": 2105,
+    "retained_samples": 18945,
+    "incomplete_groups": 0,
+    "max_gap_seconds": 1.0017149448394775,
+    "retained_span_seconds": 2104.0005900859833,
+    "policy": "35-minute rolling archive, GC every 10 seconds; endpoints can vary by a GC interval"
+  },
+  "candidate": {
+    "retained_timestamps": 2100,
+    "retained_samples": 18900,
+    "incomplete_groups": 0,
+    "max_gap_seconds": 1.0019540786743164,
+    "retained_span_seconds": 2099.0012199878693,
+    "policy": "35-minute rolling archive, GC every 10 seconds; endpoints can vary by a GC interval"
+  }
+}

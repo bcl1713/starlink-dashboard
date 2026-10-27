@@ -1,0 +1,139 @@
+{
+  "harness_sha": "0426b6163c02b38f84550fd4d04fbb5052456077",
+  "applications": {
+    "preceding": "a0cdcfbe0b6923f18f77854d43edcf94ad16f5b0",
+    "candidate": "0426b6163c02b38f84550fd4d04fbb5052456077"
+  },
+  "scope": "Opt-in real live-coordinator/SQLite/ASGI soak over fictional saved missions.\n\nRun explicitly with pytest and ISSUE392_SOAK_SECONDS. The existing fixture\nstubs dish transport, controls UTC acquisition time, disables route watchers,\nand manually drives the real tick. SQLite and ASGI APIs remain real. This lane\nhas no Docker, Nginx, physical dish, browser, or display performance claim.\n",
+  "cohort": "perf392-live-like-100x4-v1; instrumented Python/OS boundaries; current UTC; manual 1Hz; real live coordinator, SQLite and ASGI; no browser/Nginx/physical-dish performance claim",
+  "measured_seconds": {
+    "preceding": 3660.001632069703,
+    "candidate": 3660.001146217808
+  },
+  "process_cpu_seconds": {
+    "before": 465.961411263,
+    "after": 94.016450919,
+    "absolute_delta": -371.94496034400004,
+    "percent_delta": -79.82312512442479
+  },
+  "tick_thread_cpu_mean_ms": {
+    "before": 62.02419912650273,
+    "after": 6.482339613661202,
+    "absolute_delta": -55.541859512841526,
+    "percent_delta": -89.54869276032083
+  },
+  "tick_wall_p95_ms": {
+    "before": 152.194569,
+    "after": 13.149026,
+    "absolute_delta": -139.045543,
+    "percent_delta": -91.36038421975492
+  },
+  "status_asgi_p95_ms": {
+    "before": 125.974786,
+    "after": 6.459578,
+    "absolute_delta": -119.515208,
+    "percent_delta": -94.87232468884687
+  },
+  "operator_records_asgi_p95_ms": {
+    "before": 4.907201,
+    "after": 6.256766,
+    "absolute_delta": 1.3495650000000001,
+    "percent_delta": 27.501726544317222
+  },
+  "memory": {
+    "preceding": {
+      "warm_samples": 56,
+      "warm_min_mib": 252.2265625,
+      "warm_max_mib": 260.77734375,
+      "warm_first_mib": 252.2265625,
+      "warm_last_mib": 260.77734375,
+      "warm_ols_mib_per_hour": 13.06616185524756,
+      "scope": "Process RSS includes bounded measurement buffers; one-hour slopes do not diagnose leaks."
+    },
+    "candidate": {
+      "warm_samples": 56,
+      "warm_min_mib": 249.08203125,
+      "warm_max_mib": 254.20703125,
+      "warm_first_mib": 249.08203125,
+      "warm_last_mib": 254.20703125,
+      "warm_ols_mib_per_hour": 7.227656813405118,
+      "scope": "Process RSS includes bounded measurement buffers; one-hour slopes do not diagnose leaks."
+    }
+  },
+  "counts": {
+    "preceding": {
+      "stat_calls": 9882334,
+      "os_stat_calls": 9882340,
+      "os_lstat_calls": 13992168,
+      "os_open_calls": 21954,
+      "gate_acquisitions": 1551840,
+      "gate_acquire_wall_ns": 269852839558,
+      "glob_enumerations": 1504260,
+      "model_initializations": 3740515,
+      "directory_enumerations": 7320,
+      "os_listdir_calls": 7320,
+      "metadata_reads": 2203320,
+      "bytes_read": 2277354480,
+      "os_scandir_calls": 1471320,
+      "leg_reads": 2957280,
+      "json_model_validations": 2968260,
+      "model_validations": 739320,
+      "info_logs": 6
+    },
+    "candidate": {
+      "stat_calls": 3899547,
+      "os_stat_calls": 3899553,
+      "os_lstat_calls": 1634461,
+      "os_open_calls": 40063,
+      "gate_acquisitions": 178761,
+      "gate_acquire_wall_ns": 21927059573,
+      "glob_enumerations": 466854,
+      "model_initializations": 80518,
+      "json_model_validations": 14640,
+      "directory_enumerations": 3611,
+      "os_listdir_calls": 3611,
+      "os_scandir_calls": 361100,
+      "info_logs": 6
+    }
+  },
+  "process_io_delta": {
+    "preceding": {
+      "rchar": 3084226224,
+      "wchar": 271561744,
+      "syscr": 10665186,
+      "syscw": 174289,
+      "read_bytes": 0,
+      "write_bytes": 0,
+      "cancelled_write_bytes": 0
+    },
+    "candidate": {
+      "rchar": 807323414,
+      "wchar": 271657186,
+      "syscr": 344187,
+      "syscw": 174368,
+      "read_bytes": 0,
+      "write_bytes": 0,
+      "cancelled_write_bytes": 0
+    }
+  },
+  "readiness": {
+    "preceding": {
+      "ticks": 3660,
+      "observations": 3660,
+      "qualified_status_samples": 3660,
+      "errors": [],
+      "movement": "parked",
+      "max_acquisition_age_seconds": 1.210333,
+      "max_position_observation_age_seconds": 0.0
+    },
+    "candidate": {
+      "ticks": 3660,
+      "observations": 3660,
+      "qualified_status_samples": 3660,
+      "errors": [],
+      "movement": "parked",
+      "max_acquisition_age_seconds": 1.029707,
+      "max_position_observation_age_seconds": 0.0
+    }
+  }
+}

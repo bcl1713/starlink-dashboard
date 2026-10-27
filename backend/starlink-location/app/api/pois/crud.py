@@ -55,7 +55,7 @@ router = APIRouter(tags=["pois"])
 
 
 @router.get("/", response_model=POIListResponse, summary="List all POIs")
-async def list_pois(
+def list_pois(
     route_id: Annotated[str | None, Query(description="Filter by route ID")] = None,
     mission_id: Annotated[str | None, Query(description="Filter by mission ID")] = None,
     active_only: Annotated[
@@ -170,7 +170,7 @@ async def list_pois(
 
 
 @router.get("/{poi_id}", response_model=POIResponse, summary="Get a specific POI")
-async def get_poi(
+def get_poi(
     poi_id: str,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
@@ -235,7 +235,7 @@ async def get_poi(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new POI",
 )
-async def create_poi(
+def create_poi(
     poi_create: POICreate,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
@@ -335,7 +335,7 @@ async def create_poi(
 
 
 @router.put("/{poi_id}", response_model=POIResponse, summary="Update a POI")
-async def update_poi(
+def update_poi(
     poi_id: str,
     poi_update: POIUpdate,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
@@ -427,7 +427,7 @@ async def update_poi(
 @router.delete(
     "/{poi_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a POI"
 )
-async def delete_poi(
+def delete_poi(
     poi_id: str,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> None:

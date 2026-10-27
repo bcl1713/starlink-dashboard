@@ -72,7 +72,7 @@ router = APIRouter(tags=["pois"])
     response_model=POIETAListResponse,
     summary="Get all POIs with real-time ETA data",
 )
-async def get_pois_with_etas(
+def get_pois_with_etas(
     route_id: Annotated[str | None, Query(description="Filter by route ID")] = None,
     latitude: Annotated[
         str | None,
