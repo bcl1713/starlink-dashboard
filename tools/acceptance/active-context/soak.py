@@ -1,8 +1,9 @@
 """Opt-in real live-coordinator/SQLite/ASGI soak over fictional saved missions.
 
-Run explicitly with pytest and ISSUE392_SOAK_SECONDS. Only dish transport is
-stubbed by the existing live-background fixture. This lane has no Docker,
-Nginx, physical dish, browser, or representative-display performance claim.
+Run explicitly with pytest and ISSUE392_SOAK_SECONDS. The existing fixture
+stubs dish transport, controls UTC acquisition time, disables route watchers,
+and manually drives the real tick. SQLite and ASGI APIs remain real. This lane
+has no Docker, Nginx, physical dish, browser, or display performance claim.
 """
 
 import asyncio
@@ -212,6 +213,8 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
         report = {
             "application_sha": os.environ["ISSUE392_APPLICATION_SHA"],
             "harness_sha": os.environ["ISSUE392_HARNESS_SHA"],
+            "application_module_root": str(Path(main.__file__).resolve()),
+            "independent_reconciler": owner is not None,
             "counter_scope": "Python file-read, Path and os boundaries; Path/os counts overlap; proc I/O is whole-process including SQLite and observer",
             "scope": __doc__,
             "missions": missions,
