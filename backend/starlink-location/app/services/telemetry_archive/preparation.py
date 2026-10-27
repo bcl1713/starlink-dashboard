@@ -22,9 +22,6 @@ class TelemetryPreparationService:
         self.archive, self.load_mission, self.clock = archive, load_mission, clock
         self.directory = root / "downloads"
         self.directory.mkdir(parents=True, exist_ok=True)
-        self.pool = ThreadPoolExecutor(
-            max_workers=1, thread_name_prefix="telemetry-export"
-        )
         with archive.ledger.connect() as db:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS telemetry_jobs (id TEXT PRIMARY KEY, mission TEXT, payload TEXT, snapshot TEXT)"
@@ -32,8 +29,15 @@ class TelemetryPreparationService:
             pending = db.execute(
                 "SELECT id FROM telemetry_jobs WHERE json_extract(payload, '$.state') IN ('queued','preparing')"
             ).fetchall()
-        for row in pending:
-            self.pool.submit(self._build, row[0])
+        self.pool = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="telemetry-export"
+        )
+        try:
+            for row in pending:
+                self.pool.submit(self._build, row[0])
+        except BaseException:
+            self.pool.shutdown(wait=True, cancel_futures=True)
+            raise
 
     def _read(self, mission_id, job_id):
         with self.archive.ledger.connect() as db:

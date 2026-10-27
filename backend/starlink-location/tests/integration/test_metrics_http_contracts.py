@@ -37,6 +37,11 @@ def publication_http(monkeypatch):
         ),
     )
     app = FastAPI()
+    # This fixture isolates publication health. Recording readiness has its own
+    # lifecycle/API tests and must be explicitly healthy for status="ok".
+    app.state.flight_event_lifecycle = SimpleNamespace(
+        status=lambda: {"state": "ready"}
+    )
     app.include_router(http_metrics.router)
     app.include_router(health.router)
 

@@ -37,6 +37,7 @@ class DetectionPolicy(BaseModel):
     landing_knots: float = Field(default=35, gt=0)
     landing_dwell: float = Field(default=20, gt=0)
     landing_stable_feet: float = Field(default=75, gt=0)
+    landing_trend_feet_per_second: float = Field(default=1, ge=0)
     parking_knots: float = Field(default=1, ge=0)
     parking_dwell: float = Field(default=300, gt=0)
     parking_radius_m: float = Field(default=50, gt=0)
@@ -107,12 +108,20 @@ class Candidate(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     altitude_feet: float | None = None
+    altitude_min: float | None = None
+    altitude_max: float | None = None
+    sample_count: int = 0
+    time_sum: float = 0
+    altitude_sum: float = 0
+    time_squared_sum: float = 0
+    time_altitude_sum: float = 0
 
 
 class DetectionState(BaseModel):
     movement: MovementState = "unknown"
     uncertain: bool = True
     last_observed_at: AwareDatetime | None = None
+    last_altitude_observed_at: AwareDatetime | None = None
     candidate: Candidate | None = None
     parked_altitude: float | None = None
     max_airborne_altitude: float | None = None

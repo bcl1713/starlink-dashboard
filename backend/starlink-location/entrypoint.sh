@@ -18,6 +18,12 @@ for dir in \
   chmod 775 "$dir" 2>/dev/null || true
  done
 
+# The bind mount hides the image directory's ownership. Prepare only its root;
+# never recursively rewrite retained flight databases or operational evidence.
+archive_dir="${FLIGHT_ARCHIVE_ROOT:-/app/data/flight-events}"
+mkdir -p "$archive_dir" && chown appuser:appuser "$archive_dir" && chmod 700 "$archive_dir" ||
+  echo 'Flight archive storage setup failed; live recording will report recovery status.' >&2
+
 # Operator history is private and independent of the shared 775 directories.
 # Touch only the mount root; retained database/backup ownership stays intact.
 operator_dir="${OPERATOR_ROOT:-/app/data/operator}"

@@ -33,6 +33,21 @@ def advance_detection(
         return _changes(result, prior_candidate)
     speed = observation.speed_knots
     altitude = observation.altitude_feet if observation.usable_altitude else None
+    if state.movement == "airborne" and altitude is not None:
+        altitude_time = observation.altitude_observed_at
+        if (
+            state.last_altitude_observed_at is not None
+            and altitude_time <= state.last_altitude_observed_at
+        ):
+            state.uncertain = True
+            destination = observation.destination_distance_m
+            if speed >= policy.landing_knots or not (
+                destination is not None
+                and 0 <= destination <= policy.destination_radius_m
+            ):
+                state.candidate = None
+            return _changes(result, prior_candidate)
+        state.last_altitude_observed_at = altitude_time
     kind = None
     dwell = 0.0
     target = state.movement
@@ -147,9 +162,48 @@ def advance_detection(
             altitude_feet=altitude,
         )
         return _changes(result, prior_candidate)
+    if kind == "landed":
+        state.uncertain = True
+        candidate.altitude_min = min(
+            candidate.altitude_min if candidate.altitude_min is not None else altitude,
+            altitude,
+        )
+        candidate.altitude_max = max(
+            candidate.altitude_max if candidate.altitude_max is not None else altitude,
+            altitude,
+        )
+        if candidate.altitude_max - candidate.altitude_min > policy.landing_stable_feet:
+            state.candidate = None
+            return _changes(result, prior_candidate)
+        # Constant-size sufficient statistics for a noise-tolerant linear trend.
+        elapsed = (observation.altitude_observed_at - candidate.since).total_seconds()
+        candidate.sample_count += 1
+        candidate.time_sum += elapsed
+        candidate.altitude_sum += altitude
+        candidate.time_squared_sum += elapsed * elapsed
+        candidate.time_altitude_sum += elapsed * altitude
+        if elapsed < dwell:
+            return _changes(result, prior_candidate)
+        count = candidate.sample_count
+        denominator = count * candidate.time_squared_sum - candidate.time_sum**2
+        slope = (
+            (
+                (
+                    count * candidate.time_altitude_sum
+                    - candidate.time_sum * candidate.altitude_sum
+                )
+                / denominator
+            )
+            if denominator > 0
+            else float("inf")
+        )
+        if abs(slope) > policy.landing_trend_feet_per_second:
+            state.candidate = None
+            return _changes(result, prior_candidate)
     if (now - candidate.since).total_seconds() < dwell:
         return _changes(result, prior_candidate)
     state.movement = target
+    state.uncertain = False
     state.candidate = None
     if target in ("parked", "parked_at_stop"):
         state.parked_altitude = altitude

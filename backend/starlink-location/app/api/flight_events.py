@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import AwareDatetime, BaseModel, Field
 
 from app.mission.storage import load_mission_v2
+from app.services.flight_events.lifecycle import RECOVERABLE
 
 router = APIRouter(prefix="/api/v2/missions", tags=["Flight events"])
 
@@ -53,14 +54,31 @@ def event_error(error: ValueError):
 @router.get("/{mission_id}/legs/{leg_id}/flight-events")
 def read_events(request: Request, mission_id: str, leg_id: str):
     runtime = runtime_for(request, mission_id, leg_id)
+    lifecycle = getattr(request.app.state, "flight_event_lifecycle", None)
+    try:
+        status = runtime.event_status(mission_id, leg_id)
+        events = runtime.events.events(mission_id, leg_id)
+    except RECOVERABLE as error:
+        if lifecycle is not None:
+            lifecycle.report_failure("detection", error)
+        raise HTTPException(
+            503, "Flight event history is unavailable; review recording status"
+        ) from None
+    try:
+        capture = runtime.archive.capture_summary(mission_id, leg_id) or {}
+    except RECOVERABLE as error:
+        if lifecycle is not None:
+            lifecycle.report_failure("maintenance", error)
+        capture = {"state": "unavailable"}
+    status["capture_state"] = capture.get("state", "awaiting_off_blocks")
+    if lifecycle is not None and not lifecycle.status()["detection_available"]:
+        status["movement_uncertain"] = True
     return {
-        "status": runtime.status(mission_id, leg_id),
-        "events": runtime.events.events(mission_id, leg_id),
+        "status": status,
+        "events": events,
         "capture": {
             key: value
-            for key, value in (
-                runtime.archive.capture_summary(mission_id, leg_id) or {}
-            ).items()
+            for key, value in capture.items()
             if key not in ("samples", "events")
         },
     }

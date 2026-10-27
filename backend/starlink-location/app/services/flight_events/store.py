@@ -59,6 +59,18 @@ class FlightEventStore:
         with self.connect() as db:
             return self._state(db, mission_id, leg_id)
 
+    def break_continuity(self) -> None:
+        """Mode changes interrupt pending inference, never confirmed history."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            for mission, leg, payload in db.execute(
+                "SELECT mission, leg, payload FROM states"
+            ).fetchall():
+                state = DetectionState.model_validate_json(payload)
+                state.candidate = None
+                state.uncertain = True
+                self._save_state(db, mission, leg, state)
+
     def _save_state(self, db, mission_id, leg_id, state):
         db.execute(
             "INSERT OR REPLACE INTO states VALUES (?, ?, ?)",

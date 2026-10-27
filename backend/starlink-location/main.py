@@ -510,19 +510,11 @@ async def startup_event():
             )
             raise
 
-        if active_mode == "live":
-            from app.services.flight_events.live_adapter import FlightEventRuntime
+        from app.services.flight_events.lifecycle import FlightEventLifecycle
 
-            try:
-                app.state.flight_event_runtime = FlightEventRuntime(
-                    Path(os.getenv("FLIGHT_ARCHIVE_ROOT", "data/flight-events"))
-                )
-            except (OSError, sqlite3.Error, ValueError) as archive_error:
-                app.state.flight_event_runtime = None
-                logger.warning_json(
-                    "Live recording unavailable",
-                    extra_fields={"error": type(archive_error).__name__},
-                )
+        app.state.flight_event_lifecycle = FlightEventLifecycle(app.state)
+        app.state.flight_event_lifecycle.reconcile(active_mode)
+        app.state.apply_runtime_config = _apply_runtime_config
 
         # Initialize CommKa coverage for Grafana static file serving
         logger.info_json("Initializing CommKa satellite coverage")
@@ -777,10 +769,18 @@ async def _shutdown_resources():
         if hasattr(app.state, "overview_history_reader"):
             await app.state.overview_history_reader.aclose()
             del app.state.overview_history_reader
-        flight_event_runtime = getattr(app.state, "flight_event_runtime", None)
-        if flight_event_runtime is not None:
-            flight_event_runtime.close()
+        lifecycle = getattr(app.state, "flight_event_lifecycle", None)
+        if lifecycle is not None:
+            lifecycle.close()
+            del app.state.flight_event_lifecycle
+        elif getattr(app.state, "flight_event_runtime", None) is not None:
+            app.state.flight_event_runtime.close()
             app.state.flight_event_runtime = None
+        if hasattr(app.state, "apply_runtime_config"):
+            del app.state.apply_runtime_config
+        if isinstance(_coordinator, LiveCoordinator):
+            _coordinator.shutdown()
+        gps.set_starlink_client(None)
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None
@@ -801,6 +801,51 @@ async def _shutdown_resources():
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
+
+
+def _apply_runtime_config(new_config):
+    """Called under repository admission: replace source and rebind its owners."""
+    global _coordinator, _simulation_config
+    previous = _coordinator
+    expected = LiveCoordinator if new_config.mode == "live" else SimulationCoordinator
+    if isinstance(previous, expected):
+        previous.update_config(new_config)
+    else:
+        replacement = expected(new_config)
+        if (
+            isinstance(replacement, SimulationCoordinator)
+            and _route_manager is not None
+        ):
+            replacement.set_route_manager(_route_manager)
+        owner = getattr(app.state, "metrics_refresh_owner", None)
+        if owner is not None:
+            owner.detach(previous)
+            owner.attach(replacement)
+        _coordinator = replacement
+        app.state.coordinator = replacement
+        for module in (health, status, config, pois):
+            module.set_coordinator(replacement)
+        gps.set_starlink_client(
+            replacement.client if isinstance(replacement, LiveCoordinator) else None
+        )
+        service = getattr(app.state, "simulation_run_service", None)
+        if service is not None:
+            service.coordinator = (
+                replacement if isinstance(replacement, SimulationCoordinator) else None
+            )
+        if isinstance(previous, LiveCoordinator):
+            previous.shutdown()
+    _simulation_config = new_config
+    set_service_info(version="0.2.0", mode=new_config.mode)
+    lifecycle = getattr(app.state, "flight_event_lifecycle", None)
+    if lifecycle is not None:
+        lifecycle.reconcile(new_config.mode)
+    from app.services.flight_state import get_flight_state_manager
+
+    get_flight_state_manager().reset_detection()
+    owner = getattr(app.state, "metrics_refresh_owner", None)
+    if owner is not None:
+        owner.mark_dirty("Configuration source reconciled")
 
 
 def _current_runtime_config():
@@ -1131,15 +1176,18 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
             )
         )
 
-    runtime = getattr(app.state, "flight_event_runtime", None)
-    if runtime is not None:
-        try:
-            runtime.tick()
-        except (OSError, sqlite3.Error, ValueError) as archive_error:
-            logger.warning_json(
-                "Telemetry archive recovery pending",
-                extra_fields={"error": type(archive_error).__name__},
-            )
+    lifecycle = getattr(app.state, "flight_event_lifecycle", None)
+    if lifecycle is not None:
+        with get_active_leg_lock():
+            lifecycle.reconcile(_current_runtime_config().mode)
+        lifecycle.tick()
+    else:
+        runtime = getattr(app.state, "flight_event_runtime", None)
+        if runtime is not None:
+            try:
+                runtime.tick()
+            except (OSError, sqlite3.Error, ValueError):
+                logger.warning_json("Telemetry archive recovery pending")
     if _coordinator:
         run_service = getattr(app.state, "simulation_run_service", None)
         paced = (
@@ -1203,7 +1251,7 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                         else None
                     )
 
-                    flight_events_managed = False
+                    flight_events_managed = current_config.mode == "live"
                     runtime = getattr(app.state, "flight_event_runtime", None)
                     live_events = runtime is not None and current_config.mode == "live"
                     if not source_is_current():
@@ -1218,21 +1266,30 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
                         snapshot = source_mission
                         context = snapshot.binding if snapshot is not None else None
                         flight_events_managed = True
-                        try:
-                            runtime.record_live(telemetry)
-                            if context is not None and source_is_current():
-                                runtime.observe_live(telemetry, context)
-                            if context is not None and source_is_current():
-                                runtime.sync_legacy_phase(
-                                    get_flight_state_manager(),
-                                    context.parent_mission_id,
-                                    context.leg.id,
-                                )
-                        except (OSError, sqlite3.Error, ValueError) as archive_error:
-                            logger.warning_json(
-                                "Live recording pending recovery",
-                                extra_fields={"error": type(archive_error).__name__},
+                        if lifecycle is not None:
+                            lifecycle.process_live(
+                                telemetry,
+                                context,
+                                get_flight_state_manager(),
+                                source_is_current,
                             )
+                        else:
+                            # Compatibility for isolated adapters without an app lifespan.
+                            try:
+                                runtime.record_live(telemetry)
+                            except (OSError, sqlite3.Error, ValueError):
+                                logger.warning_json("Live sample recording unavailable")
+                            try:
+                                if context is not None and source_is_current():
+                                    runtime.observe_live(telemetry, context)
+                                    if source_is_current():
+                                        runtime.sync_legacy_phase(
+                                            get_flight_state_manager(),
+                                            context.parent_mission_id,
+                                            context.leg.id,
+                                        )
+                            except (OSError, sqlite3.Error, ValueError):
+                                logger.warning_json("Live flight detection unavailable")
                         # Event handling (including caught recording failures)
                         # may replace inputs. Keep its distinct entry boundary.
                         if not source_is_current():

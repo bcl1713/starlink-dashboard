@@ -55,6 +55,13 @@ class MetricsRefreshOwner:
                 self._scheduled = True
                 self._loop.call_soon_threadsafe(self._wake)
 
+    def detach(self, source):
+        """Release a replaced telemetry source without retaining its client."""
+        with self._lock:
+            if source in self._sources:
+                source.set_metrics_change_callback(None)
+                self._sources.remove(source)
+
     def _wake(self):
         with self._lock:
             self._scheduled = False

@@ -70,10 +70,11 @@ workflow. Dedicated historical restoration remains outside issue #370.
 
 The import HTTP endpoint accepts a complete ZIP up to **2 GiB** (2,147,483,648
 bytes). Production Mission Planner Nginx permits 2 GiB plus 1 MiB for multipart
-framing; the application checks the ZIP's actual spooled-file length. An exact
-2 GiB ZIP is accepted; larger files return an attributable `413` with
-`mission_package_too_large`. Other upload endpoints retain their existing limits.
-The original 100 MiB whole-ZIP limit was insufficient for telemetry-rich archives.
+framing; the application checks the ZIP's actual spooled-file length. An exact 2
+GiB ZIP is accepted; larger files return an attributable `413` with
+`mission_package_too_large`. Other upload endpoints retain their existing
+limits. The original 100 MiB whole-ZIP limit was insufficient for telemetry-rich
+archives.
 
 Import uses Starlette's disk-spooled upload directly, without reading the whole
 ZIP into memory. Before constructing ZIP entries, a bounded standard-library
@@ -168,3 +169,54 @@ exercises production persistence, ZIP assembly and HTTP import with a synthetic
 128 MiB source capture budget. The separate end-to-end multi-leg scenario tests
 real journal and telemetry capture; input-limit regressions verify complete
 rejection rather than truncation when source capture capacity is exceeded.
+
+## Inferred flight events and reconciliation
+
+Mission Planner separates estimated event occurrence from later confirmation.
+**Estimated landing** is probable ground arrival from GPS/Starshield PNT
+movement and altitude evidence, not measured wheel contact. Manual event
+creation and correction remain available when the event ledger is usable; supply
+the observed UTC time and reason. When the ledger itself is unavailable,
+preserve the crew's observed times and reconcile after recovery. A selected live
+mode or healthy metrics stream alone does not prove that detection and recording
+are available. The Flight recording panel shows each stage and recovery action
+without requiring acknowledgement before saving or using a mission plan.
+
+The final KML waypoint is a route reference, not a parking stand. The existing
+configurable `destination_radius_m` defaults to 10,000 m as supporting airport
+vicinity context. It is not an airport polygon, a calibrated airport boundary or
+a sufficient landing criterion. Large airports or off-center route references
+may require a deliberate policy adjustment and operator reconciliation. No
+external airport-data service is required. Landing, taxi-in and parking may all
+occur beyond the old 100 m endpoint circle.
+
+Engineering defaults in `FLIGHT_DETECTION_POLICY` require established flight and
+descent of at least 200 feet, ground-like groundspeed below 35 knots sustained
+for 20 seconds, altitude span at most 75 feet and fitted altitude trend at most
+1 foot/second in magnitude. The trend tolerance is a conservative engineering
+choice, not calibration from this aircraft's flight. Bounded altitude noise and
+runway slope can qualify; continuing descent/climb, renewed acceleration or a
+go-around interrupts confirmation. Dwell uses fresh distinct altitude evidence;
+repeated/out-of-order timestamps, missing altitude and observation gaps cannot
+supply confirmation. Frozen sensor values without fresh provenance remain
+uncertain. Freshly timestamped identical values alone cannot establish whether a
+sensor has physically frozen: GPS inference cannot eliminate that ambiguity. GPS
+altitude is MSL, not AGL or pressure altitude; neither zero altitude nor a
+published airspeed/stall threshold establishes ground contact. Strong headwind
+and ambiguous approach evidence still call for operator judgement.
+
+Occurrence is the beginning of the supported low-speed stable-altitude
+candidate; confirmation is later, after dwell. This change does not extrapolate
+or backdate to an earlier matching altitude or unrelated level approach. The
+detector is not an exact touchdown-time reconstruction tool. Taxi-in and
+on-blocks remain distinct from landing, with parking below 1 knot inside a 50 m
+local dwell area for 300 seconds. Departure taxi holds do not become destination
+parking. Defaults are configurable and not aircraft operating limits.
+
+The archive still starts 30 minutes before off-blocks and ends 30 minutes after
+the first confirmed destination on-blocks occurrence, including DV offload. It
+never seals at touchdown; later repositioning does not extend that destination
+capture. Raw extraction/recovery must finish or exhaust its bounded retries
+before sealing. Unavailable samples/history remain labeled partial rather than
+invented. See
+[storage and runtime recovery](../troubleshooting/data-issues.md#live-flight-detection-and-recording).

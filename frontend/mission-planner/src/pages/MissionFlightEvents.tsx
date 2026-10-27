@@ -24,6 +24,12 @@ export function MissionFlightEvents({
   const [time, setTime] = useState('');
   const [reason, setReason] = useState('');
   const [jobId, setJobId] = useState('');
+  const health = useQuery({
+    queryKey: ['flight-recording-health'],
+    queryFn: telemetryArchivesApi.health,
+    retry: false,
+    refetchInterval: 5000,
+  });
   const view = useQuery({
     queryKey: ['flight-events', missionId, leg],
     queryFn: () => telemetryArchivesApi.events(missionId, leg),
@@ -105,9 +111,39 @@ export function MissionFlightEvents({
           ))}
         </select>
       </label>
+      {health.data?.mode === 'simulation' ? (
+        <p role="status">
+          Live recording paused in simulation. Displaying retained live history.
+        </p>
+      ) : health.data && health.data.state !== 'ready' ? (
+        <div role="status">
+          {!health.data.detection_available && (
+            <p>
+              Automatic landing detection unavailable. Movement requires
+              operator reconciliation.
+            </p>
+          )}
+          {!health.data.recording_available && (
+            <p>Telemetry recording unavailable. Live history may have gaps.</p>
+          )}
+          <p>{health.data.message}</p>
+          {health.data.retry_in_seconds != null && (
+            <p>
+              Automatic retry in {Math.ceil(health.data.retry_in_seconds)}{' '}
+              seconds.
+            </p>
+          )}
+        </div>
+      ) : health.isError ? (
+        <p role="status">
+          Recording readiness unavailable. Refresh to check detection and
+          capture status.
+        </p>
+      ) : null}
       {view.isError ? (
         <p role="status">
-          Live recording unavailable. Recording controls require live mode.
+          Flight history unavailable. Review recording status and retry;
+          preserve existing archive files.
         </p>
       ) : (
         view.data && (
@@ -140,8 +176,13 @@ export function MissionFlightEvents({
             <ol>
               {view.data.events.map((event) => (
                 <li key={event.event_id}>
-                  {labels[event.kind] || event.kind}: {event.occurred_at} (
-                  {event.source})
+                  {event.kind === 'landed' && event.source === 'inferred'
+                    ? 'Estimated landing'
+                    : labels[event.kind] || event.kind}
+                  : {event.occurred_at} ({event.source})
+                  {event.source === 'inferred' && event.detected_at && (
+                    <>; confirmed {event.detected_at}</>
+                  )}
                 </li>
               ))}
             </ol>

@@ -5,6 +5,7 @@ export interface FlightEvent {
   revision: number;
   kind: string;
   occurred_at: string;
+  detected_at?: string;
   source: string;
   evidence: Record<string, unknown>;
 }
@@ -29,9 +30,27 @@ export interface TelemetryPreparation {
   download_url?: string | null;
   warning_code?: string | null;
 }
+export interface FlightRecordingHealth {
+  state:
+    | 'ready'
+    | 'inactive'
+    | 'retrying'
+    | 'degraded'
+    | 'unavailable'
+    | 'closed';
+  mode: string;
+  detection_available: boolean;
+  recording_available: boolean;
+  history_available: boolean;
+  message?: string | null;
+  retry_in_seconds?: number | null;
+}
 const base = (mission: string, leg: string) =>
   `/api/v2/missions/${encodeURIComponent(mission)}/legs/${encodeURIComponent(leg)}`;
 export const telemetryArchivesApi = {
+  async health(): Promise<FlightRecordingHealth> {
+    return (await apiClient.get('/api/flight-recording/status')).data;
+  },
   async events(mission: string, leg: string): Promise<FlightEventView> {
     return (await apiClient.get(`${base(mission, leg)}/flight-events`)).data;
   },
