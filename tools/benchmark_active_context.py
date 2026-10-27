@@ -120,16 +120,20 @@ def counters():
     handler = Logs()
     logging.getLogger().addHandler(handler)
     try:
-        with ExitStack() as stack, (
-            patch("builtins.open", opener(original_open)),
-            patch("io.open", opener(original_io_open)),
-            patch.object(Path, "stat", counted_stat),
-            patch.object(Path, "iterdir", counted_iterdir),
-            patch.object(Path, "glob", counted_glob),
-            patch.object(BaseModel, "__init__", initialized),
-            patch.object(BaseModel, "model_validate", classmethod(validated)),
-            patch.object(BaseModel, "model_validate_json", classmethod(validated_json)),
-        ):
+        with ExitStack() as stack:
+            for context in [
+                patch("builtins.open", opener(original_open)),
+                patch("io.open", opener(original_io_open)),
+                patch.object(Path, "stat", counted_stat),
+                patch.object(Path, "iterdir", counted_iterdir),
+                patch.object(Path, "glob", counted_glob),
+                patch.object(BaseModel, "__init__", initialized),
+                patch.object(BaseModel, "model_validate", classmethod(validated)),
+                patch.object(
+                    BaseModel, "model_validate_json", classmethod(validated_json)
+                ),
+            ]:
+                stack.enter_context(context)
             if RepositoryGate is not None:
                 stack.enter_context(patch.object(RepositoryGate, "acquire", acquired))
             yield counts
