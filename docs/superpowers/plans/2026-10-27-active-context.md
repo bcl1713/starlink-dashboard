@@ -38,12 +38,12 @@ rollout.
 - [x] Replace live admission's selected-mission reload with snapshot validation.
       Test live binding, source changes during recording,
       replay/simulation/no-mission paths, and locking.
-- [ ] Benchmark 0/1/10/100 missions with
+- [x] Benchmark 0/1/10/100 missions with
       filesystem/read/byte/validation/log/time counters. Run scoped and broader
       regressions, lint, production-path acceptance and a matched 60-minute
       live-like soak where runtime permits. Record unavailable coverage
       explicitly.
-- [ ] Review, commit, push and create a PR targeting dev. Verify no task-owned
+- [x] Review, commit, push and create a PR targeting dev. Verify no task-owned
       runtime resources remain; retain the open-PR worktree and evidence.
 
 ## Review focus

@@ -1,0 +1,61 @@
+{
+  "production-path-r1": {
+    "candidate_sha": "83d8ce08e91f880b600b291c14d93e3436be06ac",
+    "harness_sha": "83d8ce08e91f880b600b291c14d93e3436be06ac",
+    "status": "measured",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true,
+      "prometheusListenerRemoved": true
+    },
+    "failures": [],
+    "browser_cleanup": {
+      "started": true,
+      "pid": 1815792,
+      "pgid": 1815792,
+      "remaining": []
+    }
+  },
+  "acceptance-workspace-r1": {
+    "candidateSha": "03d7f5391f98c24f3fd3e47d84f836694bf8eee0",
+    "checksPassed": false,
+    "error": "Command failed (1): /tmp/issue392-evidence/acceptance-workspace-r1/command-019.log",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    }
+  },
+  "acceptance-workspace-baseline": {
+    "candidateSha": "a0cdcfbe0b6923f18f77854d43edcf94ad16f5b0",
+    "checksPassed": false,
+    "error": "Command failed (1): /tmp/issue392-evidence/acceptance-workspace-baseline/command-019.log",
+    "cleanup": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    }
+  }
+}
