@@ -60,3 +60,14 @@ export function projectAircraftPosition(
     longitude: status.position.longitude,
   };
 }
+
+/** A catalog identity and an unverified provider location use distinct map labels. */
+export function projectGroundEntryLabel(status: Partial<StatusResponse>) {
+  const observation = status.pop_observation;
+  const entry = observation?.entry;
+  if (!entry) return 'GEP';
+  if (observation?.source === 'simulation') return `Sim PoP · ${entry.city}`;
+  return entry.identity_source === 'operator_static_cidr'
+    ? `PoP · ${entry.city}`
+    : `GeoIP · ${entry.city || entry.country || 'egress'}`;
+}

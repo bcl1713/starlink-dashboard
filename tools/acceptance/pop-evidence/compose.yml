@@ -1,0 +1,32 @@
+services:
+  starlink-location:
+    image: ${BRIEFING_BACKEND_IMAGE:?exact image required}
+    init: true
+    environment:
+      STARLINK_MODE: simulation
+      STARLINK_DISABLE_BACKGROUND_TASKS: "1"
+      OPERATOR_ENABLED: "true"
+      POP_EVIDENCE_FIXTURE: synthetic-local-only
+      PYTHONPATH: /pop-evidence:/app
+      PROMETHEUS_URL: http://127.0.0.1:1
+    command: [uvicorn, "fixture:app", --host, 0.0.0.0, --port, "8000"]
+    volumes:
+      - app-data:/app/data
+      - poi-data:/data
+      - ${BRIEFING_SOURCE_ROOT}/tools/acceptance/pop-evidence:/pop-evidence:ro
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
+  mission-planner:
+    image: ${BRIEFING_FRONTEND_IMAGE:?exact image required}
+    ports:
+      - "127.0.0.1:${BRIEFING_PORT:?private port required}:80"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+volumes:
+  app-data:
+  poi-data:

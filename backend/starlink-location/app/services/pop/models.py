@@ -93,6 +93,21 @@ class PopObservation(ImmutableRecord):
     entry: GroundEntryPoint | None
     status: Literal["known", "unknown"]
     source: Literal["live", "simulation"]
+    sampled_at: str | None = None
+    lookup_at: str | None = None
+    freshness: Literal["fresh", "stale", "unknown"] = "unknown"
+
+
+class PopOccurrence(ImmutableRecord):
+    transition_id: str
+    disposition: Literal["pending", "observed", "superseded", "unconfirmed"]
+    expected_utc: UtcTime
+    window_start_utc: UtcTime
+    window_end_utc: UtcTime
+    from_city: str | None = None
+    to_city: str | None = None
+    observed_at: UtcTime | None = None
+    timing_residual_seconds: float | None = None
 
 
 class PopLiveState(ImmutableRecord):
@@ -100,6 +115,10 @@ class PopLiveState(ImmutableRecord):
     completed_ids: frozenset[str] = frozenset()
     overdue_ids: frozenset[str] = frozenset()
     tracked_transitions: tuple[PopTransition, ...] = ()
+    superseded_ids: frozenset[str] = frozenset()
+    unconfirmed_ids: frozenset[str] = frozenset()
+    last_observed_pop_id: str | None = None
+    occurrences: tuple[PopOccurrence, ...] = ()
 
 
 class PopLiveAdvisory(ImmutableRecord):

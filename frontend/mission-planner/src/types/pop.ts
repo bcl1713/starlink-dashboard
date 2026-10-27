@@ -33,9 +33,41 @@ export interface PopObservation {
     latitude: number;
     longitude: number;
     region?: string;
+    pop_id?: string | null;
+    identity_source?: string;
+    matched_cidr?: string | null;
+    sampled_at?: string | null;
+    lookup_at?: string | null;
+    freshness?: 'fresh' | 'stale';
+    discrepancy?: boolean;
+    provider_geoip?: {
+      source?: string;
+      ip: string;
+      city: string;
+      country: string;
+      region?: string;
+      latitude: number;
+      longitude: number;
+      lookup_at?: string | null;
+      freshness?: 'fresh' | 'stale';
+    } | null;
   } | null;
   status: 'known' | 'unknown';
   source: 'live' | 'simulation';
+  sampled_at?: string | null;
+  lookup_at?: string | null;
+  freshness?: 'fresh' | 'stale' | 'unknown';
+}
+export interface PopOccurrence {
+  transition_id: string;
+  disposition: 'pending' | 'observed' | 'superseded' | 'unconfirmed';
+  expected_utc: string;
+  window_start_utc: string;
+  window_end_utc: string;
+  from_city?: string | null;
+  to_city?: string | null;
+  observed_at?: string | null;
+  timing_residual_seconds?: number | null;
 }
 export interface PopLiveAdvisory {
   kind: 'window' | 'overdue' | 'mismatch' | 'observation_unknown';

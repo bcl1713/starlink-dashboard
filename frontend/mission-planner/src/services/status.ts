@@ -4,6 +4,7 @@ import type {
   PopForecast,
   PopObservation,
   PopLiveAdvisory,
+  PopOccurrence,
 } from '@/types/pop';
 
 export interface StatusResponse {
@@ -14,6 +15,7 @@ export interface StatusResponse {
   call_continuity?: CallContinuityProjection | null;
   pop_observation?: PopObservation | null;
   pop_advisories?: PopLiveAdvisory[];
+  pop_occurrences?: PopOccurrence[];
   timestamp: string;
   position?: {
     latitude: number;

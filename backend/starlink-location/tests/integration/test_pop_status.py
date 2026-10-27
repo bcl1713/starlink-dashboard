@@ -134,6 +134,9 @@ def test_default_provider_does_not_use_production_cache_in_simulation(monkeypatc
         "entry": None,
         "status": "unknown",
         "source": "simulation",
+        "sampled_at": None,
+        "lookup_at": None,
+        "freshness": "unknown",
     }
 
 
@@ -256,7 +259,7 @@ def test_cached_prior_city_cannot_complete_current_unknown_ip_observation():
     )
     resolver.refresh()
     resolver.refresh()
-    assert resolver.current() == old
+    assert resolver.current() is None
     service = PopStatusService(
         observation_provider=lambda *args: resolver.observation()
     )

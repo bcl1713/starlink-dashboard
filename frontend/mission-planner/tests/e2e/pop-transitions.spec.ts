@@ -295,10 +295,8 @@ test('explicit synthetic response fixtures render early, late and mismatch evalu
       name: 'Starshield advisory',
     });
     if (name === 'early') await expect(panel).toHaveCount(0);
-    if (name === 'late')
-      await expect(panel).toContainText('Starshield transition possible');
-    if (name === 'mismatch')
-      await expect(panel).toContainText('Starshield transition possible');
+    if (name === 'late' || name === 'mismatch')
+      await expect(panel).toHaveCount(0);
     await expect(page.getByText('Observed PoP:', { exact: false })).toHaveCount(
       0
     );

@@ -19,9 +19,7 @@ export function OverviewPopAdvisories({
     status.pop_forecast?.status === 'disabled'
   )
     return null;
-  const active = status.pop_advisories?.find(
-    ({ kind }) => kind === 'window' || kind === 'overdue' || kind === 'mismatch'
-  );
+  const active = status.pop_advisories?.find(({ kind }) => kind === 'window');
   if (!active) return null;
   return (
     <section
@@ -29,11 +27,7 @@ export function OverviewPopAdvisories({
       className="overview-starshield-advisory"
       aria-label="Starshield advisory"
     >
-      <strong>
-        {active.kind === 'window'
-          ? 'Starshield transition window'
-          : 'Starshield transition possible'}
-      </strong>
+      <strong>Starshield transition window</strong>
       <span>Brief interruption possible</span>
     </section>
   );

@@ -48,6 +48,7 @@ import { useStatus } from '@/hooks/api/useStatus';
 import {
   projectAircraftPosition,
   projectGroundEntryPoint,
+  projectGroundEntryLabel,
 } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
 import { OverviewMarkerDebug } from './OverviewMarkerDebug';
@@ -215,9 +216,11 @@ function AircraftMarker({
 }
 
 function GroundEntryPointMarker({
+  label,
   coordinate,
   globeOccluder,
 }: {
+  label: string;
   coordinate: GlobeCoordinate;
   globeOccluder: RefObject<THREE.Group>;
 }) {
@@ -227,7 +230,7 @@ function GroundEntryPointMarker({
       <OverviewMapLabel
         id="gep"
         kind="gep"
-        text="GEP"
+        text={label}
         priority={1}
         position={globePosition(
           coordinate.latitude,
@@ -979,8 +982,8 @@ export function OverviewPage() {
         )}
         {showGroundEntryPoint && groundEntryPoint && (
           <p className="overview-visually-hidden">
-            GEP · Ground entry point at {groundEntryPoint.latitude}°,{' '}
-            {groundEntryPoint.longitude}°
+            {projectGroundEntryLabel(status ?? {})} · Ground entry point at{' '}
+            {groundEntryPoint.latitude}°, {groundEntryPoint.longitude}°
           </p>
         )}
         <ul
@@ -1134,6 +1137,7 @@ export function OverviewPage() {
                 ))}
               {showGroundEntryPoint && groundEntryPoint && (
                 <GroundEntryPointMarker
+                  label={projectGroundEntryLabel(status ?? {})}
                   coordinate={groundEntryPoint}
                   globeOccluder={globeOccluder}
                 />

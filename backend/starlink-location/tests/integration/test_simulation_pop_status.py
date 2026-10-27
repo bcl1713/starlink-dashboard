@@ -236,6 +236,9 @@ def test_catalog_failure_clears_current_synthetic_ip_and_metrics(pop_api):
         "entry": None,
         "source": "simulation",
         "status": "unknown",
+        "sampled_at": None,
+        "lookup_at": None,
+        "freshness": "unknown",
     }
     assert result["ground_entry_point"] is None
     assert result["pop_forecast"]["status"] == "unavailable"
