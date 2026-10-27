@@ -176,6 +176,13 @@ inventory preserve the frozen revisions independently of later branch cleanup.
   Operator completed 90 measured seconds after 30 seconds warm-up, including
   mission switch/deactivation/reactivation, with no request failures. This is a
   simulation functional control, separate from the live-like ASGI measurements.
+- Two subsequent production attempts at docs/evidence head `6d830859` failed
+  the unchanged synthetic-history density gate (one final, one initial). Raw
+  capture showed 11 finite series with 300/301 points, missing the newest second.
+  The same harness against unchanged preceding `dev` also failed final density,
+  with two interior seconds missing. History services and this harness have no
+  source delta. These are retained negative outcomes, not passing qualification;
+  the earlier passing application's tree and `main.py` match the later candidate.
 - Six broader workspace journeys produced the same four passes/two failures on
   preceding `dev` and the candidate control: 40px controls fail the older 44px
   assertion, and the older `Next requirement` region selector is absent. The
