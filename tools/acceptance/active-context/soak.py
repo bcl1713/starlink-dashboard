@@ -13,7 +13,7 @@ import platform
 import resource
 import statistics
 import time
-from datetime import timedelta
+from datetime import datetime, timezone
 from math import ceil
 from pathlib import Path
 
@@ -94,11 +94,16 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
         owner = ActiveContextOwner(runtime.route_manager, lambda: "live")
         await owner.start()
     observed = []
+    observation_ages = []
     original_observe = main.app.state.flight_event_runtime.observe_live
 
     def observe(telemetry, context, **kwargs):
         assert context.parent_mission_id == "soak-0"
         assert context.leg.id == "leg-0"
+        assert telemetry.position.observed_at is not None
+        age = (telemetry.timestamp - telemetry.position.observed_at).total_seconds()
+        assert -0.1 <= age <= 5
+        observation_ages.append(age)
         result = original_observe(telemetry, context, **kwargs)
         observed.append(telemetry.timestamp)
         return result
@@ -106,6 +111,7 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
     monkeypatch.setattr(main.app.state.flight_event_runtime, "observe_live", observe)
     walls, cpus, status, operator = [], [], [], []
     errors = []
+    position_ages = []
     resource_samples = []
 
     def process_io():
@@ -148,6 +154,26 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
                     "body": response.text[:300],
                 }
             )
+        if response.status_code == 200 and path == "/api/status":
+            observed_at = response.json().get("timestamp")
+            if observed_at is None:
+                errors.append(
+                    {"path": path, "error": "missing status acquisition provenance"}
+                )
+            else:
+                age = (
+                    datetime.now(timezone.utc)
+                    - datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+                ).total_seconds()
+                position_ages.append(age)
+                if age < -0.1 or age > 5:
+                    errors.append(
+                        {
+                            "path": path,
+                            "error": "status acquisition outside live freshness window",
+                            "age_seconds": age,
+                        }
+                    )
         return response
 
     try:
@@ -155,17 +181,18 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
             transport=httpx.ASGITransport(app=main.app), base_url="http://soak"
         ) as client:
             for _ in range(5):
-                runtime.clock[0] += timedelta(seconds=1)
+                runtime.clock[0] = datetime.now(timezone.utc)
                 await asyncio.to_thread(tick)
             walls.clear()
             cpus.clear()
             observed.clear()
+            observation_ages.clear()
             started = time.monotonic()
             process_cpu_start = time.process_time_ns()
             initial_io = process_io()
             with counters() as counts:
                 for second in range(seconds):
-                    runtime.clock[0] += timedelta(seconds=1)
+                    runtime.clock[0] = datetime.now(timezone.utc)
                     producer = asyncio.create_task(asyncio.to_thread(tick))
                     await asyncio.gather(
                         probe(client, "/api/status", status),
@@ -215,6 +242,10 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
             "harness_sha": os.environ["ISSUE392_HARNESS_SHA"],
             "application_module_root": str(Path(main.__file__).resolve()),
             "independent_reconciler": owner is not None,
+            "qualified_status_samples": len(position_ages),
+            "max_acquisition_age_seconds": max(position_ages),
+            "max_position_observation_age_seconds": max(observation_ages),
+            "utc_clock": "current UTC captured once per manually driven tick",
             "counter_scope": "Python file-read, Path and os boundaries; Path/os counts overlap; proc I/O is whole-process including SQLite and observer",
             "scope": __doc__,
             "missions": missions,
