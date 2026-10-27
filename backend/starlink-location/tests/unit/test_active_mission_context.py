@@ -142,7 +142,7 @@ def test_resolver_ignores_flat_v1_active_looking_artifact(route_manager) -> None
 def test_resolver_and_v2_writer_share_active_leg_lock(
     monkeypatch, route_manager
 ) -> None:
-    from app.mission import active_context, storage
+    from app.mission import storage
     from app.mission.active_context import resolve_active_mission_leg_context
 
     events = []
@@ -336,6 +336,7 @@ def test_stable_context_reads_no_json_or_inventory_after_warmup(
     """Count real I/O boundaries, not only calls to the mission loader."""
     import builtins
     from pathlib import Path
+
     from app.mission import active_context
 
     v2_mission.legs[0].is_active = True
@@ -411,6 +412,7 @@ def test_external_edit_is_reconciled_and_generation_is_meaningful(
 
 def test_duplicate_directory_identity_fails_closed(route_manager, v2_mission):
     import shutil
+
     from app.mission import storage
     from app.mission.active_context import resolve_active_mission_leg_context
 
@@ -446,7 +448,9 @@ def test_external_changes_discard_old_binding_and_recover(
     monkeypatch, route_manager, v2_mission, change
 ):
     import shutil
-    from app.mission import active_context_cache as cache, storage
+
+    from app.mission import active_context_cache as cache
+    from app.mission import storage
 
     clock = [100.0]
     monkeypatch.setattr(cache, "monotonic", lambda: clock[0])
@@ -491,7 +495,8 @@ def test_external_changes_discard_old_binding_and_recover(
 def test_external_write_during_reconciliation_is_not_published(
     monkeypatch, route_manager, v2_mission
 ):
-    from app.mission import active_context_cache as cache, storage
+    from app.mission import active_context_cache as cache
+    from app.mission import storage
 
     v2_mission.legs[0].is_active = True
     save_mission_v2(v2_mission)
@@ -531,7 +536,8 @@ def test_route_reload_and_switch_invalidate_snapshot_immediately(
 
 
 def test_failed_reconciliation_is_throttled(monkeypatch, route_manager, v2_mission):
-    from app.mission import active_context_cache as cache, storage
+    from app.mission import active_context_cache as cache
+    from app.mission import storage
 
     clock = [100.0]
     monkeypatch.setattr(cache, "monotonic", lambda: clock[0])
@@ -592,6 +598,7 @@ def test_stalled_reconciliation_owner_fails_closed(
 
 def test_failed_owner_cannot_keep_publishing_old_binding(route_manager, v2_mission):
     from types import SimpleNamespace
+
     from app.mission import active_context_cache as cache
 
     v2_mission.legs[0].is_active = True

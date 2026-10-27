@@ -63,7 +63,9 @@ async def test_expired_overview_resolution_does_not_block_event_loop(
     monkeypatch, route_manager
 ):
     from types import SimpleNamespace
+
     import httpx
+
     import main
     from app.api import overview_upcoming_pois
     from app.mission.dependencies import get_poi_manager, get_route_manager

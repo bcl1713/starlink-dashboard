@@ -276,9 +276,10 @@ async def test_125_live_ticks_reuse_mission_without_json_reads(
 ):
     import builtins
     import io
+
     from app.mission import storage
-    from app.mission.models import Mission, MissionLeg, TransportConfig
     from app.mission.active_context_cache import get_active_mission_snapshot
+    from app.mission.models import Mission, MissionLeg, TransportConfig
 
     mission = Mission(
         id="cached-live",
