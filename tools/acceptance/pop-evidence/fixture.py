@@ -15,10 +15,17 @@ from app.mission.models import MissionLegTimeline, TimelineSegment
 
 clock = [0.0]
 case = ["tokyo"]
+scenario_time = [datetime.now(timezone.utc)]
 
 
 def ip_sample():
-    return "216.255.181.42" if case[0] in {"tokyo", "mapped-failure"} else "192.0.2.42"
+    if case[0] == "window":
+        return "216.255.176.42"
+    return (
+        "192.0.2.42"
+        if case[0] in {"geoip", "changed-failure", "stale"}
+        else "216.255.181.42"
+    )
 
 
 def geoip(ip):
@@ -54,6 +61,15 @@ async def fixture_lifespan(app):
         app.state.pop_status_service.config_provider = lambda: (
             coordinator.get_config().model_copy(update={"mode": "live"})
         )
+        original_status = app.state.pop_status_service.status_payload
+
+        def status_payload(*args, **kwargs):
+            payload = original_status(*args, **kwargs)
+            if case[0] in {"window", "skipped", "mismatch", "early"}:
+                payload.update(lifecycle_payload())
+            return payload
+
+        app.state.pop_status_service.status_payload = status_payload
         yield
 
 
@@ -62,6 +78,77 @@ def observation(*args):
         resolver.refresh(force=True)
     gep.publish_ground_entry_point_metrics(resolver.current())
     return resolver.observation()
+
+
+def lifecycle_payload():
+    """Inject invented forecasts through the shipped evaluator for UI controls."""
+    from app.services.pop.catalog import DEFAULT_CATALOG_PATH, load_catalog
+    from app.services.pop.live import evaluate_live
+    from app.services.pop.models import (
+        PopCrossing,
+        PopForecast,
+        PopLiveState,
+        PopTransition,
+    )
+
+    catalog = load_catalog(DEFAULT_CATALOG_PATH)
+    base = scenario_time[0]
+
+    def transition(id, source, target, minute, distance):
+        center = base + timedelta(minutes=minute)
+        return PopTransition(
+            crossing=PopCrossing(
+                id=id,
+                from_pop_id=source,
+                to_pop_id=target,
+                from_city=source,
+                to_city=target,
+                segment_index=0,
+                fraction=0.5,
+                latitude=0,
+                longitude=0,
+                distance_meters=distance,
+            ),
+            crossing_utc=center,
+            window_start_utc=center - timedelta(minutes=5),
+            window_end_utc=center + timedelta(minutes=5),
+        )
+
+    if case[0] == "skipped":
+        transitions = (
+            transition("first", "los-angeles", "dallas", -30, 1),
+            transition("second", "dallas", "tokyo", -10, 2),
+        )
+    else:
+        transitions = (
+            transition(
+                "first",
+                "los-angeles",
+                "tokyo" if case[0] == "early" else "dallas",
+                0 if case[0] == "window" else 20,
+                1,
+            ),
+        )
+    forecast = PopForecast(
+        revision="synthetic-evaluator",
+        catalog_fingerprint=catalog.fingerprint,
+        status="ready",
+        transitions=transitions,
+    )
+    state, advisories = evaluate_live(
+        forecast,
+        resolver.observation(),
+        catalog=catalog,
+        nearest_id="tokyo" if case[0] == "skipped" else "los-angeles",
+        next_id=transitions[0].crossing.to_pop_id,
+        now=base,
+        state=PopLiveState(revision=forecast.revision),
+    )
+    return {
+        "pop_forecast": forecast.model_dump(mode="json"),
+        "pop_advisories": [item.model_dump(mode="json") for item in advisories],
+        "pop_occurrences": [item.model_dump(mode="json") for item in state.occurrences],
+    }
 
 
 app = main.app
@@ -76,9 +163,14 @@ def set_case(body: dict):
         "mapped-failure",
         "changed-failure",
         "stale",
+        "window",
+        "skipped",
+        "mismatch",
+        "early",
     }:
         raise HTTPException(422, "Unknown synthetic case")
     case[0] = body["case"]
+    scenario_time[0] = datetime.now(timezone.utc)
     if case[0] == "stale":
         clock[0] += 31
     else:

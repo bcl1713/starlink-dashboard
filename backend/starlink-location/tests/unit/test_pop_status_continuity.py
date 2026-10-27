@@ -388,3 +388,45 @@ def test_saved_capability_rejects_changed_independent_source(
         pop_capabilities.saved_call_capabilities(leg, "mission", artifacts.route)
         is None
     )
+
+
+def test_eta_drift_cannot_rearm_call_outage_after_retained_window_expires(monkeypatch):
+    from datetime import timedelta
+
+    from app.mission import pop_status
+    from tests.integration.test_pop_status import known, telemetry
+
+    r, catalog, p, saved, captured = prepared_status_inputs()
+    service = pop_status.PopStatusService(
+        observation_provider=lambda *args: known("a", source="simulation")
+    )
+    kwargs = {
+        "route": r,
+        "catalog": catalog,
+        "enabled": True,
+        "mode": "simulation",
+        "observed_now": p.start_time,
+        "projector": p,
+        "call_capabilities": captured,
+    }
+    service.snapshot(telemetry(), now=p.start_time, **kwargs)
+    original = service.state.tracked_transitions[0]
+    shift = timedelta(minutes=10)
+    moved = original.model_copy(
+        update={
+            "crossing_utc": original.crossing_utc + shift,
+            "window_start_utc": original.window_start_utc + shift,
+            "window_end_utc": original.window_end_utc + shift,
+        }
+    )
+    forecast = saved.pop_forecast.model_copy(
+        update={"revision": service.state.revision, "transitions": (moved,)}
+    )
+    monkeypatch.setattr(
+        pop_status, "forecast_for_mission", lambda *args, **kwargs: forecast
+    )
+    result = service.snapshot(
+        telemetry(), now=original.window_end_utc + timedelta(minutes=1), **kwargs
+    )
+    assert result["pop_occurrences"][0]["disposition"] == "unconfirmed"
+    assert result["call_continuity"]["pop_call_outage_seconds"] == 0

@@ -92,7 +92,16 @@ def evaluate_live(
         return state, tuple(advisories)
 
     tracked = {t.crossing.id: t for t in state.tracked_transitions}
-    tracked.update({t.crossing.id: t for t in forecast.transitions})
+    retired = state.completed_ids | state.superseded_ids | state.unconfirmed_ids
+    for transition in forecast.transitions:
+        previous = tracked.get(transition.crossing.id)
+        # ETA estimates may move before a window opens. Once it opens, its
+        # original bounds remain the comparison: drift cannot prolong or re-arm
+        # a warning, nor rewrite observed/unconfirmed occurrence history.
+        if previous is None or (
+            transition.crossing.id not in retired and now < previous.window_start_utc
+        ):
+            tracked[transition.crossing.id] = transition
     ordered = tuple(sorted(tracked.values(), key=lambda t: t.crossing.distance_meters))
     completed = set(state.completed_ids)
     superseded = set(state.superseded_ids)
@@ -143,7 +152,7 @@ def evaluate_live(
             continue
         if id in superseded:
             disposition = "superseded"
-        elif now > transition.window_end_utc:
+        elif id in unconfirmed or now >= transition.window_end_utc:
             unconfirmed.add(id)
             disposition = "unconfirmed"
         else:

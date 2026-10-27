@@ -84,6 +84,10 @@ try {
   assert.equal(status.pop_observation.ip, "192.0.2.42");
   assert.equal(status.pop_observation.entry, null);
   assert.equal(status.ground_entry_point, null);
+  const failedCsv = await (
+    await api.get(origin + "/api/_synthetic/pop-evidence.csv")
+  ).text();
+  assert.doesNotMatch(failedCsv, /Tokyo|Invented Domestic City/);
   status = await select("geoip");
   assert.equal(status.pop_observation.entry.pop_id, null);
   assert.deepEqual(status.ground_entry_point, { latitude: 33, longitude: -84 });
@@ -92,11 +96,37 @@ try {
   await expect(
     page.locator('[data-overview-label-id="gep"] [data-label-source]'),
   ).toHaveText("GeoIP · Invented Domestic City", { timeout: 60000 });
+  await expect(
+    page.locator('[data-overview-label-id="gep"] [data-label-source]'),
+  ).toBeVisible();
   await page.screenshot({ path: evidence + "/geoip-map.png" });
   status = await select("stale");
   assert.equal(status.pop_observation.status, "unknown");
   assert.equal(status.pop_observation.entry.freshness, "stale");
   assert.equal(status.ground_entry_point, null);
+  for (const name of ["window", "skipped", "mismatch", "early"]) {
+    status = await select(name);
+    await page.goto(origin + "/overview");
+    const advisory = page.getByRole("status", { name: "Starshield advisory" });
+    if (name === "window")
+      await expect(advisory).toContainText("Starshield transition window");
+    else await expect(advisory).toHaveCount(0);
+    if (name === "skipped") {
+      assert.deepEqual(
+        status.pop_occurrences.map((item) => item.disposition),
+        ["superseded", "observed"],
+      );
+      await page.goto(origin + "/operator");
+      const evidencePanel = page.getByLabel("PoP evidence", { exact: true });
+      await evidencePanel.locator("summary").first().click();
+      await evidencePanel
+        .getByText("Forecast comparison", { exact: true })
+        .click();
+      await expect(evidencePanel).toContainText("superseded");
+      await expect(evidencePanel).toContainText("observed");
+    }
+    await page.screenshot({ path: evidence + `/lifecycle-${name}.png` });
+  }
   report.passed = true;
 } finally {
   await context?.close();

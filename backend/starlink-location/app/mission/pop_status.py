@@ -392,15 +392,10 @@ class PopStatusService:
         continuity_forecast = continuity_forecast or forecast
         from app.mission.pop_capabilities import status_call_continuity
 
-        # Include still bounded tracked windows after their crossing center.
+        # Reconciliation owns bounds once a window starts. Overlay even expired
+        # records so a later same-ID ETA cannot re-arm a continuity outage.
         by_id = {t.crossing.id: t for t in continuity_forecast.transitions}
-        by_id.update(
-            {
-                t.crossing.id: t
-                for t in self.state.tracked_transitions
-                if t.window_end_utc > now
-            }
-        )
+        by_id.update({t.crossing.id: t for t in self.state.tracked_transitions})
         continuity_forecast = continuity_forecast.model_copy(
             update={"transitions": tuple(by_id.values())}
         )
@@ -415,7 +410,7 @@ class PopStatusService:
             now=now,
             flight_phase=flight_phase,
             projector=projector,
-            completed_ids=self.state.completed_ids,
+            completed_ids=self.state.completed_ids | self.state.superseded_ids,
         )
         result = {
             "call_continuity": (

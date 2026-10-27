@@ -239,3 +239,22 @@ def test_stale_evidence_cannot_complete_and_static_identity_does_not_need_city_a
         match_observed_pop(observation().model_copy(update={"entry": entry}), CATALOG)
         == "tokyo"
     )
+
+
+def test_eta_updates_cannot_rearm_expired_window_or_rewrite_its_history():
+    state, _ = run(now=T + timedelta(minutes=10))
+    assert state.unconfirmed_ids == {"one"}
+    shifted = forecast((transition(minute=15),))
+    state, advisories = run(state=state, now=T + timedelta(minutes=12), f=shifted)
+    assert not any(item.kind == "window" for item in advisories)
+    assert state.occurrences[0].disposition == "unconfirmed"
+    assert state.occurrences[0].expected_utc == T
+
+
+def test_active_window_stays_bounded_when_live_eta_moves_later():
+    state, _ = run(now=T - timedelta(minutes=2))
+    state, advisories = run(
+        state=state, now=T + timedelta(minutes=10), f=forecast((transition(minute=12),))
+    )
+    assert state.unconfirmed_ids == {"one"}
+    assert not any(item.kind == "window" for item in advisories)
