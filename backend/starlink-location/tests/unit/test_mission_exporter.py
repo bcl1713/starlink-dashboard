@@ -142,16 +142,20 @@ class TestMissionTimelineExporters:
         df = mission_exporter._segment_rows(timeline, mission)
 
         assert {
-            "Ground Entry City",
-            "Ground Entry Country",
-            "Ground Entry IP",
-            "Ground Entry Latitude",
-            "Ground Entry Longitude",
+            "Mission Snapshot Egress City",
+            "Mission Snapshot Egress Country",
+            "Mission Snapshot Egress IP",
+            "Mission Snapshot Egress Latitude",
+            "Mission Snapshot Egress Longitude",
         } <= set(df.columns)
-        assert set(df["Ground Entry City"]) == {"Omaha"}
-        assert set(df["Ground Entry Country"]) == {"US"}
-        assert set(df["Ground Entry Latitude"]) == {41.2565}
-        assert set(df["Ground Entry Longitude"]) == {-95.9345}
+        assert set(df["Mission Snapshot Egress City"]) == {"Omaha"}
+        assert set(df["Mission Snapshot Egress Scope"]) == {
+            "Snapshot only; not leg-time history"
+        }
+        assert set(df["Mission Snapshot Egress Identity Source"]) == {"geoip"}
+        assert set(df["Mission Snapshot Egress Country"]) == {"US"}
+        assert set(df["Mission Snapshot Egress Latitude"]) == {41.2565}
+        assert set(df["Mission Snapshot Egress Longitude"]) == {-95.9345}
 
     @pytest.mark.usefixtures("offline_cartography")
     def test_generate_pptx_starts_with_zip_header(self, mission, timeline):
@@ -381,3 +385,32 @@ class TestMissionTimelineExporters:
         df = mission_exporter._segment_rows(timeline, mission)
 
         assert df.iloc[0]["Reasons"] == "X => X-6"
+
+
+def test_cidr_export_preserves_canonical_identity_and_provider_snapshot():
+    from app.mission.exporter.egress_snapshot import snapshot_egress_values
+    from app.services.ground_entry_point import (
+        GroundEntryPoint,
+        GroundEntryPointResolver,
+    )
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "216.255.181.42",
+        geolocator=lambda ip: GroundEntryPoint(
+            ip, "Invented Domestic City", "US", 33, -84
+        ),
+    )
+    entry = resolver.refresh()
+    values = snapshot_egress_values(entry)
+    assert values["Mission Snapshot Egress PoP ID"] == "tokyo"
+    assert values["Mission Snapshot Egress City"] == "Tokyo"
+    assert values["Mission Snapshot Egress Longitude"] == 139.69171
+    assert (
+        values["Mission Snapshot Egress Provider GeoIP City"]
+        == "Invented Domestic City"
+    )
+    assert (
+        values["Mission Snapshot Egress Scope"] == "Snapshot only; not leg-time history"
+    )
+    assert values["Mission Snapshot Egress Sample Time"]
+    assert values["Mission Snapshot Egress Identity Source"] == "operator_static_cidr"

@@ -13,7 +13,7 @@ it('distinguishes old absent fields, unknown observations and a valid empty fore
     },
   });
   expect(projected.summary).toContain('No upcoming');
-  expect(projected.observation).toContain('unknown');
+  expect(projected.observation).toMatch(/unknown|unavailable/);
 });
 it('uses only backend completion and persistent overdue/mismatch evidence', () => {
   const base = {
@@ -34,7 +34,7 @@ it('uses only backend completion and persistent overdue/mismatch evidence', () =
   };
   const early = projectPopAdvisories({ ...base, pop_advisories: [] });
   expect(early.advisories).toEqual([]);
-  expect(early.observation).toContain('Observed');
+  expect(early.observation).toContain('Simulated PoP');
   expect(early.observation).toContain('Dallas');
   const overdue = projectPopAdvisories({
     ...base,
@@ -48,9 +48,9 @@ it('uses only backend completion and persistent overdue/mismatch evidence', () =
       { kind: 'mismatch', transition_id: null, observed_pop_id: 'tokyo' },
     ],
   });
-  expect(overdue.advisories.join(' ')).toMatch(/Overdue.*until.*observed/);
+  expect(overdue.advisories.join(' ')).toContain('Forecast window passed');
   expect(overdue.advisories.join(' ')).toMatch(
-    /any time.*calls may be interrupted/
+    /does not establish a current interruption/
   );
 });
 it('does not invent city matches for unknown or unfamiliar observed locations', () => {
@@ -63,7 +63,7 @@ it('does not invent city matches for unknown or unfamiliar observed locations', 
         entry: null,
       },
     }).observation
-  ).toContain('unknown');
+  ).toMatch(/unknown|unavailable/);
   expect(
     projectPopAdvisories({
       pop_observation: {
@@ -209,5 +209,28 @@ it('preserves every timed portion when Ka availability changes repeatedly within
       interval.start_utc,
       interval.end_utc,
     ])
+  );
+});
+
+it('labels unverified egress as GeoIP and keeps disagreement separate from interruption risk', () => {
+  const view = projectPopAdvisories({
+    pop_observation: {
+      status: 'known',
+      source: 'live',
+      ip: '192.0.2.8',
+      entry: {
+        ip: '192.0.2.8',
+        city: 'Domestic City',
+        country: 'US',
+        latitude: 34,
+        longitude: -84,
+      },
+    },
+    pop_advisories: [{ kind: 'mismatch' }, { kind: 'overdue' }],
+  });
+  expect(view.observation).toContain('GeoIP');
+  expect(view.observation).not.toContain('Observed PoP');
+  expect(view.advisories.join(' ')).not.toMatch(
+    /any time|until.*observed|interruption remains/
   );
 });

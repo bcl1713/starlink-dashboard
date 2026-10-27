@@ -424,6 +424,9 @@ class PopStatusService:
             "pop_forecast": forecast.model_dump(mode="json"),
             "pop_observation": observation.model_dump(mode="json"),
             "pop_advisories": [a.model_dump(mode="json") for a in advisories],
+            "pop_occurrences": [
+                item.model_dump(mode="json") for item in self.state.occurrences
+            ],
         }
 
         self._published_snapshot = {

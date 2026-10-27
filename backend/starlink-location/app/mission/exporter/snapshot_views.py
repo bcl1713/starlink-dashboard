@@ -201,7 +201,9 @@ class SnapshotViews:
         return payload.content if payload is not None else None
 
     def ground_entry_point(self):
-        from app.services.ground_entry_point import GroundEntryPoint
+        from app.services.ground_entry_point import GroundEntryPoint, ProviderGeoIP
 
         data = json.loads(source_content(self.snapshot.source_payloads, "ground_entry"))
+        if data and isinstance(data.get("provider_geoip"), dict):
+            data["provider_geoip"] = ProviderGeoIP(**data["provider_geoip"])
         return GroundEntryPoint(**data) if data else None

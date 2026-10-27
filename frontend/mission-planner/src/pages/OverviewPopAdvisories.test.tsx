@@ -59,3 +59,16 @@ it('does not turn missing observations or refresh failure into a customer debug 
   );
   expect(container.textContent).toBe('');
 });
+it('keeps forecast disagreement and historical overdue forecasts off the interruption display', () => {
+  const { container } = render(
+    <OverviewPopAdvisories
+      status={{
+        ...base,
+        pop_advisories: [{ kind: 'mismatch' }, { kind: 'overdue' }],
+      }}
+      realNowMs={now}
+      refreshFailed={false}
+    />
+  );
+  expect(container.textContent).toBe('');
+});

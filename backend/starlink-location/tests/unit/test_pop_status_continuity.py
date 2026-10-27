@@ -182,7 +182,7 @@ def test_replay_repeated_seeks_and_reset_rebase_remaining_outage():
         (24, 4, "run", False, 360, {"observation_unknown", "window"}),
         (26, 6, "forward", True, 0, set()),
         (26, 6, "reset", False, 240, {"observation_unknown", "window"}),
-        (31, 6, "reset", False, 0, {"observation_unknown", "overdue"}),
+        (31, 6, "reset", False, 0, {"observation_unknown"}),
     ]:
         service.observation_provider = (
             provider if known else lambda *args: unknown_simulation_observation()
@@ -267,7 +267,8 @@ def test_overdue_advice_never_extends_fixed_communications_outage():
         telemetry(), now=p.start_time + timedelta(minutes=31), **kwargs
     )
     assert overdue["call_continuity"]["pop_call_outage_seconds"] == 0
-    assert "overdue" in {a["kind"] for a in overdue["pop_advisories"]}
+    assert "overdue" not in {a["kind"] for a in overdue["pop_advisories"]}
+    assert overdue["pop_occurrences"][0]["disposition"] == "unconfirmed"
 
 
 def test_saved_predeparture_inputs_reject_transport_edits(tmp_path, monkeypatch):

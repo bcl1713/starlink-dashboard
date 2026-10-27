@@ -6,7 +6,6 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.config import ConfigManager
 from app.mission.pop_status import PopStatusService
-from app.services.ground_entry_point import get_cached_ground_entry_point
 from app.services.pop.continuity_models import CallContinuityProjection
 
 router = APIRouter()
@@ -96,23 +95,15 @@ def _status_payload():
     try:
         telemetry = _coordinator.get_current_telemetry()
         pop_payload = _pop_service.status_payload(telemetry)
-        if pop_payload["pop_observation"]["source"] == "simulation":
-            entry = pop_payload["pop_observation"]["entry"]
-            ground_entry_position = (
-                {"latitude": entry["latitude"], "longitude": entry["longitude"]}
-                if entry
-                else None
-            )
-        else:
-            ground_entry_point = get_cached_ground_entry_point()
-            ground_entry_position = (
-                {
-                    "latitude": ground_entry_point.latitude,
-                    "longitude": ground_entry_point.longitude,
-                }
-                if ground_entry_point
-                else None
-            )
+        observation = pop_payload["pop_observation"]
+        entry = observation["entry"]
+        # Identity and marker come from the same captured observation, including
+        # live IP changes and failed lookups. Never mix a previous marker with it.
+        ground_entry_position = (
+            {"latitude": entry["latitude"], "longitude": entry["longitude"]}
+            if entry and entry.get("freshness", "fresh") != "stale"
+            else None
+        )
         availability = telemetry.metric_availability
 
         return {

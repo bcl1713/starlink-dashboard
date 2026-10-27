@@ -79,18 +79,21 @@ async def test_status_exposes_current_cached_ground_entry_point(
         "_pop_service",
         PopStatusService(config_provider=lambda: SimulationConfig(mode="live")),
     )
+    from app.services import ground_entry_point as gep
+    from app.services.pop.models import PopObservation
+
+    entry = GroundEntryPoint(
+        ip="203.0.113.10",
+        city="Omaha",
+        region="NE",
+        country="US",
+        latitude=41.2565,
+        longitude=-95.9345,
+    )
     monkeypatch.setattr(
-        status_api,
-        "get_cached_ground_entry_point",
-        lambda: GroundEntryPoint(
-            ip="203.0.113.10",
-            city="Omaha",
-            region="NE",
-            country="US",
-            latitude=41.2565,
-            longitude=-95.9345,
-        ),
-        raising=False,
+        gep,
+        "get_cached_pop_observation",
+        lambda: PopObservation(ip=entry.ip, entry=entry, status="known", source="live"),
     )
 
     response = test_client.get("/api/status")

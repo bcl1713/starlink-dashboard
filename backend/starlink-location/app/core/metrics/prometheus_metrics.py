@@ -271,7 +271,18 @@ starlink_ground_entry_point_location = Gauge(
 starlink_ground_entry_point_info = Gauge(
     "starlink_ground_entry_point_info",
     "Ground entry point identity information",
-    labelnames=["city", "region", "country", "ip", "display"],
+    labelnames=[
+        "city",
+        "region",
+        "country",
+        "ip",
+        "display",
+        "pop_id",
+        "identity_source",
+        "matched_cidr",
+        "freshness",
+        "discrepancy",
+    ],
     registry=REGISTRY,
 )
 

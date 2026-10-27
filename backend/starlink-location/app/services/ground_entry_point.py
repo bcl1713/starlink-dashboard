@@ -7,9 +7,11 @@ import math
 import os
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from ipaddress import AddressValueError, IPv4Address
-from typing import TYPE_CHECKING
+from threading import RLock
+from typing import TYPE_CHECKING, Literal
 
 import dns.resolver
 import httpx
@@ -20,6 +22,7 @@ from app.core.metrics.prometheus_metrics import (
     starlink_ground_entry_point_location,
     starlink_ground_entry_point_longitude_degrees,
 )
+from app.services.egress_identity import EgressIdentity, resolve_egress_identity
 
 if TYPE_CHECKING:
     from app.services.pop.models import PopObservation
@@ -27,12 +30,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _DEFAULT_REFRESH_INTERVAL_SECONDS = 1.0
+_GEOIP_REFRESH_SECONDS = 900.0
+_GEOIP_FAILURE_RETRY_SECONDS = 60.0
+_SAMPLE_EXPIRY_SECONDS = 30.0
 _CLOUDFLARE_TRACE_URL = "https://1.1.1.1/cdn-cgi/trace"
 _OPENDNS_RESOLVERS = ["208.67.222.222", "208.67.220.220"]
 _last_ground_entry_point_location_labels: (
     tuple[str, str, str, str, str, str, str] | None
 ) = None
-_last_ground_entry_point_info_labels: tuple[str, str, str, str, str] | None = None
+_last_ground_entry_point_info_labels: tuple[str, ...] | None = None
 _last_ground_entry_point_refresh_monotonic: float | None = None
 
 
@@ -49,8 +55,8 @@ def _has_valid_geographic_coordinates(
 
 
 @dataclass(frozen=True, slots=True)
-class GroundEntryPoint:
-    """Public internet egress location used as a ground entry point proxy."""
+class ProviderGeoIP:
+    """Raw provider evidence; never replaces an operator-supplied identity."""
 
     ip: str
     city: str
@@ -58,6 +64,29 @@ class GroundEntryPoint:
     latitude: float
     longitude: float
     region: str = ""
+    lookup_at: str | None = None
+    freshness: Literal["fresh", "stale"] = "fresh"
+    source: str = "ipinfo.io"
+
+
+@dataclass(frozen=True, slots=True)
+class GroundEntryPoint:
+    """Current public egress location with identity and separate GeoIP evidence."""
+
+    ip: str
+    city: str
+    country: str
+    latitude: float
+    longitude: float
+    region: str = ""
+    pop_id: str | None = None
+    identity_source: Literal["operator_static_cidr", "geoip"] = "geoip"
+    matched_cidr: str | None = None
+    sampled_at: str | None = None
+    lookup_at: str | None = None
+    freshness: Literal["fresh", "stale"] = "fresh"
+    provider_geoip: ProviderGeoIP | None = None
+    discrepancy: bool = False
 
     @property
     def label(self) -> str:
@@ -70,8 +99,17 @@ class GroundEntryPoint:
         return ", ".join(parts) if parts else "Ground Entry Point"
 
 
+@dataclass(slots=True)
+class _GeoIPCache:
+    entry: GroundEntryPoint | None = None
+    attempted_at: float | None = None
+    succeeded_at: float | None = None
+    lookup_at: str | None = None
+    failed: bool = False
+
+
 class GroundEntryPointResolver:
-    """Resolve public IP frequently, geolocating only when the IP changes."""
+    """Sample public IP frequently with bounded provider refresh and retry."""
 
     def __init__(
         self,
@@ -79,64 +117,102 @@ class GroundEntryPointResolver:
         geolocator: Callable[[str], GroundEntryPoint | None] | None = None,
         poll_interval_seconds: float = _DEFAULT_REFRESH_INTERVAL_SECONDS,
         time_source: Callable[[], float] | None = None,
+        wall_time_source: Callable[[], datetime] | None = None,
     ) -> None:
+        self._lock = RLock()
         self._ip_resolver = ip_resolver or resolve_public_ip
         self._geolocator = geolocator or geolocate_public_ip
         self._poll_interval_seconds = poll_interval_seconds
         self._time_source = time_source or time.monotonic
+        self._wall_time_source = wall_time_source or (lambda: datetime.now(UTC))
         self._last_lookup_at: float | None = None
+        self._sampled_monotonic: float | None = None
+        self._sampled_at: str | None = None
         self._current_ip: str | None = None
         self._current_entry: GroundEntryPoint | None = None
-        self._entry_cache: dict[str, GroundEntryPoint] = {}
+        self._entry_cache: dict[str, _GeoIPCache] = {}
+
+    def _timestamp(self) -> str:
+        return self._wall_time_source().astimezone(UTC).isoformat()
 
     def current(
-        self,
-        *,
-        include_environment_override: bool = False,
+        self, *, include_environment_override: bool = False
     ) -> GroundEntryPoint | None:
-        """Return the most recently resolved ground entry point."""
-        if include_environment_override:
-            configured = _entry_point_from_environment()
-            if configured is not None:
-                self._current_ip = configured.ip or self._current_ip
-                self._current_entry = configured
-                return configured
-
-        return self._current_entry
+        """Return current-IP evidence, expiring confidence without network I/O."""
+        with self._lock:
+            if include_environment_override:
+                configured = _entry_point_from_environment()
+                if configured is not None:
+                    return configured
+            entry = self._current_entry
+            if entry is None:
+                return None
+            now = self._time_source()
+            cache = self._entry_cache.get(entry.ip)
+            provider_stale = (
+                cache is None
+                or cache.succeeded_at is None
+                or now - cache.succeeded_at >= _GEOIP_REFRESH_SECONDS
+            )
+            sample_stale = (
+                self._sampled_monotonic is None
+                or now - self._sampled_monotonic >= _SAMPLE_EXPIRY_SECONDS
+            )
+            freshness = (
+                "stale"
+                if sample_stale or (entry.identity_source == "geoip" and provider_stale)
+                else "fresh"
+            )
+            provider = entry.provider_geoip
+            if provider is not None:
+                provider = replace(
+                    provider, freshness="stale" if provider_stale else "fresh"
+                )
+            self._current_entry = replace(
+                entry, freshness=freshness, provider_geoip=provider
+            )
+            return self._current_entry
 
     def observation(self) -> PopObservation:
-        """Return current-IP evidence without a network lookup or stale fallback."""
-        from app.services.pop.models import PopObservation
+        """Read the same current-IP view used by map and metrics."""
+        with self._lock:
+            from app.services.pop.models import PopObservation
 
-        entry = self._entry_cache.get(self._current_ip)
-        return PopObservation(
-            ip=self._current_ip,
-            entry=entry,
-            status="known" if entry is not None else "unknown",
-            source="live",
-        )
+            entry = self.current()
+            return PopObservation(
+                ip=self._current_ip,
+                entry=entry,
+                status=(
+                    "known"
+                    if entry is not None and entry.freshness == "fresh"
+                    else "unknown"
+                ),
+                source="live",
+                sampled_at=self._sampled_at,
+                lookup_at=entry.lookup_at if entry else None,
+                freshness=entry.freshness if entry else "unknown",
+            )
 
     def invalidate(self, clear_geolocation_cache: bool = False) -> None:
-        """Clear current resolver state, optionally dropping per-IP geolocation cache."""
-        self._last_lookup_at = None
-        self._current_ip = None
-        self._current_entry = None
-        if clear_geolocation_cache:
-            self._entry_cache.clear()
+        with self._lock:
+            self._last_lookup_at = None
+            self._sampled_monotonic = None
+            self._sampled_at = None
+            self._current_ip = None
+            self._current_entry = None
+            if clear_geolocation_cache:
+                self._entry_cache.clear()
 
     def refresh(self, force: bool = False) -> GroundEntryPoint | None:
-        """Refresh public IP state and geolocate only when the IP changes."""
-
+        """Sample IP; resolve identity even if provider lookup fails."""
         now = self._time_source()
         if (
             not force
             and self._last_lookup_at is not None
             and now - self._last_lookup_at < self._poll_interval_seconds
         ):
-            return self._current_entry
-
+            return self.current()
         self._last_lookup_at = now
-
         try:
             ip = self._ip_resolver()
         except (
@@ -153,50 +229,147 @@ class GroundEntryPointResolver:
             TimeoutError,
             ImportError,
             EOFError,
-        ) as exc:  # pragma: no cover - defensive network guard
+        ) as exc:
             logger.warning("Failed to resolve public IP: %s", exc)
-            return self._current_entry
-
+            return self.current()
         if not ip:
-            return self._current_entry
-
-        if ip == self._current_ip and ip in self._entry_cache:
-            return self._current_entry
-
-        self._current_ip = ip
-        cached_entry = self._entry_cache.get(ip)
-        if cached_entry is not None:
+            return self.current()
+        ip = _normalize_ipv4_address(ip)
+        identity = resolve_egress_identity(ip) if ip is not None else None
+        with self._lock:
+            if ip is None:
+                self._current_ip = None
+                self._current_entry = None
+                self._sampled_monotonic = None
+                self._sampled_at = None
+                return None
             self._current_ip = ip
-            self._current_entry = cached_entry
-            return cached_entry
+            self._sampled_monotonic = now
+            self._sampled_at = self._timestamp()
+            cache = self._entry_cache.setdefault(ip, _GeoIPCache())
+            # Publish the new IP and its static identity together, before waiting
+            # for optional provider evidence. Readers hold the same short lock.
+            self._current_entry = self._entry_from_evidence(ip, cache, identity)
+            retry = (
+                _GEOIP_FAILURE_RETRY_SECONDS if cache.failed else _GEOIP_REFRESH_SECONDS
+            )
+            needs_lookup = (
+                cache.attempted_at is None or now - cache.attempted_at >= retry
+            )
+            if needs_lookup:
+                cache.attempted_at = now
+                cache.failed = True
+        if needs_lookup:
+            try:
+                provider = self._geolocator(ip)
+            except (
+                httpx.HTTPError,
+                dns.exception.DNSException,
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:
+                logger.warning("Failed to geolocate public IP %s: %s", ip, exc)
+                provider = None
+            with self._lock:
+                if (
+                    provider is not None
+                    and provider.ip == ip
+                    and _has_valid_geographic_coordinates(
+                        provider.latitude, provider.longitude
+                    )
+                ):
+                    cache.entry = provider
+                    cache.succeeded_at = now
+                    cache.lookup_at = self._timestamp()
+                    cache.failed = False
+        with self._lock:
+            # Another sample may arrive while this provider request is running.
+            # Cache its evidence, but never overwrite the newer IP's entry.
+            if self._current_ip == ip:
+                self._current_entry = self._entry_from_evidence(ip, cache, identity)
+            return self.current()
 
-        try:
-            entry = self._geolocator(ip)
-        except (
-            httpx.HTTPError,
-            dns.exception.DNSException,
-            RuntimeError,
-            ValueError,
-            OSError,
-            KeyError,
-            TypeError,
-            AttributeError,
-            LookupError,
-            ConnectionError,
-            TimeoutError,
-            ImportError,
-            EOFError,
-        ) as exc:  # pragma: no cover - defensive network guard
-            logger.warning("Failed to geolocate public IP %s: %s", ip, exc)
-            return self._current_entry
+    def _entry_from_evidence(
+        self, ip: str, cache: _GeoIPCache, identity: EgressIdentity | None
+    ) -> GroundEntryPoint | None:
+        raw = cache.entry
+        provider_geoip = (
+            ProviderGeoIP(
+                ip=raw.ip,
+                city=raw.city,
+                region=raw.region,
+                country=raw.country,
+                latitude=raw.latitude,
+                longitude=raw.longitude,
+                lookup_at=cache.lookup_at,
+            )
+            if raw is not None
+            else None
+        )
+        if identity is not None:
+            discrepancy = False
+            if raw is not None:
+                names = {name.casefold() for name in (identity.city, *identity.aliases)}
+                discrepancy = (
+                    raw.city.casefold() not in names
+                    or raw.country.casefold() != identity.country.casefold()
+                    or _location_distance_km(
+                        raw.latitude,
+                        raw.longitude,
+                        identity.latitude,
+                        identity.longitude,
+                    )
+                    > 100
+                )
+            return GroundEntryPoint(
+                ip=ip,
+                city=identity.city,
+                country=identity.country,
+                latitude=identity.latitude,
+                longitude=identity.longitude,
+                pop_id=identity.pop_id,
+                identity_source="operator_static_cidr",
+                matched_cidr=identity.matched_cidr,
+                sampled_at=self._sampled_at,
+                lookup_at=cache.lookup_at,
+                provider_geoip=provider_geoip,
+                discrepancy=discrepancy,
+            )
+        elif raw is not None:
+            return replace(
+                raw,
+                ip=ip,
+                pop_id=None,
+                identity_source="geoip",
+                matched_cidr=None,
+                sampled_at=self._sampled_at,
+                lookup_at=cache.lookup_at,
+                provider_geoip=provider_geoip,
+                discrepancy=False,
+            )
+        else:
+            return None
 
-        if entry is None:
-            return self._current_entry
 
-        self._entry_cache[ip] = entry
-        self._current_ip = ip
-        self._current_entry = entry
-        return entry
+def _location_distance_km(
+    lat_a: float, lon_a: float, lat_b: float, lon_b: float
+) -> float:
+    """Use distance only to flag provider disagreement, never assign identity."""
+    lat_a, lon_a, lat_b, lon_b = map(math.radians, (lat_a, lon_a, lat_b, lon_b))
+    haversine = (
+        math.sin((lat_b - lat_a) / 2) ** 2
+        + math.cos(lat_a) * math.cos(lat_b) * math.sin((lon_b - lon_a) / 2) ** 2
+    )
+    return 6371 * 2 * math.asin(min(1.0, math.sqrt(haversine)))
 
 
 def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:
@@ -401,28 +574,39 @@ def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> 
         entry_point.country,
         entry_point.ip,
         entry_point.label,
+        entry_point.pop_id or "",
+        entry_point.identity_source,
+        entry_point.matched_cidr or "",
+        entry_point.freshness,
+        str(entry_point.discrepancy).lower(),
     )
 
-    starlink_ground_entry_point_latitude_degrees.set(entry_point.latitude)
-    starlink_ground_entry_point_longitude_degrees.set(entry_point.longitude)
-    starlink_ground_entry_point_location.labels(
-        lat=location_labels[0],
-        lon=location_labels[1],
-        city=location_labels[2],
-        region=location_labels[3],
-        country=location_labels[4],
-        ip=location_labels[5],
-        display=location_labels[6],
-    ).set(1)
+    if entry_point.freshness == "fresh":
+        starlink_ground_entry_point_latitude_degrees.set(entry_point.latitude)
+        starlink_ground_entry_point_longitude_degrees.set(entry_point.longitude)
+        starlink_ground_entry_point_location.labels(
+            lat=location_labels[0],
+            lon=location_labels[1],
+            city=location_labels[2],
+            region=location_labels[3],
+            country=location_labels[4],
+            ip=location_labels[5],
+            display=location_labels[6],
+        ).set(1)
+        _last_ground_entry_point_location_labels = location_labels
     starlink_ground_entry_point_info.labels(
         city=info_labels[0],
         region=info_labels[1],
         country=info_labels[2],
         ip=info_labels[3],
         display=info_labels[4],
+        pop_id=info_labels[5],
+        identity_source=info_labels[6],
+        matched_cidr=info_labels[7],
+        freshness=info_labels[8],
+        discrepancy=info_labels[9],
     ).set(1)
 
-    _last_ground_entry_point_location_labels = location_labels
     _last_ground_entry_point_info_labels = info_labels
 
 

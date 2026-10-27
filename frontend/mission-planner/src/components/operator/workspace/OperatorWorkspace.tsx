@@ -71,6 +71,7 @@ import { ManualDestinationSettingsCard } from '../ManualDestinationSettingsCard'
 import { useEventAlerts } from '../useEventAlerts';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import { WorkspaceAwareness } from './WorkspaceAwareness';
+import { PopEvidence } from '../PopEvidence';
 import { nextRequirement } from './awarenessModel';
 import { WorkspaceEditor } from './WorkspaceEditor';
 import { MissionContextChooser } from './MissionContextChooser';
@@ -610,6 +611,7 @@ export function OperatorWorkspace() {
           </button>
         </div>
       </header>
+      <PopEvidence />
       <div className="ws-content">
         <WorkspaceAwareness
           snapshot={events.snapshot}

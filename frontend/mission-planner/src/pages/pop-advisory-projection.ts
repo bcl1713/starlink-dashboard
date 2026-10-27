@@ -34,8 +34,8 @@ export function projectPopAdvisories(
     summary,
     observation:
       observation?.status === 'known' && observation.entry
-        ? `Observed PoP: ${[observation.entry.city, observation.entry.country].filter(Boolean).join(', ')}${observation.ip ? ` · ${observation.ip}` : ''}${observation.source === 'simulation' ? ' · simulated' : ''}`
-        : 'Observed PoP unknown.',
+        ? `${observation.source === 'simulation' ? 'Simulated PoP' : observation.entry.identity_source === 'operator_static_cidr' ? 'PoP (operator-supplied static CIDR mapping)' : 'Provider GeoIP egress (PoP identity unconfirmed)'}: ${[observation.entry.city, observation.entry.country].filter(Boolean).join(', ')}${observation.ip ? ` · ${observation.ip}` : ''} · ${observation.freshness ?? observation.entry.freshness ?? 'freshness unknown'}`
+        : `PoP identity unavailable.${observation?.ip ? ` Public IP: ${observation.ip}.` : ''}`,
     advisories: (status?.pop_advisories ?? []).map((advisory) => {
       const transition = forecast?.transitions.find(
         (item) => item.crossing.id === advisory.transition_id
@@ -45,11 +45,11 @@ export function projectPopAdvisories(
         case 'window':
           return `${POP_CAUTION}${cities}`;
         case 'overdue':
-          return `Overdue PoP transition.${cities} Possible call interruption remains active until the destination is observed.`;
+          return `Forecast window passed without a confirmed destination.${cities} Actual transition time is unknown.`;
         case 'mismatch':
-          return 'Observed PoP differs from the expected region. A transition is possible at any time; calls may be interrupted.';
+          return 'Egress evidence differs from the geographic forecast; remote backhaul or GeoIP error remains possible. This does not establish a current interruption.';
         case 'observation_unknown':
-          return 'Current PoP unknown; observed completion and stability cannot be confirmed.';
+          return 'Current PoP evidence unavailable or stale; transition timing is unconfirmed.';
       }
     }),
   };

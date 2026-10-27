@@ -1376,6 +1376,7 @@ def _segment_rows(
     export_timeline = timeline.model_copy(deep=True)
     normalize_call_availability_timeline(export_timeline)
     from .csv_continuity import CONTINUITY_COLUMNS, apply_csv_continuity
+    from .egress_snapshot import EGRESS_SNAPSHOT_COLUMNS
 
     apply_csv_continuity(export_timeline)
     mission_start = mission_start_timestamp(export_timeline)
@@ -1474,11 +1475,7 @@ def _segment_rows(
         "Reasons",
         "Notes / Source Events",
         *CONTINUITY_COLUMNS,
-        "Ground Entry City",
-        "Ground Entry Country",
-        "Ground Entry IP",
-        "Ground Entry Latitude",
-        "Ground Entry Longitude",
+        *EGRESS_SNAPSHOT_COLUMNS,
         "Metadata",
     ]
 
@@ -1491,22 +1488,10 @@ def _segment_rows(
 def _ground_entry_export_values(
     entry_point: GroundEntryPoint | None,
 ) -> dict[str, str | float]:
-    """Return CSV column values for the current ground entry point."""
-    if entry_point is None:
-        return {
-            "Ground Entry City": "",
-            "Ground Entry Country": "",
-            "Ground Entry IP": "",
-            "Ground Entry Latitude": "",
-            "Ground Entry Longitude": "",
-        }
-    return {
-        "Ground Entry City": entry_point.city,
-        "Ground Entry Country": entry_point.country,
-        "Ground Entry IP": entry_point.ip,
-        "Ground Entry Latitude": entry_point.latitude,
-        "Ground Entry Longitude": entry_point.longitude,
-    }
+    """Return captured mission snapshot evidence, never segment-time observations."""
+    from .egress_snapshot import snapshot_egress_values
+
+    return snapshot_egress_values(entry_point)
 
 
 def _advisory_rows(

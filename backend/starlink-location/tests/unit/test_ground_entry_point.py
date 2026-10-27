@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict, replace
+
+import pytest
 from prometheus_client import generate_latest
 from typing_extensions import Self
 
@@ -461,8 +464,8 @@ def test_resolver_suppresses_dns_polling_until_interval_elapses() -> None:
     third = resolver.refresh()
 
     assert first is not None
-    assert second is first
-    assert third is first
+    assert second.ip == first.ip and second.lookup_at == first.lookup_at
+    assert third.ip == first.ip and third.lookup_at == first.lookup_at
     assert resolve_calls == [10.0, 11.0]
 
 
@@ -502,7 +505,7 @@ def test_resolver_geolocates_only_when_public_ip_changes() -> None:
     third = resolver.refresh()
 
     assert first is not None
-    assert second is first
+    assert second.ip == first.ip and second.lookup_at == first.lookup_at
     assert third is not None
     assert third.ip == "198.51.100.24"
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
@@ -540,7 +543,7 @@ def test_resolver_reuses_cached_geolocation_when_prior_ip_returns() -> None:
 
     assert first is not None
     assert second is not None
-    assert third is first
+    assert third.ip == first.ip and third.lookup_at == first.lookup_at
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
 
 
@@ -577,7 +580,7 @@ def test_resolver_refresh_ignores_environment_override_by_default(
         geolocator=lambda _: discovered,
     )
 
-    assert resolver.refresh() is discovered
+    assert resolver.refresh().provider_geoip.city == discovered.city
 
 
 def test_observation_marks_changed_ip_unknown_until_retry_succeeds() -> None:
@@ -585,26 +588,29 @@ def test_observation_marks_changed_ip_unknown_until_retry_succeeds() -> None:
     new = GroundEntryPoint("203.0.113.2", "Tokyo", "JP", 35, 139)
     ips = iter([old.ip, new.ip, new.ip, old.ip])
     entries = iter([old, None, new])
+    now = 0.0
     resolver = GroundEntryPointResolver(
         ip_resolver=lambda: next(ips),
         geolocator=lambda ip: next(entries),
         poll_interval_seconds=0,
+        time_source=lambda: now,
     )
     resolver.refresh()
-    assert resolver.observation().entry == old
+    assert resolver.observation().entry.ip == old.ip
     resolver.refresh()
-    assert resolver.current() == old
+    assert resolver.current() is None
     current = resolver.observation()
     assert (
         current.status == "unknown" and current.ip == new.ip and current.entry is None
     )
+    now = 60.0
     resolver.refresh()
-    assert resolver.observation().entry == new
+    assert resolver.observation().entry.ip == new.ip
     resolver.refresh()
-    assert resolver.observation().entry == old
+    assert resolver.observation().entry.ip == old.ip
 
 
-def test_observation_same_ip_has_no_age_expiry() -> None:
+def test_observation_same_ip_revalidates_aged_lookup() -> None:
     entry = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
     now = 0
     calls = []
@@ -619,10 +625,12 @@ def test_observation_same_ip_has_no_age_expiry() -> None:
     resolver.refresh()
     now = 10**9
     resolver.refresh()
-    assert resolver.observation().entry == entry and calls == [entry.ip]
+    assert resolver.observation().entry.ip == entry.ip
+    assert resolver.observation().entry.freshness == "fresh"
+    assert calls == [entry.ip, entry.ip]
 
 
-def test_changed_ip_http_timeout_retains_display_but_cannot_complete_transition():
+def test_changed_ip_http_timeout_clears_display_and_observation():
     old = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
     ips = iter([old.ip, "203.0.113.2"])
 
@@ -635,7 +643,7 @@ def test_changed_ip_http_timeout_retains_display_but_cannot_complete_transition(
         ip_resolver=lambda: next(ips), geolocator=geolocate, poll_interval_seconds=0
     )
     resolver.refresh()
-    assert resolver.refresh() == old
+    assert resolver.refresh() is None
     assert resolver.observation().status == "unknown"
     assert resolver.observation().entry is None
 
@@ -649,3 +657,264 @@ def test_real_http_failure_uses_dns_fallback(monkeypatch):
         gep, "resolve_public_ip_via_dns", lambda **kwargs: "203.0.113.7"
     )
     assert gep.resolve_public_ip() == "203.0.113.7"
+
+
+@pytest.mark.parametrize(
+    "prefix,pop_id,city,latitude,longitude",
+    [
+        ("216.255.176", "los-angeles", "Los Angeles", 34.05223, -118.24368),
+        ("216.255.182", "los-angeles", "Los Angeles", 34.05223, -118.24368),
+        ("216.255.177", "ashburn", "Ashburn", 39.04372, -77.48749),
+        ("216.255.183", "ashburn", "Ashburn", 39.04372, -77.48749),
+        ("216.255.178", "dallas", "Dallas", 32.78306, -96.80667),
+        ("75.78.128", "dallas", "Dallas", 32.78306, -96.80667),
+        ("216.255.179", "sydney", "Sydney", -33.86785, 151.20732),
+        ("216.255.180", "frankfurt", "Frankfurt", 50.11552, 8.68417),
+        ("216.255.181", "tokyo", "Tokyo", 35.6895, 139.69171),
+    ],
+)
+@pytest.mark.parametrize("host", [0, 127, 255])
+def test_static_identity_uses_exact_cidr_and_catalog_without_geoip(
+    prefix, pop_id, city, latitude, longitude, host
+):
+    ip = f"{prefix}.{host}"
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: ip, geolocator=lambda _: None
+    )
+    entry = resolver.refresh()
+    assert entry is not None
+    assert (entry.pop_id, entry.city, entry.latitude, entry.longitude) == (
+        pop_id,
+        city,
+        latitude,
+        longitude,
+    )
+    assert entry.identity_source == "operator_static_cidr"
+    assert entry.matched_cidr == f"{prefix}.0/24"
+    assert entry.provider_geoip is None and not entry.discrepancy
+    assert entry.freshness == "fresh"
+    assert entry.sampled_at.endswith("+00:00")
+    assert resolver.observation().entry == resolver.current() == entry
+
+
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "216.255.175.255",
+        "216.255.184.0",
+        "75.78.127.255",
+        "75.78.129.0",
+        "bad",
+        "216.255.176.999",
+        "2001:db8::1",
+    ],
+)
+def test_nonmember_and_malformed_ips_never_gain_static_identity(ip):
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: ip, geolocator=lambda _: None
+    )
+    assert resolver.refresh() is None
+    assert resolver.current() is None
+    assert resolver.observation().status == "unknown"
+
+
+def test_static_identity_keeps_conflicting_geoip_as_serializable_evidence():
+    raw = GroundEntryPoint("216.255.176.5", "New York", "US", 40.7, -74, "New York")
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: raw.ip, geolocator=lambda _: raw
+    )
+    entry = resolver.refresh()
+    assert entry.city == "Los Angeles" and entry.latitude == 34.05223
+    assert entry.discrepancy
+    assert asdict(entry.provider_geoip)["city"] == "New York"
+    assert entry.provider_geoip.latitude == 40.7
+    publish_ground_entry_point_metrics(entry)
+    metrics = generate_latest(REGISTRY).decode()
+    assert 'pop_id="los-angeles"' in metrics
+    assert 'identity_source="operator_static_cidr"' in metrics
+    assert 'city="Los Angeles"' in metrics
+    assert 'city="New York"' not in metrics
+
+
+def test_same_ip_geoip_is_revalidated_and_can_correct_location():
+    now = 0.0
+    entries = iter(
+        [
+            GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96),
+            GroundEntryPoint("203.0.113.1", "Tokyo", "JP", 35, 139),
+        ]
+    )
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.1",
+        geolocator=lambda _: next(entries),
+        time_source=lambda: now,
+    )
+    assert resolver.refresh().city == "Dallas"
+    now = 899
+    assert resolver.refresh().city == "Dallas"
+    now = 900
+    entry = resolver.refresh()
+    assert entry.city == "Tokyo" and entry.freshness == "fresh"
+    assert entry.pop_id is None and entry.identity_source == "geoip"
+    assert entry.matched_cidr is None
+
+
+def test_readers_expire_sample_without_network_and_preserve_one_stale_view():
+    now = 0.0
+    raw = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: raw.ip, geolocator=lambda _: raw, time_source=lambda: now
+    )
+    resolver.refresh()
+    now = 30
+    entry = resolver.current()
+    assert entry.freshness == "stale"
+    assert resolver.observation().status == "unknown"
+    assert resolver.observation().entry == entry
+    now = 31
+    assert resolver.refresh().freshness == "fresh"
+
+
+def test_failed_changed_ip_clears_current_and_retries_after_sixty_seconds(monkeypatch):
+    now = 0.0
+    ip = "216.255.176.1"
+    answers = iter(
+        [None, None, GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)]
+    )
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: ip,
+        geolocator=lambda _: next(answers),
+        time_source=lambda: now,
+    )
+    assert resolver.refresh().pop_id == "los-angeles"
+    ip = "203.0.113.1"
+    now = 1
+    monkeypatch.setattr(gep, "_resolver", resolver)
+    assert refresh_ground_entry_point_metrics() is None
+    assert resolver.current() is resolver.observation().entry is None
+    assert (
+        "starlink_ground_entry_point_latitude_degrees NaN"
+        in generate_latest(REGISTRY).decode()
+    )
+    now = 60
+    assert resolver.refresh() is None
+    now = 61
+    assert resolver.refresh().city == "Dallas"
+
+
+def test_static_identity_survives_provider_exception_and_stale_provider_evidence():
+    now = 0.0
+
+    def unavailable(_):
+        raise gep.httpx.ReadTimeout("unavailable")
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "216.255.181.1",
+        geolocator=unavailable,
+        time_source=lambda: now,
+    )
+    assert resolver.refresh().pop_id == "tokyo"
+    now = 900
+    assert resolver.refresh().freshness == "fresh"
+    assert resolver.observation().status == "known"
+
+
+def test_failed_geoip_revalidation_expires_uncertainty_and_retries_bounded():
+    now = 0.0
+    raw = GroundEntryPoint("203.0.113.1", "Dallas", "US", 32, -96)
+    answers = iter([raw, None, raw])
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: raw.ip,
+        geolocator=lambda _: next(answers),
+        time_source=lambda: now,
+    )
+    first = resolver.refresh()
+    now = 900
+    entry = resolver.refresh()
+    assert entry.lookup_at == first.lookup_at
+    assert entry.freshness == entry.provider_geoip.freshness == "stale"
+    assert resolver.observation().status == "unknown"
+    now = 959
+    assert resolver.refresh().freshness == "stale"
+    now = 960
+    assert resolver.refresh().freshness == "fresh"
+
+
+def test_static_identity_freshness_is_independent_of_expired_provider():
+    now = 0.0
+    raw = GroundEntryPoint("216.255.176.1", "New York", "US", 40.7, -74)
+    answers = iter([raw, None])
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: raw.ip,
+        geolocator=lambda _: next(answers),
+        time_source=lambda: now,
+    )
+    resolver.refresh()
+    now = 900
+    entry = resolver.refresh()
+    assert entry.freshness == "fresh"
+    assert entry.provider_geoip.freshness == "stale"
+    assert entry.pop_id == "los-angeles" and entry.discrepancy
+    assert resolver.observation().status == "known"
+
+
+@pytest.mark.parametrize("initial_ip", [None, "203.0.113.1", "216.255.181.1"])
+def test_static_identity_is_readable_while_provider_lookup_is_in_progress(initial_ip):
+    ip = initial_ip
+
+    def lookup(sampled_ip):
+        if sampled_ip != "216.255.176.5":
+            return GroundEntryPoint(sampled_ip, "Tokyo", "JP", 35, 139)
+        current = resolver.current()
+        observation = resolver.observation()
+        assert current is not None
+        assert current.ip == observation.ip == sampled_ip
+        assert current.pop_id == "los-angeles"
+        assert current.latitude == 34.05223
+        assert current.provider_geoip is None
+        assert observation.status == "known"
+        assert observation.entry == current
+        return GroundEntryPoint(sampled_ip, "New York", "US", 40.7, -74)
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: ip, geolocator=lookup, poll_interval_seconds=0
+    )
+    if initial_ip:
+        resolver.refresh()
+    ip = "216.255.176.5"
+    result = resolver.refresh()
+    assert result.pop_id == "los-angeles"
+    assert result.provider_geoip.city == "New York"
+    assert result.provider_geoip.source == "ipinfo.io"
+    assert result.discrepancy
+
+
+def test_stale_metrics_remove_location_but_preserve_explicit_stale_identity():
+    entry = GroundEntryPoint(
+        "216.255.176.5",
+        "Los Angeles",
+        "US",
+        34.05223,
+        -118.24368,
+        pop_id="los-angeles",
+        identity_source="operator_static_cidr",
+        matched_cidr="216.255.176.0/24",
+    )
+    publish_ground_entry_point_metrics(entry)
+    live = generate_latest(REGISTRY).decode()
+    assert "starlink_ground_entry_point_location{" in live
+    publish_ground_entry_point_metrics(replace(entry, freshness="stale"))
+    stale = generate_latest(REGISTRY).decode()
+    assert "starlink_ground_entry_point_latitude_degrees NaN" in stale
+    assert "starlink_ground_entry_point_longitude_degrees NaN" in stale
+    assert "starlink_ground_entry_point_location{" not in stale
+    info = [
+        line
+        for line in stale.splitlines()
+        if line.startswith("starlink_ground_entry_point_info{")
+    ]
+    assert len(info) == 1
+    assert 'freshness="stale"' in info[0]
+    assert 'pop_id="los-angeles"' in info[0]
+    publish_ground_entry_point_metrics(None)
+    assert "starlink_ground_entry_point_info{" not in generate_latest(REGISTRY).decode()

@@ -40,7 +40,7 @@ forecast = PopForecast(
 reports = {}
 for name, city, country, offset, expected in [
     ("early", "Dallas", "US", -10, []),
-    ("late", "Los Angeles", "US", 6, ["overdue"]),
+    ("late", "Los Angeles", "US", 6, []),
     ("mismatch", "Tokyo", "JP", -10, ["mismatch"]),
 ]:
     observation = PopObservation(
@@ -59,6 +59,8 @@ for name, city, country, offset, expected in [
         state=PopLiveState(revision=forecast.revision),
     )
     assert [item.kind for item in advisory] == expected
+    if name == "late":
+        assert state.unconfirmed_ids == {"sanitized-occurrence"}
     if name == "early":
         assert state.completed_ids == {"sanitized-occurrence"}
     reports[name] = {
