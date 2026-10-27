@@ -7,7 +7,7 @@ import pytest
 import main
 from app.api import status as status_api
 from app.models.config import SimulationConfig
-from app.services.flight_events import live_adapter
+from app.services.flight_events import lifecycle
 
 
 @pytest.mark.asyncio
@@ -21,6 +21,9 @@ async def test_archive_sqlite_failure_preserves_live_startup_and_pop_status(
             super().__init__(config)
             self.client = None
 
+        def shutdown(self):
+            pass
+
     def unavailable(_path):
         raise sqlite3.OperationalError("fixture archive unavailable")
 
@@ -28,7 +31,7 @@ async def test_archive_sqlite_failure_preserves_live_startup_and_pop_status(
     monkeypatch.setattr(main, "LiveCoordinator", LocalLiveCoordinator)
     monkeypatch.setattr(main, "refresh_ground_entry_point_metrics", lambda: None)
     monkeypatch.setattr(main, "_background_updates_enabled", False)
-    monkeypatch.setattr(live_adapter, "FlightEventRuntime", unavailable)
+    monkeypatch.setattr(lifecycle, "FlightEventRuntime", unavailable)
     try:
         await main.startup_event()
         assert main.app.state.flight_event_runtime is None

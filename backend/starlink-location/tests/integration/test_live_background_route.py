@@ -313,7 +313,7 @@ async def test_125_live_ticks_reuse_mission_without_json_reads(
     observations = []
     runtime = SimpleNamespace(
         record_live=lambda _: None,
-        observe_live=lambda telemetry, context: observations.append(
+        observe_live=lambda telemetry, context, **kwargs: observations.append(
             (telemetry.timestamp, context.parent_mission_id, context.leg.id)
         ),
         sync_legacy_phase=lambda *_: None,
