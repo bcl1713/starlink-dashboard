@@ -11,6 +11,7 @@ import builtins
 import io
 import json
 import logging
+import os
 import statistics
 import subprocess
 import sys
@@ -29,6 +30,17 @@ def counters():
     counts = Counter()
     original_open, original_io_open = builtins.open, io.open
     original_stat, original_iterdir, original_glob = Path.stat, Path.iterdir, Path.glob
+    os_operations = {
+        name: getattr(os, name)
+        for name in ("stat", "lstat", "scandir", "listdir", "open")
+    }
+
+    def os_operation(name, original):
+        def called(*args, **kwargs):
+            counts["os_" + name + "_calls"] += 1
+            return original(*args, **kwargs)
+
+        return called
 
     class Reader:
         def __init__(self, handle, kind):
@@ -134,6 +146,10 @@ def counters():
                 ),
             ]:
                 stack.enter_context(context)
+            for name, original in os_operations.items():
+                stack.enter_context(
+                    patch.object(os, name, os_operation(name, original))
+                )
             if RepositoryGate is not None:
                 stack.enter_context(patch.object(RepositoryGate, "acquire", acquired))
             yield counts
@@ -268,6 +284,12 @@ def main():
                 }
             )
     report = {
+        "harness_sha": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[1],
+            text=True,
+        ).strip(),
+        "counter_scope": "Python file-read, Path and os boundaries; overlapping Path/os counts must not be added; no kernel trace",
         "application_sha": args.application_sha
         or subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=backend, text=True

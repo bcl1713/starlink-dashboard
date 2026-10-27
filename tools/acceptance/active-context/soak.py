@@ -211,6 +211,8 @@ async def test_live_like_soak(soak_runtime, monkeypatch):
 
         report = {
             "application_sha": os.environ["ISSUE392_APPLICATION_SHA"],
+            "harness_sha": os.environ["ISSUE392_HARNESS_SHA"],
+            "counter_scope": "Python file-read, Path and os boundaries; Path/os counts overlap; proc I/O is whole-process including SQLite and observer",
             "scope": __doc__,
             "missions": missions,
             "legs_per_mission": 4,
