@@ -11,7 +11,12 @@ if os.environ.get("POP_EVIDENCE_FIXTURE") != "synthetic-local-only":
 
 import main
 from app.services import ground_entry_point as gep
-from app.mission.models import MissionLegTimeline, TimelineSegment
+from app.mission.models import (
+    MissionLeg,
+    MissionLegTimeline,
+    TimelineSegment,
+    TransportConfig,
+)
 
 clock = [0.0]
 case = ["tokyo"]
@@ -203,5 +208,14 @@ def export_csv():
         statistics={},
     )
     return Response(
-        _segment_rows(timeline, None).to_csv(index=False), media_type="text/csv"
+        _segment_rows(
+            timeline,
+            MissionLeg(
+                id="synthetic-leg",
+                name="Synthetic evidence",
+                route_id="synthetic-route",
+                transports=TransportConfig(initial_x_satellite_id="synthetic-x"),
+            ),
+        ).to_csv(index=False),
+        media_type="text/csv",
     )
