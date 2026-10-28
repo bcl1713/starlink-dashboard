@@ -18,6 +18,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.OPERATOR_COHERENT_ORIGIN,
     headless: true,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
     actionTimeout: 20_000,
     launchOptions: {
       executablePath: process.env.OPERATOR_COHERENT_CHROMIUM,

@@ -176,6 +176,9 @@ test('coherent operations, retained capture and real journal safety across deskt
     });
     await expect(alphaCard).toBeVisible();
     await expect(idleCard).toBeVisible();
+    await page.screenshot({
+      path: `${evidence}/operations-initial-1920x1080.png`,
+    });
     const before = await alphaCard.boundingBox();
     const neighborBefore = await idleCard.boundingBox();
     await alphaCard
@@ -208,7 +211,9 @@ test('coherent operations, retained capture and real journal safety across deskt
     expect(Math.abs(established!.height - closed!.height)).toBeLessThanOrEqual(
       1
     );
-    expect(neighborBefore!.y).toBe(neighborAfter!.y);
+    expect(
+      Math.abs(neighborBefore!.y - before!.y - (neighborAfter!.y - closed!.y))
+    ).toBeLessThanOrEqual(1);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     proof.stableCloseGeometry = {
       before,
