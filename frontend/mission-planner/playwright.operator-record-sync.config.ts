@@ -19,6 +19,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     actionTimeout: 15_000,
     launchOptions: {
+      executablePath: process.env.OPERATOR_SYNC_CHROMIUM,
       args: [
         '--no-sandbox',
         '--disable-dev-shm-usage',
