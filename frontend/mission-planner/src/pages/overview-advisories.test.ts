@@ -294,3 +294,31 @@ it('quarantines a current event snapshot while an independently polled clock sti
     }).items
   ).toHaveLength(0);
 });
+
+it('scopes partial mission coverage to the active leg while keeping shared failures', () => {
+  const data = snapshot();
+  data.coverage = 'partial';
+  data.sources.push({
+    ...data.sources[0],
+    source: 'model:leg-b',
+    freshness: 'unknown',
+    aligned: false,
+    reason: 'Timeline unavailable',
+  });
+  expect(view(data)).toMatchObject({
+    items: [expect.any(Object)],
+    notice: null,
+  });
+  for (const source of [
+    'model:leg-a:prerequisites',
+    'model:leg-a:live-pop',
+    'planning',
+    'operator',
+  ]) {
+    const failed = structuredClone(data);
+    failed.sources.push({ ...data.sources[1], source });
+    expect(view(failed).notice).toBe('Transport Advisories Unavailable');
+  }
+  data.sources = data.sources.filter((s) => s.source !== 'model:leg-a');
+  expect(view(data).notice).toBe('Transport Advisories Unavailable');
+});

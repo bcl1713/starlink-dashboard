@@ -274,6 +274,9 @@ test('customizable presets and durable shared advisories across real clients', a
           .getByLabel('Transport Advisories')
           .getByText('Starshield Transition Window', { exact: true })
       ).toBeVisible();
+      await expect(
+        overview.getByText('Transport Advisories Unavailable', { exact: true })
+      ).toHaveCount(0);
       await expect(overview.getByLabel('Departure and Arrival')).toContainText(
         'Zulu'
       );
