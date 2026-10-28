@@ -7,7 +7,7 @@ import { useUpdateOverviewLinkSettings } from '@/hooks/api/useUpdateOverviewLink
 
 const groups = {
   panels: {
-    title: 'Overview panels',
+    title: 'Overview Panels',
     description:
       'Choose the information panels shown on all Overview displays.',
     controls: [
@@ -45,7 +45,7 @@ const groups = {
     ],
   },
   map: {
-    title: 'Route and points of interest',
+    title: 'Route and Points of Interest',
     description: 'Choose the mission layers shown on the globe.',
     controls: [
       {
@@ -66,7 +66,7 @@ const groups = {
     ],
   },
   network: {
-    title: 'Network map layers',
+    title: 'Network Map Layers',
     description:
       'Choose network links and satellite markers shown on Overview.',
     controls: [
@@ -99,7 +99,7 @@ const groups = {
     ],
   },
   aircraft: {
-    title: 'Own aircraft',
+    title: 'Own Aircraft',
     description: 'Choose the tracked aircraft layers shown on Overview.',
     controls: [
       {
@@ -115,7 +115,7 @@ const groups = {
     ],
   },
   metrics: {
-    title: 'Network metric panels',
+    title: 'Network Metric Panels',
     description: 'Show or hide each network graph independently.',
     controls: [
       {

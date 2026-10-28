@@ -89,7 +89,7 @@ export function OverviewPresetsCard() {
     !pending;
   return (
     <ConfigurationSection
-      title="Display presets"
+      title="Display Presets"
       description="Save panel, map and weather visibility for all Overview displays. Weather includes radar, METAR, TAF, SIGMET and route filtering, plus wind or temperature. Provider configuration, forecast level/horizon, acknowledgments, history windows and camera behavior are unchanged. Applying uses separate settings stores; any incomplete acknowledgment is reported for retry."
     >
       <div className="space-y-3">

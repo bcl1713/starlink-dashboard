@@ -15,6 +15,18 @@ transport = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(transport)
 
 
+class OverviewOwner(transport.AvailabilityOwner):
+    def compose(self, *args, timeout=120):
+        source = self.env.get("OPERATOR_SOURCE_ROOT")
+        if source:
+            self.compose_file = (
+                Path(source) / "tools/acceptance/overview-advisories/compose.yml"
+            )
+            self.ownership["composeFile"] = str(self.compose_file)
+            self.persist()
+        return transport.OriginalOwner.compose(self, *args, timeout=timeout)
+
+
 def qualify(owner):
     env = owner.env | {
         "OVERVIEW_ADVISORIES_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
@@ -53,7 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True, type=Path)
     args = parser.parse_args()
-    transport.journal.Owner = transport.AvailabilityOwner
+    transport.journal.Owner = OverviewOwner
     try:
         report = transport.journal.run(
             args.candidate, args.project, args.evidence, qualification=qualify
