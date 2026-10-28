@@ -269,3 +269,24 @@ it('writes radar and ADS-B on/off to their existing shared settings APIs without
       )
   ).toBe(false);
 });
+
+it('saves a fully customizable Customer preset with flight-only selection', async () => {
+  mount();
+  await open();
+  const flightOnly = screen.getByRole('switch', { name: 'Flight Events Only' });
+  expect(flightOnly).not.toBeChecked();
+  fireEvent.click(flightOnly);
+  await waitFor(() => expect(flightOnly).toBeChecked());
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Save current as Customer' })
+  );
+  await screen.findByText('Customer preset saved');
+  expect(presets.customer).toMatchObject({
+    settings: { next_flight_events_only: true },
+  });
+  fireEvent.click(flightOnly);
+  await waitFor(() => expect(flightOnly).not.toBeChecked());
+  fireEvent.click(screen.getByRole('button', { name: 'Apply Customer' }));
+  await screen.findByText('Customer preset applied');
+  expect(flightOnly).toBeChecked();
+});

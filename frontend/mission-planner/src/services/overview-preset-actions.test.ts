@@ -162,3 +162,39 @@ it('does not confirm a full save or apply from an acknowledgment omitting reques
     /Unconfirmed: Radar/
   );
 });
+
+it('restores all POIs for a legacy preset after a flight-only view, using the observed baseline', async () => {
+  vi.mocked(overviewLinkSettingsApi.get).mockResolvedValue({
+    ...links,
+    next_flight_events_only: true,
+  });
+  vi.mocked(overviewLinkSettingsApi.update).mockResolvedValue({
+    ...links,
+    legend_enabled: false,
+    next_flight_events_only: false,
+  });
+  await applyDisplayPreset({ version: 2, settings: { legend_enabled: false } });
+  expect(overviewLinkSettingsApi.update).toHaveBeenCalledWith(
+    { legend_enabled: false, next_flight_events_only: false },
+    { legend_enabled: true, next_flight_events_only: true }
+  );
+});
+
+it.each(['customer', 'normal', 'communications'] as const)(
+  'captures customizable flight-only selection in %s',
+  async (name) => {
+    const current = { ...links, next_flight_events_only: true };
+    vi.mocked(overviewLinkSettingsApi.get).mockResolvedValue(current);
+    vi.mocked(overviewPresetsApi.save).mockResolvedValue({
+      ...preset,
+      settings: current,
+    });
+    await saveCurrentDisplayPreset(name, 0);
+    expect(overviewPresetsApi.save).toHaveBeenCalledWith(
+      name,
+      current,
+      0,
+      weather
+    );
+  }
+);

@@ -22,6 +22,7 @@ const labels = {
   normal: 'Normal',
   communications: 'Communications',
   weather: 'Weather',
+  customer: 'Customer',
 };
 export function OverviewPresetsCard() {
   const client = useQueryClient();

@@ -38,9 +38,10 @@ class OverviewLinkSettings:
     starshield_events_enabled: bool = True
     ground_entry_point_enabled: bool = True
     configured_satellites_enabled: bool = True
+    next_flight_events_only: bool = False
 
 
-PRESET_NAMES = ("normal", "communications", "weather")
+PRESET_NAMES = ("normal", "communications", "weather", "customer")
 
 
 class OverviewSettingsConflict(Exception):

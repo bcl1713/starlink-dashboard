@@ -8,6 +8,7 @@ from app.api import overview_link_settings
 from app.services.overview_link_settings import OverviewLinkSettingsStore
 
 VISIBLE_DEFAULTS = {
+    "next_flight_events_only": False,
     "operational_clocks_enabled": True,
     "arrival_panel_enabled": True,
     "planned_satellite_panel_enabled": True,
@@ -416,6 +417,7 @@ def test_presets_roundtrip_revision_conflict_restart_and_apply(client, tmp_path)
         "normal": None,
         "communications": None,
         "weather": None,
+        "customer": None,
     }
     bundle = {"latency_panel_enabled": False, "legend_enabled": True}
     saved = client.put(
@@ -532,3 +534,22 @@ def test_preset_retains_display_weather_only_and_legacy_compatibility(client):
     )
     assert legacy.status_code == 200
     assert "weather_visibility" not in legacy.json()
+
+
+def test_flight_only_setting_and_customer_preset_are_strict_and_persist(client, tmp_path):
+    assert client.get(URL).json()["next_flight_events_only"] is False
+    assert client.put(URL, json={"next_flight_events_only": True}).status_code == 200
+    url = "/api/overview-links/presets/customer"
+    bundle = {"next_flight_events_only": True, "x_band_events_enabled": True}
+    response = client.put(url, json={"settings": bundle, "expected_version": 0})
+    assert response.status_code == 200
+    assert response.json() == {"version": 1, "settings": bundle}
+    overview_link_settings.set_overview_link_settings_store(
+        OverviewLinkSettingsStore(tmp_path / "overview-links.json")
+    )
+    assert client.get(URL).json()["next_flight_events_only"] is True
+    assert client.get("/api/overview-links/presets").json()["customer"] == response.json()
+    assert client.put(url, json={"settings": bundle, "expected_version": 0}).status_code == 409
+    for value in (None, 1, "true"):
+        assert client.put(URL, json={"next_flight_events_only": value}).status_code == 422
+    assert client.get(URL).json()["next_flight_events_only"] is True

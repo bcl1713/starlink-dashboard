@@ -22,6 +22,12 @@ const groups = {
         description: 'Show departure, arrival and upcoming POI timing.',
       },
       {
+        field: 'next_flight_events_only',
+        label: 'Flight Events Only',
+        description:
+          'Select only flight events for Next Flight Event. Save this choice in any display preset; map layers remain independently customizable.',
+      },
+      {
         field: 'planned_satellite_panel_enabled',
         label: 'Planned satellite panel',
         description: 'Show the selected satellite and planning state.',
@@ -174,7 +180,11 @@ export function OverviewLinkSettingsCard({
               </span>
               <Switch
                 aria-label={label}
-                checked={data ? (data[field] ?? true) : false}
+                checked={
+                  data
+                    ? (data[field] ?? field !== 'next_flight_events_only')
+                    : false
+                }
                 disabled={!data || isPending}
                 aria-describedby={`${id}-${field}`}
                 onChange={(event) => mutate({ [field]: event.target.checked })}

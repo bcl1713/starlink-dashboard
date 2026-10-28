@@ -82,13 +82,14 @@ function baseline(
 export async function applyDisplayPreset(
   preset: OverviewPreset
 ): Promise<{ legacy: boolean }> {
+  const settings = { next_flight_events_only: false, ...preset.settings };
   if (!preset.weather_visibility) {
     const current = await overviewLinkSettingsApi.get();
     const saved = await overviewLinkSettingsApi.update(
-      preset.settings,
-      baseline(preset.settings, current)
+      settings,
+      baseline(settings, current)
     );
-    confirmFields(preset.settings, saved);
+    confirmFields(settings, saved);
     return { legacy: true };
   }
   const weather = presetWeatherSchema.parse(preset.weather_visibility);
@@ -99,8 +100,8 @@ export async function applyDisplayPreset(
       name: 'Panels and map',
       save: () =>
         overviewLinkSettingsApi
-          .update(preset.settings, baseline(preset.settings, current.links))
-          .then((saved) => confirmFields(preset.settings, saved)),
+          .update(settings, baseline(settings, current.links))
+          .then((saved) => confirmFields(settings, saved)),
     },
     {
       name: 'Radar',

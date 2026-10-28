@@ -1,6 +1,6 @@
 # Overview Customer Flight Events and Shared Advisories
 
-Status: Proposed; awaiting design approval before implementation.
+Status: Approved in the session on 2026-10-28; implementation authorized.
 
 Source: [Issue #426](https://github.com/bcl1713/starlink-dashboard/issues/426).
 Owner correction in this session: implement the customer view through the
