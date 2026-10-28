@@ -4,6 +4,7 @@ import {
   type Page,
   type BrowserContext,
   type Response,
+  type CDPSession,
 } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -89,6 +90,16 @@ async function navigate(page: Page, path: string) {
     history.pushState({}, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
   }, path);
+}
+async function suspendRenderer(cdp: CDPSession) {
+  await cdp.send('Debugger.enable');
+  const paused = new Promise((resolve) => cdp.once('Debugger.paused', resolve));
+  await cdp.send('Debugger.pause');
+  await paused;
+}
+async function resumeRenderer(cdp: CDPSession) {
+  await cdp.send('Debugger.resume');
+  await cdp.send('Debugger.disable');
 }
 
 test('saved records converge across independent laptop and phone contexts with safe recovery', async ({
@@ -440,6 +451,22 @@ test('saved records converge across independent laptop and phone contexts with s
       laptop.getByLabel('Party / Participant (Optional)', { exact: true })
     ).toHaveValue('Laptop unsaved input');
     await laptop
+      .getByRole('button', { name: 'Reread and reconcile', exact: true })
+      .first()
+      .click();
+    await expect(
+      laptop.getByRole('button', {
+        name: /Keep my input using current version/,
+      })
+    ).toBeVisible();
+    const afterExplicitReview = await laptop.evaluate(() =>
+      Object.entries(sessionStorage)
+        .filter(([key]) => key.startsWith('operator-workspace-draft:v1:'))
+        .map(([, value]) => JSON.parse(value))
+        .find((d) => d.input.payload.party === 'Laptop unsaved input')
+    );
+    expect(afterExplicitReview.baseVersion).toBe(draftBefore.baseVersion);
+    await laptop
       .getByRole('button', { name: 'Keep Draft And Return', exact: true })
       .click();
     proof.dirtyDraftAnd409 = {
@@ -447,9 +474,10 @@ test('saved records converge across independent laptop and phone contexts with s
       targetPreserved: true,
       inputPreserved: true,
     };
-    // Genuine page lifecycle suspension; this is distinct from hidden timer tests.
+    // Suspend the actual renderer thread. Chromium ignores the experimental
+    // lifecycle freeze for visible pages; do not fake hidden delivery or clocks.
     const cdp = await phoneContext.newCDPSession(phone);
-    await cdp.send('Page.setWebLifecycleState', { state: 'frozen' });
+    await suspendRenderer(cdp);
     const suspendedCount = requestLog.filter(
       (r) => r.client === 'phone' && r.path.endsWith('/record-changes')
     ).length;
@@ -463,11 +491,13 @@ test('saved records converge across independent laptop and phone contexts with s
       ).length
     ).toBe(suspendedCount);
     const resumed = performance.now();
-    await cdp.send('Page.setWebLifecycleState', { state: 'active' });
+    await resumeRenderer(cdp);
     await expect(
       card(phone, suspended.receipt.saved_records[0].record_id)
     ).toBeVisible();
     proof.suspensionRecoveryMs = performance.now() - resumed;
+    proof.suspensionMechanism =
+      'CDP Debugger renderer-thread pause; visible document, real wall clock';
     await cdp.detach();
     // Real browser offline/online recovery; no responses are fulfilled by tests.
     await phoneContext.setOffline(true);
@@ -601,7 +631,7 @@ test('saved records converge across independent laptop and phone contexts with s
       }
     });
     const batchCdp = await phoneContext.newCDPSession(phone);
-    await batchCdp.send('Page.setWebLifecycleState', { state: 'frozen' });
+    await suspendRenderer(batchCdp);
     for (let n = 0; n < 205; n++)
       await create({
         schema_version: 1,
@@ -620,7 +650,7 @@ test('saved records converge across independent laptop and phone contexts with s
         },
       });
     const batchResume = performance.now();
-    await batchCdp.send('Page.setWebLifecycleState', { state: 'active' });
+    await resumeRenderer(batchCdp);
     await expect(
       phone
         .getByRole('region', { name: 'Current journal entries', exact: true })

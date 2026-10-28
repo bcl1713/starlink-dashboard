@@ -61,15 +61,17 @@ Omit `OPERATOR_SYNC_CHROMIUM` when Playwright's expected browser is installed.
 The test creates separate 1920×1080 laptop and 390×844 phone browser contexts.
 It checks bidirectional scheduling, conference establishment/closure, connected
 customer counts, call rescheduling/cancellation and timeline convergence. It
-also exercises snapshot pagination, dirty drafts and 409, genuine browser
-lifecycle suspension, offline/reconnect, an actual stopped/restarted backend,
-SPA unmount/remount, a 205-record incremental batch, mission isolation and
-actual live-to-simulation store/context replacement.
+also exercises snapshot pagination, dirty drafts and explicit 409 review, CDP
+renderer-thread suspension, offline/reconnect, an actual stopped/restarted
+backend, SPA unmount/remount, a 205-record incremental batch, mission isolation
+and actual live-to-simulation store/context replacement.
 
 All records, routes, telemetry and runtime configuration are synthetic and local
 to the disposable project. No production instance or aircraft hardware is
-involved. Lifecycle suspension evidence is distinguished from unit tests that
-simulate hidden-document events.
+involved. The suspension test pauses/resumes the actual JavaScript renderer with
+CDP Debugger while preserving the real clock; the document remains visible. This
+is distinguished from unit tests that simulate hidden-document events and does
+not claim operating-system suspension/background delivery behavior.
 
 `operator-record-sync-proof.json` records per-operation propagation
 milliseconds, idle request counts by endpoint/client, catch-up measurements and
