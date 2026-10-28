@@ -24,6 +24,10 @@ async function raw(request: APIRequestContext, elapsed = 1764) {
   return json<{ departure: string }>(
     await request.post('/api/_synthetic/transport-inputs', {
       data: { elapsed_seconds: elapsed },
+      // The owned loopback relay bounds connections to 120 seconds. This
+      // idempotent heartbeat must not reuse a connection for the whole scenario.
+      headers: { Connection: 'close' },
+      maxRetries: 1,
     })
   );
 }
