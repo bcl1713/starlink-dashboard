@@ -117,7 +117,11 @@ Retain tombstones and prevent a late older snapshot or poll from replacing a
 newer version. Expose this merged saved-record view to cards, counts and editor
 relationship choices; do not copy it into draft input or alter draft bases.
 Retire overlay entries only when an authoritative snapshot contains an equal or
-newer version. Scope all retained overlay state to mission and identity.
+newer version. Scope all retained overlay state to mission and identity. Retain
+the highest validated version previously displayed when a later snapshot moves
+that record beyond the loaded pages. Shared quarantine state survives
+query-error resets and ends only after a replacement baseline validates its
+captured identity, including for passive editor relationship overlays.
 
 After a batch containing changes is merged, request one refresh of that scope's
 timeline and event projections. Retain their existing refresh behavior for

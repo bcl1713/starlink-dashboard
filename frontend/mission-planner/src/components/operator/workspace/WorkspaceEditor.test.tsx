@@ -131,6 +131,7 @@ beforeEach(() => {
   });
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
   vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    source: { ...health, mission_id: 'mission-a' },
     schema_version: 1,
     items: [],
     cursor: null,

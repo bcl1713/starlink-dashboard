@@ -304,3 +304,71 @@ it('ignores a late old-epoch batch continuation after a new baseline is active',
   expect(hook.result.current.items).toEqual([]);
   expect(hook.result.current.isError).toBe(false);
 });
+
+it('retains the newest displayed snapshot version when later pagination displaces it during a delta outage', async () => {
+  vi.spyOn(api, 'readOperatorRecords')
+    .mockResolvedValueOnce(snapshot())
+    .mockResolvedValueOnce(
+      snapshot([{ ...record, version: 3, journal_seq: 3 }], 3)
+    )
+    .mockResolvedValue({ ...snapshot([], 4), cursor: 'new-snapshot-page-2' });
+  const changes = vi
+    .spyOn(api, 'readOperatorChanges')
+    .mockResolvedValue(
+      snapshot([{ ...record, version: 2, journal_seq: 2 }], 2)
+    );
+  const { wrapper } = setup();
+  const hook = renderHook(() => useWorkspaceRecords('mission-a', identity), {
+    wrapper,
+  });
+  await tick();
+  expect(hook.result.current.items[0].record.version).toBe(2);
+  await act(async () => {
+    await hook.result.current.refetch();
+  });
+  await tick();
+  expect(hook.result.current.items[0].record.version).toBe(3);
+  changes.mockRejectedValue(new Error('delta unavailable'));
+  await act(async () => {
+    hook.result.current.refresh();
+  });
+  await tick();
+  await act(async () => {
+    await hook.result.current.refetch();
+  });
+  await tick();
+  expect(hook.result.current.data?.pages[0].items).toEqual([]);
+  expect(hook.result.current.items[0].record.version).toBe(3);
+});
+
+it('keeps shared quarantine until an identity-validated replacement baseline succeeds', async () => {
+  const baseline = vi
+    .spyOn(api, 'readOperatorRecords')
+    .mockResolvedValue(snapshot());
+  const changes = vi
+    .spyOn(api, 'readOperatorChanges')
+    .mockResolvedValue(snapshot([], 1));
+  const { wrapper } = setup();
+  const hook = renderHook(
+    () => ({
+      owner: useWorkspaceRecords('mission-a', identity),
+      editor: useWorkspaceRecords('mission-a', identity, false),
+    }),
+    { wrapper }
+  );
+  await tick();
+  baseline.mockRejectedValue(new Error('replacement baseline unavailable'));
+  changes.mockRejectedValue(failure(409, 'store_context_changed'));
+  act(() => hook.result.current.owner.refresh());
+  await tick(2050);
+  expect(hook.result.current.owner.data).toBeUndefined();
+  expect(hook.result.current.owner.quarantined).toBe(true);
+  expect(hook.result.current.editor.quarantined).toBe(true);
+  expect(hook.result.current.owner.items).toEqual([]);
+  baseline.mockResolvedValue(snapshot([], 0));
+  changes.mockResolvedValue(snapshot([], 0));
+  act(() => hook.result.current.owner.refresh());
+  await tick();
+  expect(hook.result.current.owner.quarantined).toBe(false);
+  expect(hook.result.current.editor.quarantined).toBe(false);
+});

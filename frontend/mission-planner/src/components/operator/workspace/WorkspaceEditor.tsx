@@ -211,6 +211,7 @@ export function WorkspaceEditor({
   }
   if (
     recoveredConference &&
+    !relationships.quarantined &&
     recoveredConference.identity === operatorIdentity(health.data) &&
     recoveredConference.record.mission_id === draft?.target.missionId
   ) {

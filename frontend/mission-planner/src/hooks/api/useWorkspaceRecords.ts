@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   infiniteQueryOptions,
   useInfiniteQuery,
@@ -93,6 +99,10 @@ interface Updates {
   items: ReadRecord[];
   changed: boolean;
 }
+interface CurrentRecords {
+  items: ReadRecord[];
+  quarantined: boolean;
+}
 function requiresReset(error: unknown) {
   const failure = operatorFailure(error);
   return (
@@ -116,6 +126,13 @@ export function useWorkspaceRecords(
   const options = workspaceRecordsOptions(missionId, identity, expected);
   const key = options.queryKey;
   const updateKey = ['operator-record-updates', missionId, identity];
+  const currentKey = ['operator-record-current', missionId, identity];
+  const current = useQuery<CurrentRecords>({
+    queryKey: currentKey,
+    queryFn: async () => ({ items: [], quarantined: true }),
+    initialData: { items: [], quarantined: true },
+    enabled: false,
+  });
   const enabled = !!missionId && !!identity;
   const records = useInfiniteQuery({
     ...options,
@@ -221,6 +238,12 @@ export function useWorkspaceRecords(
   useEffect(() => {
     if (!owner || !resetError || handled.current === resetError) return;
     handled.current = resetError;
+    // Quarantine belongs to the shared read generation, not a query error that
+    // resetQueries clears. Passive editors must observe the same barrier.
+    client.setQueryData<CurrentRecords>(currentKey, {
+      items: [],
+      quarantined: true,
+    });
     // Query cancellation reverts/ignores old promises even if a transport ignores
     // abort. Reset discards every page/cursor and the old overlay generation.
     void client.cancelQueries({ queryKey: updateKey, exact: true });
@@ -232,6 +255,32 @@ export function useWorkspaceRecords(
   }, [client, owner, resetError, missionId, identity]);
   const sourceChanged =
     requiresReset(records.error) || requiresReset(updates.error);
+  useLayoutEffect(() => {
+    if (!records.data || records.isError || sourceChanged) return;
+    // Keep the highest version ever displayed in this validated generation.
+    // Snapshot replacement may move a newer record beyond the loaded pages;
+    // an older retained delta must never become visible again in its place.
+    client.setQueryData<CurrentRecords>(currentKey, (previous) => ({
+      items: mergeWorkspaceRecords(
+        previous?.quarantined ? [] : (previous?.items ?? []),
+        records.data.pages.flatMap((page) => page.items),
+        updates.data?.items ?? []
+      ),
+      quarantined: false,
+    }));
+    // Primitive key contents identify the generation; current.data is deliberately
+    // not a dependency because this effect is the writer of that cache entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    client,
+    missionId,
+    identity,
+    records.data,
+    records.isError,
+    sourceChanged,
+    updates.data,
+  ]);
+  const quarantined = sourceChanged || (current.data?.quarantined ?? true);
   useEffect(() => {
     if (!owner || !sourceChanged) return;
     void client.invalidateQueries(
@@ -254,14 +303,15 @@ export function useWorkspaceRecords(
   return {
     ...records,
     items:
-      !enabled || sourceChanged
+      !enabled || quarantined
         ? []
         : mergeWorkspaceRecords(
+            current.data?.items ?? [],
             records.data?.pages.flatMap((page) => page.items) ?? [],
             updates.data?.items ?? []
           ),
     isError: records.isError || updates.isError,
-    quarantined: sourceChanged,
+    quarantined,
     refresh,
   };
 }
