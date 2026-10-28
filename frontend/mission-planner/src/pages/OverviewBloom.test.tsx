@@ -53,7 +53,7 @@ it('enables the selected bloom preset on ordinary Overview without showing debug
     </OverviewBloom>
   );
   expect(screen.queryByLabelText('Temporary bloom tuning')).toBeNull();
-  expect(screen.getByTestId('composer').textContent).toBe('bloom:0');
+  expect(screen.getByTestId('composer').textContent).toBe('bloom:0.3');
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).active
   ).toBe(true);
@@ -78,7 +78,7 @@ it('applies controls to the existing scene and copies all current values without
   ).toHaveProperty('value', '0.15');
   expect(
     screen.getByRole('spinbutton', { name: 'Bloom threshold' })
-  ).toHaveProperty('value', '0');
+  ).toHaveProperty('value', '0.3');
   expect(
     screen.getByRole('spinbutton', { name: 'Bloom radius' })
   ).toHaveProperty('value', '0');
@@ -89,12 +89,12 @@ it('applies controls to the existing scene and copies all current values without
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).emission
   ).toEqual({
-    cities: 4,
+    cities: 6,
     cityColor: '#ffbe6f',
     lines: 1.7,
-    particles: 0.1,
+    particles: 0.6,
     pois: 25,
-    aircraft: 1.7,
+    aircraft: 4.3,
   });
   fireEvent.change(
     screen.getByRole('slider', { name: 'Atmosphere glow slider' }),
@@ -181,6 +181,6 @@ it('applies controls to the existing scene and copies all current values without
       <OverviewBloomScene />
     </OverviewBloom>
   );
-  expect(screen.getByTestId('composer').textContent).toBe('bloom:0');
+  expect(screen.getByTestId('composer').textContent).toBe('bloom:0.3');
   expect(screen.queryByLabelText('Temporary bloom tuning')).toBeNull();
 });
