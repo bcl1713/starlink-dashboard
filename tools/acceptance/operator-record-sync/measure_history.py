@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import platform
+import signal
 import sqlite3
 import statistics
 import sys
@@ -90,7 +91,12 @@ def measure(service, repeats):
     return {"revisions": H, "samples": repeats, **timings, "query_plans": plans}
 
 
+def interrupted(signum, _frame):
+    raise InterruptedError(f"Measurement interrupted by signal {signum}")
+
+
 def main():
+    signal.signal(signal.SIGTERM, interrupted)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--revisions", type=int, default=100000)
