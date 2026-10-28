@@ -172,7 +172,7 @@
       <h1>Operator quick reference</h1>
       <p class="important">
         <strong>Before writing:</strong> confirm mission, named leg/gap,
-        original scope and UTC. Unknown occurrence times stay unknown. Planned
+        original scope and Zulu. Unknown occurrence times stay unknown. Planned
         time, actual occurrence and backend recorded time are different.
       </p>
     </header>
@@ -183,7 +183,7 @@
           <ol>
             <li>
               <strong>Create call</strong> for a requirement. A scheduled call
-              needs planned start UTC.
+              needs planned start Zulu.
             </li>
             <li>
               Use <strong>Record completed call</strong> for an event that
@@ -207,17 +207,18 @@
           <ol>
             <li>
               <strong>Create conference</strong>, then report
-              <strong>Establish</strong> and <strong>Verify</strong> after real
-              bridge operations/checks.
+              <strong>Establish</strong> after the real two-way distant-end
+              check, then <strong>Connect Customer</strong>. No separate
+              Verify/Test step. Direct Connection needs no conference.
             </li>
             <li>
               <strong>Customer Joined</strong> records an independent interval.
               Select the correct call/conference and participant.
             </li>
             <li>
-              Check <strong>Report joined now using backend UTC</strong> only
-              for an intentional current join. Otherwise report known UTCs or
-              leave unknown.
+              Check <strong>Report joined now using backend Zulu</strong> only
+              for an intentional current join. Otherwise report known Zulu
+              timestamps or leave unknown.
             </li>
             <li>
               <strong>Interrupt conference</strong> and
@@ -230,8 +231,9 @@
             </li>
             <li>
               <strong>Customer Left</strong> reports departure.
-              <strong>Close conference</strong> does not automatically remove
-              connected customer reports.
+              <strong>Close Conference</strong> is immediate when idle. Resolve
+              actual active calls and connected or unknown customer reports
+              first. Future scheduled calls and history remain.
             </li>
           </ol>
           <p>
@@ -246,7 +248,7 @@
       </div>
       <div>
         <section>
-          <h2>Now, Next and predictions</h2>
+          <h2>Operations, Timeline And Advisories</h2>
           <ul>
             <li><strong>Now:</strong> customers reported connected.</li>
             <li>
@@ -297,9 +299,11 @@
               issue or prove actual routing.
             </li>
             <li>
-              <strong>Notes/History:</strong> retain original scope, UTC
-              precision and unresolved associations. Load all relevant pages and
-              include removed records when auditing.
+              <strong>Notes/History:</strong> Add Note defaults to source Now;
+              backdate with date/hour/minute controls. Retained drafts and
+              retries preserve original scope, Zulu precision and unresolved
+              associations. Load all relevant pages and include removed records
+              when auditing.
             </li>
           </ul>
         </section>

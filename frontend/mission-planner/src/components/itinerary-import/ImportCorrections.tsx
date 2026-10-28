@@ -1,3 +1,4 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import { useState } from 'react';
 import type { ImportOperation } from '../../types/itinerary-import';
 import type { ItineraryData, ExpectedLeg } from '../../types/planning';
@@ -164,57 +165,53 @@ export function ImportCorrections({
                 }
               />
             </label>
-            <label>
-              Departure UTC
-              <Input
-                value={leg.departure_time}
-                onChange={(e) =>
-                  update(leg.id, { departure_time: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Arrival UTC
-              <Input
-                value={leg.arrival_time}
-                onChange={(e) =>
-                  update(leg.id, { arrival_time: e.target.value })
-                }
-              />
-            </label>
+            <UtcDateTime
+              label="Departure"
+              value={leg.departure_time || null}
+              required
+              onChange={(value) =>
+                update(leg.id, { departure_time: value ?? '' })
+              }
+            />
+            <UtcDateTime
+              label="Arrival"
+              value={leg.arrival_time || null}
+              required
+              onChange={(value) =>
+                update(leg.id, { arrival_time: value ?? '' })
+              }
+            />
             {leg.ar_rows?.map((ar) => (
               <div key={ar.id}>
                 <p>{ar.track}</p>
-                <label>
-                  AR entry UTC
-                  <Input
-                    value={ar.entry_time}
-                    onChange={(e) =>
-                      update(leg.id, {
-                        ar_rows: (leg.ar_rows ?? []).map((row) =>
-                          row.id === ar.id
-                            ? { ...row, entry_time: e.target.value }
-                            : row
-                        ),
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  AR exit UTC
-                  <Input
-                    value={ar.exit_time}
-                    onChange={(e) =>
-                      update(leg.id, {
-                        ar_rows: (leg.ar_rows ?? []).map((row) =>
-                          row.id === ar.id
-                            ? { ...row, exit_time: e.target.value }
-                            : row
-                        ),
-                      })
-                    }
-                  />
-                </label>
+                <UtcDateTime
+                  label={`AR entry ${ar.track}`}
+                  value={ar.entry_time || null}
+                  required
+                  onChange={(value) =>
+                    update(leg.id, {
+                      ar_rows: (leg.ar_rows ?? []).map((row) =>
+                        row.id === ar.id
+                          ? { ...row, entry_time: value ?? '' }
+                          : row
+                      ),
+                    })
+                  }
+                />
+                <UtcDateTime
+                  label={`AR exit ${ar.track}`}
+                  value={ar.exit_time || null}
+                  required
+                  onChange={(value) =>
+                    update(leg.id, {
+                      ar_rows: (leg.ar_rows ?? []).map((row) =>
+                        row.id === ar.id
+                          ? { ...row, exit_time: value ?? '' }
+                          : row
+                      ),
+                    })
+                  }
+                />
               </div>
             ))}
           </fieldset>

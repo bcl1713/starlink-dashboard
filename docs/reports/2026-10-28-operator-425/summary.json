@@ -1,0 +1,98 @@
+{
+  "candidateSha": "4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+  "project": "starlink-operator-425-r8",
+  "checksPassed": true,
+  "fixture": "Synthetic raw KML, RF catalogs and controlled telemetry inputs; live source clock; normal production startup, mission context, prediction, journal and Nginx; no aircraft or RF hardware claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+      "id": "sha256:a87fb60b2bb7900e5c744942de37548eabe67f2238af2afaa12b3fa142c47128",
+      "revision": "4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+    },
+    "frontend": {
+      "tag": "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+      "id": "sha256:3ebd0f18dee007a42c0b41d8dec9341228b3f8baa732fc7aa2ec01bf018cb938",
+      "revision": "4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+    }
+  },
+  "sourceArchiveSha256": "447b75211ea11e280a38b6059db19d87016e0b91d3ba615e9b0f465f13a8bd9a",
+  "qualification": {
+    "synthetic": true,
+    "productionAPIs": true,
+    "browserVersion": "156.0.8078.4",
+    "locale": "en-US",
+    "timezone": "Pacific/Honolulu",
+    "browserErrors": [],
+    "captures": [
+      "1920x1080",
+      "390x844",
+      "844x390"
+    ],
+    "stableCloseGeometry": {
+      "before": {
+        "x": 360,
+        "y": 942.71875,
+        "width": 706.96875,
+        "height": 422.578125
+      },
+      "established": {
+        "x": 360,
+        "y": 327.71875,
+        "width": 706.96875,
+        "height": 422.578125
+      },
+      "closed": {
+        "x": 360,
+        "y": 327.71875,
+        "width": 706.96875,
+        "height": 422.578125
+      },
+      "actionBefore": {
+        "x": 380,
+        "y": 623.296875,
+        "width": 184,
+        "height": 44
+      },
+      "actionAfter": {
+        "x": 380,
+        "y": 623.296875,
+        "width": 184,
+        "height": 44
+      },
+      "neighborBefore": {
+        "x": 360,
+        "y": 1381.296875,
+        "width": 706.96875,
+        "height": 359
+      },
+      "neighborAfter": {
+        "x": 360,
+        "y": 766.296875,
+        "width": 706.96875,
+        "height": 359
+      }
+    },
+    "bridgeReuseAndIndependentCustomers": true,
+    "directCall": true,
+    "repeatedTimelineSelection": true,
+    "rescheduleUpdatesOverlap": true,
+    "inlineRetainsOvernightDraft": true,
+    "cancelPreservesConference": true,
+    "problemAndUpdate": true,
+    "adHocServiceTransport": true,
+    "interruptedSaveSameKey": true,
+    "displayControlParity": true
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

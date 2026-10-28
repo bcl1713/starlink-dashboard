@@ -32,7 +32,7 @@ it('retains conference draft when the disclosure is closed and reopened', async 
   disclosure.open = true;
   fireEvent(disclosure, new Event('toggle'));
   fireEvent.click(
-    await screen.findByRole('button', { name: 'New conference' })
+    await screen.findByRole('button', { name: 'New Conference' })
   );
   fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
     target: { value: 'Retain synthetic draft' },
@@ -84,16 +84,16 @@ it('retains an acknowledged draft when current-state reread fails', async () => 
     expect(
       (
         screen.getByRole('button', {
-          name: 'New conference',
+          name: 'New Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'New conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'New Conference' }));
   fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
     target: { value: 'Retain acknowledged draft' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
   await screen.findByText(/acknowledged.*current.*unavailable/i);
   expect(
     (screen.getByLabelText('Conference name (optional)') as HTMLInputElement)
@@ -102,7 +102,7 @@ it('retains an acknowledged draft when current-state reread fails', async () => 
   expect(
     (
       screen.getByRole('button', {
-        name: 'Save conference',
+        name: 'Save Conference',
       }) as HTMLButtonElement
     ).disabled
   ).toBe(true);
@@ -129,7 +129,7 @@ it('releases all mutation guards after visible store-epoch reconciliation', asyn
     expect(
       (
         screen.getByRole('button', {
-          name: 'New conference',
+          name: 'New Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
@@ -162,7 +162,7 @@ it('releases all mutation guards after visible store-epoch reconciliation', asyn
     expect(
       (
         screen.getByRole('button', {
-          name: 'New conference',
+          name: 'New Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
@@ -181,6 +181,7 @@ it('owns a lost quick-action command until receipt reconciliation', async () => 
       ...record.payload,
       entry_type: 'conference' as const,
       status: 'established' as const,
+      verified_at: '2026-10-17T16:00:00Z',
     },
   };
   vi.spyOn(api, 'readOperatorRecords').mockImplementation(async (filters) =>
@@ -203,12 +204,12 @@ it('owns a lost quick-action command until receipt reconciliation', async () => 
     expect(
       (
         screen.getByRole('button', {
-          name: 'Customer Joined',
+          name: 'Connect Customer',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Customer Joined' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Connect Customer' }));
   await screen.findByRole('button', { name: 'Retry same customer save' });
   expect(dirty).toHaveBeenLastCalledWith(true);
   view.unmount();
@@ -224,6 +225,7 @@ it('offers explicit recovery when the edited record is absent in a restored stor
       ...record.payload,
       entry_type: 'conference' as const,
       status: 'established' as const,
+      verified_at: '2026-10-17T16:00:00Z',
     },
   };
   const healthRead = vi
@@ -248,12 +250,12 @@ it('offers explicit recovery when the edited record is absent in a restored stor
     expect(
       (
         screen.getByRole('button', {
-          name: 'Correct conference',
+          name: 'Correct Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Correct conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Correct Conference' }));
   fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
     target: { value: 'Keep recovered draft' },
   });
@@ -287,6 +289,7 @@ it('releases navigation when clock capture fails before any mutation', async () 
       ...record.payload,
       entry_type: 'conference' as const,
       status: 'established' as const,
+      verified_at: '2026-10-17T16:00:00Z',
     },
   };
   let failClock = false;
@@ -308,13 +311,13 @@ it('releases navigation when clock capture fails before any mutation', async () 
     expect(
       (
         screen.getByRole('button', {
-          name: 'Customer Joined',
+          name: 'Connect Customer',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
   );
   failClock = true;
-  fireEvent.click(screen.getByRole('button', { name: 'Customer Joined' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Connect Customer' }));
   await screen.findByText('Clock snapshot unavailable');
   expect(dirty).toHaveBeenLastCalledWith(false);
   view.unmount();

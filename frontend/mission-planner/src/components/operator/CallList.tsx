@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import type { ReadRecord, SavedRecord } from '@/types/operator';
 import { preparationAt } from './callTiming';
-import { callTestReported, type CallAction } from './callCommands';
+import { customerConnectionReady, type CallAction } from './callCommands';
 import {
   sessionOutsideContext,
   type ConferenceAction,
@@ -8,7 +9,7 @@ import {
 import type { CallAssociation } from './callAssociation';
 const callUtc = (value: string | null) =>
   value
-    ? `${new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))} UTC`
+    ? `${new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))} Zulu`
     : 'Unknown';
 const button =
   'min-h-11 rounded-lg border bg-background px-4 py-2 font-medium shadow-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
@@ -27,8 +28,12 @@ export function CallList({
   onCustomerAction,
   currentAssociation,
   isSessionCurrent = () => true,
+  selectedRecordId,
+  renderAdvisory,
 }: {
   isSessionCurrent?: (record: SavedRecord) => boolean;
+  selectedRecordId?: string | null;
+  renderAdvisory?: (call: SavedRecord) => ReactNode;
   items: ReadRecord[];
   activeOnly?: boolean;
   archivedOnly?: boolean;
@@ -97,22 +102,131 @@ export function CallList({
           record.payload.entry_type === 'participation' &&
           record.payload.call_id === r.record_id
       );
-      const connected = customers.filter(
+      const resumed = new Set(
+        customers.flatMap((customer) =>
+          customer.payload.entry_type === 'participation' &&
+          customer.payload.resumes_participation_id
+            ? [customer.payload.resumes_participation_id]
+            : []
+        )
+      );
+      const currentCustomers = customers.filter(
+        (customer) => !resumed.has(customer.record_id)
+      );
+      const unresolvedCustomer = currentCustomers.some(
+        (customer) =>
+          customer.payload.entry_type === 'participation' &&
+          customer.payload.state === 'unknown'
+      );
+      const connected = currentCustomers.filter(
         (record) =>
           record.payload.entry_type === 'participation' &&
           record.payload.state === 'connected'
       );
       const ongoing =
         !r.deleted && !['completed', 'cancelled'].includes(payload.status);
-      const tested = callTestReported(r, records);
+      const ready = customerConnectionReady(
+        r,
+        records,
+        (target) =>
+          isSessionCurrent(target) &&
+          (target.record_type !== 'conference' ||
+            !sessionOutsideContext(target, currentAssociation))
+      );
+      const direct = !payload.conference_id;
+      const interrupted = currentCustomers.find(
+        (customer) =>
+          customer.payload.entry_type === 'participation' &&
+          customer.payload.state === 'interrupted'
+      );
+      const customerLeft = (customer: SavedRecord) =>
+        'Report Customer Left' +
+        (connected.length > 1 && customer.payload.entry_type === 'participation'
+          ? ` · ${customer.payload.participant ?? customer.payload.title}`
+          : '');
+      const canFinish =
+        !!r.time.occurred_at &&
+        !incomplete &&
+        !unresolvedCustomer &&
+        connected.length === 0;
+      const finishedCustomers =
+        currentCustomers.length > 0 &&
+        currentCustomers.every(
+          (customer) =>
+            customer.payload.entry_type === 'participation' &&
+            customer.payload.state === 'left'
+        );
+      type NextAction = { label: string; disabled: boolean; run: () => void };
+      let establishment: NextAction | null = null;
+      if (ongoing && onCallAction && !ready) {
+        if (direct)
+          establishment = {
+            label: 'Establish',
+            disabled,
+            run: () => onCallAction(r, 'establish'),
+          };
+        else if (bridge && bridgePayload && onConferenceAction) {
+          const restore =
+            !previousSession && bridgePayload.status === 'interrupted';
+          establishment = {
+            label: restore ? 'Restore Bridge' : 'Establish Bridge',
+            disabled,
+            run: () =>
+              onConferenceAction(
+                bridge,
+                restore ? 'restore_connection' : 'establish'
+              ),
+          };
+        } else
+          establishment = {
+            label: 'Choose Conference',
+            disabled,
+            run: () => onEdit(r),
+          };
+      }
+      let primary: NextAction | null = null;
+      if (ongoing && onCallAction) {
+        if (connected.length) {
+          primary = {
+            label: customerLeft(connected[0]),
+            disabled: disabled || !onCustomerAction,
+            run: () => onCustomerAction?.(connected[0], 'left'),
+          };
+        } else if (r.time.occurred_at && finishedCustomers) {
+          primary = {
+            label: 'Finish Call',
+            disabled: disabled || !canFinish,
+            run: () => onCallAction(r, 'finish'),
+          };
+        } else if (establishment) {
+          primary = establishment;
+        } else if (interrupted && onCustomerAction) {
+          primary = {
+            label: 'Restore Customer',
+            disabled: disabled || incomplete || unresolvedCustomer,
+            run: () => onCustomerAction(interrupted, 'restore'),
+          };
+        } else
+          primary = {
+            label: 'Connect Customer',
+            disabled: disabled || incomplete || unresolvedCustomer,
+            run: () => onCallAction(r, 'connect'),
+          };
+      }
       return (
         <li
           key={r.record_id}
+          id={`operator-record-${r.record_id}`}
+          data-record-id={r.record_id}
+          data-selected={selectedRecordId === r.record_id || undefined}
           className={
             'min-w-0 space-y-3 break-words rounded-xl border p-4 [overflow-wrap:anywhere] ' +
             (ongoing && onCallAction
               ? 'border-2 border-l-4 border-l-sky-500 border-sky-500/60 bg-sky-500/5 shadow-md'
-              : 'bg-card shadow-sm')
+              : 'bg-card shadow-sm') +
+            (selectedRecordId === r.record_id
+              ? ' ring-2 ring-primary ring-offset-2'
+              : '')
           }
         >
           <h4 className="text-xl font-bold">
@@ -123,208 +237,215 @@ export function CallList({
             {r.payload.status === 'cancelled'
               ? 'Canceled'
               : r.time.occurred_at && ongoing
-                ? 'In progress'
-                : r.payload.status}{' '}
-            · {r.payload.communications_kind ?? 'Type unknown'}
+                ? 'In Progress'
+                : r.payload.status.replace(/\b\w/g, (c) => c.toUpperCase())}
+            {r.payload.communications_kind &&
+              ` · ${{ voice: 'Voice', vtc: 'VTC', other: 'Other' }[r.payload.communications_kind]}`}
           </p>
           <p className="text-sm">
             Planned: {callUtc(r.time.planned_start_at)} · End:{' '}
             {callUtc(r.time.planned_end_at)}
           </p>
-          <p className="text-sm">
-            Actual: {callUtc(r.time.occurred_at)} · End:{' '}
-            {callUtc(r.time.ended_at)}
-          </p>
-          {prep && (
+          {renderAdvisory?.(r)}
+          {r.time.occurred_at && (
             <p className="text-sm">
-              Prepare: {callUtc(prep)}
-              {asOf
-                ? Date.parse(prep) <= Date.parse(asOf)
-                  ? ' · Due at snapshot'
-                  : ' · Upcoming at snapshot'
-                : ''}
+              Actual: {callUtc(r.time.occurred_at)}
+              {r.time.ended_at ? ` · End: ${callUtc(r.time.ended_at)}` : ''}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Operator reported · freshness {item.freshness.status} · association{' '}
-            {item.association.status} · {r.scope.replaceAll('_', ' ')}
+          <p className="text-sm">
+            {payload.conference_id
+              ? `Conference: ${bridgePayload?.title ?? 'Unavailable'}`
+              : 'Direct Connection'}
+            {connected.length
+              ? ` · ${connected.length} Customer${connected.length === 1 ? '' : 's'} Connected`
+              : ''}
           </p>
-          {onCallAction && (
+          {onCallAction && ongoing && (
             <>
-              <p className="text-sm">
-                Bridge:{' '}
-                {previousSession && bridgePayload?.status !== 'closed'
-                  ? 'Previous activity report · not assumed available here · '
-                  : ''}
-                {bridgePayload?.title ? `${bridgePayload.title} · ` : ''}
-                {bridgePayload
-                  ? `${bridgePayload.status ?? 'unknown'} · ${bridgePayload.verified_at ? 'verification reported' : 'not verified'}`
-                  : payload.conference_id
-                    ? 'Unresolved'
-                    : 'Not assigned (optional for voice)'}
-              </p>
-              <p className="text-sm">
-                Customer:{' '}
-                {connected.length
-                  ? `${connected.length} reported connected`
-                  : incomplete
-                    ? 'Reports incomplete'
-                    : customers.length
-                      ? 'No current connection reported'
-                      : 'No connection reported'}{' '}
-                · Call test: {tested ? 'reported in Notes' : 'not reported'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Operator reports; these actions do not control hardware.
-              </p>
-              {ongoing && (
-                <div className="flex flex-wrap gap-2">
-                  {!r.time.occurred_at && (
-                    <button
-                      className={button + ' bg-primary text-primary-foreground'}
-                      disabled={disabled}
-                      onClick={() => onCallAction(r, 'start')}
-                    >
-                      Start call
-                    </button>
-                  )}
-                  {!bridge && (
-                    <button
-                      className={button}
-                      disabled={disabled}
-                      onClick={() => onEdit(r)}
-                    >
-                      Choose bridge
-                    </button>
-                  )}
-                  {bridge && bridgePayload && onConferenceAction && (
-                    <>
-                      {(['preparing', 'unknown', 'closed'].includes(
-                        bridgePayload.status ?? 'unknown'
-                      ) ||
-                        previousSession) && (
-                        <button
-                          className={button}
-                          disabled={disabled}
-                          onClick={() =>
-                            onConferenceAction(bridge, 'establish')
-                          }
-                        >
-                          {bridgePayload.status === 'closed' || previousSession
-                            ? 'Reopen bridge'
-                            : 'Establish bridge'}
-                        </button>
-                      )}
-                      {!previousSession &&
-                        bridgePayload.status === 'interrupted' && (
-                          <button
-                            className={button}
-                            disabled={disabled}
-                            onClick={() =>
-                              onConferenceAction(bridge, 'restore_connection')
-                            }
-                          >
-                            Restore bridge
-                          </button>
-                        )}
-                      {!previousSession &&
-                        bridgePayload.status === 'established' &&
-                        !bridgePayload.verified_at && (
-                          <button
-                            className={button}
-                            disabled={disabled}
-                            onClick={() => onConferenceAction(bridge, 'verify')}
-                          >
-                            Verify bridge
-                          </button>
-                        )}
-                    </>
-                  )}
-                  {r.time.occurred_at && (
-                    <>
-                      {!connected.length && (
-                        <button
-                          className={
-                            button + ' bg-primary text-primary-foreground'
-                          }
-                          disabled={disabled || incomplete}
-                          onClick={() => onCallAction(r, 'connect')}
-                        >
-                          Report customer connected
-                        </button>
-                      )}
-                      {!tested && (
-                        <button
-                          className={button}
-                          disabled={disabled}
-                          onClick={() => onCallAction(r, 'test')}
-                        >
-                          Report call tested
-                        </button>
-                      )}
-                      {connected.map((customer) => (
-                        <button
-                          key={customer.record_id}
-                          className={button}
-                          disabled={disabled}
-                          onClick={() => onCustomerAction?.(customer, 'left')}
-                        >
-                          Report customer left
-                          {connected.length > 1 &&
-                          customer.payload.entry_type === 'participation'
-                            ? ` · ${customer.payload.participant ?? customer.payload.title}`
-                            : ''}
-                        </button>
-                      ))}
-                      <button
-                        className={button}
-                        disabled={
-                          disabled || incomplete || connected.length > 0
-                        }
-                        onClick={() => onCallAction(r, 'finish')}
-                      >
-                        Finish call
-                      </button>
-                      {connected.length > 0 && (
-                        <p className="text-sm">
-                          Report the customer leaving before finishing. The
-                          bridge stays available for reuse.
-                        </p>
-                      )}
-                    </>
-                  )}
-                  <button
-                    className={button}
-                    disabled={disabled || !!r.time.occurred_at}
-                    onClick={() => onCallAction(r, 'cancel')}
-                  >
-                    Cancel call
-                  </button>
-                </div>
+              {payload.conference_id && !bridge && (
+                <p role="status">
+                  Conference unavailable. Choose a conference before connecting.
+                </p>
+              )}
+              {previousSession && (
+                <p role="status">
+                  Previous activity report. Establish this conference in the
+                  current context before connecting.
+                </p>
+              )}
+              {bridgePayload?.status === 'established' &&
+                !bridgePayload.verified_at && (
+                  <p role="status">
+                    Complete establishment before connecting the customer.
+                  </p>
+                )}
+              {interrupted && (
+                <p role="status">Customer connection interrupted.</p>
+              )}
+              {unresolvedCustomer && (
+                <p role="status">
+                  Customer state unknown. Review customer reports before
+                  connecting or finishing.
+                </p>
+              )}
+              {!!connected.length && establishment && (
+                <p role="status">
+                  Establishment needs updating. Open Call Details.
+                </p>
+              )}
+              {incomplete && (
+                <p role="status">
+                  Customer reports incomplete. Load remaining records before
+                  connecting or finishing.
+                </p>
+              )}
+              {item.freshness.status === 'stale' && (
+                <p role="status">
+                  Last-known call report. Refresh before using this state.
+                </p>
+              )}
+              {item.association.status !== 'resolved' && (
+                <p role="status">
+                  Call association {item.association.status}. Review Call
+                  Details.
+                </p>
               )}
             </>
           )}
-          <div className="flex flex-wrap gap-2">
+          {primary && (
             <button
-              className={button}
-              disabled={disabled || r.deleted}
-              onClick={() => onEdit(r)}
+              className={button + ' ws-primary'}
+              data-primary-action
+              disabled={primary.disabled}
+              onClick={primary.run}
             >
-              {onCallAction && ongoing && !r.time.occurred_at
-                ? 'Reschedule'
-                : 'Edit call'}
+              {primary.label}
             </button>
-            <button className={button} onClick={() => onHistory(r.record_id)}>
-              Call history
-            </button>
-            <button
-              className={button}
-              disabled={disabled}
-              onClick={() => onTransition(r)}
-            >
-              {r.deleted ? 'Restore call' : 'Remove call'}
-            </button>
-          </div>
+          )}
+          <details className="border-t pt-3">
+            <summary className="min-h-11 cursor-pointer py-2">
+              Call Details
+            </summary>
+            <div className="space-y-3 pt-2">
+              {prep && (
+                <p className="text-sm">
+                  Prepare: {callUtc(prep)}
+                  {asOf
+                    ? Date.parse(prep) <= Date.parse(asOf)
+                      ? ' · Due at snapshot'
+                      : ' · Upcoming at snapshot'
+                    : ''}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Operator reported · freshness {item.freshness.status} ·
+                association {item.association.status} ·{' '}
+                {r.scope.replaceAll('_', ' ')}
+              </p>
+              {bridgePayload && (
+                <p className="text-sm">
+                  Conference status: {bridgePayload.status ?? 'unknown'}
+                  {bridgePayload.verified_at
+                    ? ` · Establishment check reported: ${callUtc(bridgePayload.verified_at)}`
+                    : ''}
+                </p>
+              )}
+              {payload.established_at && (
+                <p className="text-sm">
+                  Direct establishment reported:{' '}
+                  {callUtc(payload.established_at)}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Operator reports; these actions do not control hardware.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ongoing && onCallAction && (
+                  <>
+                    {establishment && primary !== establishment && (
+                      <button
+                        className={button}
+                        disabled={establishment.disabled}
+                        onClick={establishment.run}
+                      >
+                        {establishment.label}
+                      </button>
+                    )}
+                    {connected.slice(1).map((customer) => (
+                      <button
+                        key={customer.record_id}
+                        className={button}
+                        disabled={disabled}
+                        onClick={() => onCustomerAction?.(customer, 'left')}
+                      >
+                        {customerLeft(customer)}
+                      </button>
+                    ))}
+                    {!connected.length &&
+                      primary?.label !== 'Connect Customer' && (
+                        <button
+                          className={button}
+                          disabled={
+                            disabled ||
+                            incomplete ||
+                            unresolvedCustomer ||
+                            !ready
+                          }
+                          onClick={() => onCallAction(r, 'connect')}
+                        >
+                          Connect Customer
+                        </button>
+                      )}
+                    {r.time.occurred_at && primary?.label !== 'Finish Call' && (
+                      <button
+                        className={button}
+                        disabled={disabled || !canFinish}
+                        onClick={() => onCallAction(r, 'finish')}
+                      >
+                        Finish Call
+                      </button>
+                    )}
+                    {!!connected.length && (
+                      <p className="text-sm">
+                        Report the customer leaving before finishing. The bridge
+                        stays available for reuse.
+                      </p>
+                    )}
+                    <button
+                      className={button}
+                      disabled={disabled || !!r.time.occurred_at}
+                      onClick={() => onCallAction(r, 'cancel')}
+                    >
+                      Cancel Call
+                    </button>
+                  </>
+                )}
+                <button
+                  className={button}
+                  disabled={disabled || r.deleted}
+                  onClick={() => onEdit(r)}
+                >
+                  {onCallAction && ongoing && !r.time.occurred_at
+                    ? 'Reschedule'
+                    : 'Edit Call'}
+                </button>
+                <button
+                  className={button}
+                  onClick={() => onHistory(r.record_id)}
+                >
+                  Call History
+                </button>
+                <button
+                  className={button}
+                  disabled={disabled}
+                  onClick={() => onTransition(r)}
+                >
+                  {r.deleted ? 'Restore Call' : 'Remove Call'}
+                </button>
+              </div>
+            </div>
+          </details>
         </li>
       );
     });

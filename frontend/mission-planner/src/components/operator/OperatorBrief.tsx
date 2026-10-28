@@ -15,7 +15,7 @@ function operatorUtc(value: string | null | undefined) {
   return new Date(value)
     .toISOString()
     .replace('T', ' ')
-    .replace(/\.\d+Z$/, ' UTC');
+    .replace(/\.\d+Z$/, ' Zulu');
 }
 function SummaryRecord({ item, now }: { item: ReadRecord; now: number }) {
   const { record, freshness, association } = item;

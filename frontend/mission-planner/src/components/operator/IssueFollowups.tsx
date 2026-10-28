@@ -30,7 +30,7 @@ export function IssueFollowups({
   return (
     <aside
       aria-label="Issue follow-up snapshot"
-      className="sticky top-0 z-10 min-w-0 rounded border bg-background p-3 text-sm shadow"
+      className="min-w-0 rounded border bg-background p-3 text-sm shadow"
     >
       <a
         className="inline-flex min-h-11 items-center font-medium underline"

@@ -137,7 +137,19 @@ export function MissionTimelineContents({
           )}
         </div>
         <div className="ws-timeline-event">
-          <h3>{entry.title}</h3>
+          <h3>
+            {event && onOpenSource ? (
+              <button
+                className="ws-timeline-focus"
+                onClick={() => onOpenSource(event)}
+                aria-label={`Focus ${entry.title}`}
+              >
+                {entry.title}
+              </button>
+            ) : (
+              entry.title
+            )}
+          </h3>
           {entry.leg && <p className="ws-meta">{entry.leg}</p>}
           <p className="ws-meta">
             {label}

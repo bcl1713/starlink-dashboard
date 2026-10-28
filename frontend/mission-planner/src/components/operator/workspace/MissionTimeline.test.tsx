@@ -282,3 +282,27 @@ it.each(['age', 'failure'])(
     vi.useRealTimers();
   }
 );
+
+it('keeps a directly selectable compact chronology on phones without opening the full timeline', () => {
+  vi.stubGlobal('matchMedia', () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  const select = vi.fn();
+  render(
+    <MissionTimeline
+      timeline={state([
+        eventFixture({ title: 'Bravo Preparation', kind: 'call_prep' }),
+      ])}
+      onOpenSource={select}
+    />
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Focus Bravo Preparation' })
+  );
+  expect(select).toHaveBeenCalledWith(
+    expect.objectContaining({ title: 'Bravo Preparation' })
+  );
+  expect(screen.queryByRole('dialog')).toBeNull();
+});

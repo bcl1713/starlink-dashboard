@@ -28,7 +28,7 @@ it('searches only loaded records and keeps removed records available for restora
       onTransition={vi.fn()}
     />
   );
-  fireEvent.change(screen.getByLabelText('Search loaded records'), {
+  fireEvent.change(screen.getByLabelText('Search Loaded Records'), {
     target: { value: 'Synthetic' },
   });
   expect(

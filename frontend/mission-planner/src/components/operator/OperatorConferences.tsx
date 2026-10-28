@@ -174,7 +174,7 @@ export function OperatorConferences({
           disabled={disabled || !!draft}
           onClick={() => edit()}
         >
-          New conference
+          New Conference
         </button>
         <button
           className={button}
@@ -373,6 +373,8 @@ export function OperatorConferences({
             key={record.record_id}
             record={record}
             participations={records}
+            calls={records}
+            incomplete={!complete}
             disabled={disabled || !!draft}
             onAction={(a) =>
               action((now) => conferenceCommand(record, a, now), record)
@@ -382,7 +384,10 @@ export function OperatorConferences({
               action(
                 (now) =>
                   joinCommand(
-                    participationDraft(missionId, record.record_id),
+                    {
+                      ...participationDraft(missionId, record.record_id),
+                      connect_customer: true,
+                    },
                     now
                   ),
                 record

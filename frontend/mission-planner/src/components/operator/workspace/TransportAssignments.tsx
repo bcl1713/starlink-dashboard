@@ -1,3 +1,4 @@
+import { transportLabel } from '../transportLabel';
 import {
   catalogTransportKey,
   type TransportEligibility,
@@ -209,7 +210,7 @@ function AssignmentCard({
       <h3 className="break-words text-lg font-semibold">{service.name}</h3>
       <p className="break-words">
         Current reported transport:{' '}
-        <strong>{assignment?.transport ?? 'Not reported'}</strong>
+        <strong>{assignment?.transport ?? 'Not Reported'}</strong>
         {current && !usable(current) && ' (unavailable for this mission)'}
         {previous?.archived
           ? ' (archived)'
@@ -257,7 +258,18 @@ function AssignmentCard({
             )}
             {choices.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name}
+                {[
+                  'Ka',
+                  'Ka-band',
+                  'Ka Band',
+                  'KA',
+                  'X',
+                  'X-band',
+                  'Starlink',
+                  'Starshield',
+                ].includes(t.name)
+                  ? transportLabel(t.id)
+                  : t.name}
               </option>
             ))}
           </select>

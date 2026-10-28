@@ -127,18 +127,52 @@ export function MissionTimeline({
     <section className="ws-timeline" aria-label="Mission timeline">
       {narrow ? (
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <button
-              className="ws-timeline-launch ws-button"
-              aria-label="Open mission timeline"
-            >
-              <span>
-                <strong>Mission timeline</strong>
-                <span className="ws-meta">{summary}</span>
-              </span>
-              <span aria-hidden="true">View all →</span>
-            </button>
-          </DialogTrigger>
+          <div
+            className="ws-timeline-strip"
+            aria-label="Compact Mission Chronology"
+          >
+            <DialogTrigger asChild>
+              <button
+                className="ws-timeline-launch ws-timeline-chip"
+                aria-label="Open mission timeline"
+                title={summary}
+              >
+                <strong>
+                  Timeline ·{' '}
+                  {Number.isFinite(now)
+                    ? `${new Date(now).toISOString().slice(11, 16)} Zulu`
+                    : 'Time Unknown'}
+                </strong>
+                <span>{summary}</span>
+              </button>
+            </DialogTrigger>
+            {snapshot?.events
+              .filter(
+                (event) =>
+                  event.active &&
+                  (!event.end_at || Date.parse(event.end_at) >= now)
+              )
+              .slice(0, 8)
+              .map((event) => (
+                <button
+                  key={event.event_id}
+                  className="ws-timeline-chip"
+                  aria-label={`Focus ${event.title}`}
+                  onClick={() => source(event)}
+                  disabled={!onOpenSource}
+                >
+                  <strong>{event.title}</strong>
+                  <span>
+                    {event.due_at
+                      ? timelineTime(event.due_at, snapshot.as_of)
+                      : 'Timing Unknown'}
+                    {stale || event.freshness !== 'fresh'
+                      ? ' · Last Known'
+                      : ''}
+                  </span>
+                </button>
+              ))}
+          </div>
           <DialogContent className="ws-timeline-dialog">
             <div className="ws-timeline-dialog-header">
               <DialogTitle>Mission timeline</DialogTitle>

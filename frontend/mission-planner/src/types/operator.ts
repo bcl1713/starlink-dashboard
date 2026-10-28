@@ -40,6 +40,8 @@ export interface CallPayload extends PayloadBase {
   entry_type: 'call';
   status: 'tentative' | 'scheduled' | 'delayed' | 'completed' | 'cancelled';
   conference_id: string | null;
+  direct_transport?: string | null;
+  established_at?: string | null;
   party?: string | null;
   coordinator?: string | null;
   communications_kind?: 'voice' | 'vtc' | 'other' | null;
@@ -62,8 +64,8 @@ export interface ConferencePayload extends PayloadBase {
     | null;
   coordinator?: string | null;
   verified_at?: string | null;
-  intended_transport?: Transport | null;
-  configured_transport?: Transport | null;
+  intended_transport?: string | null;
+  configured_transport?: string | null;
   configuration_reported_at?: string | null;
 }
 export interface ParticipationPayload extends PayloadBase {
@@ -82,6 +84,7 @@ export interface ConferenceInput
 export interface ParticipationInput
   extends Omit<JournalInput, 'record_type' | 'payload'> {
   record_type: 'participation';
+  connect_customer?: boolean;
   payload: ParticipationPayload;
 }
 export interface IssuePayload extends PayloadBase {
@@ -181,6 +184,7 @@ export type OperatorCommand =
         expected_version: number;
         replacement_check_row_ids?: string[];
         establish_session?: boolean;
+        begin_customer_connect?: boolean;
         audit_note?: string | null;
       };
     }

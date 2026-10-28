@@ -1,0 +1,58 @@
+{
+  "starlink-operator-425-r1": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r2": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r3": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r4": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r5": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r6": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r7": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  },
+  "starlink-operator-425-r8": {
+    "containers": "",
+    "networks": "",
+    "volumes": "",
+    "listener": [],
+    "ownedProcesses": []
+  }
+}

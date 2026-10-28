@@ -1,3 +1,4 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import { useState } from 'react';
 import {
   Table,
@@ -171,27 +172,20 @@ export function KuOutageConfig({
               <TableCell>
                 <div>
                   {/* datetime-local input with step="60" for 1-minute precision (no seconds) */}
-                  <Input
-                    type="datetime-local"
-                    step="60"
-                    value={newOutage.start_time ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setNewOutage({
-                        ...newOutage,
-                        start_time: value,
-                      });
+                  <UtcDateTime
+                    label="Ku outage start"
+                    value={newOutage.start_time || null}
+                    onChange={(at) => {
+                      const value = at ?? '';
+                      setNewOutage({ ...newOutage, start_time: value });
                       setStartTimeError(validateDatetime(value));
-                      // Re-validate duration if end time exists
-                      if (newOutage.end_time) {
-                        const dur = calculateDuration(
-                          value,
-                          newOutage.end_time
+                      if (newOutage.end_time)
+                        setDurationError(
+                          validateDuration(
+                            calculateDuration(value, newOutage.end_time)
+                          )
                         );
-                        setDurationError(validateDuration(dur));
-                      }
                     }}
-                    className={startTimeError ? 'border-destructive' : ''}
                   />
                   {/* Helper text guides users to enter time in 24-hour format */}
                   <p className="text-xs text-muted-foreground mt-1">
@@ -225,27 +219,20 @@ export function KuOutageConfig({
               </TableCell>
               <TableCell>
                 <div>
-                  <Input
-                    type="datetime-local"
-                    step="60"
-                    value={newOutage.end_time ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setNewOutage({
-                        ...newOutage,
-                        end_time: value,
-                      });
+                  <UtcDateTime
+                    label="Ku outage end"
+                    value={newOutage.end_time || null}
+                    onChange={(at) => {
+                      const value = at ?? '';
+                      setNewOutage({ ...newOutage, end_time: value });
                       setEndTimeError(validateDatetime(value));
-                      // Re-validate duration if start time exists
-                      if (newOutage.start_time) {
-                        const dur = calculateDuration(
-                          newOutage.start_time,
-                          value
+                      if (newOutage.start_time)
+                        setDurationError(
+                          validateDuration(
+                            calculateDuration(newOutage.start_time, value)
+                          )
                         );
-                        setDurationError(validateDuration(dur));
-                      }
                     }}
-                    className={endTimeError ? 'border-destructive' : ''}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     24-hour format (HH:mm)

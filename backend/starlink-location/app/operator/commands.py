@@ -4,7 +4,12 @@ import json
 from uuid import uuid4
 
 from .clock import observation_now
-from .conference_actions import conference_audit_reason, validate_conference_update
+from .conference_actions import (
+    conference_audit_reason,
+    validate_call_begin,
+    validate_conference_update,
+    validate_customer_connection,
+)
 from .errors import OperatorError
 from .event_models import AckReceipt
 from .issue_actions import issue_audit_reason, validate_issue_update
@@ -59,7 +64,13 @@ def execute_in_transaction(
     if command.operation in ("create", "update"):
         command.validate_for_acceptance(clock)
         validate_transport_update(current, command)
-        validate_conference_update(current, command, clock)
+        validate_conference_update(current, command, clock, connection)
+        validate_customer_connection(
+            connection, command, replay_run_id, operating_context_id
+        )
+        validate_call_begin(
+            connection, current, command, replay_run_id, operating_context_id
+        )
         validate_issue_update(connection, current, command, clock)
         content = {name: getattr(command, name) for name in RecordInput.model_fields}
     else:
@@ -111,15 +122,27 @@ def execute_in_transaction(
         and command.operation == "update"
         and getattr(command, "establish_session", False)
     ):
-        if (
-            current.record_type != "conference"
-            or content["payload"].status != "established"
-            or content["payload"].verified_at is not None
-        ):
+        payload = content["payload"]
+        conference_establishment = (
+            current.record_type == "conference"
+            and payload.status == "established"
+            and (
+                payload.verified_at is None
+                or payload.verified_at == content["time"].occurred_at
+            )
+        )
+        direct_establishment = (
+            current.record_type == "call"
+            and payload.conference_id is None
+            and payload.established_at is not None
+            and content["time"].occurred_at is not None
+            and payload.status not in ("completed", "cancelled")
+        )
+        if not (conference_establishment or direct_establishment):
             raise OperatorError(
                 "validation_error",
                 fields={
-                    "establish_session": "Establishment requires a conference report with cleared verification"
+                    "establish_session": "Establishment requires a conference or direct call with a two-way check"
                 },
             )
         report_run, report_context = replay_run_id, operating_context_id

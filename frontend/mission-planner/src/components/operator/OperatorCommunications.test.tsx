@@ -100,15 +100,15 @@ function details() {
 it('saves a correction, refreshes an independent summary, and preserves unknown prep', async () => {
   const { writes } = mount();
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Edit Call' })).toBeTruthy()
   );
   completed();
-  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Call' }));
   details();
   fireEvent.change(screen.getByLabelText('Notes (optional)'), {
     target: { value: 'Corrected synthetic note' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   await waitFor(() => expect(screen.getByText('Call saved.')).toBeTruthy());
   expect(screen.getByTestId('independent-summary').textContent).toBe(
     'Corrected synthetic note'
@@ -121,11 +121,11 @@ it('saves a correction, refreshes an independent summary, and preserves unknown 
 it('retains dirty drafts through refresh and uncertain retry uses the same request', async () => {
   const { writes, client } = mount();
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Edit Call' })).toBeTruthy()
   );
   completed();
-  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
-  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Call' }));
+  fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
     target: { value: 'Local unsaved participant' },
   });
   await act(async () => {
@@ -134,7 +134,7 @@ it('retains dirty drafts through refresh and uncertain retry uses the same reque
   expect(
     (
       screen.getByLabelText(
-        'Party / participant (optional)'
+        'Party / Participant (Optional)'
       ) as HTMLInputElement
     ).value
   ).toBe('Local unsaved participant');
@@ -145,7 +145,7 @@ it('retains dirty drafts through refresh and uncertain retry uses the same reque
         rejectFirst = reject;
       })
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   await waitFor(() =>
     expect(
       screen.getByRole('button', { name: 'Retry same call save' })
@@ -178,16 +178,16 @@ it('retains dirty drafts through refresh and uncertain retry uses the same reque
 it('remove/restore preserves completed timing and never invents preparation', async () => {
   mount();
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Remove call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Remove Call' })).toBeTruthy()
   );
   completed();
-  fireEvent.click(screen.getByRole('button', { name: 'Remove call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Call' }));
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Restore call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Restore Call' })).toBeTruthy()
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Restore call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Restore Call' }));
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Remove call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Remove Call' })).toBeTruthy()
   );
   expect(screen.queryByText(/^Prepare:/)).toBeNull();
 });
@@ -230,10 +230,10 @@ it('does not apply an old mission receipt to a new keyed mission workspace', asy
   fireEvent.click(
     screen.getByRole('button', { name: 'Log unscheduled/completed call' })
   );
-  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+  fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
     target: { value: 'Old mission draft' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   await waitFor(() => expect(screen.getByText('Saving call…')).toBeTruthy());
   view.rerender(tree('mission-b'));
   await act(async () => {
@@ -246,7 +246,7 @@ it('does not apply an old mission receipt to a new keyed mission workspace', asy
   expect(
     (
       screen.getByLabelText(
-        'Party / participant (optional)'
+        'Party / Participant (Optional)'
       ) as HTMLInputElement
     ).value
   ).toBe('');
@@ -255,11 +255,11 @@ it('does not apply an old mission receipt to a new keyed mission workspace', asy
 it('does not reopen a historical receipt when the current-state reread fails', async () => {
   const { writes } = mount();
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Edit Call' })).toBeTruthy()
   );
   completed();
-  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
-  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Call' }));
+  fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
     target: { value: 'Retained local draft' },
   });
   vi.mocked(api.readOperatorRecord).mockRejectedValueOnce(
@@ -270,14 +270,14 @@ it('does not reopen a historical receipt when the current-state reread fails', a
     command_id: 'historical',
     saved_records: [original],
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   await waitFor(() =>
     expect(screen.getByText(/Call save acknowledged/)).toBeTruthy()
   );
   expect(
     (
       screen.getByLabelText(
-        'Party / participant (optional)'
+        'Party / Participant (Optional)'
       ) as HTMLInputElement
     ).value
   ).toBe('Retained local draft');
@@ -287,7 +287,7 @@ it('does not reopen a historical receipt when the current-state reread fails', a
   expect(
     (
       screen
-        .getByRole('button', { name: 'Save call' })
+        .getByRole('button', { name: 'Save Call' })
         .closest('fieldset') as HTMLFieldSetElement
     ).disabled
   ).toBe(true);
@@ -314,7 +314,7 @@ it('does not reopen a historical receipt when the current-state reread fails', a
     expect(
       (
         screen.getByLabelText(
-          'Party / participant (optional)'
+          'Party / Participant (Optional)'
         ) as HTMLInputElement
       ).value
     ).toBe('Remote correction')
@@ -323,17 +323,17 @@ it('does not reopen a historical receipt when the current-state reread fails', a
 it('keeps raw preparation and duration edits when retaining a draft in a replacement store', async () => {
   const { client } = mount();
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Edit Call' })).toBeTruthy()
   );
   completed();
-  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Call' }));
   details();
   fireEvent.change(
-    screen.getByLabelText('Preparation lead minutes (blank = unknown)'),
+    screen.getByLabelText('Preparation Lead Minutes (blank = unknown)'),
     { target: { value: '25' } }
   );
   fireEvent.change(
-    screen.getByLabelText('Duration minutes (blank = unknown)'),
+    screen.getByLabelText('Duration Minutes (blank = unknown)'),
     { target: { value: '30' } }
   );
   const replacement = {
@@ -371,14 +371,14 @@ it('keeps raw preparation and duration edits when retaining a draft in a replace
   expect(
     (
       screen.getByLabelText(
-        'Preparation lead minutes (blank = unknown)'
+        'Preparation Lead Minutes (blank = unknown)'
       ) as HTMLInputElement
     ).value
   ).toBe('25');
   expect(
     (
       screen.getByLabelText(
-        'Duration minutes (blank = unknown)'
+        'Duration Minutes (blank = unknown)'
       ) as HTMLInputElement
     ).value
   ).toBe('30');
@@ -386,13 +386,13 @@ it('keeps raw preparation and duration edits when retaining a draft in a replace
 it('does not label an edited draft saved after a previous acknowledgment', async () => {
   mount();
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Edit call' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Edit Call' })).toBeTruthy()
   );
   completed();
-  fireEvent.click(screen.getByRole('button', { name: 'Edit call' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   await waitFor(() => expect(screen.getByText('Call saved.')).toBeTruthy());
-  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+  fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
     target: { value: 'Unsaved participant' },
   });
   expect(screen.queryByText('Call saved.')).toBeNull();

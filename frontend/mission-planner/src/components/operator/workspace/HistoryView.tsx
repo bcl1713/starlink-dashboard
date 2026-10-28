@@ -39,14 +39,14 @@ export function HistoryView({
   );
   return (
     <section aria-label={notesOnly ? 'Notes' : 'History'} className="space-y-3">
-      <h2>{notesOnly ? 'Notes and observations' : 'History'}</h2>
+      <h2>{notesOnly ? 'Notes And Observations' : 'History'}</h2>
       <p>
         Open a record’s history for immutable revisions, provenance and
         removals.
       </p>
       <div className="ws-draft-context">
         <label>
-          Search loaded records
+          Search Loaded Records
           <input
             className="ws-field"
             value={search}
@@ -54,13 +54,13 @@ export function HistoryView({
           />
         </label>
         <label>
-          Record type
+          Record Type
           <select
             className="ws-field"
             value={type}
             onChange={(event) => setType(event.target.value)}
           >
-            <option value="">All loaded types</option>
+            <option value="">All Loaded Types</option>
             {[
               ...new Set(
                 eligible.map(({ record }) => record.payload.entry_type)
@@ -73,13 +73,13 @@ export function HistoryView({
           </select>
         </label>
         <label>
-          Scope filter
+          Scope Filter
           <select
             className="ws-field"
             value={scope}
             onChange={(event) => setScope(event.target.value)}
           >
-            <option value="">All scopes</option>
+            <option value="">All Scopes</option>
             {['mission', 'preflight', 'leg', 'between_legs', 'postflight'].map(
               (scope) => (
                 <option key={scope} value={scope}>

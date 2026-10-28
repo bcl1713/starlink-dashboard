@@ -1,3 +1,4 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { telemetryArchivesApi } from '@/services/telemetry-archives';
@@ -248,16 +249,12 @@ export function MissionFlightEvents({
                   </select>
                 </label>
                 {!['destination_complete', 'intermediate'].includes(kind) && (
-                  <label>
-                    Observed time (UTC){' '}
-                    <input
-                      aria-label="Observed time (UTC)"
-                      type="datetime-local"
-                      required
-                      value={time}
-                      onChange={(event) => setTime(event.target.value)}
-                    />
-                  </label>
+                  <UtcDateTime
+                    label="Observed time"
+                    required
+                    value={time ? `${time}:00Z` : null}
+                    onChange={(value) => setTime(value?.slice(0, 16) ?? '')}
+                  />
                 )}
                 <label>
                   Reason{' '}

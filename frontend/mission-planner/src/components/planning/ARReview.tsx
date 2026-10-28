@@ -1,3 +1,4 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import type {
   ARMatchCandidates,
   ExpectedLeg,
@@ -287,38 +288,32 @@ export function ARReview({
                   }
                 />
               </label>
-              <label>
-                Entry UTC {row.track}
-                <Input
-                  aria-label={`Entry UTC ${row.track}`}
-                  value={row.entry_time}
-                  aria-invalid={!validTime}
-                  onChange={(e) =>
-                    update(row.id, {
-                      entry_time: e.target.value,
-                      start_anchor: null,
-                      end_anchor: null,
-                      match_status: 'unresolved',
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Exit UTC {row.track}
-                <Input
-                  aria-label={`Exit UTC ${row.track}`}
-                  value={row.exit_time}
-                  aria-invalid={!validTime}
-                  onChange={(e) =>
-                    update(row.id, {
-                      exit_time: e.target.value,
-                      start_anchor: null,
-                      end_anchor: null,
-                      match_status: 'unresolved',
-                    })
-                  }
-                />
-              </label>
+              <UtcDateTime
+                label={`Entry ${row.track}`}
+                value={row.entry_time || null}
+                required
+                onChange={(value) =>
+                  update(row.id, {
+                    entry_time: value ?? '',
+                    start_anchor: null,
+                    end_anchor: null,
+                    match_status: 'unresolved',
+                  })
+                }
+              />
+              <UtcDateTime
+                label={`Exit ${row.track}`}
+                value={row.exit_time || null}
+                required
+                onChange={(value) =>
+                  update(row.id, {
+                    exit_time: value ?? '',
+                    start_anchor: null,
+                    end_anchor: null,
+                    match_status: 'unresolved',
+                  })
+                }
+              />
               <details
                 aria-label={`Advanced altitude units ${row.track}`}
                 open={!row.confirmed_units}

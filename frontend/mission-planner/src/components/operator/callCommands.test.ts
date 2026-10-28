@@ -1,7 +1,11 @@
 import { expect, it } from 'vitest';
 import { record } from '@/test/operator-fixtures';
 import { callDraft } from './callDraft';
-import { callCommand, callTestReported } from './callCommands';
+import {
+  callCommand,
+  callTestReported,
+  customerConnectionReady,
+} from './callCommands';
 const call = { ...record, ...callDraft(undefined, 'planned', 'mission-a') };
 it('starts and finishes without inventing bridge or customer states', () => {
   const start = callCommand(call, 'start', '2026-10-20T11:00:00Z');
@@ -54,4 +58,52 @@ it('keeps a test observation inside the existing title length contract', () => {
   const command = callCommand(long, 'test', '2026-10-20T11:01:00Z');
   if (command.operation !== 'create') throw new Error('expected observation');
   expect(command.body.payload.title.length).toBeLessThanOrEqual(200);
+});
+
+it('establishes a direct call with a two-way check, retaining reported transport', () => {
+  const direct = {
+    ...call,
+    payload: { ...call.payload, direct_transport: 'Ka' },
+  };
+  const command = callCommand(direct, 'establish', '2026-10-20T11:00:00Z');
+  expect(command).toMatchObject({
+    operation: 'update',
+    body: {
+      expected_version: 1,
+      time: { occurred_at: '2026-10-20T11:00:00Z', end_state: 'ongoing' },
+      payload: {
+        established_at: '2026-10-20T11:00:00Z',
+        direct_transport: 'Ka',
+        conference_id: null,
+      },
+    },
+  });
+  if (command.operation !== 'update') throw new Error('expected update');
+  const established = { ...direct, ...command.body };
+  expect(customerConnectionReady(direct, [])).toBe(false);
+  expect(customerConnectionReady(established, [])).toBe(true);
+});
+it('requires current combined bridge establishment before customer connection', () => {
+  const linked = {
+    ...call,
+    payload: { ...call.payload, conference_id: 'bridge' },
+  };
+  const bridge = {
+    ...record,
+    record_id: 'bridge',
+    record_type: 'conference' as const,
+    payload: {
+      ...record.payload,
+      entry_type: 'conference' as const,
+      status: 'established' as const,
+      verified_at: null,
+    },
+  };
+  expect(customerConnectionReady(linked, [bridge])).toBe(false);
+  const checked = {
+    ...bridge,
+    payload: { ...bridge.payload, verified_at: '2026-10-20T11:00:00Z' },
+  };
+  expect(customerConnectionReady(linked, [checked])).toBe(true);
+  expect(customerConnectionReady(linked, [checked], () => false)).toBe(false);
 });

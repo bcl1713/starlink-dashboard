@@ -23,11 +23,11 @@ it('keeps applied-only entry direct and does not require a reason or request', a
     target: { value: 'IPTV' },
   });
   fireEvent.click(screen.getByLabelText('Reported Applied 1'));
-  fireEvent.change(screen.getByLabelText('Applied transport 1'), {
+  fireEvent.change(screen.getByLabelText('Applied Transport 1'), {
     target: { value: 'Ka' },
   });
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save transport decision' })
+    screen.getByRole('button', { name: 'Save Transport Decision' })
   );
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].body).toMatchObject({

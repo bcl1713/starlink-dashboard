@@ -227,7 +227,7 @@ it('does not confirm a save when the server returns a malformed acknowledgment',
 it('keeps mission planning reachable without an ambiguous Configuration link', () => {
   mount();
   expect(
-    screen.getByRole('link', { name: 'Mission planning' }).getAttribute('href')
+    screen.getByRole('link', { name: 'Mission Planning' }).getAttribute('href')
   ).toBe('/missions/synthetic-demo');
   expect(
     screen.queryByRole('button', { name: 'Show display controls' })

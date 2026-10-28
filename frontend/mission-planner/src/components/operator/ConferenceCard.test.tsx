@@ -37,7 +37,9 @@ it('conference close keeps customer connected with conspicuous discrepancy', () 
     />
   );
   expect(screen.getByRole('alert').textContent).toMatch(/continuity unknown/i);
-  expect(screen.getByText(/Customer reported connected: 1/)).toBeTruthy();
+  expect(
+    screen.getByText('Customers Reported Connected').parentElement?.textContent
+  ).toContain('1');
 });
 it('one-tap customer actions need no note or confirmation', () => {
   const action = vi.fn();
@@ -56,7 +58,7 @@ it('one-tap customer actions need no note or confirmation', () => {
   expect(action).toHaveBeenCalledWith('left');
   expect(screen.queryByRole('dialog')).toBeNull();
 });
-it('Restore connection and Restore record are distinct', () => {
+it('Restore connection and Restore Record are distinct', () => {
   const interrupted = {
     ...customer,
     payload: { ...customer.payload, state: 'interrupted' },
@@ -84,7 +86,7 @@ it('Restore connection and Restore record are distinct', () => {
       onRemove={vi.fn()}
     />
   );
-  expect(screen.getByRole('button', { name: 'Restore record' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /Restore record/i })).toBeTruthy();
   expect(
     screen.queryByRole('button', { name: 'Restore connection' })
   ).toBeNull();
@@ -127,9 +129,130 @@ it('offers explicit reestablishment of a historical session without claiming rea
   expect(action).toHaveBeenCalledWith('establish');
 });
 
-it('keeps active bridge actions visible without expanding a disclosure', () => {
+it('keeps Establish and eligible Close in the same primary slot and moves rare actions to details', () => {
   const action = vi.fn();
-  const join = vi.fn();
+  const props = {
+    participations: [],
+    calls: [],
+    disabled: false,
+    onAction: action,
+    onEdit: vi.fn(),
+    onJoin: vi.fn(),
+    onHistory: vi.fn(),
+    onRemove: vi.fn(),
+  };
+  const view = render(<ConferenceCard {...props} record={conference} />);
+  const establish = screen.getByRole('button', { name: /^Establish$/ });
+  const slot = establish.parentElement;
+  const style = establish.className;
+  fireEvent.click(establish);
+  expect(action).toHaveBeenCalledWith('establish');
+  view.rerender(
+    <ConferenceCard
+      {...props}
+      record={{
+        ...conference,
+        payload: {
+          ...conference.payload,
+          entry_type: 'conference',
+          status: 'established',
+          verified_at: '2026-10-17T16:00:00Z',
+        },
+      }}
+    />
+  );
+  const close = screen.getByRole('button', { name: 'Close Conference' });
+  expect(close.parentElement).toBe(slot);
+  expect(close.className).toBe(style);
+  expect(close.hasAttribute('disabled')).toBe(false);
+  expect(screen.queryByRole('button', { name: /^Verify$/ })).toBeNull();
+  fireEvent.click(close);
+  expect(action).toHaveBeenCalledWith('close');
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(
+    screen
+      .getByRole('button', { name: 'Correct Conference' })
+      .closest('details')
+  ).toBeTruthy();
+});
+it('guards close for connected or unresolved customers and actual calls but ignores future-only calls', () => {
+  const established = {
+    ...conference,
+    payload: {
+      ...conference.payload,
+      entry_type: 'conference' as const,
+      status: 'established' as const,
+      verified_at: '2026-10-17T16:00:00Z',
+    },
+  };
+  const future = {
+    ...record,
+    record_type: 'call' as const,
+    time: {
+      ...record.time,
+      occurred_at: null,
+      ended_at: null,
+      planned_start_at: '2026-10-18T16:00:00Z',
+    },
+    payload: {
+      ...record.payload,
+      entry_type: 'call' as const,
+      status: 'scheduled' as const,
+      conference_id: conference.record_id,
+    },
+  };
+  const props = {
+    record: established,
+    participations: [],
+    calls: [future],
+    disabled: false,
+    onAction: vi.fn(),
+    onEdit: vi.fn(),
+    onJoin: vi.fn(),
+    onHistory: vi.fn(),
+    onRemove: vi.fn(),
+  };
+  const view = render(<ConferenceCard {...props} />);
+  expect(
+    screen
+      .getByRole('button', { name: 'Close Conference' })
+      .hasAttribute('disabled')
+  ).toBe(false);
+  view.rerender(<ConferenceCard {...props} participations={[customer]} />);
+  expect(
+    screen
+      .getByRole('button', { name: 'Close Conference' })
+      .hasAttribute('disabled')
+  ).toBe(true);
+  view.rerender(
+    <ConferenceCard
+      {...props}
+      calls={[
+        {
+          ...future,
+          time: {
+            ...future.time,
+            occurred_at: '2026-10-17T15:00:00Z',
+            end_state: 'ongoing',
+          },
+        },
+      ]}
+    />
+  );
+  expect(
+    screen
+      .getByRole('button', { name: 'Close Conference' })
+      .hasAttribute('disabled')
+  ).toBe(true);
+  view.rerender(<ConferenceCard {...props} incomplete />);
+  expect(
+    screen
+      .getByRole('button', { name: 'Close Conference' })
+      .hasAttribute('disabled')
+  ).toBe(true);
+});
+it('allows an explicit two-way check report for a legacy session with existing customer activity', () => {
+  const action = vi.fn();
   render(
     <ConferenceCard
       record={{
@@ -138,31 +261,20 @@ it('keeps active bridge actions visible without expanding a disclosure', () => {
           ...conference.payload,
           entry_type: 'conference',
           status: 'established',
+          verified_at: null,
         },
       }}
-      participations={[]}
+      participations={[customer]}
       disabled={false}
-      compactActions
-      prominentActions
       onAction={action}
       onEdit={vi.fn()}
-      onJoin={join}
+      onJoin={vi.fn()}
       onHistory={vi.fn()}
       onRemove={vi.fn()}
     />
   );
-  for (const name of [
-    'Verify',
-    'Interrupt conference',
-    'Close conference',
-    'Correct conference',
-    'Customer Joined',
-  ]) {
-    const button = screen.getByRole('button', { name });
-    expect(button.closest('details')).toBeNull();
-  }
-  fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Customer Joined' }));
-  expect(action).toHaveBeenCalledWith('verify');
-  expect(join).toHaveBeenCalledTimes(1);
+  const establish = screen.getByRole('button', { name: 'Establish' });
+  expect(establish.hasAttribute('disabled')).toBe(false);
+  fireEvent.click(establish);
+  expect(action).toHaveBeenCalledWith('establish');
 });

@@ -34,10 +34,10 @@ it('makes first-use call, conference and customer reporting discoverable', () =>
       {...actions}
     />
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Create call' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Create conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Schedule Call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
   fireEvent.click(
-    screen.getByRole('button', { name: 'Report customer joined' })
+    screen.getByRole('button', { name: 'Report Customer Joined' })
   );
   expect(actions.onCreateCall).toHaveBeenCalledOnce();
   expect(actions.onCreateConference).toHaveBeenCalledOnce();
@@ -74,6 +74,7 @@ it('exposes conference reuse and independent customer interruption with the actu
       name: 'Use this session for another customer',
     })
   ).toBeNull();
+  fireEvent.click(screen.getByText('Customer Intervals And Previous Activity'));
   fireEvent.click(screen.getByRole('button', { name: 'Interrupt customer' }));
   expect(actions.onCustomerAction).toHaveBeenCalledWith(
     customer,
@@ -89,6 +90,8 @@ it('offers reuse once a bridge is established', () => {
   } as SavedRecord;
   if (conference.payload.entry_type === 'conference')
     conference.payload.status = 'established';
+  if (conference.payload.entry_type === 'conference')
+    conference.payload.verified_at = '2026-10-17T16:00:00Z';
   const actions = callbacks();
   render(
     <CommunicationsView
@@ -100,7 +103,7 @@ it('offers reuse once a bridge is established', () => {
   );
   fireEvent.click(
     screen.getByRole('button', {
-      name: 'Use this session for another customer',
+      name: 'Connect Customer',
     })
   );
   expect(actions.onJoin).toHaveBeenCalledWith(conference);
@@ -111,6 +114,11 @@ it('keeps active bridge independent and closed definitions reusable', () => {
     ...record,
     ...conferenceDraft('mission-a'),
     record_id: 'bridge',
+    payload: {
+      ...conferenceDraft('mission-a').payload,
+      status: 'established',
+      verified_at: '2026-10-17T16:00:00Z',
+    },
   } as SavedRecord;
   const actions = callbacks();
   const props = {
@@ -122,9 +130,9 @@ it('keeps active bridge independent and closed definitions reusable', () => {
   const { rerender } = render(
     <CommunicationsView {...props} items={page([bridge]).items} />
   );
-  expect(screen.getByRole('heading', { name: 'Active Calls' })).toBeTruthy();
-  expect(screen.getByRole('heading', { name: 'Active Bridges' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Close conference' }));
+  expect(screen.getByRole('heading', { name: 'Calls' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Conferences' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /Close Conference/i }));
   expect(actions.onConferenceAction).toHaveBeenCalledWith(bridge, 'close');
   const closed = {
     ...bridge,
@@ -202,8 +210,12 @@ it('retains multiple independent bridges and customer reports when a call finish
       items={page([bridge, other, call, customer]).items}
     />
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Start call' }));
-  expect(actions.onCallAction).toHaveBeenCalledWith(call, 'start');
+  fireEvent.click(
+    within(screen.getByRole('region', { name: 'Calls' })).getByRole('button', {
+      name: 'Establish',
+    })
+  );
+  expect(actions.onCallAction).toHaveBeenCalledWith(call, 'establish');
   const finished = {
     ...call,
     payload: { ...call.payload, status: 'completed' },
@@ -215,6 +227,7 @@ it('retains multiple independent bridges and customer reports when a call finish
     />
   );
   expect(screen.getAllByRole('article').length).toBeGreaterThanOrEqual(2);
+  fireEvent.click(screen.getByText('Customer Intervals And Previous Activity'));
   fireEvent.click(screen.getByRole('button', { name: 'Customer Left' }));
   expect(actions.onCustomerAction).toHaveBeenCalledWith(customer, 'left');
   expect(screen.queryByRole('button', { name: 'Start call' })).toBeNull();
@@ -244,4 +257,48 @@ it('excludes a bridge session reported in another phase', () => {
     />
   );
   expect(screen.queryByRole('article')).toBeNull();
+});
+
+it('keeps conference definitions in stable order across establishment and close', () => {
+  const a = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    record_id: 'a',
+    payload: {
+      ...conferenceDraft('mission-a').payload,
+      title: 'Alpha',
+      status: 'closed',
+    },
+  } as SavedRecord;
+  const b = {
+    ...a,
+    record_id: 'b',
+    payload: { ...a.payload, title: 'Bravo', status: 'established' },
+  } as SavedRecord;
+  const props = { disabled: false, incomplete: false, ...callbacks() };
+  const { rerender } = render(
+    <CommunicationsView {...props} items={page([a, b]).items} />
+  );
+  expect(
+    screen.getAllByRole('article').map((el) => el.getAttribute('aria-label'))
+  ).toEqual(['Conference Alpha', 'Conference Bravo']);
+  rerender(
+    <CommunicationsView
+      {...props}
+      items={
+        page([
+          {
+            ...a,
+            payload: { ...a.payload, status: 'established' },
+          } as SavedRecord,
+          b,
+        ]).items
+      }
+    />
+  );
+  expect(
+    screen.getAllByRole('article').map((el) => el.getAttribute('aria-label'))
+  ).toEqual(['Conference Alpha', 'Conference Bravo']);
+  expect(screen.getByRole('region', { name: 'Conferences' })).toBeTruthy();
+  expect(screen.getByRole('region', { name: 'Calls' })).toBeTruthy();
 });

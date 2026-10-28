@@ -1,3 +1,4 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import type { MissionLeg } from '../../types/mission';
@@ -258,41 +259,14 @@ export function TimingSection({
           <label className="text-sm font-medium block mb-1">
             Current Departure (UTC)
           </label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <input
-                id="departure-date"
-                type="date"
-                value={editedDepartureTime.slice(0, 10)}
-                onChange={(e) =>
-                  handleDepartureTimeChange(
-                    e.target.value + editedDepartureTime.slice(10)
-                  )
-                }
-                className="w-full px-3 py-2 border rounded-md font-mono text-sm"
-                disabled={isUpdating}
-              />
-            </div>
-            <div className="flex-1">
-              {/* Text input with pattern ensures 24-hour format (HH:mm) across all browsers */}
-              <input
-                id="departure-time"
-                type="text"
-                pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
-                placeholder="HH:mm (e.g., 14:30)"
-                value={editedDepartureTime.slice(11, 16)}
-                onChange={(e) =>
-                  handleDepartureTimeChange(
-                    editedDepartureTime.slice(0, 11) + e.target.value
-                  )
-                }
-                className={`w-full px-3 py-2 border rounded-md font-mono text-sm ${
-                  timeFormatError ? 'border-destructive' : ''
-                }`}
-                disabled={isUpdating}
-              />
-            </div>
-          </div>
+          <UtcDateTime
+            label="Current departure"
+            value={editedDepartureTime ? `${editedDepartureTime}:00Z` : null}
+            disabled={isUpdating}
+            onChange={(value) =>
+              handleDepartureTimeChange(value?.slice(0, 16) ?? '')
+            }
+          />
           {timeFormatError && (
             <p className="text-sm text-destructive mt-1">{timeFormatError}</p>
           )}

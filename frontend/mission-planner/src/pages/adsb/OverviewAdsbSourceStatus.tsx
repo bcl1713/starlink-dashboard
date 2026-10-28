@@ -1,3 +1,4 @@
+import { formatTime24Hour } from '@/lib/utils';
 import { useOverviewAdsbLayer } from '@/hooks/useOverviewAdsbLayer';
 import { ConfigurationSection } from '../ConfigurationSection';
 export function OverviewAdsbSourceStatus() {
@@ -50,11 +51,14 @@ export function OverviewAdsbSourceStatus() {
                 Last success:{' '}
                 {source.last_success_at_ms === null
                   ? 'Unavailable'
-                  : new Date(source.last_success_at_ms).toLocaleString()}
+                  : formatTime24Hour(
+                      new Date(source.last_success_at_ms).toISOString()
+                    )}
               </p>
               {source.retry_at_ms !== null && (
                 <p className="text-xs text-muted-foreground">
-                  Retry after: {new Date(source.retry_at_ms).toLocaleString()}
+                  Retry after:{' '}
+                  {formatTime24Hour(new Date(source.retry_at_ms).toISOString())}
                 </p>
               )}
             </dd>

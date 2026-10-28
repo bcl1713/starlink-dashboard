@@ -101,7 +101,7 @@ def test_legacy_transport_key_replays_after_catalog_fields_added(service, record
     command = CreateRecord.model_validate(
         decision(record_data, row(applied={"transport": "X"}))
     )
-    body = command.model_dump(mode="json")
+    body = command.model_dump(mode="json", exclude={"connect_customer"})
     for item in body["payload"]["services"]:
         item.pop("service_id", None)
         item["applied"].pop("transport_id", None)

@@ -1,0 +1,70 @@
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ uv run --python 3.11 --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+All done! ✨ 🍰 ✨
+839 files would be left unchanged.
+stage=uv elapsed=7.82s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator/backend/starlink-location) $ uv run --python 3.11 --with-requirements requirements-dev.txt ruff check app tests
+All checks passed!
+stage=uv elapsed=0.04s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ python tools/check_filename_convention.py
+Checking filename conventions in docs...
+All markdown files follow the naming convention.
+stage=python elapsed=0.03s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ npm --prefix frontend/mission-planner exec -- prettier --check frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}
+Checking formatting...
+All matched files use Prettier code style!
+stage=npm elapsed=10.01s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ npm --prefix frontend/mission-planner run lint
+
+> mission-planner@0.0.0 lint
+> eslint .
+
+stage=npm elapsed=36.68s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ markdownlint-cli2 docs/**/*.md
+markdownlint-cli2 v0.19.1 (markdownlint v0.39.0)
+Finding: docs/**/*.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 527 file(s)
+Summary: 0 error(s)
+stage=markdownlint-cli2 elapsed=5.24s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ python3 tools/check_docs_links.py docs/
+Checking internal documentation files and anchors (required)
+🔍 1651 Total (in 0s) ✅ 1418 OK 🚫 0 Errors 👻 233 Excluded
+Checking external documentation links (advisory)
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Error (cached)
+[429] https://api.adsb.lol/api/openapi.json | Error (cached)
+[429] https://api.adsb.lol/docs | Error (cached)
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+Issues found in 4 inputs. Find details below.
+
+[docs/reports/2026-10-03-overview-adsb-aircraft-layer.md]:
+[429] https://api.adsb.lol/docs | Error (cached)
+
+[docs/reports/2026-10-17-operator-displays/static-ci-limitations.txt]:
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+[429] https://api.adsb.lol/api/openapi.json | Error (cached)
+[429] https://api.adsb.lol/docs | Error (cached)
+
+[docs/superpowers/plans/2026-10-03-overview-adsb-aircraft-layer.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/superpowers/specs/2026-10-03-overview-adsb-aircraft-addon-design.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+🔍 1651 Total (in 1s) ✅ 190 OK 🚫 8 Errors 👻 1453 Excluded
+::warning title=External documentation links::External check did not pass: Lychee exited with status 2; see link report above. Internal files and anchors passed; external availability is nonblocking.
+stage=python3 elapsed=1.97s exit=0
+(/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator) $ python3 -m pytest -q tools/tests/test_acceptance_platform_typing_policy.py tools/tests/test_docs_links.py tools/tests/test_backend_ci.py tools/tests/test_backend_test_runner.py tools/tests/test_verify.py tools/tests/test_quality_gate_workflow.py
+/home/oracle-worker/.cache/uv/archive-v0/CTQzFA39exHoKWxf/lib/python3.11/site-packages/pytest_asyncio/plugin.py:300: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 47%]
+........................................................................ [ 94%]
+........                                                                 [100%]
+152 passed in 32.11s
+stage=python3 elapsed=32.37s exit=0

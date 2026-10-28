@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import type {
   JournalInput,
   OperatorInput,
   Scope,
+  SavedRecord,
 } from '@/types/operator';
 import { CapabilityForm } from '../CapabilityEditor';
 import { TransportForm } from '../TransportEditor';
@@ -23,10 +24,16 @@ import { IssueForm } from '../IssueEditor';
 import { JournalEditor } from '../JournalEditor';
 import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
-import { joinCommand } from '../conferenceCommands';
+import { conferenceDraft, joinCommand } from '../conferenceCommands';
 import { ParticipationEditor } from '../ParticipationEditor';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { readOperatorRecord, readOperatorRecords } from '@/services/operator';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { readTransportCatalog } from '@/services/transportCatalog';
+import { UtcDateTime, type UtcParts } from '../UtcDateTime';
+import {
+  getOperatorHealth,
+  readOperatorRecord,
+  readOperatorRecords,
+} from '@/services/operator';
 import { createEditorDraft } from './editorDraft';
 import { useOperatorWorkspace } from './OperatorWorkspaceProvider';
 import {
@@ -51,6 +58,112 @@ export function WorkspaceEditor({
     ? workspace.registry.resumeDraft(workspace.selectedDraftId)
     : null;
   const health = useOperatorHealth(false);
+  const inlineParentId =
+    typeof draft?.editorState?.inlineParentCallDraftId === 'string'
+      ? draft.editorState.inlineParentCallDraftId
+      : null;
+  const inlineParent = inlineParentId
+    ? workspace.registry.resumeDraft(inlineParentId)
+    : null;
+  const inlineTray = inlineParentId
+    ? workspace.tray.find((row) => row.draftId === draft?.draftId)
+    : undefined;
+  const acceptedReference = draft?.editorState?.inlineConferenceAccepted as
+    | { recordId?: unknown; submittedRevision?: unknown }
+    | undefined;
+  const acceptedRecordId =
+    typeof acceptedReference?.recordId === 'string'
+      ? acceptedReference.recordId
+      : null;
+  const [readingInline, setReadingInline] = useState(false);
+  const [recoveredConference, setRecoveredConference] = useState<{
+    identity: string;
+    record: SavedRecord;
+  } | null>(null);
+  function finishInlineConference(
+    saved: SavedRecord,
+    submittedRevision: number
+  ) {
+    if (
+      !draft ||
+      saved.record_type !== 'conference' ||
+      saved.deleted ||
+      saved.mission_id !== draft.target.missionId ||
+      (inlineParent &&
+        (inlineParent.input.record_type !== 'call' ||
+          targetIdentity(inlineParent.target) !==
+            targetIdentity(draft.target))) ||
+      targetIdentity(draft.target) !== operatorIdentity(health.data)
+    )
+      return;
+    function settleInlineDraft() {
+      const retained = workspace.registry.resumeDraft(draft!.draftId);
+      if (!retained || retained.revision === submittedRevision) {
+        workspace.registry.retireSubmitted(draft!.draftId, submittedRevision);
+        return;
+      }
+      // A confirmed create must never replay as another create. Newer input is
+      // kept as an ordinary correction against the authoritative saved record.
+      const state = { ...retained.editorState };
+      delete state.inlineParentCallDraftId;
+      delete state.inlineConferenceAccepted;
+      workspace.registry.parkDraft({
+        ...retained,
+        target: {
+          ...retained.target,
+          recordId: saved.record_id,
+          newDraftId: null,
+        },
+        baseRecord: saved,
+        baseVersion: saved.version,
+        revision: retained.revision + 1,
+        editorState: state,
+      });
+    }
+    if (!inlineParent) {
+      settleInlineDraft();
+      workspace.closeEditor();
+      workspace.refreshDrafts();
+      return;
+    }
+    const retainedParent = workspace.registry.resumeDraft(inlineParent.draftId);
+    if (!retainedParent || retainedParent.input.record_type !== 'call') return;
+    const parentState = { ...retainedParent.editorState };
+    delete parentState.inlineConferenceDraftId;
+    workspace.registry.parkDraft({
+      ...retainedParent,
+      input: {
+        ...retainedParent.input,
+        payload: {
+          ...retainedParent.input.payload,
+          conference_id: saved.record_id,
+        },
+      },
+      revision: retainedParent.revision + 1,
+      editorState: parentState,
+    });
+    settleInlineDraft();
+    workspace.openDraft(retainedParent.draftId);
+    workspace.refreshDrafts();
+  }
+  useEffect(() => {
+    if (
+      inlineTray?.status === 'accepted' &&
+      inlineTray.receipt &&
+      inlineTray.current
+    )
+      finishInlineConference(inlineTray.current, inlineTray.submittedRevision);
+    // Registry revisions and the exact accepted tray row govern this handoff.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, inlineParent, inlineTray, health.data, workspace]);
+  const transportCatalog = useQuery({
+    queryKey: ['operator-transport-catalog'],
+    queryFn: readTransportCatalog,
+    retry: false,
+    enabled:
+      ['call', 'conference'].includes(draft?.input.record_type ?? '') &&
+      !!health.data?.ready,
+  });
   const usesRelationships = [
     'participation',
     'conference',
@@ -93,6 +206,28 @@ export function WorkspaceEditor({
     if (!previous || previous.version < record.version)
       related.set(record.record_id, record);
   }
+  for (const row of workspace.tray) {
+    if (
+      row.status === 'accepted' &&
+      row.current &&
+      targetIdentity(row.target) === operatorIdentity(health.data) &&
+      row.current.mission_id === draft?.target.missionId
+    ) {
+      const previous = related.get(row.current.record_id);
+      if (!previous || previous.version < row.current.version)
+        related.set(row.current.record_id, row.current);
+    }
+  }
+  if (
+    recoveredConference &&
+    recoveredConference.identity === operatorIdentity(health.data) &&
+    recoveredConference.record.mission_id === draft?.target.missionId
+  ) {
+    const saved = recoveredConference.record;
+    const previous = related.get(saved.record_id);
+    if (!previous || previous.version < saved.version)
+      related.set(saved.record_id, saved);
+  }
   const relatedRecords = [...related.values()].filter((record) =>
     operationalRelevant(record, health.data)
   );
@@ -107,19 +242,19 @@ export function WorkspaceEditor({
   const saveLabel =
     draft.input.record_type === 'journal_entry'
       ? draft.input.payload.entry_type === 'capability_assessment'
-        ? 'Save assessment'
+        ? 'Save Assessment'
         : ['note', 'call_observation'].includes(draft.input.payload.entry_type)
-          ? 'Save entry'
+          ? 'Save Entry'
           : null
       : draft.input.record_type === 'issue' && draft.target.correctionVersion
-        ? 'Save correction'
+        ? 'Save Correction'
         : (
             {
-              call: 'Save call',
-              conference: 'Save conference',
-              participation: 'Save customer interval',
-              transport_decision: 'Save transport decision',
-              issue: 'Save issue',
+              call: 'Save Call',
+              conference: 'Save Conference',
+              participation: 'Save Customer Interval',
+              transport_decision: 'Save Transport Decision',
+              issue: 'Save Issue',
             } as Partial<Record<string, string>>
           )[draft.input.record_type];
 
@@ -134,6 +269,10 @@ export function WorkspaceEditor({
     wrongStore ||
     !!tray?.pending ||
     tray?.status === 'saving' ||
+    (tray?.draftId === draft.draftId &&
+      tray.status === 'accepted_unreadable') ||
+    (!!inlineParentId && (!!inlineTray?.receipt || !!acceptedRecordId)) ||
+    readingInline ||
     workspace.busyLanes.includes(commandLane(draft.target));
   const legs = mission?.id === draft.target.missionId ? mission.legs : [];
   const automatic =
@@ -213,9 +352,57 @@ export function WorkspaceEditor({
         input.payload.state === 'connected' &&
         draft.editorState?.joinNow === true &&
         !input.time.occurred_at
-        ? { atCurrentTime: (now) => joinCommand(input, now) }
+        ? {
+            atCurrentTime: (now) =>
+              joinCommand({ ...input, connect_customer: true }, now),
+          }
         : undefined
     );
+  }
+  function createInlineConference() {
+    if (!draft || draft.input.record_type !== 'call' || saveDisabled) return;
+    const retained = workspace.registry.resumeDraft(draft.draftId) ?? draft;
+    const childId = retained.editorState?.inlineConferenceDraftId;
+    if (
+      typeof childId === 'string' &&
+      workspace.registry.resumeDraft(childId)
+    ) {
+      workspace.openDraft(childId);
+      return;
+    }
+    const input = conferenceDraft(draft.target.missionId);
+    const child = workspace.registry.createDraft(
+      {
+        ...draft.target,
+        recordType: 'conference',
+        recordId: null,
+        newDraftId: null,
+        scope: input.scope,
+        legId: input.leg_id,
+        previousLegId: input.payload.previous_leg_id,
+        nextLegId: input.payload.next_leg_id,
+        correctionVersion: null,
+      },
+      input
+    );
+    workspace.registry.parkDraft({
+      ...child,
+      editorState: { inlineParentCallDraftId: draft.draftId },
+    });
+    workspace.registry.parkDraft({
+      ...retained,
+      revision: retained.revision + 1,
+      editorState: {
+        ...retained.editorState,
+        inlineConferenceDraftId: child.draftId,
+      },
+    });
+    workspace.openDraft(child.draftId);
+    workspace.refreshDrafts();
+  }
+  function returnToParent() {
+    if (inlineParent) workspace.openDraft(inlineParent.draftId);
+    else workspace.closeEditor();
   }
   function legSelect(
     label: string,
@@ -251,7 +438,7 @@ export function WorkspaceEditor({
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) workspace.closeEditor();
+        if (!open) returnToParent();
       }}
     >
       <DialogContent
@@ -268,22 +455,84 @@ export function WorkspaceEditor({
         <div className="ws-editor-heading">
           <DialogTitle>
             {draft.target.recordId ? 'Edit' : 'Create'}{' '}
-            {draft.input.payload.entry_type.replaceAll('_', ' ')}
+            {draft.input.payload.entry_type
+              .replaceAll('_', ' ')
+              .replace(/\b\w/g, (c) => c.toUpperCase())}
           </DialogTitle>
-          <button className="ws-button" onClick={() => workspace.closeEditor()}>
-            Keep draft and return
+          <button className="ws-button" onClick={returnToParent}>
+            {inlineParent ? 'Back To Call' : 'Keep Draft And Return'}
           </button>
         </div>
         <DialogDescription>
-          Draft mission:{' '}
+          Draft Mission:{' '}
           {mission?.id === draft.target.missionId
             ? mission.name
             : draft.target.missionId}{' '}
-          · Times are UTC. Reports record operator actions.
+          · Times Are Zulu. Reports record operator actions.
         </DialogDescription>
         <div className="ws-editor-body">
+          {inlineParentId && (
+            <p role="status">
+              Your full call draft is parked. This conference is saved
+              independently for reuse and selected after its saved state is
+              confirmed.
+            </p>
+          )}
+          {inlineParentId && acceptedRecordId && !inlineTray && (
+            <div role="status">
+              <p>
+                Conference save accepted. Reread its saved state to return to
+                your call.
+              </p>
+              <button
+                type="button"
+                className="ws-button"
+                disabled={wrongStore || unavailable || readingInline}
+                onClick={async () => {
+                  setReadingInline(true);
+                  try {
+                    const read = await readOperatorRecord(acceptedRecordId);
+                    const source = await health.refetch();
+                    if (
+                      !source.data?.ready ||
+                      operatorIdentity(source.data) !==
+                        targetIdentity(draft.target)
+                    )
+                      throw new Error(
+                        'Store changed. Keep both drafts and reread after recovery.'
+                      );
+                    if (
+                      read.record.record_id !== acceptedRecordId ||
+                      read.record.deleted
+                    )
+                      throw new Error(
+                        'The saved conference is unavailable. Both drafts remain retained.'
+                      );
+                    setRecoveredConference({
+                      identity: targetIdentity(draft.target),
+                      record: read.record,
+                    });
+                    finishInlineConference(
+                      read.record,
+                      Number(acceptedReference?.submittedRevision)
+                    );
+                  } catch (caught) {
+                    setError(
+                      caught instanceof Error
+                        ? caught.message
+                        : 'Saved conference could not be read. Both drafts remain retained.'
+                    );
+                  } finally {
+                    setReadingInline(false);
+                  }
+                }}
+              >
+                Reread saved conference
+              </button>
+            </div>
+          )}
           {usesRelationships && (
-            <p role="status" aria-label="Related record coverage">
+            <p role="status" aria-label="Related Record Coverage">
               {relationships.isPending
                 ? 'Loading related records…'
                 : `${relatedRecords.length} related records loaded.`}
@@ -295,7 +544,7 @@ export function WorkspaceEditor({
             </p>
           )}
           {usesRelationships && relationships.hasNextPage && (
-            <section aria-label="More related records">
+            <section aria-label="More Related Records">
               <p>Relationship choices cover loaded records only.</p>
               <button
                 className="ws-button"
@@ -378,7 +627,8 @@ export function WorkspaceEditor({
               </div>
             )}
           {tray &&
-            (tray.pending ||
+            (tray.draftId === draft.draftId ||
+              tray.pending ||
               (draft.target.recordId
                 ? tray.target.recordId === draft.target.recordId
                 : tray.target.newDraftId === draft.target.newDraftId)) && (
@@ -387,6 +637,15 @@ export function WorkspaceEditor({
                   {tray.status.replaceAll('_', ' ')} · {tray.title}
                 </p>
                 {tray.message && <p>{tray.message}</p>}
+                {inlineParentId && tray.pending && tray.retryReady && (
+                  <button
+                    type="button"
+                    className="ws-button"
+                    onClick={() => void workspace.retryExact(tray.commandId)}
+                  >
+                    Retry exact conference save
+                  </button>
+                )}
                 {(tray.status === 'needs_review' ||
                   tray.status === 'quarantined' ||
                   tray.status === 'accepted_unreadable') && (
@@ -480,7 +739,7 @@ export function WorkspaceEditor({
             }
           >
             <label>
-              {contextualAssociation ? 'Association' : 'Draft scope'}
+              {contextualAssociation ? 'Association' : 'Draft Scope'}
               <select
                 className="ws-field"
                 value={draft.input.scope}
@@ -504,7 +763,7 @@ export function WorkspaceEditor({
                 </option>
                 <option value="preflight">Preflight</option>
                 <option value="leg">Leg</option>
-                <option value="between_legs">Between legs</option>
+                <option value="between_legs">Between Legs</option>
                 <option value="postflight">Postflight</option>
               </select>
             </label>
@@ -518,12 +777,12 @@ export function WorkspaceEditor({
             {draft.input.scope === 'between_legs' && (
               <>
                 {legSelect(
-                  'Previous leg',
+                  'Previous Leg',
                   draft.input.payload.previous_leg_id,
                   (previous_leg_id) => association({ previous_leg_id })
                 )}
                 {legSelect(
-                  'Next leg',
+                  'Next Leg',
                   draft.input.payload.next_leg_id,
                   (next_leg_id) => association({ next_leg_id })
                 )}
@@ -540,6 +799,8 @@ export function WorkspaceEditor({
               saveDisabled={saveDisabled}
               contextual
               records={relatedRecords}
+              onCreateConference={createInlineConference}
+              transportChoices={transportCatalog.data?.transports}
               editorState={
                 draft.editorState?.call as Partial<CallEditorState> | undefined
               }
@@ -551,6 +812,9 @@ export function WorkspaceEditor({
             <ConferenceEditor
               formId={formId}
               draft={draft.input as ConferenceInput}
+              transportOptions={transportCatalog.data?.transports.filter(
+                (transport) => transport.enabled && !transport.archived
+              )}
               disabled={saveDisabled}
               onChange={update}
               onSubmit={(value) => void saveInput(value)}
@@ -576,7 +840,7 @@ export function WorkspaceEditor({
                           });
                       }}
                     />
-                    Report joined now using backend UTC
+                    Report Joined Now Using Backend Zulu
                   </label>
                 )}
               {!draft.target.recordId && (
@@ -635,20 +899,20 @@ export function WorkspaceEditor({
             draft.target.correctionVersion ? (
             <form
               id={formId}
-              aria-label="Correct historical update"
+              aria-label="Correct Historical Update"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!saveDisabled) void workspace.submitDraft(draft.draftId);
               }}
             >
               <p>
-                Correct historical update · current status, mitigation and
+                Correct Historical Update · current status, mitigation and
                 follow-up are preserved.
               </p>
               <label>
-                Corrected update
+                Corrected Update
                 <textarea
-                  aria-label="Corrected update"
+                  aria-label="Corrected Update"
                   className="ws-field"
                   required
                   maxLength={8000}
@@ -665,26 +929,27 @@ export function WorkspaceEditor({
                   }}
                 />
               </label>
-              <label>
-                Corrected occurred UTC
-                <input
-                  className="ws-field"
-                  placeholder="YYYY-MM-DDTHH:MM:SSZ or unknown"
-                  value={draft.input.payload.corrected_update_at ?? ''}
-                  onChange={(event) => {
-                    if (draft.input.record_type === 'issue')
-                      update({
-                        ...draft.input,
-                        payload: {
-                          ...draft.input.payload,
-                          corrected_update_at: event.target.value || null,
-                        },
-                      });
-                  }}
-                />
-              </label>
+              <UtcDateTime
+                label="Corrected Occurrence"
+                value={draft.input.payload.corrected_update_at ?? null}
+                parts={
+                  draft.editorState?.correctedOccurrenceParts as
+                    | UtcParts
+                    | undefined
+                }
+                onPartsChange={(correctedOccurrenceParts) =>
+                  editorState({ correctedOccurrenceParts })
+                }
+                onChange={(corrected_update_at) => {
+                  if (draft.input.record_type === 'issue')
+                    update({
+                      ...draft.input,
+                      payload: { ...draft.input.payload, corrected_update_at },
+                    });
+                }}
+              />
               <button hidden className="ws-button" disabled={saveDisabled}>
-                Save correction
+                Save Correction
               </button>
             </form>
           ) : draft.input.record_type === 'issue' ? (
@@ -778,6 +1043,25 @@ export function WorkspaceEditor({
               disabled={false}
               saveDisabled={saveDisabled}
               onChange={update}
+              captureNow={async () => {
+                const clock = await readOperatorRecords({
+                  mission_id: draft.target.missionId,
+                  record_type: 'journal_entry',
+                  limit: 1,
+                });
+                const source = await getOperatorHealth();
+                if (operatorIdentity(source) !== targetIdentity(draft.target))
+                  throw new Error(
+                    'Source Changed. Keep This Draft And Reopen After Recovery.'
+                  );
+                return clock.as_of;
+              }}
+              occurrenceParts={
+                draft.editorState?.noteOccurrenceParts as UtcParts | undefined
+              }
+              onOccurrencePartsChange={(noteOccurrenceParts) =>
+                editorState({ noteOccurrenceParts })
+              }
               auditNote={String(draft.editorState?.auditNote ?? '')}
               onAuditNoteChange={(auditNote) => editorState({ auditNote })}
               onSave={(command) => {
@@ -805,10 +1089,30 @@ export function WorkspaceEditor({
           )}
           <button
             className="ws-button ws-destructive"
+            disabled={
+              !!inlineParentId &&
+              (!!inlineTray?.pending ||
+                !!inlineTray?.receipt ||
+                !!acceptedRecordId ||
+                inlineTray?.status === 'saving')
+            }
             onClick={() => {
               const result = workspace.registry.discardDraft(draft.draftId);
-              if (result.state === 'durable') workspace.closeEditor();
-              else setError(result.message);
+              if (result.state === 'durable') {
+                if (inlineParent) {
+                  const retainedParent = workspace.registry.resumeDraft(
+                    inlineParent.draftId
+                  )!;
+                  const parentState = { ...retainedParent.editorState };
+                  delete parentState.inlineConferenceDraftId;
+                  workspace.registry.parkDraft({
+                    ...retainedParent,
+                    editorState: parentState,
+                    revision: retainedParent.revision + 1,
+                  });
+                }
+                returnToParent();
+              } else setError(result.message);
               workspace.refreshDrafts();
             }}
           >

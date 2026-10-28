@@ -1,3 +1,4 @@
+import { enterZulu } from '@/test/utc-controls';
 /** @vitest-environment jsdom */
 import { useState } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -293,4 +294,15 @@ it('shows imported FL without requiring another unit selection', () => {
   ).not.toHaveAttribute('open');
   expect(screen.getByLabelText('Altitude AR106')).toHaveValue(210);
   expect(screen.queryByText(/confirm altitude and units/i)).toBeNull();
+});
+it('edits an overnight Zulu calendar occurrence while retaining original source evidence', () => {
+  render(<Form />);
+  enterZulu('Entry AR106', '2026-10-26T00:10:00Z');
+  const corrected = JSON.parse(
+    screen.getByLabelText('Corrections').textContent!
+  )[0];
+  expect(corrected.entry_time).toBe('2026-10-26T00:10:00Z');
+  expect(corrected.start_anchor).toBeNull();
+  expect(corrected.match_status).toBe('unresolved');
+  expect(screen.getByText(/Source UTC: 2026-10-25T12:10:00Z/)).toBeVisible();
 });

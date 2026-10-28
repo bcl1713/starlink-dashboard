@@ -241,13 +241,11 @@
       </p>
       <nav aria-label="Guide contents">
         <ul>
-          <li><a href="#context">1. Mission, leg and UTC context</a></li>
+          <li><a href="#context">1. Mission, Leg And Zulu Context</a></li>
           <li><a href="#first-use">2. First use and workspace controls</a></li>
           <li><a href="#calls">3. Plan, complete and recover calls</a></li>
           <li>
-            <a href="#conferences"
-              >4. Establish, verify and reuse a conference</a
-            >
+            <a href="#conferences">4. Establish And Reuse A Conference</a>
           </li>
           <li>
             <a href="#customers">5. Report independent customer intervals</a>
@@ -295,7 +293,7 @@
     </header>
     <main>
       <section id="context">
-        <h2>1. Mission, leg and UTC context</h2>
+        <h2>1. Mission, Leg And Zulu Context</h2>
         <p>
           Operator follows the active mission and leg automatically in live and
           simulation modes. Confirm the displayed names and phase. New entries
@@ -364,14 +362,14 @@
                 </td>
               </tr>
               <tr>
-                <td>Planned UTC</td>
+                <td>Planned Zulu</td>
                 <td>
                   A requirement or forecast, not evidence that an action
                   occurred.
                 </td>
               </tr>
               <tr>
-                <td>Actual / reported occurrence UTC</td>
+                <td>Actual / reported occurrence Zulu</td>
                 <td>
                   The time being reported for an action. It can be unknown or
                   approximate.
@@ -388,11 +386,11 @@
           </table>
         </div>
         <p>
-          Enter UTC using the field's displayed format. A field that says UTC
-          remains UTC even if the device uses another time zone. Leave genuinely
-          unknown times unknown; do not enter zero, the current time or a
-          planned time to make a form look complete. A zero preparation lead is
-          a valid deliberate value.
+          Enter Zulu using the field's displayed format. A field that says Zulu
+          remains Zulu even if the device uses another time zone. Leave
+          genuinely unknown times unknown; do not enter zero, the current time
+          or a planned time to make a form look complete. A zero preparation
+          lead is a valid deliberate value.
         </p>
         <figure>
           <div class="annotated mobile">
@@ -440,12 +438,13 @@
             rather than reset.
           </li>
           <li>
-            Use Communications, Transport, Issues, Notes and History for
-            detailed work. Now retains the mission awareness area.
+            Use Operations, Transport, Issues, Notes and History for detailed
+            work. The timeline and shared Add Note, Add Issue and Schedule Call
+            actions remain available across sections.
           </li>
           <li>
             Open Help for this guide, the quick reference or the private Guided
-            mission walkthrough. Display tools and Local alerts are in the
+            mission walkthrough. Display Controls and Local alerts are in the
             header; on narrow screens expand Tools.
           </li>
         </ol>
@@ -470,9 +469,14 @@
         <h2>3. Plan, complete and recover calls</h2>
         <h3>Create a scheduled requirement</h3>
         <ol>
-          <li>In Communications choose Create call.</li>
           <li>
-            Enter the party or participant if known, a planned start UTC and a
+            In Operations choose Schedule Call. Select an existing conference,
+            Create Conference inline, or choose Direct Connection. Open Call
+            Details for Reschedule or Cancel Call before a call starts; history
+            remains available.
+          </li>
+          <li>
+            Enter the party or participant if known, a planned start Zulu and a
             status. Scheduled calls require a planned start; a merely planned
             call does not prove a completed call.
           </li>
@@ -504,6 +508,11 @@
         </p>
         <h3>Reschedule, cancel, reinstate, remove or restore</h3>
         <p>
+          Open Call Details for secondary call actions and audit evidence. The
+          card’s primary action advances from establishment through customer
+          connection, departure and call completion.
+        </p>
+        <p>
           Use Edit call to update its planned time or status. Canceled describes
           the requirement's operational status. Reinstate it by deliberately
           selecting an appropriate active status and plan; this appends a
@@ -519,48 +528,49 @@
         </p>
       </section>
       <section id="conferences">
-        <h2>4. Establish, verify and reuse a conference</h2>
+        <h2>4. Establish And Reuse A Conference</h2>
         <p>
-          Now and Communications keep Active Calls and Active Bridges prominent.
-          Finishing a call leaves its bridge session open. Use Close conference
-          on the bridge card when appropriate; its saved definition remains
-          reusable. Customer joins and departures remain independent reports.
+          Operations keeps the mission timeline on the left, reusable
+          conferences in the middle, and calls on the right. On phones, use the
+          compact chronology and stacked lanes. Selecting a timeline event
+          focuses its next action without reporting anything.
         </p>
-        <aside>
-          <p>
-            A conference record reports bridge operations. Create conference,
-            Establish and Verify do not provision, dial or test communications
-            hardware. Establish and test the actual bridge through the
-            operational communications procedure, then report what happened
-            here.
-          </p>
-        </aside>
         <ol>
           <li>
-            Choose Create conference. Give the reusable bridge a recognizable
-            name. Add platform, reference, coordinator and notes when known.
+            Choose Create Conference, or create one inline while scheduling a
+            call. Your full call draft returns with the saved independent
+            conference selected. Direct Connection needs no conference.
           </li>
           <li>
-            After the real bridge is available, choose Establish on its
-            conference card. Verify only after the real check has been made.
+            Complete the actual two-way distant-end check: they can hear us and
+            we can hear them. Then choose Establish once. Establish reports the
+            completed check; there is no separate Verify or Test step.
           </li>
           <li>
-            Associate calls or customer intervals with this conference. Reuse
-            the same conference when the actual bridge is reused for another
-            call; do not create a duplicate merely because a different customer
-            joins.
+            Choose Connect Customer on the call. Report each customer leaving or
+            interruption independently. Finishing a call keeps the conference
+            available for reuse.
           </li>
           <li>
-            Report Interrupt conference when its connection is interrupted.
-            Restore conference connection reports restoration of the bridge's
-            connection.
+            An eligible idle conference has Close Conference in the same primary
+            slot as Establish. Close is immediate. Resolve active calls and
+            connected or unknown customer reports first; future scheduled calls
+            alone do not prevent Close.
           </li>
           <li>
-            Use Close conference when the actual bridge is closed. Review any
-            warning that a customer is still reported connected; closing a
-            bridge does not automatically report that customer's departure.
+            Close retains the reusable definition, future call associations and
+            all history. Establish explicitly before the next use. Corrections,
+            interruption and record history remain under Conference Details.
           </li>
         </ol>
+        <aside>
+          <p>
+            These are operator reports, not communications hardware commands.
+            Scheduled restrictions and PoP transitions are advisories: no
+            automatic rerouting or blocked establishment. Unknown or ad hoc
+            schedule coverage is not an all-clear.
+          </p>
+        </aside>
         <p>
           Conference history preserves establishment, verification, interruption
           and closure after its current state changes. Correct conference edits
@@ -582,9 +592,9 @@
             unknown.
           </li>
           <li>
-            Use Report joined now using backend UTC only when intentionally
+            Use Report joined now using backend Zulu only when intentionally
             reporting a current join. For retrospective or unknown timing, leave
-            that choice off and enter known reported UTC information under
+            that choice off and enter known reported Zulu information under
             Retrospective timing and correction.
           </li>
           <li>
@@ -603,9 +613,9 @@
           Restoring the bridge does not automatically restore each customer's
           connection. A resumed customer's new interval is not a rewrite of the
           old interval. Inspect the call and conference names, participant,
-          state, reported join/leave UTCs and resume link. Keep unknown timing
-          unknown. Resolve discrepancies by recording the actual operations, not
-          by forcing all statuses to agree without evidence.
+          state, reported join/leave Zulu timestamps and resume link. Keep
+          unknown timing unknown. Resolve discrepancies by recording the actual
+          operations, not by forcing all statuses to agree without evidence.
         </p>
       </section>
       <section id="display-alerts">
@@ -619,7 +629,7 @@
         <h3>Shared switches and a current-view preset</h3>
         <ol>
           <li>
-            Open Display tools, then Show display controls. Shared switches
+            Open Display Controls, then Show display controls. Shared switches
             apply to all Overview displays on the installation, including
             another device. Recenter targets a selected connected window in this
             browser.
@@ -699,8 +709,8 @@
                 hidden.
               </li>
               <li>
-                The operational map and UTC clocks remain available. Replay does
-                not replace the visibility preference.
+                The operational map and Zulu clocks remain available. Replay
+                does not replace the visibility preference.
               </li>
             </ol>
           </figcaption>
@@ -755,7 +765,7 @@
             request stages.
           </li>
           <li>
-            Enter known transport, outcome, UTC timing, precision and
+            Enter known transport, outcome, Zulu timing, precision and
             explanatory notes. Save and inspect the recorded report.
           </li>
           <li>
@@ -785,7 +795,7 @@
               src="images/transport-check-c4a20ed4a8a4.png"
               width="672"
               height="1080"
-              alt="Actual fictional transport editor showing one applied Starshield service with an independent issue-reported check and unknown applied/check UTCs."
+              alt="Actual fictional transport editor showing one applied Starshield service with an independent issue-reported check and unknown applied/check Zulu timestamps."
             /><span class="marker" style="left: 8%; top: 44%" aria-hidden="true"
               >1</span
             ><span class="marker" style="left: 53%; top: 64%" aria-hidden="true"
@@ -844,10 +854,10 @@
         <p>
           Capability assessments are separate observations. Report functional
           capability and redundancy independently, including unknown dimensions
-          or unknown observation UTCs. A capability report does not close an
-          issue, prove actual routing or replace a service check. Review the
-          saved dimension values and notes instead of assuming that one known
-          dimension makes the other known.
+          or unknown observation Zulu timestamps. A capability report does not
+          close an issue, prove actual routing or replace a service check.
+          Review the saved dimension values and notes instead of assuming that
+          one known dimension makes the other known.
         </p>
         <figure>
           <div class="annotated">
@@ -855,7 +865,7 @@
               src="images/issue-followup-b31b5113d832.png"
               width="672"
               height="1080"
-              alt="Actual fictional issue editor with mission scope, optional mitigation, follow-up UTC, explicit clear follow-up and independent related records."
+              alt="Actual fictional issue editor with mission scope, optional mitigation, follow-up Zulu, explicit clear follow-up and independent related records."
             /><span class="marker" style="left: 8%; top: 20%" aria-hidden="true"
               >1</span
             ><span class="marker" style="left: 51%; top: 58%" aria-hidden="true"
@@ -874,7 +884,7 @@
                 include mitigation and follow-up.
               </li>
               <li>
-                Follow-up UTC is separate from action occurrence time and
+                Follow-up Zulu is separate from action occurrence time and
                 backend save time. Enter it only when known.
               </li>
               <li>
@@ -889,11 +899,13 @@
       <section id="notes-history">
         <h2>10. Notes, observations and immutable history</h2>
         <p>
-          Use Note for free text and the supported observation type for the
-          thing observed. Confirm the pinned mission, preflight/leg/ground-gap
-          scope and UTC precision. Saving an observation preserves its original
-          context; it is not automatically reassigned when you select another
-          mission or leg.
+          Use the shared Add Note action for text and an occurrence defaulting
+          to the source clock's Now. Use Backdate / Change Occurrence for
+          explicit Zulu date, hour and minute controls. No title or precision
+          choice is required for an ordinary note. Keep Draft And Return
+          preserves text and partial controls; retry retains the chosen
+          occurrence. Existing historical precision, corrections and recorded
+          time remain distinct.
         </p>
         <p>
           In History, apply the available mission, record, type and scope
@@ -1176,9 +1188,9 @@ scripts/operator-training.sh archive-inputs --root /tmp/operator-learner</pre
         </ol>
         <p>
           The original customer briefing uses Eastern Time (ET), as printed on
-          its pages. Operator records remain UTC. Read each artifact's time-zone
-          label; the PDF's predicted posture does not replace the separate
-          reported journal or telemetry archive.
+          its pages. Operator records remain Zulu. Read each artifact's
+          time-zone label; the PDF's predicted posture does not replace the
+          separate reported journal or telemetry archive.
         </p>
         <p>
           A download is not evidence that somebody reviewed its PDF. Mission
@@ -1310,8 +1322,8 @@ scripts/operator-training.sh start --root /tmp/operator-learner</pre
               <tr>
                 <td>T01</td>
                 <td>
-                  Identify the private mission, both legs, scope and UTC. Record
-                  your own observation of context.
+                  Identify the private mission, both legs, scope and Zulu.
+                  Record your own observation of context.
                 </td>
               </tr>
               <tr>
@@ -1325,9 +1337,9 @@ scripts/operator-training.sh start --root /tmp/operator-learner</pre
               <tr>
                 <td>T03</td>
                 <td>
-                  Establish/verify a bridge, overlap independent customers,
-                  interrupt/restore, reuse and close. Explain that the records
-                  do not provision hardware.
+                  Establish a bridge with the two-way check, overlap independent
+                  customers, interrupt/restore, reuse and close. Explain that
+                  the records do not provision hardware.
                 </td>
               </tr>
               <tr>

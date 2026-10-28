@@ -1,0 +1,13 @@
+
+> mission-planner@0.0.0 test:unit
+> NODE_ENV=test vitest run --maxWorkers=4
+
+
+ RUN  v4.1.11 /home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator/frontend/mission-planner
+
+
+ Test Files  325 passed (325)
+      Tests  2272 passed (2272)
+   Start at  05:03:36
+   Duration  83.48s (transform 9.93s, setup 0ms, import 55.11s, tests 111.07s, environment 125.55s)
+

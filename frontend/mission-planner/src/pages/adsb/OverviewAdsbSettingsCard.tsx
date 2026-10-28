@@ -1,3 +1,4 @@
+import { formatTime24Hour } from '@/lib/utils';
 import { useConfigurationAdsbLayer } from '@/hooks/useConfigurationAdsbLayer';
 import { Switch } from '@/components/ui/switch';
 import { useUpdateOverviewAdsbSettings } from '@/hooks/api/useUpdateOverviewAdsbSettings';
@@ -123,7 +124,7 @@ export function OverviewAdsbSettingsCard({
               : `Aircraft ${source.key.slice(4)}`}
             : {source.error}.
             {source.retry_at_ms !== null &&
-              ` Next retry ${new Date(source.retry_at_ms).toLocaleTimeString()}.`}
+              ` Next retry ${formatTime24Hour(new Date(source.retry_at_ms).toISOString())}.`}
           </p>
         ))}
         {settings && !controlsOnly && (

@@ -275,11 +275,56 @@ export function OperatorWorkspaceProvider({
     setAttempts((previous) => [...previous.slice(-99), observed]);
   }
   function receipt(lane: string, request: Pending, value: CommandReceipt) {
-    if (request.workspace)
-      registry.retireSubmitted(
-        request.workspace.draftId,
-        request.workspace.revision
-      );
+    const inlineDraft = request.workspace
+      ? registry.resumeDraft(request.workspace.draftId)
+      : null;
+    if (inlineDraft?.editorState?.inlineParentCallDraftId) {
+      // Keep a durable accepted reference while the current read is unavailable.
+      // Reloading this editor must reread that row instead of creating it again.
+      registry.parkDraft({
+        ...inlineDraft,
+        editorState: {
+          ...inlineDraft.editorState,
+          inlineConferenceAccepted: {
+            recordId: value.saved_records[0].record_id,
+            submittedRevision: request.workspace!.revision,
+          },
+        },
+      });
+    } else if (request.workspace) {
+      const retained = registry.resumeDraft(request.workspace.draftId);
+      const accepted = value.saved_records[0];
+      if (
+        request.command.operation === 'create' &&
+        request.command.body.record_type === 'call' &&
+        retained?.input.record_type === 'call' &&
+        !retained.target.recordId &&
+        retained.revision > request.workspace.revision &&
+        targetIdentity(retained.target) === request.identity &&
+        accepted.record_type === 'call' &&
+        accepted.mission_id === retained.target.missionId
+      ) {
+        // Keep edits made during the request as a correction of the accepted
+        // create. Its receipt version remains the optimistic concurrency base;
+        // a newer current row still requires the existing conflict review.
+        registry.parkDraft({
+          ...retained,
+          target: {
+            ...retained.target,
+            recordId: accepted.record_id,
+            newDraftId: null,
+          },
+          baseRecord: accepted,
+          baseVersion: accepted.version,
+          revision: retained.revision + 1,
+        });
+      } else {
+        registry.retireSubmitted(
+          request.workspace.draftId,
+          request.workspace.revision
+        );
+      }
+    }
     update(lane, {
       receipt: value,
       commandId: request.key,

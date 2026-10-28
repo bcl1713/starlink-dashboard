@@ -1,0 +1,166 @@
+{
+  "runnerCleanup": {
+    "starlink-operator-425-r1": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r2": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r3": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r4": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r5": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r6": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r7": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r8": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r9": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r10": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r11": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r12": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    },
+    "starlink-operator-425-r13": {
+      "remaining": {
+        "containers": "",
+        "networks": "",
+        "volumes": ""
+      },
+      "composeRemoved": true,
+      "childrenReaped": true,
+      "listenerRemoved": true,
+      "temporaryPathsRemoved": true,
+      "imagesRemoved": true
+    }
+  },
+  "finalHostAudit": {
+    "taskPrefixedContainers": [],
+    "taskPrefixedNetworks": [],
+    "taskPrefixedVolumes": [],
+    "taskPathProcesses": []
+  }
+}

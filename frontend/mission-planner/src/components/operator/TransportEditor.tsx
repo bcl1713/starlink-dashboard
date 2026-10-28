@@ -1,3 +1,4 @@
+import { UtcDateTime } from './UtcDateTime';
 import { useState } from 'react';
 import type { TransportDraft } from '@/types/operatorTransport';
 import type { OperatorCommand, SavedRecord, Scope } from '@/types/operator';
@@ -11,7 +12,7 @@ import {
   toTransportCommand,
 } from './transportForms';
 import { TransportServiceRow } from './TransportServiceRow';
-import { issueButton, issueField, parseUtc, utcValue } from './issueForms';
+import { issueButton, issueField } from './issueForms';
 
 export function TransportEditor({
   missionId,
@@ -105,8 +106,8 @@ export function TransportForm({
     >
       <h3 className="font-semibold">
         {record && !createFromDraft
-          ? 'Correct this decision'
-          : 'Record transport decision'}
+          ? 'Correct This Decision'
+          : 'Record Transport Decision'}
       </h3>
       <fieldset disabled={disabled} className="min-w-0 space-y-3">
         {rows.map((row, index) => (
@@ -179,11 +180,11 @@ export function TransportForm({
           disabled={rows.length >= 32}
           onClick={() => field({ services: [...rows, newServiceRow()] })}
         >
-          Add service
+          Add Service
         </button>
         <details>
           <summary className="min-h-11 cursor-pointer py-3">
-            Reason, timing and associations (optional)
+            Reason, Timing and Associations (Optional)
           </summary>
           <div className="space-y-3">
             <label>
@@ -218,7 +219,7 @@ export function TransportForm({
               />
             </label>
             <label hidden={contextual}>
-              Decision scope
+              Decision Scope
               <select
                 className={issueField}
                 value={input.scope}
@@ -248,7 +249,7 @@ export function TransportForm({
             </label>
             {input.scope === 'leg' && (
               <label hidden={contextual}>
-                Decision leg ID
+                Decision Leg ID
                 <input
                   className={issueField}
                   value={input.leg_id ?? ''}
@@ -263,27 +264,23 @@ export function TransportForm({
             )}
             {(['planned_start_at', 'planned_end_at'] as const).map(
               (name, index) => (
-                <label key={name}>
-                  Planned change {index ? 'end' : 'start'} UTC
-                  <input
-                    className={issueField}
-                    type="datetime-local"
-                    step="1"
-                    value={utcValue(input.time[name])}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        input: {
-                          ...input,
-                          time: {
-                            ...input.time,
-                            [name]: parseUtc(e.target.value),
-                          },
+                <UtcDateTime
+                  key={name}
+                  label={`Planned Change ${index ? 'end' : 'start'}`}
+                  value={input.time[name]}
+                  onChange={(value) =>
+                    setDraft({
+                      ...draft,
+                      input: {
+                        ...input,
+                        time: {
+                          ...input.time,
+                          [name]: value ? new Date(value).toISOString() : null,
                         },
-                      })
-                    }
-                  />
-                </label>
+                      },
+                    })
+                  }
+                />
               )
             )}
             {records !== undefined ? (
@@ -303,7 +300,7 @@ export function TransportForm({
                   const value = input.payload[key] ?? '';
                   return (
                     <label key={type}>
-                      Related {type}
+                      Related {type === 'call' ? 'Call' : 'Conference'}
                       <select
                         className={issueField}
                         value={value}
@@ -315,7 +312,8 @@ export function TransportForm({
                         {value &&
                           !choices.some((item) => item.record_id === value) && (
                             <option value={value}>
-                              Saved {type} (not loaded)
+                              Saved {type === 'call' ? 'Call' : 'Conference'}{' '}
+                              (Not Loaded)
                             </option>
                           )}
                         {choices.map((item) => (
@@ -335,7 +333,7 @@ export function TransportForm({
             ) : (
               <>
                 <label>
-                  Related call ID
+                  Related Call ID
                   <input
                     className={issueField}
                     value={input.payload.call_id ?? ''}
@@ -343,7 +341,7 @@ export function TransportForm({
                   />
                 </label>
                 <label>
-                  Related conference ID
+                  Related Conference ID
                   <input
                     className={issueField}
                     value={input.payload.conference_id ?? ''}
@@ -366,7 +364,7 @@ export function TransportForm({
           hidden={!!formId}
           disabled={saveDisabled}
         >
-          Save transport decision
+          Save Transport Decision
         </button>
       </fieldset>
       {error && <p role="alert">{error}</p>}

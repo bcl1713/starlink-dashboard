@@ -1,3 +1,4 @@
+import { enterZulu } from '@/test/utc-controls';
 /** @vitest-environment jsdom */
 import { useState } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -26,11 +27,11 @@ it('submits applied-only transport from a controlled draft without legacy storag
     target: { value: 'Synthetic video' },
   });
   fireEvent.click(screen.getByLabelText('Reported Applied 1'));
-  fireEvent.change(screen.getByLabelText('Applied transport 1'), {
+  fireEvent.change(screen.getByLabelText('Applied Transport 1'), {
     target: { value: 'Ka' },
   });
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save transport decision' })
+    screen.getByRole('button', { name: 'Save Transport Decision' })
   );
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].body.payload.services[0]).toMatchObject({
@@ -87,9 +88,9 @@ it('offers readable mission-scoped call and conference choices', () => {
     />
   );
   fireEvent.click(
-    screen.getByText('Reason, timing and associations (optional)')
+    screen.getByText('Reason, Timing and Associations (Optional)')
   );
-  const calls = screen.getByRole('combobox', { name: 'Related call' });
+  const calls = screen.getByRole('combobox', { name: 'Related Call' });
   expect(
     screen.getByRole('option', { name: 'Meridian customer briefing' })
   ).toBeTruthy();
@@ -116,14 +117,14 @@ it('retains an unresolved saved association instead of silently clearing it', ()
     />
   );
   fireEvent.click(
-    screen.getByText('Reason, timing and associations (optional)')
+    screen.getByText('Reason, Timing and Associations (Optional)')
   );
   const select = screen.getByRole('combobox', {
-    name: 'Related call',
+    name: 'Related Call',
   }) as HTMLSelectElement;
   expect(select.value).toBe('not-in-loaded-page');
   expect(
-    screen.getByRole('option', { name: 'Saved call (not loaded)' })
+    screen.getByRole('option', { name: 'Saved Call (Not Loaded)' })
   ).toBeTruthy();
   expect(screen.getByText(/Choices cover loaded records only/)).toBeTruthy();
 });
@@ -147,26 +148,26 @@ it('submits independent intended and requested reports, explicit precision, reas
     fireEvent.change(screen.getByLabelText(name), { target: { value } });
   change('Service 1', 'Fictional VTC');
   fireEvent.click(screen.getByLabelText('Intended 1'));
-  change('Intended transport 1', 'Ka');
+  change('Intended Transport 1', 'Ka');
   fireEvent.click(screen.getByLabelText('Requested 1'));
-  change('Requested transport 1', 'X');
-  change('Requested time 1 UTC', '2026-10-17T15:00:00');
-  change('Requested time 1 precision', 'approximate');
+  change('Requested Transport 1', 'X');
+  enterZulu('Requested Time 1', '2026-10-17T15:00:00');
+  change('Requested Time 1 Precision', 'approximate');
   fireEvent.click(screen.getByLabelText('Reported Applied 1'));
-  change('Applied transport 1', 'Starshield');
-  change('Applied time 1 UTC', '2026-10-17T15:02:00');
+  change('Applied Transport 1', 'Starshield');
+  enterZulu('Applied Time 1', '2026-10-17T15:02:00');
   fireEvent.click(screen.getByLabelText('Operator Checked 1'));
-  change('Check result 1', 'satisfactory');
-  fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+  change('Check Result 1', 'satisfactory');
+  fireEvent.click(screen.getByRole('button', { name: 'Add Service' }));
   change('Service 2', 'Fictional IPTV');
   fireEvent.click(screen.getByLabelText('Reported Applied 2'));
-  change('Applied transport 2', 'Ka');
+  change('Applied Transport 2', 'Ka');
   fireEvent.click(
-    screen.getByText('Reason, timing and associations (optional)')
+    screen.getByText('Reason, Timing and Associations (Optional)')
   );
   change('Reason', 'Fictional allocation choice');
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save transport decision' })
+    screen.getByRole('button', { name: 'Save Transport Decision' })
   );
   const body = save.mock.calls[0][0].body;
   expect(body.payload.reason).toBe('Fictional allocation choice');

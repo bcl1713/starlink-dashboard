@@ -61,7 +61,7 @@ export function RevisionDetails({ record, association }: ReadRecord) {
             verification: {revisionUtc(payload.verified_at ?? null)}
           </p>
           <p>
-            Intended transport: {payload.intended_transport ?? 'Unknown'} ·
+            Intended Transport: {payload.intended_transport ?? 'Unknown'} ·
             Operator-reported configuration:{' '}
             {payload.configured_transport ?? 'Unknown'} · Configuration
             reported: {revisionUtc(payload.configuration_reported_at ?? null)}
@@ -88,18 +88,18 @@ export function RevisionDetails({ record, association }: ReadRecord) {
             {payload.mitigation ?? 'unknown'} · Priority:{' '}
             {payload.priority ?? 'unspecified'}
           </p>
-          <p>Follow-up: {revisionUtc(payload.follow_up_at ?? null)}</p>
+          <p>Follow-Up: {revisionUtc(payload.follow_up_at ?? null)}</p>
           <p className="whitespace-pre-wrap">
             Update: {payload.update_text || 'None'}
           </p>
           {payload.corrects_version && (
             <p>
-              Corrects version {payload.corrects_version} · Corrected occurred:{' '}
+              Corrects version {payload.corrects_version} · Corrected Occurred:{' '}
               {revisionUtc(payload.corrected_update_at ?? null)}
             </p>
           )}
           <p>
-            Functional area: {payload.functional_area ?? 'Unspecified'} ·
+            Functional Area: {payload.functional_area ?? 'Unspecified'} ·
             Responsible party: {payload.responsible_party ?? 'Unspecified'}
           </p>
           <p>
@@ -164,7 +164,7 @@ export function RevisionDetails({ record, association }: ReadRecord) {
         </p>
       )}
       <p>
-        Entry type: {payload.entry_type} ·{' '}
+        Entry Type: {payload.entry_type} ·{' '}
         {record.deleted ? 'Removed' : 'Present'}
       </p>
     </div>

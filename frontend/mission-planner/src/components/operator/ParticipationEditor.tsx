@@ -1,4 +1,5 @@
 import type { ParticipationInput, SavedRecord } from '@/types/operator';
+import { UtcDateTime } from './UtcDateTime';
 const field = 'min-h-11 w-full rounded border bg-background p-2';
 export function ParticipationEditor({
   formId,
@@ -91,54 +92,49 @@ export function ParticipationEditor({
             ))}
           </select>
         </label>
-        <label className="block">
-          Reported join UTC
-          <input
-            className={field}
-            placeholder="YYYY-MM-DDTHH:MM:SSZ or unknown"
-            value={draft.time.occurred_at ?? ''}
-            onChange={(e) =>
-              onChange({
-                ...draft,
-                time: {
-                  ...draft.time,
-                  occurred_at: e.target.value || null,
-                  precision: e.target.value ? 'approximate' : 'unknown',
-                  end_state: e.target.value
-                    ? draft.time.ended_at
-                      ? 'known'
-                      : draft.payload.state === 'connected'
-                        ? 'ongoing'
-                        : 'unknown'
-                    : 'unknown',
-                  ended_at: e.target.value ? draft.time.ended_at : null,
-                },
-              })
-            }
-          />
-        </label>
-        <label className="block">
-          Reported leave / interruption UTC
-          <input
-            className={field}
-            value={draft.time.ended_at ?? ''}
-            onChange={(e) =>
-              onChange({
-                ...draft,
-                time: {
-                  ...draft.time,
-                  ended_at: e.target.value || null,
-                  end_state: e.target.value
+        <UtcDateTime
+          label="Reported join"
+          value={draft.time.occurred_at}
+          disabled={disabled}
+          onChange={(value) =>
+            onChange({
+              ...draft,
+              time: {
+                ...draft.time,
+                occurred_at: value,
+                precision: value ? 'approximate' : 'unknown',
+                end_state: value
+                  ? draft.time.ended_at
                     ? 'known'
-                    : draft.time.occurred_at &&
-                        draft.payload.state === 'connected'
+                    : draft.payload.state === 'connected'
                       ? 'ongoing'
-                      : 'unknown',
-                },
-              })
-            }
-          />
-        </label>
+                      : 'unknown'
+                  : 'unknown',
+                ended_at: value ? draft.time.ended_at : null,
+              },
+            })
+          }
+        />
+        <UtcDateTime
+          label="Reported leave / interruption"
+          value={draft.time.ended_at}
+          disabled={disabled}
+          onChange={(value) =>
+            onChange({
+              ...draft,
+              time: {
+                ...draft.time,
+                ended_at: value,
+                end_state: value
+                  ? 'known'
+                  : draft.time.occurred_at &&
+                      draft.payload.state === 'connected'
+                    ? 'ongoing'
+                    : 'unknown',
+              },
+            })
+          }
+        />
         <label className="block">
           Customer note (optional)
           <textarea
@@ -154,7 +150,7 @@ export function ParticipationEditor({
         hidden={!!formId}
         disabled={disabled}
       >
-        Save customer interval
+        Save Customer Interval
       </button>
     </form>
   );

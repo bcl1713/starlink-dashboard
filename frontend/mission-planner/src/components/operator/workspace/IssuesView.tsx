@@ -48,7 +48,7 @@ export function IssuesView({
             {payload.mitigation ?? 'unknown'}
           </p>
           <p>
-            Follow-up {item.follow_up?.state ?? 'unknown'} ·{' '}
+            Follow-Up {item.follow_up?.state ?? 'unknown'} ·{' '}
             {operatorUtc(payload.follow_up_at)}
           </p>
           <p className="ws-meta">
@@ -63,7 +63,7 @@ export function IssuesView({
                   disabled={disabled}
                   onClick={() => onEdit(record)}
                 >
-                  Add update / follow up
+                  Add Update / Follow Up
                 </button>
                 {payload.status === 'resolved' ? (
                   <button
@@ -88,7 +88,7 @@ export function IssuesView({
                       }
                     >
                       {payload.status === 'monitoring'
-                        ? 'Return to open'
+                        ? 'Return To Open'
                         : 'Monitor'}
                     </button>
                     <button
@@ -106,20 +106,20 @@ export function IssuesView({
               className="ws-button"
               onClick={() => onActivity(record.record_id)}
             >
-              Issue activity
+              Issue Activity
             </button>
             <button
               className="ws-button"
               onClick={() => onHistory(record.record_id)}
             >
-              Audit history
+              Audit History
             </button>
             <button
               className="ws-button"
               disabled={disabled}
               onClick={() => onTransition(record)}
             >
-              {record.deleted ? 'Restore issue record' : 'Remove issue record'}
+              {record.deleted ? 'Restore Issue Record' : 'Remove Issue Record'}
             </button>
           </div>
         </article>
@@ -130,11 +130,11 @@ export function IssuesView({
     <section aria-label="Issues" id="operator-issues">
       <h2>Issues</h2>
       <p>
-        Exceptions, workarounds and check-ins. Follow-ups reflect the current
+        Exceptions, workarounds and check-ins. Follow-Ups reflect the current
         snapshot.
       </p>
       <button className="ws-button" disabled={disabled} onClick={onCreate}>
-        New issue
+        New Issue
       </button>
       <IssueFollowups
         pages={pages}
@@ -143,7 +143,7 @@ export function IssuesView({
       />
       {!issues.length && (
         <p>
-          No issues recorded. Log a problem from its description; add details
+          No issues recorded. Log a Problem from its description; add details
           when known.
         </p>
       )}
@@ -156,7 +156,7 @@ export function IssuesView({
         )
       )}
       <details>
-        <summary className="min-h-11">Resolved issues</summary>
+        <summary className="min-h-11">Resolved Issues</summary>
         {rows(
           issues.filter(
             (item) =>
@@ -167,13 +167,13 @@ export function IssuesView({
         )}
       </details>
       <details>
-        <summary className="min-h-11">Removed issue records</summary>
+        <summary className="min-h-11">Removed Issue Records</summary>
         {rows(issues.filter((item) => item.record.deleted))}
       </details>
-      <section aria-label="Manual capabilities">
-        <h2>Manual capabilities</h2>
+      <section aria-label="Manual Capabilities">
+        <h2>Manual Capabilities</h2>
         <p>
-          Functional capability and backup availability are independent operator
+          Functional Capability and backup availability are independent operator
           observations.
         </p>
         {onCreateCapability && (
@@ -182,7 +182,7 @@ export function IssuesView({
             disabled={disabled}
             onClick={onCreateCapability}
           >
-            Record manual assessment
+            Record Manual Assessment
           </button>
         )}
         {pages
@@ -212,13 +212,13 @@ export function IssuesView({
                       disabled={disabled || record.deleted}
                       onClick={() => onEdit(record)}
                     >
-                      Assess capability
+                      Assess Capability
                     </button>
                     <button
                       className="ws-button"
                       onClick={() => onHistory(record.record_id)}
                     >
-                      Assessment history
+                      Assessment History
                     </button>
                     <button
                       className="ws-button"
@@ -226,8 +226,8 @@ export function IssuesView({
                       onClick={() => onTransition(record)}
                     >
                       {record.deleted
-                        ? 'Restore assessment record'
-                        : 'Remove assessment record'}
+                        ? 'Restore Assessment Record'
+                        : 'Remove Assessment Record'}
                     </button>
                   </div>
                 </article>

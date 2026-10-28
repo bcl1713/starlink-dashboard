@@ -28,6 +28,8 @@ class CallPayload(PayloadBase):
     communications_kind: Literal["voice", "vtc", "other"] | None = None
     prep_lead_minutes: Annotated[int, Field(strict=True, ge=0, le=10080)] | None = None
     conference_id: RecordId | None = None
+    direct_transport: str | None = Field(default=None, min_length=1, max_length=200)
+    established_at: UtcTimestamp | None = None
 
 
 class ConferencePayload(PayloadBase):
@@ -37,8 +39,8 @@ class ConferencePayload(PayloadBase):
     ) = None
     coordinator: str | None = Field(default=None, max_length=200)
     verified_at: UtcTimestamp | None = None
-    intended_transport: Literal["Starshield", "Ka", "X"] | None = None
-    configured_transport: Literal["Starshield", "Ka", "X"] | None = None
+    intended_transport: str | None = Field(default=None, min_length=1, max_length=200)
+    configured_transport: str | None = Field(default=None, min_length=1, max_length=200)
     configuration_reported_at: UtcTimestamp | None = None
 
     @model_validator(mode="after")
