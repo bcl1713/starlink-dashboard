@@ -311,7 +311,6 @@ it.each(['direct', 'bridge'] as const)(
     fireEvent.click(
       screen.getByRole('button', {
         name: kind === 'direct' ? 'Establish' : 'Establish Bridge',
-        exact: true,
       })
     );
     if (kind === 'direct')
