@@ -255,10 +255,7 @@ class FlightEventRuntime:
                     status["landed_at"], "inferred live ground arrival"
                 )
         elif movement == "airborne":
-            if manager.get_status().phase != FlightPhase.IN_FLIGHT:
-                manager.trigger_departure(
-                    status["takeoff_at"], "inferred live departure"
-                )
+            manager.resume_in_flight(status["takeoff_at"])
         elif movement in ("unknown", "taxi_out", "parked"):
             if manager.get_status().phase != FlightPhase.PRE_DEPARTURE:
                 manager.transition_phase(

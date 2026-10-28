@@ -22,17 +22,29 @@ def advance_detection(
     if previous is not None and now <= previous:
         return result
     prior_candidate = state.candidate
+    ground_state = state.movement in ("parked", "parked_at_stop", "taxi_out")
+    if ground_state and (previous is None or (now - previous).total_seconds() >= 10):
+        state.ground_history_interrupted = True
     if previous is not None and (now - previous).total_seconds() >= 10:
         state.candidate = None
     state.last_observed_at = now
     if state.destination_complete:
         return result
     if observation.source_mode != "live" or not observation.usable_motion:
+        if ground_state:
+            state.ground_history_interrupted = True
         state.uncertain = True
         state.candidate = None
         return _changes(result, prior_candidate)
     speed = observation.speed_knots
     altitude = observation.altitude_feet if observation.usable_altitude else None
+    if ground_state:
+        if altitude is None:
+            state.ground_history_interrupted = True
+        elif state.ground_history_interrupted and speed < policy.airborne_knots:
+            # Fresh ground-like motion can establish a new baseline after a gap.
+            state.parked_altitude = altitude
+            state.ground_history_interrupted = False
     if state.movement == "airborne" and altitude is not None:
         altitude_time = observation.altitude_observed_at
         if (
@@ -59,6 +71,32 @@ def advance_detection(
     state.uncertain = False
 
     if (
+        state.movement in ("unknown", "parked", "parked_at_stop", "taxi_out")
+        and speed >= policy.recovery_airborne_knots
+        and altitude is not None
+        and altitude >= policy.recovery_altitude_feet
+        and not (
+            state.movement == "taxi_out"
+            and not state.ground_history_interrupted
+            and state.parked_altitude is not None
+            and altitude - state.parked_altitude >= policy.altitude_change_feet
+            and speed > policy.airborne_knots
+        )
+    ):
+        # A process/mission can join a flight after taxi and takeoff, including
+        # an incomplete saved ground state. Require cruise-like evidence rather
+        # than interpreting a ground roll as recovery. No missed events are emitted.
+        state.uncertain = True
+        altitude_time = observation.altitude_observed_at
+        if (
+            state.last_altitude_observed_at is not None
+            and altitude_time <= state.last_altitude_observed_at
+        ):
+            state.candidate = None
+            return _changes(result, prior_candidate)
+        state.last_altitude_observed_at = altitude_time
+        kind, dwell, target = "airborne_recovery", policy.airborne_dwell, "airborne"
+    elif (
         state.movement in ("unknown", "taxi_in", "probable_landed_rollout")
         and speed < policy.parking_knots
     ):
@@ -78,6 +116,7 @@ def advance_detection(
     elif state.movement == "taxi_out":
         climb = (
             altitude is not None
+            and not state.ground_history_interrupted
             and state.parked_altitude is not None
             and altitude - state.parked_altitude >= policy.altitude_change_feet
         )
@@ -209,6 +248,7 @@ def advance_detection(
         state.parked_altitude = altitude
     if target == "airborne":
         state.max_airborne_altitude = altitude
+        state.recovered_airborne = kind == "airborne_recovery"
     if event_kind:
         state.destination_complete = event_kind == "on_blocks" and near_destination
         result.leg_completion = state.destination_complete
@@ -225,6 +265,7 @@ def advance_detection(
                     "destination_complete": state.destination_complete,
                     "position_source": "collection_time",
                     "altitude_source": observation.altitude_validity_source,
+                    "missing_departure_history": state.recovered_airborne,
                 },
             )
         )

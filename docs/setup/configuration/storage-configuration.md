@@ -56,7 +56,16 @@ revisions. Intermediate operational stops remain inside the planned leg.
 `FLIGHT_DETECTION_POLICY` accepts a JSON object overriding the documented
 engineering policy fields in the flight-events evidence report. Defaults are not
 field-calibrated aircraft operating limits. Missing evidence requires manual
-confirmation. Startup while moving does not invent a departure time.
+confirmation. Startup while moving does not invent a departure time. When a
+mission is activated during flight, continuous fresh live position, speed and
+altitude observations at or above `recovery_airborne_knots` (150 knots) and
+`recovery_altitude_feet` (5,000 feet) for `airborne_dwell` (20 seconds) restore
+the current airborne state and estimated route timing. These are configurable
+engineering defaults. Gaps or stale/repeated altitude evidence restart recovery.
+Missed off-blocks and takeoff events remain absent, and the actual departure
+time stays unknown. The recovered movement is saved for subsequent restarts.
+Later landing events retain the missing-departure provenance so operators can
+correct times and fill the missing departure history.
 
 Prometheus recovery uses `STARLINK_PROMETHEUS_URL` and selects only the source
 identified by `FLIGHT_ARCHIVE_PROMETHEUS_INSTANCE` (default

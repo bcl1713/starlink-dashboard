@@ -121,15 +121,19 @@ async function seed(request: APIRequestContext) {
     await json(
       await request.post(`/api/v2/missions/${missionId}/legs/${leg}/activate`)
     );
-    await json(
-      await request.post('/api/flight-status/depart', {
-        data: {
-          timestamp: departure,
-          reason: 'Synthetic raw flight-state input',
-        },
-      })
-    );
     await raw(request, elapsed);
+    await expect
+      .poll(
+        async () => {
+          await raw(request, elapsed);
+          return (await json(await request.get('/api/flight-status'))).phase;
+        },
+        { timeout: 35_000, intervals: [1_000] }
+      )
+      .toBe('in_flight');
+    const recovered = await json(await request.get('/api/flight-status'));
+    expect(recovered.eta_mode).toBe('estimated');
+    expect(recovered.departure_time).toBeNull();
   };
   await activate(legs[0]);
   return { missionId, legs, activate };
@@ -170,6 +174,7 @@ test('customizable presets and durable shared advisories across real clients', a
   };
   try {
     const { missionId, legs, activate } = await seed(request);
+    proof.coldLiveActivationResumesWithoutTakeoffTime = true;
     startHeartbeat();
     const first = await feed(request, missionId);
     await writeFile(
@@ -564,6 +569,46 @@ test('customizable presets and durable shared advisories across real clients', a
         .getByText('Starshield Transition Window', { exact: true })
     ).toHaveCount(0, { timeout: 65_000 });
     proof.sourceFailureDoesNotClaimAllClear = true;
+    await overviewA.screenshot({
+      path: `${evidence}/unavailable-dismissible-1920x1080.png`,
+    });
+    await overviewA
+      .getByRole('button', { name: 'Dismiss transport advisory notice' })
+      .click();
+    await expect(
+      overviewA.getByText('Transport Advisories Unavailable', { exact: true })
+    ).toHaveCount(0);
+    // Another poll must keep it hidden on this display while a second display
+    // continues to show the unresolved coverage problem.
+    const nextPoll = overviewA.waitForResponse(
+      (response) =>
+        response.url().includes('/api/v2/operator/events?') &&
+        response.status() === 200
+    );
+    await overviewA.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await nextPoll;
+    await expect(
+      overviewA.getByText('Transport Advisories Unavailable', { exact: true })
+    ).toHaveCount(0);
+    await expect(overviewB.getByLabel('Transport Advisories')).toContainText(
+      /Unavailable|Stale/,
+      { timeout: 65_000 }
+    );
+    proof.noticeDismissalSurvivesPollingAndIsLocal = true;
+    await json(await request.post('/api/config', { data: config }));
+    await expect(
+      overviewA.getByText(/Transport Advisories (Unavailable|Stale)/)
+    ).toHaveCount(0);
+    await expect(overviewA.getByLabel('Transport Advisories')).toContainText(
+      'Starshield Transition Window',
+      { timeout: 65_000 }
+    );
+    await expect(
+      overviewA.getByRole('button', {
+        name: 'Dismiss transport advisory notice',
+      })
+    ).toHaveCount(0);
+    proof.dismissalDoesNotStopRecoveryOrNewAdvisories = true;
     expect(proof.browserErrors).toEqual([]);
     expect(proof.externalRequests).toEqual([]);
     proof.checksPassed = true;

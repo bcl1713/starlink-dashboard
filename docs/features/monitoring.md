@@ -5,6 +5,12 @@
 
 ## Core Monitoring Features
 
+The **×** beside `Transport Advisories Unavailable` or
+`Transport Advisories Stale` on Overview dismisses that notice locally for the
+continuous failure. Polling continues and transport advisories still appear. A
+later failure after coverage recovers shows a new notice; refreshing also clears
+the local dismissal.
+
 ### Real-Time Position Tracking
 
 Track Starlink terminal position in real-time with historical trail
