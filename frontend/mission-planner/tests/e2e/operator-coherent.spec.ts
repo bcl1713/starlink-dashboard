@@ -287,10 +287,22 @@ test('coherent operations, retained capture and real journal safety across deskt
     await bravoCall
       .getByRole('button', { name: 'Reschedule', exact: true })
       .click();
+    const currentSchedule = await feed(request, missionId);
+    const lastRestrictionEnd = Math.max(
+      ...currentSchedule.events
+        .filter(
+          (event) =>
+            event.kind === 'restriction' &&
+            event.leg_id === legs[0] &&
+            (event.transport === 'Ka' || event.transport === null) &&
+            event.end_at
+        )
+        .map((event) => Date.parse(event.end_at!))
+    );
     await zulu(
       page,
       'Planned Start',
-      new Date(Date.parse(restriction!.end_at!) + 5 * 60000).toISOString()
+      new Date(lastRestrictionEnd + 5 * 60000).toISOString()
     );
     await page.getByRole('button', { name: /^Save Call$/i }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
