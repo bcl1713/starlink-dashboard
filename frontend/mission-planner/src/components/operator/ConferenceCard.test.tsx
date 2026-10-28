@@ -37,7 +37,9 @@ it('conference close keeps customer connected with conspicuous discrepancy', () 
     />
   );
   expect(screen.getByRole('alert').textContent).toMatch(/continuity unknown/i);
-  expect(screen.getByText(/Customer reported connected: 1/)).toBeTruthy();
+  expect(
+    screen.getByText('Customers Reported Connected').parentElement?.textContent
+  ).toContain('1');
 });
 it('one-tap customer actions need no note or confirmation', () => {
   const action = vi.fn();

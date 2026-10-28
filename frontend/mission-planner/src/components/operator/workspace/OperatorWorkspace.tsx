@@ -354,7 +354,7 @@ export function OperatorWorkspace() {
         ?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [selectedRecordId, view]);
+  }, [selection, selectedRecordId, view]);
   function focusRecord(record: SavedRecord) {
     if (record.payload.entry_type === 'participation') {
       const { call_id, conference_id } = record.payload;
@@ -1080,9 +1080,6 @@ export function OperatorWorkspace() {
               }}
             />
           )}
-          <div hidden={view !== 'Operations'}>
-            <ManualDestinationSettingsCard />
-          </div>
           <OperatorStoreSetup
             health={health.data}
             error={health.error}
@@ -1579,6 +1576,9 @@ export function OperatorWorkspace() {
           </DialogDescription>
           <div className="ws-editor-body">
             <OperatorDisplayTools missionId={missionId} />
+            <div id="operator-destination-controls">
+              <ManualDestinationSettingsCard />
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -72,6 +72,26 @@ export function ConferenceCard({
     previousSession ||
     !['established', 'interrupted'].includes(p.status ?? '') ||
     (p.status === 'established' && !p.verified_at);
+  const discrepancy =
+    connected > 0 &&
+    (p.status === 'closed' || p.status === 'interrupted' || record.deleted);
+  const status = discrepancy
+    ? `Discrepancy · Customer Reported Connected; Conference ${record.deleted ? 'Removed' : p.status}. Continuity Unknown.`
+    : blockers.length > 0
+      ? 'Active Call Or Unresolved Customer Report · Resolve Before Closing.'
+      : incomplete
+        ? 'Activity Incomplete · Load Remaining Records Before Closing.'
+        : previousSession
+          ? 'Previous Session Not Assumed Available Here · Establish With The Two-Way Check For This Leg.'
+          : p.status === 'closed'
+            ? 'Closed · Establish To Reuse This Conference.'
+            : p.status === 'interrupted'
+              ? 'Connection Interrupted · Restore And Complete The Two-Way Check.'
+              : ready
+                ? 'Two-Way Check Complete · Connect Customer When Ready.'
+                : p.status === 'established'
+                  ? 'Earlier Check Not Recorded · Establish To Report The Completed Two-Way Check.'
+                  : 'Establish After The Distant End Can Hear Us And We Can Hear Them.';
   return (
     <article
       id={`operator-record-${record.record_id}`}
@@ -79,9 +99,9 @@ export function ConferenceCard({
       data-selected={selected || undefined}
       aria-label={`Conference ${p.title}`}
       className={
-        'min-w-0 space-y-3 rounded-xl border-2 border-l-4 p-4 break-words ' +
+        'ws-conference-card min-w-0 space-y-2 rounded-xl border-2 border-l-4 p-4 break-words ' +
         (prominentActions
-          ? 'border-2 border-l-4 border-teal-500/60 border-l-teal-500 bg-teal-500/5 shadow-md'
+          ? 'border-teal-500/60 border-l-teal-500 bg-teal-500/5 shadow-md'
           : 'border-l-transparent bg-card shadow-sm') +
         (selected ? ' ring-2 ring-primary ring-offset-2' : '')
       }
@@ -90,47 +110,39 @@ export function ConferenceCard({
         {p.title}
         {record.deleted ? ' · Removed' : ''}
       </h4>
-      <p className="min-h-24 rounded bg-muted p-2 text-sm">
-        {previousSession
-          ? 'This session is not assumed available here. Establish again for the current leg; previous reports remain in history.'
-          : p.status === 'closed'
-            ? 'Closed. Establish again to reuse this bridge.'
-            : p.status === 'interrupted'
-              ? 'Connection interrupted. Restore the bridge, then Establish with the two-way check.'
-              : ready
-                ? 'Established with a two-way distant-end check. Connect Customer when ready.'
-                : p.status === 'established'
-                  ? 'Earlier establishment has no completed two-way check. Establish to report the check; earlier evidence stays in history.'
-                  : 'Establish includes the two-way distant-end check. Then Connect Customer.'}
+      <p className="inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold">
+        {previousSession ? 'Previous Session' : (p.status ?? 'Unknown')}
       </p>
-      <p className="inline-block min-h-20 rounded-full border bg-background px-3 py-1 text-sm font-semibold">
-        Conference: {previousSession ? 'Historical session report · ' : ''}
-        {p.status ?? 'Unknown'} · Two-way check:{' '}
-        {revisionUtc(p.verified_at ?? null)}
+      <p className="text-sm">
+        Reported Transport: <strong>{transport(p.configured_transport)}</strong>
+        {p.intended_transport && p.intended_transport !== p.configured_transport
+          ? ` · Intended: ${transport(p.intended_transport)}`
+          : ''}
       </p>
-      {compactActions && (
-        <p>
-          Last reported activity:{' '}
-          {activityAssociationLabel ??
-            (record.scope === 'mission'
-              ? 'Association unknown'
-              : record.scope.replaceAll('_', ' '))}
-          . Saved configuration is kept across the mission.
-        </p>
-      )}
-      <p>Customer reported connected: {connected}</p>
-      {connected > 0 &&
-        (p.status === 'closed' ||
-          p.status === 'interrupted' ||
-          record.deleted) && (
-          <p
-            role="alert"
-            className="rounded border-2 border-amber-500 p-2 font-semibold"
-          >
-            Discrepancy — customer reported connected; conference{' '}
-            {record.deleted ? 'removed' : p.status}. Continuity unknown.
-          </p>
-        )}
+      {advisory}
+      <div className="grid min-h-14 grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-muted-foreground">Two-Way Distant-End Check</p>
+          <p>{revisionUtc(p.verified_at ?? null)}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Customers Reported Connected</p>
+          <p>{connected}</p>
+        </div>
+      </div>
+      <p
+        className={
+          'ws-conference-status rounded border border-transparent px-2 py-1 text-sm ' +
+          (discrepancy
+            ? 'border-amber-500 text-amber-500'
+            : 'text-muted-foreground')
+        }
+        role={
+          discrepancy ? 'alert' : blockers.length > 0 ? 'status' : undefined
+        }
+      >
+        {status}
+      </p>
       <div
         className="flex min-h-11 flex-wrap items-start gap-2"
         aria-label="Conference primary action"
@@ -163,22 +175,20 @@ export function ConferenceCard({
           </button>
         )}
       </div>
-      <p className="min-h-16 text-sm text-muted-foreground">
-        {blockers.length > 0
-          ? 'Finish active calls and resolve connected or unknown customer reports before closing.'
-          : incomplete
-            ? 'Load remaining activity before closing.'
-            : 'Establish reports the two-way check; Close keeps the saved bridge available for reuse.'}
-      </p>
-      <p>
-        Intended Transport: {transport(p.intended_transport)} ·
-        Operator-reported configuration: {transport(p.configured_transport)}
-      </p>
-      {advisory}
       <details className="border-t pt-3">
         <summary className="min-h-11 cursor-pointer py-2">
           Conference Details
         </summary>
+        {compactActions && (
+          <p className="text-sm">
+            Last Reported Activity:{' '}
+            {activityAssociationLabel ??
+              (record.scope === 'mission'
+                ? 'Association Unknown'
+                : record.scope.replaceAll('_', ' '))}
+            . Configuration Is Retained Across The Mission.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           {!record.deleted && (
             <>
@@ -223,7 +233,7 @@ export function ConferenceCard({
           </button>
         </div>
         <p className="text-sm">
-          Configuration reported:{' '}
+          Configuration Reported:{' '}
           {revisionUtc(p.configuration_reported_at ?? null)} · Coordinator:{' '}
           {p.coordinator ?? 'Unknown'}
         </p>

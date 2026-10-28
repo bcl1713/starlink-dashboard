@@ -438,7 +438,7 @@ it('shows pending immediately and the authoritative accepted conference while li
   }
 });
 
-it('offers manual destination in Now without a mission or ready operator journal', async () => {
+it('offers manual destination in shared Display Controls without a mission or ready operator journal', async () => {
   const { manualDestinationApi } = await import(
     '@/services/manual-destination'
   );
@@ -446,6 +446,7 @@ it('offers manual destination in Now without a mission or ready operator journal
     destination: null,
   });
   mount('/operator', false);
+  fireEvent.click(screen.getByRole('button', { name: 'Display Controls' }));
   expect(
     await screen.findByRole('region', { name: 'Manual destination' })
   ).toBeTruthy();
@@ -531,6 +532,27 @@ it('focuses the referenced call from the mission timeline without editing or rep
   );
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(registry.listDrafts()).toHaveLength(0);
+  await waitFor(() =>
+    expect(
+      document
+        .getElementById(`operator-record-${call.record_id}`)
+        ?.contains(document.activeElement)
+    ).toBe(true)
+  );
+  screen.getByRole('button', { name: 'Schedule' }).focus();
+  expect(
+    document
+      .getElementById(`operator-record-${call.record_id}`)
+      ?.contains(document.activeElement)
+  ).toBe(false);
+  fireEvent.click(within(row).getByRole('button', { name: 'Open source' }));
+  await waitFor(() =>
+    expect(
+      document
+        .getElementById(`operator-record-${call.record_id}`)
+        ?.contains(document.activeElement)
+    ).toBe(true)
+  );
 });
 
 it('keeps the full timeline across operating views and retains the editor draft', async () => {

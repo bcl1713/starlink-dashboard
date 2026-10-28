@@ -861,3 +861,12 @@
     border-top: 0;
   }
 }
+/* Reserve concise operational status without filling the card with blank space. */
+.ws-conference-status {
+  min-height: 3.75rem;
+}
+@media (min-width: 1201px) {
+  .ws-conference-status {
+    min-height: 2.5rem;
+  }
+}

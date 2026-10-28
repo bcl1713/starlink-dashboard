@@ -262,6 +262,25 @@ test('coherent operations, retained capture and real journal safety across deskt
     proof.directCall = true;
     const bravoCall = page.locator(`#operator-record-${callBravo.record_id}`);
     await expect(bravoCall.locator('.ws-call-advisory-warning')).toBeVisible();
+    const timelineBravo = page.getByRole('button', {
+      name: 'Focus Prepare: Bravo Customer',
+      exact: true,
+    });
+    await timelineBravo.click();
+    await expect
+      .poll(() =>
+        bravoCall.evaluate((el) => el.contains(document.activeElement))
+      )
+      .toBe(true);
+    await page.getByRole('button', { name: 'Schedule', exact: true }).focus();
+    await timelineBravo.click();
+    await expect
+      .poll(() =>
+        bravoCall.evaluate((el) => el.contains(document.activeElement))
+      )
+      .toBe(true);
+    proof.repeatedTimelineSelection = true;
+
     await page.screenshot({
       path: `${evidence}/operations-busy-1920x1080.png`,
     });

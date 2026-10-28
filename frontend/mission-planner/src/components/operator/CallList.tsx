@@ -180,7 +180,7 @@ export function CallList({
                   ? `${bridgePayload.status ?? 'unknown'} · ${bridgePayload.verified_at ? 'verification reported' : 'not verified'}`
                   : payload.conference_id
                     ? 'Unresolved'
-                    : 'Direct call'}
+                    : 'Direct Connection'}
               </p>
               <p className="text-sm">
                 Customer:{' '}

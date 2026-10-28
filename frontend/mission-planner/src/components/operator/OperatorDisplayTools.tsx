@@ -63,6 +63,16 @@ export function OperatorDisplayTools({ missionId }: { missionId: string }) {
           >
             Weather And Aircraft
           </button>
+          <button
+            className="ws-button"
+            onClick={() =>
+              document
+                .getElementById('operator-destination-controls')
+                ?.scrollIntoView({ block: 'start' })
+            }
+          >
+            Destination
+          </button>
         </nav>
         <div id="operator-camera-controls" className="scroll-mt-3">
           <OverviewDisplaySettingsCard />
