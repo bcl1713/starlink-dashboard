@@ -53,10 +53,10 @@ import {
 } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
 import {
-  OverviewBloomDebug,
-  OverviewBloomAmbientLight,
-  OverviewBloomDebugScene,
-} from './OverviewBloomDebug';
+  OverviewBloom,
+  OverviewAmbientLight,
+  OverviewBloomScene,
+} from './OverviewBloom';
 import { OverviewMarkerDebug } from './OverviewMarkerDebug';
 import {
   DEFAULT_CHEVRON_SETTINGS,
@@ -984,7 +984,7 @@ export function OverviewPage() {
         data-adsb-details-open={selectedAdsbContact !== null}
         data-aviation-details-open={selectedWeather !== null}
       >
-        <OverviewBloomDebug enabled={bloomDebug}>
+        <OverviewBloom debug={bloomDebug}>
           {markerDebug && (
             <OverviewMarkerDebug
               settings={chevronSettings}
@@ -1061,7 +1061,7 @@ export function OverviewPage() {
               className="overview-globe"
               camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
             >
-              <OverviewBloomDebugScene />
+              <OverviewBloomScene />
               <OverviewLabelLayout
                 paths={[
                   ...(showRoute ? [routePoints] : []),
@@ -1073,7 +1073,7 @@ export function OverviewPage() {
                 ]}
               />
               <color attach="background" args={['#030307']} />
-              <OverviewBloomAmbientLight />
+              <OverviewAmbientLight />
               <directionalLight position={sunPosition} intensity={5} />
               <Stars
                 radius={50}
@@ -1257,7 +1257,7 @@ export function OverviewPage() {
               />
             </Canvas>
           </div>
-        </OverviewBloomDebug>
+        </OverviewBloom>
       </div>
       <div className="overview-overlay-layout">
         {(showClocks || pacedRunning) && (

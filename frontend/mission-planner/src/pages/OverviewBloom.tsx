@@ -7,10 +7,7 @@ import {
 } from 'react';
 import type { RootState } from '@react-three/fiber';
 import { TuningPanel } from '../experiments/bloom/TuningPanel';
-import {
-  type BloomMode,
-  type BloomSettings,
-} from '../experiments/bloom/contracts';
+import type { BloomMode, BloomSettings } from '../experiments/bloom/contracts';
 import {
   OverviewBloomComposer,
   type FrameEvidence,
@@ -26,33 +23,35 @@ import {
 
 import {
   OVERVIEW_BLOOM_SETTINGS,
+  OVERVIEW_BLOOM_AMBIENT_INTENSITY,
   OVERVIEW_BLOOM_EMISSIONS,
 } from './overview-bloom-tuning';
 
 type RenderedFrame = { state: RootState; dimensions: FrameEvidence };
-const DebugScene = createContext<{
+const BloomScene = createContext<{
   mode: BloomMode;
   settings: BloomSettings;
   onFrame: (state: RootState, dimensions: FrameEvidence) => void;
 } | null>(null);
 
 // The provider stays in place while tuning, keeping the real Canvas and all its
-// live data, camera controls and animation pools mounted.
-export function OverviewBloomDebug({
-  enabled,
+// live data, camera controls and animation pools mounted. Bloom is the default;
+// the query flag controls only whether the temporary tuning panel is shown.
+export function OverviewBloom({
+  debug = false,
   children,
 }: {
-  enabled: boolean;
+  debug?: boolean;
   children: ReactNode;
 }) {
   const [mode, setMode] = useState<BloomMode>('bloom');
   const [settings, setSettings] = useState(OVERVIEW_BLOOM_SETTINGS);
   const [emissions, setEmissions] = useState(OVERVIEW_BLOOM_EMISSIONS);
   const [ambientIntensity, setAmbientIntensity] = useState(
-    DEFAULT_OVERVIEW_AMBIENT_INTENSITY
+    OVERVIEW_BLOOM_AMBIENT_INTENSITY
   );
   const frame = useRef<RenderedFrame | null>(null);
-  const active = enabled && mode === 'bloom';
+  const active = mode === 'bloom';
   const getReport = () => {
     const last = frame.current;
     return {
@@ -78,18 +77,14 @@ export function OverviewBloomDebug({
     };
   };
   return (
-    <DebugScene.Provider
-      value={
-        enabled
-          ? {
-              mode,
-              settings,
-              onFrame: (state, dimensions) => {
-                frame.current = { state, dimensions };
-              },
-            }
-          : null
-      }
+    <BloomScene.Provider
+      value={{
+        mode,
+        settings,
+        onFrame: (state, dimensions) => {
+          if (debug) frame.current = { state, dimensions };
+        },
+      }}
     >
       <OverviewAmbientIntensity.Provider
         value={active ? ambientIntensity : DEFAULT_OVERVIEW_AMBIENT_INTENSITY}
@@ -97,7 +92,7 @@ export function OverviewBloomDebug({
         <OverviewBloomMode.Provider value={active}>
           <OverviewBloomEmission.Provider value={emissions}>
             {children}
-            {enabled && (
+            {debug && (
               <TuningPanel
                 active={active}
                 busy={false}
@@ -126,7 +121,7 @@ export function OverviewBloomDebug({
                 onReset={() => {
                   setSettings(OVERVIEW_BLOOM_SETTINGS);
                   setEmissions(OVERVIEW_BLOOM_EMISSIONS);
-                  setAmbientIntensity(DEFAULT_OVERVIEW_AMBIENT_INTENSITY);
+                  setAmbientIntensity(OVERVIEW_BLOOM_AMBIENT_INTENSITY);
                 }}
                 getReport={getReport}
               />
@@ -134,16 +129,16 @@ export function OverviewBloomDebug({
           </OverviewBloomEmission.Provider>
         </OverviewBloomMode.Provider>
       </OverviewAmbientIntensity.Provider>
-    </DebugScene.Provider>
+    </BloomScene.Provider>
   );
 }
 
-export function OverviewBloomDebugScene() {
-  const debug = useContext(DebugScene);
+export function OverviewBloomScene() {
+  const debug = useContext(BloomScene);
   return debug ? <OverviewBloomComposer {...debug} /> : null;
 }
 
-export function OverviewBloomAmbientLight() {
+export function OverviewAmbientLight() {
   const intensity = useOverviewAmbientIntensity();
   return <ambientLight intensity={intensity} />;
 }

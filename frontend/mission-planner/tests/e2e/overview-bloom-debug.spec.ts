@@ -31,6 +31,29 @@ test('tunes real Overview bloom and exports the current settings', async ({
   const panel = page.getByLabel('Temporary bloom tuning');
   await expect(panel).toBeVisible();
   await expect(panel.getByLabel('City light color')).toHaveValue('#ffbe6f');
+  await panel
+    .getByRole('button', { name: 'Copy settings', exact: true })
+    .click();
+  const defaults = JSON.parse(
+    await panel.getByLabel('Feedback JSON').inputValue()
+  );
+  expect(defaults.settings).toEqual({
+    strength: 0.15,
+    threshold: 0,
+    radius: 0,
+    maxDimension: 3840,
+    exposure: 1,
+    view: 'final',
+  });
+  expect(defaults.emissions).toEqual({
+    cities: 2.9,
+    cityColor: '#ffbe6f',
+    lines: 1.7,
+    particles: 0.1,
+    pois: 4,
+    aircraft: 1.7,
+  });
+  expect(defaults.lighting).toEqual({ ambientIntensity: 0.1 });
   const camera = await settledOverviewCamera(page);
   const numeric = (name: string) =>
     panel.getByRole('spinbutton', { name, exact: true });
@@ -44,6 +67,13 @@ test('tunes real Overview bloom and exports the current settings', async ({
   await numeric('Bloom radius').fill('0.3');
   await numeric('Routes & links emission').fill('6');
   await numeric('Particles emission').fill('7');
+  await expect
+    .poll(
+      async () =>
+        JSON.parse(await panel.getByLabel('Feedback JSON').inputValue())
+          .emissions.particles
+    )
+    .toBe(7);
   await numeric('POI cores emission').fill('9');
   await numeric('Aircraft emission').fill('12');
   await panel.getByLabel('Bloom resolution bound').selectOption('1920');
@@ -143,7 +173,14 @@ test('tunes real Overview bloom and exports the current settings', async ({
   await page.goto('/overview');
   await expect(panel).toHaveCount(0);
   await settledOverviewCamera(page);
-  expect((await applied()).renderOwners).toBe(0);
-  expect((await applied()).ambientIntensity).toBe(0.5);
+  await expect
+    .poll(async () => (await applied()).city, { timeout: 30_000 })
+    .toBe(2.9);
+  expect((await applied()).renderOwners).toBe(1);
+  expect((await applied()).ambientIntensity).toBe(0.1);
+  expect((await applied()).aircraft).toContain(1.7);
+  await page.screenshot({
+    path: info.outputPath('overview-default-bloom.png'),
+  });
   expect(errors).toEqual([]);
 });

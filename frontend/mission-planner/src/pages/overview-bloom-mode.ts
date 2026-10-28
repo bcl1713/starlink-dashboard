@@ -1,7 +1,8 @@
 import { createContext, useContext } from 'react';
 import { Color } from 'three';
 
-// Opt-in only. Ordinary Overview keeps bloom disabled; temporary debug mode opts in.
+// Overview supplies these contexts for its default bloom rendering. Other scenes
+// retain legacy rendering unless they provide the contexts explicitly.
 export const OverviewBloomMode = createContext(false);
 export const useOverviewBloom = () => useContext(OverviewBloomMode);
 export const DEFAULT_OVERVIEW_AMBIENT_INTENSITY = 0.5;

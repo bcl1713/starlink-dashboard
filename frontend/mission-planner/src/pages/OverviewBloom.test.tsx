@@ -7,10 +7,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import {
-  OverviewBloomDebug,
-  OverviewBloomDebugScene,
-} from './OverviewBloomDebug';
+import { OverviewBloom, OverviewBloomScene } from './OverviewBloom';
 import {
   useOverviewAmbientIntensity,
   useOverviewBloom,
@@ -41,18 +38,21 @@ function Scene() {
   );
 }
 afterEach(cleanup);
-it('keeps ordinary Overview free of the panel and composer', () => {
+it('enables the selected bloom preset on ordinary Overview without showing debug controls', () => {
   render(
-    <OverviewBloomDebug enabled={false}>
+    <OverviewBloom debug={false}>
       <Scene />
-      <OverviewBloomDebugScene />
-    </OverviewBloomDebug>
+      <OverviewBloomScene />
+    </OverviewBloom>
   );
   expect(screen.queryByLabelText('Temporary bloom tuning')).toBeNull();
-  expect(screen.queryByTestId('composer')).toBeNull();
+  expect(screen.getByTestId('composer').textContent).toBe('bloom:0');
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).active
-  ).toBe(false);
+  ).toBe(true);
+  expect(
+    JSON.parse(screen.getByTestId('actual-scene').textContent!).ambientIntensity
+  ).toBe(0.1);
 });
 it('applies controls to the existing scene and copies all current values without a separate app', async () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
@@ -61,20 +61,20 @@ it('applies controls to the existing scene and copies all current values without
     value: { writeText },
   });
   const { rerender } = render(
-    <OverviewBloomDebug enabled>
+    <OverviewBloom debug>
       <Scene />
-      <OverviewBloomDebugScene />
-    </OverviewBloomDebug>
+      <OverviewBloomScene />
+    </OverviewBloom>
   );
   expect(
     screen.getByRole('spinbutton', { name: 'Bloom strength' })
-  ).toHaveProperty('value', '0.35');
+  ).toHaveProperty('value', '0.15');
   expect(
     screen.getByRole('spinbutton', { name: 'Bloom threshold' })
-  ).toHaveProperty('value', '0.8');
+  ).toHaveProperty('value', '0');
   expect(
     screen.getByRole('spinbutton', { name: 'Bloom radius' })
-  ).toHaveProperty('value', '1');
+  ).toHaveProperty('value', '0');
   expect(screen.getByLabelText('City light color')).toHaveProperty(
     'value',
     '#ffbe6f'
@@ -82,12 +82,12 @@ it('applies controls to the existing scene and copies all current values without
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).emission
   ).toEqual({
-    cities: 17,
+    cities: 2.9,
     cityColor: '#ffbe6f',
-    lines: 3.9,
-    particles: 0.2,
-    pois: 40,
-    aircraft: 2.8,
+    lines: 1.7,
+    particles: 0.1,
+    pois: 4,
+    aircraft: 1.7,
   });
   fireEvent.change(
     screen.getByRole('slider', { name: 'Ambient lighting slider' }),
@@ -152,12 +152,13 @@ it('applies controls to the existing scene and copies all current values without
   fireEvent.click(screen.getByRole('button', { name: 'Reset tuning' }));
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).ambientIntensity
-  ).toBe(0.5);
+  ).toBe(0.1);
   rerender(
-    <OverviewBloomDebug enabled={false}>
+    <OverviewBloom debug={false}>
       <Scene />
-      <OverviewBloomDebugScene />
-    </OverviewBloomDebug>
+      <OverviewBloomScene />
+    </OverviewBloom>
   );
-  expect(screen.queryByTestId('composer')).toBeNull();
+  expect(screen.getByTestId('composer').textContent).toBe('bloom:0');
+  expect(screen.queryByLabelText('Temporary bloom tuning')).toBeNull();
 });

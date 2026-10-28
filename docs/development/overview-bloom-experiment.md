@@ -1,46 +1,41 @@
 # Overview bloom tuning (#429)
 
-## Tune the actual Overview
+## Default Overview and live tuning
 
-Open the normal application at `/overview?bloomDebug=1`. The temporary panel
-renders on the real Overview, using the current mission, map layers, camera,
-city texture and animations. No separate package or app is needed.
+Bloom is enabled on `/overview` using the owner-selected October 28 preset:
+strength 0.15, threshold 0, radius 0, bloom bound 3840, exposure 1; cities 2.9
+at `#ffbe6f`, route/link cores 1.7, particles 0.1, POI cores 4, aircraft 1.7 and
+ambient intensity 0.1. The ordinary map has no debug panel.
 
-The live defaults now use the owner-selected October 28 values: strength 0.35,
-threshold 0.8, radius 1, bloom bound 3840, exposure 1; cities 17 at `#ffbe6f`,
-route/link cores 3.9, particles 0.2, POI cores 40 and aircraft 2.8.
+Open `/overview?bloomDebug=1` to show temporary live controls on the same scene,
+using the current mission, layers, camera and animations. No separate package or
+app is needed. The flag controls panel visibility; bloom stays enabled without
+it.
 
-Use **Ambient lighting** to reduce terrain fill independently of emission and
-exposure. The slider and numeric input range from 0 to 1 in steps of 0.01; 0.5
-is the previous ambient level. Copied/downloaded JSON includes
-`lighting.ambientIntensity`. Current appearance and ordinary Overview retain
-their original 0.5 ambient level; Reset tuning restores 0.5 and the selected
-bloom/emission defaults.
+Adjust **Bloom strength**, **Bloom threshold**, **Bloom radius**, **Exposure**,
+resolution, **Ambient lighting**, city color and the emission values. Ambient
+ranges from 0 to 1 in steps of 0.01 and changes terrain fill independently of
+emission and exposure. **Find city glow** provides a stronger starting point.
+Inspect **Bright pass** or **Bloom only**, then return to **Final scene** to
+judge the whole map. These views process WebGL content; DOM labels remain
+visible.
 
-Adjust **Bloom strength**, **Bloom threshold**, **Bloom radius**, **Exposure**
-and the bloom resolution bound. Emission controls apply immediately to warm city
-lights, route/link cores, particles, POI/ground-entry/satellite marker cores and
-both our aircraft and ADS-B aircraft. City color starts at warm amber `#ffbe6f`.
-**Find city glow** provides a stronger starting point while keeping the actual
-scene visible. Inspect **Bright pass** or **Bloom only**, then return to **Final
-scene** to judge the whole map. These debug views process WebGL content; DOM map
-labels remain visible.
+Choose **Current appearance** to compare the legacy renderer, including its
+original 0.5 ambient level, or **Output pass only** to isolate postprocessing
+output. Changing controls preserves camera and animation pools. **Reset tuning**
+restores the selected preset, including ambient 0.1. Live edits are temporary to
+the page session and do not write saved settings; reloading returns to the
+preset.
 
-Choose **Current appearance** to compare the original rendering or **Output pass
-only** to isolate the postprocessing output. Changing controls preserves the
-camera and animation pools. Normal `/overview` omits the panel and composer.
-Values are temporary to this page session and do not write saved settings.
+Click **Copy settings** and paste JSON into chat, or use **Download
+settings.json**. If clipboard access is denied, copy **Feedback JSON** manually.
+Displayed JSON updates after further edits and includes all current controls,
+including `lighting.ambientIntensity`, rendering mode, camera, renderer,
+viewport/DPR and actual target sizes. It identifies `scene: "overview"` and
+excludes mission records and route/location lists.
 
-Click **Copy settings** and paste the JSON into chat, or use **Download
-settings.json**. If clipboard access is denied, select and copy **Feedback
-JSON** manually. The displayed JSON updates after further control edits. It
-includes all current controls, the active rendering mode, camera, renderer,
-viewport/DPR and actual target sizes, with `scene: "overview"`. It excludes
-mission records and route/location lists.
-
-This PR remains unmerged and undeployed pending the separate integration
-decision. Browser verification uses the production-built Overview with local API
-fixtures, never a production backend.
+This PR remains unmerged and undeployed. Browser verification uses the
+production-built Overview with local API fixtures, never a production backend.
 
 ## Supplemental synthetic regression fixture
 
