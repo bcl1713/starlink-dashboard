@@ -388,16 +388,19 @@ test('customizable presets and durable shared advisories across real clients', a
     await expect(
       row.getByRole('button', { name: 'Acknowledge', exact: true })
     ).toBeEnabled();
-    let lostRequest: { key: string | undefined; body: unknown } | undefined;
+    let lostRequest:
+      | { key: string | undefined; body: unknown; receipt: unknown }
+      | undefined;
     await operator.route(
       '**/api/v2/operator/events/acknowledge',
       async (route) => {
+        const response = await route.fetch();
+        expect(response.ok(), await response.text()).toBe(true);
         lostRequest = {
           key: route.request().headers()['idempotency-key'],
           body: route.request().postDataJSON(),
+          receipt: await response.json(),
         };
-        const response = await route.fetch();
-        expect(response.ok(), await response.text()).toBe(true);
         await route.abort('failed');
       }
     );
@@ -425,7 +428,8 @@ test('customizable presets and durable shared advisories across real clients', a
       lostRequest!.key
     );
     expect(replay.request().postDataJSON()).toEqual(lostRequest!.body);
-    expect((await replay.json()).replayed).toBe(true);
+    expect(replay.headers()['idempotency-replayed']).toBe('true');
+    expect(await replay.json()).toEqual(lostRequest!.receipt);
     await expect(
       row.getByRole('button', { name: 'Acknowledged', exact: true })
     ).toBeVisible();
@@ -551,6 +555,11 @@ test('customizable presets and durable shared advisories across real clients', a
       /Unavailable|Stale/,
       { timeout: 65_000 }
     );
+    await expect(
+      overviewA
+        .getByLabel('Transport Advisories')
+        .getByText('Starshield Transition Window', { exact: true })
+    ).toHaveCount(0, { timeout: 65_000 });
     proof.sourceFailureDoesNotClaimAllClear = true;
     expect(proof.browserErrors).toEqual([]);
     expect(proof.externalRequests).toEqual([]);
