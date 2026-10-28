@@ -1,0 +1,29 @@
+..F.............................                                         [100%]
+=================================== FAILURES ===================================
+____________ test_browser_card_rejects_direct_browser_launch_inputs ____________
+
+    def test_browser_card_rejects_direct_browser_launch_inputs() -> None:
+        """Fails if this retired card can still create a browser outside the platform."""
+        completed = subprocess.run(
+            [
+                "node",
+                str(BROWSER_SCRIPT),
+                "--mode",
+                "neutral",
+                "--chrome",
+                "/bin/true",
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+    
+        assert completed.returncode == 1
+>       assert "platform-owned browser session" in completed.stdout
+E       assert 'platform-owned browser session' in ''
+E        +  where '' = CompletedProcess(args=['node', '<feature-checkout>/tool...-dashboard/.worktrees/issue-393-metric-lifecycle/frontend/mission-planner/package.json'\n  ]\n}\n\nNode.js v22.12.0\n").stdout
+
+tools/tests/test_v2_acceptance_browser_contract.py:59: AssertionError
+=========================== short test summary info ============================
+FAILED tools/tests/test_v2_acceptance_browser_contract.py::test_browser_card_rejects_direct_browser_launch_inputs
+1 failed, 31 passed in 1.46s

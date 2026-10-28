@@ -1,0 +1,43 @@
+{
+  "recorded_at": 1793219328.3803978,
+  "tooling": {
+    "session_id": 21945,
+    "budget_seconds": 720,
+    "kill_grace_seconds": 20,
+    "processes": [],
+    "exit_code": 0,
+    "passed": 451,
+    "seconds": 120.24,
+    "processes_terminal": true
+  },
+  "formal": {
+    "session_id": 52857,
+    "budget_seconds": 1800,
+    "kill_grace_seconds": 90,
+    "ownership": "owner-final.json",
+    "exit_code": 0,
+    "processes_terminal": true,
+    "backend_passed": 4862,
+    "backend_skipped": 20,
+    "frontend_passed": 2337
+  },
+  "health": {
+    "session_id": 61357,
+    "exit_code": 0
+  },
+  "static": {
+    "session_id": 16351,
+    "exit_code": 0,
+    "canonical_tests": 152
+  },
+  "browser_watcher": {
+    "script": "watch-browser-ownership.py",
+    "budget_seconds": 1200,
+    "grace_seconds": 10,
+    "receipt": "browser-ownership.json",
+    "session_id": 14017,
+    "exit_code": 0,
+    "processes_terminal": true,
+    "capture_limitation": "Xvfb observed; browser argv matcher missed Chrome; original receipt preserved"
+  }
+}

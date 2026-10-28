@@ -1,0 +1,214 @@
+{
+  "browser_supplement_source_sha256": "ec0ba24a6b53658e4e631a4442bd2120239cdad7c2adc5515a7a64d51350ba43",
+  "browser_verification_method": "Original watcher captured Xvfb only; Chrome cleanup independently verified post-run without historical capture claims.",
+  "checked_at_unix": 1793221115.9723983,
+  "omitted": "Original browser/process/ownership identities and absolute resource paths.",
+  "preserved_task_evidence_count": 0,
+  "removed_disposable_volume_count": 12,
+  "removed_owned_path_count": 4,
+  "runtime_generated_files_inventory": {
+    "bytes": 2814227,
+    "file_count": 34,
+    "files": [
+      {
+        "bytes": 37,
+        "path": "backend/starlink-location/.pytest_cache/.gitignore",
+        "sha256": "3ed731b65d06150c138e2dadb0be0697550888a6b47eb8c45ecc9adba8b8e9bd"
+      },
+      {
+        "bytes": 191,
+        "path": "backend/starlink-location/.pytest_cache/CACHEDIR.TAG",
+        "sha256": "37dc88ef9a0abeddbe81053a6dd8fdfb13afb613045ea1eb4a5c815a74a3bde4"
+      },
+      {
+        "bytes": 302,
+        "path": "backend/starlink-location/.pytest_cache/README.md",
+        "sha256": "73fd6fccdd802c419a6b2d983d6c3173b7da97558ac4b589edec2dfe443db9ad"
+      },
+      {
+        "bytes": 2662685,
+        "path": "backend/starlink-location/.pytest_cache/v/cache/nodeids",
+        "sha256": "d45ee7e7b77eb7e69f6ce701f1aa0038f3b150a31bd539f5deed042b9ae33e61"
+      },
+      {
+        "bytes": 35,
+        "path": "backend/starlink-location/.ruff_cache/.gitignore",
+        "sha256": "9e3a60f1e6ec4ae60215c11d54b171392745ec25e9dded433d5bd921363af316"
+      },
+      {
+        "bytes": 548,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/10589420942778115695",
+        "sha256": "3359e207b6006657f968b0e02ff56c13fdf172e51a7ac8e2befdd3e8a312c0d0"
+      },
+      {
+        "bytes": 19884,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/10960280134907460658",
+        "sha256": "80e455ff96210110c7006e7e0a80e396b54421c59c734619a2be1f51d8698a9c"
+      },
+      {
+        "bytes": 23644,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/1527547335163924085",
+        "sha256": "6bd0440fdbaf6e74218e2540e6d293f89cfe4abd43944ee10202b6b90fe20915"
+      },
+      {
+        "bytes": 4404,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/15664855289647193308",
+        "sha256": "e5f2091e9478ea10a4a3685d768308112ed406db72919f2016b8905ea10612b1"
+      },
+      {
+        "bytes": 644,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/17143713792199028957",
+        "sha256": "d07df274717ebc16f5ce174784a0d0e92841daea28f85f81df3b688cdd45b5bb"
+      },
+      {
+        "bytes": 468,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/18434244995684374672",
+        "sha256": "c0b6fee6ba7920e13fb2ef126a1d35c87a50987e825558b2827483882d137f93"
+      },
+      {
+        "bytes": 604,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/1851847815268063424",
+        "sha256": "5424b6b9fb40054bf0b8b3a6a1584bdd6ac9cc6d74807aa903f9dbad2213308c"
+      },
+      {
+        "bytes": 1772,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/2028269490725073431",
+        "sha256": "59ef3aace6d816d063c10706508b0941e4185fd89f68f0836cb42986b57fd636"
+      },
+      {
+        "bytes": 516,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/2725307653338345966",
+        "sha256": "38c19352b6ed0732ad89f8a68bbac7ae1e2b55709b227c66f67c0023b8534723"
+      },
+      {
+        "bytes": 292,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/277731477271077531",
+        "sha256": "b9be0367d142a25bd8b38119853d7b6316941aed419a55dad3cdddb5c6fd55d2"
+      },
+      {
+        "bytes": 2636,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/360829453679344909",
+        "sha256": "83df033e697c747e5e26299813921654d398f255c47d202d35b8df491cd93a3c"
+      },
+      {
+        "bytes": 332,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/5824162510500340968",
+        "sha256": "434590c25c0ade34e3592f778936f811c2d7363d7bce7005f7486560edfb01e9"
+      },
+      {
+        "bytes": 348,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/645150238334463687",
+        "sha256": "ed35d4715c047c34b37dddd61d4c2d328b6d0bc24ee46b8e21fc725a0ebac693"
+      },
+      {
+        "bytes": 388,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/7300234825329903728",
+        "sha256": "9a762a5a09e8a535f583e7c321ff19952883ec5376a51a3beaf790719d2eb566"
+      },
+      {
+        "bytes": 628,
+        "path": "backend/starlink-location/.ruff_cache/0.16.8/74803198666635311",
+        "sha256": "644fb69385521c1b1eceadb8e3513d0b7e85f8422620c213d1858d355ed2dd1d"
+      },
+      {
+        "bytes": 43,
+        "path": "backend/starlink-location/.ruff_cache/CACHEDIR.TAG",
+        "sha256": "5953156d7e0c564a427251316eaf26f8870e6483ae2197f916b630e4f93e31ae"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/gfs-mailbox/.control.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 38,
+        "path": "backend/starlink-location/data/gfs-mailbox/demand.json",
+        "sha256": "5c9391b8911ca622cdc93c0d03636f15d2f0ffecf645677352584eb960589429"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/missions/.active-leg.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/missions/.itinerary-imports/.operations.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/missions/.slide-cache/slides.export-assembly.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 28672,
+        "path": "backend/starlink-location/data/missions/.slide-cache/slides.sqlite3",
+        "sha256": "a9d421e435ecb9747f62fc779f5d6ac100b78202657728cc404627c13c181f4e"
+      },
+      {
+        "bytes": 64867,
+        "path": "backend/starlink-location/data/sat_coverage/commka.geojson",
+        "sha256": "0d0498dad82bfc13a888a7772d33319bd192c1a3935d27845e41002285e81c39"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/settings/aviation-weather.json.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/settings/overview-adsb.json.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 249,
+        "path": "backend/starlink-location/data/settings/overview-clocks.json",
+        "sha256": "7b5b6ba4ffe5e1a61cdd2df7ea273dc1b69255adc6436d9e8de3971282c61a18"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/settings/overview-manual-destination.json.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/settings/overview-weather.json.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "backend/starlink-location/data/settings/x-band-selection.json.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "source_sha256": "55072e45368b70d8cf4a74c6ab7ff1c7b4cdc987ca557896a1d0319485e0ad2d"
+  },
+  "schema_version": 1,
+  "sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "source_receipt_sha256": "fa1a90bdd67186e1c949981e6e7807426f616248721c07a29ae4c539231c4d13",
+  "status": "clean",
+  "task": "issue393-review3",
+  "transformation": "bounded-cleanup-summary",
+  "verified": {
+    "additional_cdp_port_count": 1,
+    "docker_configuration_preserved": true,
+    "exact_preexisting_shared_service_exclusion_count": 2,
+    "host_actor_uid_1002": true,
+    "host_namespaces_confirmed_by_caller": true,
+    "original_platform_seal_groups": [
+      "final",
+      "health",
+      "health-runner"
+    ],
+    "product_ports_audited": [
+      18394,
+      15394
+    ],
+    "remaining_process_count": 0,
+    "remaining_resources": {
+      "container": 0,
+      "network": 0,
+      "volume": 0
+    }
+  }
+}

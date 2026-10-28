@@ -1,0 +1,99 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_planning_route_selects_active_duplicate_and_preserves_uploaded_identity _
+
+tmp_path = PosixPath('<pytest-temp>/test_planning_route_selects_ac0')
+
+    def test_planning_route_selects_active_duplicate_and_preserves_uploaded_identity(
+        tmp_path: Path,
+    ) -> None:
+        """Retained same-name routes must not make qualification ambiguous or bind an old ID."""
+        repository = tmp_path / "repository"
+        adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+        package = repository / "frontend/mission-planner/package.json"
+        playwright = package.parent / "node_modules/@playwright/test"
+        adapter.parent.mkdir(parents=True)
+        adapter.write_text(
+            ADAPTER_SCRIPT.read_text(encoding="utf-8")
+            + "\nexport { observePlanningRoute };\n",
+            encoding="utf-8",
+        )
+        package.parent.mkdir(parents=True)
+        package.write_text('{"name":"duplicate-route-qualification"}\n', encoding="utf-8")
+        playwright.mkdir(parents=True)
+        (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
+        program = r"""
+    const { observePlanningRoute } = await import(process.argv[1]);
+    const upload = { id: 'v2-activation-route-1', name: 'V2 Acceptance Route KAAA-KBBB', point_count: 3 };
+    const active = { ...upload, is_active: true, points: [{ longitude: -100, latitude: 35 }, { longitude: -99.95, latitude: 35.05 }, { longitude: -99.9, latitude: 35.1 }] };
+    const retained = { ...active, id: 'v2-activation-route', is_active: false };
+    function pageWithRoutes(routes, detailOverride) {
+      let observe;
+      const visible = (text) => ({ waitFor: async () => {}, innerText: async () => text });
+      const rows = (matches) => ({
+        filter: ({ has }) => rows(matches.filter(has.matches)),
+        count: async () => matches.length,
+        waitFor: async () => { if (matches.length !== 1) throw new Error(`strict row locator resolved to ${matches.length} rows`); },
+        getByText: (text, { exact }) => {
+          if (!exact || matches.length !== 1 || (matches[0].is_active ? 'Active' : 'Inactive') !== text) throw new Error('route status not visible');
+          return visible(text);
+        },
+        getByTitle: () => ({ click: async () => {
+          if (matches.length !== 1) throw new Error('ambiguous details control');
+          const route = detailOverride ?? matches[0];
+          const response = { request: () => ({ method: () => 'GET' }), url: () => `http://product/api/routes/${matches[0].id}`, status: () => 200, json: async () => route };
+          observe(response);
+        } }),
+      });
+      return {
+        getByText: (text, { exact }) => ({ matches: (route) => exact && (route.is_active ? 'Active' : 'Inactive') === text }),
+        getByRole: (role, options) => {
+          if (role === 'link') return { click: async () => {} };
+          if (role === 'row') return rows(routes);
+          if (role === 'cell') return { matches: (route) => options.exact && route.name === options.name };
+          if (role === 'dialog') return {
+            getByRole: (kind) => kind === 'button' ? { click: async () => {} } : visible(active.name),
+            getByText: () => visible('Active'),
+          };
+          throw new Error('unexpected public route control');
+        },
+        waitForResponse: (predicate) => new Promise((resolve, reject) => {
+          observe = (response) => predicate(response) ? resolve(response) : reject(new Error('unexpected route detail response ID'));
+        }),
+      };
+    }
+    for (const routes of [[retained, active], [active, retained]]) {
+      const observed = await observePlanningRoute(pageWithRoutes(routes), upload);
+      if (observed.routeBinding.routeId !== 'v2-activation-route-1' || observed.planning.planningRouteStatus !== 'Active') throw new Error('qualification did not bind the newly uploaded active duplicate');
+    }
+    for (const routes of [[retained], [active, { ...active, id: 'v2-activation-route-2' }]]) {
+      await observePlanningRoute(pageWithRoutes(routes), upload).then(() => { throw new Error('missing or ambiguous active route was accepted'); }, () => {});
+    }
+    await observePlanningRoute(pageWithRoutes([retained, active], retained), upload).then(() => { throw new Error('stale route detail identity was accepted'); }, () => {});
+    """
+        completed = subprocess.run(
+            ["node", "--input-type=module", "--eval", program, adapter.as_uri()],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+        )
+>       assert completed.returncode == 0, completed.stderr
+E       AssertionError: file://<feature-checkout>/[eval1]:12
+E             waitFor: async () => { if (matches.length !== 1) throw new Error(`strict row locator resolved to ${matches.length} rows`); },
+E                                                                    ^
+E         
+E         Error: strict row locator resolved to 2 rows
+E             at Object.waitFor (file://<feature-checkout>/[eval1]:12:60)
+E             at observePlanningRoute (file://<pytest-temp>/test_planning_route_selects_ac0/repository/tools/acceptance/journeys/v2-mission-retirement.mjs:321:13)
+E             at async file://<feature-checkout>/[eval1]:42:20
+E         
+E         Node.js v22.12.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '--input-type=module', '--eval', "\nconst { observePlanningRoute } = await import(proce...<feature-checkout>/[eval1]:42:20\n\nNode.js v22.12.0\n').returncode
+
+tools/tests/test_v2_acceptance_browser_contract.py:575: AssertionError
+=========================== short test summary info ============================
+FAILED tools/tests/test_v2_acceptance_browser_contract.py::test_planning_route_selects_active_duplicate_and_preserves_uploaded_identity
+1 failed, 31 deselected in 0.10s

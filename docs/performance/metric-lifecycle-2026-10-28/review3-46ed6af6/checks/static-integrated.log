@@ -1,0 +1,71 @@
+Installed 93 packages in 36ms
+(<feature-checkout>) $ uv run --python 3.11 --with-requirements backend/starlink-location/requirements-dev.txt black --check --diff backend/starlink-location/app backend/starlink-location/tests
+All done! ✨ 🍰 ✨
+844 files would be left unchanged.
+stage=uv elapsed=5.81s exit=0
+(<feature-checkout>/backend/starlink-location) $ uv run --python 3.11 --with-requirements requirements-dev.txt ruff check app tests
+All checks passed!
+stage=uv elapsed=0.03s exit=0
+(<feature-checkout>) $ python tools/check_filename_convention.py
+Checking filename conventions in docs...
+All markdown files follow the naming convention.
+stage=python elapsed=0.03s exit=0
+(<feature-checkout>) $ npm --prefix frontend/mission-planner exec -- prettier --check frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}
+Checking formatting...
+All matched files use Prettier code style!
+stage=npm elapsed=7.24s exit=0
+(<feature-checkout>) $ npm --prefix frontend/mission-planner run lint
+
+> mission-planner@0.0.0 lint
+> eslint .
+
+stage=npm elapsed=25.60s exit=0
+(<feature-checkout>) $ markdownlint-cli2 docs/**/*.md
+markdownlint-cli2 v0.19.1 (markdownlint v0.39.0)
+Finding: docs/**/*.md !specs/** !.agent/** !.gemini/** !.claude/** !.codex/** !.specify/** !node_modules/** !dist/** !build/** !.git/** !.venv/** !__pycache__/** !docs/REFACTORING_SUMMARY.txt !**/*.txt
+Linting: 538 file(s)
+Summary: 0 error(s)
+stage=markdownlint-cli2 elapsed=3.90s exit=0
+(<feature-checkout>) $ python3 tools/check_docs_links.py docs/
+Checking internal documentation files and anchors (required)
+🔍 1708 Total (in 0s) ✅ 1464 OK 🚫 0 Errors 👻 244 Excluded
+Checking external documentation links (advisory)
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Error (cached)
+[429] https://api.adsb.lol/docs | Error (cached)
+[429] https://api.adsb.lol/api/openapi.json | Error (cached)
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+Issues found in 4 inputs. Find details below.
+
+[docs/reports/2026-10-03-overview-adsb-aircraft-layer.md]:
+[429] https://api.adsb.lol/docs | Error (cached)
+
+[docs/reports/2026-10-17-operator-displays/static-ci-limitations.txt]:
+[403] https://adsb.lol/ | Rejected status code (this depends on your "accept" configuration): Forbidden
+[429] https://api.adsb.lol/api/openapi.json | Error (cached)
+[429] https://api.adsb.lol/docs | Error (cached)
+
+[docs/superpowers/plans/2026-10-03-overview-adsb-aircraft-layer.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+[docs/superpowers/specs/2026-10-03-overview-adsb-aircraft-addon-design.md]:
+[429] https://api.adsb.lol/api/openapi.json | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+[429] https://api.adsb.lol/docs | Rejected status code (this depends on your "accept" configuration): Too Many Requests
+
+🔍 1708 Total (in 3s) ✅ 201 OK 🚫 8 Errors 👻 1499 Excluded
+::warning title=External documentation links::External check did not pass: Lychee exited with status 2; see link report above. Internal files and anchors passed; external availability is nonblocking.
+stage=python3 elapsed=3.63s exit=0
+(<feature-checkout>) $ python3 -m pytest -q tools/tests/test_acceptance_platform_typing_policy.py tools/tests/test_docs_links.py tools/tests/test_backend_ci.py tools/tests/test_backend_test_runner.py tools/tests/test_verify.py tools/tests/test_quality_gate_workflow.py
+<actor-home>/.cache/uv/archive-v0/X4udrVD8xAkScevX/lib/python3.11/site-packages/pytest_asyncio/plugin.py:300: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 47%]
+........................................................................ [ 94%]
+........                                                                 [100%]
+152 passed in 26.73s
+stage=python3 elapsed=27.25s exit=0
