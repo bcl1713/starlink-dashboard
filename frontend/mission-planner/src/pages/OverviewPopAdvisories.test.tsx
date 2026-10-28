@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 afterEach(cleanup);
@@ -51,9 +51,47 @@ it('communicates unavailable coverage without an all-clear or raw PoP fallback',
       state={{ items: [], notice: 'Transport Advisories Unavailable' }}
     />
   );
-  expect(screen.getByRole('status').textContent).toBe(
+  expect(screen.getByRole('status').textContent).toContain(
     'Transport Advisories Unavailable'
   );
+});
+it('dismisses a coverage notice across polls while retaining real advisories and rearms after recovery', () => {
+  const item = {
+    id: 'x',
+    title: 'X-Band Service Interruption Expected',
+    detail: 'Current · Modeled',
+  };
+  const { rerender } = render(
+    <OverviewPopAdvisories
+      state={{ items: [], notice: 'Transport Advisories Unavailable' }}
+    />
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Dismiss transport advisory notice' })
+  );
+  expect(screen.queryByRole('status')).toBeNull();
+  rerender(
+    <OverviewPopAdvisories
+      state={{ items: [item], notice: 'Transport Advisories Unavailable' }}
+    />
+  );
+  expect(screen.getByText(item.title)).toBeTruthy();
+  expect(screen.queryByText('Transport Advisories Unavailable')).toBeNull();
+  rerender(
+    <OverviewPopAdvisories
+      state={{ items: [], notice: 'Transport Advisories Stale' }}
+    />
+  );
+  expect(screen.queryByRole('status')).toBeNull();
+  rerender(<OverviewPopAdvisories state={{ items: [], notice: null }} />);
+  rerender(
+    <OverviewPopAdvisories
+      state={{ items: [], notice: 'Transport Advisories Unavailable' }}
+    />
+  );
+  expect(
+    screen.getByRole('button', { name: 'Dismiss transport advisory notice' })
+  ).toBeTruthy();
 });
 it('keeps long simultaneous advisory lists keyboard reachable as a labeled scroll region', () => {
   render(

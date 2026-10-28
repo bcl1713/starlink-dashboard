@@ -34,6 +34,7 @@ async def raw_inputs(body: dict):
             "longitude": -10 + min(seconds, 3600) / 180,
             "altitude": 30000,
             "altitude_observed_at": now,
+            "altitude_validity_source": "synthetic_location_collection",
             "speed": 600,
             "heading": 90,
             "observed_at": now,
@@ -55,6 +56,20 @@ async def raw_inputs(body: dict):
         coordinator._publish_telemetry(sample, True)
     else:
         coordinator.restore_telemetry(sample)
+    if base.main._current_runtime_config().mode == "live":
+        from app.mission.active_context import resolve_active_mission_leg_context
+        from app.services.flight_state import get_flight_state_manager
+
+        context = resolve_active_mission_leg_context(app.state.route_manager).context
+        # Background collection is disabled in this isolated fixture. Admit the
+        # raw sample through the normal live lifecycle, never set flight phase.
+        await asyncio.to_thread(
+            app.state.flight_event_lifecycle.process_live,
+            sample,
+            context,
+            get_flight_state_manager(),
+            lambda: True,
+        )
     service = app.state.simulation_run_service
     if service.status().state == "running":
         await asyncio.to_thread(

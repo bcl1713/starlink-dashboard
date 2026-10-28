@@ -33,6 +33,8 @@ class DetectionPolicy(BaseModel):
     movement_dwell: float = Field(default=15, gt=0)
     airborne_knots: float = Field(default=80, gt=0)
     airborne_dwell: float = Field(default=20, gt=0)
+    recovery_airborne_knots: float = Field(default=150, gt=0)
+    recovery_altitude_feet: float = Field(default=5000, gt=0)
     altitude_change_feet: float = Field(default=200, gt=0)
     landing_knots: float = Field(default=35, gt=0)
     landing_dwell: float = Field(default=20, gt=0)
@@ -127,6 +129,8 @@ class DetectionState(BaseModel):
     max_airborne_altitude: float | None = None
     landed_altitude: float | None = None
     destination_complete: bool = False
+    recovered_airborne: bool = False
+    ground_history_interrupted: bool = False
 
 
 class DetectionResult(BaseModel):

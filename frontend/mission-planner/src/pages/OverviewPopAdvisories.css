@@ -33,9 +33,31 @@
   border-top: var(--overview-border);
 }
 .overview-transport-advisories__notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 8px 0 0;
   color: var(--overview-secondary);
   font-size: 1rem;
+}
+.overview-transport-advisories__notice p {
+  margin: 0;
+}
+.overview-transport-advisories__notice button {
+  pointer-events: auto;
+  flex: 0 0 44px;
+  min-height: 44px;
+  border: var(--overview-border);
+  border-radius: var(--overview-radius);
+  background: transparent;
+  color: var(--overview-text);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.overview-transport-advisories__notice button:focus-visible {
+  outline: 2px solid var(--overview-text);
+  outline-offset: 2px;
 }
 .overview-transport-advisories__notice:first-child {
   margin-top: 0;

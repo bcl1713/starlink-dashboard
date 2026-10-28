@@ -75,11 +75,18 @@ def test_fuel_stop_remains_open():
     assert state.movement == "taxi_out"
 
 
-def test_stale_altitude_and_startup_airborne_do_not_invent_events():
+def test_startup_airborne_resumes_current_movement_without_inventing_events():
     state = DetectionState()
-    state, events = feed(state, 0, 40, speed=150, altitude=5000)
+    state, events = feed(state, 0, 19, speed=150, altitude=5000)
     assert not events
+    assert state.movement == "unknown"
     assert state.uncertain
+    state, events = feed(state, 20, 40, speed=150, altitude=5000)
+    assert state.movement == "airborne"
+    assert not events
+
+
+def test_stale_altitude_does_not_invent_landing_events():
     state = DetectionState(movement="airborne", max_airborne_altitude=10000)
     for second in range(50, 100):
         result = advance_detection(
