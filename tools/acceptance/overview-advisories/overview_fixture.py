@@ -50,7 +50,9 @@ async def raw_inputs(body: dict):
     )
     coordinator = base.main._coordinator
     if isinstance(coordinator, LiveCoordinator):
-        coordinator._publish_telemetry(sample, False)
+        # A received synthetic sample is a connected input; metric provenance
+        # remains unavailable, so no network measurement is claimed.
+        coordinator._publish_telemetry(sample, True)
     else:
         coordinator.restore_telemetry(sample)
     service = app.state.simulation_run_service
