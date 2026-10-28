@@ -9,7 +9,7 @@ import {
   within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
 import { OperatorJournalPage } from '@/pages/OperatorJournalPage';
 import { OperatorWorkspaceProvider } from './OperatorWorkspaceProvider';
@@ -23,8 +23,9 @@ import {
   type AvailabilityView,
 } from '@/services/transportAvailability';
 import * as timelineApi from '@/services/missionTimeline';
+import * as transportCatalog from '@/services/transportCatalog';
 import { eventSnapshot, eventFixture } from '@/test/operator-event-fixtures';
-import { health, page, record } from '@/test/operator-fixtures';
+import { failure, health, page, record } from '@/test/operator-fixtures';
 const missionState = vi.hoisted(() => ({
   pending: false,
   error: false,
@@ -54,7 +55,23 @@ afterEach(() => {
   localStorage.clear();
   vi.restoreAllMocks();
 });
-function mount(route = '/operator', ready = false, source = health) {
+function NavigationControls() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button onClick={() => navigate('/missions')}>Leave workspace</button>
+      <button onClick={() => navigate('/operator?mission_id=mission-a')}>
+        Return to workspace
+      </button>
+    </>
+  );
+}
+function mount(
+  route = '/operator',
+  ready = false,
+  source = health,
+  routed = false
+) {
   if (!vi.isMockFunction(api.readOperatingContext))
     vi.spyOn(api, 'readOperatingContext').mockResolvedValue({
       state: 'no_active_mission',
@@ -81,13 +98,33 @@ function mount(route = '/operator', ready = false, source = health) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  if (routed) {
+    const identity = JSON.stringify(['store', 'epoch-a', 'live', null]);
+    // Exercise actual inactive-query GC without a five-minute wall-clock wait.
+    for (const key of [
+      ['operator-records', 'mission-a', identity, 'workspace-all'],
+      ['operator-record-updates', 'mission-a', identity],
+      ['operator-record-current', 'mission-a', identity],
+    ])
+      client.setQueryDefaults(key, { gcTime: 20 });
+  }
   clients.push(client);
   const registry = new DraftRegistry(sessionStorage);
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[route]}>
         <OperatorWorkspaceProvider registry={registry}>
-          <OperatorJournalPage />
+          {routed ? (
+            <>
+              <NavigationControls />
+              <Routes>
+                <Route path="/operator" element={<OperatorJournalPage />} />
+                <Route path="/missions" element={<p>Other route</p>} />
+              </Routes>
+            </>
+          ) : (
+            <OperatorJournalPage />
+          )}
         </OperatorWorkspaceProvider>
       </MemoryRouter>
     </QueryClientProvider>
@@ -100,6 +137,23 @@ it('renders a cold workspace before any training context or checked evidence exi
   expect(
     screen.getByRole('heading', { name: 'Choose A Mission' })
   ).toBeTruthy();
+});
+
+it('retains validated saved cards when a health refresh fails during a network outage', async () => {
+  const saved = { ...record, ...callDraft(undefined, 'planned', 'mission-a') };
+  saved.payload.title = 'Retained remote call';
+  saved.payload.party = 'Retained remote call';
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([saved]));
+  vi.spyOn(api, 'readOperatorChanges').mockResolvedValue(page([]));
+  const { client } = mount('/operator?mission_id=mission-a', true);
+  await screen.findByText('Retained remote call');
+  vi.mocked(api.getOperatorHealth).mockRejectedValue(
+    new Error('backend offline')
+  );
+  await act(async () => {
+    await client.refetchQueries({ queryKey: ['operator-health'] });
+  });
+  expect(screen.getByText('Retained remote call')).toBeTruthy();
 });
 it('explains separate nonproduction setup instead of opening training in an ordinary instance', () => {
   mount();
@@ -315,9 +369,10 @@ it('renders newly accepted and older ordinary-Activate conference definitions wi
     payload: { ...accepted.payload, title: 'Existing accepted conference' },
     provenance: { ...accepted.provenance, operating_context_id: null },
   };
-  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(
-    page([accepted, older])
-  );
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    ...page([accepted, older]),
+    source: { ...source, mission_id: 'mission-a' },
+  });
   mount(
     '/operator?workspace=1&mission_id=mission-a&view=communications',
     true,
@@ -349,94 +404,148 @@ it.each(['now', 'communications'])(
   }
 );
 
-it('shows pending immediately and the authoritative accepted conference while list refresh is still waiting', async () => {
-  missionState.mission = {
-    id: 'mission-a',
-    name: 'Fictional mission',
-    legs: [],
-  };
-  let acknowledged = false;
-  let accept!: (value: {
-    schema_version: 1;
-    command_id: string;
-    saved_records: (typeof accepted)[];
-  }) => void;
-  const accepted = {
-    ...record,
-    ...conferenceDraft('mission-a'),
-    payload: { ...conferenceDraft('mission-a').payload, title: 'FAST BRIDGE' },
-  };
-  const releaseReads: (() => void)[] = [];
-  const reads = vi
-    .spyOn(api, 'readOperatorRecords')
-    .mockImplementation(async () => {
-      if (acknowledged)
-        await new Promise<void>((resolve) => releaseReads.push(resolve));
-      return page([]);
-    });
-  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
-    page([accepted]).items[0]
-  );
-  const save = vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        accept = resolve;
-      })
-  );
-  const { client } = mount(
-    '/operator?workspace=1&mission_id=mission-a&view=communications',
-    true
-  );
-  const createButton = (
-    await screen.findAllByRole('button', { name: 'Create Conference' })
-  )[0] as HTMLButtonElement;
-  await waitFor(() => expect(createButton.disabled).toBe(false));
-  fireEvent.click(createButton);
-  fireEvent.change(await screen.findByLabelText('Conference name (optional)'), {
-    target: { value: 'FAST BRIDGE' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
-  expect(
-    screen.getAllByText(/saving.*FAST BRIDGE|FAST BRIDGE.*saving/).length
-  ).toBeGreaterThan(0);
-  expect(screen.queryByRole('heading', { name: 'FAST BRIDGE' })).toBeNull();
-  const started = performance.now();
-  try {
-    await act(async () => {
-      acknowledged = true;
-      accept({
-        schema_version: 1,
-        command_id: 'fast-receipt',
-        saved_records: [accepted],
+it.each(['departure', 'rebaseline'])(
+  'shows an authoritative accepted conference while list refresh waits, then suppresses departed membership (%s)',
+  async (recovery) => {
+    missionState.mission = {
+      id: 'mission-a',
+      name: 'Fictional mission',
+      legs: [],
+    };
+    let acknowledged = false;
+    let accept!: (value: {
+      schema_version: 1;
+      command_id: string;
+      saved_records: (typeof accepted)[];
+    }) => void;
+    const accepted = {
+      ...record,
+      ...conferenceDraft('mission-a'),
+      payload: {
+        ...conferenceDraft('mission-a').payload,
+        title: 'FAST BRIDGE',
+      },
+    };
+    let delta = { ...page([]), H: 0 };
+    vi.spyOn(api, 'readOperatorChanges').mockImplementation(async () => delta);
+    const releaseReads: (() => void)[] = [];
+    const reads = vi
+      .spyOn(api, 'readOperatorRecords')
+      .mockImplementation(async () => {
+        if (acknowledged)
+          await new Promise<void>((resolve) => releaseReads.push(resolve));
+        return { ...page([]), H: 0 };
       });
-    });
-    await screen.findByRole('heading', { name: 'FAST BRIDGE' });
-    expect(performance.now() - started).toBeLessThan(300);
-    expect(save).toHaveBeenCalledTimes(1);
-    expect(releaseReads.length).toBeGreaterThan(0);
-    await waitFor(() =>
-      expect(
-        (screen.getByRole('button', { name: 'Establish' }) as HTMLButtonElement)
-          .disabled
-      ).toBe(false)
+    vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
+      page([accepted]).items[0]
     );
-    const snapshot = client
-      .getQueryCache()
-      .findAll({ queryKey: ['operator-records', 'mission-a'] })
-      .find(
-        (query) =>
-          query.queryKey[3] === 'workspace-all' &&
-          query.state.data !== undefined
-      )?.state.data;
-    expect(snapshot).toMatchObject({ pages: [{ items: [] }] });
-    expect(reads).toHaveBeenCalled();
-  } finally {
-    await act(async () => {
-      releaseReads.forEach((resolve) => resolve());
-    });
+    const save = vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          accept = resolve;
+        })
+    );
+    const { client } = mount(
+      '/operator?workspace=1&mission_id=mission-a&view=communications',
+      true
+    );
+    const createButton = (
+      await screen.findAllByRole('button', { name: 'Create Conference' })
+    )[0] as HTMLButtonElement;
+    await waitFor(() => expect(createButton.disabled).toBe(false));
+    fireEvent.click(createButton);
+    fireEvent.change(
+      await screen.findByLabelText('Conference name (optional)'),
+      {
+        target: { value: 'FAST BRIDGE' },
+      }
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(
+      screen.getAllByText(/saving.*FAST BRIDGE|FAST BRIDGE.*saving/).length
+    ).toBeGreaterThan(0);
+    expect(screen.queryByRole('heading', { name: 'FAST BRIDGE' })).toBeNull();
+    const started = performance.now();
+    try {
+      await act(async () => {
+        acknowledged = true;
+        accept({
+          schema_version: 1,
+          command_id: 'fast-receipt',
+          saved_records: [accepted],
+        });
+      });
+      await screen.findByRole('heading', { name: 'FAST BRIDGE' });
+      expect(performance.now() - started).toBeLessThan(300);
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(releaseReads.length).toBeGreaterThan(0);
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByRole('button', {
+              name: 'Establish',
+            }) as HTMLButtonElement
+          ).disabled
+        ).toBe(false)
+      );
+      const snapshot = client
+        .getQueryCache()
+        .findAll({ queryKey: ['operator-records', 'mission-a'] })
+        .find(
+          (query) =>
+            query.queryKey[3] === 'workspace-all' &&
+            query.state.data !== undefined
+        )?.state.data;
+      expect(snapshot).toMatchObject({ pages: [{ items: [] }] });
+      expect(reads).toHaveBeenCalled();
+      if (recovery === 'rebaseline') {
+        reads.mockResolvedValue({ ...page([]), H: 2 });
+        vi.mocked(api.readOperatorChanges).mockRejectedValueOnce(
+          failure(422, 'invalid_cursor')
+        );
+        delta = { ...page([]), H: 2 };
+      } else
+        delta = {
+          ...page([]),
+          H: 2,
+          departures: [
+            { record_id: accepted.record_id, version: 2, journal_seq: 2 },
+          ],
+        } as typeof delta;
+      await act(async () => {
+        await client.refetchQueries({
+          queryKey: ['operator-record-updates', 'mission-a'],
+        });
+      });
+      if (recovery === 'rebaseline') {
+        await waitFor(() =>
+          expect(
+            client.getQueryData([
+              'operator-record-current',
+              'mission-a',
+              JSON.stringify(['store', 'epoch-a', 'live', null]),
+            ])
+          ).toMatchObject({ quarantined: false })
+        );
+        await act(async () => {
+          await client.refetchQueries({
+            queryKey: ['operator-record-updates', 'mission-a'],
+          });
+        });
+      }
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('heading', { name: 'FAST BRIDGE' })
+        ).toBeNull()
+      );
+    } finally {
+      await act(async () => {
+        releaseReads.forEach((resolve) => resolve());
+      });
+    }
   }
-});
+);
 
 it('offers manual destination in shared Display Controls without a mission or ready operator journal', async () => {
   const { manualDestinationApi } = await import(
@@ -809,4 +918,124 @@ it('opens preserved call history when an inactive timeline requirement is select
     ).toBe('page')
   );
   expect(registry.listDrafts()).toHaveLength(0);
+});
+
+it('keeps a departed confirmation and editor relationship absent after navigating away and garbage-collecting only synchronization caches', async () => {
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+  vi.spyOn(transportCatalog, 'readTransportCatalog').mockResolvedValue({
+    schema_version: 1,
+    version: 1,
+    services: [],
+    transports: [],
+  });
+  missionState.mission = {
+    id: 'mission-a',
+    name: 'Fictional mission',
+    legs: [],
+  };
+  const saved = {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    journal_seq: 51,
+    payload: {
+      ...conferenceDraft('mission-a').payload,
+      title: 'Departed bridge',
+    },
+  };
+  let baselineH = 50;
+  const reads = vi
+    .spyOn(api, 'readOperatorRecords')
+    .mockImplementation(async () => ({
+      ...page([]),
+      H: baselineH,
+      cursor: 'unloaded-page',
+    }));
+  let delta = { ...page([]), H: 50 };
+  vi.spyOn(api, 'readOperatorChanges').mockImplementation(async () => delta);
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([saved]).items[0]);
+  vi.spyOn(api, 'saveOperatorCommand').mockImplementation(async () => {
+    baselineH = 51;
+    delta = { ...page([]), H: 51 };
+    return { schema_version: 1, command_id: 'receipt', saved_records: [saved] };
+  });
+  const { client, registry } = mount(
+    '/operator?mission_id=mission-a',
+    true,
+    health,
+    true
+  );
+  const createButton = (
+    await screen.findAllByRole('button', { name: 'Create Conference' })
+  )[0] as HTMLButtonElement;
+  await waitFor(() => expect(createButton.disabled).toBe(false));
+  fireEvent.click(createButton);
+  fireEvent.change(await screen.findByLabelText('Conference name (optional)'), {
+    target: { value: 'Departed bridge' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await screen.findByRole('heading', { name: 'Departed bridge' });
+  // Keep a real dirty parent draft referencing the accepted conference.
+  fireEvent.click(screen.getByRole('button', { name: 'Schedule Call' }));
+  fireEvent.change(
+    await screen.findByLabelText('Party / Participant (Optional)'),
+    { target: { value: 'Retained unsaved call' } }
+  );
+  fireEvent.change(screen.getByLabelText('Conference (Optional)'), {
+    target: { value: saved.record_id },
+  });
+  const retained = registry
+    .listDrafts()
+    .find((d) => d.input.record_type === 'call')!;
+  expect(retained.input.payload).toHaveProperty(
+    'conference_id',
+    saved.record_id
+  );
+  baselineH = 52;
+  delta = {
+    ...page([]),
+    H: 52,
+    departures: [{ record_id: saved.record_id, version: 2, journal_seq: 52 }],
+  } as typeof delta;
+  await act(async () => {
+    await client.refetchQueries({ queryKey: ['operator-record-updates'] });
+  });
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('heading', { name: 'Departed bridge', hidden: true })
+    ).toBeNull()
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Leave workspace', hidden: true })
+  );
+  await screen.findByText('Other route');
+  const identity = JSON.stringify(['store', 'epoch-a', 'live', null]);
+  await waitFor(() => {
+    for (const key of [
+      ['operator-records', 'mission-a', identity, 'workspace-all'],
+      ['operator-record-updates', 'mission-a', identity],
+      ['operator-record-current', 'mission-a', identity],
+    ])
+      expect(client.getQueryState(key)).toBeUndefined();
+  });
+  expect(client.getQueryData(['operator-health'])).toBeTruthy();
+  expect(registry.resumeDraft(retained.draftId)).toEqual(retained);
+  delta = { ...page([]), H: 52 };
+  fireEvent.click(screen.getByRole('button', { name: 'Return to workspace' }));
+  await screen.findByLabelText('Party / Participant (Optional)');
+  await waitFor(() =>
+    expect(
+      client.getQueryData(['operator-record-current', 'mission-a', identity])
+    ).toMatchObject({ quarantined: false })
+  );
+  expect(reads).toHaveBeenCalled();
+  expect(
+    screen.queryByRole('heading', { name: 'Departed bridge', hidden: true })
+  ).toBeNull();
+  expect(screen.queryByRole('option', { name: 'Departed bridge' })).toBeNull();
+  expect(
+    screen.getByRole('option', {
+      name: `Unresolved conference · ${saved.record_id}`,
+    })
+  ).toBeTruthy();
+  expect(registry.resumeDraft(retained.draftId)).toEqual(retained);
 });

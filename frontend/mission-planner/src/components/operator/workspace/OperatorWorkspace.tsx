@@ -26,17 +26,14 @@ import {
 } from '../training/trainingRetryEvidence';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMission } from '@/hooks/api/useMissions';
 import {
   operatorIdentity,
   useOperatorHealth,
 } from '@/hooks/api/operatorReadSession';
 import { useMissionTimeline } from '@/hooks/api/useMissionTimeline';
+import { useWorkspaceRecords } from '@/hooks/api/useWorkspaceRecords';
 import { useOperatorEvents } from '@/hooks/api/useOperatorEvents';
 import {
   getOperatorHealth,
@@ -189,19 +186,10 @@ export function OperatorWorkspace() {
     ? workspace.registry.resumeDraft(workspace.selectedDraftId)
     : null;
   const editorMission = useMission(selectedDraft?.target.missionId ?? '');
-  const records = useInfiniteQuery({
-    queryKey: ['operator-records', missionId, identity, 'workspace-all'],
-    queryFn: ({ pageParam }) =>
-      readOperatorRecords(
-        { mission_id: missionId, include_removed: true },
-        pageParam
-      ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.cursor ?? undefined,
-    enabled: !!missionId && !!identity && !health.isError,
-    retry: false,
-    networkMode: 'always',
-  });
+  const records = useWorkspaceRecords(
+    missionId,
+    !contextMismatch ? identity : null
+  );
   const currentAssociation = activeAssociation(
     active.isError || active.data?.mission_id !== missionId
       ? undefined
@@ -213,10 +201,15 @@ export function OperatorWorkspace() {
   // Its H/cursors stay untouched; replay receipts alone never enter this view.
   const confirmed = workspace.confirmedRecords.filter(
     (row) =>
-      row.identity === identity && row.read.record.mission_id === missionId
+      !!records.data &&
+      !records.quarantined &&
+      !contextMismatch &&
+      row.identity === identity &&
+      row.read.record.mission_id === missionId &&
+      records.acceptsOverlay(row.read.record)
   );
   const merged = new Map(
-    snapshotItems.map((item) => [item.record.record_id, item])
+    records.items.map((item) => [item.record.record_id, item])
   );
   for (const row of confirmed) {
     const previous = merged.get(row.read.record.record_id);
@@ -1444,10 +1437,13 @@ export function OperatorWorkspace() {
                 </button>
               )}
               {records.isError && (
-                <button
-                  className="ws-button"
-                  onClick={() => void records.refetch()}
-                >
+                <p role="status">
+                  Saved records unavailable. Last-known records may be stale;
+                  retrying automatically.
+                </p>
+              )}
+              {records.isError && (
+                <button className="ws-button" onClick={() => records.refresh()}>
                   Retry records
                 </button>
               )}

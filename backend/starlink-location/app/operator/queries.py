@@ -49,6 +49,103 @@ def _encode(value):
     ).decode()
 
 
+def changes(
+    connection, *, clock, mission_id, source, after_seq, limit=200, cursor=None
+):
+    """Latest changed records in a frozen sequence interval, never full history."""
+    if type(limit) is not int or not 1 <= limit <= 200:
+        raise OperatorError("validation_error", fields={"limit": "Expected 1 to 200"})
+    # Bind only identity fields; readiness/clock metadata may change between reads.
+    identity = _digest(
+        {
+            key: source.get(key)
+            for key in (
+                "store_id",
+                "api_epoch",
+                "source_mode",
+                "simulation_run_id",
+                "replay_run_id",
+                "operating_context_id",
+                "mission_journal",
+            )
+        }
+    )
+    maximum = connection.execute(
+        "SELECT coalesce(max(journal_seq), 0) FROM revisions"
+    ).fetchone()[0]
+    if type(after_seq) is not int or not 0 <= after_seq <= maximum:
+        raise OperatorError(
+            "validation_error", fields={"after_seq": "Invalid checkpoint"}
+        )
+    if cursor is None:
+        state = {
+            "v": 1,
+            "source": identity,
+            "mission": mission_id,
+            "after": after_seq,
+            "H": maximum,
+            "last": after_seq,
+            "as_of": clock.now().isoformat(),
+        }
+    else:
+        try:
+            state = json.loads(base64.b64decode(cursor, altchars=b"-_", validate=True))
+            if (
+                set(state) != {"v", "source", "mission", "after", "H", "last", "as_of"}
+                or state["v"] != 1
+                or state["source"] != identity
+                or state["mission"] != mission_id
+                or state["after"] != after_seq
+                or type(state["H"]) is not int
+                or type(state["last"]) is not int
+                or not after_seq <= state["last"] <= state["H"] <= maximum
+            ):
+                raise ValueError("Invalid changes cursor")
+            from .time_models import utc_timestamp
+
+            utc_timestamp(state["as_of"])
+        except (ValueError, TypeError, KeyError, UnicodeError) as error:
+            raise OperatorError("invalid_cursor") from error
+    # Include both incoming revisions and departures whose predecessor belonged
+    # to this mission. Choose the latest revision globally inside the frozen
+    # interval: filtering before this choice can resurrect an obsolete member.
+    records = select_records(
+        connection,
+        "WITH touched AS ("
+        "SELECT record_id FROM revisions WHERE mission_id=? AND journal_seq>? AND journal_seq<=? "
+        "UNION SELECT v.record_id FROM revisions v CROSS JOIN revisions p "
+        "ON p.record_id=v.record_id AND p.version=v.previous_version "
+        "WHERE v.journal_seq>? AND v.journal_seq<=? AND p.mission_id=? AND v.mission_id<>?), "
+        "changed AS (SELECT v.record_id, max(v.journal_seq) AS seq FROM revisions v "
+        "JOIN touched t ON t.record_id=v.record_id "
+        "WHERE v.journal_seq>? AND v.journal_seq<=? GROUP BY v.record_id) "
+        "SELECT v.* FROM revisions v JOIN changed c ON v.journal_seq=c.seq "
+        "WHERE v.journal_seq>? ORDER BY v.journal_seq LIMIT ?",
+        (
+            mission_id,
+            after_seq,
+            state["H"],
+            after_seq,
+            state["H"],
+            mission_id,
+            mission_id,
+            after_seq,
+            state["H"],
+            state["last"],
+            limit + 1,
+        ),
+    )
+    more = len(records) > limit
+    records = records[:limit]
+    next_cursor = None
+    if more:
+        state["last"] = records[-1].journal_seq
+        next_cursor = _encode(state)
+    return RecordPage(
+        items=records, H=state["H"], as_of=state["as_of"], cursor=next_cursor
+    )
+
+
 def page(connection, *, identity, clock, kind, filters, limit=50, cursor=None):
     if type(limit) is not int or not 1 <= limit <= 200:
         raise OperatorError("validation_error", fields={"limit": "Expected 1 to 200"})
