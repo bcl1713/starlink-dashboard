@@ -141,11 +141,12 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
             "polling": {
                 "navigationScoped": True,
                 "endpoint": "/api/overview-history",
-                "periodMs": 5000,
-                "cadenceMinMs": 4500,
-                "cadenceMaxMs": 7500,
+                "periodMs": 1000,
+                "cadenceMinMs": 900,
+                "cadenceMaxMs": 2500,
+                "cadenceBasis": "previous-completion-to-next-start",
                 "windowStart": 10.1,
-                "windowEnd": 15.1,
+                "windowEnd": 11.2,
                 "minimumScheduledRequests": 1,
                 "observedScheduledRequests": 1,
             },
@@ -164,8 +165,8 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
                     "path": "/api/overview-history",
                     "outcome": "finished",
                     "status": 200,
-                    "startedAt": 15.0,
-                    "finishedAt": 15.1,
+                    "startedAt": 11.1,
+                    "finishedAt": 11.2,
                     "cycle": "scheduled",
                 },
             ],
@@ -173,8 +174,10 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
         },
         "visible": {
             "routeName": "V2 Acceptance Route KAAA-KBBB",
-            "firstPoi": "KAAA",
-            "poiRows": 2,
+            "poiMarkers": [
+                {"id": "poi:aaa", "name": "KAAA", "label": "Takeoff · KAAA"},
+                {"id": "poi:bbb", "name": "KBBB", "label": "Landing · KBBB"},
+            ],
         },
         "artifacts": {
             "journey-pre.png": encoded,
@@ -1490,17 +1493,62 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     assert observation["lifecycle"]["requests"][0]["startedAt"] == 10.0
     assert observation["lifecycle"]["requests"][1]["cycle"] == "scheduled"
     assert observation["lifecycle"]["polling"] == {
-        "cadenceMaxMs": 7500,
-        "cadenceMinMs": 4500,
+        "cadenceMaxMs": 2500,
+        "cadenceBasis": "previous-completion-to-next-start",
+        "cadenceMinMs": 900,
         "endpoint": "/api/overview-history",
         "minimumScheduledRequests": 1,
         "navigationScoped": True,
         "observedScheduledRequests": 1,
-        "periodMs": 5000,
-        "windowEnd": 15.1,
+        "periodMs": 1000,
+        "windowEnd": 11.2,
         "windowStart": 10.1,
     }
     assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
+
+
+@pytest.mark.parametrize(
+    "change", ["table", "duplicate-id", "decoy-name", "wrong-route", "hidden-label"]
+)
+def test_adapter_observation_requires_distinct_current_route_map_markers(
+    change: str,
+) -> None:
+    payload = _adapter_payload()
+    visible = payload["visible"]
+    if change == "table":
+        visible.pop("poiMarkers")
+        visible.update({"firstPoi": "KAAA", "poiRows": 2})
+    elif change == "duplicate-id":
+        visible["poiMarkers"][1]["id"] = "poi:aaa"
+    elif change == "decoy-name":
+        visible["poiMarkers"][1]["name"] = "prefix-KBBB"
+    elif change == "wrong-route":
+        visible["routeName"] = "Unrelated route"
+    else:
+        visible["poiMarkers"][1]["label"] = ""
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+def test_adapter_observation_uses_completion_to_next_start_cadence() -> None:
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["requests"][0]["finishedAt"] = 12.0
+    lifecycle["requests"][1].update({"startedAt": 13.0, "finishedAt": 13.1})
+    lifecycle["polling"].update({"windowStart": 12.0, "windowEnd": 13.1})
+    observation = json.loads(
+        runner._decode_adapter_artifacts(payload)["adapter-observation.json"]
+    )
+    assert observation["lifecycle"]["requests"][1]["startedAt"] == 13.0
+
+
+def test_adapter_observation_rejects_stale_five_second_live_polling() -> None:
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
+    lifecycle["polling"]["windowEnd"] = 15.2
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
 
 
 def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> None:
@@ -1508,6 +1556,9 @@ def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> 
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
+    lifecycle["polling"].update(
+        {"periodMs": 5000, "cadenceMinMs": 4500, "cadenceMaxMs": 7500}
+    )
     lifecycle["history"] = {
         "mode": "degraded",
         "fallback": "Aircraft history unavailable",
@@ -1547,10 +1598,15 @@ def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> Non
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
+    lifecycle["polling"].update(
+        {"periodMs": 5000, "cadenceMinMs": 4500, "cadenceMaxMs": 7500}
+    )
     lifecycle["history"] = {
         "mode": "degraded",
         "fallback": "Aircraft history unavailable",
     }
+    lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
+    lifecycle["polling"]["windowEnd"] = 15.2
     for record in lifecycle["requests"]:
         record["outcome"] = "degraded"
         record["status"] = 503
@@ -1563,11 +1619,11 @@ def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> Non
     observation = json.loads(artifacts["adapter-observation.json"])
     assert observation["lifecycle"]["requests"][1] == {
         "cycle": "scheduled",
-        "finishedAt": 15.1,
+        "finishedAt": 15.2,
         "id": "2",
         "outcome": "degraded",
         "path": "/api/overview-history",
-        "startedAt": 15.0,
+        "startedAt": 15.1,
         "status": 503,
     }
 
@@ -1583,10 +1639,15 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
+    lifecycle["polling"].update(
+        {"periodMs": 5000, "cadenceMinMs": 4500, "cadenceMaxMs": 7500}
+    )
     lifecycle["history"] = {
         "mode": "degraded",
         "fallback": "Aircraft history unavailable",
     }
+    lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
+    lifecycle["polling"]["windowEnd"] = 15.2
     for record in lifecycle["requests"]:
         record["outcome"] = "degraded"
         record["status"] = 503
@@ -2181,14 +2242,14 @@ def test_v2_adapter_has_no_platform_authority() -> None:
     assert "record budget exceeded" in source
     assert "navigationScoped: true" in source
     assert "loaderId" in source
-    assert "Upcoming POIs" in source
+    assert 'data-label-kind="poi"' in source
 
 
 def test_v2_adapter_declares_navigation_scoped_history_polling_window() -> None:
     source = V2_ADAPTER.read_text(encoding="utf-8")
 
     assert "const POLLING_ENDPOINT = '/api/overview-history';" in source
-    assert "const POLLING_PERIOD_MS = 5_000;" in source
+    assert "const POLLING_PERIOD_MS = 1_000;" in source
     assert "beginHistoryObservation" in source
     assert "waitForScheduledPoll" in source
     assert "cadenceMinMs" in source

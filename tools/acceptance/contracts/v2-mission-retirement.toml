@@ -1,5 +1,8 @@
 name = "v2-mission-retirement"
 services = ["starlink-location", "mission-planner"]
+# Public KML upload and activation bind the current Overview map labels for
+# distinct KAAA/KBBB POIs; live history must retain its default one-second poll.
+# Browser ownership, cadence validation, and evidence sealing remain platform-owned.
 journey_adapter = "tools/acceptance/journeys/v2-mission-retirement.mjs"
 assets = ["docs/missions/acceptance-assets/v2-activation-route.kml"]
 

@@ -22,9 +22,9 @@ const require = createRequire(resolve(ROOT, 'frontend/mission-planner/package.js
 const { chromium } = require('@playwright/test');
 const LIMIT = 50;
 const POLLING_ENDPOINT = '/api/overview-history';
-const POLLING_PERIOD_MS = 5_000;
-const POLLING_MIN_CADENCE_MS = 4_500;
-const POLLING_MAX_CADENCE_MS = 7_500;
+const POLLING_PERIOD_MS = 1_000;
+const POLLING_MIN_CADENCE_MS = 900;
+const POLLING_MAX_CADENCE_MS = 2_500;
 const SEMANTIC_READINESS_TIMEOUT_MS = 10_000;
 
 function parse(argv) {
@@ -122,6 +122,12 @@ function scopedLifecycle(page) {
   let overflow = false;
   let pollingWindow;
   let historyMode = '';
+  let bootstrapStarted = false;
+  // QueryObserver resets its interval on completion. Errors use the product's
+  // intentional five-second backoff rather than the live one-second default.
+  const pollingSettings = () => historyMode === 'degraded'
+    ? { periodMs: 5_000, cadenceMinMs: 4_500, cadenceMaxMs: 7_500 }
+    : { periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS };
   const add = (record) => {
     if (records.length >= LIMIT) { overflow = true; return; }
     records.push(record);
@@ -138,7 +144,8 @@ function scopedLifecycle(page) {
       });
       session.on('Network.requestWillBeSent', (event) => {
         if (event.frameId !== frameId || event.loaderId !== loaderId || new URL(event.request.url).pathname !== POLLING_ENDPOINT) return;
-        requests.set(event.requestId, { id: event.requestId, path: new URL(event.request.url).pathname, startedAt: event.timestamp, loaderId: event.loaderId, outcome: 'pending' });
+        requests.set(event.requestId, { id: event.requestId, path: new URL(event.request.url).pathname, startedAt: event.timestamp, loaderId: event.loaderId, outcome: 'pending', cycle: bootstrapStarted ? 'scheduled' : 'bootstrap' });
+        bootstrapStarted = true;
       });
       session.on('Network.responseReceived', (event) => {
         const record = requests.get(event.requestId);
@@ -147,7 +154,7 @@ function scopedLifecycle(page) {
       session.on('Network.loadingFinished', (event) => {
         const record = requests.get(event.requestId);
         if (record) {
-          Object.assign(record, { outcome: record.status === 200 ? 'finished' : record.status === 503 ? 'degraded' : 'http_failed', finishedAt: event.timestamp, cycle: pollingWindow ? 'scheduled' : 'bootstrap' });
+          Object.assign(record, { outcome: record.status === 200 ? 'finished' : record.status === 503 ? 'degraded' : 'http_failed', finishedAt: event.timestamp });
           add({ ...record });
           requests.delete(event.requestId);
         }
@@ -155,14 +162,14 @@ function scopedLifecycle(page) {
       session.on('Network.loadingFailed', (event) => {
         const record = requests.get(event.requestId);
         if (record) {
-          Object.assign(record, { outcome: 'failed', error: event.errorText, finishedAt: event.timestamp, cycle: pollingWindow ? 'scheduled' : 'bootstrap' });
+          Object.assign(record, { outcome: 'failed', error: event.errorText, finishedAt: event.timestamp });
           add({ ...record });
           requests.delete(event.requestId);
         }
       });
     },
     async beginHistoryObservation() {
-      const deadline = Date.now() + POLLING_MAX_CADENCE_MS;
+      const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
       while (!records.some((record) => record.cycle === 'bootstrap' && ['finished', 'degraded'].includes(record.outcome))) {
         if (Date.now() >= deadline) throw new Error('scoped V2 polling bootstrap coverage gap');
         await page.waitForTimeout(50);
@@ -173,7 +180,7 @@ function scopedLifecycle(page) {
       return historyMode;
     },
     async waitForScheduledPoll() {
-      const deadline = Date.now() + POLLING_MAX_CADENCE_MS;
+      const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
       const outcome = historyMode === 'degraded' ? 'degraded' : 'finished';
       while (!records.some((record) => record.cycle === 'scheduled' && record.outcome === outcome)) {
         if (Date.now() >= deadline) throw new Error('scoped V2 scheduled polling window coverage gap');
@@ -192,20 +199,32 @@ function scopedLifecycle(page) {
       const status = historyMode === 'degraded' ? 503 : 200;
       if (!['live', 'degraded'].includes(historyMode) || records.some((record) => record.outcome !== outcome || record.status !== status)) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
       if (bootstrap.length !== 1 || (historyMode === 'live' && scheduled.length < 1)) throw new Error('scoped V2 polling cadence coverage gap');
+      const { cadenceMinMs, cadenceMaxMs } = pollingSettings();
       const ordered = [bootstrap[0], ...scheduled];
       for (let index = 1; index < ordered.length; index += 1) {
         const previous = ordered[index - 1]; const record = ordered[index];
-        const cadenceMs = (record.startedAt - previous.startedAt) * 1_000;
-        if (record.startedAt < previous.finishedAt || cadenceMs < POLLING_MIN_CADENCE_MS || cadenceMs > POLLING_MAX_CADENCE_MS) throw new Error('scoped V2 polling cadence or overlap failure');
+        const cadenceMs = (record.startedAt - previous.finishedAt) * 1_000;
+        if (record.startedAt < previous.finishedAt || cadenceMs < cadenceMinMs || cadenceMs > cadenceMaxMs) throw new Error('scoped V2 polling cadence or overlap failure');
       }
     },
     observation() {
       const scheduled = records.filter((record) => record.cycle === 'scheduled');
       const degraded = historyMode === 'degraded';
-      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS, windowStart: pollingWindow?.windowStart, windowEnd: scheduled.at(-1)?.finishedAt ?? pollingWindow?.windowEnd, minimumScheduledRequests: degraded ? 0 : 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
+      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, ...pollingSettings(), cadenceBasis: 'previous-completion-to-next-start', windowStart: pollingWindow?.windowStart, windowEnd: scheduled.at(-1)?.finishedAt ?? pollingWindow?.windowEnd, minimumScheduledRequests: degraded ? 0 : 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
+    },
+    async finishObservation() {
+      // End a bounded, terminal network window before screenshot rendering can
+      // start another poll. Never drop an already observed in-flight request.
+      const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
+      while (requests.size) {
+        if (Date.now() >= deadline) throw new Error('scoped V2 navigation lifecycle has pending requests');
+        await page.waitForTimeout(50);
+      }
+      await this.close();
     },
     async close() {
       await session?.detach().catch(() => {});
+      session = undefined;
     },
   };
 }
@@ -222,21 +241,73 @@ async function waitForMissionCreationReadiness(page, origin) {
   return control;
 }
 
+async function visibleMapPoi(page, map, name, label) {
+  const marker = map.locator(`[data-label-kind="poi"][data-label-text="${label}"]`);
+  await marker.waitFor({ state: 'attached', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  if (await marker.count() !== 1) throw new Error(`ambiguous ${name} map marker`);
+  const id = await marker.getAttribute('data-overview-label-id');
+  if (!id?.startsWith('poi:') || id.length <= 4) throw new Error(`missing ${name} map marker identity`);
+  const source = marker.locator('[data-label-source]');
+  const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
+  let painted;
+  while (!painted) {
+    if (await source.isVisible()) painted = source;
+    else {
+      // Close endpoints can share a crowded-label disclosure. Use its public
+      // control, and require its group to contain this exact map marker ID.
+      for (const group of await map.locator('details[data-group-ids]').all()) {
+        const ids = JSON.parse(await group.getAttribute('data-group-ids'));
+        if (!Array.isArray(ids) || !ids.includes(id)) continue;
+        const summary = group.locator('summary');
+        if (!await summary.isVisible()) continue;
+        if (await group.getAttribute('open') === null) await summary.click({ timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+        const item = group.getByText(label, { exact: true });
+        if (await item.isVisible()) {
+          await item.scrollIntoViewIfNeeded({ timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+          painted = item;
+        }
+      }
+    }
+    if (!painted) {
+      if (Date.now() >= deadline) throw new Error(`${name} map marker label is not visible`);
+      await page.waitForTimeout(50);
+    }
+  }
+  await painted.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  const box = await painted.boundingBox();
+  const bounds = await map.boundingBox();
+  if (!box || !bounds || box.width <= 0 || box.height <= 0 || box.x < Math.max(0, bounds.x) || box.y < Math.max(0, bounds.y) || box.x + box.width > Math.min(1920, bounds.x + bounds.width) || box.y + box.height > Math.min(1080, bounds.y + bounds.height)) throw new Error(`${name} map marker label is outside the visible map`);
+  // isVisible() does not account for overflow clipping. Check the text against
+  // each ancestor's client viewport after any public disclosure scrolling.
+  const unclipped = await painted.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      const style = getComputedStyle(ancestor);
+      const bounds = ancestor.getBoundingClientRect();
+      const left = bounds.left + ancestor.clientLeft;
+      const top = bounds.top + ancestor.clientTop;
+      if (/(auto|scroll|hidden|clip)/.test(style.overflowX) && (rect.left < left || rect.right > left + ancestor.clientWidth)) return false;
+      if (/(auto|scroll|hidden|clip)/.test(style.overflowY) && (rect.top < top || rect.bottom > top + ancestor.clientHeight)) return false;
+    }
+    return true;
+  });
+  if (!unclipped) throw new Error(`${name} map marker label is clipped`);
+  if (await painted.innerText() !== label) throw new Error(`${name} map marker label does not match the accepted KML`);
+  return { name, id, label };
+}
+
 async function assertSemanticOverview(page) {
   const legend = page.getByLabel('Globe legend');
-  const poiPanel = page.getByLabel('Upcoming POIs');
   const routeName = legend.getByText('V2 Acceptance Route KAAA-KBBB', { exact: true });
-  const poiRows = poiPanel.locator('tbody tr');
-  const poiNameCells = page.locator('td:nth-child(2)');
-  const kAaaPoiRow = poiRows.filter({ has: poiNameCells.getByText('KAAA', { exact: true }) });
-  const kBbbPoiRow = poiRows.filter({ has: poiNameCells.getByText('KBBB', { exact: true }) });
+  const map = page.locator('.overview-map-stage');
   await routeName.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
-  await kAaaPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
-  await kBbbPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
-  await poiRows.nth(1).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
   await settleAnimations(page);
-  if ((await poiRows.count()) < 2) throw new Error('active V2 route, context, or KAAA/KBBB generated POI body rows are not visibly bound to the accepted KML');
-  return { routeName: await routeName.innerText(), firstPoi: await kAaaPoiRow.first().innerText(), secondPoi: await kBbbPoiRow.first().innerText(), poiRows: await poiRows.count() };
+  const poiMarkers = [
+    await visibleMapPoi(page, map, 'KAAA', 'Takeoff · KAAA'),
+    await visibleMapPoi(page, map, 'KBBB', 'Landing · KBBB'),
+  ];
+  if (poiMarkers[0].id === poiMarkers[1].id) throw new Error('KAAA/KBBB map markers are not distinct');
+  return { routeName: await routeName.innerText(), poiMarkers };
 }
 
 export async function runV2MissionRetirement({ page, origin, kmlPath }) {
@@ -263,6 +334,7 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
       ? await page.getByText('Aircraft history unavailable', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS }).then(() => 'Aircraft history unavailable')
       : undefined;
     if (historyMode === 'live') await lifecycle.waitForScheduledPoll();
+    await lifecycle.finishObservation();
     const post = await viewportArtifact(page, 'journey-post');
     lifecycle.assertHealthy();
     return { missionName, activation: 'browser-observed-200', lifecycle: lifecycle.observation(), visible: { ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };

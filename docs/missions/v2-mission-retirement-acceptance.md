@@ -46,8 +46,10 @@ pre-existing state or navigating directly to a hidden state:
 5. Select **Activate** and observe a successful activation response.
 6. Navigate through the visible **Overview** control.
 7. Confirm the visible active route context, route name
-   `V2 Acceptance Route KAAA-KBBB`, and the **Upcoming POIs** panel with
-   separate visible body rows for `KAAA` and `KBBB` (at least two POI rows).
+   `V2 Acceptance Route KAAA-KBBB`, and distinct generated map POIs for `KAAA`
+   and `KBBB` with visible **Takeoff · KAAA** and **Landing · KBBB** labels.
+   When close labels are grouped, open the public crowded-label disclosure to
+   see both exact labels. Hidden accessible POI text alone is insufficient.
 
 Upcoming POI visibility derives from active-route position; ETA remains
 anticipated/estimated metadata. Before planned departure, anticipated ETA is
@@ -55,7 +57,12 @@ calendar-based. After a missed planned departure but before actual departure,
 planned route durations are re-anchored at now. Once in flight, ETA is estimated
 from the current route position; POI visibility remains route-relative.
 
-The journey records a pre-journey and post-journey visual state. A successful
+The journey records a pre-journey and post-journey visual state, distinct map
+marker identities, and a bounded navigation-scoped history request lifecycle.
+Successful live history must complete a bootstrap and a scheduled poll using the
+current one-second default, timed from prior completion to next start without
+overlap. A visible history-unavailable fallback may accompany an explicit HTTP
+503; that error state retains the intentional five-second backoff. A successful
 final product result requires the public controls and this visible journey; a
 successful endpoint response alone does not prove that the active route context
 is visible to an operator.

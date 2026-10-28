@@ -1,0 +1,94 @@
+{
+  "end": 1793185388,
+  "step": 1,
+  "series": {
+    "starlink_dish_latitude_degrees": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        0.00560467221540258
+      ]
+    },
+    "starlink_dish_speed_knots": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        449.27724721991393
+      ]
+    },
+    "starlink_dish_altitude_feet": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        63.43981208360367
+      ]
+    },
+    "starlink_network_throughput_up_mbps_current": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        19.781568018316648
+      ]
+    },
+    "starlink_signal_quality_percent": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        70
+      ]
+    },
+    "starlink_network_throughput_down_mbps_current": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        166.09786231743962
+      ]
+    },
+    "starlink_dish_obstruction_percent": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        30
+      ]
+    },
+    "starlink_network_packet_loss_percent": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        0.5029633043683298
+      ]
+    },
+    "starlink_dish_longitude_degrees": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        -9.970485005811838
+      ]
+    },
+    "starlink_dish_heading_degrees": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        78.67495052022423
+      ]
+    },
+    "starlink_network_latency_ms_current": {
+      "points": 1801,
+      "qualified": 1801,
+      "last": [
+        1793185388,
+        55.93892027744699
+      ]
+    }
+  }
+}

@@ -281,10 +281,8 @@ def test_adapter_explicitly_classifies_visible_degraded_history_fallback() -> No
     assert "minimumScheduledRequests: degraded ? 0 : 1" in card
 
 
-def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(
-    tmp_path: Path,
-) -> None:
-    """Only exact named POI cells in two body rows can satisfy the executed waits."""
+def test_v2_adapter_executes_current_map_marker_readiness(tmp_path: Path) -> None:
+    """Hidden lists, unrelated labels and duplicate identities cannot replace map labels."""
     repository = tmp_path / "repository"
     adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
     package = repository / "frontend/mission-planner/package.json"
@@ -292,7 +290,7 @@ def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(
     adapter.parent.mkdir(parents=True)
     adapter.write_text(
         ADAPTER_SCRIPT.read_text(encoding="utf-8")
-        + "\nexport { assertSemanticOverview };\n",
+        + "\nexport { assertSemanticOverview, scopedLifecycle };\n",
         encoding="utf-8",
     )
     package.parent.mkdir(parents=True)
@@ -300,70 +298,134 @@ def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(
     playwright.mkdir(parents=True)
     (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
     program = r"""
-const { assertSemanticOverview } = await import(process.argv[1]);
-const timeout = 10_000;
+const { assertSemanticOverview, scopedLifecycle } = await import(process.argv[1]);
 class Locator {
-  constructor(page, kind, rows = null, exact = null, root = null) { Object.assign(this, { page, kind, rows, exact, root }); }
+  constructor(page, kind, marker = null) { Object.assign(this, { page, kind, marker }); }
   getByText(text, options = {}) {
-    if (this.kind === 'legend') return new Locator(this.page, 'route', null, options.exact ? text : null);
-    if (this.kind === 'cells') return new Locator(this.page, 'cells', null, options.exact ? text : null, this.root);
+    if (!options.exact) throw new Error('label matching must be exact');
+    if (this.kind === 'legend') return new Locator(this.page, 'route', { label: text });
+    if (this.kind === 'group') return new Locator(this.page, 'item', this.page.markers.find((m) => m.label === text));
     throw new Error(`unexpected getByText on ${this.kind}`);
   }
   locator(selector) {
-    if (this.kind === 'poi-panel' && selector === 'tbody tr') return new Locator(this.page, 'rows', this.page.rows);
-    if (this.kind === 'page' && selector === 'td:nth-child(2)') return new Locator(this.page, 'cells', null, null, 'global');
-    if (this.kind === 'rows' && selector === 'td:nth-child(2)') return new Locator(this.page, 'cells', null, null, 'rows');
+    if (this.kind === 'page' && selector === '.overview-map-stage') return new Locator(this.page, 'map');
+    if (this.kind === 'map' && selector.startsWith('[data-label-kind="poi"]')) {
+      const label = selector.match(/data-label-text="([^"]+)"/)[1];
+      return new Locator(this.page, 'marker', this.page.markers.find((m) => m.label === label));
+    }
+    if (this.kind === 'marker' && selector === '[data-label-source]') return new Locator(this.page, 'source', this.marker);
+    if (this.kind === 'map' && selector === 'details[data-group-ids]') return { all: async () => this.page.groupIds ? [new Locator(this.page, 'group')] : [] };
+    if (this.kind === 'group' && selector === 'summary') return new Locator(this.page, 'summary');
     throw new Error(`unexpected locator ${this.kind} ${selector}`);
   }
-  filter(options) {
-    if (this.kind !== 'rows') throw new Error('filter must be scoped to body rows');
-    if (options.has?.kind === 'cells' && options.has.root === 'global') return new Locator(this.page, 'rows', this.rows.filter((row) => row.name === options.has.exact));
-    if (options.has?.kind === 'cells') throw new Error('has locator must be global, not rooted through candidate rows');
-    if (options.hasText) return new Locator(this.page, 'rows', this.rows.filter((row) => row.name.includes(options.hasText)));
-    if (options.hasNotText) return new Locator(this.page, 'rows', this.rows.filter((row) => !row.name.includes(options.hasNotText)));
-    throw new Error('unexpected row filter');
-  }
-  first() { return new Locator(this.page, this.kind, this.rows?.slice(0, 1), this.exact, this.root); }
-  nth(index) { return new Locator(this.page, this.kind, this.rows?.slice(index, index + 1), this.exact, this.root); }
   async waitFor(options) {
-    this.page.waits.push({ kind: this.kind, exact: this.exact, rows: this.rows?.map((row) => row.name), options });
-    const visible = this.kind === 'route' ? this.page.route === this.exact : this.rows?.length > 0;
-    if (!visible) throw new Error('not visible');
+    if (options.timeout !== 10_000 || !['visible', 'attached'].includes(options.state)) throw new Error('unbounded semantic wait');
+    if (this.kind === 'route' ? this.page.route !== this.marker.label : !await this.isVisible() && options.state !== 'attached' || this.kind === 'marker' && !this.marker) throw new Error('not ready');
   }
-  async count() { return this.rows.length; }
-  async innerText() { return this.kind === 'route' ? this.page.route : this.rows[0].name; }
+  async count() { return this.marker ? 1 : 0; }
+  async getAttribute(name) {
+    if (name === 'data-overview-label-id') return this.marker?.id;
+    if (name === 'data-group-ids') return JSON.stringify(this.page.groupIds);
+    if (name === 'open') return this.page.open ? '' : null;
+    throw new Error(`unexpected attribute ${name}`);
+  }
+  async isVisible() {
+    if (this.kind === 'source') return Boolean(this.marker?.visible);
+    if (this.kind === 'item') return Boolean(this.page.open && this.marker);
+    if (this.kind === 'summary') return true;
+    return Boolean(this.marker);
+  }
+  async click() { if (this.kind !== 'summary') throw new Error('only public disclosure click is permitted'); this.page.open = true; this.page.clicks++; }
+  async boundingBox() { return this.kind === 'map' ? { x: 0, y: 0, width: 1920, height: 1080 } : this.marker?.box ?? { x: 500, y: 300, width: 150, height: 30 }; }
+  async innerText() { return this.kind === 'route' ? this.page.route : this.marker.label; }
+  async scrollIntoViewIfNeeded(options) {
+    if (options.timeout !== 10_000) throw new Error('unbounded scroll');
+    if (this.marker?.scrollable) this.marker.box = { x: 500, y: 350, width: 150, height: 30 };
+  }
+  async evaluate(fn) {
+    const box = await this.boundingBox();
+    const rect = { ...box, left: box.x, top: box.y, right: box.x + box.width, bottom: box.y + box.height };
+    const clip = this.marker?.clip;
+    const parentElement = clip ? {
+      parentElement: null, clientLeft: 2, clientTop: 2, clientWidth: 200, clientHeight: 180,
+      getBoundingClientRect: () => ({ left: 498, top: 298 }),
+    } : null;
+    globalThis.getComputedStyle = () => ({ overflowX: 'auto', overflowY: 'auto' });
+    return fn({ getBoundingClientRect: () => rect, parentElement });
+  }
 }
-const page = (route, rows) => ({
-  route, rows, waits: [],
-  getByLabel(name) { return new Locator(this, name === 'Globe legend' ? 'legend' : 'poi-panel'); },
+const markers = () => [
+  { name: 'KAAA', label: 'Takeoff · KAAA', id: 'poi:aaa', visible: true },
+  { name: 'KBBB', label: 'Landing · KBBB', id: 'poi:bbb', visible: true },
+];
+const page = (items = markers(), groupIds = null) => ({
+  route: 'V2 Acceptance Route KAAA-KBBB', markers: items, groupIds, open: false, clicks: 0,
+  getByLabel(name) { if (name !== 'Globe legend') throw new Error('hidden accessible list cannot prove visible readiness'); return new Locator(this, 'legend'); },
   locator(selector) { return new Locator(this, 'page').locator(selector); },
   evaluate: async () => {},
+  waitForTimeout: async () => { throw new Error('test fixture has no visible map marker'); },
 });
-for (const candidate of [
-  page('V2 Acceptance Route KAAA-KBBB', []),
-  page('V2 Acceptance Route KAAA-KBBB', [{ name: 'KAAA1' }, { name: 'prefix-KBBB' }]),
-  page('V2 Acceptance Route KAAA-KBBB', [{ name: 'KAAA' }, { name: 'KAAA' }]),
-]) {
+const decoy = markers(); decoy[1].label = 'prefix-Landing · KBBB';
+const duplicate = markers(); duplicate[1].id = 'poi:aaa';
+const offscreen = markers(); offscreen[1].box = { x: -400, y: 200, width: 150, height: 30 };
+// Playwright isVisible remains true for a list item below a scroll container's
+// client viewport, even though its box is comfortably inside the map bounds.
+const clipped = markers().map((m) => ({ ...m, visible: false }));
+clipped[1].box = { x: 500, y: 520, width: 150, height: 30 }; clipped[1].clip = true;
+await assertSemanticOverview(page(clipped, ['poi:aaa', 'poi:bbb'])).then(
+  () => { throw new Error('a disclosure item below its scroll clip was accepted'); },
+  () => {},
+);
+const scrollable = clipped.map((m) => ({ ...m, scrollable: true }));
+await assertSemanticOverview(page(scrollable, ['poi:aaa', 'poi:bbb']));
+for (const candidate of [page([]), page(decoy), page(duplicate), page(markers().map((m) => ({ ...m, visible: false }))), page(offscreen)]) {
   await assertSemanticOverview(candidate).then(
-    () => { throw new Error('static, decoy, or non-distinct POI rows were accepted'); },
+    () => { throw new Error('hidden, decoy, duplicate or offscreen POIs were accepted'); },
     () => {},
   );
 }
-const ready = page('V2 Acceptance Route KAAA-KBBB', [{ name: 'KAAA' }, { name: 'KBBB' }]);
-const visible = await assertSemanticOverview(ready);
-if (visible.poiRows !== 2 || visible.firstPoi !== 'KAAA' || visible.secondPoi !== 'KBBB') throw new Error('exact readiness result was not observed');
-if (ready.waits.length !== 4 || ready.waits.some(({ options }) => options.state !== 'visible' || options.timeout !== timeout)) throw new Error('executed readiness waits are not bounded');
-if (!ready.waits.some(({ kind, exact }) => kind === 'route' && exact === 'V2 Acceptance Route KAAA-KBBB')) throw new Error('route readiness was not scoped to the legend locator');
-if (!ready.waits.some(({ kind, rows }) => kind === 'rows' && rows?.join(',') === 'KAAA')) throw new Error('KAAA exact body row was not waited');
-if (!ready.waits.some(({ kind, rows }) => kind === 'rows' && rows?.join(',') === 'KBBB')) throw new Error('KBBB exact body row was not waited');
+for (const candidate of [page(), page(markers().map((m) => ({ ...m, visible: false })), ['poi:aaa', 'poi:bbb'])]) {
+  const visible = await assertSemanticOverview(candidate);
+  if (JSON.stringify(visible.poiMarkers) !== JSON.stringify(markers().map(({ name, label, id }) => ({ name, id, label })))) throw new Error('exact distinct map identities were not returned');
+  if (candidate.groupIds && candidate.clicks !== 1) throw new Error('crowded map labels were not opened through the public control');
+}
+// Exercise real CDP record classification and timing without a browser process.
+function monitored() {
+  const listeners = new Map();
+  const session = { send: async (method) => method === 'Page.getFrameTree' ? { frameTree: { frame: { id: 'frame' } } } : {}, on: (event, fn) => listeners.set(event, fn), detach: async () => {} };
+  const lifecycle = scopedLifecycle({ context: () => ({ newCDPSession: async () => session }), waitForTimeout: async () => { throw new Error('coverage gap'); } });
+  const emit = (event, payload) => listeners.get(event)(payload);
+  const request = (id, start, finish, status = 200, loaderId = 'loader') => {
+    emit('Network.requestWillBeSent', { frameId: 'frame', loaderId, requestId: id, timestamp: start, request: { url: 'http://product/api/overview-history' } });
+    emit('Network.responseReceived', { requestId: id, response: { status } });
+    emit('Network.loadingFinished', { requestId: id, timestamp: finish });
+  };
+  return { lifecycle, emit, request };
+}
+const good = monitored(); await good.lifecycle.arm();
+good.emit('Page.frameNavigated', { frame: { id: 'frame', loaderId: 'loader' } });
+good.request('unrelated', 1, 2, 200, 'other-loader');
+good.request('bootstrap', 10, 12);
+good.request('scheduled-before-semantic-readiness', 13, 13.1);
+await good.lifecycle.beginHistoryObservation(); await good.lifecycle.waitForScheduledPoll(); good.lifecycle.assertHealthy();
+const observed = good.lifecycle.observation();
+if (observed.requests.length !== 2 || observed.requests[1].cycle !== 'scheduled' || observed.polling.periodMs !== 1000) throw new Error('navigation-scoped one-second completion cadence was not retained');
+for (const [start, finish] of [[15, 15.1], [11, 11.1], [12.1, 12.2]]) {
+  const bad = monitored(); await bad.lifecycle.arm();
+  bad.emit('Page.frameNavigated', { frame: { id: 'frame', loaderId: 'loader' } });
+  bad.request('bootstrap', 10, 12); bad.request('scheduled', start, finish);
+  await bad.lifecycle.beginHistoryObservation(); await bad.lifecycle.waitForScheduledPoll();
+  let rejected = false; try { bad.lifecycle.assertHealthy(); } catch { rejected = true; }
+  if (!rejected) throw new Error('stale, overlapping or immediate refetch was accepted');
+}
 """
     completed = subprocess.run(
         ["node", "--input-type=module", "--eval", program, adapter.as_uri()],
         capture_output=True,
         check=False,
         text=True,
+        timeout=10,
     )
-
     assert completed.returncode == 0, completed.stderr
 
 

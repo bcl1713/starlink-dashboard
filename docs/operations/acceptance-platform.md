@@ -130,19 +130,19 @@ contract checksum requires a new final build-ledger record.
 
 ## V2 visible journey observation
 
-For the V2 mission-retirement product contract, the adapter must prove the
-operator-visible binding created by the public KML upload and activation flow:
-the active route name and a genuine **Upcoming POIs** table containing separate
-visible body rows for `KAAA` and `KBBB` (at least two POI rows). This is a
-visible
-browser observation, not API seeding, hidden navigation, a synthetic clock, or
-hidden application state. POI
-eligibility is route-relative; ETA is anticipated/estimated metadata and does
-not determine whether a route-relative POI row is visible.
+Public KML upload/activation must bind the active route name to distinct
+`KAAA` / `KBBB` map identities labelled `Takeoff · KAAA` / `Landing · KBBB`.
+Crowded labels use public disclosure/scrolling, member IDs and clipping checks;
+the hidden **Map POIs** list alone is insufficient. Eligibility is route-relative,
+not ETA-based. No API seeding, hidden navigation, synthetic clocks or state apply.
+
+Navigation-scoped CDP requires live bootstrap plus a scheduled poll, timed from
+completion to next start at one second (900–2500 ms), without overlap or failures.
+HTTP 503 requires visible **Aircraft history unavailable** and five-second backoff.
+Bounded waits close the network window before screenshots, dropping no requests.
+Only the platform seals observations and grants final authority.
 
 ## Final browser execution and interruption recovery
-
-Use this operator sequence for final acceptance:
 
 1. Run `health` and checksum-verify its sealed fingerprint and evidence
    manifest.

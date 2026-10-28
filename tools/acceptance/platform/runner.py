@@ -835,12 +835,15 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         "observedScheduledRequests"
     )
     cadence_min, cadence_max = polling.get("cadenceMinMs"), polling.get("cadenceMaxMs")
+    expected_polling = (
+        (1000, 900, 2500) if history_mode == "live" else (5000, 4500, 7500)
+    )
     if (
         lifecycle.get("overflow") is not False
         or polling.get("navigationScoped") is not True
         or polling.get("endpoint") != "/api/overview-history"
-        or polling.get("periodMs") != 5000
-        or (cadence_min, cadence_max) != (4500, 7500)
+        or polling.get("cadenceBasis") != "previous-completion-to-next-start"
+        or (polling.get("periodMs"), cadence_min, cadence_max) != expected_polling
         or not all(
             isinstance(polling.get(key), (int, float))
             for key in ("windowStart", "windowEnd")
@@ -850,7 +853,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or not isinstance(observed, int)
         or (history_mode == "live" and (minimum < 1 or observed < minimum))
         or (history_mode == "degraded" and minimum != 0)
-        ):
+    ):
         raise ValueError("adapter observation is invalid")
     records: list[dict[str, object]] = []
     for record in requests:
@@ -885,15 +888,11 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         )
     bootstrap = [record for record in records if record["cycle"] == "bootstrap"]
     scheduled = [record for record in records if record["cycle"] == "scheduled"]
-    if (
-        len(bootstrap) != 1
-        or len(scheduled) != observed
-        or len(scheduled) < minimum
-    ):
+    if len(bootstrap) != 1 or len(scheduled) != observed or len(scheduled) < minimum:
         raise ValueError("adapter observation is invalid")
     ordered = [bootstrap[0], *sorted(scheduled, key=lambda record: record["startedAt"])]
     for previous, record in pairwise(ordered):
-        cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
+        cadence_ms = (record["startedAt"] - previous["finishedAt"]) * 1000
         if (
             record["startedAt"] < previous["finishedAt"]
             or cadence_ms < cadence_min
@@ -905,16 +904,30 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or polling["windowEnd"] != ordered[-1]["finishedAt"]
     ):
         raise ValueError("adapter observation is invalid")
+    markers = visible.get("poiMarkers")
     if (
-        not isinstance(visible.get("routeName"), str)
-        or not isinstance(visible.get("firstPoi"), str)
-        or not isinstance(visible.get("poiRows"), int)
-        or visible["poiRows"] < 2
+        visible.get("routeName") != "V2 Acceptance Route KAAA-KBBB"
+        or not isinstance(markers, list)
+        or len(markers) != 2
     ):
         raise ValueError("adapter observation is invalid")
-    if (
-        visible.get("historyFallback") != history_fallback
-        or (history_fallback is None and "historyFallback" in visible)
+    for marker, name, label in zip(
+        markers, ("KAAA", "KBBB"), ("Takeoff · KAAA", "Landing · KBBB"), strict=True
+    ):
+        if (
+            not isinstance(marker, Mapping)
+            or set(marker) != {"id", "name", "label"}
+            or not isinstance(marker.get("id"), str)
+            or not marker["id"].startswith("poi:")
+            or len(marker["id"]) <= 4
+            or marker.get("name") != name
+            or marker.get("label") != label
+        ):
+            raise ValueError("adapter observation is invalid")
+    if markers[0]["id"] == markers[1]["id"]:
+        raise ValueError("adapter observation is invalid")
+    if visible.get("historyFallback") != history_fallback or (
+        history_fallback is None and "historyFallback" in visible
     ):
         raise ValueError("adapter observation is invalid")
     encoded = json.dumps(
@@ -930,6 +943,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                     "periodMs": polling["periodMs"],
                     "cadenceMinMs": cadence_min,
                     "cadenceMaxMs": cadence_max,
+                    "cadenceBasis": polling["cadenceBasis"],
                     "windowStart": polling["windowStart"],
                     "windowEnd": polling["windowEnd"],
                     "minimumScheduledRequests": minimum,
@@ -939,8 +953,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
             },
             "visible": {
                 "routeName": visible["routeName"],
-                "firstPoi": visible["firstPoi"],
-                "poiRows": visible["poiRows"],
+                "poiMarkers": [dict(marker) for marker in markers],
                 **(
                     {"historyFallback": history_fallback}
                     if history_fallback is not None

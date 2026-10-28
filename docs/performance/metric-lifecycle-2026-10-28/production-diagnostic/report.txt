@@ -1,0 +1,45 @@
+# Issue 393 acceptance follow-up — 2026-10-28
+
+Candidate and harness: `bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef`. PR: https://github.com/bcl1713/starlink-dashboard/pull/432. No source changes during this acceptance run.
+
+Latest review found no new source-level correctness defects. All seven CI gates were already green on this head integrated with dev. This report adds exact production-image diagnostic evidence; it does not claim sealed final browser acceptance.
+
+## Production run
+
+Built the checked-in backend and frontend Dockerfiles from a Git archive of the exact candidate. Served through production Nginx with actual Prometheus at 1 Hz. Synthetic real-clock fixture, one 1920×1080 Overview viewer plus Operator, 30-minute history window, 120-second warmup, planned 3,600-second measurement, leg switch/deactivation/reactivation plus three journal writes. Each service had a 2 CPU/2 GiB limit.
+
+Runner exited 0 with status `measured`. There were 721 measured resource samples. Measured first-to-last span: **3599.999954706000 seconds**. The strict `sustained_60_minutes` flag is **false**: the endpoints are approximately 45 microseconds short of 3,600 seconds. The raw result is preserved; the one-hour gate is not marked passed.
+
+Request outcomes: `{"unexpected_failures": 0, "client_cancellations": 0}`; browser failures: `[]`. All three lifecycle operations and journal receipts succeeded.
+
+There were 46 additional point-in-time mission-cardinality observations. Every captured scrape was healthy, every active identity had value 1 and a nonempty route, and current mission-info counts were bounded to 0 or 1. Observations followed **1 → 0 → 1**: no mission gauge children during inactivity, one identity after reactivation. POI ETA series count remained 2. These observations are discrete, not a continuous proof of every scrape.
+
+## Resources
+
+Descriptive measurements only; there is no matched baseline for a speedup, capacity, or leak claim. Backend memory rose transiently around reactivation and settled back near 329 MB. Browser memory grew; this evidence does not establish flat browser memory. TSDB head series retain historical identities and are not expected to drop immediately when exporter children disappear.
+
+| Resource | First MB | Last MB | Maximum MB | Fitted MB/min |
+| --- | ---: | ---: | ---: | ---: |
+| backend.anonymous_bytes | 315.63 | 329.28 | 899.49 | 0.460 |
+| prometheus.anonymous_bytes | 29.72 | 42.61 | 52.76 | 0.120 |
+| browser.pss_bytes | 1168.77 | 1479.21 | 1542.16 | 3.828 |
+
+Overview history request latency: p50 193.855 ms, p95 306.198 ms, p99 397.824 ms across 2,571 measured completions. Software-rendered frame p95 was 116.6 ms, so this is not a hardware-rendering performance claim. Full endpoint statistics are in `production-soak/summary.json`.
+
+## Identity and authority
+
+- backend: `sha256:f4cbf42fed80373c2ec39762ad2a427347794dcf818dff0370886700482e3687`
+- frontend: `sha256:4fe7bf67cc4be2183b32bab70a0c5b7710b583c239003d4556961d0a12573a98`
+- prometheus: `sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996`
+
+Source archive SHA-256: `a6424604de63ad3896d6c28e60e42430aa805656cee6bc3dc5f124a08c16b562`.
+
+Platform health passed separately using the provisioned full Chrome 153.0.8010.12, native 1920×1080, DPR 1 and WebGL2. Its sealed fingerprint is retained under `evidence/health/`. The production probe and soak use the performance harness’s **headless-diagnostic** browser mode and SwiftShader, with DOM fullscreen but no physical fullscreen. They are not final platform acceptance authority.
+
+Formal product acceptance remains unresolved: the only checked-in contract, `tools/acceptance/contracts/v2-mission-retirement.toml`, requires an Upcoming POIs table and five-second polling. Current Overview renders POIs on the map and defaults to one-second polling. The platform adapter also fixes those expectations. The final lane was not run or weakened; clarification about a current contract remains pending. PR stays draft.
+
+## Cleanup and evidence
+
+Independent host/Docker checks confirmed no task containers, networks, private volumes, image tags, process groups, browser/Xvfb processes or listeners remain. Temporary source archives and fresh worktree node_modules were removed; the open-PR worktree and evidence remain. See `final-cleanup.json`.
+
+Primary raw evidence: `production-soak/run.json`, `summary.json`, `samples.jsonl`, `browser-processes.jsonl`, `operations.jsonl`, `request-outcomes.json`, `failures.json`; additional cardinality observations: `mission-cardinality-samples.jsonl`. The initial short probe was retried after selecting the provisioned browser store; both attempts were cleaned.

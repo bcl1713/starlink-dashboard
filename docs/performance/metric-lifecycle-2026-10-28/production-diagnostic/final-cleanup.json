@@ -1,0 +1,37 @@
+{
+  "checked_at_unix": 1793189317.3957083,
+  "projects": {
+    "starlink-operator-issue393-production-probe": {
+      "container": [],
+      "network": [],
+      "volume": [],
+      "images": []
+    },
+    "starlink-operator-issue393-production-probe-r2": {
+      "container": [],
+      "network": [],
+      "volume": [],
+      "images": []
+    },
+    "starlink-operator-issue393-production-soak": {
+      "container": [],
+      "network": [],
+      "volume": [],
+      "images": []
+    }
+  },
+  "remaining_processes": [],
+  "ports": {
+    "60191": "closed",
+    "36077": "closed",
+    "48577": "closed",
+    "49059": "closed",
+    "53041": "closed",
+    "45755": "closed"
+  },
+  "removed_paths": [
+    "<candidate-worktree>/frontend/mission-planner/node_modules"
+  ],
+  "status": "clean",
+  "health_browser_or_xvfb_processes": []
+}

@@ -195,5 +195,11 @@ preflight, source-admission and read-only HTTP tests protect provenance.
 
 Full production-image/Nginx/browser acceptance and sustained production-like
 soaks are separate gates before approval/merge. These scoped controls do not
-claim to have passed those gates. Rollback is a revert of this PR, restoring the
-known baseline stale-series behavior; it does not alter TSDB history.
+claim to have passed those gates. A subsequent
+[production-image diagnostic report and raw evidence bundle](metric-lifecycle-2026-10-28/production-diagnostic/README.md)
+records the exact `bba55c52` images/source, nominal one-hour soak, resource
+samples, lifecycle observations and cleanup receipts. Its measured span was
+`3599.9999547059997` seconds with `sustained_60_minutes: false`; its headless
+SwiftShader browser is diagnostic and does not establish final acceptance.
+Rollback is a revert of this PR, restoring the known baseline stale-series
+behavior; it does not alter TSDB history.
