@@ -29,7 +29,7 @@ histograms. **Tech stack:** Python, prometheus-client, pytest, Prometheus.
       missing measurements, preflight, replay and concurrent scrapes.
 - [x] Add a bounded before/after benchmark and real Prometheus scrape control;
       document all mutable/high-cardinality families and consumer compatibility.
-- [ ] Run scoped and adjacent tests, formatting and review; commit, push and
+- [x] Run scoped and adjacent tests, formatting and review; commit, push and
       open a PR to dev. Stop all task resources and retain open-PR
       worktree/evidence.
 
@@ -58,3 +58,7 @@ Future benchmark/acceptance resources use `issue393` names and cleanup handlers.
 - Scoped Black/Ruff and Markdown checks passed. No frontend behavior changed.
 - Exact production-image/Nginx/browser and sustained-soak gates remain outside
   this scoped evidence; do not treat this branch as approved to merge.
+
+PR: [#432](https://github.com/bcl1713/starlink-dashboard/pull/432), draft
+against `dev`; implementation and scoped controls are complete. The worktree is
+retained for review. All task runtime resources are stopped.
