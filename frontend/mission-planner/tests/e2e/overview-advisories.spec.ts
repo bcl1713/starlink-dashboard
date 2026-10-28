@@ -20,7 +20,7 @@ async function json<T = Record<string, unknown>>(
   );
   return response.json();
 }
-async function raw(request: APIRequestContext, elapsed = 1800) {
+async function raw(request: APIRequestContext, elapsed = 1764) {
   return json<{ departure: string }>(
     await request.post('/api/_synthetic/transport-inputs', {
       data: { elapsed_seconds: elapsed },
@@ -117,7 +117,7 @@ async function seed(request: APIRequestContext) {
       },
     })
   );
-  const activate = async (leg: string, elapsed = 1800) => {
+  const activate = async (leg: string, elapsed = 1764) => {
     await json(
       await request.post(`/api/v2/missions/${missionId}/legs/${leg}/activate`)
     );
@@ -155,7 +155,7 @@ test('customizable presets and durable shared advisories across real clients', a
   const contexts: BrowserContext[] = [];
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   let heartbeatWork = Promise.resolve();
-  let elapsed = 1800;
+  let elapsed = 1764;
   const stopHeartbeat = async () => {
     if (heartbeat) clearInterval(heartbeat);
     heartbeat = undefined;
@@ -461,7 +461,7 @@ test('customizable presets and durable shared advisories across real clients', a
     const beforeDrift = (await feed(request, missionId)).events.find(
       (event) => event.notification.generation === pop.notification.generation
     )!;
-    elapsed = 1801;
+    elapsed = 1765;
     await raw(request, elapsed);
     const drift = await feed(request, missionId);
     const retained = drift.events.find(
@@ -495,7 +495,7 @@ test('customizable presets and durable shared advisories across real clients', a
     }
     await stopHeartbeat();
     await activate(legs[1], elapsed);
-    elapsed = 1801;
+    elapsed = 1765;
     await raw(request, elapsed);
     startHeartbeat();
     const nextLeg = await feed(request, missionId);

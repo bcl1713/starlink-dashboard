@@ -31,7 +31,7 @@ export function OverviewArrivalPanel({ state }: { state: ArrivalPanelState }) {
                       : 'ETA '}
                     <time
                       dateTime={section.timing.timestamp}
-                      aria-label={section.timing.timestamp}
+                      aria-label={section.timing.utc}
                     >
                       {section.timing.utc}
                     </time>
