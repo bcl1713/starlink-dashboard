@@ -1585,6 +1585,57 @@ def test_adapter_observation_binds_public_upload_to_current_overview(
         runner._decode_adapter_artifacts(payload)
 
 
+@pytest.mark.parametrize(
+    "change",
+    [
+        "old-label",
+        "unknown-reason",
+        "missing-plot",
+        "plot-not-unavailable",
+        "wrong-plot",
+    ],
+)
+def test_adapter_observation_requires_current_degraded_history_surface(
+    change: str,
+) -> None:
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["history"] = {
+        "mode": "degraded",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
+    }
+    lifecycle["requests"] = [lifecycle["requests"][0]]
+    lifecycle["requests"][0].update({"outcome": "degraded", "status": 503})
+    lifecycle["polling"].update(
+        {
+            "periodMs": 5000,
+            "cadenceMinMs": 4500,
+            "cadenceMaxMs": 7500,
+            "minimumScheduledRequests": 0,
+            "observedScheduledRequests": 0,
+            "windowEnd": 10.1,
+        }
+    )
+    fallback = lifecycle["history"]["fallback"]
+    if change == "old-label":
+        lifecycle["history"]["fallback"] = "Aircraft history unavailable"
+    elif change == "unknown-reason":
+        fallback["reason"] = "Loading history"
+    elif change == "missing-plot":
+        fallback.pop("plotLabel")
+    elif change == "plot-not-unavailable":
+        fallback["plotLabel"] = "Network latency time history; ms; Waiting for history"
+    else:
+        fallback["plotLabel"] = "Packet loss time history; %; History unavailable"
+    payload["visible"]["historyFallback"] = lifecycle["history"]["fallback"]
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
 def test_adapter_observation_uses_completion_to_next_start_cadence() -> None:
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
@@ -1616,7 +1667,11 @@ def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> 
     )
     lifecycle["history"] = {
         "mode": "degraded",
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
     }
     lifecycle["requests"] = [lifecycle["requests"][0]]
     lifecycle["requests"][0]["outcome"] = "degraded"
@@ -1624,13 +1679,21 @@ def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> 
     lifecycle["polling"]["windowEnd"] = 10.1
     lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 0
-    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+    payload["visible"]["historyFallback"] = {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+    }
 
     artifacts = runner._decode_adapter_artifacts(payload)
 
     observation = json.loads(artifacts["adapter-observation.json"])
     assert observation["lifecycle"]["history"] == {
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
         "mode": "degraded",
     }
     assert observation["lifecycle"]["polling"]["minimumScheduledRequests"] == 0
@@ -1658,7 +1721,11 @@ def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> Non
     )
     lifecycle["history"] = {
         "mode": "degraded",
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
     }
     lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
     lifecycle["polling"]["windowEnd"] = 15.2
@@ -1667,7 +1734,11 @@ def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> Non
         record["status"] = 503
     lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 1
-    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+    payload["visible"]["historyFallback"] = {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+    }
 
     artifacts = runner._decode_adapter_artifacts(payload)
 
@@ -1699,7 +1770,11 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
     )
     lifecycle["history"] = {
         "mode": "degraded",
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
     }
     lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
     lifecycle["polling"]["windowEnd"] = 15.2
@@ -1709,7 +1784,11 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
     lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 1
     lifecycle["requests"][1].update({"outcome": outcome, "status": status})
-    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+    payload["visible"]["historyFallback"] = {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+    }
 
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
@@ -1720,7 +1799,16 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
     [
         lambda payload: payload["visible"].update({"historyFallback": None}),
         lambda payload: payload["lifecycle"].update(
-            {"history": {"mode": "degraded", "fallback": "Aircraft history unavailable"}}
+            {
+                "history": {
+                    "mode": "degraded",
+                    "fallback": {
+                        "surface": "network-history",
+                        "reason": "History refresh unavailable",
+                        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+                    },
+                }
+            }
         ),
     ],
 )

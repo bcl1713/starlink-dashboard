@@ -269,18 +269,6 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
     assert card.index("process.stderr.write") < card.index("() => process.exit(1),")
 
 
-def test_adapter_explicitly_classifies_visible_degraded_history_fallback() -> None:
-    """A scoped history 503 needs the product fallback, not a silent pass."""
-
-    card = adapter_source()
-
-    assert "status === 503 ? 'degraded'" in card
-    assert "Aircraft history unavailable" in card
-    assert "history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' }" in card
-    assert "if (historyMode === 'live') await lifecycle.waitForScheduledPoll();" in card
-    assert "minimumScheduledRequests: degraded ? 0 : 1" in card
-
-
 def test_v2_adapter_executes_current_map_marker_readiness(tmp_path: Path) -> None:
     """Hidden lists, unrelated labels and duplicate identities cannot replace map labels."""
     repository = tmp_path / "repository"
@@ -290,7 +278,7 @@ def test_v2_adapter_executes_current_map_marker_readiness(tmp_path: Path) -> Non
     adapter.parent.mkdir(parents=True)
     adapter.write_text(
         ADAPTER_SCRIPT.read_text(encoding="utf-8")
-        + "\nexport { assertSemanticOverview, scopedLifecycle, observedRouteBinding, observePlanningRoute };\n",
+        + "\nexport { assertSemanticOverview, scopedLifecycle, observedRouteBinding, observePlanningRoute, observeDegradedHistory };\n",
         encoding="utf-8",
     )
     package.parent.mkdir(parents=True)
@@ -298,7 +286,31 @@ def test_v2_adapter_executes_current_map_marker_readiness(tmp_path: Path) -> Non
     playwright.mkdir(parents=True)
     (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
     program = r"""
-const { assertSemanticOverview, scopedLifecycle, observedRouteBinding, observePlanningRoute } = await import(process.argv[1]);
+const { assertSemanticOverview, scopedLifecycle, observedRouteBinding, observePlanningRoute, observeDegradedHistory } = await import(process.argv[1]);
+const plotLabel = 'Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable';
+function degradedPage(reason = 'History refresh unavailable', reasonVisible = true, plotVisible = true, label = plotLabel) {
+  const text = { isVisible: async () => reasonVisible, boundingBox: async () => ({ x: 20, y: 120, width: 300, height: 20 }) };
+  const plot = {
+    waitFor: async ({ state, timeout }) => { if (!plotVisible || state !== 'visible' || timeout !== 10_000) throw new Error('plot not visible'); },
+    getAttribute: async (name) => { if (name !== 'aria-label') throw new Error('wrong plot identity'); return label; },
+    boundingBox: async () => ({ x: 20, y: 220, width: 360, height: 48 }),
+  };
+  return {
+    getByLabel: (name, options) => {
+      if (name === 'Network history context') return { getByText: (candidate, { exact }) => { if (!exact) throw new Error('reason must be exact'); return { ...text, isVisible: async () => reasonVisible && candidate === reason }; } };
+      if (name === 'Network latency history' && options?.exact) return { getByRole: (role, { name: pattern }) => { if (role !== 'img' || !pattern.test(label)) return { ...plot, waitFor: async () => { throw new Error('wrong graph or accessible status'); } }; return plot; } };
+      throw new Error('unexpected history surface');
+    },
+    waitForTimeout: async () => { throw new Error('current degraded history reason absent'); },
+  };
+}
+for (const reason of ['History refresh unavailable', 'Network source unavailable', 'Paced simulation · network measurements unavailable']) {
+  const fallback = await observeDegradedHistory(degradedPage(reason));
+  if (fallback.reason !== reason || fallback.plotLabel !== plotLabel || fallback.surface !== 'network-history') throw new Error('current visible degraded evidence was not retained');
+}
+for (const candidate of [degradedPage('Aircraft history unavailable'), degradedPage('History refresh unavailable', false), degradedPage('History refresh unavailable', true, false), degradedPage('History refresh unavailable', true, true, 'Network latency time history; ms; Waiting for history')]) {
+  await observeDegradedHistory(candidate).then(() => { throw new Error('obsolete, hidden, missing or non-degraded history surface accepted'); }, () => {});
+}
 const contextKey = '6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2';
 const overview = (page) => assertSemanticOverview(page, contextKey);
 const upload = { id: 'v2-activation-route', name: 'V2 Acceptance Route KAAA-KBBB', point_count: 3 };

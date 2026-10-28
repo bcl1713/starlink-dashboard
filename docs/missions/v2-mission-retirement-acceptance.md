@@ -76,8 +76,12 @@ The journey records a pre-journey and post-journey visual state, distinct map
 marker identities, and a bounded navigation-scoped history request lifecycle.
 Successful live history must complete a bootstrap and a scheduled poll using the
 current one-second default, timed from prior completion to next start without
-overlap. A visible history-unavailable fallback may accompany an explicit HTTP
-503; that error state retains the intentional five-second backoff. A successful
+overlap. An explicit HTTP 503 requires the current visible **Network history
+context** reason (**History refresh unavailable**, **Network source unavailable**,
+or **Paced simulation · network measurements unavailable**) together with a
+visible **Network latency** plot whose accessible name states **History
+unavailable**. Hidden error paragraphs alone cannot satisfy this observation.
+That error state retains the intentional five-second backoff. A successful
 final product result requires the public controls and this visible journey; a
 successful endpoint response alone does not prove that the active route context
 is visible to an operator.

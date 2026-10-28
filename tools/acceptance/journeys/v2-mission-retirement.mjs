@@ -208,10 +208,10 @@ function scopedLifecycle(page) {
         if (record.startedAt < previous.finishedAt || cadenceMs < cadenceMinMs || cadenceMs > cadenceMaxMs) throw new Error('scoped V2 polling cadence or overlap failure');
       }
     },
-    observation() {
+    observation(historyFallback) {
       const scheduled = records.filter((record) => record.cycle === 'scheduled');
       const degraded = historyMode === 'degraded';
-      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, ...pollingSettings(), cadenceBasis: 'previous-completion-to-next-start', windowStart: pollingWindow?.windowStart, windowEnd: scheduled.at(-1)?.finishedAt ?? pollingWindow?.windowEnd, minimumScheduledRequests: degraded ? 0 : 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
+      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: historyFallback } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, ...pollingSettings(), cadenceBasis: 'previous-completion-to-next-start', windowStart: pollingWindow?.windowStart, windowEnd: scheduled.at(-1)?.finishedAt ?? pollingWindow?.windowEnd, minimumScheduledRequests: degraded ? 0 : 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
     },
     async finishObservation() {
       // End a bounded, terminal network window before screenshot rendering can
@@ -355,6 +355,32 @@ async function assertSemanticOverview(page, expectedContextKey) {
   return { overviewRouteLegend: await routeLegend.innerText(), overviewRouteContextKey: await overview.getAttribute('data-route-context-key'), poiMarkers };
 }
 
+async function observeDegradedHistory(page) {
+  const reasons = ['History refresh unavailable', 'Network source unavailable', 'Paced simulation · network measurements unavailable'];
+  const context = page.getByLabel('Network history context');
+  const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
+  let reason; let message;
+  while (!reason) {
+    for (const candidate of reasons) {
+      const text = context.getByText(candidate, { exact: true });
+      if (await text.isVisible()) { reason = candidate; message = text; break; }
+    }
+    if (!reason) {
+      if (Date.now() >= deadline) throw new Error('current degraded history context is not visible');
+      await page.waitForTimeout(50);
+    }
+  }
+  // The per-plot error paragraph is intentionally visually hidden. The current
+  // plot viewport is visible and carries its unavailable state accessibly.
+  const plot = page.getByLabel('Network latency history', { exact: true }).getByRole('img', { name: /^Network latency time history; ms;.*; History unavailable$/ });
+  await plot.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  for (const surface of [message, plot]) {
+    const box = await surface.boundingBox();
+    if (!box || box.width <= 1 || box.height <= 1 || box.x < 0 || box.y < 0 || box.x + box.width > 1920 || box.y + box.height > 1080) throw new Error('degraded history context or plot is outside the visible viewport');
+  }
+  return { surface: 'network-history', reason, plotLabel: await plot.getAttribute('aria-label') };
+}
+
 export async function runV2MissionRetirement({ page, origin, kmlPath }) {
   const missionName = `V2 acceptance ${Date.now()}`;
   const lifecycle = scopedLifecycle(page);
@@ -383,13 +409,13 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
     const visible = await assertSemanticOverview(page, routeBinding.contextKey);
     const historyMode = await lifecycle.beginHistoryObservation();
     const historyFallback = historyMode === 'degraded'
-      ? await page.getByText('Aircraft history unavailable', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS }).then(() => 'Aircraft history unavailable')
+      ? await observeDegradedHistory(page)
       : undefined;
     if (historyMode === 'live') await lifecycle.waitForScheduledPoll();
     await lifecycle.finishObservation();
     const post = await viewportArtifact(page, 'journey-post');
     lifecycle.assertHealthy();
-    return { missionName, activation: 'browser-observed-200', routeBinding, lifecycle: lifecycle.observation(), visible: { missionLegRoute, ...planning, ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };
+    return { missionName, activation: 'browser-observed-200', routeBinding, lifecycle: lifecycle.observation(historyFallback), visible: { missionLegRoute, ...planning, ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };
   } finally {
     await lifecycle.close();
   }

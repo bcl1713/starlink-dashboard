@@ -869,13 +869,28 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         raise ValueError("adapter observation is invalid")
     history_mode = history.get("mode")
     if history_mode == "live" and set(history) == {"mode"}:
-        history_fallback: str | None = None
-    elif (
-        history_mode == "degraded"
-        and set(history) == {"mode", "fallback"}
-        and history.get("fallback") == "Aircraft history unavailable"
-    ):
-        history_fallback = "Aircraft history unavailable"
+        history_fallback = None
+    elif history_mode == "degraded" and set(history) == {"mode", "fallback"}:
+        history_fallback = history.get("fallback")
+        if (
+            not isinstance(history_fallback, Mapping)
+            or set(history_fallback) != {"surface", "reason", "plotLabel"}
+            or history_fallback.get("surface") != "network-history"
+            or history_fallback.get("reason")
+            not in {
+                "History refresh unavailable",
+                "Network source unavailable",
+                "Paced simulation · network measurements unavailable",
+            }
+            or not isinstance(history_fallback.get("plotLabel"), str)
+            or len(history_fallback["plotLabel"]) > 1024
+            or re.fullmatch(
+                r"Network latency time history; ms;.*; History unavailable",
+                history_fallback["plotLabel"],
+            )
+            is None
+        ):
+            raise ValueError("adapter observation is invalid")
     else:
         raise ValueError("adapter observation is invalid")
     minimum, observed = polling.get("minimumScheduledRequests"), polling.get(
