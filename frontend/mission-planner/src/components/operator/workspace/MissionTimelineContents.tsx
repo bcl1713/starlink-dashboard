@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import type { Ref } from 'react';
 import type { MissionTimelineSnapshot } from '@/types/missionTimeline';
 import type { OperationalEvent } from '@/types/operatorEvents';
 import { eventUtc, timelineTime } from '../eventFormatting';
@@ -27,7 +27,7 @@ export function MissionTimelineContents({
   snapshot?: MissionTimelineSnapshot;
   now: number;
   stale: boolean;
-  nowMarker: RefObject<HTMLLIElement | null>;
+  nowMarker: Ref<HTMLLIElement>;
   onOpenSource?: (event: OperationalEvent) => void;
 }) {
   const entries: Entry[] = (snapshot?.events ?? []).map((event) => ({

@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import type { UIEvent } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,21 +33,55 @@ export function MissionTimeline({
   const [open, setOpen] = useState(false);
   const [monotonicNow, setMonotonicNow] = useState(() => performance.now());
   const nowMarker = useRef<HTMLLIElement>(null);
+  const following = useRef(true);
+  const expectedScrollTop = useRef(0);
+  const followContext = useRef<string | null>(null);
+  const positionNow = useCallback(() => {
+    const marker = nowMarker.current;
+    const body = marker?.closest('.ws-timeline-body');
+    if (!marker || !body) return;
+    const bodyTop = body.getBoundingClientRect().top;
+    const visibleHeight = Math.max(
+      0,
+      Math.min(body.clientHeight, window.innerHeight - bodyTop)
+    );
+    body.scrollTop +=
+      marker.getBoundingClientRect().top - bodyTop - visibleHeight * 0.65;
+    // Browser scroll events also fire after our own positioning.
+    expectedScrollTop.current = body.scrollTop;
+  }, []);
+  const attachNowMarker = useCallback(
+    (marker: HTMLLIElement | null) => {
+      nowMarker.current = marker;
+      if (following.current) positionNow();
+    },
+    [positionNow]
+  );
+  function onTimelineScroll(event: UIEvent<HTMLDivElement>) {
+    if (Math.abs(event.currentTarget.scrollTop - expectedScrollTop.current) > 1)
+      following.current = false;
+  }
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (!timeline?.failed) setMonotonicNow(performance.now());
     }, 1000);
     const media = globalThis.matchMedia?.('(max-width: 900px)');
     const resize = (event: MediaQueryListEvent) => {
+      following.current = true;
       setNarrow(event.matches);
       setOpen(false);
     };
+    const reposition = () => {
+      if (following.current) positionNow();
+    };
     media?.addEventListener('change', resize);
+    window.addEventListener('resize', reposition);
     return () => {
       clearInterval(timer);
       media?.removeEventListener('change', resize);
+      window.removeEventListener('resize', reposition);
     };
-  }, [timeline?.failed]);
+  }, [timeline?.failed, positionNow]);
   const snapshot = timeline?.snapshot;
   const elapsed = Math.max(
     0,
@@ -48,6 +89,22 @@ export function MissionTimeline({
   );
   const stale = !!timeline?.failed || elapsed >= 30000;
   const now = Date.parse(snapshot?.as_of ?? '') + Math.min(elapsed, 30000);
+  useLayoutEffect(() => {
+    const context = snapshot
+      ? JSON.stringify([
+          snapshot.mission_id,
+          snapshot.store_id,
+          snapshot.api_epoch,
+          snapshot.source_mode,
+          snapshot.simulation_run_id,
+        ])
+      : null;
+    if (context !== followContext.current) {
+      followContext.current = context;
+      following.current = true;
+    }
+    if (following.current) positionNow();
+  }, [now, snapshot, narrow, open, positionNow]);
   const next = [...(snapshot?.events ?? [])]
     .filter(
       (event) =>
@@ -74,19 +131,8 @@ export function MissionTimeline({
       <button
         className="ws-button"
         onClick={() => {
-          const marker = nowMarker.current;
-          const body = marker?.closest('.ws-timeline-body');
-          if (marker && body) {
-            const bodyTop = body.getBoundingClientRect().top;
-            const visibleHeight = Math.max(
-              0,
-              Math.min(body.clientHeight, window.innerHeight - bodyTop)
-            );
-            body.scrollTop +=
-              marker.getBoundingClientRect().top -
-              bodyTop -
-              visibleHeight * 0.65;
-          }
+          following.current = true;
+          positionNow();
         }}
       >
         Jump to now
@@ -119,14 +165,20 @@ export function MissionTimeline({
       snapshot={snapshot}
       now={now}
       stale={stale}
-      nowMarker={nowMarker}
+      nowMarker={attachNowMarker}
       onOpenSource={onOpenSource ? source : undefined}
     />
   );
   return (
     <section className="ws-timeline" aria-label="Mission timeline">
       {narrow ? (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(nextOpen) => {
+            if (nextOpen) following.current = true;
+            setOpen(nextOpen);
+          }}
+        >
           <div
             className="ws-timeline-strip"
             aria-label="Compact Mission Chronology"
@@ -181,7 +233,7 @@ export function MissionTimeline({
               </DialogDescription>
               {controls}
             </div>
-            <div className="ws-timeline-body">
+            <div className="ws-timeline-body" onScroll={onTimelineScroll}>
               {!snapshot && (
                 <p role="status" className="ws-meta">
                   {summary}
@@ -200,7 +252,9 @@ export function MissionTimeline({
             {snapshot ? 'Whole mission · Zulu' : summary}
           </p>
           {controls}
-          <div className="ws-timeline-body">{contents}</div>
+          <div className="ws-timeline-body" onScroll={onTimelineScroll}>
+            {contents}
+          </div>
         </>
       )}
     </section>
