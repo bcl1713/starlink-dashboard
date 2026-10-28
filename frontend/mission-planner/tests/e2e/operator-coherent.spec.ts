@@ -269,7 +269,7 @@ test('coherent operations, retained capture and real journal safety across deskt
       new Date(Date.parse(restriction!.end_at!) + 5 * 60000).toISOString()
     );
     await page.getByRole('button', { name: /^Save Call$/i }).click();
-    await await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(bravoCall.locator('.ws-call-advisory-warning')).toHaveCount(0);
     proof.rescheduleUpdatesOverlap = true;
     await page.getByRole('button', { name: 'Schedule', exact: true }).click();
@@ -295,7 +295,7 @@ test('coherent operations, retained capture and real journal safety across deskt
       'Inline Conference'
     );
     await page.getByRole('button', { name: /^Save Call$/i }).click();
-    await await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     const all = await json<{ items: { record: SavedRecord }[] }>(
       await request.get(
         `/api/v2/operator/records?mission_id=${missionId}&limit=200`
@@ -464,7 +464,7 @@ test('coherent operations, retained capture and real journal safety across deskt
       ).toBe(true);
       if (width < 900)
         await expect(
-          page.getByRole('region', { name: 'Compact Mission Chronology' })
+          page.getByLabel('Compact Mission Chronology')
         ).toBeVisible();
       await page.screenshot({
         path: `${evidence}/operations-${width}x${height}.png`,

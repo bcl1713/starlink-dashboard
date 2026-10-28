@@ -258,7 +258,18 @@ function AssignmentCard({
             )}
             {choices.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name}
+                {[
+                  'Ka',
+                  'Ka-band',
+                  'Ka Band',
+                  'KA',
+                  'X',
+                  'X-band',
+                  'Starlink',
+                  'Starshield',
+                ].includes(t.name)
+                  ? transportLabel(t.id)
+                  : t.name}
               </option>
             ))}
           </select>
