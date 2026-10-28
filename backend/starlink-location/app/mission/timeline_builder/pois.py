@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import get_args
 
 from app.mission.models import ManualAARTrack, MissionLeg
+from app.mission.poi_display import MISSION_POI_LABELS
 from app.mission.timeline_builder.aar import ResolvedAARWindow
 from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.mission.timeline_builder.coverage import CoverageAnalysisResult
@@ -133,7 +134,7 @@ def construct_mission_pois(
             else manual_tracks
         ),
     )
-    create_outage_pois(create, mission.transports.ka_outages, projector, "ka", "Ka")
+    create_outage_pois(create, mission.transports.ka_outages, projector, "ka", "KA")
     create_outage_pois(
         create, mission.transports.ku_overrides, projector, "starshield", "Starshield"
     )
@@ -141,7 +142,9 @@ def construct_mission_pois(
     _create_ka_pois(create, coverage)
     for boundary in warning_boundaries:
         create(
-            name="X-Band Shut Down" if boundary.warning else "X-Band Turn On",
+            name=MISSION_POI_LABELS[
+                "x_band_warning_start" if boundary.warning else "x_band_warning_end"
+            ],
             latitude=boundary.sample.latitude,
             longitude=boundary.sample.longitude,
             icon="satellite",
@@ -162,7 +165,7 @@ def construct_mission_pois(
                 + (
                     "; ".join(boundary.reasons)
                     if boundary.warning
-                    else "Starlink interference, elevation and AR warnings clear"
+                    else "Starshield interference, elevation and AR warnings clear"
                 )
             ),
         )
@@ -207,7 +210,7 @@ def _create_x_transition_pois(create, mission: MissionLeg, transition_schedule) 
         if timestamp is None:
             continue
         create(
-            name="X-Band\nSwap",
+            name=MISSION_POI_LABELS["x_band_transition"],
             latitude=transition.latitude,
             longitude=transition.longitude,
             icon="satellite",
@@ -221,7 +224,7 @@ def _create_ka_pois(create, coverage: CoverageAnalysisResult) -> None:
     for gap in coverage.gaps:
         if gap.start:
             create(
-                name="CommKa\nExit",
+                name=MISSION_POI_LABELS["ka_coverage_exit"],
                 latitude=gap.start.latitude,
                 longitude=gap.start.longitude,
                 icon="satellite",
@@ -231,7 +234,7 @@ def _create_ka_pois(create, coverage: CoverageAnalysisResult) -> None:
             )
         if gap.end:
             create(
-                name="CommKa\nEnter",
+                name=MISSION_POI_LABELS["ka_coverage_entry"],
                 latitude=gap.end.latitude,
                 longitude=gap.end.longitude,
                 icon="satellite",
@@ -254,5 +257,5 @@ def _create_ka_pois(create, coverage: CoverageAnalysisResult) -> None:
 
 def _ka_transition_name(from_satellite: str | None, to_satellite: str | None) -> str:
     if from_satellite and to_satellite:
-        return f"Ka Transition {from_satellite} → {to_satellite}"
-    return "CommKa\nSwap"
+        return f"KA Satellite Handover {from_satellite} → {to_satellite}"
+    return MISSION_POI_LABELS["ka_transition"]

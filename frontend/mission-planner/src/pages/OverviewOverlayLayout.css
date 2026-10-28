@@ -669,7 +669,7 @@
 }
 .overview-page[data-layout='desktop']:has(
     .overview-satellite-overlays,
-    .overview-starshield-advisory,
+    .overview-transport-advisories,
     .overview-map-overlays > :not(.overview-display-label)
   ) {
   --overview-arrival-right: 360px;
@@ -682,7 +682,7 @@
     :has(
       .overview-metrics-overlays,
       .overview-satellite-overlays,
-      .overview-starshield-advisory,
+      .overview-transport-advisories,
       .overview-map-overlays > :not(.overview-display-label)
     )
   ) {
@@ -709,7 +709,7 @@
       :has(
         .overview-metrics-overlays,
         .overview-satellite-overlays,
-        .overview-starshield-advisory,
+        .overview-transport-advisories,
         .overview-map-overlays > :not(.overview-display-label)
       )
     ) {

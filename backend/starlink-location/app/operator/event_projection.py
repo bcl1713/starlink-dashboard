@@ -125,7 +125,7 @@ def derive_events(inputs, *, as_of, policy):
                         title=(
                             "Prepare: "
                             if kind == "call_prep"
-                            else "Customer requirement: "
+                            else "Customer Requirement: "
                         )
                         + payload.title,
                         due_at=due,
@@ -145,7 +145,7 @@ def derive_events(inputs, *, as_of, policy):
                     **common,
                     event_id=identity(record.record_id, "followup"),
                     kind="issue_followup",
-                    title="Follow up: " + payload.title,
+                    title="Follow Up: " + payload.title,
                     due_at=due,
                     active=active,
                     provenance="operator_reported",
@@ -209,7 +209,8 @@ def derive_events(inputs, *, as_of, policy):
                 **common,
                 event_id=key,
                 kind="pop_advisory",
-                title="Modeled PoP transition window",
+                title="Starshield Transition Window",
+                advisory_type="transition_window",
                 due_at=start,
                 end_at=end,
                 transport="Starshield",
@@ -248,9 +249,14 @@ def derive_events(inputs, *, as_of, policy):
                 event_id=key,
                 kind="pop_advisory",
                 title={
-                    "observation_unknown": "PoP observation unknown",
-                    "mismatch": "Observed PoP differs from route estimate",
-                    "overdue": "PoP handover not confirmed",
+                    "observation_unknown": "PoP Observation Unknown",
+                    "mismatch": "Observed PoP Differs From Route Estimate",
+                    "overdue": "PoP Handover Not Confirmed",
+                }[kind],
+                advisory_type={
+                    "observation_unknown": "observation_unknown",
+                    "mismatch": "observation_mismatch",
+                    "overdue": "handover_unconfirmed",
                 }[kind],
                 significance="advisory",
                 schedule_key=key,
@@ -294,12 +300,30 @@ def derive_events(inputs, *, as_of, policy):
                 planned_end_at=planned_end if time_basis else None,
                 event_id=key,
                 kind="restriction",
-                title=(transport + " " if transport else "Customer communications ")
-                + "modeled "
-                + (
-                    "concurrency restriction"
+                title=(
+                    "X-Band Concurrency Restriction"
                     if "x_concurrency_only" in causes
-                    else severity.replace("_", " ")
+                    else (
+                        "Customer Communications Interruption Expected"
+                        if transport is None and severity == "call_outage"
+                        else (
+                            {"Ka": "KA", "X": "X-Band", "Starshield": "Starshield"}.get(
+                                transport, "Customer Communications"
+                            )
+                            + {
+                                "unavailable": " Service Interruption Expected",
+                                "degraded": " Service Degradation Expected",
+                                "call_outage": " Service Interruption Expected",
+                                "advisory": " Advisory",
+                                "routine": " Advisory",
+                            }[severity]
+                        )
+                    )
+                ),
+                advisory_type=(
+                    "concurrency_restriction"
+                    if "x_concurrency_only" in causes
+                    else None
                 ),
                 due_at=start,
                 end_at=end,

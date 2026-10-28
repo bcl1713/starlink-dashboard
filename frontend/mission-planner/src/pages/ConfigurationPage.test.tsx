@@ -185,7 +185,7 @@ describe('ConfigurationPage', () => {
       screen.getByRole('switch', { name: 'Starshield data link' })
     ).not.toBeNull();
     expect(
-      screen.getByRole('switch', { name: 'X-band data link' })
+      screen.getByRole('switch', { name: 'X-Band data link' })
     ).not.toBeNull();
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Displays' }));
     expect(

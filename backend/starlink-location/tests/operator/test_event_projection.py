@@ -203,7 +203,7 @@ def test_actual_pop_advisories_survive_without_future_forecast_windows(service, 
         for event in events
     )
     assert all(not event.notification.available for event in events)
-    assert any("not confirmed" in event.title for event in events)
+    assert any("Not Confirmed" in event.title for event in events)
 
 
 def test_model_identity_is_scoped_to_mission_even_when_leg_ids_are_reused(
@@ -325,3 +325,33 @@ def test_compact_projection_preserves_event_identity_timing_and_protection(
     compact = compact_event_model(full)
     assert derive(service, clock, models={"leg-a": compact}) == expected
     assert "samples" not in compact and "segments" not in compact
+
+
+@pytest.mark.parametrize(
+    "field,transport,title",
+    [
+        ("ka", "Ka", "KA Service Interruption Expected"),
+        ("x", "X", "X-Band Service Interruption Expected"),
+        ("starshield", "Starshield", "Starshield Service Interruption Expected"),
+    ],
+)
+def test_transport_advisory_headlines_keep_semantic_keys(
+    service, clock, field, transport, title
+):
+    span = {
+        "start_utc": clock.now().isoformat(),
+        "end_utc": (clock.now() + timedelta(minutes=10)).isoformat(),
+        field: "unavailable",
+    }
+    events = derive(service, clock, models={"leg-a": {"capability_spans": [span]}})
+    event = next(e for e in events if e.kind == "restriction")
+    assert event.title == title
+    assert event.transport == transport
+    if field == "x":
+        span["x_concurrency_only"] = True
+        concurrent = derive(
+            service, clock, models={"leg-a": {"capability_spans": [span]}}
+        )[0]
+        assert concurrent.title == "X-Band Concurrency Restriction"
+        assert concurrent.advisory_type == "concurrency_restriction"
+        assert concurrent.significance == "degraded"

@@ -1,3 +1,4 @@
+import { useOverviewAdvisories } from '@/hooks/api/useOverviewAdvisories';
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 import {
   Suspense,
@@ -515,6 +516,13 @@ export function OverviewPage() {
     true
   );
   const missionNow = simulationClock.missionNowMs;
+  const transportAdvisories = useOverviewAdvisories(
+    pacedRunning && simulationClock.stale
+      ? NaN
+      : simulationRun?.state === 'completed' && simulationRun.run
+        ? Date.parse(simulationRun.run.simulation_time)
+        : missionNow
+  );
   const replaySelected = Boolean(
     replayGeometry &&
       simulationRun &&
@@ -1269,11 +1277,7 @@ export function OverviewPage() {
                   <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
                 </div>
               )}
-              <OverviewPopAdvisories
-                status={status}
-                realNowMs={currentTime}
-                refreshFailed={statusRequestFailed || simulationClock.stale}
-              />
+              <OverviewPopAdvisories state={transportAdvisories} />
               <OverviewMapControls
                 exploring={exploring}
                 intent={cameraIntent}

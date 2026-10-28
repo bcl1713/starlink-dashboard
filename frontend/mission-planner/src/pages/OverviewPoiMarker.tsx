@@ -1,3 +1,4 @@
+import { overviewPoiLabel } from './overview-upcoming-pois';
 import { OverviewMapLabel } from './OverviewMapLabel';
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
@@ -25,7 +26,7 @@ export function OverviewPoiMarker({
       <OverviewMapLabel
         id={`poi:${poi.poi_id}`}
         kind="poi"
-        text={poi.name}
+        text={overviewPoiLabel(poi)}
         poiId={poi.poi_id}
         priority={2}
         position={globePosition(

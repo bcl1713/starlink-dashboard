@@ -592,7 +592,7 @@ it('keeps optional alert acknowledgment and pending reconciliation available in 
     screen.getByRole('button', { name: 'Open operational alerts' })
   );
   const drawer = await screen.findByRole('dialog', {
-    name: 'Operational alerts',
+    name: 'Operational Alerts',
   });
   expect(
     await within(drawer).findByRole('button', { name: 'Acknowledge' })

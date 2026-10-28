@@ -61,7 +61,7 @@ const groups = {
       ...MISSION_POI_LAYERS.map(({ field, label }) => ({
         field,
         label,
-        description: `Show ${label.toLowerCase()} POI markers and labels.`,
+        description: `Show ${label} POI markers and labels.`,
       })),
     ],
   },
@@ -83,13 +83,13 @@ const groups = {
       },
       {
         field: 'x_band_link_enabled',
-        label: 'X-band data link',
+        label: 'X-Band data link',
         description: 'Show the configured satellite link and its activity.',
       },
       {
         field: 'configured_satellites_enabled',
         label: 'Configured satellite markers',
-        description: 'Show configured X-band satellites and their labels.',
+        description: 'Show configured X-Band satellites and their labels.',
       },
       {
         field: 'ground_entry_point_enabled',

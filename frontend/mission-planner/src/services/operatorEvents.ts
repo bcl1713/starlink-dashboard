@@ -22,6 +22,7 @@ export async function readEventSnapshot(
   signal?: AbortSignal
 ): Promise<EventSnapshot> {
   const first = await getOperatorEvents(missionId, undefined, signal);
+  validatePage(first, missionId);
   const snapshot = { ...first, events: [...first.events] };
   const seen = new Set<string>();
   let cursor = first.cursor;
@@ -30,7 +31,12 @@ export async function readEventSnapshot(
       throw new Error('Event pagination did not advance');
     seen.add(cursor);
     const next = await getOperatorEvents(missionId, cursor, signal);
+    validatePage(next, missionId);
     if (
+      next.source_mode !== first.source_mode ||
+      next.simulation_run_id !== first.simulation_run_id ||
+      next.as_of !== first.as_of ||
+      next.coverage !== first.coverage ||
       next.mission_id !== first.mission_id ||
       next.store_id !== first.store_id ||
       next.api_epoch !== first.api_epoch ||
@@ -54,4 +60,15 @@ export async function acknowledgeOperatorEvent(
       headers: { 'Idempotency-Key': key, 'X-Operator-Store-Epoch': epoch },
     })
   ).data;
+}
+
+function validatePage(page: EventSnapshot, missionId: string) {
+  if (
+    page.schema_version !== 1 ||
+    page.mission_id !== missionId ||
+    !Array.isArray(page.events) ||
+    !Array.isArray(page.sources) ||
+    page.truncated !== Boolean(page.cursor)
+  )
+    throw new Error('Incomplete or invalid event snapshot');
 }

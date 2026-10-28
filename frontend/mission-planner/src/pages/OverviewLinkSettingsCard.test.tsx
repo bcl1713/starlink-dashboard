@@ -25,7 +25,7 @@ const pair = {
 };
 const switches = () => [
   screen.getByRole('switch', { name: 'Starshield data link' }),
-  screen.getByRole('switch', { name: 'X-band data link' }),
+  screen.getByRole('switch', { name: 'X-Band data link' }),
   screen.getByRole('switch', { name: 'Orbital traffic view' }),
   screen.getByRole('switch', { name: 'Configured satellite markers' }),
 ];
@@ -115,7 +115,7 @@ describe('OverviewLinkSettingsCard', () => {
       },
     ],
     [
-      'X-band data link',
+      'X-Band data link',
       { x_band_link_enabled: false },
       {
         starshield_link_enabled: false,

@@ -62,13 +62,13 @@ export function OperatorEventStrip({
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <button className="min-h-11 rounded-md border px-3 text-sm">
-                Open events
+                Open Events
               </button>
             </DialogTrigger>
             <DialogContent className="left-auto right-0 top-0 flex h-dvh w-full max-w-xl translate-x-0 translate-y-0 flex-col rounded-none">
-              <DialogTitle>Operational timeline</DialogTitle>
+              <DialogTitle>Operational Timeline</DialogTitle>
               <DialogDescription>
-                UTC · requirements, follow-ups and modeled advisories.
+                Zulu · requirements, follow-ups and modeled advisories.
                 Acknowledgment changes alerts only.
               </DialogDescription>
               <OperatorEventFeed

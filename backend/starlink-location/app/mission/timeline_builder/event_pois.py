@@ -2,6 +2,8 @@
 
 from datetime import timedelta
 
+from app.mission.poi_display import MISSION_POI_LABELS
+
 from app.mission.timeline_builder.calculator import ensure_timezone
 from app.mission.timeline_builder.utils import find_waypoint_coordinates
 
@@ -51,7 +53,7 @@ def create_ar_pois(create, mission, route, windows, projector, manual_tracks):
                 lat, lon, segment = route_position(projector, timestamp)
                 coordinates = (lat, lon)
             create(
-                name=f"AR\n{boundary.title()}",
+                name=MISSION_POI_LABELS[f"aar_{boundary}"],
                 latitude=coordinates[0],
                 longitude=coordinates[1],
                 icon="aar",
@@ -70,7 +72,7 @@ def create_ar_pois(create, mission, route, windows, projector, manual_tracks):
         for boundary, projection in (("start", start), ("end", end)):
             _, _, segment = route_position(projector, projection.timestamp)
             create(
-                name=f"AR\n{boundary.title()}",
+                name=MISSION_POI_LABELS[f"aar_{boundary}"],
                 latitude=projection.latitude,
                 longitude=projection.longitude,
                 icon="aar",
@@ -102,7 +104,7 @@ def create_outage_pois(create, outages, projector, prefix, label):
                 continue
             lat, lon, segment = route_position(projector, timestamp)
             create(
-                name=f"{label}\n{'Loss' if boundary == 'start' else 'Restore'}",
+                name=MISSION_POI_LABELS[f"{prefix}_outage_{boundary}"],
                 latitude=lat,
                 longitude=lon,
                 icon="satellite",

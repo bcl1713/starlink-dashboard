@@ -1,74 +1,57 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { popForecast } from '@/test/pop-fixtures';
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 afterEach(cleanup);
-const now = Date.now();
-const base = {
-  timestamp: new Date(now).toISOString(),
-  pop_forecast: popForecast(),
-};
-it('keeps the customer display clear outside an active advisory', () => {
+it('stays clear for a complete snapshot with no visible advisories', () => {
   const { container } = render(
-    <OverviewPopAdvisories
-      status={base}
-      realNowMs={now}
-      refreshFailed={false}
-    />
+    <OverviewPopAdvisories state={{ items: [], notice: null }} />
   );
   expect(container.textContent).toBe('');
 });
-it('shows only a concise themed transition advisory without diagnostic details', () => {
+it('shows simultaneous concise themed advisories without controls or diagnostics', () => {
   const { container } = render(
     <OverviewPopAdvisories
-      status={{
-        ...base,
-        call_continuity: null,
-        pop_advisories: [{ kind: 'window' }],
-        pop_observation: {
-          status: 'known',
-          source: 'simulation',
-          ip: '192.0.2.2',
-          entry: null,
-        },
+      state={{
+        items: [
+          {
+            id: 'pop',
+            title: 'Starshield Transition Window',
+            detail: 'Brief Interruption Possible · Modeled',
+          },
+          {
+            id: 'x',
+            title: 'X-Band Concurrency Restriction',
+            detail: 'Current · Modeled',
+          },
+          {
+            id: 'ka',
+            title: 'KA Service Interruption Expected',
+            detail: 'Approaching · Planned',
+          },
+        ],
+        notice: null,
       }}
-      realNowMs={now}
-      refreshFailed={false}
     />
   );
-  expect(screen.getByRole('status').textContent).toMatch(
-    /Starshield transition window/
+  expect(screen.getByRole('status').textContent).toContain(
+    'Starshield Transition Window'
   );
-  expect(screen.getByText('Brief interruption possible')).not.toBeNull();
   expect(
-    container.querySelector('.overview-starshield-advisory')
-  ).not.toBeNull();
-  expect(container.querySelector('details, button, input')).toBeNull();
+    container.querySelectorAll('.overview-transport-advisory')
+  ).toHaveLength(3);
+  expect(container.querySelector('details, button, input, time')).toBeNull();
   expect(container.textContent).not.toMatch(
-    /192\.0\.2|Observed PoP|Remaining mission|unresolved|UTC|predicted/
+    /192\.0\.2|Observed PoP|unresolved|UTC|unavailable/
   );
 });
-it('does not turn missing observations or refresh failure into a customer debug warning', () => {
-  const { container } = render(
+it('communicates unavailable coverage without an all-clear or raw PoP fallback', () => {
+  render(
     <OverviewPopAdvisories
-      status={{ ...base, pop_advisories: [{ kind: 'observation_unknown' }] }}
-      realNowMs={now}
-      refreshFailed
+      state={{ items: [], notice: 'Transport Advisories Unavailable' }}
     />
   );
-  expect(container.textContent).toBe('');
-});
-it('keeps forecast disagreement and historical overdue forecasts off the interruption display', () => {
-  const { container } = render(
-    <OverviewPopAdvisories
-      status={{
-        ...base,
-        pop_advisories: [{ kind: 'mismatch' }, { kind: 'overdue' }],
-      }}
-      realNowMs={now}
-      refreshFailed={false}
-    />
+  expect(screen.getByRole('status').textContent).toBe(
+    'Transport Advisories Unavailable'
   );
-  expect(container.textContent).toBe('');
 });

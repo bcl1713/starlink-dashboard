@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from math import isfinite
 from typing import TYPE_CHECKING
 
+from app.mission.poi_display import display_poi_name
 from app.models.flight_status import FlightPhase
 from app.models.overview_upcoming_pois import (
     OverviewUpcomingPoi,
@@ -129,7 +130,7 @@ def project_overview_upcoming_pois(
         projected.append(
             OverviewUpcomingPoi(
                 poi_id=poi.id,
-                name=poi.name,
+                name=display_poi_name(poi),
                 kind=poi.kind,
                 latitude=poi.latitude,
                 longitude=poi.longitude,

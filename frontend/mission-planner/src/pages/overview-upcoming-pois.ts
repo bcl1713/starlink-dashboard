@@ -106,3 +106,12 @@ export function overviewPoiView(
     ),
   };
 }
+
+/** Keep endpoint proper names while labeling the generated flight event. */
+export function overviewPoiLabel(
+  poi: Pick<OverviewUpcomingPoi, 'kind' | 'name'>
+) {
+  if (poi.kind === 'departure') return `Takeoff · ${poi.name}`;
+  if (poi.kind === 'arrival') return `Landing · ${poi.name}`;
+  return poi.name;
+}

@@ -56,7 +56,7 @@ def reconcile(connection, events, *, as_of, policy, stability=None):
                     event.mission_id,
                     event.due_at.isoformat() if event.due_at else None,
                     recorded_at,
-                    event.model_dump_json(),
+                    event.model_dump_json(exclude={"advisory_type"}),
                 ),
             )
             connection.execute(

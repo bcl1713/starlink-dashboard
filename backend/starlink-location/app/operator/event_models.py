@@ -47,6 +47,16 @@ class OperationalEvent(StrictModel):
         "call_prep", "call_start", "issue_followup", "pop_advisory", "restriction"
     ]
     title: str
+    advisory_type: (
+        Literal[
+            "transition_window",
+            "concurrency_restriction",
+            "observation_unknown",
+            "observation_mismatch",
+            "handover_unconfirmed",
+        ]
+        | None
+    ) = None
     due_at: UtcTimestamp | None = None
     end_at: UtcTimestamp | None = None
     state: Literal["upcoming", "active", "overdue", "inactive", "unknown"] = "unknown"
