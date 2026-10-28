@@ -312,7 +312,14 @@ def build_mission_timeline(runtime, mission_id, adapter):
             raise OperatorError("event_snapshot_changed", retryable=True)
     inputs = replace(
         captured,
-        records=current_records(captured.records, health),
+        # Alert projection retains inactive call milestones for retirement.
+        # Chronology excludes withdrawn calls but keeps completed-call history.
+        records=[
+            record
+            for record in current_records(captured.records, health)
+            if record.payload.entry_type != "call"
+            or (not record.deleted and record.payload.status != "cancelled")
+        ],
         models=models,
         sources=sources,
     )

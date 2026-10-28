@@ -1,7 +1,33 @@
 """Read-time metadata is never inserted into immutable revisions or receipts."""
 
+import json
+
+from .errors import OperatorError
 from .issue_followup import derive_issue_followup
 from .time_models import utc_timestamp
+
+
+def captured_source(runtime, mission_id, expected=None):
+    """Called under runtime_for's binding lock, including for an empty page."""
+    state = runtime.health()
+    identity = json.dumps(
+        [
+            str(state.store_id),
+            str(state.api_epoch),
+            state.source_mode,
+            (
+                state.operating_context_id
+                or state.replay_run_id
+                or f"idle:{state.simulation_run_id}"
+                if state.mission_journal
+                else state.simulation_run_id
+            ),
+        ],
+        separators=(",", ":"),
+    )
+    if expected is not None and expected != identity:
+        raise OperatorError("store_context_changed")
+    return dict(state.model_dump(mode="json"), enabled=True, mission_id=mission_id)
 
 
 def freshness(record, *, as_of, policies):

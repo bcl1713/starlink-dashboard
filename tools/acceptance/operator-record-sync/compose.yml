@@ -1,0 +1,22 @@
+# Production images and raw fixture inputs, with a stable live startup namespace.
+services:
+  starlink-location:
+    extends:
+      file: ../overview-advisories/compose.yml
+      service: starlink-location
+    environment:
+      STARLINK_MODE: live
+      SIMULATION_MODE: "false"
+  mission-planner:
+    extends:
+      file: ../overview-advisories/compose.yml
+      service: mission-planner
+
+volumes:
+  fixture-data:
+  operator-data:
+  route-data:
+
+networks:
+  default:
+    internal: true

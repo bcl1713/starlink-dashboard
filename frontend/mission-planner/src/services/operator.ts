@@ -56,11 +56,38 @@ export async function provisionOperatorStore(
 }
 export async function readOperatorRecords(
   filters: RecordFilters,
-  cursor?: string
+  cursor?: string,
+  options?: { signal?: AbortSignal; sourceIdentity?: string | null }
 ): Promise<RecordPage> {
   return (
     await apiClient.get<RecordPage>(`${base}/records`, {
-      params: { ...filters, cursor },
+      params: {
+        ...filters,
+        cursor,
+        ...(options?.sourceIdentity
+          ? { source_identity: options.sourceIdentity }
+          : {}),
+      },
+      signal: options?.signal,
+    })
+  ).data;
+}
+export async function readOperatorChanges(
+  missionId: string,
+  identity: string,
+  afterSeq: number,
+  cursor?: string,
+  signal?: AbortSignal
+): Promise<RecordPage> {
+  return (
+    await apiClient.get<RecordPage>(`${base}/record-changes`, {
+      params: {
+        mission_id: missionId,
+        source_identity: identity,
+        after_seq: afterSeq,
+        cursor,
+      },
+      signal,
     })
   ).data;
 }
