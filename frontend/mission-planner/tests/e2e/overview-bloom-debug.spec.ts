@@ -39,19 +39,19 @@ test('tunes real Overview bloom and exports the current settings', async ({
   );
   expect(defaults.settings).toEqual({
     strength: 0.15,
-    threshold: 0,
+    threshold: 0.3,
     radius: 0,
     maxDimension: 3840,
     exposure: 1,
     view: 'final',
   });
   expect(defaults.emissions).toEqual({
-    cities: 4,
+    cities: 6,
     cityColor: '#ffbe6f',
     lines: 1.7,
-    particles: 0.1,
+    particles: 0.6,
     pois: 25,
-    aircraft: 1.7,
+    aircraft: 4.3,
   });
   expect(defaults.lighting).toEqual({
     ambientIntensity: 0.1,
@@ -215,12 +215,12 @@ test('tunes real Overview bloom and exports the current settings', async ({
   await settledOverviewCamera(page);
   await expect
     .poll(async () => (await applied()).city, { timeout: 30_000 })
-    .toBe(4);
+    .toBe(6);
   expect((await applied()).renderOwners).toBe(1);
   expect((await applied()).ambientIntensity).toBe(0.1);
   expect((await applied()).atmosphereIntensity).toBe(0);
   expect((await applied()).cores).toContain(25);
-  expect((await applied()).aircraft).toContain(1.7);
+  expect((await applied()).aircraft).toContain(4.3);
   await page.screenshot({
     path: info.outputPath('overview-default-bloom.png'),
   });
