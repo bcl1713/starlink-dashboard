@@ -15,6 +15,17 @@ overview = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(overview)
 
 
+class SyncOwner(overview.OverviewOwner):
+    def compose(self, *args, timeout=120):
+        if source := self.env.get("OPERATOR_SOURCE_ROOT"):
+            self.compose_file = (
+                Path(source) / "tools/acceptance/operator-record-sync/compose.yml"
+            )
+            self.ownership["composeFile"] = str(self.compose_file)
+            self.persist()
+        return overview.transport.OriginalOwner.compose(self, *args, timeout=timeout)
+
+
 def qualify(owner):
     env = owner.env | {
         "OPERATOR_SYNC_ORIGIN": f"http://127.0.0.1:{owner.ownership['port']}",
@@ -55,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True, type=Path)
     args = parser.parse_args()
-    overview.transport.journal.Owner = overview.OverviewOwner
+    overview.transport.journal.Owner = SyncOwner
     report = overview.transport.journal.run(
         args.candidate, args.project, args.evidence, qualification=qualify
     )

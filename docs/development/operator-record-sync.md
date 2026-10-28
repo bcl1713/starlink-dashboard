@@ -46,7 +46,9 @@ snapshot pages. Other context/health/projection queries retain their own costs.
 Use a clean feature worktree with dependencies installed and the
 actor-configured Docker daemon available. The runner requires a new private
 project and evidence directory. It archives the exact committed candidate and
-builds the production backend/frontend Dockerfiles, including Nginx.
+builds the production backend/frontend Dockerfiles, including Nginx. Its
+task-specific Compose file starts in live mode so a backend restart recovers the
+same journal namespace; live-to-simulation replacement is tested separately.
 
 ```sh
 OPERATOR_SYNC_CHROMIUM=/path/to/installed/chrome \

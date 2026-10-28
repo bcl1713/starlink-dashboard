@@ -532,12 +532,33 @@ test('saved records converge across independent laptop and phone contexts with s
     ).toBeVisible();
     control('start');
     backendStopped = false;
+    await expect
+      .poll(
+        async () => {
+          const response = await request.get('/api/v2/operator/health');
+          return response.ok() ? response.json() : null;
+        },
+        { timeout: 30_000 }
+      )
+      .toMatchObject({
+        ready: true,
+        store_id: health.store_id,
+        api_epoch: health.api_epoch,
+        source_mode: 'live',
+      });
     await expect(phone.getByText(/Saved records unavailable/)).toHaveCount(0, {
       timeout: 30_000,
     });
     proof.backendRecovery = true;
+    proof.backendRecoveryIdentityPreserved = true;
     // Cancellation changes the card and its current timeline representation.
     await openCallDetails(phone, b.record_id);
+    await expect(
+      card(phone, b.record_id).getByRole('button', {
+        name: 'Cancel Call',
+        exact: true,
+      })
+    ).toBeEnabled({ timeout: 30_000 });
     await propagated(
       'phone cancellation → laptop card and timeline',
       phone,
