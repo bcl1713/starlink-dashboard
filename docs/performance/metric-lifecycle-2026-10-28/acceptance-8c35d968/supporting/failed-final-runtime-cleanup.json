@@ -1,0 +1,30 @@
+{
+  "at": 1793202553.639418,
+  "project": "accept-8c35d968cfff",
+  "removed_disposable_volumes": [
+    "accept-8c35d968cfff-starlink-location-data-0",
+    "accept-8c35d968cfff-starlink-location-data-1",
+    "accept-8c35d968cfff-starlink-location-data-2",
+    "accept-8c35d968cfff-starlink-location-data-3",
+    "accept-8c35d968cfff-starlink-location-data-4",
+    "accept-8c35d968cfff-starlink-location-data-5",
+    "accept-8c35d968cfff-starlink-location-data-6",
+    "accept-8c35d968cfff-starlink-location-data-7",
+    "accept-8c35d968cfff-starlink-location-data-8",
+    "accept-8c35d968cfff-starlink-location-data-9",
+    "accept-8c35d968cfff-starlink-location-data-10",
+    "accept-8c35d968cfff-starlink-location-data-11"
+  ],
+  "container": [],
+  "network": [],
+  "volumes_remaining": [],
+  "builder_containers": [],
+  "builder_volumes": [],
+  "ports": {
+    "18393": "closed",
+    "15393": "closed"
+  },
+  "remaining_group_processes": [],
+  "status": "clean",
+  "cached_images": "usable build-ledger images retained as evidence/cache, no runtime"
+}

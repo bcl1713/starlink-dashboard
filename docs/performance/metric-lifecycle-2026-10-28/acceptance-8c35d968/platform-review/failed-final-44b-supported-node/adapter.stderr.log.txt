@@ -1,0 +1,6 @@
+locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+  - waiting for getByText('Aircraft history unavailable', { exact: true }) to be visible
+
+    at runV2MissionRetirement (<evidence-root>/tasks/final/.acceptance-adapters/44b86c5b878f8d9b051576bea7c6f21e60555668/v2-mission-retirement.mjs:386:79)
+    at async main (<evidence-root>/tasks/final/.acceptance-adapters/44b86c5b878f8d9b051576bea7c6f21e60555668/v2-mission-retirement.mjs:406:20)

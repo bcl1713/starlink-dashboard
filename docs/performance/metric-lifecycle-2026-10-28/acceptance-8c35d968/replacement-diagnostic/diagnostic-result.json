@@ -1,0 +1,94 @@
+{
+  "diagnostic_only": true,
+  "final_acceptance": false,
+  "status": "diagnostic_journey_completed",
+  "observation": {
+    "missionName": "V2 acceptance 1793207321478",
+    "activation": "browser-observed-200",
+    "routeBinding": {
+      "source": "browser-upload-and-route-detail",
+      "uploadStatus": 201,
+      "detailStatus": 200,
+      "routeId": "v2-activation-route",
+      "routeName": "V2 Acceptance Route KAAA-KBBB",
+      "pointCount": 3,
+      "coordinates": [
+        [
+          -100,
+          35
+        ],
+        [
+          -99.95,
+          35.05
+        ],
+        [
+          -99.9,
+          35.1
+        ]
+      ],
+      "contextKey": "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2"
+    },
+    "lifecycle": {
+      "frameId": "CFF6E20D1C32D91EBB1FD8A04D236424",
+      "loaderId": "0DD9DF42A3E7C5A9E1670E3DBCF062DA",
+      "history": {
+        "mode": "degraded",
+        "fallback": {
+          "surface": "network-history",
+          "reason": "History refresh unavailable",
+          "plotLabel": "Network latency time history; ms; cyan simulated, dashed five-minute average, shaded five-minute low–high range; History unavailable"
+        }
+      },
+      "polling": {
+        "navigationScoped": true,
+        "endpoint": "/api/overview-history",
+        "periodMs": 5000,
+        "cadenceMinMs": 4500,
+        "cadenceMaxMs": 7500,
+        "cadenceBasis": "previous-completion-to-next-start",
+        "windowStart": 2608906.097343,
+        "windowEnd": 2608906.097343,
+        "minimumScheduledRequests": 0,
+        "observedScheduledRequests": 0
+      },
+      "requests": [
+        {
+          "id": "442965.56",
+          "path": "/api/overview-history",
+          "startedAt": 2608906.057509,
+          "loaderId": "0DD9DF42A3E7C5A9E1670E3DBCF062DA",
+          "outcome": "degraded",
+          "cycle": "bootstrap",
+          "status": 503,
+          "finishedAt": 2608906.097343
+        }
+      ],
+      "overflow": false
+    },
+    "visible": {
+      "missionLegRoute": "Route: v2-activation-route",
+      "planningRouteName": "V2 Acceptance Route KAAA-KBBB",
+      "planningRouteStatus": "Active",
+      "overviewRouteLegend": "Planned route",
+      "overviewRouteContextKey": "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2",
+      "poiMarkers": [
+        {
+          "name": "KAAA",
+          "id": "poi:v2-activation-route-kaaa-1",
+          "label": "Takeoff · KAAA"
+        },
+        {
+          "name": "KBBB",
+          "id": "poi:v2-activation-route-kbbb-1",
+          "label": "Landing · KBBB"
+        }
+      ],
+      "historyFallback": {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan simulated, dashed five-minute average, shaded five-minute low–high range; History unavailable"
+      }
+    }
+  },
+  "visible_history": []
+}

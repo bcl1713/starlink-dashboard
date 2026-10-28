@@ -1,0 +1,10 @@
+{
+  "version": "v22.22.2",
+  "archive_sha256": "88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a",
+  "checksum_source": "https://nodejs.org/dist/v22.22.2/SHASUMS256.txt",
+  "distribution_source": "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-x64.tar.xz",
+  "executable": "<evidence-root>/node-v22.22.2-linux-x64/bin/node",
+  "system_node_preserved": "v22.12.0",
+  "recorded_at": 1793205187.1092541,
+  "purpose": "Supported frontend engine for final static groups; no claim that version alone caused prior intermittent test failure"
+}

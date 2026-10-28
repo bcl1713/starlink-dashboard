@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "soak_sha": "8c35d968cfffd355fe609e7c96678b44fe979d73",
+  "final_sha": "4bbc93907294b8c40c9e751beb31f1ae901b0030",
+  "base_sha": "44d09d59f6eb60142e6f9ac0a0b676a6a019e353",
+  "recorded_at": 1793207759.2600157,
+  "inputs": [
+    {
+      "path": "backend",
+      "soak_object": "c7d6312e0b728668e420878fcb279c05ec4a2cd9",
+      "final_object": "c7d6312e0b728668e420878fcb279c05ec4a2cd9",
+      "object_type": "tree"
+    },
+    {
+      "path": "frontend",
+      "soak_object": "20f349a1d7a9858b2f19831d79dca6455fe9daeb",
+      "final_object": "20f349a1d7a9858b2f19831d79dca6455fe9daeb",
+      "object_type": "tree"
+    },
+    {
+      "path": ".dockerignore",
+      "soak_object": "91f472ff5a5ae227580edd1bb63ef95557c12cf1",
+      "final_object": "91f472ff5a5ae227580edd1bb63ef95557c12cf1",
+      "object_type": "blob"
+    },
+    {
+      "path": ".env.example",
+      "soak_object": "56d849557a00d59b41eefcff3f63aa487c8718a8",
+      "final_object": "56d849557a00d59b41eefcff3f63aa487c8718a8",
+      "object_type": "blob"
+    },
+    {
+      "path": "docker-compose.yml",
+      "soak_object": "f32549866c52eb03d9fd4edbfc22eeafe980ea02",
+      "final_object": "f32549866c52eb03d9fd4edbfc22eeafe980ea02",
+      "object_type": "blob"
+    },
+    {
+      "path": "docker-compose.dev.yml",
+      "soak_object": "e29386b0ca87a023af59c1f75ed7877fb2cf88df",
+      "final_object": "e29386b0ca87a023af59c1f75ed7877fb2cf88df",
+      "object_type": "blob"
+    },
+    {
+      "path": "docker-compose.gfs.yml",
+      "soak_object": "4d5117a3e92be8d007868f2daa3ff9393851fb5b",
+      "final_object": "4d5117a3e92be8d007868f2daa3ff9393851fb5b",
+      "object_type": "blob"
+    },
+    {
+      "path": "docker-compose.operator-training.yml",
+      "soak_object": "c68a721739c0748c837b5b98873738e5977770cb",
+      "final_object": "c68a721739c0748c837b5b98873738e5977770cb",
+      "object_type": "blob"
+    },
+    {
+      "path": "backend/starlink-location/Dockerfile",
+      "soak_object": "c1f283773de7d93d30972b663dcaa7753b009414",
+      "final_object": "c1f283773de7d93d30972b663dcaa7753b009414",
+      "object_type": "blob"
+    },
+    {
+      "path": "frontend/mission-planner/Dockerfile",
+      "soak_object": "3f6e9597aa615b795607799a1c16f03c614a6355",
+      "final_object": "3f6e9597aa615b795607799a1c16f03c614a6355",
+      "object_type": "blob"
+    },
+    {
+      "path": "monitoring/prometheus",
+      "soak_object": "05f12e00801d6afd2ad07ecebc6094c8b88e19e9",
+      "final_object": "05f12e00801d6afd2ad07ecebc6094c8b88e19e9",
+      "object_type": "tree"
+    },
+    {
+      "path": "tools/acceptance/performance",
+      "soak_object": "5901de12b261996d4839fa277d6261d3e58f7d55",
+      "final_object": "5901de12b261996d4839fa277d6261d3e58f7d55",
+      "object_type": "tree"
+    },
+    {
+      "path": "tools/acceptance/operator-journal/scenario.py",
+      "soak_object": "e1fb506f4fc5ae16a8335a33b762d87464e9aaa8",
+      "final_object": "e1fb506f4fc5ae16a8335a33b762d87464e9aaa8",
+      "object_type": "blob"
+    },
+    {
+      "path": "tools/acceptance/overview_history/seed.py",
+      "soak_object": "5b9a5ad1ae812f94ca300ca5bc74511702ad500c",
+      "final_object": "5b9a5ad1ae812f94ca300ca5bc74511702ad500c",
+      "object_type": "blob"
+    }
+  ],
+  "changed_paths": [
+    "docs/missions/v2-mission-retirement-acceptance.md",
+    "docs/operations/acceptance-platform.md",
+    "tools/acceptance/contracts/v2-mission-retirement.toml",
+    "tools/acceptance/journeys/v2-mission-retirement.mjs",
+    "tools/acceptance/platform/runner.py",
+    "tools/tests/test_acceptance_platform_runner.py",
+    "tools/tests/test_v2_acceptance_browser_contract.py"
+  ],
+  "meaning": "Recorded production and fixture Git inputs are equal; final and soak retain their actual distinct candidate and image identities. No claim of bit-identical images or dependency inventories."
+}

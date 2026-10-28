@@ -1,0 +1,10 @@
+{
+  "candidate_sha": "4bbc93907294b8c40c9e751beb31f1ae901b0030",
+  "reviewed_at": 1793208806.108696,
+  "method": "parent viewed original PNGs",
+  "images": {
+    "journey-pre.png": "b60388dca0ffc7bae01c0757c435f54cfedb028a7c33c065be97c93354fa4e11",
+    "journey-post.png": "6115c3b0a6652447760f9751e1f216ef8321fafdfb5b9b3067290fcafe319236"
+  },
+  "finding": "Synthetic empty mission list before; Overview after shows distinct KAAA/KBBB POIs and visible History refresh unavailable state; no credentials or private personal data observed; does not establish live polling or capacity"
+}

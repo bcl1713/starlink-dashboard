@@ -1,0 +1,47 @@
+[354228:354248:1028/165215.862264:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354248:1028/165215.862704:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354248:1028/165215.864065:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354248:1028/165215.882676:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165215.891145:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354228:1028/165215.891184:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354228:1028/165215.891278:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165215.895758:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354248:1028/165215.895873:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+
+DevTools listening on <browser-debug-endpoint>
+[354228:354228:1028/165215.896304:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165215.896365:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165215.897493:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354228:1028/165215.897656:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165215.897700:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354248:1028/165215.912913:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354248:1028/165215.912930:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165215.977343:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354228:1028/165215.978306:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165215.978369:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165215.987072:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165215.987127:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165215.996779:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354228:1028/165216.007653:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.NetworkManager.GetDevices: object_path= /org/freedesktop/NetworkManager: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.NetworkManager was not provided by any .service files
+[354228:354228:1028/165216.375987:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:748] Message 0 rejected by interface blink.mojom.WidgetHost
+[354264:354264:1028/165216.409971:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1209] []Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader flag to opt in to lower security guarantees for trusted content.
+[354228:354248:1028/165216.450762:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165216.450789:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165216.450855:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165216.450870:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165218.856189:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[354228:354248:1028/165218.856753:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[354228:354248:1028/165218.859758:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[354228:354248:1028/165247.346109:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[354228:354248:1028/165337.073067:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[354228:354248:1028/165340.954803:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165340.954832:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165340.954868:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165340.954888:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165341.401505:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165341.401525:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354228:354248:1028/165341.401551:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[354228:354228:1028/165341.401562:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[354264:354264:1028/165346.605641:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1209] []Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader flag to opt in to lower security guarantees for trusted content.
+[354228:354228:1028/165414.010591:ERROR:content/common/zygote/zygote_communication_linux.cc:291] Failed to send GetTerminationStatus message to zygote
+[354228:354248:1028/165414.013931:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2

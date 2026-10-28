@@ -1,0 +1,19 @@
+{
+  "diagnostic_only": true,
+  "candidate_sha": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+  "source_archive_sha256": "4a53f42b3534b10426ba175d641d74448cde9ab1719eb73b5bbd65ec905df1bf",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-issue393-history-diag-backend:44b86c5b878f",
+      "id": "sha256:75134e6b675f28742943498a4c07a2783a49e1c11755e16bee3c650e79f3518b",
+      "revision": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+      "dockerfile_sha256": "11fdb2a5106312536c1727d609945fa2936971306bb802a31c91f3414629116c"
+    },
+    "frontend": {
+      "tag": "starlink-operator-issue393-history-diag-frontend:44b86c5b878f",
+      "id": "sha256:17e318923e73c136262db8a8e5b6bc73857046002c4a481d8a22940257d4caf8",
+      "revision": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+      "dockerfile_sha256": "6674804885c800da6462320f8c9102e4b83b8d8ad69f5be6cc93fea4107701e1"
+    }
+  }
+}

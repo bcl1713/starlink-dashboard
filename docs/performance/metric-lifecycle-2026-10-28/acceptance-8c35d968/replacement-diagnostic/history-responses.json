@@ -1,0 +1,16 @@
+[
+  {
+    "url": "http://127.0.0.1:37191/api/overview-history",
+    "status": 503,
+    "timestamp": "2026-10-28T17:08:46.959Z",
+    "body": "{\"detail\":\"Overview history is temporarily unavailable\"}",
+    "truncated": false
+  },
+  {
+    "url": "http://127.0.0.1:37191/api/overview-history",
+    "status": 503,
+    "timestamp": "2026-10-28T17:08:51.995Z",
+    "body": "{\"detail\":\"Overview history is temporarily unavailable\"}",
+    "truncated": false
+  }
+]

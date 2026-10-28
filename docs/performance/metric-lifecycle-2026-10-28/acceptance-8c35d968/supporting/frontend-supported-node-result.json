@@ -1,0 +1,11 @@
+{
+  "candidate_sha": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+  "node_version": "v22.22.2",
+  "command": "CI=1 npm run test:unit",
+  "exit_code": 0,
+  "files_passed": 327,
+  "tests_passed": 2314,
+  "log_sha256": "15f8a5427f685e4176656af923b56f4b193519950cbd23d27fae19dbc67c77fe",
+  "recorded_at": 1793205339.8152797,
+  "prior_failure": "same source passed isolated7; unsupportedNode22.12 fullrun had1intermittentUIreadinessfailure, preserved"
+}

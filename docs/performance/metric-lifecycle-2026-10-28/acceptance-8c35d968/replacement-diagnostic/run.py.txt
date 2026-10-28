@@ -1,0 +1,108 @@
+from pathlib import Path
+import hashlib,json,os,signal,socket,subprocess,sys,tarfile,time,traceback
+ROOT=Path('<tested-feature-worktree>')
+STATE=Path('<evidence-root>')
+OUT=STATE/'history-diagnostic/replacement-run'
+os.environ['PATH']=str(STATE/'node-v22.22.2-linux-x64/bin')+os.pathsep+os.environ['PATH']
+sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tools/acceptance/operator-journal')]
+from ownership import Owner,free_port
+from acceptance.platform.compose import render_task_override,resolve_topology,CommandResult
+from acceptance.platform.contracts import load_product_contract
+from acceptance.platform.health import PlatformHealthExecutor,start_final_browser_session
+from acceptance.platform.runner import _load_profile
+owner=Owner('starlink-operator-issue393-history-diag',OUT)
+owner.deadline=time.monotonic()+840
+owner.ownership['diagnostic_only']=True
+owner.ownership['maximum_evidence_claim']='diagnostic_only'
+owner.ownership['temporaryPaths']=[str(OUT/'runtime'),str(OUT/'source'),str(OUT/'source.tar')]
+owner.persist()
+for signum in [signal.SIGTERM,signal.SIGINT]: signal.signal(signum,owner.signal)
+browser=None
+cleanup_errors=[]
+result={'diagnostic_only':True,'final_acceptance':False}
+ports={'starlink-location':free_port(),'mission-planner':free_port()}
+compose_created=False
+source_root=OUT/'source'
+archive=OUT/'source.tar'
+tags={'backend':owner.project+'-backend:44b86c5b878f','frontend':owner.project+'-frontend:44b86c5b878f'}
+class Executor:
+ def run(self,argv,**kwargs): return CommandResult(0,owner.execute(list(argv),timeout=60))
+try:
+ owner.admit()
+ candidate='44b86c5b878f8d9b051576bea7c6f21e60555668'
+ owner.ownership['images']=list(tags.values())
+ owner.ownership['ports']=ports
+ owner.persist()
+ owner.execute(['git','archive','--format=tar',f'--output={archive}',candidate],timeout=60,cwd=ROOT)
+ result['source_archive_sha256']=hashlib.sha256(archive.read_bytes()).hexdigest()
+ source_root.mkdir()
+ with tarfile.open(archive) as bundle: bundle.extractall(source_root,filter='data')
+ build_deadline=time.monotonic()+600
+ result['images']={}
+ for kind,dockerfile,context in [('backend',source_root/'backend/starlink-location/Dockerfile',source_root),('frontend',source_root/'frontend/mission-planner/Dockerfile',source_root/'frontend/mission-planner')]:
+  command=['docker','build','-f',str(dockerfile),'--build-arg',f'ACCEPTANCE_CANDIDATE_SHA={candidate}','-t',tags[kind]]
+  if ca:=os.environ.get('CODEX_PROXY_CERT'): command+=['--secret',f'id=proxy_ca,src={ca}']
+  owner.execute([*command,str(context)],timeout=max(1,build_deadline-time.monotonic()))
+  image=json.loads(owner.execute(['docker','image','inspect',tags[kind],'--format','{{json .}}'],timeout=20))
+  revision=image['Config']['Labels'].get('org.opencontainers.image.revision')
+  if revision!=candidate: raise ValueError('diagnostic replacement revision mismatch')
+  result['images'][kind]={'tag':tags[kind],'id':image['Id'],'revision':revision,'dockerfile_sha256':hashlib.sha256(dockerfile.read_bytes()).hexdigest()}
+  (OUT/'replacement-images.json').write_text(json.dumps({'diagnostic_only':True,'candidate_sha':candidate,'source_archive_sha256':result['source_archive_sha256'],'images':result['images']},indent=2))
+ contract=load_product_contract(ROOT/'tools/acceptance/contracts/v2-mission-retirement.toml')
+ topology=render_task_override(source_root,contract,OUT/'runtime',owner.project,ports,candidate_sha=candidate,lane='diagnostic',task_id='issue393-history-diag')
+ resolve_topology(topology,contract,Executor())
+ config=json.loads(topology.rendered_override_path.read_text())
+ for name,service in config['services'].items():
+  service['image']=tags['backend' if name=='starlink-location' else 'frontend']
+  service.pop('build',None)
+ owner.compose_file=topology.rendered_override_path
+ owner.ownership['composeFile']=str(owner.compose_file)
+ owner.ownership['volumes']=[value['name'] for value in config.get('volumes',{}).values()]
+ owner.persist()
+ owner.compose_file.write_text(json.dumps(config,indent=2)+'\n')
+ compose_created=True
+ owner.compose('up','-d','--no-build','--wait','--wait-timeout','120',timeout=180)
+ profile=_load_profile(Path('/srv/starlink-acceptance/profiles/v2-mission-retirement-chromium.toml'))
+ owner.ownership['browserIntent']={'profile':'/srv/starlink-acceptance/profiles/v2-mission-retirement-chromium.toml','taskRoot':str(OUT/'runtime/browser')}
+ owner.persist()
+ browser=start_final_browser_session(profile,OUT/'runtime/browser',PlatformHealthExecutor(probe=lambda argv:owner.execute(list(argv),timeout=20)))
+ browser_record={'browser_pid':browser._browser.pid,'browser_pgid':browser._browser_group,'xvfb_pid':browser._xvfb.pid,'xvfb_pgid':os.getpgid(browser._xvfb.pid),'cdp_url':browser.cdp_url,'display':browser.display,'profile_dir':str(browser.profile_dir),'metrics':browser.metrics}
+ owner.ownership['browser']=browser_record
+ owner.persist()
+ source=ROOT/'tools/acceptance/journeys/v2-mission-retirement.mjs'
+ (OUT/'source-provenance.json').write_text(json.dumps({'diagnostic_only':True,'journey_source':str(source),'journey_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'execution':'dynamic import of unchanged exported runV2MissionRetirement; guarded CLI main not invoked','image_candidate_sha':candidate,'draft_source_head':subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,capture_output=True,text=True,check=True).stdout.strip(),'replacement_diagnostic_images':result['images'],'source_archive_sha256':result['source_archive_sha256'],'compose_sha256':hashlib.sha256(owner.compose_file.read_bytes()).hexdigest(),'driver_sha256':hashlib.sha256((OUT.parent/'driver.mjs').read_bytes()).hexdigest()},indent=2))
+ owner.execute(['node',str(OUT.parent/'driver.mjs'),'--repository-root',str(ROOT),'--session',browser.cdp_url,'--origin',f"http://127.0.0.1:{ports['mission-planner']}",'--kml',str(ROOT/'docs/missions/acceptance-assets/v2-activation-route.kml'),'--output',str(OUT)],timeout=120)
+ result['status']='diagnostic_journey_completed'
+except BaseException as error:
+ result.update(status='diagnostic_failed',error=str(error),traceback=traceback.format_exc())
+ print(result['traceback'],flush=True)
+finally:
+ if browser is not None:
+  try: browser.close()
+  except BaseException as error: cleanup_errors.append('browser: '+str(error))
+  for name,data in browser.artifacts.items():
+   if '/' not in name: (OUT/name).write_bytes(data)
+  owner.ownership['browser']['closed']=True
+  owner.persist()
+ if owner.admitted and compose_created:
+  try: owner.compose('logs','--no-color',timeout=30)
+  except BaseException as error: cleanup_errors.append('logs: '+str(error))
+ try: result['cleanup']=owner.close()
+ except BaseException as error: cleanup_errors.append('compose: '+str(error))
+ try: owner.release()
+ except BaseException as error: cleanup_errors.append('reservation: '+str(error))
+ remaining_listeners=[]
+ for name,port in {**ports,**({'cdp':int(browser.cdp_url.rsplit(':',1)[1])} if browser else {})}.items():
+  with socket.socket() as probe:
+   probe.settimeout(.2)
+   if probe.connect_ex(('127.0.0.1',port))==0: remaining_listeners.append({'name':name,'port':port})
+ result['remaining_listeners']=remaining_listeners
+ result['cleanup_errors']=cleanup_errors
+ if browser:
+  result['remaining_browser_pids']=[pid for pid in [browser._browser.pid,browser._xvfb.pid] if Path('/proc',str(pid)).exists()]
+ result['owned_images_remaining']={}
+ for kind,tag in tags.items():
+  try: result['owned_images_remaining'][tag]=bool(owner.execute(['docker','image','ls','-q',tag],timeout=20).strip())
+  except BaseException as error: cleanup_errors.append('image verification: '+str(error))
+ (OUT/'runner-result.json').write_text(json.dumps(result,indent=2)+'\n')
+ print(json.dumps(result,indent=2),flush=True)

@@ -1,0 +1,25 @@
+{
+  "at": 1793200191.8513198,
+  "reason": "Bind backend static groups to reviewed CI lock before exact candidate acceptance",
+  "static": {
+    "pid": 4056176,
+    "pgid": 4056163,
+    "started": 1793199494.0535238,
+    "sha": "4ba2ec225a83e6618e967df51c07bfd839723571",
+    "lane": "static",
+    "checkout": "<repository>/.worktrees/issue-393-final-review2",
+    "task_id": "issue393-review2",
+    "project": "accept-4ba2ec225a83",
+    "task_root": "<evidence-root>/tasks/static",
+    "ports": [
+      18393,
+      15393
+    ]
+  },
+  "soak": {
+    "pid": 4085394,
+    "pgid": 4085344,
+    "project": "starlink-operator-issue393-review2-soak"
+  },
+  "signals": "static owned process group TERM; soak owner TERM for cleanup"
+}

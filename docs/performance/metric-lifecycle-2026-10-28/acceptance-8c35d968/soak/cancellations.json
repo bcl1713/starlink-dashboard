@@ -1,0 +1,8 @@
+[
+  {
+    "path": "/api/v2/operator/events",
+    "error": {
+      "errorText": "net::ERR_ABORTED"
+    }
+  }
+]

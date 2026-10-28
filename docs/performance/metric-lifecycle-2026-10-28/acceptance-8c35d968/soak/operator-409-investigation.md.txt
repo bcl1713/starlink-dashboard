@@ -1,0 +1,15 @@
+# Operator 409 investigation
+
+The raw production soak remains **failed**: `failures.json` contains two 409 reads and `request-outcomes.json` reports two unexpected failures and one separate client cancellation. This analysis does not reclassify the run or establish a clean performance baseline.
+
+At 15:35:03 UTC the controlled leg switch and journal write succeed; the receipt records operating context `ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route`. Both rejected reads send that same source identity at 15:50:08–09, immediately after the successful deliberate deactivation at 15:50:08. The deactivation-time journal write also succeeds and records a null operating context. The store ID, API epoch and source mode in the rejected requests match the subsequent successful requests.
+
+The existing backend explicitly rejects mismatched source identity with `store_context_changed`, mapped to HTTP 409. The frontend explicitly quarantines and resets that read generation. Existing test_record_sync and useWorkspaceRecords tests cover this guard/reset contract. Relevant source files match the measured 8c35d968 candidate byte for byte. **The actual response bodies were not captured**, so the exact error-code/quarantine explanation is inferred from source and identities; only request identities, status codes, receipts and access times are direct evidence.
+
+There are no browser record reads in the idle interval after deactivation; the Node workload continues successful record reads. Source explains that an unpinned `/operator` page has no selected mission when no leg is active, and record polling requires a nonempty mission ID. Do not describe the idle period as an immediately recovered browser read lane.
+
+At 16:05:13 UTC the deliberate leg-1 reactivation and journal write succeed; the receipt records operating context `ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route` and journal sequence 9. At 16:05:15 both browser baseline and delta reads return 200 with that new identity (delta `after_seq=9`). That is two displayed clock seconds, bounded below three seconds given second-resolution access timestamps. Subsequent browser reads remain 200. The final screenshot shows the active leg-1 workspace.
+
+The two 409s therefore fit the existing expected stale-source coordination guard, with successful writes and restored browser reads after reactivation; they do not demonstrate a persistent application failure. The response-body limitation prevents a conclusive assertion about the precise 409 payload. The single `/events` `net::ERR_ABORTED` cancellation has no timestamp and cannot be assigned to this transition.
+
+`operator-409-investigation.json` contains source hashes, candidate equality checks, exact selected log lines, operation receipts, recovery counts, and raw-file SHA-256 hashes. It preserves the failed raw outcome. No source edits, services, tests or runtime requests were used.

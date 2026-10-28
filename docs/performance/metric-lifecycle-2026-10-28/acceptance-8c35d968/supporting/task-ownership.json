@@ -1,0 +1,87 @@
+{
+  "task": "issue393-review5682783162",
+  "started": 1793198164.438662,
+  "worktree": "<tested-feature-worktree>",
+  "branch": "fix/393-metric-lifecycle",
+  "base_sha": "44d09d59f6eb60142e6f9ac0a0b676a6a019e353",
+  "fresh_frontend_dependencies": "<tested-feature-worktree>/frontend/mission-planner/node_modules",
+  "projects": [
+    "accept-4ba2ec225a83",
+    "starlink-operator-issue393-review2-soak",
+    "accept-8c35d968cfff",
+    "starlink-operator-issue393-review2-locked-soak",
+    "accept-44b86c5b878f",
+    "accept-4bbc93907294",
+    "starlink-operator-issue393-history-diag"
+  ],
+  "processes": [],
+  "temporary_paths": [
+    "<repository>/.worktrees/issue-393-final-review2",
+    "<repository>/.worktrees/issue-393-final-review2/frontend/mission-planner/node_modules",
+    "<repository>/.worktrees/issue-393-final-review2-locked",
+    "<packaging-worktree>",
+    "<repository>/.worktrees/issue-393-final-review2-current",
+    "<repository>/.worktrees/issue-393-final-review2-supported",
+    "<repository>/.worktrees/issue-393-final-review2-history"
+  ],
+  "evidence_root": "<evidence-root>",
+  "dependency_setup": {
+    "exec_session_id": 85019,
+    "exit_code": 0
+  },
+  "static_check": {
+    "exec_session_id": 97929,
+    "deadline_seconds": 720,
+    "termination_grace_seconds": 10,
+    "base_sha": "44d09d59f6eb60142e6f9ac0a0b676a6a019e353"
+  },
+  "checks": {
+    "canonical_static": {
+      "session_id": 14503,
+      "exit_code": 0
+    },
+    "latest_changed_tooling": {
+      "session_id": 73652,
+      "exit_code": 0,
+      "passed": 61
+    },
+    "frozen_acceptance_tooling": {
+      "session_id": 47733,
+      "timeout_seconds": 600,
+      "exit_code": 0,
+      "passed": 433
+    }
+  },
+  "candidate_sha": "8c35d968cfffd355fe609e7c96678b44fe979d73",
+  "final_dependency_setup": {
+    "session_id": 34424,
+    "exit_code": 0,
+    "path": "<repository>/.worktrees/issue-393-final-review2/frontend/mission-planner/node_modules"
+  },
+  "evidence_publication": {
+    "branch": "evidence/393-acceptance-8c35d968",
+    "worktree": "<packaging-worktree>",
+    "purpose": "reviewable artifacts for exact candidate without changing tested feature head",
+    "retention": "preserve published acceptance evidence; remove packaging worktree and local branch after push"
+  },
+  "final_candidate_sha": "4bbc93907294b8c40c9e751beb31f1ae901b0030",
+  "task_node": {
+    "version": "v22.22.2",
+    "directory": "<evidence-root>/node-v22.22.2-linux-x64",
+    "archive": "<evidence-root>/node-v22.22.2-linux-x64.tar.xz",
+    "checksum_manifest": "<evidence-root>/node-SHASUMS256.txt",
+    "purpose": "Use declared frontend Node engine floor matchingCI; preserve system installation"
+  },
+  "supported_node_final": {
+    "checkout": "<repository>/.worktrees/issue-393-final-review2-supported",
+    "health_root": "<evidence-root>/evidence/health-supported-node",
+    "final_root": "<evidence-root>/evidence/final-supported-node",
+    "candidate_sha": "44b86c5b878f8d9b051576bea7c6f21e60555668"
+  },
+  "current_history_final": {
+    "checkout": "<repository>/.worktrees/issue-393-final-review2-history",
+    "health_root": "<evidence-root>/evidence/health-current-history",
+    "final_root": "<evidence-root>/evidence/final-current-history",
+    "candidate_sha": "4bbc93907294b8c40c9e751beb31f1ae901b0030"
+  }
+}

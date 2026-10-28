@@ -1,0 +1,5 @@
+{
+  "outcome": "environment_blocked",
+  "reason": "fresh checkout lacks @playwright/test",
+  "remaining_browser_xvfb_processes": []
+}

@@ -1,0 +1,7 @@
+locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for getByLabel('Globe legend').getByText('V2 Acceptance Route KAAA-KBBB', { exact: true }) to be visible[22m
+
+    at assertSemanticOverview (<evidence-root>/tasks/final/.acceptance-adapters/8c35d968cfffd355fe609e7c96678b44fe979d73/v2-mission-retirement.mjs:303:19)
+    at runV2MissionRetirement (<evidence-root>/tasks/final/.acceptance-adapters/8c35d968cfffd355fe609e7c96678b44fe979d73/v2-mission-retirement.mjs:331:27)
+    at async main (<evidence-root>/tasks/final/.acceptance-adapters/8c35d968cfffd355fe609e7c96678b44fe979d73/v2-mission-retirement.mjs:354:20)

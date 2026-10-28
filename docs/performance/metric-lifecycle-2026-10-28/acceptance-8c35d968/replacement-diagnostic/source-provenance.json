@@ -1,0 +1,25 @@
+{
+  "diagnostic_only": true,
+  "journey_source": "<tested-feature-worktree>/tools/acceptance/journeys/v2-mission-retirement.mjs",
+  "journey_sha256": "663f17f0dc7b2f023ee3e611ffb681ce96e720e7b347fee3037a6593a135f9db",
+  "execution": "dynamic import of unchanged exported runV2MissionRetirement; guarded CLI main not invoked",
+  "image_candidate_sha": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+  "draft_source_head": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+  "replacement_diagnostic_images": {
+    "backend": {
+      "tag": "starlink-operator-issue393-history-diag-backend:44b86c5b878f",
+      "id": "sha256:75134e6b675f28742943498a4c07a2783a49e1c11755e16bee3c650e79f3518b",
+      "revision": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+      "dockerfile_sha256": "11fdb2a5106312536c1727d609945fa2936971306bb802a31c91f3414629116c"
+    },
+    "frontend": {
+      "tag": "starlink-operator-issue393-history-diag-frontend:44b86c5b878f",
+      "id": "sha256:17e318923e73c136262db8a8e5b6bc73857046002c4a481d8a22940257d4caf8",
+      "revision": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+      "dockerfile_sha256": "6674804885c800da6462320f8c9102e4b83b8d8ad69f5be6cc93fea4107701e1"
+    }
+  },
+  "source_archive_sha256": "4a53f42b3534b10426ba175d641d74448cde9ab1719eb73b5bbd65ec905df1bf",
+  "compose_sha256": "5860a1d051d29f4a97bf280efa163b4d312ea3dec5700eacf92c045219ba5f8b",
+  "driver_sha256": "d73e5f83bab4e70405a7aaf2ee5d96feb82889752c0c50c6e563af38cee5757a"
+}

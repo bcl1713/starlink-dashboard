@@ -1,0 +1,14 @@
+{
+  "diagnostic_only": true,
+  "project": "starlink-operator-issue393-history-diag",
+  "containers": "",
+  "networks": "",
+  "volumes": "",
+  "listeners": [],
+  "owned_process_groups": [],
+  "temporary_paths_remaining": [],
+  "owned_image_objects_remaining": [],
+  "browser_pids_remaining": [],
+  "journey_source_unchanged": true,
+  "all_owned_resources_gone": true
+}

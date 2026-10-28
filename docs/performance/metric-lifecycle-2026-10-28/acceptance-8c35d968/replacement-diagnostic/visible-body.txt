@@ -1,0 +1,133 @@
+Mission Planner
+Missions
+Satellites
+POIs
+Routes
+Data Export
+Configuration
+Overview
+Operator
+KAAA
+KBBB
+
+Sim PoP · Dallas · Ground entry point at 32.78306°, -96.80667°
+
+Takeoff · KAAA
+Landing · KBBB
+Sim PoP · Dallas
+
+ZULU / UTC
+
+Zulu
+
+17:08:52
+
+WASHINGTON, DC
+
+Zulu
+
+17:08:52
+
+ERICK, OK
+
+Zulu
+
+17:08:52
+
+ERICK, OK
+
+Zulu
+
+17:08:52
+Scheduled Departure · KAAA
+
+15965 HR 8 MIN AGO
+
+Scheduled 2025-01-01 12:00 Zulu
+
+X-BAND
+
+NO SATELLITE SELECTED
+
+PLANNED SATELLITE
+
+Transport Advisories Unavailable
+
+Reset
+Fullscreen
+
+Track history unavailable
+
+LEGEND
+
+Aircraft
+Planned route
+Ground entry point
+Traffic path
+
+Overview 8afff7
+
+NETWORK · SIMULATED DATA
+FRESH
+
+- UPDATED 0S AGO
+
+LAST 30 MIN
+
+ROLLING STATISTICS: 5 MINUTES
+
+History refresh unavailable
+
+SIMULATED
+AVERAGE (5M)
+LOW–HIGH ENVELOPE (5M)
+LATENCY
+51 ms
+Simulated 17:08:52 UTC; exact value 51.021821256202855 ms
+
+History unavailable
+
+1
+0.5
+0
+Time (UTC)
+DOWNLINK
+93.6 Mbps
+Simulated 17:08:52 UTC; exact value 93.60960397044853 Mbps
+
+History unavailable
+
+1
+0.5
+0
+Time (UTC)
+UPLINK
+21.9 Mbps
+Simulated 17:08:52 UTC; exact value 21.936743686152834 Mbps
+
+History unavailable
+
+1
+0.5
+0
+Time (UTC)
+PACKET LOSS
+3.89%
+Simulated 17:08:52 UTC; exact value 3.8883774790605994 %
+
+History unavailable
+
+100
+10
+≤1
+Time (UTC)
+OBSTRUCTION
+26.12%
+Simulated 17:08:52 UTC; exact value 26.12066296772714 %
+
+History unavailable
+
+100
+10
+≤1
+Time (UTC)

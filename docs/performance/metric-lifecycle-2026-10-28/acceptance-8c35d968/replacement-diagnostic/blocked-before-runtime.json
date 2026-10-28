@@ -1,0 +1,29 @@
+{
+  "diagnostic_only": true,
+  "final_acceptance": false,
+  "status": "blocked_before_runtime",
+  "reason": "Both borrowed image tags and exact recorded image IDs were already absent before diagnostic containers or browser were created. No images were deleted by this diagnostic.",
+  "draft_journey_sha256": "663f17f0dc7b2f023ee3e611ffb681ce96e720e7b347fee3037a6593a135f9db",
+  "missing_borrowed_images": {
+    "accept-44b86c5b878f-mission-planner:latest": "sha256:869bb7cede244827bb39ed9fc0b0013635c5efd0ba40f98e53122d604ee4b23a",
+    "accept-44b86c5b878f-starlink-location:latest": "sha256:9481789424c1c3b9c49573e623f41245408f9401d32678ffd55486f7c7129a2f"
+  },
+  "first_failure_log": "command-009.log",
+  "runtime_created": false,
+  "browser_created": false,
+  "public_ui_exercised": false,
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  },
+  "remaining_listeners": [],
+  "note": "An attempted logs command before topology creation also failed; owned resource cleanup itself completed successfully."
+}

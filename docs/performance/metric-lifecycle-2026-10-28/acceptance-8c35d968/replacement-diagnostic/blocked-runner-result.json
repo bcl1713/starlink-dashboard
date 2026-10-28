@@ -1,0 +1,27 @@
+{
+  "diagnostic_only": true,
+  "final_acceptance": false,
+  "status": "diagnostic_failed",
+  "error": "Command failed (1): <evidence-root>/history-diagnostic/command-009.log",
+  "traceback": "Traceback (most recent call last):\n  File \"<evidence-root>/history-diagnostic/run.py\", line 35, in <module>\n    actual=owner.execute(['docker','image','inspect','--format','{{.Id}}',tag],timeout=20).strip()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<tested-feature-worktree>/tools/acceptance/operator-journal/ownership.py\", line 110, in execute\n    raise RuntimeError(\nRuntimeError: Command failed (1): <evidence-root>/history-diagnostic/command-009.log\n",
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  },
+  "remaining_listeners": [],
+  "cleanup_errors": [
+    "logs: Command failed (1): <evidence-root>/history-diagnostic/command-010.log"
+  ],
+  "borrowed_images_preserved": {
+    "accept-44b86c5b878f-mission-planner:latest": false,
+    "accept-44b86c5b878f-starlink-location:latest": false
+  }
+}

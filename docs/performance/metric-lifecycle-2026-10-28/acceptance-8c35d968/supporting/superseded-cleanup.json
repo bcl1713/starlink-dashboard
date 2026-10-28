@@ -1,0 +1,28 @@
+{
+  "at": 1793200238.2089076,
+  "project": "starlink-operator-issue393-review2-soak",
+  "remaining_processes": [],
+  "resources": {
+    "container": [],
+    "network": [],
+    "volume": []
+  },
+  "ports": {
+    "52225": "closed",
+    "59727": "closed"
+  },
+  "runner_cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true,
+    "prometheusListenerRemoved": true
+  },
+  "reason": "Superseded after diagnosed dependency drift"
+}

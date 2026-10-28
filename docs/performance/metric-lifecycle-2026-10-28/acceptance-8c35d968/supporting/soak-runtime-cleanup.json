@@ -1,0 +1,15 @@
+{
+  "checked_at": 1793204731.355871,
+  "project": "starlink-operator-issue393-review2-locked-soak",
+  "remaining_processes": [],
+  "resources": {
+    "container": [],
+    "network": [],
+    "volume": []
+  },
+  "ports": {
+    "52849": "closed",
+    "47663": "closed"
+  },
+  "status": "clean"
+}

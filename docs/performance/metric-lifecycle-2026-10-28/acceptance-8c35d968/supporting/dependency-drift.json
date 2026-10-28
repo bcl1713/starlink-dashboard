@@ -1,0 +1,9 @@
+{
+  "problem": "pytest9.2 MonkeyPatch on dynamic Starlette State",
+  "ci_pytest": "9.1.1",
+  "raw_module": "17 passed,2 teardown errors",
+  "version_only_control": "17 passed",
+  "source_changes": "contract static check lock only; no runtime/Dockerfile changes",
+  "proof_root": "<temporary-root>/issue393-platform-static-diagnosis",
+  "recorded_at": 1793200376.7679164
+}

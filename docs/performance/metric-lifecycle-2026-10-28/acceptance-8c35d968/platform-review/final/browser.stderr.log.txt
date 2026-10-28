@@ -1,0 +1,50 @@
+[545721:545746:1028/173024.467141:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545746:1028/173024.467516:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545746:1028/173024.468680:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545746:1028/173024.488306:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+
+DevTools listening on <browser-debug-endpoint>
+[545721:545721:1028/173024.518178:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545721:1028/173024.518215:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173024.518233:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545746:1028/173024.518248:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173024.518298:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545721:1028/173024.520362:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173024.520415:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545746:1028/173024.540982:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545746:1028/173024.541003:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173024.598346:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545721:1028/173024.598514:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173024.598729:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173024.599029:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545721:1028/173024.608674:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173024.608755:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173024.618821:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173024.618885:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173024.627398:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545721:1028/173024.631765:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.NetworkManager.GetDevices: object_path= /org/freedesktop/NetworkManager: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.NetworkManager was not provided by any .service files
+[545721:545721:1028/173025.001058:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:748] Message 0 rejected by interface blink.mojom.WidgetHost
+[545760:545760:1028/173025.036676:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1209] []Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader flag to opt in to lower security guarantees for trusted content.
+[545721:545746:1028/173025.077855:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173025.077876:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173025.077909:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173025.077919:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173027.724924:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[545721:545746:1028/173027.908669:ERROR:google_apis/gcm/engine/mcs_client.cc:702]   Error code: 401  Error message: Authentication Failed: wrong_secret
+[545721:545746:1028/173027.908682:ERROR:google_apis/gcm/engine/mcs_client.cc:704] Failed to log in to GCM, resetting connection.
+[545721:545746:1028/173054.955754:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: QUOTA_EXCEEDED
+[545721:545746:1028/173156.681315:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173156.681346:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173156.681382:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173156.681395:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173157.116113:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173157.116134:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173157.116163:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173157.116173:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545760:545760:1028/173202.436421:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1209] []Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader flag to opt in to lower security guarantees for trusted content.
+[545721:545746:1028/173204.947391:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173204.947420:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545746:1028/173204.947449:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket <runtime-dir>/bus: Permission denied
+[545721:545721:1028/173204.947460:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[545721:545721:1028/173216.998993:ERROR:content/common/zygote/zygote_communication_linux.cc:291] Failed to send GetTerminationStatus message to zygote
+[545721:545746:1028/173216.999929:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2

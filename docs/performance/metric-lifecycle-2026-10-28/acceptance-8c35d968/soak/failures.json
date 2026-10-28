@@ -1,0 +1,10 @@
+[
+  {
+    "path": "/api/v2/operator/record-changes",
+    "status": 409
+  },
+  {
+    "path": "/api/v2/operator/records",
+    "status": 409
+  }
+]

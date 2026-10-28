@@ -1,0 +1,42 @@
+import { createRequire } from 'node:module';
+import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const args = Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all) => index % 2 ? rows : [...rows,[value.slice(2),all[index+1]]], []));
+const require = createRequire(resolve(args['repository-root'], 'frontend/mission-planner/package.json'));
+const { chromium } = require('@playwright/test');
+const { runV2MissionRetirement } = await import(pathToFileURL(resolve(args['repository-root'], 'tools/acceptance/journeys/v2-mission-retirement.mjs')).href);
+const browser = await chromium.connectOverCDP(args.session);
+const context = browser.contexts()[0];
+const page = await context.newPage();
+const historyResponses=[];
+const pending=[];
+page.on('response', response => {
+  if(new URL(response.url()).pathname !== '/api/overview-history' || historyResponses.length >= 20) return;
+  const row={url:response.url(),status:response.status(),timestamp:new Date().toISOString()};
+  historyResponses.push(row);
+  pending.push(response.text().then(body => {row.body=body.slice(0,16384);row.truncated=body.length>16384;}).catch(error => {row.body_error=String(error);}));
+});
+let result={diagnostic_only:true,final_acceptance:false};
+try {
+  const observation=await runV2MissionRetirement({page,origin:args.origin,kmlPath:args.kml});
+  result={...result,status:'diagnostic_journey_completed',observation};
+  for(const [name,encoded] of Object.entries(observation.artifacts ?? {})){
+    if(!/^[a-z0-9-]+\.(png|json)$/.test(name)) throw new Error('invalid artifact basename');
+    await writeFile(resolve(args.output,name),Buffer.from(encoded,'base64'));
+  }
+  delete result.observation.artifacts;
+} catch(error) {
+  result={...result,status:'diagnostic_journey_failed',error:error instanceof Error ? error.stack : String(error)};
+  process.exitCode=1;
+} finally {
+  await Promise.allSettled(pending);
+  await writeFile(resolve(args.output,'history-responses.json'),JSON.stringify(historyResponses,null,2));
+  await page.screenshot({path:resolve(args.output,'visible-page.png')}).catch(error => {result.screenshot_error=String(error);});
+  await writeFile(resolve(args.output,'visible-body.txt'),(await page.locator('body').innerText().catch(error=>String(error))).slice(0,50000));
+  result.visible_history = await page.locator('section').filter({has:page.getByRole('heading',{name:'Network latency history',exact:true})}).evaluateAll(nodes=>nodes.map(node=>({text:node.innerText,ariaLabel:node.getAttribute('aria-label'),images:[...node.querySelectorAll('[role=img]')].map(image=>({label:image.getAttribute('aria-label'),rect:{x:image.getBoundingClientRect().x,y:image.getBoundingClientRect().y,width:image.getBoundingClientRect().width,height:image.getBoundingClientRect().height}}))}))).catch(error=>({error:String(error)}));
+  await writeFile(resolve(args.output,'diagnostic-result.json'),JSON.stringify(result,null,2));
+  console.log(JSON.stringify({diagnostic_only:true,status:result.status,error:result.error,historyResponses:historyResponses.length}));
+  await page.close().catch(()=>{});
+  await browser.close().catch(()=>{});
+}

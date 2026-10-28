@@ -1,0 +1,940 @@
+{
+  "schema_version": 1,
+  "analysis_only": true,
+  "captured_at": "2026-10-28T16:27:39.769595+00:00",
+  "measured_candidate_sha": "8c35d968cfffd355fe609e7c96678b44fe979d73",
+  "inspected_source_head": "44b86c5b878f8d9b051576bea7c6f21e60555668",
+  "raw_run_status_preserved": "failed",
+  "raw_request_outcomes": {
+    "unexpected_failures": 2,
+    "client_cancellations": 1
+  },
+  "raw_sha256": {
+    "run.json": "0bb74e70facc0cc8906d6dfe2cf2236f96e4fc63ab20220193ab3c5cd2b3c0f3",
+    "failures.json": "143459a3b29a6bea7c381ca74b0354c22e1c1c8dc12ddb3681c9b951ca711780",
+    "operations.jsonl": "edd11cc2279a8333d8adf2e1ef4b8ce33e5f1b643b218263931501c5662974c4",
+    "command-027.log": "f70a181373230acee492b44f8414ca65195bd6f442ee60df88cbb5ab1d1ccb84",
+    "cancellations.json": "32ac20f40ef7c6ef8b0a4d5be08b33b1a8a11017a41e831b93070509f5fe360f",
+    "request-outcomes.json": "27dfdc894605f7702c6d95591bef9f303401c21c20bb17022c042849f6eeacd7",
+    "page-1.png": "222c1de78bf0c5c0a55a3eb330971cacd9ccf37e410ac8f69af277c795f9a958"
+  },
+  "finding": "The two observed 409s are consistent with the existing stale-source coordination guard during deliberate deactivation. No persistent read failure is observed after reactivation. Response error codes and quarantine state were not captured directly, so exact store_context_changed attribution is inferred from unchanged measured-candidate source and matching stale identity.",
+  "direct_observations": {
+    "rejected_identity": [
+      "813969e5-118b-4067-bd4e-5e6466a86eab",
+      "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+      "simulation",
+      "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+    ],
+    "http_409_reads": [
+      {
+        "line": 28013,
+        "timestamp": "2026-10-28T15:50:08+00:00",
+        "method": "GET",
+        "path": "/api/v2/operator/record-changes",
+        "status": 409,
+        "source_identity": [
+          "813969e5-118b-4067-bd4e-5e6466a86eab",
+          "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+          "simulation",
+          "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+        ],
+        "after_seq": "7",
+        "client": "browser",
+        "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D&after_seq=7 HTTP/1.1\" 409 163 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+      },
+      {
+        "line": 28015,
+        "timestamp": "2026-10-28T15:50:09+00:00",
+        "method": "GET",
+        "path": "/api/v2/operator/records",
+        "status": 409,
+        "source_identity": [
+          "813969e5-118b-4067-bd4e-5e6466a86eab",
+          "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+          "simulation",
+          "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+        ],
+        "after_seq": null,
+        "client": "browser",
+        "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:09 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a&include_removed=true&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D HTTP/1.1\" 409 163 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+      }
+    ],
+    "controlled_operations": [
+      {
+        "seconds": 1025.024038215,
+        "path": "/api/v2/missions/synthetic-mission-a/legs/synthetic-leg-2/activate",
+        "elapsed_ms": 163.89137099997606,
+        "result": {
+          "status": "success",
+          "active_leg_id": "synthetic-leg-2"
+        }
+      },
+      {
+        "seconds": 1025.024038215,
+        "operation": "journal_write",
+        "receipt": {
+          "schema_version": 1,
+          "command_id": "fad01cd2-6213-44f6-b57c-9f5192787d9e",
+          "saved_records": [
+            {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "synthetic-mission-a",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": "2026-10-28T15:35:03.909000Z",
+                "ended_at": null,
+                "precision": "exact",
+                "end_state": "instant",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Synthetic measured operation 0",
+                "note": "Fictional performance workload",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "14be6bbe-382b-4fc8-bf90-76e1b092a72e",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 7,
+              "command_id": "fad01cd2-6213-44f6-b57c-9f5192787d9e",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-28T15:35:03.928332Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "replay_run_id": null,
+                "operating_context_id": "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "retrospective"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "seconds": 1930.0003595010003,
+        "path": "/api/v2/missions/synthetic-mission-a/legs/deactivate",
+        "elapsed_ms": 13.644381999969482,
+        "result": {
+          "status": "success",
+          "message": "All legs deactivated"
+        }
+      },
+      {
+        "seconds": 1930.0003595010003,
+        "operation": "journal_write",
+        "receipt": {
+          "schema_version": 1,
+          "command_id": "0239cd50-a805-4e98-8f83-2c1ac680e1ed",
+          "saved_records": [
+            {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "synthetic-mission-a",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": "2026-10-28T15:50:08.574000Z",
+                "ended_at": null,
+                "precision": "exact",
+                "end_state": "instant",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Synthetic measured operation 1",
+                "note": "Fictional performance workload",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "6b67df3e-e725-435a-afc1-4d2924377125",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 8,
+              "command_id": "0239cd50-a805-4e98-8f83-2c1ac680e1ed",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-28T15:50:08.588102Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "replay_run_id": null,
+                "operating_context_id": null,
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "retrospective"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "seconds": 2835.0000213300004,
+        "path": "/api/v2/missions/synthetic-mission-a/legs/synthetic-leg-1/activate",
+        "elapsed_ms": 114.36109700007364,
+        "result": {
+          "status": "success",
+          "active_leg_id": "synthetic-leg-1"
+        }
+      },
+      {
+        "seconds": 2835.0000213300004,
+        "operation": "journal_write",
+        "receipt": {
+          "schema_version": 1,
+          "command_id": "efc89f1b-e9de-49be-8953-2bbdea3be74f",
+          "saved_records": [
+            {
+              "schema_version": 1,
+              "record_type": "journal_entry",
+              "mission_id": "synthetic-mission-a",
+              "leg_id": null,
+              "scope": "mission",
+              "time": {
+                "occurred_at": "2026-10-28T16:05:13.506000Z",
+                "ended_at": null,
+                "precision": "exact",
+                "end_state": "instant",
+                "planned_start_at": null,
+                "planned_end_at": null
+              },
+              "payload": {
+                "schema_version": 1,
+                "title": "Synthetic measured operation 2",
+                "note": "Fictional performance workload",
+                "previous_leg_id": null,
+                "next_leg_id": null,
+                "entry_type": "note"
+              },
+              "record_id": "85d8a95a-ed7b-4d1d-858b-c334e6dce353",
+              "version": 1,
+              "previous_version": null,
+              "journal_seq": 9,
+              "command_id": "efc89f1b-e9de-49be-8953-2bbdea3be74f",
+              "operation": "create",
+              "reason": null,
+              "reason_origin": null,
+              "deleted": false,
+              "recorded_at": "2026-10-28T16:05:13.518284Z",
+              "author": {
+                "backend": "restricted-access operator",
+                "operator_label": null
+              },
+              "provenance": {
+                "kind": "operator_reported",
+                "source_mode": "simulation",
+                "replay_run_id": null,
+                "operating_context_id": "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route",
+                "observed_at": null,
+                "predicted_at": null,
+                "source_ref": null,
+                "mutation_origin": "retrospective"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "idle_interval": {
+      "start_inclusive": "2026-10-28T15:50:10+00:00",
+      "end_exclusive": "2026-10-28T16:05:13+00:00",
+      "browser_record_reads": 0,
+      "node_record_reads": 180,
+      "node_statuses": [
+        200
+      ]
+    },
+    "reactivation_recovery": {
+      "activation_log_time": "2026-10-28T16:05:13+00:00",
+      "first_browser_baseline": {
+        "line": 40611,
+        "timestamp": "2026-10-28T16:05:15+00:00",
+        "method": "GET",
+        "path": "/api/v2/operator/records",
+        "status": 200,
+        "source_identity": [
+          "813969e5-118b-4067-bd4e-5e6466a86eab",
+          "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+          "simulation",
+          "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route"
+        ],
+        "after_seq": null,
+        "client": "browser",
+        "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:15 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a&include_removed=true&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route%22%5D HTTP/1.1\" 200 1587 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+      },
+      "first_browser_delta": {
+        "line": 40655,
+        "timestamp": "2026-10-28T16:05:15+00:00",
+        "method": "GET",
+        "path": "/api/v2/operator/record-changes",
+        "status": 200,
+        "source_identity": [
+          "813969e5-118b-4067-bd4e-5e6466a86eab",
+          "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+          "simulation",
+          "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route"
+        ],
+        "after_seq": "9",
+        "client": "browser",
+        "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:15 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route%22%5D&after_seq=9 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+      },
+      "coarse_clock_recovery_upper_bound_seconds": 3,
+      "browser_read_count_after_reactivation": 449,
+      "statuses_after_reactivation": [
+        200
+      ]
+    },
+    "cancellation": [
+      {
+        "path": "/api/v2/operator/events",
+        "error": {
+          "errorText": "net::ERR_ABORTED"
+        }
+      }
+    ],
+    "final_screenshot": "page-1.png shows active Synthetic Leg 1 and an Operator workspace; a final screenshot does not establish the transition/quarantine behavior."
+  },
+  "interpretation_limits": [
+    "Response bodies are absent; store_context_changed is source-based attribution, not a captured response code.",
+    "Compose output interleaves separately buffered services. Only timestamped mission-planner access entries are used to order or time events; backend duplicate access lines are not additional failures.",
+    "No browser record reads were logged during the idle interval. There is no claim of fresh-identity browser recovery immediately after deactivation. Without a manual mission_id, operatingMission selects no mission when deactivated, and useWorkspaceRecords requires a nonempty mission ID; that explains the idle pause from source.",
+    "Bounded observed browser recovery is after deliberate reactivation, within three seconds at access-log resolution, with the new identity matching the successful journal receipt.",
+    "The cancellation has no captured timestamp; it cannot be tied to the context transition from this evidence.",
+    "The browser harness counts all HTTP statuses >=400 except GPS 503 as failures, without context/body classification. Raw status failed and unexpected_failures=2 remain authoritative; this investigation does not establish an overall clean performance baseline.",
+    "No source changes, tests, services, runtime requests, or reruns were performed for this diagnosis."
+  ],
+  "selected_log_entries": [
+    {
+      "line": 15539,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:1:synthetic-route"
+      ],
+      "after_seq": "6",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:1:synthetic-route%22%5D&after_seq=6 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15544,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/records",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a HTTP/1.1\" 200 1202 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 15545,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "POST",
+      "path": "/api/v2/missions/synthetic-mission-a/legs/synthetic-leg-2/activate",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"POST /api/v2/missions/synthetic-mission-a/legs/synthetic-leg-2/activate HTTP/1.1\" 200 54 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 15546,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 382 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 15547,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 306 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15548,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 382 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15549,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "POST",
+      "path": "/api/v2/operator/records",
+      "status": 201,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"POST /api/v2/operator/records HTTP/1.1\" 201 1152 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 15552,
+      "timestamp": "2026-10-28T15:35:03+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/records",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+      ],
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:03 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a&include_removed=true&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D HTTP/1.1\" 200 1361 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15554,
+      "timestamp": "2026-10-28T15:35:04+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+      ],
+      "after_seq": "7",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:04 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D&after_seq=7 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15562,
+      "timestamp": "2026-10-28T15:35:05+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:05 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 306 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15566,
+      "timestamp": "2026-10-28T15:35:06+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+      ],
+      "after_seq": "7",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:06 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D&after_seq=7 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 15570,
+      "timestamp": "2026-10-28T15:35:06+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:35:06 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 306 \"http://127.0.0.1:52849/overview\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 27985,
+      "timestamp": "2026-10-28T15:50:06+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:06 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 306 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 27988,
+      "timestamp": "2026-10-28T15:50:06+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+      ],
+      "after_seq": "7",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:06 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D&after_seq=7 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28004,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 306 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28005,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 382 \"http://127.0.0.1:52849/overview\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28009,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/records",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a HTTP/1.1\" 200 1366 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 28010,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "POST",
+      "path": "/api/v2/missions/synthetic-mission-a/legs/deactivate",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"POST /api/v2/missions/synthetic-mission-a/legs/deactivate HTTP/1.1\" 200 53 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 28011,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 321 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 28012,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "POST",
+      "path": "/api/v2/operator/records",
+      "status": 201,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"POST /api/v2/operator/records HTTP/1.1\" 201 1091 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 28013,
+      "timestamp": "2026-10-28T15:50:08+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 409,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+      ],
+      "after_seq": "7",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:08 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D&after_seq=7 HTTP/1.1\" 409 163 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28015,
+      "timestamp": "2026-10-28T15:50:09+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/records",
+      "status": 409,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route"
+      ],
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:09 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a&include_removed=true&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:2:synthetic-route%22%5D HTTP/1.1\" 409 163 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28016,
+      "timestamp": "2026-10-28T15:50:09+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:09 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 321 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28017,
+      "timestamp": "2026-10-28T15:50:09+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:09 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 186 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28018,
+      "timestamp": "2026-10-28T15:50:09+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:09 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 321 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 28020,
+      "timestamp": "2026-10-28T15:50:09+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:15:50:09 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 186 \"http://127.0.0.1:52849/overview\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 40585,
+      "timestamp": "2026-10-28T16:05:13+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:13 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 186 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 40591,
+      "timestamp": "2026-10-28T16:05:13+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/records",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:13 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a HTTP/1.1\" 200 1476 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 40592,
+      "timestamp": "2026-10-28T16:05:13+00:00",
+      "method": "POST",
+      "path": "/api/v2/missions/synthetic-mission-a/legs/synthetic-leg-1/activate",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:13 +0000] \"POST /api/v2/missions/synthetic-mission-a/legs/synthetic-leg-1/activate HTTP/1.1\" 200 54 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 40593,
+      "timestamp": "2026-10-28T16:05:13+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:13 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 382 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 40594,
+      "timestamp": "2026-10-28T16:05:13+00:00",
+      "method": "POST",
+      "path": "/api/v2/operator/records",
+      "status": 201,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "node",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:13 +0000] \"POST /api/v2/operator/records HTTP/1.1\" 201 1152 \"-\" \"node\" \"-\""
+    },
+    {
+      "line": 40607,
+      "timestamp": "2026-10-28T16:05:15+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/context",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:15 +0000] \"GET /api/v2/operator/context HTTP/1.1\" 200 310 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 40609,
+      "timestamp": "2026-10-28T16:05:15+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/health",
+      "status": 200,
+      "source_identity": null,
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:15 +0000] \"GET /api/v2/operator/health HTTP/1.1\" 200 382 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 40611,
+      "timestamp": "2026-10-28T16:05:15+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/records",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route"
+      ],
+      "after_seq": null,
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:15 +0000] \"GET /api/v2/operator/records?mission_id=synthetic-mission-a&include_removed=true&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route%22%5D HTTP/1.1\" 200 1587 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 40655,
+      "timestamp": "2026-10-28T16:05:15+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route"
+      ],
+      "after_seq": "9",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:05:15 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route%22%5D&after_seq=9 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 53381,
+      "timestamp": "2026-10-28T16:20:17+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route"
+      ],
+      "after_seq": "9",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:20:17 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route%22%5D&after_seq=9 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    },
+    {
+      "line": 53402,
+      "timestamp": "2026-10-28T16:20:19+00:00",
+      "method": "GET",
+      "path": "/api/v2/operator/record-changes",
+      "status": 200,
+      "source_identity": [
+        "813969e5-118b-4067-bd4e-5e6466a86eab",
+        "4e7a7ab6-67e5-46de-9bdb-f42b666a13ab",
+        "simulation",
+        "ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route"
+      ],
+      "after_seq": "9",
+      "client": "browser",
+      "raw_excerpt": "mission-planner-1    | 172.18.0.1 - - [28/Oct/2026:16:20:19 +0000] \"GET /api/v2/operator/record-changes?mission_id=synthetic-mission-a&source_identity=%5B%22813969e5-118b-4067-bd4e-5e6466a86eab%22,%224e7a7ab6-67e5-46de-9bdb-f42b666a13ab%22,%22simulation%22,%22ordinary:0c63f609-e81c-4e31-8753-45442127f5d4:3:synthetic-route%22%5D&after_seq=9 HTTP/1.1\" 200 532 \"http://127.0.0.1:52849/operator\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\" \"-\""
+    }
+  ],
+  "source_evidence": [
+    {
+      "path": "backend/starlink-location/app/operator/read_metadata.py",
+      "sha256": "0fb644d50f59150fc7096a5512eb58da884d507d3702def05f9d7762fc522842",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 10,
+          "end_line": 30,
+          "lines": "10: def captured_source(runtime, mission_id, expected=None):\n11:     \"\"\"Called under runtime_for's binding lock, including for an empty page.\"\"\"\n12:     state = runtime.health()\n13:     identity = json.dumps(\n14:         [\n15:             str(state.store_id),\n16:             str(state.api_epoch),\n17:             state.source_mode,\n18:             (\n19:                 state.operating_context_id\n20:                 or state.replay_run_id\n21:                 or f\"idle:{state.simulation_run_id}\"\n22:                 if state.mission_journal\n23:                 else state.simulation_run_id\n24:             ),\n25:         ],\n26:         separators=(\",\", \":\"),\n27:     )\n28:     if expected is not None and expected != identity:\n29:         raise OperatorError(\"store_context_changed\")\n30:     return dict(state.model_dump(mode=\"json\"), enabled=True, mission_id=mission_id)"
+        }
+      ]
+    },
+    {
+      "path": "backend/starlink-location/app/api/operator.py",
+      "sha256": "d8e7a0f1b4923969b9cb5d7e6806b18e0ebdb82236a8cd611fafd4e07ed1da56",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 33,
+          "end_line": 54,
+          "lines": "33:     code = error.code\n34:     status = (\n35:         404\n36:         if code in (\"operator_disabled\", \"record_not_found\")\n37:         else (\n38:             422\n39:             if code in (\"validation_error\", \"invalid_cursor\")\n40:             else (\n41:                 409\n42:                 if code\n43:                 in (\n44:                     \"version_conflict\",\n45:                     \"idempotency_conflict\",\n46:                     \"dependency_conflict\",\n47:                     \"invalid_transition\",\n48:                     \"store_epoch_changed\",\n49:                     \"event_snapshot_changed\",\n50:                     \"store_context_changed\",\n51:                     \"simulation_run_required\",\n52:                 )\n53:                 else 503\n54:             )"
+        },
+        {
+          "start_line": 328,
+          "end_line": 340,
+          "lines": "328:     scope: Scope | None = None,\n329:     leg_id: Identifier | None = None,\n330:     record_type: RecordType | None = None,\n331:     include_removed: bool = False,\n332:     limit: int = Query(50, ge=1, le=200),\n333:     cursor: str | None = Query(None, max_length=8192),\n334:     source_identity: str | None = Query(None, max_length=2048),\n335: ):\n336:     with runtime_for(request) as runtime:\n337:         service = require_service(runtime)\n338:         source = captured_source(runtime, mission_id, source_identity)\n339:         filters = RecordFilter(\n340:             mission_id=mission_id,"
+        },
+        {
+          "start_line": 375,
+          "end_line": 385,
+          "lines": "375:     mission_id: Identifier,\n376:     after_seq: int = Query(..., ge=0),\n377:     limit: int = Query(200, ge=1, le=200),\n378:     cursor: str | None = Query(None, max_length=8192),\n379:     source_identity: str | None = Query(None, max_length=2048),\n380: ):\n381:     with runtime_for(request) as runtime:\n382:         service = require_service(runtime)\n383:         source = captured_source(runtime, mission_id, source_identity)\n384:         page = service.changes(\n385:             mission_id, source=source, after_seq=after_seq, limit=limit, cursor=cursor"
+        }
+      ]
+    },
+    {
+      "path": "frontend/mission-planner/src/hooks/api/useWorkspaceRecords.ts",
+      "sha256": "e94e7be238228b84c582f41d6a3d3032b9c3332e4ce4c01cd1350c107eadc3f5",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 139,
+          "end_line": 146,
+          "lines": "139: function requiresReset(error: unknown) {\n140:   const failure = operatorFailure(error);\n141:   return (\n142:     error instanceof RecordSourceChanged ||\n143:     error instanceof InvalidRecordCheckpoint ||\n144:     failure.status === 422 ||\n145:     ['store_epoch_changed', 'store_context_changed'].includes(failure.code)\n146:   );"
+        },
+        {
+          "start_line": 169,
+          "end_line": 184,
+          "lines": "169:   const enabled = !!missionId && !!identity;\n170:   const records = useInfiniteQuery({\n171:     ...options,\n172:     enabled,\n173:     // Only failed bootstrap reads retry on the foreground timer. Idle snapshots\n174:     // and their original pagination cursors do not get periodically reread.\n175:     refetchInterval:\n176:       owner && visible\n177:         ? (query) => (query.state.status === 'error' ? 2000 : false)\n178:         : false,\n179:     refetchIntervalInBackground: false,\n180:   });\n181:   const updates = useQuery({\n182:     queryKey: updateKey,\n183:     enabled: owner && visible && enabled && !!records.data && !records.isError,\n184:     queryFn: async ({ signal }) => {"
+        },
+        {
+          "start_line": 269,
+          "end_line": 292,
+          "lines": "269:   const resetError = requiresReset(updates.error)\n270:     ? updates.error\n271:     : records.data && requiresReset(records.error)\n272:       ? records.error\n273:       : null;\n274:   useEffect(() => {\n275:     if (!owner || !resetError || handled.current === resetError) return;\n276:     handled.current = resetError;\n277:     // Quarantine belongs to the shared read generation, not a query error that\n278:     // resetQueries clears. Passive editors must observe the same barrier.\n279:     client.setQueryData<CurrentRecords>(currentKey, (previous) => ({\n280:       ...previous,\n281:       resetOverlays: true,\n282:       items: [],\n283:       departures: previous?.departures ?? [],\n284:       quarantined: true,\n285:     }));\n286:     // Query cancellation reverts/ignores old promises even if a transport ignores\n287:     // abort. Reset discards every page/cursor and the old overlay generation.\n288:     void client.cancelQueries({ queryKey: updateKey, exact: true });\n289:     void client.resetQueries({ queryKey: key, exact: true });\n290:     void client.resetQueries({ queryKey: updateKey, exact: true });\n291:     // The new baseline and next bounded update tick recover this lane. Do not\n292:     // recursively refetch here: a source changing repeatedly must not spin."
+        }
+      ]
+    },
+    {
+      "path": "frontend/mission-planner/src/hooks/api/operatorReadSession.ts",
+      "sha256": "d41bbe370ff24f2ae2275478f0c2fb1f73a0be8c8b20b64fdd8c7f69d6f9a2b8",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 16,
+          "end_line": 30,
+          "lines": "16: export function operatorIdentity(health?: OperatorHealth) {\n17:   return health?.ready && health.store_id && health.api_epoch\n18:     ? JSON.stringify([\n19:         health.store_id,\n20:         health.api_epoch,\n21:         health.source_mode,\n22:         health.mission_journal\n23:           ? (health.operating_context_id ??\n24:             health.replay_run_id ??\n25:             `idle:${health.simulation_run_id}`)\n26:           : health.simulation_run_id,\n27:       ])\n28:     : null;\n29: }\n30: "
+        }
+      ]
+    },
+    {
+      "path": "frontend/mission-planner/src/components/operator/workspace/OperatorWorkspace.tsx",
+      "sha256": "8e0516da6a8f53e32c49e321ab416a6c45b414ffba6f588be380bc5cc1cd9302",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 132,
+          "end_line": 147,
+          "lines": "132: export function OperatorWorkspace() {\n133:   const [params, setParams] = useSearchParams();\n134:   const navigate = useNavigate();\n135:   const queryClient = useQueryClient();\n136:   const active = useQuery({\n137:     queryKey: ['operator-operating-context'],\n138:     queryFn: readOperatingContext,\n139:     refetchInterval: 2000,\n140:     retry: false,\n141:     networkMode: 'always',\n142:   });\n143:   const missionId = operatingMission(\n144:     params.get('mission_id'),\n145:     active.isError ? undefined : active.data\n146:   );\n147:   const requested = params.get('view');"
+        },
+        {
+          "start_line": 160,
+          "end_line": 172,
+          "lines": "160:   ]);\n161:   const contextMismatch =\n162:     !active.isError &&\n163:     !!health.data?.mission_journal &&\n164:     !!active.data &&\n165:     (active.data.source_mode !== health.data.source_mode ||\n166:       active.data.replay_run_id !== health.data.replay_run_id ||\n167:       active.data.operating_context_id !== health.data.operating_context_id);\n168:   const currentSource = contextMismatch\n169:     ? {\n170:         ...health.data!,\n171:         replay_run_id: active.data!.replay_run_id,\n172:         operating_context_id: active.data!.operating_context_id,"
+        },
+        {
+          "start_line": 189,
+          "end_line": 192,
+          "lines": "189:   const records = useWorkspaceRecords(\n190:     missionId,\n191:     !contextMismatch ? identity : null\n192:   );"
+        }
+      ]
+    },
+    {
+      "path": "frontend/mission-planner/src/components/operator/workspace/operatingContext.ts",
+      "sha256": "823b6d157bcb3efb7a3149abc14e9adb9721a144caf84632311e13b388011d03",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 20,
+          "end_line": 25,
+          "lines": "20: export function operatingMission(\n21:   manual: string | null,\n22:   active?: Pick<OperatingContext, 'mission_id'>\n23: ) {\n24:   return manual ?? active?.mission_id ?? '';\n25: }"
+        }
+      ]
+    },
+    {
+      "path": "backend/starlink-location/tests/operator/test_record_sync.py",
+      "sha256": "31cc7f95e54e5b6732838817ff34b2d102288612b20c817de36f5f42fc0dab68",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 114,
+          "end_line": 137,
+          "lines": "114: def test_source_change_rejects_old_baseline_and_delta_cursor(api, record_data):\n115:     health = api.get(BASE + \"/health\").json()\n116:     for _ in range(2):\n117:         create(api, record_data)\n118:     cursor = changes(api, limit=1).json()[\"cursor\"]\n119:     foreign = json.loads(urlsafe_b64decode(cursor))\n120:     foreign[\"source\"] = \"foreign-context\"\n121:     forged = urlsafe_b64encode(json.dumps(foreign).encode()).decode()\n122:     assert changes(api, cursor=forged).status_code == 422\n123:     assert changes(api, source_identity=\"obsolete-source\").status_code == 409\n124:     response = api.get(\n125:         BASE + \"/records\",\n126:         params={\"mission_id\": \"demo-mission\", \"source_identity\": \"obsolete-source\"},\n127:     )\n128:     assert response.status_code == 409\n129:     # A cursor for one mission can never be used for another, even in one store.\n130:     assert (\n131:         api.get(\n132:             BASE + \"/record-changes\",\n133:             params={\"mission_id\": \"other-mission\", \"after_seq\": 0, \"cursor\": cursor},\n134:         ).status_code\n135:         == 422\n136:     )\n137:     assert changes(api, source_identity=source_key(health)).status_code == 200"
+        }
+      ]
+    },
+    {
+      "path": "frontend/mission-planner/src/hooks/api/useWorkspaceRecords.test.tsx",
+      "sha256": "c219bb5fb2eafe09bbd4e1d797669c98578ee3931cc1ccc1a773865e6ba48c37",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 354,
+          "end_line": 378,
+          "lines": "354:     .spyOn(api, 'readOperatorChanges')\n355:     .mockResolvedValue(snapshot([], 1));\n356:   const { wrapper } = setup();\n357:   const hook = renderHook(\n358:     () => ({\n359:       owner: useWorkspaceRecords('mission-a', identity),\n360:       editor: useWorkspaceRecords('mission-a', identity, false),\n361:     }),\n362:     { wrapper }\n363:   );\n364:   await tick();\n365:   baseline.mockRejectedValue(new Error('replacement baseline unavailable'));\n366:   changes.mockRejectedValue(failure(409, 'store_context_changed'));\n367:   act(() => hook.result.current.owner.refresh());\n368:   await tick(2050);\n369:   expect(hook.result.current.owner.data).toBeUndefined();\n370:   expect(hook.result.current.owner.quarantined).toBe(true);\n371:   expect(hook.result.current.editor.quarantined).toBe(true);\n372:   expect(hook.result.current.owner.items).toEqual([]);\n373:   baseline.mockResolvedValue(snapshot([], 0));\n374:   changes.mockResolvedValue(snapshot([], 0));\n375:   act(() => hook.result.current.owner.refresh());\n376:   await tick();\n377:   expect(hook.result.current.owner.quarantined).toBe(false);\n378:   expect(hook.result.current.editor.quarantined).toBe(false);"
+        }
+      ]
+    },
+    {
+      "path": "tools/acceptance/performance/browser.mjs",
+      "sha256": "b15a26b630d6f614a90ff0d388403994b3249513979f4da534eda8914b02fa7b",
+      "matches_measured_candidate": true,
+      "excerpts": [
+        {
+          "start_line": 271,
+          "end_line": 295,
+          "lines": "271:       page.on(\"requestfailed\", (req) => {\n272:         if (requests.has(req)) {\n273:           inflight--;\n274:           requests.delete(req);\n275:           const cancelled = req.failure()?.errorText === \"net::ERR_ABORTED\";\n276:           (cancelled ? cancellations : failures).push({\n277:             path: new URL(req.url()).pathname,\n278:             error: req.failure(),\n279:           });\n280:         }\n281:       });\n282:       page.on(\"response\", (response) => {\n283:         if (\n284:           measuring &&\n285:           response.status() >= 400 &&\n286:           !(\n287:             new URL(response.url()).pathname === \"/api/v2/gps/config\" &&\n288:             response.status() === 503\n289:           )\n290:         )\n291:           failures.push({\n292:             path: new URL(response.url()).pathname,\n293:             status: response.status(),\n294:           });\n295:       });"
+        },
+        {
+          "start_line": 585,
+          "end_line": 594,
+          "lines": "585:   out(\"failures.json\", failures);\n586:   out(\"cancellations.json\", cancellations);\n587:   out(\"request-outcomes.json\", {\n588:     unexpected_failures: failures.length,\n589:     client_cancellations: cancellations.length,\n590:   });\n591:   if (failures.length)\n592:     throw new Error(\n593:       \"Unexpected browser requests failed; this run is not a valid baseline (failures.json)\",\n594:     );"
+        }
+      ]
+    }
+  ]
+}
