@@ -536,7 +536,9 @@ def test_preset_retains_display_weather_only_and_legacy_compatibility(client):
     assert "weather_visibility" not in legacy.json()
 
 
-def test_flight_only_setting_and_customer_preset_are_strict_and_persist(client, tmp_path):
+def test_flight_only_setting_and_customer_preset_are_strict_and_persist(
+    client, tmp_path
+):
     assert client.get(URL).json()["next_flight_events_only"] is False
     assert client.put(URL, json={"next_flight_events_only": True}).status_code == 200
     url = "/api/overview-links/presets/customer"
@@ -548,8 +550,15 @@ def test_flight_only_setting_and_customer_preset_are_strict_and_persist(client, 
         OverviewLinkSettingsStore(tmp_path / "overview-links.json")
     )
     assert client.get(URL).json()["next_flight_events_only"] is True
-    assert client.get("/api/overview-links/presets").json()["customer"] == response.json()
-    assert client.put(url, json={"settings": bundle, "expected_version": 0}).status_code == 409
+    assert (
+        client.get("/api/overview-links/presets").json()["customer"] == response.json()
+    )
+    assert (
+        client.put(url, json={"settings": bundle, "expected_version": 0}).status_code
+        == 409
+    )
     for value in (None, 1, "true"):
-        assert client.put(URL, json={"next_flight_events_only": value}).status_code == 422
+        assert (
+            client.put(URL, json={"next_flight_events_only": value}).status_code == 422
+        )
     assert client.get(URL).json()["next_flight_events_only"] is True

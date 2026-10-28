@@ -61,13 +61,13 @@ proceed” instruction.
 confirmed settings; add `customer` to preset names. Legacy preset application
 supplies false with matching expected baseline.
 
-- [ ] Add failing tests for default/strict persistence, Customer save/apply,
+- [x] Add failing tests for default/strict persistence, Customer save/apply,
       false fallback on legacy presets and capture of either value in any
       preset.
-- [ ] Run focused settings/preset tests and confirm intended failures.
-- [ ] Implement additive settings, switch and preset slot; retain existing write
+- [x] Run focused settings/preset tests and confirm intended failures.
+- [x] Implement additive settings, switch and preset slot; retain existing write
       confirmation/conflict semantics.
-- [ ] Run the focused tests and commit.
+- [x] Run the focused tests and commit.
 
 ## Task 2: Flight Selection and Semantic Sections
 
@@ -77,13 +77,13 @@ supplies false with matching expected baseline.
 **Interfaces:** Extend `deriveArrivalPanel` with an optional flight-only boolean
 after existing clock parameters; add stable `key` to `ArrivalSection`.
 
-- [ ] Add failing tests for mixed transport/flight ordering, untimed/no flight
+- [x] Add failing tests for mixed transport/flight ordering, untimed/no flight
       candidate, independent map filters and preserved
       manual/phase/landing/replay behavior.
-- [ ] Replace label comparisons with section keys, filter typed flight
+- [x] Replace label comparisons with section keys, filter typed flight
       candidates before selection, and bind confirmed preference.
-- [ ] Render Title Case headings and 24-hour Zulu with date rollover.
-- [ ] Run arrival/page tests and commit.
+- [x] Render Title Case headings and 24-hour Zulu with date rollover.
+- [x] Run arrival/page tests and commit.
 
 ## Task 3: Generated Vocabulary
 
@@ -96,13 +96,13 @@ classification for concurrency/window/diagnostic distinctions, separate from
 title and identity. Read-time legacy name adaptation only for recognized
 generated templates.
 
-- [ ] Add table-driven failing tests for every kind, legacy labels, retained
+- [x] Add table-driven failing tests for every kind, legacy labels, retained
       endpoints/satellite detail, untouched user names and concurrency versus
       unavailable/degraded titles.
-- [ ] Update generators and read-time presentation without
+- [x] Update generators and read-time presentation without
       store/history/identity rewrites; remove forced uppercase and touched
       legacy terminology.
-- [ ] Run POI generation/projection, ledger/eligibility/ack tests and frontend
+- [x] Run POI generation/projection, ledger/eligibility/ack tests and frontend
       event formatting tests; commit.
 
 ## Task 4: Complete Identity-Scoped Overview Advisory Reader
@@ -117,17 +117,17 @@ store/epoch/mode/context; active leg scoped query. Pure projection returns
 advisory items plus restrained unavailable/stale state; never falls back to raw
 PoP data.
 
-- [ ] Add failing tests for all transports/simultaneous events, timing
+- [x] Add failing tests for all transports/simultaneous events, timing
       thresholds/end, PoP audio exclusion, acknowledged/retired/preview
       suppression and freshness/alignment.
-- [ ] Add failing reader tests for terminal truncation, changed mode/run/pages,
+- [x] Add failing reader tests for terminal truncation, changed mode/run/pages,
       old results/context switch and 409/503.
-- [ ] Implement read-only queries with visibility/focus polling and monotonic
+- [x] Implement read-only queries with visibility/focus polling and monotonic
       receipt freshness; match active context and event leg/replay, reuse shared
       snapshot reader.
-- [ ] Integrate glass-theme strip in both preset configurations, preserve
+- [x] Integrate glass-theme strip in both preset configurations, preserve
       diagnostics off Overview, and verify no mutation/audio controller.
-- [ ] Run focused reader/projection/page tests and commit.
+- [x] Run focused reader/projection/page tests and commit.
 
 ## Task 5: Production Two-Client Acceptance
 
@@ -139,25 +139,25 @@ evidence under `docs/reports/2026-10-28-overview-advisories/`.
 synthetic raw mission/route/position/model inputs; reuse existing Operator
 acceptance fixtures where possible.
 
-- [ ] Record project/process/private path ownership and install bounded-run
+- [x] Record project/process/private path ownership and install bounded-run
       cleanup handlers.
-- [ ] Run focused/full appropriate backend/frontend checks, TypeScript build and
+- [x] Run focused/full appropriate backend/frontend checks, TypeScript build and
       lint; record baseline failures separately.
-- [ ] Commit candidate; build/run isolated production images; test
+- [x] Commit candidate; build/run isolated production images; test
       Customer/custom/legacy presets and two Overview contexts plus Operator
       acknowledgment.
-- [ ] Prove polling suppression, reload persistence/history, ETA drift/new
+- [x] Prove polling suppression, reload persistence/history, ETA drift/new
       occurrence, unavailable context/source, desktop/mobile readability and
       keyboard interaction. Preserve screenshots, scenario results and exact
       tested SHA.
-- [ ] Stop/reap owned processes and remove private containers/networks/volumes;
+- [x] Stop/reap owned processes and remove private containers/networks/volumes;
       verify cleanup.
 
 ## Task 6: Review and Deliver
 
-- [ ] Obtain fresh whole-branch review, resolve substantive findings with
+- [x] Obtain fresh whole-branch review, resolve substantive findings with
       regression checks.
-- [ ] Update design/report/PR to final behavior and validation, inventory
-      unrelated Zulu follow-through and give simple revert backout.
-- [ ] Push feature branch, update PR #427 against dev and report remaining
+- [x] Update design/report/PR to final behavior and validation, inventory
+      unrelated Zulu follow-through and document preset preparation before reverting.
+- [x] Push feature branch, update PR #427 against dev and report remaining
       acceptance/CI limitations honestly. Do not merge/deploy.

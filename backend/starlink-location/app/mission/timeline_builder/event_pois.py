@@ -3,7 +3,6 @@
 from datetime import timedelta
 
 from app.mission.poi_display import MISSION_POI_LABELS
-
 from app.mission.timeline_builder.calculator import ensure_timezone
 from app.mission.timeline_builder.utils import find_waypoint_coordinates
 

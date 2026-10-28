@@ -350,6 +350,7 @@ def test_live_pop_ack_allows_clock_advance_without_source_input_change(
 ):
     from types import SimpleNamespace
     from uuid import uuid4
+
     from app.mission.pop_status import PopStatusService
     from app.models.flight_status import FlightPhase
     from app.operator.event_ack import acknowledge
@@ -397,6 +398,7 @@ def test_live_pop_ack_keeps_material_input_guards(
 ):
     from types import SimpleNamespace
     from uuid import uuid4
+
     from app.mission.pop_status import PopStatusService
     from app.models.flight_status import FlightPhase
     from app.operator.event_ack import acknowledge

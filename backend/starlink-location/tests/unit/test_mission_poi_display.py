@@ -4,8 +4,8 @@ from typing import get_args
 
 import pytest
 
-from app.models.poi import POI, MissionPoiKind
 from app.mission.poi_display import MISSION_POI_LABELS, display_poi_name
+from app.models.poi import POI, MissionPoiKind
 
 LABELS = {
     "departure": "Takeoff",

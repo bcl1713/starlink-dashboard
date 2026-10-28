@@ -140,7 +140,8 @@ def get_overview_presets():
 
 @router.put("/api/overview-links/presets/{name}")
 def save_overview_preset(
-    name: Literal["normal", "communications", "weather", "customer"], settings: OverviewPresetUpdate
+    name: Literal["normal", "communications", "weather", "customer"],
+    settings: OverviewPresetUpdate,
 ):
     try:
         return _get_store().save_preset(
