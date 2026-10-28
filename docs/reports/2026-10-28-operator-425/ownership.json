@@ -1,0 +1,650 @@
+{
+  "pid": 1653681,
+  "pgid": 1653670,
+  "project": "starlink-operator-425-r8",
+  "composeFile": "/tmp/issue425-acceptance-r8/source/tools/acceptance/overview-advisories/compose.yml",
+  "commands": [
+    {
+      "command": [
+        "docker",
+        "container",
+        "ls",
+        "-q",
+        "-a",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-425-r8"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.4155457,
+      "pid": 1653691,
+      "pgid": 1653691,
+      "log": "/tmp/issue425-acceptance-r8/command-001.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.447702
+    },
+    {
+      "command": [
+        "docker",
+        "container",
+        "ls",
+        "-q",
+        "-a",
+        "--filter",
+        "name=^starlink-operator-425-r8[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.4479253,
+      "pid": 1653706,
+      "pgid": 1653706,
+      "log": "/tmp/issue425-acceptance-r8/command-002.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.4638603
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-425-r8"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.4641001,
+      "pid": 1653720,
+      "pgid": 1653720,
+      "log": "/tmp/issue425-acceptance-r8/command-003.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.48003
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "name=^starlink-operator-425-r8[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.4802704,
+      "pid": 1653735,
+      "pgid": 1653735,
+      "log": "/tmp/issue425-acceptance-r8/command-004.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.4961772
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-425-r8"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.4964142,
+      "pid": 1653746,
+      "pgid": 1653746,
+      "log": "/tmp/issue425-acceptance-r8/command-005.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.5123427
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "name=^starlink-operator-425-r8[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.5125797,
+      "pid": 1653759,
+      "pgid": 1653759,
+      "log": "/tmp/issue425-acceptance-r8/command-006.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.5284786
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=starlink-operator-425-r8-backend:*"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.528762,
+      "pid": 1653772,
+      "pgid": 1653772,
+      "log": "/tmp/issue425-acceptance-r8/command-007.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.5447474
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=starlink-operator-425-r8-frontend:*"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163815.5450094,
+      "pid": 1653786,
+      "pgid": 1653786,
+      "log": "/tmp/issue425-acceptance-r8/command-008.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163815.5608726
+    },
+    {
+      "command": [
+        "git",
+        "archive",
+        "--format=tar",
+        "--output=/tmp/issue425-acceptance-r8/source.tar",
+        "4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 60,
+      "started": 1793163815.5613174,
+      "pid": 1653804,
+      "pgid": 1653804,
+      "log": "/tmp/issue425-acceptance-r8/command-009.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163816.0761456
+    },
+    {
+      "command": [
+        "docker",
+        "build",
+        "-f",
+        "/tmp/issue425-acceptance-r8/source/backend/starlink-location/Dockerfile",
+        "--build-arg",
+        "ACCEPTANCE_CANDIDATE_SHA=4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+        "-t",
+        "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+        "/tmp/issue425-acceptance-r8/source"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 2400,
+      "started": 1793163817.1336844,
+      "pid": 1653990,
+      "pgid": 1653990,
+      "log": "/tmp/issue425-acceptance-r8/command-010.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163840.6039393
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163840.6043117,
+      "pid": 1657526,
+      "pgid": 1657526,
+      "log": "/tmp/issue425-acceptance-r8/command-011.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163840.6688495
+    },
+    {
+      "command": [
+        "docker",
+        "build",
+        "-f",
+        "/tmp/issue425-acceptance-r8/source/frontend/mission-planner/Dockerfile",
+        "--build-arg",
+        "ACCEPTANCE_CANDIDATE_SHA=4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+        "-t",
+        "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+        "/tmp/issue425-acceptance-r8/source/frontend/mission-planner"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 2400,
+      "started": 1793163840.669448,
+      "pid": 1657540,
+      "pgid": 1657540,
+      "log": "/tmp/issue425-acceptance-r8/command-012.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163887.572328
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163887.5727482,
+      "pid": 1661630,
+      "pgid": 1661630,
+      "log": "/tmp/issue425-acceptance-r8/command-013.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163887.6377957
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-425-r8",
+        "-f",
+        "/tmp/issue425-acceptance-r8/source/tools/acceptance/overview-advisories/compose.yml",
+        "up",
+        "-d",
+        "--no-build",
+        "--wait",
+        "--wait-timeout",
+        "180"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 210,
+      "started": 1793163887.6385746,
+      "pid": 1661655,
+      "pgid": 1661655,
+      "log": "/tmp/issue425-acceptance-r8/command-014.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163894.129728
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-425-r8",
+        "-f",
+        "/tmp/issue425-acceptance-r8/source/tools/acceptance/overview-advisories/compose.yml",
+        "ps",
+        "-q",
+        "mission-planner"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 15,
+      "started": 1793163894.13028,
+      "pid": 1663089,
+      "pgid": 1663089,
+      "log": "/tmp/issue425-acceptance-r8/command-015.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163894.2447217
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "9629e5f716320db100600ccfbf546a16b6b621d4b95982ab8deac1d078757f2a",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 15,
+      "started": 1793163894.2451704,
+      "pid": 1663160,
+      "pgid": 1663160,
+      "log": "/tmp/issue425-acceptance-r8/command-016.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163894.277659
+    },
+    {
+      "command": [
+        "python3",
+        "/tmp/issue425-acceptance-r8/source/tools/acceptance/operator-journal/relay.py",
+        "--port",
+        "43209",
+        "--",
+        "docker",
+        "exec",
+        "-i",
+        "9629e5f716320db100600ccfbf546a16b6b621d4b95982ab8deac1d078757f2a",
+        "nc",
+        "-w",
+        "120",
+        "127.0.0.1",
+        "80"
+      ],
+      "role": "loopback-to-production-nginx",
+      "pid": 1663183,
+      "pgid": 1663183,
+      "log": "/tmp/issue425-acceptance-r8/relay.log",
+      "reaped": true,
+      "returncode": 0,
+      "groupRemaining": false
+    },
+    {
+      "command": [
+        "timeout",
+        "--kill-after=10s",
+        "15m",
+        "npx",
+        "--no-install",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.operator-coherent.config.ts"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator/frontend/mission-planner",
+      "timeout": 920,
+      "started": 1793163894.545098,
+      "pid": 1663253,
+      "pgid": 1663253,
+      "log": "/tmp/issue425-acceptance-r8/command-018.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163913.0413246
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-425-r8",
+        "-f",
+        "/tmp/issue425-acceptance-r8/source/tools/acceptance/overview-advisories/compose.yml",
+        "logs",
+        "--no-color"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163913.041822,
+      "pid": 1666317,
+      "pgid": 1666317,
+      "log": "/tmp/issue425-acceptance-r8/command-019.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163913.1060047
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-425-r8",
+        "-f",
+        "/tmp/issue425-acceptance-r8/source/tools/acceptance/overview-advisories/compose.yml",
+        "down",
+        "--volumes",
+        "--remove-orphans"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 90,
+      "started": 1793163913.2071042,
+      "pid": 1666383,
+      "pgid": 1666383,
+      "log": "/tmp/issue425-acceptance-r8/command-020.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163915.7257192
+    },
+    {
+      "command": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-425-r8"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163915.7260327,
+      "pid": 1666646,
+      "pgid": 1666646,
+      "log": "/tmp/issue425-acceptance-r8/command-021.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163915.7420366
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-425-r8"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163915.7423427,
+      "pid": 1666660,
+      "pgid": 1666660,
+      "log": "/tmp/issue425-acceptance-r8/command-022.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163915.758372
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-425-r8"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163915.7586708,
+      "pid": 1666674,
+      "pgid": 1666674,
+      "log": "/tmp/issue425-acceptance-r8/command-023.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163915.7746956
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163915.7751923,
+      "pid": 1666688,
+      "pgid": 1666688,
+      "log": "/tmp/issue425-acceptance-r8/command-024.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163915.8393605
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "rm",
+        "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 60,
+      "started": 1793163915.839751,
+      "pid": 1666702,
+      "pgid": 1666702,
+      "log": "/tmp/issue425-acceptance-r8/command-025.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163916.3048332
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 30,
+      "started": 1793163916.305215,
+      "pid": 1666733,
+      "pgid": 1666733,
+      "log": "/tmp/issue425-acceptance-r8/command-026.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163916.3373904
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "rm",
+        "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-425-operator",
+      "timeout": 60,
+      "started": 1793163916.3377137,
+      "pid": 1666750,
+      "pgid": 1666750,
+      "log": "/tmp/issue425-acceptance-r8/command-027.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793163916.4520292
+    }
+  ],
+  "volumes": [
+    "starlink-operator-425-r8_fixture-data",
+    "starlink-operator-425-r8_operator-data",
+    "starlink-operator-425-r8_route-data"
+  ],
+  "containers": [],
+  "images": [
+    "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+    "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+  ],
+  "temporaryPaths": [
+    "/tmp/issue425-acceptance-r8/source",
+    "/tmp/issue425-acceptance-r8/source.tar",
+    "/tmp/issue425-acceptance-r8/npm-cache"
+  ],
+  "dockerHost": "unix:///run/user/1002/docker.sock",
+  "dockerContext": null,
+  "fixture": "synthetic raw clocks, KML, Ka polygon and satellite inputs; normal app/runtime/calculations",
+  "evidence": "/tmp/issue425-acceptance-r8",
+  "reservation": {
+    "kind": "linux-abstract-socket",
+    "name": "operator-acceptance-1ae955a6a0eb05fa60ba3139fe40450fbc0655839caa829a40cb0a53814bfd08",
+    "released": true
+  },
+  "admitted": true,
+  "port": 43209,
+  "imageIdentity": {
+    "backend": {
+      "tag": "starlink-operator-425-r8-backend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+      "id": "sha256:a87fb60b2bb7900e5c744942de37548eabe67f2238af2afaa12b3fa142c47128",
+      "revision": "4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+    },
+    "frontend": {
+      "tag": "starlink-operator-425-r8-frontend:4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d",
+      "id": "sha256:3ebd0f18dee007a42c0b41d8dec9341228b3f8baa732fc7aa2ec01bf018cb938",
+      "revision": "4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d"
+    }
+  },
+  "relay": {
+    "command": [
+      "python3",
+      "/tmp/issue425-acceptance-r8/source/tools/acceptance/operator-journal/relay.py",
+      "--port",
+      "43209",
+      "--",
+      "docker",
+      "exec",
+      "-i",
+      "9629e5f716320db100600ccfbf546a16b6b621d4b95982ab8deac1d078757f2a",
+      "nc",
+      "-w",
+      "120",
+      "127.0.0.1",
+      "80"
+    ],
+    "role": "loopback-to-production-nginx",
+    "pid": 1663183,
+    "pgid": 1663183,
+    "log": "/tmp/issue425-acceptance-r8/relay.log",
+    "reaped": true,
+    "returncode": 0,
+    "groupRemaining": false
+  },
+  "originTraversal": {
+    "origin": "http://127.0.0.1:43209",
+    "nginx": "nginx/1.31.7",
+    "transport": "docker-exec-byte-relay",
+    "container": "9629e5f716320db100600ccfbf546a16b6b621d4b95982ab8deac1d078757f2a"
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

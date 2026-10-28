@@ -1,0 +1,116 @@
+
+Running 1 test using 1 worker
+
+Phone Geometry 390 844 {
+  idleBefore: { x: 12, y: 300.328125, width: 362, height: 411 },
+  idleEstablished: { x: 12, y: 300.328125, width: 362, height: 411 },
+  layoutBefore: [
+    { tag: 'H4', cls: 'text-xl font-bold', h: 28 },
+    {
+      tag: 'P',
+      cls: 'inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold',
+      h: 30
+    },
+    { tag: 'P', cls: 'text-sm', h: 20 },
+    {
+      tag: 'DIV',
+      cls: 'ws-conference-facts grid grid-cols-2 gap-3 text-sm',
+      h: 88
+    },
+    {
+      tag: 'P',
+      cls: 'ws-conference-status rounded border border-transparent px-2 py-1 text-sm text-muted-foreground',
+      h: 60
+    },
+    {
+      tag: 'DIV',
+      cls: 'flex min-h-11 flex-wrap items-start gap-2',
+      h: 44
+    },
+    { tag: 'DETAILS', cls: 'border-t pt-3', h: 57 }
+  ],
+  layoutAfter: [
+    { tag: 'H4', cls: 'text-xl font-bold', h: 28 },
+    {
+      tag: 'P',
+      cls: 'inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold',
+      h: 30
+    },
+    { tag: 'P', cls: 'text-sm', h: 20 },
+    {
+      tag: 'DIV',
+      cls: 'ws-conference-facts grid grid-cols-2 gap-3 text-sm',
+      h: 88
+    },
+    {
+      tag: 'P',
+      cls: 'ws-conference-status rounded border border-transparent px-2 py-1 text-sm text-muted-foreground',
+      h: 60
+    },
+    {
+      tag: 'DIV',
+      cls: 'flex min-h-11 flex-wrap items-start gap-2',
+      h: 44
+    },
+    { tag: 'DETAILS', cls: 'border-t pt-3', h: 57 }
+  ]
+}
+(node:1663520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Phone Geometry 844 390 {
+  idleBefore: { x: 248, y: 20.953125, width: 580, height: 379 },
+  idleEstablished: { x: 248, y: 20.953125, width: 580, height: 379 },
+  layoutBefore: [
+    { tag: 'H4', cls: 'text-xl font-bold', h: 28 },
+    {
+      tag: 'P',
+      cls: 'inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold',
+      h: 30
+    },
+    { tag: 'P', cls: 'text-sm', h: 20 },
+    {
+      tag: 'DIV',
+      cls: 'ws-conference-facts grid grid-cols-2 gap-3 text-sm',
+      h: 56
+    },
+    {
+      tag: 'P',
+      cls: 'ws-conference-status rounded border border-transparent px-2 py-1 text-sm text-muted-foreground',
+      h: 60
+    },
+    {
+      tag: 'DIV',
+      cls: 'flex min-h-11 flex-wrap items-start gap-2',
+      h: 44
+    },
+    { tag: 'DETAILS', cls: 'border-t pt-3', h: 57 }
+  ],
+  layoutAfter: [
+    { tag: 'H4', cls: 'text-xl font-bold', h: 28 },
+    {
+      tag: 'P',
+      cls: 'inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold',
+      h: 30
+    },
+    { tag: 'P', cls: 'text-sm', h: 20 },
+    {
+      tag: 'DIV',
+      cls: 'ws-conference-facts grid grid-cols-2 gap-3 text-sm',
+      h: 56
+    },
+    {
+      tag: 'P',
+      cls: 'ws-conference-status rounded border border-transparent px-2 py-1 text-sm text-muted-foreground',
+      h: 60
+    },
+    {
+      tag: 'DIV',
+      cls: 'flex min-h-11 flex-wrap items-start gap-2',
+      h: 44
+    },
+    { tag: 'DETAILS', cls: 'border-t pt-3', h: 57 }
+  ]
+}
+  ✓  1 tests/e2e/operator-coherent.spec.ts:42:1 › coherent operations, retained capture and real journal safety across desktop and phone (16.5s)
+
+  1 passed (17.6s)

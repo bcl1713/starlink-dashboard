@@ -1,0 +1,67 @@
+{
+  "synthetic": true,
+  "productionAPIs": true,
+  "browserVersion": "156.0.8078.4",
+  "locale": "en-US",
+  "timezone": "Pacific/Honolulu",
+  "browserErrors": [],
+  "captures": [
+    "1920x1080",
+    "390x844",
+    "844x390"
+  ],
+  "stableCloseGeometry": {
+    "before": {
+      "x": 360,
+      "y": 942.71875,
+      "width": 706.96875,
+      "height": 422.578125
+    },
+    "established": {
+      "x": 360,
+      "y": 327.71875,
+      "width": 706.96875,
+      "height": 422.578125
+    },
+    "closed": {
+      "x": 360,
+      "y": 327.71875,
+      "width": 706.96875,
+      "height": 422.578125
+    },
+    "actionBefore": {
+      "x": 380,
+      "y": 623.296875,
+      "width": 184,
+      "height": 44
+    },
+    "actionAfter": {
+      "x": 380,
+      "y": 623.296875,
+      "width": 184,
+      "height": 44
+    },
+    "neighborBefore": {
+      "x": 360,
+      "y": 1381.296875,
+      "width": 706.96875,
+      "height": 359
+    },
+    "neighborAfter": {
+      "x": 360,
+      "y": 766.296875,
+      "width": 706.96875,
+      "height": 359
+    }
+  },
+  "bridgeReuseAndIndependentCustomers": true,
+  "directCall": true,
+  "repeatedTimelineSelection": true,
+  "rescheduleUpdatesOverlap": true,
+  "inlineRetainsOvernightDraft": true,
+  "cancelPreservesConference": true,
+  "problemAndUpdate": true,
+  "adHocServiceTransport": true,
+  "interruptedSaveSameKey": true,
+  "displayControlParity": true
+}
