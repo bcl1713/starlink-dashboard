@@ -43,6 +43,9 @@ gh pr create --base dev
 Create a pull request from your feature branch against `dev`. CI/CD will run
 linting checks.
 
+Planning-only tasks also require a committed handoff and a pushed task PR. See
+[workspace instructions](../../AGENTS.md) for the delivery standard.
+
 ### 5. Integrate Through `dev`
 
 Open pull requests from feature branches to `dev`. Reviewer-passed PRs may merge
