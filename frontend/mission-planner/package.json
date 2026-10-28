@@ -9,7 +9,10 @@
     "build:mission-export": "vite build --config vite.mission-export.config.ts",
     "lint": "eslint .",
     "test:unit": "NODE_ENV=test vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:bloom": "tsc -b && vite build --config vite.bloom.config.ts",
+    "preview:bloom": "node scripts/bloom-server.mjs",
+    "package:bloom": "node scripts/bloom-package.mjs"
   },
   "engines": {
     "node": "^22.22.2"

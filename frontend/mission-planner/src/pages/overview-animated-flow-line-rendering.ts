@@ -389,6 +389,8 @@ export function createAnimatedFlowResources(
     uniforms: {
       uPixelRatio: { value: 1 },
       uViewportHeightPixels: { value: 1 },
+      uRealBloom: { value: 0 },
+      uEmissionGain: { value: 4 },
       uDepthBias: { value: 0.00001 },
     },
     transparent: true,
@@ -428,6 +430,8 @@ export function createAnimatedFlowResources(
       }
     `,
     fragmentShader: `
+      uniform float uRealBloom;
+      uniform float uEmissionGain;
       varying vec3 vColor;
       varying float vBrightness;
 
@@ -440,6 +444,10 @@ export function createAnimatedFlowResources(
         alpha = pow(alpha, 1.5);
         float hot = 1.0 - smoothstep(0.0, 0.18, distanceFromCenter);
         vec3 color = mix(vColor, vec3(1.0), hot);
+        if (uRealBloom > 0.5) {
+          alpha = 1.0 - smoothstep(0.16, 0.3, distanceFromCenter);
+          color = mix(vColor, vec3(1.0), hot * 0.3) * uEmissionGain;
+        }
         gl_FragColor = vec4(color * vBrightness, alpha);
       }
     `,
@@ -531,4 +539,13 @@ export function disposeAnimatedFlowResources(
 ): void {
   resources.geometry.dispose();
   resources.material.dispose();
+}
+
+export function setAnimatedFlowBloom(
+  resources: AnimatedFlowResources,
+  enabled: boolean,
+  intensity = 4
+): void {
+  resources.material.uniforms.uEmissionGain.value = intensity;
+  resources.material.uniforms.uRealBloom.value = enabled ? 1 : 0;
 }

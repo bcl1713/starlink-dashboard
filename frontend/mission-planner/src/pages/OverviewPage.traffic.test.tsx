@@ -132,6 +132,10 @@ vi.mock('@react-three/drei', () => ({
   CameraControlsImpl: class {},
   Stars: () => null,
 }));
+// Postprocessing is a WebGL boundary, exercised by the real Overview browser test.
+vi.mock('../experiments/bloom/OverviewBloomComposer', () => ({
+  OverviewBloomComposer: () => null,
+}));
 vi.mock('./CityLitGlobe', () => ({ CityLitGlobe: () => null }));
 vi.mock('./OverviewLabelLayout', () => ({ OverviewLabelLayout: () => null }));
 vi.mock('./AnimatedFlowLine', async () => {

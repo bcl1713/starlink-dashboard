@@ -605,3 +605,27 @@ it.each(['desktop', 'portrait'])(
     expect(screen.queryByLabelText('Route SIGMET advisories')).toBeNull();
   }
 );
+
+it('offers temporary bloom controls only on the opted-in real Overview', () => {
+  window.history.replaceState(null, '', '/overview?bloomDebug=1');
+  try {
+    render(<OverviewPage />);
+    expect(screen.getByLabelText('Temporary bloom tuning')).toBeTruthy();
+    expect(screen.getByLabelText('City light color')).toHaveProperty(
+      'value',
+      '#ffbe6f'
+    );
+    fireEvent.change(
+      screen.getByRole('spinbutton', { name: 'Cities emission' }),
+      { target: { value: '37' } }
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Copy settings' }));
+    const values = JSON.parse(
+      (screen.getByLabelText('Feedback JSON') as HTMLTextAreaElement).value
+    );
+    expect(values.scene).toBe('overview');
+    expect(values.emissions.cities).toBe(37);
+  } finally {
+    window.history.replaceState(null, '', '/overview');
+  }
+});

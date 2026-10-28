@@ -52,6 +52,11 @@ import {
   projectGroundEntryLabel,
 } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
+import {
+  OverviewBloom,
+  OverviewAmbientLight,
+  OverviewBloomScene,
+} from './OverviewBloom';
 import { OverviewMarkerDebug } from './OverviewMarkerDebug';
 import {
   DEFAULT_CHEVRON_SETTINGS,
@@ -65,6 +70,7 @@ import {
 } from './globe-render-radii';
 import { OverviewBoundaryLayer } from './OverviewBoundaryLayer';
 import { useOverviewBoundaries } from '@/hooks/useOverviewBoundaries';
+import { useOverviewAtmosphereIntensity } from './overview-bloom-mode';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
@@ -164,6 +170,7 @@ const atmosphereVertexShader = `
 `;
 
 const atmosphereFragmentShader = `
+  uniform float atmosphereIntensity;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
 
@@ -176,7 +183,7 @@ const atmosphereFragmentShader = `
     float rim = pow(1.0 - viewAngle, 3.0);
     vec3 atmosphereColor = vec3(0.16, 0.55, 1.0);
 
-    gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
+    gl_FragColor = vec4(atmosphereColor * rim * atmosphereIntensity, rim * 0.22);
   }
 `;
 
@@ -269,6 +276,8 @@ function ConfiguredXBandSatelliteMarker({
 }
 
 function Atmosphere() {
+  const intensity = useOverviewAtmosphereIntensity();
+  const uniforms = useMemo(() => ({ atmosphereIntensity: { value: 1 } }), []);
   return (
     <mesh scale={1.025}>
       <sphereGeometry args={[2, 64, 64]} />
@@ -278,12 +287,16 @@ function Atmosphere() {
         blending={THREE.AdditiveBlending}
         vertexShader={atmosphereVertexShader}
         fragmentShader={atmosphereFragmentShader}
+        uniforms={uniforms}
+        uniforms-atmosphereIntensity-value={intensity}
       />
     </mesh>
   );
 }
 
 export function OverviewPage() {
+  const bloomDebug =
+    new URLSearchParams(window.location.search).get('bloomDebug') === '1';
   const markerDebug =
     new URLSearchParams(window.location.search).get('markerDebug') === '1';
   const [chevronSettings, setChevronSettings] = useState<
@@ -977,277 +990,280 @@ export function OverviewPage() {
         data-adsb-details-open={selectedAdsbContact !== null}
         data-aviation-details-open={selectedWeather !== null}
       >
-        {markerDebug && (
-          <OverviewMarkerDebug
-            settings={chevronSettings}
-            onChange={setChevronSettings}
-          />
-        )}
-        {showPois && (
-          <ul className="overview-visually-hidden" aria-label="Map POIs">
-            {upcomingPoiView.markers.map((poi) => (
-              <li key={poi.poi_id}>{poi.name}</li>
-            ))}
-          </ul>
-        )}
-        {showConfiguredSatellites && (
+        <OverviewBloom debug={bloomDebug}>
+          {markerDebug && (
+            <OverviewMarkerDebug
+              settings={chevronSettings}
+              onChange={setChevronSettings}
+            />
+          )}
+          {showPois && (
+            <ul className="overview-visually-hidden" aria-label="Map POIs">
+              {upcomingPoiView.markers.map((poi) => (
+                <li key={poi.poi_id}>{poi.name}</li>
+              ))}
+            </ul>
+          )}
+          {showConfiguredSatellites && (
+            <ul
+              className="overview-visually-hidden"
+              aria-label="Configured map satellites"
+            >
+              {configuredXBandSatellites.map((satellite) => (
+                <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
+              ))}
+            </ul>
+          )}
+          {showGroundEntryPoint && groundEntryPoint && (
+            <p className="overview-visually-hidden">
+              {projectGroundEntryLabel(status ?? {})} · Ground entry point at{' '}
+              {groundEntryPoint.latitude}°, {groundEntryPoint.longitude}°
+            </p>
+          )}
           <ul
-            className="overview-visually-hidden"
-            aria-label="Configured map satellites"
+            className="adsb-keyboard-contacts"
+            aria-label="Visible ADS-B aircraft"
           >
-            {configuredXBandSatellites.map((satellite) => (
-              <li key={satellite.satelliteId}>{satellite.satelliteId}</li>
-            ))}
+            {adsb.contacts
+              .filter((c) => visibleAdsbHexes.includes(c.hex))
+              .map((c) => (
+                <li key={c.hex}>
+                  <button
+                    type="button"
+                    aria-label={`Details for ${c.hex}`}
+                    onClick={() => selectAdsb(c.hex)}
+                  >
+                    {c.label} · {c.hex}
+                    {c.freshness === 'stale' ? ' · ◷ Stale' : ''}
+                  </button>
+                </li>
+              ))}
           </ul>
-        )}
-        {showGroundEntryPoint && groundEntryPoint && (
-          <p className="overview-visually-hidden">
-            {projectGroundEntryLabel(status ?? {})} · Ground entry point at{' '}
-            {groundEntryPoint.latitude}°, {groundEntryPoint.longitude}°
-          </p>
-        )}
-        <ul
-          className="adsb-keyboard-contacts"
-          aria-label="Visible ADS-B aircraft"
-        >
-          {adsb.contacts
-            .filter((c) => visibleAdsbHexes.includes(c.hex))
-            .map((c) => (
-              <li key={c.hex}>
-                <button
-                  type="button"
-                  aria-label={`Details for ${c.hex}`}
-                  onClick={() => selectAdsb(c.hex)}
-                >
-                  {c.label} · {c.hex}
-                  {c.freshness === 'stale' ? ' · ◷ Stale' : ''}
-                </button>
-              </li>
-            ))}
-        </ul>
-        <OverviewAdsbDetails
-          contact={selectedAdsbContact}
-          onClose={() => setSelectedAdsbHex(null)}
-          returnFocusRef={adsbReturnFocus}
-          portalContainer={stageNode}
-        />
-        <AviationDetails
-          view={aviation}
-          candidates={weatherCandidates}
-          selection={selectedWeather}
-          onSelectionChange={(selection) => {
-            setSelectedWeather(selection);
-            if (selection.layer === 'sigmet') {
-              setWeatherCandidates([selection]);
-              setWeatherInspectionRevision((revision) => revision + 1);
-            }
-          }}
-          onSigmetFocused={focusSigmet}
-          inspectionRevision={weatherInspectionRevision}
-          onClose={closeWeather}
-          returnFocusRef={weatherReturnFocus}
-          portalContainer={document.body}
-        />
-        <div className="overview-globe-viewport">
-          <Canvas
-            className="overview-globe"
-            camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
-          >
-            <OverviewLabelLayout
-              paths={[
-                ...(showRoute ? [routePoints] : []),
-                ...(linkState.starshieldVisible ? [trafficPoints] : []),
-                ...(linkState.xBandVisible && activeConfiguredXBandLink
-                  ? [activeConfiguredXBandLink.points]
-                  : []),
-                ...(showAircraftHistory ? [aircraftHistoryPoints] : []),
-              ]}
-            />
-            <color attach="background" args={['#030307']} />
-            <ambientLight intensity={0.5} />
-            <directionalLight position={sunPosition} intensity={5} />
-            <Stars
-              radius={50}
-              depth={0}
-              count={1500}
-              factor={3}
-              saturation={0}
-              fade
-              speed={reducedMotion ? 0 : 1.1}
-            />
-            <Stars
-              radius={50}
-              depth={0}
-              count={1500}
-              factor={3}
-              saturation={0}
-              fade
-              speed={reducedMotion ? 0 : 0.75}
-            />
-            <Stars
-              radius={50}
-              depth={0}
-              count={1500}
-              factor={3}
-              saturation={0}
-              fade
-              speed={reducedMotion ? 0 : 0.1}
-            />
-            <OverviewWeatherCameraObserver
-              capabilities={weather.detailContext?.manifest ?? null}
-              onDemand={weather.onDemand}
-            />
-            <OverviewWeatherLayer
-              atlas={weather.atlas}
-              context={weather.detailContext}
-              pairs={weather.detailPairs}
-              work={weather.work}
-            />
-            <GfsLayer view={gfs} />
-            <AviationLayer
-              view={aviation}
-              selection={selectedWeather}
-              onSelect={inspectWeather}
-              onVisibleSigmets={updateVisibleSigmets}
-            />
-            {aviationSettings?.sigmet && (
-              <SigmetMapLabels
-                labels={sigmetPresentation.mapLabels}
-                globeOccluder={globeOccluder}
+          <OverviewAdsbDetails
+            contact={selectedAdsbContact}
+            onClose={() => setSelectedAdsbHex(null)}
+            returnFocusRef={adsbReturnFocus}
+            portalContainer={stageNode}
+          />
+          <AviationDetails
+            view={aviation}
+            candidates={weatherCandidates}
+            selection={selectedWeather}
+            onSelectionChange={(selection) => {
+              setSelectedWeather(selection);
+              if (selection.layer === 'sigmet') {
+                setWeatherCandidates([selection]);
+                setWeatherInspectionRevision((revision) => revision + 1);
+              }
+            }}
+            onSigmetFocused={focusSigmet}
+            inspectionRevision={weatherInspectionRevision}
+            onClose={closeWeather}
+            returnFocusRef={weatherReturnFocus}
+            portalContainer={document.body}
+          />
+          <div className="overview-globe-viewport">
+            <Canvas
+              className="overview-globe"
+              camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}
+            >
+              <OverviewBloomScene />
+              <OverviewLabelLayout
+                paths={[
+                  ...(showRoute ? [routePoints] : []),
+                  ...(linkState.starshieldVisible ? [trafficPoints] : []),
+                  ...(linkState.xBandVisible && activeConfiguredXBandLink
+                    ? [activeConfiguredXBandLink.points]
+                    : []),
+                  ...(showAircraftHistory ? [aircraftHistoryPoints] : []),
+                ]}
               />
-            )}
-            {countryBoundaries.data && (
-              <OverviewBoundaryLayer
-                kind="countries"
-                segments={countryBoundaries.data.segments}
+              <color attach="background" args={['#030307']} />
+              <OverviewAmbientLight />
+              <directionalLight position={sunPosition} intensity={5} />
+              <Stars
+                radius={50}
+                depth={0}
+                count={1500}
+                factor={3}
+                saturation={0}
+                fade
+                speed={reducedMotion ? 0 : 1.1}
               />
-            )}
-            {stateBoundaries.data && (
-              <OverviewBoundaryLayer
-                kind="subdivisions"
-                segments={stateBoundaries.data.segments}
+              <Stars
+                radius={50}
+                depth={0}
+                count={1500}
+                factor={3}
+                saturation={0}
+                fade
+                speed={reducedMotion ? 0 : 0.75}
               />
-            )}
-            <Suspense fallback={null}>
-              <group ref={globeOccluder}>
-                <CityLitGlobe sunPosition={sunPosition} />
-              </group>
-              <Atmosphere />
-              {showRoute && (
-                <AnimatedFlowLine
-                  points={routePoints}
-                  forward={routeFlow.forward}
-                  reverse={routeFlow.reverse}
-                  depthWrite={false}
-                />
-              )}
-              {showPois &&
-                upcomingPoiView.markers.map((poi) => (
-                  <OverviewPoiMarker
-                    key={poi.poi_id}
-                    poi={poi}
-                    color={overviewPoiUrgencyColor(
-                      poi.estimated_arrival_time,
-                      upcomingPoisResponse?.source,
-                      currentTime,
-                      missionNow
-                    )}
-                    globeOccluder={globeOccluder}
-                  />
-                ))}
-              {showGroundEntryPoint && groundEntryPoint && (
-                <GroundEntryPointMarker
-                  label={projectGroundEntryLabel(status ?? {})}
-                  coordinate={groundEntryPoint}
+              <Stars
+                radius={50}
+                depth={0}
+                count={1500}
+                factor={3}
+                saturation={0}
+                fade
+                speed={reducedMotion ? 0 : 0.1}
+              />
+              <OverviewWeatherCameraObserver
+                capabilities={weather.detailContext?.manifest ?? null}
+                onDemand={weather.onDemand}
+              />
+              <OverviewWeatherLayer
+                atlas={weather.atlas}
+                context={weather.detailContext}
+                pairs={weather.detailPairs}
+                work={weather.work}
+              />
+              <GfsLayer view={gfs} />
+              <AviationLayer
+                view={aviation}
+                selection={selectedWeather}
+                onSelect={inspectWeather}
+                onVisibleSigmets={updateVisibleSigmets}
+              />
+              {aviationSettings?.sigmet && (
+                <SigmetMapLabels
+                  labels={sigmetPresentation.mapLabels}
                   globeOccluder={globeOccluder}
                 />
               )}
-              {showSprites && orbital.current && (
-                <OrbitalSprites
-                  current={orbital.current}
-                  previous={orbital.previous}
-                  generation={orbital.current.generation}
-                  reducedMotion={reducedMotion}
+              {countryBoundaries.data && (
+                <OverviewBoundaryLayer
+                  kind="countries"
+                  segments={countryBoundaries.data.segments}
                 />
               )}
-              {linkState.starshieldVisible && (
-                <AnimatedFlowLine
-                  points={trafficPoints}
-                  forward={linkState.starshieldFlow.forward}
-                  reverse={linkState.starshieldFlow.reverse}
-                  outer={TRAFFIC_PATH_STYLE.outer}
-                  glow={TRAFFIC_PATH_STYLE.glow}
-                  core={TRAFFIC_PATH_STYLE.core}
-                  canAnimate={canAnimateStarshield}
-                  particleKey={chosenTraffic.particleKey}
-                  depthWrite={false}
+              {stateBoundaries.data && (
+                <OverviewBoundaryLayer
+                  kind="subdivisions"
+                  segments={stateBoundaries.data.segments}
                 />
               )}
-              {linkState.xBandVisible && activeConfiguredXBandLink && (
-                <AnimatedFlowLine
-                  points={activeConfiguredXBandLink.points}
-                  forward={linkState.xBandFlow.forward}
-                  reverse={linkState.xBandFlow.reverse}
-                  outer={activeXBandLineStyle.outer}
-                  glow={activeXBandLineStyle.glow}
-                  core={activeXBandLineStyle.core}
-                  canAnimate={canAnimateXBand}
-                  particleKey={`x-band:${activeConfiguredXBandSatelliteId}:${activeSatelliteLongitude}`}
-                  depthWrite={false}
-                />
-              )}
-              {showConfiguredSatellites &&
-                configuredXBandSatellites.map((satellite) => (
-                  <ConfiguredXBandSatelliteMarker
-                    key={`${satellite.satelliteId}-${satellite.longitude}`}
-                    satelliteId={satellite.satelliteId}
-                    position={satellite.position}
+              <Suspense fallback={null}>
+                <group ref={globeOccluder}>
+                  <CityLitGlobe sunPosition={sunPosition} />
+                </group>
+                <Atmosphere />
+                {showRoute && (
+                  <AnimatedFlowLine
+                    points={routePoints}
+                    forward={routeFlow.forward}
+                    reverse={routeFlow.reverse}
+                    depthWrite={false}
+                  />
+                )}
+                {showPois &&
+                  upcomingPoiView.markers.map((poi) => (
+                    <OverviewPoiMarker
+                      key={poi.poi_id}
+                      poi={poi}
+                      color={overviewPoiUrgencyColor(
+                        poi.estimated_arrival_time,
+                        upcomingPoisResponse?.source,
+                        currentTime,
+                        missionNow
+                      )}
+                      globeOccluder={globeOccluder}
+                    />
+                  ))}
+                {showGroundEntryPoint && groundEntryPoint && (
+                  <GroundEntryPointMarker
+                    label={projectGroundEntryLabel(status ?? {})}
+                    coordinate={groundEntryPoint}
                     globeOccluder={globeOccluder}
                   />
-                ))}
-              {showAircraftHistory && (
-                <AnimatedFlowLine
-                  points={aircraftHistoryPoints}
-                  depthWrite={false}
-                  outer={AIRCRAFT_HISTORY_LINE.outer}
-                  glow={AIRCRAFT_HISTORY_LINE.glow}
-                  core={AIRCRAFT_HISTORY_LINE.core}
-                />
-              )}
-              {showAircraft && aircraftPosition && (
-                <AircraftMarker
-                  coordinate={aircraftPosition}
-                  position={aircraftScenePosition?.position ?? null}
-                  headingDegrees={displayStatus?.position?.heading}
+                )}
+                {showSprites && orbital.current && (
+                  <OrbitalSprites
+                    current={orbital.current}
+                    previous={orbital.previous}
+                    generation={orbital.current.generation}
+                    reducedMotion={reducedMotion}
+                  />
+                )}
+                {linkState.starshieldVisible && (
+                  <AnimatedFlowLine
+                    points={trafficPoints}
+                    forward={linkState.starshieldFlow.forward}
+                    reverse={linkState.starshieldFlow.reverse}
+                    outer={TRAFFIC_PATH_STYLE.outer}
+                    glow={TRAFFIC_PATH_STYLE.glow}
+                    core={TRAFFIC_PATH_STYLE.core}
+                    canAnimate={canAnimateStarshield}
+                    particleKey={chosenTraffic.particleKey}
+                    depthWrite={false}
+                  />
+                )}
+                {linkState.xBandVisible && activeConfiguredXBandLink && (
+                  <AnimatedFlowLine
+                    points={activeConfiguredXBandLink.points}
+                    forward={linkState.xBandFlow.forward}
+                    reverse={linkState.xBandFlow.reverse}
+                    outer={activeXBandLineStyle.outer}
+                    glow={activeXBandLineStyle.glow}
+                    core={activeXBandLineStyle.core}
+                    canAnimate={canAnimateXBand}
+                    particleKey={`x-band:${activeConfiguredXBandSatelliteId}:${activeSatelliteLongitude}`}
+                    depthWrite={false}
+                  />
+                )}
+                {showConfiguredSatellites &&
+                  configuredXBandSatellites.map((satellite) => (
+                    <ConfiguredXBandSatelliteMarker
+                      key={`${satellite.satelliteId}-${satellite.longitude}`}
+                      satelliteId={satellite.satelliteId}
+                      position={satellite.position}
+                      globeOccluder={globeOccluder}
+                    />
+                  ))}
+                {showAircraftHistory && (
+                  <AnimatedFlowLine
+                    points={aircraftHistoryPoints}
+                    depthWrite={false}
+                    outer={AIRCRAFT_HISTORY_LINE.outer}
+                    glow={AIRCRAFT_HISTORY_LINE.glow}
+                    core={AIRCRAFT_HISTORY_LINE.core}
+                  />
+                )}
+                {showAircraft && aircraftPosition && (
+                  <AircraftMarker
+                    coordinate={aircraftPosition}
+                    position={aircraftScenePosition?.position ?? null}
+                    headingDegrees={displayStatus?.position?.heading}
+                    chevronSettings={chevronSettings}
+                  />
+                )}
+              </Suspense>
+              {adsb.contacts.length > 0 && (
+                <OverviewAdsbLayer
+                  contacts={adsb.contacts}
                   chevronSettings={chevronSettings}
+                  globeOccluder={globeOccluder}
+                  onSelect={selectAdsb}
+                  onVisibleHexesChange={updateVisibleAdsb}
                 />
               )}
-            </Suspense>
-            {adsb.contacts.length > 0 && (
-              <OverviewAdsbLayer
-                contacts={adsb.contacts}
-                chevronSettings={chevronSettings}
-                globeOccluder={globeOccluder}
-                onSelect={selectAdsb}
-                onVisibleHexesChange={updateVisibleAdsb}
+              <OverviewMapController
+                mode={layout.mode}
+                safeRect={layout.safeRect}
+                exploring={exploring}
+                intent={cameraIntent}
+                aircraft={aircraftPosition}
+                followAvailable={!followUnavailable}
+                route={routePoints}
+                initialReady={contentReady}
+                resetRevision={resetRevision}
+                reducedMotion={reducedMotion}
+                onManual={onManual}
+                onCameraSettled={onCameraSettled}
               />
-            )}
-            <OverviewMapController
-              mode={layout.mode}
-              safeRect={layout.safeRect}
-              exploring={exploring}
-              intent={cameraIntent}
-              aircraft={aircraftPosition}
-              followAvailable={!followUnavailable}
-              route={routePoints}
-              initialReady={contentReady}
-              resetRevision={resetRevision}
-              reducedMotion={reducedMotion}
-              onManual={onManual}
-              onCameraSettled={onCameraSettled}
-            />
-          </Canvas>
-        </div>
+            </Canvas>
+          </div>
+        </OverviewBloom>
       </div>
       <div className="overview-overlay-layout">
         {(showClocks || pacedRunning) && (

@@ -3,6 +3,11 @@ import { create, act } from '@react-three/test-renderer';
 import { expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import CameraControls from 'camera-controls';
+import {
+  DEFAULT_EMISSION,
+  OverviewBloomEmission,
+  OverviewBloomMode,
+} from '../overview-bloom-mode';
 import { OverviewAdsbLayer } from './OverviewAdsbLayer';
 import { projectAdsbContacts } from './overview-adsb-state';
 import { ADSB_NOW, adsbContact, adsbSettings } from '@/test/adsb-fixtures';
@@ -173,4 +178,52 @@ it('selects the solid chevron while its wider glow does not intercept clicks', a
   ray.setFromCamera(new THREE.Vector2(0, 0.03), camera);
   expect(ray.intersectObject(mesh)).toHaveLength(0);
   await view.unmount();
+});
+
+it('tunes ADS-B emission in place and restores the original halo without replacing picking or buffers', async () => {
+  const props = {
+    contacts: projectAdsbContacts(
+      [adsbContact({ latitude: 0, longitude: -90 })],
+      adsbSettings(),
+      ADSB_NOW
+    ),
+    globeOccluder: { current: new THREE.Group() },
+    onSelect: vi.fn(),
+    onVisibleHexesChange: vi.fn(),
+  };
+  const scene = (bloom: boolean, aircraft: number) => (
+    <OverviewBloomMode.Provider value={bloom}>
+      <OverviewBloomEmission.Provider value={{ ...DEFAULT_EMISSION, aircraft }}>
+        <OverviewAdsbLayer {...props} />
+      </OverviewBloomEmission.Provider>
+    </OverviewBloomMode.Provider>
+  );
+  const view = await create(scene(false, 4));
+  try {
+    const meshes = view.scene
+      .findAllByType('Mesh')
+      .map((node) => node.instance as THREE.InstancedMesh);
+    const core = meshes.find(
+      (mesh) => mesh.count > 0 && mesh.userData.adsbBatch
+    )!;
+    const halo = meshes.find(
+      (mesh) => mesh.count > 0 && mesh.userData.adsbHaloBatch
+    )!;
+    const material = core.material as THREE.ShaderMaterial;
+    const buffer = core.instanceMatrix.array,
+      raycast = core.raycast;
+    expect(material.uniforms.uEmission.value).toBe(1);
+    await view.update(scene(true, 12));
+    expect(material.uniforms.uEmission.value).toBe(12);
+    expect(halo.visible).toBe(false);
+    await view.update(scene(true, 3));
+    expect(material.uniforms.uEmission.value).toBe(3);
+    expect(core.instanceMatrix.array).toBe(buffer);
+    expect(core.raycast).toBe(raycast);
+    await view.update(scene(false, 3));
+    expect(material.uniforms.uEmission.value).toBe(1);
+    expect(halo.visible).toBe(true);
+  } finally {
+    await view.unmount();
+  }
 });
