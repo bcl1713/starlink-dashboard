@@ -754,6 +754,9 @@ test('saved records converge across independent laptop and phone contexts with s
           data: {
             ...moveBody,
             mission_id: mission,
+            ...(mission === otherMission
+              ? { scope: 'mission', leg_id: null }
+              : {}),
             expected_version: expectedVersion,
           },
         })
