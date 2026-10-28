@@ -179,6 +179,41 @@ test('coherent operations, retained capture and real journal safety across deskt
     });
     await expect(alphaCard).toBeVisible();
     await expect(idleCard).toBeVisible();
+    const firstConference = page
+      .locator('.ws-conferences-lane article')
+      .first();
+    const firstCall = page.locator('.ws-calls-lane li[data-record-id]').first();
+    const aligned = async () => {
+      const conference = await firstConference.boundingBox();
+      const call = await firstCall.boundingBox();
+      expect(Math.abs(conference!.y - call!.y)).toBeLessThanOrEqual(1);
+      return { conference, call };
+    };
+    const laneAlignment = await aligned();
+    await expect(
+      firstCall.locator(':scope > button[data-primary-action]')
+    ).toHaveCount(1);
+    await expect(
+      firstCall.getByRole('button', { name: 'Call History', exact: true })
+    ).toBeHidden();
+    await expect(
+      firstCall.getByRole('button', { name: 'Reschedule', exact: true })
+    ).toBeHidden();
+    const createConference = page.getByRole('button', {
+      name: 'Create Conference',
+      exact: true,
+    });
+    await createConference.evaluate((el) => {
+      el.style.width = '100%';
+    });
+    const wrappedLaneAlignment = await aligned();
+    await createConference.evaluate((el) => {
+      el.style.removeProperty('width');
+    });
+    proof.laneAlignment = {
+      normal: laneAlignment,
+      wrapped: wrappedLaneAlignment,
+    };
     await page.screenshot({
       path: `${evidence}/operations-initial-1920x1080.png`,
     });
@@ -275,7 +310,9 @@ test('coherent operations, retained capture and real journal safety across deskt
         bravoCall.evaluate((el) => el.contains(document.activeElement))
       )
       .toBe(true);
-    await page.getByRole('button', { name: 'Schedule', exact: true }).focus();
+    await page
+      .getByRole('button', { name: 'Schedule Call', exact: true })
+      .focus();
     await timelineBravo.click();
     await expect
       .poll(() =>
@@ -294,6 +331,7 @@ test('coherent operations, retained capture and real journal safety across deskt
     await page.screenshot({
       path: `${evidence}/operations-busy-1920x1080.png`,
     });
+    await bravoCall.getByText('Call Details', { exact: true }).click();
     await bravoCall
       .getByRole('button', { name: 'Reschedule', exact: true })
       .click();
@@ -318,7 +356,9 @@ test('coherent operations, retained capture and real journal safety across deskt
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(bravoCall.locator('.ws-call-advisory-warning')).toHaveCount(0);
     proof.rescheduleUpdatesOverlap = true;
-    await page.getByRole('button', { name: 'Schedule', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Schedule Call', exact: true })
+      .click();
     await page
       .getByLabel(/Party \/ Participant/i)
       .fill('Overnight Inline Customer');
@@ -374,7 +414,7 @@ test('coherent operations, retained capture and real journal safety across deskt
       ).record.deleted
     ).toBe(false);
     proof.cancelPreservesConference = true;
-    await page.getByRole('button', { name: 'Issue', exact: true }).click();
+    await page.getByRole('button', { name: 'Add Issue', exact: true }).click();
     await page
       .getByLabel(/Problem Description/i)
       .fill('Intermittent Customer Audio');
@@ -417,7 +457,7 @@ test('coherent operations, retained capture and real journal safety across deskt
     await expect(service).toContainText('Training Relay');
     proof.adHocServiceTransport = true;
     // A response is lost after a real durable note commit; retry must reuse it.
-    await page.getByRole('button', { name: 'Note', exact: true }).click();
+    await page.getByRole('button', { name: 'Add Note', exact: true }).click();
     await page
       .getByLabel('Note', { exact: true })
       .fill('Backdated Note Retained On Interrupted Save');
@@ -482,7 +522,7 @@ test('coherent operations, retained capture and real journal safety across deskt
         .getByRole('button', { name: section, exact: true })
         .click();
       await expect(
-        page.getByRole('button', { name: 'Schedule', exact: true })
+        page.getByRole('button', { name: 'Schedule Call', exact: true })
       ).toBeVisible();
       await expect(
         page.getByRole('region', { name: 'Mission timeline' })
@@ -577,6 +617,35 @@ test('coherent operations, retained capture and real journal safety across deskt
         await expect(
           page.getByLabel('Compact Mission Chronology')
         ).toBeVisible();
+      const capture = page.getByRole('group', { name: 'Create Records' });
+      for (const name of ['Schedule Call', 'Add Issue', 'Add Note'])
+        await expect(
+          capture.getByRole('button', { name, exact: true })
+        ).toBeInViewport({ ratio: 1 });
+      await expect(
+        page.getByRole('button', { name: 'Create Conference', exact: true })
+      ).toBeInViewport({ ratio: 1 });
+      await expect(
+        page
+          .locator('.ws-conferences-lane article')
+          .first()
+          .getByRole('heading')
+      ).toBeInViewport({ ratio: 1 });
+      if (width < 900) {
+        const nextWork = page
+          .getByRole('region', { name: 'Next Action' })
+          .getByRole('button');
+        await expect(nextWork).toBeInViewport({ ratio: 1 });
+        await nextWork.click();
+        const nextPrimary = bravoCall.locator('[data-primary-action]');
+        await expect(nextPrimary).toBeFocused();
+        await expect(nextPrimary).toBeInViewport({ ratio: 1 });
+        await page.locator('.ws-body').evaluate((el) => {
+          el.scrollTop = 0;
+        });
+      }
+      proof.firstScreenCaptureAndWork = true;
+
       await page.screenshot({
         path: `${evidence}/operations-${width}x${height}.png`,
       });

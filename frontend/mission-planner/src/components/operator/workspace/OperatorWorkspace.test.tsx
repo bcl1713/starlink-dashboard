@@ -190,7 +190,7 @@ it.each(['live', 'simulation'] as const)(
         'active'
       )
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
     await waitFor(() => expect(registry.listDrafts()).toHaveLength(1));
     const original = registry.listDrafts()[0];
     expect(original.target.legId).toBe('a');
@@ -208,7 +208,7 @@ it.each(['live', 'simulation'] as const)(
     fireEvent.click(
       screen.getByRole('button', { name: 'Keep Draft And Return' })
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
     await waitFor(() =>
       expect(
         registry
@@ -539,7 +539,7 @@ it('focuses the referenced call from the mission timeline without editing or rep
         ?.contains(document.activeElement)
     ).toBe(true)
   );
-  screen.getByRole('button', { name: 'Schedule' }).focus();
+  screen.getByRole('button', { name: 'Schedule Call' }).focus();
   expect(
     document
       .getElementById(`operator-record-${call.record_id}`)
@@ -583,7 +583,7 @@ it('keeps the full timeline across operating views and retains the editor draft'
       screen.queryByRole('region', { name: 'Mission activity' })
     ).toBeNull();
   }
-  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
   fireEvent.change(await screen.findByLabelText('Note'), {
     target: { value: 'Unsaved mission note' },
   });
@@ -655,9 +655,11 @@ it.each(['now', 'communications', 'operations'])(
       'History',
     ]) {
       fireEvent.click(within(nav).getByRole('button', { name: section }));
-      expect(screen.getByRole('button', { name: 'Schedule' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Note' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Issue' })).toBeTruthy();
+      expect(
+        screen.getByRole('button', { name: 'Schedule Call' })
+      ).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Add Note' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Add Issue' })).toBeTruthy();
       expect(
         screen.getByRole('button', { name: 'Display Controls' })
       ).toBeTruthy();
@@ -673,12 +675,12 @@ it('freezes the source mission clock when a quick note draft is created', async 
   });
   const { registry } = mount('/operator?mission_id=mission-a', true);
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Note' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Add Note' })).toHaveProperty(
       'disabled',
       false
     )
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
   await waitFor(() => expect(registry.listDrafts()).toHaveLength(1));
   expect(registry.listDrafts()[0].input.time.occurred_at).toBe(replayTime);
 });
@@ -693,12 +695,12 @@ it('retains quick note text and partial backdate through park, reopen and a fail
     .mockRejectedValue(new Error('Connection Lost After Submission'));
   const { registry } = mount('/operator?mission_id=mission-a', true);
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Note' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Add Note' })).toHaveProperty(
       'disabled',
       false
     )
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
   fireEvent.change(await screen.findByLabelText('Note'), {
     target: { value: 'Retained Field Note' },
   });

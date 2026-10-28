@@ -106,7 +106,7 @@ export function CommunicationsView({
               disabled={disabled}
               onClick={onCreateCall}
             >
-              Schedule
+              Schedule Call
             </button>
             <button
               className="ws-button"
@@ -134,7 +134,7 @@ export function CommunicationsView({
       )}
       <div className="ws-operations-lanes">
         <section className="ws-conferences-lane" aria-label="Conferences">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="ws-lane-header">
             <h2>Conferences</h2>
             {!showCaptureActions && (
               <button
@@ -146,65 +146,69 @@ export function CommunicationsView({
               </button>
             )}
           </div>
-          {incomplete && (
-            <p role="status">
-              Active communications show loaded records only; unread pages may
-              contain more sessions.
-            </p>
-          )}
-          {!activeOnly && !conferences.length && (
-            <p>
-              No conferences recorded. Create a bridge to report its
-              configuration and use.
-            </p>
-          )}
-          {displayedConferences.map((record) => (
-            <div
-              key={record.record_id}
-              className="space-y-2"
-              data-record-id={record.record_id}
-              data-selected={record.record_id === selectedBridgeId}
-            >
-              <ConferenceCard
-                prominentActions={activeConferences.includes(record)}
-                calls={calls}
-                incomplete={incomplete}
-                selected={record.record_id === selectedBridgeId}
-                advisory={
-                  renderAdvisory &&
-                  calls
-                    .filter(
-                      (call) =>
-                        call.payload.entry_type === 'call' &&
-                        call.payload.conference_id === record.record_id
-                    )
-                    .map((call) => (
-                      <div key={call.record_id}>{renderAdvisory(call)}</div>
-                    ))
-                }
-                compactActions
-                sessionCurrent={isSessionCurrent(record)}
-                currentAssociation={currentAssociation}
-                activityAssociationLabel={
-                  record.scope === 'leg'
-                    ? mission?.legs.find((leg) => leg.id === record.leg_id)
-                        ?.name
-                    : undefined
-                }
-                record={record}
-                participations={customers}
-                disabled={disabled}
-                onAction={(action) => onConferenceAction(record, action)}
-                onEdit={() => onEdit(record)}
-                onJoin={() => onJoin(record)}
-                onHistory={() => onHistory(record.record_id)}
-                onRemove={() => onTransition(record)}
-              />
-            </div>
-          ))}
+          <div className="ws-lane-records">
+            {incomplete && (
+              <p role="status">
+                Active communications show loaded records only; unread pages may
+                contain more sessions.
+              </p>
+            )}
+            {!activeOnly && !conferences.length && (
+              <p>
+                No conferences recorded. Create a bridge to report its
+                configuration and use.
+              </p>
+            )}
+            {displayedConferences.map((record) => (
+              <div
+                key={record.record_id}
+                className="space-y-2"
+                data-record-id={record.record_id}
+                data-selected={record.record_id === selectedBridgeId}
+              >
+                <ConferenceCard
+                  prominentActions={activeConferences.includes(record)}
+                  calls={calls}
+                  incomplete={incomplete}
+                  selected={record.record_id === selectedBridgeId}
+                  advisory={
+                    renderAdvisory &&
+                    calls
+                      .filter(
+                        (call) =>
+                          call.payload.entry_type === 'call' &&
+                          call.payload.conference_id === record.record_id
+                      )
+                      .map((call) => (
+                        <div key={call.record_id}>{renderAdvisory(call)}</div>
+                      ))
+                  }
+                  compactActions
+                  sessionCurrent={isSessionCurrent(record)}
+                  currentAssociation={currentAssociation}
+                  activityAssociationLabel={
+                    record.scope === 'leg'
+                      ? mission?.legs.find((leg) => leg.id === record.leg_id)
+                          ?.name
+                      : undefined
+                  }
+                  record={record}
+                  participations={customers}
+                  disabled={disabled}
+                  onAction={(action) => onConferenceAction(record, action)}
+                  onEdit={() => onEdit(record)}
+                  onJoin={() => onJoin(record)}
+                  onHistory={() => onHistory(record.record_id)}
+                  onRemove={() => onTransition(record)}
+                />
+              </div>
+            ))}
+          </div>
         </section>
         <section className="ws-calls-lane" aria-label="Calls">
-          <h2>Calls</h2>
+          <div className="ws-lane-header">
+            <h2>Calls</h2>
+          </div>
           <CallList
             activeOnly
             selectedRecordId={selectedRecordId}

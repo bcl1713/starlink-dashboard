@@ -346,11 +346,11 @@ export function OperatorWorkspace() {
         ...document.querySelectorAll<HTMLElement>('[data-record-id]'),
       ].find((el) => el.dataset.recordId === selectedRecordId);
       row?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
-      row
-        ?.querySelector<HTMLButtonElement>(
-          '[aria-label="Conference primary action"] button, button.ws-primary, button[data-primary-action], button'
-        )
-        ?.focus({ preventScroll: true });
+      const action = row?.querySelector<HTMLButtonElement>(
+        '[aria-label="Conference primary action"] button, button.ws-primary, button[data-primary-action], button'
+      );
+      action?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      action?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [selection, selectedRecordId, view]);
@@ -1106,20 +1106,24 @@ export function OperatorWorkspace() {
             </section>
           ) : (
             <>
-              <div className="ws-quick-actions" aria-label="Quick Actions">
+              <div
+                className="ws-quick-actions"
+                role="group"
+                aria-label="Create Records"
+              >
                 <button
                   className="ws-button ws-primary"
                   disabled={disabled}
                   onClick={plannedCall}
                 >
-                  Schedule
+                  Schedule Call
                 </button>
                 <button
                   className="ws-button"
                   disabled={disabled}
                   onClick={() => openInput(issueInput(missionId))}
                 >
-                  Issue
+                  Add Issue
                 </button>
                 <button
                   className="ws-button"
@@ -1127,7 +1131,7 @@ export function OperatorWorkspace() {
                   disabled={disabled}
                   onClick={note}
                 >
-                  Note
+                  Add Note
                 </button>
                 {cue?.length ? (
                   <button
@@ -1152,19 +1156,6 @@ export function OperatorWorkspace() {
               {view === 'Operations' ? (
                 <>
                   <section className="ws-next-action" aria-label="Next Action">
-                    <div>
-                      <h2>Next Action</h2>
-                      <p>
-                        {selectedRecordId
-                          ? 'Selected Work · Complete Establishment, Then Connect The Customer'
-                          : (nextRequirement(events.snapshot)?.title ??
-                            'Prepare A Conference Or Schedule A Call')}
-                      </p>
-                    </div>
-                    <p className="ws-meta">
-                      Establish Includes The Two-Way Distant-End Check. These
-                      Are Operator Reports.
-                    </p>
                     <button
                       className="ws-button"
                       disabled={
@@ -1185,9 +1176,19 @@ export function OperatorWorkspace() {
                         if (record) focusRecord(record);
                       }}
                     >
-                      {selectedRecordId
-                        ? 'Open Selected Work'
-                        : 'Open Next Action'}
+                      <span>
+                        {selectedRecordId
+                          ? 'Open Selected Work'
+                          : 'Open Next Action'}
+                      </span>
+                      <span className="ws-next-target">
+                        {currentLoaded.find(
+                          (record) => record.record_id === selectedRecordId
+                        )?.payload.title ??
+                          nextRequirement(events.snapshot)?.title ??
+                          'Schedule A Call Or Create A Conference'}
+                      </span>
+                      <span aria-hidden="true">→</span>
                     </button>
                   </section>
                   <CommunicationsView

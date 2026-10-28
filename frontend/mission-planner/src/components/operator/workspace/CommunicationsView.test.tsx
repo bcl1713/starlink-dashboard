@@ -34,7 +34,7 @@ it('makes first-use call, conference and customer reporting discoverable', () =>
       {...actions}
     />
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Schedule' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Schedule Call' }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
   fireEvent.click(
     screen.getByRole('button', { name: 'Report Customer Joined' })

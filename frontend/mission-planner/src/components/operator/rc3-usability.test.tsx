@@ -122,7 +122,9 @@ it('shows contextual actions and independent bridge and customer reports on a ca
   );
   fireEvent.click(screen.getByRole('button', { name: /Establish Bridge/i }));
   expect(action).toHaveBeenCalledWith(bridge, 'establish');
-  expect(screen.getByText(/Bridge: .*preparing/)).toBeVisible();
+  expect(screen.getByText('Conference: Conference')).toBeVisible();
+  fireEvent.click(screen.getByText('Call Details'));
+  expect(screen.getByText('Conference status: preparing')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Reschedule' })).toBeVisible();
   const running = {
     ...call,
