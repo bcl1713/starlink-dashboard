@@ -279,6 +279,13 @@ test('coherent operations, retained capture and real journal safety across deskt
         bravoCall.evaluate((el) => el.contains(document.activeElement))
       )
       .toBe(true);
+    await timelineBravo.focus();
+    await page.keyboard.press('Enter');
+    await expect
+      .poll(() =>
+        bravoCall.evaluate((el) => el.contains(document.activeElement))
+      )
+      .toBe(true);
     proof.repeatedTimelineSelection = true;
 
     await page.screenshot({
@@ -436,22 +443,37 @@ test('coherent operations, retained capture and real journal safety across deskt
       await route.continue();
     });
     await page.getByRole('button', { name: /^Save Entry$/i }).click();
-    await expect(page.getByLabel('Note', { exact: true })).toHaveValue(
-      'Backdated Note Retained On Interrupted Save'
-    );
+    await expect(
+      page.getByRole('textbox', { name: 'Note', exact: true })
+    ).toHaveValue('Backdated Note Retained On Interrupted Save');
+    await page.getByRole('button', { name: /Keep Draft And Return/i }).click();
     const retry = page.getByRole('button', {
       name: /Retry Exact Save|Retry Same Save|Retry Exact Command/i,
     });
-    await expect(retry.first()).toBeVisible();
+    await expect(retry.first()).toBeEnabled();
     await retry.first().click();
     await expect.poll(() => noteKeys.length).toBe(2);
     expect(noteKeys[0]).toBe(noteKeys[1]);
+    await expect(retry).toHaveCount(0);
+    const notes = await json<{ items: { record: SavedRecord }[] }>(
+      await request.get(
+        `/api/v2/operator/records?mission_id=${missionId}&record_type=journal_entry&limit=200`
+      )
+    );
+    expect(
+      notes.items.filter(
+        ({ record }) =>
+          record.payload.title === 'Backdated Note Retained On Interrupted Save'
+      )
+    ).toHaveLength(1);
     await page.unroute('**/api/v2/operator/records');
     proof.interruptedSaveSameKey = true;
-    await page
-      .getByRole('button', { name: /Keep Draft And Return/i })
-      .click()
-      .catch(() => {});
+    if (
+      await page.getByRole('button', { name: /Keep Draft And Return/i }).count()
+    )
+      await page
+        .getByRole('button', { name: /Keep Draft And Return/i })
+        .click();
     for (const section of ['Transport', 'Issues', 'Notes', 'History']) {
       await controls(page)
         .getByRole('button', { name: section, exact: true })
