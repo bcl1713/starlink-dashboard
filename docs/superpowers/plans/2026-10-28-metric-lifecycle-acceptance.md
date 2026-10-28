@@ -33,6 +33,8 @@ Prometheus, existing provisioned Chromium.
       run the focused tooling tests with an explicit wall-clock timeout.
 - [x] Publish the previous diagnostic raw samples, provenance and cleanup
       receipts with checksums and a clear headless diagnostic limitation.
+- [x] Bind backend checks to the reviewed CI dependency lock; a version-only
+      control isolated pytest 9.2 teardown errors absent with CI's pytest 9.1.1.
 - [ ] Run canonical static checks, review the combined diff, commit and push.
 - [ ] Run fresh platform health/static/final on that exact candidate using the
       provisioned browser and production Dockerfiles; retain sealed evidence.

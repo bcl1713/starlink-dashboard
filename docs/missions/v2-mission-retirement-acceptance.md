@@ -26,6 +26,10 @@ The acceptance lane verifies these public controls through the deployed product:
 The legacy paths are intentionally unavailable. The supported activation route
 is `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
 
+Backend static checks use the tracked `requirements-ci.txt` lock, matching CI's
+reviewed dependency versions. Unbounded development ranges must not select a
+different test framework for final acceptance.
+
 ## Deterministic route asset
 
 The journey uploads the tracked asset

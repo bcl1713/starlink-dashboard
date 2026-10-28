@@ -34,9 +34,9 @@ _OPERATIONAL_TOKENS = (
 )
 _V2_BACKEND_COMMANDS = frozenset(
     {
-        "uv run --with-requirements requirements-dev.txt black --check app tests",
-        "uv run --with-requirements requirements-dev.txt ruff check app tests",
-        "uv run --with-requirements requirements-dev.txt pytest -q",
+        "uv run --with-requirements requirements-ci.txt black --check app tests",
+        "uv run --with-requirements requirements-ci.txt ruff check app tests",
+        "uv run --with-requirements requirements-ci.txt pytest -q",
     }
 )
 _STATIC_COMMANDS = _V2_BACKEND_COMMANDS | frozenset({"lint", "test:unit"})
