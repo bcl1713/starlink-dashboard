@@ -95,7 +95,7 @@ it('does not show a rejected save as an assignment', async () => {
     'textContent',
     'Unconfirmed'
   );
-  expect(within(card).getByText('Not reported')).toBeTruthy();
+  expect(within(card).getByText('Not Reported')).toBeTruthy();
 });
 
 it('unavailable_transport_not_offered_for_assignment_but_report_is_retained', async () => {

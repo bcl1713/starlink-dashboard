@@ -126,37 +126,76 @@ export function MissionTimeline({
   return (
     <section className="ws-timeline" aria-label="Mission timeline">
       {narrow ? (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <button
-              className="ws-timeline-launch ws-button"
-              aria-label="Open mission timeline"
-            >
-              <span>
-                <strong>Mission timeline</strong>
-                <span className="ws-meta">{summary}</span>
-              </span>
-              <span aria-hidden="true">View all →</span>
-            </button>
-          </DialogTrigger>
-          <DialogContent className="ws-timeline-dialog">
-            <div className="ws-timeline-dialog-header">
-              <DialogTitle>Mission timeline</DialogTitle>
-              <DialogDescription>
-                Whole mission · times in Zulu
-              </DialogDescription>
-              {controls}
-            </div>
-            <div className="ws-timeline-body">
-              {!snapshot && (
-                <p role="status" className="ws-meta">
-                  {summary}
-                </p>
-              )}
-              {contents}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <>
+          <div
+            className="ws-timeline-strip"
+            aria-label="Compact Mission Chronology"
+          >
+            <span className="ws-timeline-strip-now">
+              Now
+              {Number.isFinite(now)
+                ? ` · ${new Date(now).toISOString().slice(11, 16)} Zulu`
+                : ' · Unknown'}
+            </span>
+            {snapshot?.events
+              .filter(
+                (event) =>
+                  event.active &&
+                  (!event.end_at || Date.parse(event.end_at) >= now)
+              )
+              .slice(0, 8)
+              .map((event) => (
+                <button
+                  key={event.event_id}
+                  className="ws-timeline-chip"
+                  aria-label={`Focus ${event.title}`}
+                  onClick={() => source(event)}
+                  disabled={!onOpenSource}
+                >
+                  <strong>{event.title}</strong>
+                  <span>
+                    {event.due_at
+                      ? timelineTime(event.due_at, snapshot.as_of)
+                      : 'Timing Unknown'}
+                    {stale || event.freshness !== 'fresh'
+                      ? ' · Last Known'
+                      : ''}
+                  </span>
+                </button>
+              ))}
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <button
+                className="ws-timeline-launch ws-button"
+                aria-label="Open mission timeline"
+              >
+                <span>
+                  <strong>Mission timeline</strong>
+                  <span className="ws-meta">{summary}</span>
+                </span>
+                <span aria-hidden="true">View all →</span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="ws-timeline-dialog">
+              <div className="ws-timeline-dialog-header">
+                <DialogTitle>Mission timeline</DialogTitle>
+                <DialogDescription>
+                  Whole mission · times in Zulu
+                </DialogDescription>
+                {controls}
+              </div>
+              <div className="ws-timeline-body">
+                {!snapshot && (
+                  <p role="status" className="ws-meta">
+                    {summary}
+                  </p>
+                )}
+                {contents}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
       ) : (
         <>
           <div className="ws-timeline-header">

@@ -20,46 +20,46 @@ it('schedules and reschedules with UTC date and time controls and visible prepar
     );
   }
   render(<Form />);
-  expect(screen.getByLabelText('Planned start date (Zulu)')).toHaveAttribute(
+  expect(screen.getByLabelText('Planned Start date (Zulu)')).toHaveAttribute(
     'type',
     'date'
   );
-  expect(screen.getByLabelText('Planned start hour (Zulu)')).toHaveProperty(
+  expect(screen.getByLabelText('Planned Start hour (Zulu)')).toHaveProperty(
     'tagName',
     'SELECT'
   );
-  expect(screen.getByLabelText('Planned start minute (Zulu)')).toHaveProperty(
+  expect(screen.getByLabelText('Planned Start minute (Zulu)')).toHaveProperty(
     'tagName',
     'SELECT'
   );
   expect(
-    screen.getByLabelText('Communications type').closest('details')
+    screen.getByLabelText('Communications Type').closest('details')
   ).toBeNull();
   expect(
     screen
-      .getByLabelText('Preparation lead minutes (blank = unknown)')
+      .getByLabelText('Preparation Lead Minutes (blank = unknown)')
       .closest('details')
   ).toBeNull();
-  fireEvent.change(screen.getByLabelText('Planned start date (Zulu)'), {
+  fireEvent.change(screen.getByLabelText('Planned Start date (Zulu)'), {
     target: { value: '2026-10-20' },
   });
-  fireEvent.change(screen.getByLabelText('Planned start hour (Zulu)'), {
+  fireEvent.change(screen.getByLabelText('Planned Start hour (Zulu)'), {
     target: { value: '14' },
   });
-  fireEvent.change(screen.getByLabelText('Planned start minute (Zulu)'), {
+  fireEvent.change(screen.getByLabelText('Planned Start minute (Zulu)'), {
     target: { value: '30' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   expect(save.mock.calls[0][0].time.planned_start_at).toBe(
     '2026-10-20T14:30:00Z'
   );
-  fireEvent.change(screen.getByLabelText('Planned start hour (Zulu)'), {
+  fireEvent.change(screen.getByLabelText('Planned Start hour (Zulu)'), {
     target: { value: '15' },
   });
-  fireEvent.change(screen.getByLabelText('Planned start minute (Zulu)'), {
+  fireEvent.change(screen.getByLabelText('Planned Start minute (Zulu)'), {
     target: { value: '45' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
   expect(save.mock.calls[1][0].time.planned_start_at).toBe(
     '2026-10-20T15:45:00Z'
   );
@@ -76,7 +76,7 @@ it('retains a partially entered date when parked without inventing a timestamp',
       onEditorStateChange={changed}
     />
   );
-  fireEvent.change(screen.getByLabelText('Planned start date (Zulu)'), {
+  fireEvent.change(screen.getByLabelText('Planned Start date (Zulu)'), {
     target: { value: '2026-10-20' },
   });
   const state = changed.mock.calls.at(-1)![0];
@@ -90,10 +90,10 @@ it('retains a partially entered date when parked without inventing a timestamp',
       editorState={state}
     />
   );
-  expect(screen.getByLabelText('Planned start date (Zulu)')).toHaveValue(
+  expect(screen.getByLabelText('Planned Start date (Zulu)')).toHaveValue(
     '2026-10-20'
   );
-  expect(screen.getByLabelText('Planned start hour (Zulu)')).toHaveValue('');
+  expect(screen.getByLabelText('Planned Start hour (Zulu)')).toHaveValue('');
 });
 
 import { CallList } from './CallList';
@@ -167,7 +167,7 @@ it('names the retained draft as soon as the participant is entered', () => {
       onSubmit={vi.fn()}
     />
   );
-  fireEvent.change(screen.getByLabelText('Party / participant (optional)'), {
+  fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
     target: { value: 'Recognizable draft' },
   });
   expect(change.mock.calls[0][0].payload.title).toBe('Recognizable draft');

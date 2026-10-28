@@ -34,9 +34,9 @@ export function TransportReportTime({
         }}
       />
       <label>
-        {label} precision
+        {label} Precision
         <select
-          aria-label={`${label} precision`}
+          aria-label={`${label} Precision`}
           className={issueField}
           value={time.precision}
           onChange={(e) =>
@@ -85,7 +85,13 @@ export function TransportServiceRow({
         >
           {[...new Set([...transports, value])].map((t) => (
             <option key={t} value={t}>
-              {t === 'X' ? 'X-band' : t === 'unknown' ? 'Unknown' : t}
+              {t === 'X'
+                ? 'X-Band'
+                : t === 'Ka'
+                  ? 'Ka Commercial'
+                  : t === 'unknown'
+                    ? 'Unknown'
+                    : t}
             </option>
           ))}
         </select>
@@ -126,7 +132,7 @@ export function TransportServiceRow({
           </label>
           {row.applied && (
             <div className="space-y-2">
-              {transport(`Applied transport ${n}`, row.applied.transport, (v) =>
+              {transport(`Applied Transport ${n}`, row.applied.transport, (v) =>
                 onChange(
                   replaceApplication(row, {
                     ...row.applied!,
@@ -136,7 +142,7 @@ export function TransportServiceRow({
                 )
               )}
               <TransportReportTime
-                label={`Applied time ${n}`}
+                label={`Applied Time ${n}`}
                 time={row.applied.time}
                 onChange={(time) =>
                   onChange(replaceApplication(row, { ...row.applied!, time }))
@@ -164,7 +170,7 @@ export function TransportServiceRow({
           {row.requested && (
             <div className="space-y-2">
               {transport(
-                `Requested transport ${n}`,
+                `Requested Transport ${n}`,
                 row.requested.transport,
                 (v) =>
                   onChange({
@@ -177,7 +183,7 @@ export function TransportServiceRow({
                   })
               )}
               <TransportReportTime
-                label={`Requested time ${n}`}
+                label={`Requested Time ${n}`}
                 time={row.requested.time}
                 onChange={(time) =>
                   onChange({ ...row, requested: { ...row.requested!, time } })
@@ -201,7 +207,7 @@ export function TransportServiceRow({
             Intended {n}
           </label>
           {row.intended &&
-            transport(`Intended transport ${n}`, row.intended.transport, (v) =>
+            transport(`Intended Transport ${n}`, row.intended.transport, (v) =>
               onChange({ ...row, intended: { transport: v } })
             )}
         </div>
@@ -227,9 +233,9 @@ export function TransportServiceRow({
                 Operator-reported check; actual routing unknown.
               </p>
               <label>
-                Check result {n}
+                Check Result {n}
                 <select
-                  aria-label={`Check result ${n}`}
+                  aria-label={`Check Result ${n}`}
                   className={issueField}
                   value={row.checked.result}
                   onChange={(e) =>
@@ -250,14 +256,14 @@ export function TransportServiceRow({
                 </select>
               </label>
               <TransportReportTime
-                label={`Checked time ${n}`}
+                label={`Checked Time ${n}`}
                 time={row.checked.time}
                 onChange={(time) =>
                   onCheck({ ...row, checked: { ...row.checked!, time } })
                 }
               />
               <label>
-                Check note {n}
+                Check Note {n}
                 <textarea
                   className={issueField}
                   maxLength={8000}
@@ -279,7 +285,7 @@ export function TransportServiceRow({
         in history.
       </p>
       <button type="button" className={issueButton} onClick={onRemove}>
-        Remove service {n}
+        Remove Service {n}
       </button>
     </fieldset>
   );

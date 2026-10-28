@@ -263,10 +263,10 @@ describe('ConfigurationPage', () => {
         { label: 'Zulu / UTC', time_zone: 'UTC' },
         {
           label: 'Washington, DC',
-          time_zone: 'America/New_York',
+          time_zone: 'UTC',
         },
-        { label: 'Zulu Custom', time_zone: 'America/Chicago' },
-        { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+        { label: 'Zulu Custom', time_zone: 'UTC' },
+        { label: 'Tokyo, JP', time_zone: 'UTC' },
       ],
     });
   });

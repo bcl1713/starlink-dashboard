@@ -48,7 +48,7 @@ export function TransportView({
       className="space-y-4"
     >
       <OperatorTransportAvailability missionId={missionId} />
-      <h2>Service transport</h2>
+      <h2>Service Transport</h2>
       <p className="ws-meta">
         Record the transport each service is reported to be using.
       </p>
@@ -64,9 +64,9 @@ export function TransportView({
         onApply={onApply}
       />
       <details>
-        <summary>History and advanced records</summary>
+        <summary>History And Advanced Records</summary>
         <button className="ws-button" disabled={disabled} onClick={onCreate}>
-          Create advanced transport record
+          Create Advanced Transport Record
         </button>
         <TransportReview
           review={events.snapshot?.transport_review}

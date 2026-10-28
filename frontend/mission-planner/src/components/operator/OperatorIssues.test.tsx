@@ -53,18 +53,18 @@ function mount(component: React.ReactNode, issue = false) {
 }
 it('logs a problem from its description only', async () => {
   const save = mount(<OperatorIssues missionId="mission-a" />);
-  const description = await screen.findByLabelText('Problem description');
+  const description = await screen.findByLabelText('Problem Description');
   fireEvent.change(description, {
     target: { value: 'Synthetic preflight problem' },
   });
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save issue' })
+        .getByRole('button', { name: 'Save Issue' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
   expect(save.mock.calls[0][0]).toMatchObject({
     operation: 'create',
@@ -97,10 +97,10 @@ it('resolves a monitoring workaround with one action and no audit note', async (
 });
 it('keeps functional service and redundancy separate and unknown by default', async () => {
   const save = mount(<CapabilityAssessments missionId="mission-a" />);
-  fireEvent.change(await screen.findByLabelText('Capability name'), {
+  fireEvent.change(await screen.findByLabelText('Capability Name'), {
     target: { value: 'Synthetic secure voice' },
   });
-  fireEvent.change(screen.getByLabelText('Functional capability'), {
+  fireEvent.change(screen.getByLabelText('Functional Capability'), {
     target: { value: 'functional' },
   });
   fireEvent.change(screen.getByLabelText('Redundancy'), {
@@ -109,11 +109,11 @@ it('keeps functional service and redundancy separate and unknown by default', as
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save assessment' })
+        .getByRole('button', { name: 'Save Assessment' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save assessment' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Assessment' }));
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
   expect(save.mock.calls[0][0]).toMatchObject({
     body: {
@@ -147,38 +147,38 @@ it('clears an acknowledged update and uses the latest version for the next updat
   });
   vi.mocked(api.readOperatorRecord).mockResolvedValue(page([current]).items[0]);
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Add update / follow up' })
+    await screen.findByRole('button', { name: /Add Update.*follow up/i })
   );
-  fireEvent.change(screen.getByLabelText('Add update'), {
+  fireEvent.change(screen.getByLabelText('Add Update'), {
     target: { value: 'Synthetic first update' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await waitFor(() =>
     expect(
-      (screen.getByLabelText('Add update') as HTMLTextAreaElement).value
+      (screen.getByLabelText('Add Update') as HTMLTextAreaElement).value
     ).toBe('')
   );
-  fireEvent.change(screen.getByLabelText('Add update'), {
+  fireEvent.change(screen.getByLabelText('Add Update'), {
     target: { value: 'Synthetic second update' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
   expect(save.mock.calls[1][0].body).toHaveProperty('expected_version', 2);
 });
 it('retires the accepted create draft after an uncertain save is retried across reload', async () => {
   const save = mount(<OperatorIssues missionId="mission-a" />);
   save.mockRejectedValueOnce(new Error('lost acknowledgment'));
-  fireEvent.change(await screen.findByLabelText('Problem description'), {
+  fireEvent.change(await screen.findByLabelText('Problem Description'), {
     target: { value: 'Synthetic lost create' },
   });
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save issue' })
+        .getByRole('button', { name: 'Save Issue' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await screen.findByRole('button', { name: 'Retry issue save' });
   cleanup();
   mount(<OperatorIssues missionId="mission-a" />);
@@ -192,18 +192,18 @@ it('retires the accepted create draft after an uncertain save is retried across 
   );
   fireEvent.click(screen.getByRole('button', { name: 'New issue' }));
   expect(
-    (screen.getByLabelText('Problem description') as HTMLInputElement).value
+    (screen.getByLabelText('Problem Description') as HTMLInputElement).value
   ).toBe('');
 });
 it('captures fresh backend UTC for a quick issue action rather than an old list snapshot', async () => {
   const save = mount(<OperatorIssues missionId="mission-a" />);
-  fireEvent.change(await screen.findByLabelText('Problem description'), {
+  fireEvent.change(await screen.findByLabelText('Problem Description'), {
     target: { value: 'Synthetic current time' },
   });
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save issue' })
+        .getByRole('button', { name: 'Save Issue' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
@@ -211,7 +211,7 @@ it('captures fresh backend UTC for a quick issue action rather than an old list 
     ...page([]),
     as_of: '2026-10-17T12:00:00Z',
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].body).toHaveProperty(
     'time.occurred_at',
@@ -220,10 +220,10 @@ it('captures fresh backend UTC for a quick issue action rather than an old list 
 });
 it('captures fresh UTC for changed assessment dimensions without making unknown backup known', async () => {
   const save = mount(<CapabilityAssessments missionId="mission-a" />);
-  fireEvent.change(await screen.findByLabelText('Capability name'), {
+  fireEvent.change(await screen.findByLabelText('Capability Name'), {
     target: { value: 'Synthetic current assessment' },
   });
-  fireEvent.change(screen.getByLabelText('Functional capability'), {
+  fireEvent.change(screen.getByLabelText('Functional Capability'), {
     target: { value: 'functional' },
   });
   vi.mocked(api.readOperatorRecords).mockResolvedValue({
@@ -233,11 +233,11 @@ it('captures fresh UTC for changed assessment dimensions without making unknown 
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save assessment' })
+        .getByRole('button', { name: 'Save Assessment' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save assessment' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Assessment' }));
   await waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].body).toMatchObject({
     payload: {
@@ -252,17 +252,17 @@ it('retires an acknowledged draft even when current-state reread fails', async (
   vi.mocked(api.readOperatorRecord).mockRejectedValue(
     new Error('read unavailable')
   );
-  fireEvent.change(await screen.findByLabelText('Problem description'), {
+  fireEvent.change(await screen.findByLabelText('Problem Description'), {
     target: { value: 'Synthetic acknowledged read failure' },
   });
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save issue' })
+        .getByRole('button', { name: 'Save Issue' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await screen.findByText(
     /Current state unavailable; the submitted draft is retired/
   );
@@ -272,25 +272,25 @@ it('retires an acknowledged draft even when current-state reread fails', async (
       .join('')
   ).not.toContain('Synthetic acknowledged read failure');
   expect(
-    screen.getByRole('button', { name: 'Save issue' }).hasAttribute('disabled')
+    screen.getByRole('button', { name: 'Save Issue' }).hasAttribute('disabled')
   ).toBe(true);
 });
 it('preserves deliberate retrospective issue time instead of capturing current UTC', async () => {
   const save = mount(<OperatorIssues missionId="mission-a" />);
-  fireEvent.change(await screen.findByLabelText('Problem description'), {
+  fireEvent.change(await screen.findByLabelText('Problem Description'), {
     target: { value: 'Synthetic retrospective problem' },
   });
-  fireEvent.click(screen.getByText('Optional issue details'));
-  fireEvent.click(screen.getByLabelText('Use current backend UTC when saved'));
-  enterZulu('Action occurred', '2026-10-17T10:00:00');
+  fireEvent.click(screen.getByText('Optional Issue Details'));
+  fireEvent.click(screen.getByLabelText('Use Current Zulu When Saved'));
+  enterZulu('Action Occurred', '2026-10-17T10:00:00');
   await waitFor(() =>
     expect(
       screen
-        .getByRole('button', { name: 'Save issue' })
+        .getByRole('button', { name: 'Save Issue' })
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save issue' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Issue' }));
   await waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].body).toHaveProperty(
     'time.occurred_at',

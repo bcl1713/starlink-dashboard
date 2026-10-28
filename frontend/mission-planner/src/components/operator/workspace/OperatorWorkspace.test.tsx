@@ -98,7 +98,7 @@ it('renders a cold workspace before any training context or checked evidence exi
   mount();
   expect(screen.getByRole('button', { name: 'Help' })).toBeTruthy();
   expect(
-    screen.getByRole('heading', { name: 'Choose a mission' })
+    screen.getByRole('heading', { name: 'Choose A Mission' })
   ).toBeTruthy();
 });
 it('explains separate nonproduction setup instead of opening training in an ordinary instance', () => {
@@ -106,14 +106,14 @@ it('explains separate nonproduction setup instead of opening training in an ordi
   fireEvent.click(screen.getByRole('button', { name: 'Help' }));
   fireEvent.click(
     screen.getByRole('button', {
-      name: 'Guided mission walkthrough',
+      name: 'Guided Mission Walkthrough',
     })
   );
   expect(
     screen.getByText(/Training requires a separate private instance/)
   ).toBeTruthy();
   expect(
-    screen.queryByRole('complementary', { name: 'Guided mission walkthrough' })
+    screen.queryByRole('complementary', { name: 'Guided Mission Walkthrough' })
   ).toBeNull();
 });
 
@@ -122,7 +122,7 @@ it('waits for selected mission identity before enabling the guide launcher', () 
   mount('/operator?workspace=1&mission_id=loading-private-mission');
   fireEvent.click(screen.getByRole('button', { name: 'Help' }));
   const button = screen.getByRole('button', {
-    name: 'Guided mission walkthrough',
+    name: 'Guided Mission Walkthrough',
   }) as HTMLButtonElement;
   expect(button.disabled).toBe(true);
   expect(
@@ -138,13 +138,13 @@ it('offers an explicit failed mission read retry without treating it as an unmar
   expect(
     (
       screen.getByRole('button', {
-        name: 'Guided mission walkthrough',
+        name: 'Guided Mission Walkthrough',
       }) as HTMLButtonElement
     ).disabled
   ).toBe(true);
   expect(screen.getByText(/Mission details could not be loaded/)).toBeTruthy();
   fireEvent.click(
-    screen.getByRole('button', { name: 'Retry mission details' })
+    screen.getByRole('button', { name: 'Retry Mission Details' })
   );
   expect(missionState.retry).toHaveBeenCalledTimes(1);
   expect(
@@ -155,7 +155,7 @@ it('offers an explicit failed mission read retry without treating it as an unmar
 it('links the selected mission to its existing Missions records destination', () => {
   mount('/operator?workspace=1&mission_id=mission%20%2F%20one');
   expect(
-    screen.getByRole('link', { name: 'Mission records' }).getAttribute('href')
+    screen.getByRole('link', { name: 'Mission Records' }).getAttribute('href')
   ).toBe('/missions/mission%20%2F%20one');
 });
 
@@ -206,17 +206,19 @@ it.each(['live', 'simulation'] as const)(
     expect(registry.listDrafts()[0].target.legId).toBe('a');
     // Closing parks the draft; a new note follows the new active leg.
     fireEvent.click(
-      screen.getByRole('button', { name: 'Keep draft and return' })
+      screen.getByRole('button', { name: 'Keep Draft And Return' })
     );
     fireEvent.click(screen.getByRole('button', { name: 'Note' }));
-    expect(
-      registry
-        .listDrafts()
-        .map((draft) => draft.target.legId)
-        .sort()
-    ).toEqual(['a', 'b']);
+    await waitFor(() =>
+      expect(
+        registry
+          .listDrafts()
+          .map((draft) => draft.target.legId)
+          .sort()
+      ).toEqual(['a', 'b'])
+    );
     fireEvent.click(
-      screen.getByRole('button', { name: 'Keep draft and return' })
+      screen.getByRole('button', { name: 'Keep Draft And Return' })
     );
     vi.mocked(api.readOperatingContext).mockRejectedValue(
       new Error('Mission source offline')
@@ -264,7 +266,7 @@ it('preserves deliberate historical browsing across active mission changes and r
     'historical'
   );
   fireEvent.click(
-    screen.getByRole('button', { name: 'Return to active mission' })
+    screen.getByRole('button', { name: 'Return To Active Mission' })
   );
   expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe(
     'next-mission'
@@ -334,17 +336,13 @@ it.each(['now', 'communications'])(
   async (view) => {
     vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
     mount(`/operator?workspace=1&mission_id=mission-a&view=${view}`, true);
-    expect(
-      await screen.findByRole('heading', { name: 'Active Calls' })
-    ).toBeTruthy();
-    expect(
-      screen.getByRole('heading', { name: 'Active Bridges' })
-    ).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Calls' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Conferences' })).toBeTruthy();
     if (view === 'now') {
       const headings = screen
         .getAllByRole('heading')
         .map((heading) => heading.textContent);
-      expect(headings).toContain('Active Bridges');
+      expect(headings).toContain('Conferences');
       expect(headings).toContain('Mission timeline');
       expect(headings).not.toContain('Mission activity');
     }
@@ -390,14 +388,14 @@ it('shows pending immediately and the authoritative accepted conference while li
     true
   );
   const createButton = (
-    await screen.findAllByRole('button', { name: 'Create conference' })
+    await screen.findAllByRole('button', { name: 'Create Conference' })
   )[0] as HTMLButtonElement;
   await waitFor(() => expect(createButton.disabled).toBe(false));
   fireEvent.click(createButton);
   fireEvent.change(await screen.findByLabelText('Conference name (optional)'), {
     target: { value: 'FAST BRIDGE' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
   expect(
     screen.getAllByText(/saving.*FAST BRIDGE|FAST BRIDGE.*saving/).length
@@ -496,7 +494,7 @@ it('keeps_now_view_availability_actions_usable_with_the_journal_disabled', async
     )
   );
 });
-it('opens the referenced call from the mission timeline', async () => {
+it('focuses the referenced call from the mission timeline without editing or reporting', async () => {
   const input = callDraft(undefined, 'planned', 'mission-a');
   const call = {
     ...record,
@@ -524,11 +522,15 @@ it('opens the referenced call from the mission timeline', async () => {
   const row = (await screen.findByText('Briefing due')).closest('li')!;
   fireEvent.click(within(row).getByText('Details'));
   fireEvent.click(within(row).getByRole('button', { name: 'Open source' }));
-  await screen.findByRole('dialog', { name: 'Edit call' });
-  expect(registry.listDrafts()[0].target.recordId).toBe(call.record_id);
-  expect(registry.listDrafts()[0].input.payload.title).toBe(
-    'Specific briefing'
+  await waitFor(() =>
+    expect(
+      document
+        .getElementById(`operator-record-${call.record_id}`)
+        ?.getAttribute('data-selected')
+    ).toBeTruthy()
   );
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(registry.listDrafts()).toHaveLength(0);
 });
 
 it('keeps the full timeline across operating views and retains the editor draft', async () => {
@@ -543,7 +545,13 @@ it('keeps the full timeline across operating views and retains the editor draft'
   });
   const { registry } = mount('/operator?mission_id=mission-a', true);
   await screen.findByText('Persistent X window');
-  for (const view of ['Communications', 'Transport', 'Issues', 'Now']) {
+  for (const view of [
+    'Operations',
+    'Transport',
+    'Issues',
+    'Notes',
+    'History',
+  ]) {
     fireEvent.click(screen.getByRole('button', { name: view }));
     expect(
       screen.getByRole('region', { name: 'Mission timeline' })
@@ -554,11 +562,11 @@ it('keeps the full timeline across operating views and retains the editor draft'
     ).toBeNull();
   }
   fireEvent.click(screen.getByRole('button', { name: 'Note' }));
-  fireEvent.change(screen.getByLabelText('Title'), {
+  fireEvent.change(await screen.findByLabelText('Note'), {
     target: { value: 'Unsaved mission note' },
   });
   fireEvent.click(
-    screen.getByRole('button', { name: 'Keep draft and return' })
+    screen.getByRole('button', { name: 'Keep Draft And Return' })
   );
   const draft = registry.listDrafts()[0];
   expect(draft.input.payload.title).toBe('Unsaved mission note');
@@ -603,4 +611,132 @@ it('keeps optional alert acknowledgment and pending reconciliation available in 
   expect(
     within(drawer).getByRole('button', { name: 'Dismiss request and refresh' })
   ).toBeTruthy();
+});
+
+it.each(['now', 'communications', 'operations'])(
+  'uses Operations for legacy and current %s URLs with shared capture actions',
+  async (view) => {
+    vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([]));
+    mount(`/operator?mission_id=mission-a&view=${view}`, true);
+    const nav = screen.getByRole('navigation', { name: 'Operator workspace' });
+    expect(
+      within(nav)
+        .getByRole('button', { name: 'Operations' })
+        .getAttribute('aria-current')
+    ).toBe('page');
+    expect(within(nav).queryByRole('button', { name: 'Now' })).toBeNull();
+    for (const section of [
+      'Operations',
+      'Transport',
+      'Issues',
+      'Notes',
+      'History',
+    ]) {
+      fireEvent.click(within(nav).getByRole('button', { name: section }));
+      expect(screen.getByRole('button', { name: 'Schedule' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Note' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Issue' })).toBeTruthy();
+      expect(
+        screen.getByRole('button', { name: 'Display Controls' })
+      ).toBeTruthy();
+    }
+  }
+);
+
+it('freezes the source mission clock when a quick note draft is created', async () => {
+  const replayTime = '2026-01-02T23:59:00Z';
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    ...page([]),
+    as_of: replayTime,
+  });
+  const { registry } = mount('/operator?mission_id=mission-a', true);
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Note' })).toHaveProperty(
+      'disabled',
+      false
+    )
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+  await waitFor(() => expect(registry.listDrafts()).toHaveLength(1));
+  expect(registry.listDrafts()[0].input.time.occurred_at).toBe(replayTime);
+});
+
+it('retains quick note text and partial backdate through park, reopen and a failed exact retry', async () => {
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    ...page([]),
+    as_of: '2026-10-17T16:00:00Z',
+  });
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValue(new Error('Connection Lost After Submission'));
+  const { registry } = mount('/operator?mission_id=mission-a', true);
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Note' })).toHaveProperty(
+      'disabled',
+      false
+    )
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Note' }));
+  fireEvent.change(await screen.findByLabelText('Note'), {
+    target: { value: 'Retained Field Note' },
+  });
+  fireEvent.click(screen.getByText('Backdate / Change Occurrence'));
+  fireEvent.change(screen.getByLabelText('Occurred At date (Zulu)'), {
+    target: { value: '2026-10-16' },
+  });
+  fireEvent.change(screen.getByLabelText('Occurred At hour (Zulu)'), {
+    target: { value: '' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Keep Draft And Return' })
+  );
+  expect(
+    registry.listDrafts()[0].editorState?.noteOccurrenceParts
+  ).toMatchObject({ date: '2026-10-16', time: ':00' });
+  fireEvent.click(
+    within(screen.getByRole('region', { name: 'Retained drafts' })).getByRole(
+      'button',
+      { name: /Retained Field Note/ }
+    )
+  );
+  expect(await screen.findByLabelText('Note')).toHaveProperty(
+    'value',
+    'Retained Field Note'
+  );
+  fireEvent.click(screen.getByText('Backdate / Change Occurrence'));
+  expect(screen.getByLabelText('Occurred At date (Zulu)')).toHaveProperty(
+    'value',
+    '2026-10-16'
+  );
+  expect(screen.getByLabelText('Occurred At hour (Zulu)')).toHaveProperty(
+    'value',
+    ''
+  );
+  fireEvent.change(screen.getByLabelText('Occurred At hour (Zulu)'), {
+    target: { value: '23' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Entry' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  const first = save.mock.calls[0];
+  expect(first[0]).toMatchObject({
+    operation: 'create',
+    body: {
+      time: { occurred_at: '2026-10-16T23:00:00Z' },
+      payload: { note: 'Retained Field Note' },
+    },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Keep Draft And Return' })
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Retry Same Save' })
+    ).toHaveProperty('disabled', false)
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Retry Same Save' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+  expect(save.mock.calls[1]).toEqual(first);
+  expect(registry.listDrafts()[0].input.payload.note).toBe(
+    'Retained Field Note'
+  );
 });

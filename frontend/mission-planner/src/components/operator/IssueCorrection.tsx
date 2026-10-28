@@ -40,7 +40,7 @@ export function IssueCorrection({
   );
   return (
     <form
-      aria-label="Correct historical update"
+      aria-label="Correct Historical Update"
       className="space-y-3 rounded border p-3"
       onSubmit={(e) => {
         e.preventDefault();
@@ -67,14 +67,14 @@ export function IssueCorrection({
     >
       <fieldset disabled={disabled} className="space-y-3">
         <p>
-          Correct historical update · current status and follow-up are
+          Correct Historical Update · current status and follow-up are
           preserved.
         </p>
         {storageError && <p role="alert">{storageError}</p>}
         <label className="block">
-          Corrected update
+          Corrected Update
           <textarea
-            aria-label="Corrected update"
+            aria-label="Corrected Update"
             className={issueField}
             required
             maxLength={8000}
@@ -83,7 +83,7 @@ export function IssueCorrection({
           />
         </label>
         <UtcDateTime
-          label="Corrected occurred"
+          label="Corrected Occurred"
           value={draft.at}
           onChange={(value) =>
             setDraft({
@@ -92,9 +92,9 @@ export function IssueCorrection({
             })
           }
         />
-        <button className={issueButton}>Save correction</button>
+        <button className={issueButton}>Save Correction</button>
         <button type="button" className={issueButton} onClick={onClose}>
-          Close correction
+          Close Correction
         </button>
         {draft.version !== current.version && (
           <button
@@ -108,7 +108,7 @@ export function IssueCorrection({
               })
             }
           >
-            Preserve current state for reviewed correction
+            Preserve Current State for Reviewed Correction
           </button>
         )}
       </fieldset>

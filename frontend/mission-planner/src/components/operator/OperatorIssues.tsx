@@ -158,7 +158,7 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
           {record.payload.mitigation ?? 'unknown'}
         </p>
         <p>
-          Follow-up {item.follow_up?.state ?? 'unknown'} ·{' '}
+          Follow-Up {item.follow_up?.state ?? 'unknown'} ·{' '}
           {operatorUtc(record.payload.follow_up_at)}
         </p>
         <p className="text-xs text-muted-foreground">
@@ -173,7 +173,7 @@ export function OperatorIssues({ missionId }: { missionId: string }) {
                 disabled={disabled}
                 onClick={() => choose(record)}
               >
-                Add update / follow up
+                Add Update / follow up
               </button>
               {record.payload.status === 'resolved' ? (
                 <button

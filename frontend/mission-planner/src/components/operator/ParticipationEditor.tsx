@@ -150,7 +150,7 @@ export function ParticipationEditor({
         hidden={!!formId}
         disabled={disabled}
       >
-        Save customer interval
+        Save Customer Interval
       </button>
     </form>
   );

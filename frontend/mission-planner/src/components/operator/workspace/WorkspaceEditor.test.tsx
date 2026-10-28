@@ -23,6 +23,7 @@ import type { DraftTarget } from './types';
 import type { OperatorInput } from '@/types/operator';
 import { callDraft } from '../callDraft';
 import { routesApi } from '@/services/routes';
+import * as transportCatalog from '@/services/transportCatalog';
 import { conferenceDraft, participationDraft } from '../conferenceCommands';
 
 const clients: QueryClient[] = [];
@@ -47,21 +48,28 @@ function mount(
   active = false,
   saved?: typeof record,
   pinned: Partial<DraftTarget> = {},
-  source = health
+  source = health,
+  editorState?: Record<string, unknown>,
+  restored?: { registry: DraftRegistry; draftId: string }
 ) {
-  const registry = new DraftRegistry(sessionStorage);
-  const draft = registry.createDraft(
-    {
-      ...target,
-      recordType: initial.record_type,
-      recordId: saved?.record_id ?? null,
-      scope: initial.scope,
-      legId: initial.leg_id,
-      ...pinned,
-    },
-    initial,
-    saved
-  );
+  const registry = restored?.registry ?? new DraftRegistry(sessionStorage);
+  const draft = restored
+    ? registry.resumeDraft(restored.draftId)!
+    : registry.createDraft(
+        {
+          ...target,
+          recordType: initial.record_type,
+          recordId: saved?.record_id ?? null,
+          scope: initial.scope,
+          legId: initial.leg_id,
+          previousLegId: initial.payload.previous_leg_id,
+          nextLegId: initial.payload.next_leg_id,
+          ...pinned,
+        },
+        initial,
+        saved
+      );
+  if (editorState) registry.parkDraft({ ...draft, editorState });
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -107,6 +115,12 @@ function mount(
 }
 beforeEach(() => {
   sessionStorage.clear();
+  vi.spyOn(transportCatalog, 'readTransportCatalog').mockResolvedValue({
+    schema_version: 1,
+    version: 1,
+    services: [],
+    transports: [],
+  });
   vi.spyOn(api, 'getOperatorHealth').mockResolvedValue(health);
   vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
     schema_version: 1,
@@ -128,7 +142,7 @@ it('keeps registry-owned unsent text when the editor closes', async () => {
     target: { value: 'Parked note' },
   });
   fireEvent.click(
-    screen.getByRole('button', { name: 'Keep draft and return' })
+    screen.getByRole('button', { name: 'Keep Draft And Return' })
   );
   expect(registry.resumeDraft(draft.draftId)?.input.payload.title).toBe(
     'Parked note'
@@ -138,13 +152,13 @@ it('keeps registry-owned unsent text when the editor closes', async () => {
 
 it('uses explicit named scope selectors without changing the pinned mission', async () => {
   const { registry, draft } = mount();
-  fireEvent.change(await screen.findByLabelText('Draft scope'), {
+  fireEvent.change(await screen.findByLabelText('Draft Scope'), {
     target: { value: 'between_legs' },
   });
-  fireEvent.change(screen.getByLabelText('Previous leg'), {
+  fireEvent.change(screen.getByLabelText('Previous Leg'), {
     target: { value: 'leg-1' },
   });
-  fireEvent.change(screen.getByLabelText('Next leg'), {
+  fireEvent.change(screen.getByLabelText('Next Leg'), {
     target: { value: 'leg-2' },
   });
   expect(registry.resumeDraft(draft.draftId)?.target).toMatchObject({
@@ -153,14 +167,14 @@ it('uses explicit named scope selectors without changing the pinned mission', as
     previousLegId: 'leg-1',
     nextLegId: 'leg-2',
   });
-  expect(screen.getByText(/Draft mission: Fictional mission/)).toBeTruthy();
-  expect(screen.queryByLabelText('Entry mission ID')).toBeNull();
+  expect(screen.getByText(/Draft Mission: Fictional mission/)).toBeTruthy();
+  expect(screen.queryByLabelText('Entry Mission ID')).toBeNull();
 });
 it.each(['preflight', 'postflight'] as const)(
   'keeps %s scope explicit without moving the draft mission or inventing a leg',
   async (scope) => {
     const { registry, draft } = mount();
-    fireEvent.change(await screen.findByLabelText('Draft scope'), {
+    fireEvent.change(await screen.findByLabelText('Draft Scope'), {
       target: { value: scope },
     });
     const retained = registry.resumeDraft(draft.draftId)!;
@@ -187,7 +201,7 @@ it('keeps input editable while the store is unavailable and disables saving', as
   });
   await waitFor(() =>
     expect(
-      (screen.getByRole('button', { name: 'Save entry' }) as HTMLButtonElement)
+      (screen.getByRole('button', { name: 'Save Entry' }) as HTMLButtonElement)
         .disabled
     ).toBe(true)
   );
@@ -204,7 +218,7 @@ it('makes current join time explicit and retains intentional unknown join time',
     participationDraft('mission-a', 'conference-a')
   );
   const choice = await screen.findByRole('checkbox', {
-    name: 'Report joined now using backend UTC',
+    name: 'Report Joined Now Using Backend Zulu',
   });
   expect((choice as HTMLInputElement).checked).toBe(false);
   fireEvent.click(choice);
@@ -228,11 +242,11 @@ for (const captureNow of [false, true]) {
     });
     mount(participationDraft('mission-a', 'conference-a'));
     const choice = await screen.findByRole('checkbox', {
-      name: 'Report joined now using backend UTC',
+      name: 'Report Joined Now Using Backend Zulu',
     });
     if (captureNow) fireEvent.click(choice);
     fireEvent.click(
-      screen.getByRole('button', { name: 'Save customer interval' })
+      screen.getByRole('button', { name: 'Save Customer Interval' })
     );
     await waitFor(() => expect(save).toHaveBeenCalled());
     const command = save.mock.calls[0][0];
@@ -244,6 +258,10 @@ for (const captureNow of [false, true]) {
       expect(command.body.time.precision).toBe(
         captureNow ? 'exact' : 'unknown'
       );
+      expect(
+        command.body.record_type === 'participation' &&
+          command.body.connect_customer === true
+      ).toBe(captureNow);
     }
   });
 }
@@ -284,7 +302,7 @@ it('loads later relationship pages without dropping the pinned draft', async () 
 it('keeps native form submission outside the scrolling editor body', async () => {
   mount();
   const save = (await screen.findByRole('button', {
-    name: 'Save entry',
+    name: 'Save Entry',
   })) as HTMLButtonElement;
   expect(save.closest('.ws-editor-body')).toBeNull();
   expect(save.closest('.ws-editor-footer')).not.toBeNull();
@@ -310,8 +328,8 @@ it('associates a picked UTC call time and preserves an explicit override across 
   initial.time.planned_start_at = '2026-10-20T11:00:00Z';
   const { registry, draft } = mount(initial, true);
   await screen.findByText('Mission association: First flight');
-  fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
-    target: { value: '13:00' },
+  fireEvent.change(screen.getByLabelText('Planned Start hour (Zulu)'), {
+    target: { value: '13' },
   });
   expect(registry.resumeDraft(draft.draftId)?.input).toMatchObject({
     scope: 'between_legs',
@@ -322,8 +340,8 @@ it('associates a picked UTC call time and preserves an explicit override across 
   fireEvent.change(screen.getByLabelText('Association'), {
     target: { value: 'preflight' },
   });
-  fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
-    target: { value: '15:00' },
+  fireEvent.change(screen.getByLabelText('Planned Start hour (Zulu)'), {
+    target: { value: '15' },
   });
   expect(registry.resumeDraft(draft.draftId)?.input.scope).toBe('preflight');
   expect(registry.resumeDraft(draft.draftId)?.target.missionId).toBe(
@@ -468,8 +486,422 @@ it('closes the conference dialog after its exact draft is accepted', async () =>
   vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([saved]).items[0]);
   const { registry, draft } = mount(conferenceDraft('mission-a'));
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Save conference' })
+    await screen.findByRole('button', { name: 'Save Conference' })
   );
   await waitFor(() => expect(registry.resumeDraft(draft.draftId)).toBeNull());
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});
+
+function retainedCall() {
+  const call = callDraft(undefined, 'planned', 'mission-a');
+  call.scope = 'between_legs';
+  call.payload = {
+    ...call.payload,
+    title: 'Customer Charlie',
+    party: 'Customer Charlie',
+    communications_kind: 'vtc',
+    coordinator: 'Ground lead',
+    conference_id: 'existing-bridge',
+    previous_leg_id: 'leg-1',
+    next_leg_id: 'leg-2',
+    note: 'Keep every call detail',
+    status: 'delayed',
+  };
+  call.time = {
+    ...call.time,
+    planned_start_at: '2026-10-28T23:45:12.123456Z',
+    planned_end_at: '2026-10-29T00:15:12.123456Z',
+    occurred_at: '2026-10-28T23:48:00Z',
+    ended_at: null,
+    precision: 'approximate',
+    end_state: 'ongoing',
+  };
+  return call;
+}
+async function prepareInline() {
+  const call = retainedCall();
+  const mounted = mount(call, false, false, undefined, {}, health, {
+    associationMode: 'manual',
+    associationExpanded: true,
+    call: {
+      lead: '1.5',
+      duration: '12.',
+      shift: '-2',
+      unit: 'hours',
+      originalTime: call.time,
+      originalDuration: '30',
+      timeParts: { occurred_at: { date: '2026-10-28', time: '23:' } },
+    },
+  });
+  await screen.findByLabelText('Party / Participant (Optional)');
+  const parent = mounted.registry.resumeDraft(mounted.draft.draftId)!;
+  fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
+  await screen.findByLabelText('Conference name (optional)');
+  const child = mounted.registry
+    .listDrafts()
+    .find((draft) => draft.input.record_type === 'conference')!;
+  return { ...mounted, parent, child };
+}
+function savedInline(title = 'Charlie bridge') {
+  return {
+    ...record,
+    ...conferenceDraft('mission-a'),
+    record_id: 'new-bridge',
+    payload: { ...conferenceDraft('mission-a').payload, title },
+  };
+}
+
+it('parks all call input and editor state and returns unchanged when inline creation is canceled', async () => {
+  const { registry, parent, child } = await prepareInline();
+  expect(child.target).toMatchObject({
+    storeId: parent.target.storeId,
+    epoch: parent.target.epoch,
+    sourceMode: parent.target.sourceMode,
+    simulationRunId: parent.target.simulationRunId,
+    missionId: parent.target.missionId,
+  });
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Parked bridge' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Back To Call' }));
+  await screen.findByLabelText('Party / Participant (Optional)');
+  const returned = registry.resumeDraft(parent.draftId)!;
+  expect(returned.input).toEqual(parent.input);
+  expect(returned.editorState?.call).toEqual(parent.editorState?.call);
+  expect(returned.editorState?.associationMode).toBe('manual');
+  expect(
+    (
+      screen.getByLabelText(
+        'Duration Minutes (blank = unknown)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('12.');
+  expect(
+    (
+      screen.getByLabelText(
+        'Preparation Lead Minutes (blank = unknown)'
+      ) as HTMLInputElement
+    ).value
+  ).toBe('1.5');
+  expect(
+    (screen.getByLabelText('Shift amount') as HTMLInputElement).value
+  ).toBe('-2');
+  expect((screen.getByLabelText('Shift Unit') as HTMLSelectElement).value).toBe(
+    'hours'
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
+  expect(
+    (
+      (await screen.findByLabelText(
+        'Conference name (optional)'
+      )) as HTMLInputElement
+    ).value
+  ).toBe('Parked bridge');
+  expect(registry.listDrafts()).toHaveLength(2);
+});
+
+it('selects an independently saved conference only after its authoritative read and keeps it when the call is discarded', async () => {
+  const saved = savedInline();
+  let resolveRead!: (value: ReturnType<typeof page>['items'][number]) => void;
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
+  vi.spyOn(api, 'readOperatorRecord').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveRead = resolve;
+      })
+  );
+  const { registry, parent, child } = await prepareInline();
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Charlie bridge' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await waitFor(() =>
+    expect(api.readOperatorRecord).toHaveBeenCalledWith('new-bridge')
+  );
+  expect(registry.resumeDraft(parent.draftId)?.input).toEqual(parent.input);
+  expect(registry.resumeDraft(child.draftId)).not.toBeNull();
+  expect(screen.queryByLabelText('Party / Participant (Optional)')).toBeNull();
+  await act(async () => resolveRead(page([saved]).items[0]));
+  await screen.findByLabelText('Party / Participant (Optional)');
+  expect(registry.resumeDraft(parent.draftId)?.input).toEqual({
+    ...parent.input,
+    payload: { ...parent.input.payload, conference_id: 'new-bridge' },
+  });
+  expect(registry.resumeDraft(parent.draftId)?.editorState?.call).toEqual(
+    parent.editorState?.call
+  );
+  expect(registry.resumeDraft(child.draftId)).toBeNull();
+  expect(
+    (screen.getByLabelText('Conference (Optional)') as HTMLSelectElement).value
+  ).toBe('new-bridge');
+  fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(registry.listDrafts()).toHaveLength(0);
+  expect(api.saveOperatorCommand).toHaveBeenCalledTimes(1);
+  expect(api.saveOperatorCommand).toHaveBeenCalledWith(
+    expect.objectContaining({
+      operation: 'create',
+      body: expect.objectContaining({ record_type: 'conference' }),
+    }),
+    expect.any(String),
+    'epoch-a'
+  );
+});
+
+it('retains both drafts after a failed conference save and retries the retained conference', async () => {
+  const saved = savedInline();
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(
+      Object.assign(new Error('Conference rejected'), {
+        response: {
+          status: 400,
+          data: {
+            error: {
+              code: 'invalid_input',
+              message: 'Conference rejected',
+              retryable: false,
+            },
+          },
+        },
+      })
+    )
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [saved],
+    });
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([saved]).items[0]);
+  const { registry, parent, child } = await prepareInline();
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Charlie bridge' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await screen.findByText('Conference rejected');
+  expect(registry.resumeDraft(parent.draftId)?.input).toEqual(parent.input);
+  expect(registry.resumeDraft(child.draftId)?.input.payload.title).toBe(
+    'Charlie bridge'
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await screen.findByLabelText('Party / Participant (Optional)');
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(registry.resumeDraft(parent.draftId)?.input.payload).toHaveProperty(
+    'conference_id',
+    'new-bridge'
+  );
+});
+
+it('resolves an uncertain inline save with its exact command key and body without creating a second conference', async () => {
+  const saved = savedInline();
+  const save = vi
+    .spyOn(api, 'saveOperatorCommand')
+    .mockRejectedValueOnce(new Error('lost conference receipt'))
+    .mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [saved],
+    });
+  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(page([saved]).items[0]);
+  const { registry, parent, child } = await prepareInline();
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Charlie bridge' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  const retry = await screen.findByRole('button', {
+    name: 'Retry exact conference save',
+  });
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Save Conference',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  expect(registry.resumeDraft(parent.draftId)?.input).toEqual(parent.input);
+  expect(registry.resumeDraft(child.draftId)?.input.payload.title).toBe(
+    'Charlie bridge'
+  );
+  fireEvent.click(retry);
+  await screen.findByLabelText('Party / Participant (Optional)');
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(save.mock.calls[1]).toEqual(save.mock.calls[0]);
+  expect(registry.listDrafts()).toHaveLength(1);
+});
+
+it('keeps an accepted unreadable inline conference and rereads it before selecting without resubmission', async () => {
+  const saved = savedInline();
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
+  vi.spyOn(api, 'readOperatorRecord')
+    .mockRejectedValueOnce(new Error('read unavailable'))
+    .mockResolvedValue(page([saved]).items[0]);
+  const { registry, parent, child } = await prepareInline();
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Charlie bridge' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  const reconcile = await screen.findByRole('button', {
+    name: 'Reread and reconcile',
+  });
+  expect(registry.resumeDraft(child.draftId)).not.toBeNull();
+  expect(registry.resumeDraft(parent.draftId)?.input).toEqual(parent.input);
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Save Conference',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  fireEvent.click(reconcile);
+  await screen.findByLabelText('Party / Participant (Optional)');
+  expect(save).toHaveBeenCalledTimes(1);
+});
+
+it('recovers an accepted unreadable inline conference after reload without submitting it again', async () => {
+  const saved = savedInline();
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
+  vi.spyOn(api, 'readOperatorRecord')
+    .mockRejectedValueOnce(new Error('read unavailable'))
+    .mockResolvedValue(page([saved]).items[0]);
+  const { registry, parent, child } = await prepareInline();
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await screen.findByRole('button', { name: 'Reread and reconcile' });
+  cleanup();
+  clients.splice(0).forEach((client) => client.clear());
+  const recovered = new DraftRegistry(sessionStorage);
+  const retained = recovered.resumeDraft(child.draftId)!;
+  mount(retained.input, false, false, undefined, {}, health, undefined, {
+    registry: recovered,
+    draftId: child.draftId,
+  });
+  const reread = await screen.findByRole('button', {
+    name: 'Reread saved conference',
+  });
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Save Conference',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  fireEvent.click(reread);
+  await screen.findByLabelText('Party / Participant (Optional)');
+  expect(screen.getByRole('option', { name: 'Charlie bridge' })).toBeTruthy();
+  expect(recovered.resumeDraft(parent.draftId)?.input.payload).toHaveProperty(
+    'conference_id',
+    'new-bridge'
+  );
+  expect(save).toHaveBeenCalledTimes(1);
+  expect(registry.resumeDraft(parent.draftId)?.input).toEqual(parent.input);
+});
+
+it('retains partial explicit Zulu controls for a historical issue occurrence while parked', async () => {
+  const { issueInput } = await import('../issueForms');
+  const initial = issueInput('mission-a');
+  initial.payload.corrects_version = 1;
+  initial.payload.corrected_update_at = '2026-10-28T23:45:12.123456Z';
+  const saved = { ...record, ...initial };
+  const { registry, draft } = mount(initial, false, false, saved, {
+    correctionVersion: 1,
+  });
+  const hour = await screen.findByLabelText('Corrected Occurrence hour (Zulu)');
+  expect((hour as HTMLSelectElement).value).toBe('23');
+  fireEvent.change(hour, { target: { value: '' } });
+  expect(
+    registry.resumeDraft(draft.draftId)?.editorState?.correctedOccurrenceParts
+  ).toEqual({ date: '2026-10-28', time: ':45' });
+  expect(registry.resumeDraft(draft.draftId)?.input.payload).toHaveProperty(
+    'corrected_update_at',
+    null
+  );
+});
+
+it('uses the shared ad hoc transport catalog for reusable conference configuration', async () => {
+  vi.mocked(transportCatalog.readTransportCatalog).mockResolvedValue({
+    schema_version: 1,
+    version: 1,
+    services: [],
+    transports: [
+      {
+        id: 'mission-sat',
+        name: 'Mission satellite',
+        enabled: true,
+        archived: false,
+      },
+    ],
+  });
+  const { registry, draft } = mount(conferenceDraft('mission-a'));
+  await screen.findAllByRole('option', { name: 'Mission satellite' });
+  fireEvent.change(screen.getByLabelText('Intended Transport'), {
+    target: { value: 'mission-sat' },
+  });
+  expect(registry.resumeDraft(draft.draftId)?.input.payload).toHaveProperty(
+    'intended_transport',
+    'mission-sat'
+  );
+});
+
+it('keeps the independent conference when its parked parent call was discarded during the accepted read', async () => {
+  const saved = savedInline();
+  let resolveRead!: (value: ReturnType<typeof page>['items'][number]) => void;
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
+  vi.spyOn(api, 'readOperatorRecord').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveRead = resolve;
+      })
+  );
+  const { registry, parent, child } = await prepareInline();
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await waitFor(() => expect(api.readOperatorRecord).toHaveBeenCalled());
+  registry.discardDraft(parent.draftId);
+  await act(async () => resolveRead(page([saved]).items[0]));
+  await waitFor(() => expect(registry.resumeDraft(child.draftId)).toBeNull());
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(save).toHaveBeenCalledTimes(1);
+});
+
+it('retains conference edits made during the accepted read as a correction to the saved conference', async () => {
+  const saved = savedInline();
+  let resolveRead!: (value: ReturnType<typeof page>['items'][number]) => void;
+  vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+    schema_version: 1,
+    command_id: 'receipt',
+    saved_records: [saved],
+  });
+  vi.spyOn(api, 'readOperatorRecord').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveRead = resolve;
+      })
+  );
+  const { registry, child } = await prepareInline();
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+  await waitFor(() => expect(api.readOperatorRecord).toHaveBeenCalled());
+  fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
+    target: { value: 'Newer unsent name' },
+  });
+  await act(async () => resolveRead(page([saved]).items[0]));
+  await screen.findByLabelText('Party / Participant (Optional)');
+  const retained = registry.resumeDraft(child.draftId)!;
+  expect(retained.target.recordId).toBe('new-bridge');
+  expect(retained.baseVersion).toBe(saved.version);
+  expect(retained.input.payload.title).toBe('Newer unsent name');
+  expect(retained.editorState?.inlineParentCallDraftId).toBeUndefined();
+  expect(retained.editorState?.inlineConferenceAccepted).toBeUndefined();
 });

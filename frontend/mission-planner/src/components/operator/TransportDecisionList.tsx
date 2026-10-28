@@ -59,7 +59,7 @@ export function TransportDecisionList({
                   disabled={disabled || r.deleted}
                   onClick={() => onCorrect(r)}
                 >
-                  Correct this decision
+                  Correct This Decision
                 </button>
                 <button
                   className={issueButton}

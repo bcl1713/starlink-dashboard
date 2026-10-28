@@ -32,3 +32,16 @@ it('captures explicit overnight Ku start and end dates', () => {
     duration_seconds: 3600,
   });
 });
+it('validates an enormous finite Ka duration without deriving an invalid date', () => {
+  const save = vi.fn();
+  render(<KaOutageConfig outages={[]} onOutagesChange={save} />);
+  enterZulu('Ka outage start', '2026-10-28T23:30');
+  fireEvent.change(screen.getByLabelText('Duration (hours)'), {
+    target: { value: '1000000000000' },
+  });
+  expect(screen.getByRole('alert').textContent).toMatch(
+    /cannot exceed 24 hours/i
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+  expect(save).not.toHaveBeenCalled();
+});

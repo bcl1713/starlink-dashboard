@@ -1,3 +1,3 @@
 import { instant } from './issueForms';
 /** Capture once when the retained note draft is created, never on submission. */
-export const createNoteTime = (now = new Date().toISOString()) => instant(now);
+export const createNoteTime = (now: string) => instant(now);

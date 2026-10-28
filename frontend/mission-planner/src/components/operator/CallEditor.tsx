@@ -6,6 +6,7 @@ import type {
   SavedRecord,
 } from '@/types/operator';
 import { shiftCallTime } from './callTiming';
+import type { CatalogItem } from '@/services/transportCatalog';
 import { UtcDateTime, type UtcParts } from './UtcDateTime';
 const fieldClass =
   'min-h-11 w-full min-w-0 rounded-md border bg-background px-3 py-2';
@@ -54,6 +55,8 @@ export function CallEditor({
   onEditorStateChange,
   records,
   contextual = false,
+  onCreateConference,
+  transportChoices = [],
 }: {
   formId?: string;
   draft: CallInput;
@@ -67,6 +70,8 @@ export function CallEditor({
   onEditorStateChange?: (state: CallEditorState) => void;
   records?: SavedRecord[];
   contextual?: boolean;
+  onCreateConference?: () => void;
+  transportChoices?: readonly CatalogItem[];
 }) {
   const [lead, setLead] = useState(
     editorState?.lead ??
@@ -200,7 +205,7 @@ export function CallEditor({
   return (
     <form
       id={formId}
-      aria-label="Call editor"
+      aria-label="Call Editor"
       className="min-w-0 space-y-3 rounded-xl border bg-card p-4"
       onSubmit={(e) => {
         e.preventDefault();
@@ -210,10 +215,10 @@ export function CallEditor({
       <h3 className="text-lg font-semibold">
         {draft.payload.status === 'completed' && !draft.time.planned_start_at
           ? 'Completed / unscheduled call'
-          : 'Schedule a call'}
+          : 'Schedule A Call'}
       </h3>
       <p className="text-sm text-muted-foreground">
-        All dates and times are UTC. Blank optional fields remain unknown.
+        All dates and times are Zulu. Blank optional fields remain unknown.
       </p>
       {error && <p role="alert">{error}</p>}
       <fieldset
@@ -222,7 +227,7 @@ export function CallEditor({
         className="min-w-0 space-y-3 disabled:opacity-60"
       >
         <label className="block">
-          Party / participant (optional)
+          Party / Participant (Optional)
           <input
             className={fieldClass}
             maxLength={200}
@@ -235,11 +240,11 @@ export function CallEditor({
             }
           />
         </label>
-        {dateTime('planned_start_at', 'Planned start')}
+        {dateTime('planned_start_at', 'Planned Start')}
         <label className="block">
-          Communications type
+          Communications Type
           <select
-            aria-label="Communications type"
+            aria-label="Communications Type"
             className={fieldClass}
             value={draft.payload.communications_kind ?? ''}
             onChange={(e) =>
@@ -256,7 +261,7 @@ export function CallEditor({
           </select>
         </label>
         <label className="block">
-          Duration minutes (blank = unknown)
+          Duration Minutes (blank = unknown)
           <input
             className={fieldClass}
             inputMode="numeric"
@@ -268,7 +273,7 @@ export function CallEditor({
           />
         </label>
         <label className="block">
-          Preparation lead minutes (blank = unknown)
+          Preparation Lead Minutes (blank = unknown)
           <input
             className={fieldClass}
             inputMode="numeric"
@@ -281,8 +286,8 @@ export function CallEditor({
         </label>
         <label className="block">
           {records
-            ? 'Conference (optional)'
-            : 'Conference record ID (optional)'}
+            ? 'Conference (Optional)'
+            : 'Conference Record ID (Optional)'}
           {records ? (
             <select
               className={fieldClass}
@@ -291,7 +296,7 @@ export function CallEditor({
                 payload({ conference_id: event.target.value || null })
               }
             >
-              <option value="">Unknown / unassigned</option>
+              <option value="">Direct Connection · no conference</option>
               {draft.payload.conference_id &&
                 !records.some(
                   (record) => record.record_id === draft.payload.conference_id
@@ -321,6 +326,62 @@ export function CallEditor({
             />
           )}
         </label>
+        {onCreateConference && (
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={onCreateConference}
+          >
+            Create Conference
+          </button>
+        )}
+        {!draft.payload.conference_id && (
+          <label className="block">
+            Direct connection transport (optional)
+            <select
+              className={fieldClass}
+              value={draft.payload.direct_transport ?? ''}
+              onChange={(event) =>
+                payload({
+                  direct_transport: (event.target.value ||
+                    null) as CallPayload['direct_transport'],
+                  established_at: null,
+                })
+              }
+            >
+              <option value="">Unknown / not specified</option>
+              <option value="Ka">Ka Commercial</option>
+              <option value="X">X-Band</option>
+              <option value="Starshield">Starshield</option>
+              {transportChoices
+                .filter(
+                  (transport) =>
+                    transport.enabled &&
+                    !transport.archived &&
+                    !['Ka', 'X', 'Starshield'].includes(transport.id)
+                )
+                .map((transport) => (
+                  <option key={transport.id} value={transport.id}>
+                    {transport.name}
+                  </option>
+                ))}
+              {draft.payload.direct_transport &&
+                !['Ka', 'X', 'Starshield'].includes(
+                  draft.payload.direct_transport
+                ) &&
+                !transportChoices.some(
+                  (transport) =>
+                    transport.id === draft.payload.direct_transport &&
+                    transport.enabled &&
+                    !transport.archived
+                ) && (
+                  <option value={draft.payload.direct_transport}>
+                    {draft.payload.direct_transport} · saved transport
+                  </option>
+                )}
+            </select>
+          </label>
+        )}
         <details>
           <summary className="min-h-11 cursor-pointer py-2">
             Timing, association and optional details
@@ -367,9 +428,9 @@ export function CallEditor({
                 />
               </label>
               <label>
-                Shift unit
+                Shift Unit
                 <select
-                  aria-label="Shift unit"
+                  aria-label="Shift Unit"
                   className={fieldClass}
                   value={unit}
                   onChange={(e) => {
@@ -409,9 +470,9 @@ export function CallEditor({
             {dateTime('occurred_at', 'Actual start')}
             {dateTime('ended_at', 'Actual end')}
             <label className="block">
-              Actual time precision
+              Actual Time Precision
               <select
-                aria-label="Actual time precision"
+                aria-label="Actual Time Precision"
                 className={fieldClass}
                 value={draft.time.precision}
                 onChange={(e) =>
@@ -483,7 +544,7 @@ export function CallEditor({
             {!contextual && draft.scope === 'between_legs' && (
               <>
                 <label className="block">
-                  Previous leg ID (optional)
+                  Previous Leg ID (optional)
                   <input
                     className={fieldClass}
                     value={draft.payload.previous_leg_id ?? ''}
@@ -493,7 +554,7 @@ export function CallEditor({
                   />
                 </label>
                 <label className="block">
-                  Next leg ID (optional)
+                  Next Leg ID (optional)
                   <input
                     className={fieldClass}
                     value={draft.payload.next_leg_id ?? ''}
@@ -521,7 +582,7 @@ export function CallEditor({
           hidden={!!formId}
           disabled={saveDisabled}
         >
-          Save call
+          Save Call
         </button>
       </fieldset>
     </form>

@@ -39,7 +39,11 @@ import {
 } from '@/hooks/api/operatorReadSession';
 import { useMissionTimeline } from '@/hooks/api/useMissionTimeline';
 import { useOperatorEvents } from '@/hooks/api/useOperatorEvents';
-import { readOperatorRecords, readOperatorRecord } from '@/services/operator';
+import {
+  getOperatorHealth,
+  readOperatorRecords,
+  readOperatorRecord,
+} from '@/services/operator';
 import type {
   JournalInput,
   OperatorCommand,
@@ -52,16 +56,20 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { callCommand, type CallAction } from '../callCommands';
+import {
+  customerConnectionReady,
+  callCommand,
+  type CallAction,
+} from '../callCommands';
 import { joinCommand } from '../conferenceCommands';
 import { callDraft } from '../callDraft';
 import {
   conferenceDraft,
   participationDraft,
   conferenceCommand,
+  sessionOutsideContext,
   leaveCommand,
   resumeCommand,
-  unknownTime,
 } from '../conferenceCommands';
 import { OperatorEventFeed } from '../OperatorEventFeed';
 import { OperatorAlertSettings } from '../OperatorAlertSettings';
@@ -112,11 +120,12 @@ import {
   operationalRelevant,
   replayCurrent,
 } from './operatingContext';
+import { createNoteTime } from '../noteTime';
+import { CallTransportAdvisory } from './CallTransportAdvisory';
 import './workspace.css';
 
 const views = [
-  'Now',
-  'Communications',
+  'Operations',
   'Transport',
   'Issues',
   'Notes',
@@ -140,7 +149,8 @@ export function OperatorWorkspace() {
     active.isError ? undefined : active.data
   );
   const requested = params.get('view');
-  const view = views.find((view) => view.toLowerCase() === requested) ?? 'Now';
+  const view =
+    views.find((view) => view.toLowerCase() === requested) ?? 'Operations';
   const workspace = useOperatorWorkspace();
   const health = useOperatorHealth(false);
   const identity = operatorIdentity(health.data);
@@ -310,7 +320,52 @@ export function OperatorWorkspace() {
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
+  const actionLock = useRef(false);
+  const connectLock = useRef(false);
+  const noteLock = useRef(false);
   const noteButton = useRef<HTMLButtonElement>(null);
+  const [selection, setSelection] = useState<{
+    missionId: string;
+    recordId: string;
+  } | null>(null);
+  const selectedRecordId =
+    selection?.missionId === missionId ? selection.recordId : null;
+  const [timelineStale, setTimelineStale] = useState(true);
+  useEffect(() => {
+    const elapsed = performance.now() - timeline.receivedAt;
+    const id = window.setTimeout(
+      () => setTimelineStale(true),
+      Math.max(0, 30_000 - elapsed)
+    );
+    setTimelineStale(timeline.failed || elapsed >= 30_000);
+    return () => window.clearTimeout(id);
+  }, [timeline.receivedAt, timeline.failed]);
+  useEffect(() => {
+    if (!selectedRecordId || view !== 'Operations') return;
+    const frame = window.requestAnimationFrame(() => {
+      const row = [
+        ...document.querySelectorAll<HTMLElement>('[data-record-id]'),
+      ].find((el) => el.dataset.recordId === selectedRecordId);
+      row?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      row
+        ?.querySelector<HTMLButtonElement>(
+          '[aria-label="Conference primary action"] button, button.ws-primary, button[data-primary-action], button'
+        )
+        ?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedRecordId, view]);
+  function focusRecord(record: SavedRecord) {
+    if (record.payload.entry_type === 'participation') {
+      const { call_id, conference_id } = record.payload;
+      const parent = currentLoaded.find(
+        (r) => r.record_id === call_id || r.record_id === conference_id
+      );
+      if (parent) record = parent;
+    }
+    setSelection({ missionId, recordId: record.record_id });
+    navigateView(record.record_type === 'issue' ? 'Issues' : 'Operations');
+  }
   function returnToActiveMission() {
     setMobileTools(false);
     setParams((previous) => {
@@ -336,33 +391,97 @@ export function OperatorWorkspace() {
     openInput(input);
   }
   function callAction(record: SavedRecord, intent: CallAction) {
-    void action(record, (latest, now) => {
-      if (intent !== 'connect') return callCommand(latest, intent, now);
+    if (intent !== 'connect') {
+      void action(record, (latest, now) => callCommand(latest, intent, now));
+      return;
+    }
+    void connectCustomer(record);
+  }
+  async function connectCustomer(record: SavedRecord) {
+    if (connectLock.current || actionLock.current || disabled) return;
+    connectLock.current = true;
+    try {
+      const current = await readOperatorRecord(record.record_id);
+      let latest = current.record;
+      if (latest.version !== record.version)
+        throw new Error(
+          'This Call Changed. Review Its Current State Before Connecting.'
+        );
+      if (latest.payload.entry_type !== 'call') return;
+      const related = [...currentLoaded];
+      if (latest.payload.conference_id) {
+        const bridge = await readOperatorRecord(latest.payload.conference_id);
+        const index = related.findIndex(
+          (r) => r.record_id === bridge.record.record_id
+        );
+        if (index < 0) related.push(bridge.record);
+        else related[index] = bridge.record;
+      }
       if (
-        latest.payload.entry_type !== 'call' ||
-        !latest.time.occurred_at ||
-        latest.deleted ||
-        ['completed', 'cancelled'].includes(latest.payload.status)
+        !customerConnectionReady(
+          latest,
+          related,
+          (r) =>
+            replayCurrent(r, currentSource) &&
+            (r.record_type !== 'conference' ||
+              !sessionOutsideContext(r, currentAssociation))
+        )
       )
         throw new Error(
-          'Start an active call before reporting a customer connection.'
+          'Establish The Connection And Complete The Two-Way Check Before Connecting The Customer.'
         );
-      const input = participationDraft(
-        latest.mission_id,
-        latest.payload.conference_id
+      if (!latest.time.occurred_at) {
+        const accepted = await action(latest, (r, now) => {
+          const command = callCommand(r, 'start', now);
+          if (command.operation !== 'update')
+            throw new Error('Call Start Unavailable.');
+          return {
+            ...command,
+            body: { ...command.body, begin_customer_connect: true },
+          };
+        });
+        if (!accepted) return;
+        latest = (await readOperatorRecord(latest.record_id)).record;
+      }
+      await action(latest, (call, now) => {
+        if (
+          call.payload.entry_type !== 'call' ||
+          !call.time.occurred_at ||
+          call.deleted ||
+          ['completed', 'cancelled'].includes(call.payload.status)
+        )
+          throw new Error('This Call Is No Longer Active.');
+        const input = participationDraft(
+          call.mission_id,
+          call.payload.conference_id
+        );
+        input.scope = call.scope;
+        input.leg_id = call.leg_id;
+        input.payload = {
+          ...input.payload,
+          call_id: call.record_id,
+          participant: call.payload.party ?? call.payload.title,
+          title: call.payload.party ?? call.payload.title,
+          previous_leg_id: call.payload.previous_leg_id,
+          next_leg_id: call.payload.next_leg_id,
+        };
+        const command = joinCommand(input, now);
+        if (command.operation !== 'create')
+          throw new Error('Customer Report Unavailable.');
+        return {
+          ...command,
+          body: { ...command.body, connect_customer: true },
+        };
+      });
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'Customer Connection Unavailable.'
       );
-      input.scope = latest.scope;
-      input.leg_id = latest.leg_id;
-      input.payload = {
-        ...input.payload,
-        call_id: latest.record_id,
-        participant: latest.payload.party ?? latest.payload.title,
-        title: latest.payload.party ?? latest.payload.title,
-        previous_leg_id: latest.payload.previous_leg_id,
-        next_leg_id: latest.payload.next_leg_id,
-      };
-      return joinCommand(input, now);
-    });
+    } finally {
+      connectLock.current = false;
+    }
   }
   function openInput(
     input: OperatorInput,
@@ -412,7 +531,8 @@ export function OperatorWorkspace() {
     record: SavedRecord,
     build: (latest: SavedRecord, now: string) => OperatorCommand
   ) {
-    if (acting || disabled || !health.data) return;
+    if (actionLock.current || disabled || !health.data) return;
+    actionLock.current = true;
     setActing(true);
     setActionError(null);
     try {
@@ -443,12 +563,20 @@ export function OperatorWorkspace() {
         command.operation === 'create' ? undefined : latest.record
       );
       workspace.refreshDrafts();
-      await workspace.submitDraft(draft.draftId, { command });
+      let accepted = false;
+      await workspace.submitDraft(draft.draftId, {
+        command,
+        onAccepted: () => {
+          accepted = true;
+        },
+      });
+      return accepted;
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : 'Action unavailable.'
       );
     } finally {
+      actionLock.current = false;
       setActing(false);
     }
   }
@@ -459,24 +587,46 @@ export function OperatorWorkspace() {
       body: { schema_version: 1, expected_version: latest.version },
     }));
   }
-  function note() {
-    const input: JournalInput = {
-      schema_version: 1,
-      record_type: 'journal_entry',
-      mission_id: missionId,
-      leg_id: null,
-      scope: 'mission',
-      time: { ...unknownTime },
-      payload: {
+  async function note() {
+    if (noteLock.current || disabled) return;
+    noteLock.current = true;
+    try {
+      const clock = await readOperatorRecords({
+        mission_id: missionId,
+        record_type: 'journal_entry',
+        limit: 1,
+      });
+      const currentHealth = await getOperatorHealth();
+      if (operatorIdentity(currentHealth) !== identity)
+        throw new Error(
+          'Source Changed. Reopen Note After The Workspace Refreshes.'
+        );
+      const input: JournalInput = {
         schema_version: 1,
-        entry_type: 'note',
-        title: '',
-        note: '',
-        previous_leg_id: null,
-        next_leg_id: null,
-      },
-    };
-    openInput(input);
+        record_type: 'journal_entry',
+        mission_id: missionId,
+        leg_id: null,
+        scope: 'mission',
+        time: createNoteTime(clock.as_of),
+        payload: {
+          schema_version: 1,
+          entry_type: 'note',
+          title: '',
+          note: '',
+          previous_leg_id: null,
+          next_leg_id: null,
+        },
+      };
+      openInput(input);
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'Note Time Unavailable. Retry After Reconnecting.'
+      );
+    } finally {
+      noteLock.current = false;
+    }
   }
   const cue = alerts.batch?.events.filter((event) =>
     events.snapshot?.events.some(
@@ -535,7 +685,7 @@ export function OperatorWorkspace() {
               className="ws-button ws-context-return"
               onClick={returnToActiveMission}
             >
-              Return to active mission
+              Return To Active Mission
             </button>
           )}
           {health.data?.mission_journal && (
@@ -566,10 +716,7 @@ export function OperatorWorkspace() {
             data-open={mobileTools}
           >
             {params.has('mission_id') && (
-              <button
-                className="ws-button ws-mobile-only"
-                onClick={returnToActiveMission}
-              >
+              <button className="ws-button" onClick={returnToActiveMission}>
                 Follow active mission
               </button>
             )}
@@ -578,7 +725,7 @@ export function OperatorWorkspace() {
                 className="ws-button"
                 to={`/missions/${encodeURIComponent(missionId)}`}
               >
-                Mission records
+                Mission Records
               </Link>
             )}
             <button
@@ -588,7 +735,7 @@ export function OperatorWorkspace() {
                 setTools(true);
               }}
             >
-              Display tools
+              Display Controls
             </button>
             <OperatorAlertSettings
               preferences={alerts.preferences}
@@ -597,13 +744,13 @@ export function OperatorWorkspace() {
               onEnable={alerts.enableOutput}
             />
             <button
-              className="ws-button ws-mobile-only"
+              className="ws-button"
               onClick={() => {
                 setMobileTools(false);
                 setSources(true);
               }}
             >
-              Source status
+              Source Status
             </button>
           </div>
           <button className="ws-button" onClick={() => setHelp(true)}>
@@ -611,46 +758,32 @@ export function OperatorWorkspace() {
           </button>
         </div>
       </header>
-      <PopEvidence />
       <div className="ws-content">
         <WorkspaceAwareness
           snapshot={events.snapshot}
           timeline={timeline}
           onOpenTimelineSource={(event) => {
-            if (
-              event.kind === 'issue_followup' ||
-              event.kind.startsWith('call_')
-            ) {
-              const record = loaded.find(
-                (record) => record.record_id === event.source_ref
-              );
-              if (record) {
-                openRecord(record);
-                return;
-              }
-              if (event.source_ref) {
-                setHistoryId(event.source_ref);
-                return;
-              }
-            } else if (event.leg_id) {
-              navigate(
-                `/missions/${encodeURIComponent(event.mission_id)}/legs/${encodeURIComponent(event.leg_id)}`
-              );
-              return;
-            }
-            navigateView(
-              event.kind === 'issue_followup'
-                ? 'Issues'
-                : event.kind.startsWith('call_')
-                  ? 'Communications'
-                  : 'Transport'
+            const record = currentLoaded.find(
+              (r) =>
+                r.record_id === event.source_ref ||
+                (r.record_type === 'call' &&
+                  event.dependent_versions[r.record_id] !== undefined)
             );
+            if (record) focusRecord(record);
+            else
+              navigateView(
+                event.kind === 'issue_followup'
+                  ? 'Issues'
+                  : event.kind.startsWith('call_')
+                    ? 'Operations'
+                    : 'Transport'
+              );
           }}
           next={nextRequirement(events.snapshot)}
           records={currentLoaded}
           recordsIncomplete={incomplete}
           failed={events.failed || health.isError}
-          onOpenRecord={openRecord}
+          onOpenRecord={focusRecord}
           onOpenEvents={() => setOperationalAlerts(true)}
           onOpenNext={() => {
             const next = nextRequirement(events.snapshot);
@@ -659,8 +792,8 @@ export function OperatorWorkspace() {
                 record.record_type === 'call' &&
                 next?.dependent_versions[record.record_id] !== undefined
             );
-            if (record) openRecord(record);
-            else navigateView('Communications');
+            if (record) focusRecord(record);
+            else navigateView('Operations');
           }}
         />
         <nav className="ws-navigation" aria-label="Operator workspace">
@@ -933,7 +1066,7 @@ export function OperatorWorkspace() {
                 else
                   navigateView(
                     stage === 'T02' || stage === 'T03'
-                      ? 'Communications'
+                      ? 'Operations'
                       : stage === 'T06'
                         ? 'Transport'
                         : stage === 'T07'
@@ -942,12 +1075,12 @@ export function OperatorWorkspace() {
                             ? 'Notes'
                             : stage === 'T11'
                               ? 'History'
-                              : 'Now'
+                              : 'Operations'
                   );
               }}
             />
           )}
-          <div hidden={view !== 'Now'}>
+          <div hidden={view !== 'Operations'}>
             <ManualDestinationSettingsCard />
           </div>
           <OperatorStoreSetup
@@ -957,37 +1090,47 @@ export function OperatorWorkspace() {
           />
           {!missionId ? (
             <section>
-              <h2>Choose a mission</h2>
+              <h2>Choose A Mission</h2>
               <p>
                 Select a mission above. Missions owns the itinerary and leg
                 activation.
               </p>
               <Link className="ws-button" to="/missions">
-                Browse missions
+                Browse Missions
               </Link>
             </section>
           ) : (
             <>
-              {view === 'Now' && (
-                <OperatorTransportAvailability
-                  key={missionId}
-                  missionId={missionId}
-                />
+              {view === 'Operations' && (
+                <details className="ws-secondary-capture">
+                  <summary>Transport Availability</summary>
+                  <OperatorTransportAvailability
+                    key={missionId}
+                    missionId={missionId}
+                  />
+                </details>
               )}
-              <div className="ws-quick-actions" hidden={view === 'Transport'}>
+              <div className="ws-quick-actions" aria-label="Quick Actions">
                 <button
                   className="ws-button ws-primary"
                   disabled={disabled}
                   onClick={plannedCall}
                 >
-                  Create call
+                  Schedule
                 </button>
                 <button
                   className="ws-button"
                   disabled={disabled}
                   onClick={() => openInput(conferenceDraft(missionId))}
                 >
-                  Create conference
+                  Create Conference
+                </button>
+                <button
+                  className="ws-button"
+                  disabled={disabled}
+                  onClick={() => openInput(issueInput(missionId))}
+                >
+                  Issue
                 </button>
                 <button
                   className="ws-button"
@@ -1014,10 +1157,34 @@ export function OperatorWorkspace() {
                 <p role="status">Refreshing saved records…</p>
               )}
               {actionError && <p role="alert">{actionError}</p>}
-              {view === 'Communications' || view === 'Now' ? (
+              {view === 'Operations' ? (
                 <>
+                  <section className="ws-next-action" aria-label="Next Action">
+                    <div>
+                      <h2>Next Action</h2>
+                      <p>
+                        {selectedRecordId
+                          ? 'Selected Work · Complete Establishment, Then Connect The Customer'
+                          : (nextRequirement(events.snapshot)?.title ??
+                            'Prepare A Conference Or Schedule A Call')}
+                      </p>
+                    </div>
+                    <p className="ws-meta">
+                      Establish Includes The Two-Way Distant-End Check. These
+                      Are Operator Reports.
+                    </p>
+                  </section>
                   <CommunicationsView
-                    activeOnly={view === 'Now'}
+                    showCaptureActions={false}
+                    selectedRecordId={selectedRecordId}
+                    renderAdvisory={(call) => (
+                      <CallTransportAdvisory
+                        call={call}
+                        records={currentLoaded}
+                        snapshot={timeline.snapshot}
+                        stale={timelineStale}
+                      />
+                    )}
                     items={currentItems}
                     currentAssociation={currentAssociation}
                     isSessionCurrent={(record) =>
@@ -1071,6 +1238,33 @@ export function OperatorWorkspace() {
                       )
                     }
                   />
+                  <details className="ws-secondary-capture">
+                    <summary>Record Other Activity</summary>
+                    <button
+                      className="ws-button"
+                      disabled={disabled}
+                      onClick={() =>
+                        openInput(
+                          callDraft(undefined, 'retrospective', missionId)
+                        )
+                      }
+                    >
+                      Record Completed Call
+                    </button>
+                    <button
+                      className="ws-button"
+                      disabled={disabled}
+                      onClick={() =>
+                        openInput(
+                          participationDraft(missionId),
+                          undefined,
+                          true
+                        )
+                      }
+                    >
+                      Report Customer Joined
+                    </button>
+                  </details>
                 </>
               ) : view === 'Transport' ? (
                 <TransportView
@@ -1197,7 +1391,7 @@ export function OperatorWorkspace() {
                 />
               )}
               {!!retained.length &&
-                ['Communications', 'Transport', 'Issues'].includes(view) && (
+                ['Operations', 'Transport', 'Issues'].includes(view) && (
                   <section aria-label="Previous operational records">
                     <h3>
                       Previous operational records · {retained.length} loaded
@@ -1223,7 +1417,7 @@ export function OperatorWorkspace() {
                   disabled={records.isFetchingNextPage}
                   onClick={() => void records.fetchNextPage()}
                 >
-                  Load more records
+                  Load More Records
                 </button>
               )}
               {records.isError && (
@@ -1279,7 +1473,7 @@ export function OperatorWorkspace() {
                     }
                     onClick={() => void workspace.retryExact(row.commandId)}
                   >
-                    Retry same save
+                    Retry Same Save
                   </button>
                 )}
                 {[
@@ -1318,7 +1512,7 @@ export function OperatorWorkspace() {
         }}
       >
         <DialogContent className="ws-editor">
-          <DialogTitle>Issue activity</DialogTitle>
+          <DialogTitle>Issue Activity</DialogTitle>
           <DialogDescription>
             Operational updates and their corrections, with immutable audit
             history.
@@ -1378,7 +1572,7 @@ export function OperatorWorkspace() {
       </Dialog>
       <Dialog open={tools} onOpenChange={setTools}>
         <DialogContent className="ws-editor">
-          <DialogTitle>Display tools</DialogTitle>
+          <DialogTitle>Display Controls</DialogTitle>
           <DialogDescription>
             Shared Overview settings and commands to a selected window in this
             browser.
@@ -1396,10 +1590,9 @@ export function OperatorWorkspace() {
             communications hardware.
           </DialogDescription>
           <p>
-            Create calls for requirements. Create a reusable conference, report
-            its state, then report each customer joining or leaving
-            independently. Keep a draft before changing mission; its target
-            stays pinned.
+            Schedules for requirements. Create a reusable conference, report its
+            state, then report each customer joining or leaving independently.
+            Keep a draft before changing mission; its target stays pinned.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -1425,7 +1618,7 @@ export function OperatorWorkspace() {
               } else setGuide(true);
             }}
           >
-            Guided mission walkthrough
+            Guided Mission Walkthrough
           </button>
           {trainingLoading && (
             <p role="status">
@@ -1443,7 +1636,7 @@ export function OperatorWorkspace() {
                 className="ws-button"
                 onClick={() => void mission.refetch()}
               >
-                Retry mission details
+                Retry Mission Details
               </button>
             </div>
           )}
@@ -1478,7 +1671,7 @@ export function OperatorWorkspace() {
                 event.kind === 'issue_followup'
                   ? 'Issues'
                   : event.kind.startsWith('call_')
-                    ? 'Communications'
+                    ? 'Operations'
                     : 'Transport'
               )
             }
@@ -1487,7 +1680,8 @@ export function OperatorWorkspace() {
       </Dialog>
       <Dialog open={sources} onOpenChange={setSources}>
         <DialogContent>
-          <DialogTitle>Source status</DialogTitle>
+          <DialogTitle>Source Status</DialogTitle>
+          <PopEvidence />
           <DialogDescription>
             Current event coverage and source freshness.
           </DialogDescription>

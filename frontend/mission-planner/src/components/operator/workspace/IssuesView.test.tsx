@@ -30,5 +30,5 @@ it('exposes issue lifecycle without changing mitigation or hiding removed histor
   fireEvent.click(screen.getByRole('button', { name: 'Monitor' }));
   expect(action).toHaveBeenCalledWith(issue, 'monitoring');
   expect(screen.getByText(/Mitigation unknown/)).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Audit history' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Audit History' })).toBeTruthy();
 });

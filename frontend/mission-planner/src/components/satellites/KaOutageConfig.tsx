@@ -97,9 +97,7 @@ export function KaOutageConfig({
   const duration = Number(durationHours);
   const calculatedEndTime =
     !Number.isNaN(startDate.getTime()) &&
-    durationHoursPattern.test(durationHours) &&
-    Number.isFinite(duration) &&
-    duration > 0
+    validateDurationHours(durationHours) === null
       ? new Date(startDate.getTime() + duration * 3600000).toISOString()
       : '';
 

@@ -63,7 +63,7 @@ it('freezes an uncertain applied-only request across reload and retries its orig
   });
   fireEvent.click(screen.getByLabelText('Reported Applied 1'));
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save transport decision' })
+    screen.getByRole('button', { name: 'Save Transport Decision' })
   );
   await screen.findByRole('button', { name: 'Retry transport save' });
   const original = structuredClone(save.mock.calls[0]);
@@ -124,13 +124,13 @@ it('can explicitly keep a corrected draft as new when its old-store record is ab
     </QueryClientProvider>
   );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Correct this decision' })
+    await screen.findByRole('button', { name: 'Correct This Decision' })
   );
   fireEvent.change(screen.getByLabelText('Service 1'), {
     target: { value: 'Retained correction' },
   });
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save transport decision' })
+    screen.getByRole('button', { name: 'Save Transport Decision' })
   );
   await screen.findByRole('button', { name: 'Retry transport save' });
   healthRead.mockResolvedValue({ ...health, api_epoch: 'restored-epoch' });
@@ -151,7 +151,7 @@ it('can explicitly keep a corrected draft as new when its old-store record is ab
   );
   read.mockResolvedValue({ ...page().items[0], record: saved });
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save transport decision' })
+    screen.getByRole('button', { name: 'Save Transport Decision' })
   );
   await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
   expect(save.mock.calls[1][0]).toMatchObject({

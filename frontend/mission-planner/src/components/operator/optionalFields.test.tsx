@@ -33,13 +33,13 @@ it('submits independent conference intent, configuration, coordinator and retros
   change('Conference name (optional)', 'Fictional coordination bridge');
   change('Conference state', 'established');
   change('Coordinator (optional)', 'Fictional coordinator');
-  change('Intended transport', 'X');
+  change('Intended Transport', 'X');
   change('Operator-reported configuration', 'Ka');
   enterZulu('Configuration report', '2026-10-17T15:30:00Z');
   enterZulu('Two-way check', '2026-10-17T15:31:00Z');
   enterZulu('Action occurrence', '2026-10-17T15:00:00Z');
   change('Conference note (optional)', 'Retrospective operator report');
-  fireEvent.click(screen.getByRole('button', { name: 'Save conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
   expect(submit.mock.calls[0][0]).toMatchObject({
     mission_id: 'mission-a',
     payload: {
@@ -65,7 +65,7 @@ it('submits independent conference intent, configuration, coordinator and retros
   ).toBe('');
   enterZulu('Configuration report', '');
   enterZulu('Action occurrence', '');
-  fireEvent.click(screen.getByRole('button', { name: 'Save conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
   expect(submit.mock.calls[1][0]).toMatchObject({
     payload: {
       configured_transport: 'Starshield',
@@ -113,7 +113,7 @@ it('submits named participant and both associations while correcting an independ
   enterZulu('Reported join', '2026-10-17T15:00:00Z');
   enterZulu('Reported leave / interruption', '2026-10-17T15:10:00Z');
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save customer interval' })
+    screen.getByRole('button', { name: 'Save Customer Interval' })
   );
   expect(submit.mock.calls[0][0]).toMatchObject({
     payload: {
@@ -131,7 +131,7 @@ it('submits named participant and both associations while correcting an independ
   });
   enterZulu('Reported join', '');
   fireEvent.click(
-    screen.getByRole('button', { name: 'Save customer interval' })
+    screen.getByRole('button', { name: 'Save Customer Interval' })
   );
   expect(submit.mock.calls[1][0].time).toMatchObject({
     occurred_at: null,
@@ -186,14 +186,14 @@ it('submits optional issue priority, ownership and named links and explicitly re
     );
   }
   render(<Form />);
-  change('Problem description', 'Fictional audio issue');
+  change('Problem Description', 'Fictional audio issue');
   change('Priority', 'high');
-  change('Functional area', 'Audio');
-  change('Responsible party (optional)', 'Fictional ground team');
-  change('Affected capability', 'capability-a');
-  change('Related call', 'call-a');
-  change('Related conference', 'conference-a');
-  change('Relevant transport', 'X');
+  change('Functional Area', 'Audio');
+  change('Responsible Party (Optional)', 'Fictional ground team');
+  change('Affected Capability', 'capability-a');
+  change('Related Call', 'call-a');
+  change('Related Conference', 'conference-a');
+  change('Relevant Transport', 'X');
   enterZulu('Follow-Up', '2026-10-17T16:30:00');
   fireEvent.click(
     screen.getByRole('button', { name: /In 15 Minutes from Snapshot/i })

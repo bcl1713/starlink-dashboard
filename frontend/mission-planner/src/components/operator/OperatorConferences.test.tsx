@@ -32,7 +32,7 @@ it('retains conference draft when the disclosure is closed and reopened', async 
   disclosure.open = true;
   fireEvent(disclosure, new Event('toggle'));
   fireEvent.click(
-    await screen.findByRole('button', { name: 'New conference' })
+    await screen.findByRole('button', { name: 'New Conference' })
   );
   fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
     target: { value: 'Retain synthetic draft' },
@@ -84,16 +84,16 @@ it('retains an acknowledged draft when current-state reread fails', async () => 
     expect(
       (
         screen.getByRole('button', {
-          name: 'New conference',
+          name: 'New Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
   );
-  fireEvent.click(screen.getByRole('button', { name: 'New conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'New Conference' }));
   fireEvent.change(screen.getByLabelText('Conference name (optional)'), {
     target: { value: 'Retain acknowledged draft' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Save conference' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
   await screen.findByText(/acknowledged.*current.*unavailable/i);
   expect(
     (screen.getByLabelText('Conference name (optional)') as HTMLInputElement)
@@ -102,7 +102,7 @@ it('retains an acknowledged draft when current-state reread fails', async () => 
   expect(
     (
       screen.getByRole('button', {
-        name: 'Save conference',
+        name: 'Save Conference',
       }) as HTMLButtonElement
     ).disabled
   ).toBe(true);
@@ -129,7 +129,7 @@ it('releases all mutation guards after visible store-epoch reconciliation', asyn
     expect(
       (
         screen.getByRole('button', {
-          name: 'New conference',
+          name: 'New Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)
@@ -162,7 +162,7 @@ it('releases all mutation guards after visible store-epoch reconciliation', asyn
     expect(
       (
         screen.getByRole('button', {
-          name: 'New conference',
+          name: 'New Conference',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(false)

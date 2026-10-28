@@ -22,7 +22,7 @@ it('retains independent observation controls in the supplied draft', () => {
       onSave={vi.fn()}
     />
   );
-  fireEvent.change(screen.getByLabelText('Functional capability'), {
+  fireEvent.change(screen.getByLabelText('Functional Capability'), {
     target: { value: 'degraded' },
   });
   expect(changed.mock.calls[0][0]).toMatchObject({
@@ -57,19 +57,19 @@ it('submits distinct functional and redundancy UTC observations and preserves th
   render(<Form />);
   const change = (name: string, value: string) =>
     fireEvent.change(screen.getByLabelText(name), { target: { value } });
-  change('Capability name', 'Fictional audio service');
-  change('Functional capability', 'functional');
+  change('Capability Name', 'Fictional audio service');
+  change('Functional Capability', 'functional');
   fireEvent.click(
-    screen.getByLabelText('Use current UTC for functional observation')
+    screen.getByLabelText('Use Current Zulu for Functional Observation')
   );
-  enterZulu('Functional observation', '2026-10-17T15:00:00');
+  enterZulu('Functional Observation', '2026-10-17T15:00:00');
   change('Redundancy', 'unavailable');
   fireEvent.click(
-    screen.getByLabelText('Use current UTC for redundancy observation')
+    screen.getByLabelText('Use Current Zulu for Redundancy Observation')
   );
-  enterZulu('Redundancy observation', '2026-10-17T15:30:00');
-  change('Redundancy time precision', 'approximate');
-  fireEvent.click(screen.getByRole('button', { name: 'Save assessment' }));
+  enterZulu('Redundancy Observation', '2026-10-17T15:30:00');
+  change('Redundancy Time Precision', 'approximate');
+  fireEvent.click(screen.getByRole('button', { name: 'Save Assessment' }));
   expect(save.mock.calls[0][0].payload).toMatchObject({
     functional_status: 'functional',
     functional_observed_at: '2026-10-17T15:00:00.000Z',
@@ -79,8 +79,8 @@ it('submits distinct functional and redundancy UTC observations and preserves th
     redundancy_time_precision: 'approximate',
   });
   expect(save.mock.calls[0][2]).toEqual([]);
-  change('Functional time precision', 'unknown');
-  fireEvent.click(screen.getByRole('button', { name: 'Save assessment' }));
+  change('Functional Time Precision', 'unknown');
+  fireEvent.click(screen.getByRole('button', { name: 'Save Assessment' }));
   expect(save.mock.calls[1][0].payload).toMatchObject({
     functional_observed_at: null,
     functional_time_precision: 'unknown',

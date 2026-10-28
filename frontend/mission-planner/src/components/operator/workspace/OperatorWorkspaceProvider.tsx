@@ -275,11 +275,28 @@ export function OperatorWorkspaceProvider({
     setAttempts((previous) => [...previous.slice(-99), observed]);
   }
   function receipt(lane: string, request: Pending, value: CommandReceipt) {
-    if (request.workspace)
+    const inlineDraft = request.workspace
+      ? registry.resumeDraft(request.workspace.draftId)
+      : null;
+    if (inlineDraft?.editorState?.inlineParentCallDraftId) {
+      // Keep a durable accepted reference while the current read is unavailable.
+      // Reloading this editor must reread that row instead of creating it again.
+      registry.parkDraft({
+        ...inlineDraft,
+        editorState: {
+          ...inlineDraft.editorState,
+          inlineConferenceAccepted: {
+            recordId: value.saved_records[0].record_id,
+            submittedRevision: request.workspace!.revision,
+          },
+        },
+      });
+    } else if (request.workspace) {
       registry.retireSubmitted(
         request.workspace.draftId,
         request.workspace.revision
       );
+    }
     update(lane, {
       receipt: value,
       commandId: request.key,

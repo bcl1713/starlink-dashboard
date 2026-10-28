@@ -53,7 +53,7 @@ export function ConferenceEditor({
       {(['intended_transport', 'configured_transport'] as const).map((key) => (
         <label className="block" key={key}>
           {key === 'intended_transport'
-            ? 'Intended transport'
+            ? 'Intended Transport'
             : 'Operator-reported configuration'}
           <select
             className={field}
@@ -153,7 +153,7 @@ export function ConferenceEditor({
         type="submit"
         hidden={!!formId}
       >
-        Save conference
+        Save Conference
       </button>
     </form>
   );

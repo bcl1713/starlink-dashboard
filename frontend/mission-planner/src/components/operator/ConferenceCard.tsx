@@ -171,7 +171,7 @@ export function ConferenceCard({
             : 'Establish reports the two-way check; Close keeps the saved bridge available for reuse.'}
       </p>
       <p>
-        Intended transport: {transport(p.intended_transport)} ·
+        Intended Transport: {transport(p.intended_transport)} ·
         Operator-reported configuration: {transport(p.configured_transport)}
       </p>
       {advisory}

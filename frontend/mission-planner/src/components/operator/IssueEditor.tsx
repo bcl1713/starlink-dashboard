@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { UtcDateTime } from './UtcDateTime';
 import type {
   IssueInput,
@@ -90,6 +91,7 @@ export function IssueForm({
   contextual?: boolean;
 }) {
   const input = draft.input;
+  const [followUpReset, setFollowUpReset] = useState(0);
   const patch = (fields: Partial<IssueInput['payload']>) =>
     setDraft({
       ...draft,
@@ -112,17 +114,17 @@ export function IssueForm({
   return (
     <form
       id={formId}
-      aria-label="Issue editor"
+      aria-label="Issue Editor"
       onSubmit={(event) => void submit(event)}
       className="min-w-0 space-y-3 rounded-lg border p-4"
     >
       <fieldset disabled={disabled} className="min-w-0 space-y-3">
         <h3 className="font-semibold">
-          {record ? 'Update issue' : 'Log a problem'}
+          {record ? 'Update Issue' : 'Log a Problem'}
         </h3>
         {storageError && <p role="alert">{storageError}</p>}
         <label className="block">
-          Problem description
+          Problem Description
           <input
             className={issueField}
             required
@@ -133,9 +135,9 @@ export function IssueForm({
         </label>
         {record && (
           <label className="block">
-            Add update
+            Add Update
             <textarea
-              aria-label="Add update"
+              aria-label="Add Update"
               className={issueField}
               maxLength={8000}
               value={input.payload.update_text ?? ''}
@@ -145,7 +147,7 @@ export function IssueForm({
         )}
         <details>
           <summary className="min-h-11 cursor-pointer">
-            Optional issue details
+            Optional Issue Details
           </summary>
           <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             <label>
@@ -211,8 +213,8 @@ export function IssueForm({
               (field) => (
                 <label key={field}>
                   {field === 'functional_area'
-                    ? 'Functional area'
-                    : 'Responsible party (optional)'}
+                    ? 'Functional Area'
+                    : 'Responsible Party (Optional)'}
                   <input
                     className={issueField}
                     maxLength={200}
@@ -223,7 +225,8 @@ export function IssueForm({
               )
             )}
             <UtcDateTime
-              label="Follow-up"
+              key={followUpReset}
+              label="Follow-Up"
               value={input.payload.follow_up_at ?? null}
               disabled={input.payload.status === 'resolved'}
               onChange={(value) =>
@@ -245,14 +248,17 @@ export function IssueForm({
                   })
                 }
               >
-                In 15 minutes from snapshot
+                In 15 Minutes from Snapshot
               </button>
               <button
                 type="button"
                 className={issueButton}
-                onClick={() => patch({ follow_up_at: null })}
+                onClick={() => {
+                  patch({ follow_up_at: null });
+                  setFollowUpReset((value) => value + 1);
+                }}
               >
-                Clear follow-up
+                Clear Follow-Up
               </button>
             </div>
             <label className="flex min-h-11 items-center gap-2">
@@ -263,10 +269,10 @@ export function IssueForm({
                   setDraft({ ...draft, useCurrentTime: e.target.checked })
                 }
               />
-              Use current backend UTC when saved
+              Use Current Zulu When Saved
             </label>
             <UtcDateTime
-              label="Action occurred"
+              label="Action Occurred"
               value={draft.occurredAt}
               disabled={draft.useCurrentTime ?? true}
               onChange={(value) =>
@@ -333,17 +339,17 @@ export function IssueForm({
                 return (
                   <label key={field}>
                     {field === 'capability_id'
-                      ? 'Affected capability'
+                      ? 'Affected Capability'
                       : field === 'call_id'
-                        ? 'Related call'
-                        : 'Related conference'}
+                        ? 'Related Call'
+                        : 'Related Conference'}
                     <select
                       aria-label={
                         field === 'capability_id'
-                          ? 'Affected capability'
+                          ? 'Affected Capability'
                           : field === 'call_id'
-                            ? 'Related call'
-                            : 'Related conference'
+                            ? 'Related Call'
+                            : 'Related Conference'
                       }
                       className={issueField}
                       value={input.payload[field] ?? ''}
@@ -371,9 +377,9 @@ export function IssueForm({
               }
             )}
             <label>
-              Relevant transport
+              Relevant Transport
               <select
-                aria-label="Relevant transport"
+                aria-label="Relevant Transport"
                 className={issueField}
                 value={input.payload.transport ?? ''}
                 onChange={(e) =>
@@ -407,7 +413,7 @@ export function IssueForm({
             className={issueButton}
             disabled={disabled || saveDisabled}
           >
-            Save issue
+            Save Issue
           </button>
           <button
             type="button"
@@ -416,7 +422,7 @@ export function IssueForm({
             onClick={onSaved}
             hidden={!onSaved}
           >
-            Discard issue draft
+            Discard Issue Draft
           </button>
           {record && draft.baseVersion !== record.version && (
             <button
@@ -427,12 +433,12 @@ export function IssueForm({
                 setDraft({ ...draft, baseVersion: record.version })
               }
             >
-              Apply reviewed draft to current version
+              Apply Reviewed Draft to Current Version
             </button>
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Draft retained in this browser tab. Times are UTC. No automatic
+          Draft retained in this browser tab. Times are Zulu. No automatic
           readiness assessment.
         </p>
       </fieldset>

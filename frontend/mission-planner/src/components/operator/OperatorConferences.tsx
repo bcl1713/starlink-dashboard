@@ -174,7 +174,7 @@ export function OperatorConferences({
           disabled={disabled || !!draft}
           onClick={() => edit()}
         >
-          New conference
+          New Conference
         </button>
         <button
           className={button}

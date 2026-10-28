@@ -723,3 +723,141 @@
     padding-right: 0.5rem;
   }
 }
+
+/* Approved Operations hierarchy: chronology, reusable conferences, then calls. */
+.ws-operations-lanes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 1rem;
+}
+.ws-operations-lanes > section {
+  min-width: 0;
+}
+.ws-conferences-lane > div + div {
+  margin-top: 1rem;
+}
+.ws-next-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  border: 1px solid var(--ws-border);
+  border-left: 3px solid var(--primary);
+  border-radius: 0.65rem;
+  background: var(--card);
+  padding: 0.7rem 1rem;
+  margin: 0.75rem 0;
+}
+.ws-next-action h2 {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.ws-quick-actions {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.ws-call-advisory {
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--muted);
+  font-size: 0.85rem;
+}
+.ws-call-advisory-warning {
+  border-left: 3px solid #f59e0b;
+  background: #f59e0b12;
+}
+[data-record-id][data-selected='true'] {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 0.75rem;
+}
+.ws-secondary-capture {
+  margin-block: 1rem;
+}
+.ws-secondary-capture summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 0.5rem;
+}
+@media (max-width: 1200px) {
+  .ws-operations-lanes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .ws-next-action {
+    padding: 0.5rem 0.65rem;
+  }
+  .ws-next-action > .ws-meta {
+    display: none;
+  }
+  .ws-quick-actions {
+    gap: 0.35rem;
+  }
+  .ws-quick-actions .ws-button {
+    font-size: 0.8rem;
+    padding-inline: 0.6rem;
+  }
+}
+.ws-timeline-focus {
+  text-align: left;
+  min-height: 44px;
+  width: 100%;
+  border-radius: 0.35rem;
+}
+.ws-timeline-focus:hover,
+.ws-timeline-chip:hover {
+  background: var(--muted);
+}
+.ws-timeline-focus:focus-visible,
+.ws-timeline-chip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.ws-timeline-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 0.3rem;
+}
+.ws-timeline-strip-now,
+.ws-timeline-chip {
+  flex: 0 0 auto;
+  border: 1px solid var(--ws-border);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.75rem;
+}
+.ws-timeline-strip-now {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  max-width: 6rem;
+}
+.ws-timeline-chip {
+  max-width: 14rem;
+  text-align: left;
+  min-height: 44px;
+}
+.ws-timeline-chip strong,
+.ws-timeline-chip span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (min-width: 901px) {
+  .ws-awareness {
+    display: flex;
+    flex-direction: column;
+  }
+  .ws-timeline {
+    order: -1;
+    margin-top: 0;
+    border-top: 0;
+  }
+}

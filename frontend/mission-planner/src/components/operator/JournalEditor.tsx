@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { readOperatorRecords } from '@/services/operator';
+import { unknownTime } from './issueForms';
 import { UtcDateTime, type UtcParts } from './UtcDateTime';
 import { createNoteTime } from './noteTime';
 import type {
@@ -23,6 +25,7 @@ interface Props {
   saveDisabled?: boolean;
   occurrenceParts?: UtcParts;
   onOccurrencePartsChange?: (parts: UtcParts) => void;
+  captureNow?: () => Promise<string>;
 }
 const control =
   'min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2';
@@ -42,6 +45,7 @@ export function JournalEditor({
   saveDisabled = false,
   occurrenceParts,
   onOccurrencePartsChange,
+  captureNow,
 }: Props) {
   const [base] = useState(record);
   const [localDraft, setDraft] = useState<JournalInput>(() => ({
@@ -50,7 +54,7 @@ export function JournalEditor({
     mission_id: record?.mission_id ?? missionId,
     leg_id: record?.leg_id ?? null,
     scope: record?.scope ?? 'mission',
-    time: record ? { ...record.time } : createNoteTime(),
+    time: record ? { ...record.time } : { ...unknownTime },
     payload: record
       ? {
           ...record.payload,
@@ -69,11 +73,60 @@ export function JournalEditor({
         },
   }));
   const draft = controlledDraft ?? localDraft;
+  const latestDraft = useRef(draft);
+  useLayoutEffect(() => {
+    latestDraft.current = draft;
+  }, [draft]);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const needsInitialClock = !record && !controlledDraft;
+  const [capturing, setCapturing] = useState(needsInitialClock);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+  const [initialCapture] = useState(
+    () =>
+      captureNow ??
+      (async () =>
+        (await readOperatorRecords({ mission_id: missionId, limit: 1 })).as_of)
+  );
+  useEffect(() => {
+    if (!needsInitialClock) return;
+    let active = true;
+    void initialCapture()
+      .then((now) => {
+        if (!active) return;
+        if (!now || !Number.isFinite(Date.parse(now)))
+          throw new Error('Source clock unavailable');
+        const next = { ...latestDraft.current, time: createNoteTime(now) };
+        latestDraft.current = next;
+        setDraft(next);
+        onChange?.(next);
+      })
+      .catch(() => {
+        if (active)
+          setCaptureError(
+            'Could not read the source clock. Retry Now or choose a backdate.'
+          );
+      })
+      .finally(() => {
+        if (active) setCapturing(false);
+      });
+    return () => {
+      active = false;
+    };
+    // The initial occurrence belongs to this editor instance, not later refetches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCapture, needsInitialClock]);
   const [localAudit, setAudit] = useState('');
   const audit = auditNote ?? localAudit;
   const target = asNewEntry ? undefined : base;
   function change(update: Partial<JournalInput>) {
     const next = { ...draft, ...update };
+    latestDraft.current = next;
     setDraft(next);
     onChange?.(next);
     onDirty?.(true);
@@ -84,6 +137,53 @@ export function JournalEditor({
   function time(update: Partial<JournalInput['time']>) {
     change({ time: { ...draft.time, ...update } });
   }
+  async function chooseNow() {
+    if (capturing) return;
+    setCapturing(true);
+    setCaptureError(null);
+    try {
+      const now = await (
+        captureNow ??
+        (async () =>
+          (
+            await readOperatorRecords({
+              mission_id: draft.mission_id,
+              limit: 1,
+            })
+          ).as_of)
+      )();
+      if (!mounted.current) return;
+      if (!now || !Number.isFinite(Date.parse(now)))
+        throw new Error('Source clock unavailable');
+      const current = latestDraft.current;
+      const nextTime = target
+        ? {
+            ...current.time,
+            occurred_at: now,
+            precision:
+              current.time.precision === 'unknown'
+                ? ('exact' as const)
+                : current.time.precision,
+          }
+        : createNoteTime(now);
+      onOccurrencePartsChange?.({
+        date: now.slice(0, 10),
+        time: now.slice(11, 16),
+      });
+      const next = { ...current, time: nextTime };
+      latestDraft.current = next;
+      setDraft(next);
+      onChange?.(next);
+      onDirty?.(true);
+    } catch {
+      if (mounted.current)
+        setCaptureError(
+          'Could not read the source clock. Retry Now or choose a backdate.'
+        );
+    } finally {
+      if (mounted.current) setCapturing(false);
+    }
+  }
   return (
     <form
       id={formId}
@@ -93,7 +193,7 @@ export function JournalEditor({
         const title =
           draft.payload.title.trim() ||
           draft.payload.note.trim().split(/\r?\n/)[0].slice(0, 200);
-        if (disabled || saveDisabled || !title) return;
+        if (disabled || saveDisabled || capturing || !title) return;
         const body = { ...draft, payload: { ...draft.payload, title } };
         onSave(
           target
@@ -111,7 +211,7 @@ export function JournalEditor({
       }}
     >
       <h2 className="text-lg font-semibold">
-        {target ? `Edit entry · version ${target.version}` : 'New note'}
+        {target ? `Edit Entry · Version ${target.version}` : 'New Note'}
       </h2>
       <fieldset
         disabled={disabled}
@@ -120,7 +220,7 @@ export function JournalEditor({
         {!contextual && (
           <>
             <label className="block">
-              Entry mission ID
+              Entry Mission ID
               <input
                 className={control}
                 required
@@ -144,7 +244,7 @@ export function JournalEditor({
                   <option value="mission">Mission</option>
                   <option value="preflight">Preflight</option>
                   <option value="leg">Leg</option>
-                  <option value="between_legs">Between legs</option>
+                  <option value="between_legs">Between Legs</option>
                   <option value="postflight">Postflight</option>
                 </select>
               </label>
@@ -162,7 +262,7 @@ export function JournalEditor({
               {draft.scope === 'between_legs' && (
                 <>
                   <label>
-                    Previous leg ID (optional)
+                    Previous Leg ID (Optional)
                     <input
                       className={control}
                       value={draft.payload.previous_leg_id ?? ''}
@@ -172,7 +272,7 @@ export function JournalEditor({
                     />
                   </label>
                   <label>
-                    Next leg ID (optional)
+                    Next Leg ID (Optional)
                     <input
                       className={control}
                       value={draft.payload.next_leg_id ?? ''}
@@ -218,47 +318,55 @@ export function JournalEditor({
           <button
             type="button"
             className="min-h-11 rounded-md border px-3"
-            onClick={() => {
-              const nextTime = createNoteTime();
-              onOccurrencePartsChange?.({
-                date: nextTime.occurred_at!.slice(0, 10),
-                time: nextTime.occurred_at!.slice(11, 16),
-              });
-              change({ time: nextTime });
-            }}
+            disabled={capturing}
+            onClick={() => void chooseNow()}
           >
             Now
           </button>
         </div>
+        {captureError && <p role="alert">{captureError}</p>}
+        {capturing && <p role="status">Capturing Current Zulu…</p>}
         <details>
           <summary className="min-h-11 cursor-pointer">
-            Backdate / change occurrence
+            Backdate / Change Occurrence
           </summary>
           <UtcDateTime
-            label="Occurred at"
+            label="Occurred At"
+            required={draft.time.precision !== 'unknown'}
+            disabled={capturing}
             value={draft.time.occurred_at}
             parts={occurrenceParts}
             onPartsChange={onOccurrencePartsChange}
             onChange={(value) =>
-              time({
-                occurred_at: value,
-                ...(!target
+              time(
+                value
                   ? {
-                      precision: value ? 'exact' : 'unknown',
-                      end_state: value ? 'instant' : 'unknown',
+                      occurred_at: value,
+                      precision:
+                        draft.time.precision === 'unknown'
+                          ? 'exact'
+                          : draft.time.precision,
+                      ...(!target ? { end_state: 'instant' } : {}),
                     }
-                  : {}),
-              })
+                  : target
+                    ? { occurred_at: null }
+                    : {
+                        occurred_at: null,
+                        precision: 'unknown',
+                        ended_at: null,
+                        end_state: 'unknown',
+                      }
+              )
             }
           />
         </details>
         <details>
           <summary className="min-h-11 cursor-pointer">
-            Historical entry details
+            Historical Entry Details
           </summary>
           <div className="space-y-3">
             <label className="block">
-              Entry type
+              Entry Type
               <select
                 className={control}
                 value={draft.payload.entry_type}
@@ -269,7 +377,7 @@ export function JournalEditor({
                 }
               >
                 <option value="note">Note</option>
-                <option value="call_observation">Call observation</option>
+                <option value="call_observation">Call Observation</option>
               </select>
             </label>
             <label className="block">
@@ -283,11 +391,13 @@ export function JournalEditor({
               />
             </label>
             <label className="block">
-              Time precision
+              Time Precision
               <select
                 className={control}
                 value={draft.time.precision}
-                onChange={(e) =>
+                onChange={(e) => {
+                  if (e.target.value === 'unknown')
+                    onOccurrencePartsChange?.({ date: '', time: '' });
                   time(
                     e.target.value === 'unknown'
                       ? {
@@ -297,8 +407,8 @@ export function JournalEditor({
                           end_state: 'unknown',
                         }
                       : { precision: e.target.value as 'exact' | 'approximate' }
-                  )
-                }
+                  );
+                }}
               >
                 <option value="unknown">Unknown</option>
                 <option value="approximate">Approximate</option>
@@ -306,7 +416,7 @@ export function JournalEditor({
               </select>
             </label>
             <label>
-              End state
+              End State
               <select
                 className={control}
                 disabled={draft.time.precision === 'unknown'}
@@ -328,7 +438,7 @@ export function JournalEditor({
 
             {draft.time.end_state === 'known' && (
               <UtcDateTime
-                label="Ended at"
+                label="Ended At"
                 value={draft.time.ended_at}
                 required
                 onChange={(value) => time({ ended_at: value })}
@@ -338,7 +448,7 @@ export function JournalEditor({
         </details>
         {target && (
           <label className="block">
-            Audit note (optional)
+            Audit Note (Optional)
             <textarea
               className={control}
               rows={2}
@@ -357,9 +467,9 @@ export function JournalEditor({
         className="min-h-11 rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
         type="submit"
         hidden={!!formId}
-        disabled={disabled || saveDisabled}
+        disabled={disabled || saveDisabled || capturing}
       >
-        Save entry
+        Save Entry
       </button>
     </form>
   );

@@ -102,7 +102,7 @@ export function CapabilityForm({
   return (
     <form
       id={formId}
-      aria-label="Capability assessment"
+      aria-label="Capability Assessment"
       className="min-w-0 space-y-3 rounded-lg border p-4"
       onSubmit={(e) => {
         e.preventDefault();
@@ -118,14 +118,14 @@ export function CapabilityForm({
     >
       <fieldset disabled={disabled} className="min-w-0 space-y-3">
         <h3 className="font-semibold">
-          {record ? 'Update manual assessment' : 'Record manual assessment'}
+          {record ? 'Update Manual Assessment' : 'Record Manual Assessment'}
         </h3>
         <p>
           Operator reported · functional service and redundancy are independent.
         </p>
         {storageError && <p role="alert">{storageError}</p>}
         <label className="block">
-          Capability name
+          Capability Name
           <input
             className={issueField}
             maxLength={200}
@@ -139,12 +139,12 @@ export function CapabilityForm({
             <div key={dimension} className="space-y-2">
               <label className="block">
                 {dimension === 'functional'
-                  ? 'Functional capability'
+                  ? 'Functional Capability'
                   : 'Redundancy'}
                 <select
                   aria-label={
                     dimension === 'functional'
-                      ? 'Functional capability'
+                      ? 'Functional Capability'
                       : 'Redundancy'
                   }
                   className={issueField}
@@ -175,13 +175,15 @@ export function CapabilityForm({
                   checked={(draft.currentDimensions ?? []).includes(dimension)}
                   onChange={(e) => patch({}, dimension, e.target.checked)}
                 />
-                Use current UTC for {dimension} observation
+                Use Current Zulu for{' '}
+                {dimension === 'functional' ? 'Functional' : 'Redundancy'}{' '}
+                Observation
               </label>
               <UtcDateTime
                 label={
                   dimension === 'functional'
-                    ? 'Functional observation'
-                    : 'Redundancy observation'
+                    ? 'Functional Observation'
+                    : 'Redundancy Observation'
                 }
                 disabled={(draft.currentDimensions ?? []).includes(dimension)}
                 value={input.payload[`${dimension}_observed_at`]}
@@ -202,13 +204,13 @@ export function CapabilityForm({
               />
               <label className="block">
                 {dimension === 'functional'
-                  ? 'Functional time precision'
-                  : 'Redundancy time precision'}
+                  ? 'Functional Time Precision'
+                  : 'Redundancy Time Precision'}
                 <select
                   aria-label={
                     dimension === 'functional'
-                      ? 'Functional time precision'
-                      : 'Redundancy time precision'
+                      ? 'Functional Time Precision'
+                      : 'Redundancy Time Precision'
                   }
                   className={issueField}
                   value={input.payload[`${dimension}_time_precision`]}
@@ -236,9 +238,9 @@ export function CapabilityForm({
           ))}
         </div>
         <label className="block">
-          Assessment notes
+          Assessment Notes
           <textarea
-            aria-label="Assessment notes"
+            aria-label="Assessment Notes"
             className={issueField}
             maxLength={8000}
             value={input.payload.note}
@@ -251,7 +253,7 @@ export function CapabilityForm({
             className={issueButton}
             disabled={saveDisabled}
           >
-            Save assessment
+            Save Assessment
           </button>
           <button
             className={issueButton}
@@ -259,7 +261,7 @@ export function CapabilityForm({
             onClick={onSaved}
             hidden={!onSaved}
           >
-            Discard assessment draft
+            Discard Assessment Draft
           </button>
           {record && draft.version !== record.version && (
             <button
@@ -267,7 +269,7 @@ export function CapabilityForm({
               type="button"
               onClick={() => setDraft({ ...draft, version: record.version })}
             >
-              Apply reviewed assessment to current version
+              Apply Reviewed Assessment to Current Version
             </button>
           )}
         </div>

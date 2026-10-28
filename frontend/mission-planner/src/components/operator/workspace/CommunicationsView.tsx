@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ReadRecord, SavedRecord } from '@/types/operator';
 import { CallList } from '../CallList';
 import { ConferenceCard } from '../ConferenceCard';
@@ -13,6 +14,9 @@ import type { AssociationMission } from '../useMissionAssociation';
 export function CommunicationsView({
   items,
   activeOnly = false,
+  showCaptureActions = true,
+  selectedRecordId,
+  renderAdvisory,
   disabled,
   incomplete,
   asOf,
@@ -33,6 +37,9 @@ export function CommunicationsView({
   isSessionCurrent?: (record: SavedRecord) => boolean;
   items: ReadRecord[];
   activeOnly?: boolean;
+  showCaptureActions?: boolean;
+  selectedRecordId?: string | null;
+  renderAdvisory?: (call: SavedRecord) => ReactNode;
   disabled: boolean;
   incomplete: boolean;
   asOf?: string;
@@ -69,20 +76,23 @@ export function CommunicationsView({
       isSessionCurrent(record) &&
       !sessionOutsideContext(record, currentAssociation)
   );
-  const displayedConferences = activeOnly
-    ? activeConferences
-    : [
-        ...activeConferences,
-        ...conferences.filter((record) => !activeConferences.includes(record)),
-      ];
+  const displayedConferences = (
+    activeOnly ? activeConferences : conferences.filter((r) => !r.deleted)
+  ).sort((a, b) => a.record_id.localeCompare(b.record_id));
+  const calls = records.filter((r) => r.record_type === 'call');
+  const selectedCall = calls.find((r) => r.record_id === selectedRecordId);
+  const selectedBridgeId =
+    selectedCall?.payload.entry_type === 'call'
+      ? selectedCall.payload.conference_id
+      : selectedRecordId;
   return (
     <section
-      aria-label={activeOnly ? 'Active communications' : 'Communications'}
+      aria-label="Operations"
       className="space-y-4 [&_button]:min-h-11 [&_button]:min-w-11"
     >
-      {!activeOnly && (
+      {showCaptureActions && (
         <>
-          <h2>Communications</h2>
+          <h2>Operations</h2>
           <p>
             Calls record customer requirements. Conferences record reusable
             bridges. Report each customer joining and leaving independently.
@@ -96,174 +106,197 @@ export function CommunicationsView({
               disabled={disabled}
               onClick={onCreateCall}
             >
-              Create call
+              Schedule
             </button>
             <button
               className="ws-button"
               disabled={disabled}
               onClick={onCreateActualCall}
             >
-              Record completed call
+              Record Completed Call
             </button>
             <button
               className="ws-button"
               disabled={disabled}
               onClick={onCreateConference}
             >
-              Create conference
+              Create Conference
             </button>
             <button
               className="ws-button"
               disabled={disabled}
               onClick={() => onJoin()}
             >
-              Report customer joined
+              Report Customer Joined
             </button>
           </div>
         </>
       )}
-      <h2>Active Calls</h2>
-      <CallList
-        activeOnly
-        items={items}
-        disabled={disabled}
-        incomplete={incomplete}
-        asOf={asOf}
-        onEdit={onEdit}
-        onHistory={onHistory}
-        onTransition={onTransition}
-        onCallAction={onCallAction}
-        onConferenceAction={onConferenceAction}
-        currentAssociation={currentAssociation}
-        isSessionCurrent={isSessionCurrent}
-        onCustomerAction={onCustomerAction}
-      />
-      <h2>Active Bridges</h2>
-      {!activeConferences.length && (
-        <p>No current active bridge sessions reported.</p>
-      )}
-      {incomplete && (
-        <p role="status">
-          Active communications show loaded records only; unread pages may
-          contain more sessions.
-        </p>
-      )}
-      {!activeOnly && !conferences.length && (
-        <p>
-          No conferences recorded. Create a bridge to report its configuration
-          and use.
-        </p>
-      )}
-      {displayedConferences.map((record) => (
-        <div key={record.record_id} className="space-y-2">
-          {!activeOnly &&
-            !activeConferences.includes(record) &&
-            conferences.filter((r) => !activeConferences.includes(r))[0] ===
-              record && (
-              <h3>Reusable bridge definitions and previous sessions</h3>
-            )}
-          <ConferenceCard
-            prominentActions={activeConferences.includes(record)}
-            compactActions
-            sessionCurrent={isSessionCurrent(record)}
-            currentAssociation={currentAssociation}
-            activityAssociationLabel={
-              record.scope === 'leg'
-                ? mission?.legs.find((leg) => leg.id === record.leg_id)?.name
-                : undefined
-            }
-            record={record}
-            participations={customers}
-            disabled={disabled}
-            onAction={(action) => onConferenceAction(record, action)}
-            onEdit={() => onEdit(record)}
-            onJoin={() => onJoin(record)}
-            onHistory={() => onHistory(record.record_id)}
-            onRemove={() => onTransition(record)}
-          />
-          {!record.deleted &&
-            record.payload.entry_type === 'conference' &&
-            record.payload.status === 'established' &&
-            isSessionCurrent(record) &&
-            !sessionOutsideContext(record, currentAssociation) && (
-              <button
-                className="ws-button"
+      <div className="ws-operations-lanes">
+        <section className="ws-conferences-lane" aria-label="Conferences">
+          <h2>Conferences</h2>
+          {incomplete && (
+            <p role="status">
+              Active communications show loaded records only; unread pages may
+              contain more sessions.
+            </p>
+          )}
+          {!activeOnly && !conferences.length && (
+            <p>
+              No conferences recorded. Create a bridge to report its
+              configuration and use.
+            </p>
+          )}
+          {displayedConferences.map((record) => (
+            <div
+              key={record.record_id}
+              className="space-y-2"
+              data-record-id={record.record_id}
+              data-selected={record.record_id === selectedBridgeId}
+            >
+              <ConferenceCard
+                prominentActions={activeConferences.includes(record)}
+                calls={calls}
+                incomplete={incomplete}
+                selected={record.record_id === selectedBridgeId}
+                advisory={
+                  renderAdvisory &&
+                  calls
+                    .filter(
+                      (call) =>
+                        call.payload.entry_type === 'call' &&
+                        call.payload.conference_id === record.record_id
+                    )
+                    .map((call) => (
+                      <div key={call.record_id}>{renderAdvisory(call)}</div>
+                    ))
+                }
+                compactActions
+                sessionCurrent={isSessionCurrent(record)}
+                currentAssociation={currentAssociation}
+                activityAssociationLabel={
+                  record.scope === 'leg'
+                    ? mission?.legs.find((leg) => leg.id === record.leg_id)
+                        ?.name
+                    : undefined
+                }
+                record={record}
+                participations={customers}
                 disabled={disabled}
-                onClick={() => onJoin(record)}
-              >
-                Use this session for another customer
-              </button>
-            )}
-        </div>
-      ))}
-      <h3>
-        {activeOnly ? 'Current customer intervals' : 'Customer intervals'}
-      </h3>
-      {!customers.length && (
-        <p>
-          No customer intervals recorded. A conference state alone does not
-          report a connected customer.
-        </p>
-      )}
-      {customers
-        .filter(
-          (record) =>
-            !activeOnly ||
-            (!record.deleted &&
-              isSessionCurrent(record) &&
-              record.payload.entry_type === 'participation' &&
-              ['connected', 'interrupted'].includes(record.payload.state ?? ''))
-        )
-        .map((record) => (
-          <ParticipationRow
-            key={record.record_id}
-            record={record}
-            conference={
-              record.payload.entry_type === 'participation'
-                ? conferences.find(
-                    (conference) =>
-                      conference.record_id ===
-                      (record.payload.entry_type === 'participation'
-                        ? record.payload.conference_id
-                        : null)
-                  )
-                : undefined
-            }
-            call={
-              record.payload.entry_type === 'participation'
-                ? records.find(
-                    (call) =>
-                      call.record_id ===
-                      (record.payload.entry_type === 'participation'
-                        ? record.payload.call_id
-                        : null)
-                  )
-                : undefined
-            }
+                onAction={(action) => onConferenceAction(record, action)}
+                onEdit={() => onEdit(record)}
+                onJoin={() => onJoin(record)}
+                onHistory={() => onHistory(record.record_id)}
+                onRemove={() => onTransition(record)}
+              />
+            </div>
+          ))}
+        </section>
+        <section className="ws-calls-lane" aria-label="Calls">
+          <h2>Calls</h2>
+          <CallList
+            activeOnly
+            selectedRecordId={selectedRecordId}
+            renderAdvisory={renderAdvisory}
+            items={items}
             disabled={disabled}
-            onAction={(action) => onCustomerAction(record, action)}
-            onEdit={() => onEdit(record)}
-            onHistory={() => onHistory(record.record_id)}
-            onRemove={() => onTransition(record)}
+            incomplete={incomplete}
+            asOf={asOf}
+            onEdit={onEdit}
+            onHistory={onHistory}
+            onTransition={onTransition}
+            onCallAction={onCallAction}
+            onConferenceAction={onConferenceAction}
+            currentAssociation={currentAssociation}
+            isSessionCurrent={isSessionCurrent}
+            onCustomerAction={onCustomerAction}
           />
-        ))}
-      {!activeOnly && (
-        <CallList
-          archivedOnly
-          items={items}
-          disabled={disabled}
-          incomplete={false}
-          asOf={asOf}
-          onEdit={onEdit}
-          onHistory={onHistory}
-          onTransition={onTransition}
-          onCallAction={onCallAction}
-          onConferenceAction={onConferenceAction}
-          currentAssociation={currentAssociation}
-          isSessionCurrent={isSessionCurrent}
-          onCustomerAction={onCustomerAction}
-        />
-      )}
+        </section>
+      </div>
+      <details>
+        <summary className="ws-button">
+          Customer Intervals And Previous Activity
+        </summary>
+        {!showCaptureActions && (
+          <button
+            className="ws-button"
+            disabled={disabled}
+            onClick={() => onJoin()}
+          >
+            Report Customer Joined
+          </button>
+        )}
+        <h3>
+          {activeOnly ? 'Current Customer Intervals' : 'Customer Intervals'}
+        </h3>
+        {!customers.length && (
+          <p>
+            No customer intervals recorded. A conference state alone does not
+            report a connected customer.
+          </p>
+        )}
+        {customers
+          .filter(
+            (record) =>
+              !activeOnly ||
+              (!record.deleted &&
+                isSessionCurrent(record) &&
+                record.payload.entry_type === 'participation' &&
+                ['connected', 'interrupted'].includes(
+                  record.payload.state ?? ''
+                ))
+          )
+          .map((record) => (
+            <ParticipationRow
+              key={record.record_id}
+              record={record}
+              conference={
+                record.payload.entry_type === 'participation'
+                  ? conferences.find(
+                      (conference) =>
+                        conference.record_id ===
+                        (record.payload.entry_type === 'participation'
+                          ? record.payload.conference_id
+                          : null)
+                    )
+                  : undefined
+              }
+              call={
+                record.payload.entry_type === 'participation'
+                  ? records.find(
+                      (call) =>
+                        call.record_id ===
+                        (record.payload.entry_type === 'participation'
+                          ? record.payload.call_id
+                          : null)
+                    )
+                  : undefined
+              }
+              disabled={disabled}
+              onAction={(action) => onCustomerAction(record, action)}
+              onEdit={() => onEdit(record)}
+              onHistory={() => onHistory(record.record_id)}
+              onRemove={() => onTransition(record)}
+            />
+          ))}
+        {!activeOnly && (
+          <CallList
+            archivedOnly
+            items={items}
+            disabled={disabled}
+            incomplete={false}
+            asOf={asOf}
+            onEdit={onEdit}
+            onHistory={onHistory}
+            onTransition={onTransition}
+            onCallAction={onCallAction}
+            onConferenceAction={onConferenceAction}
+            currentAssociation={currentAssociation}
+            isSessionCurrent={isSessionCurrent}
+            onCustomerAction={onCustomerAction}
+          />
+        )}
+      </details>
     </section>
   );
 }
