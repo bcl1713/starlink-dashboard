@@ -87,9 +87,21 @@ independent flight-event ledger's journal mode as an incidental change.
 Active observations stream from the pinned database cursor. Sealed revisions
 remain authoritative after rolling data expires; their retained JSON samples
 must also be read incrementally, rather than loaded into a complete Python list.
-Use a maintained incremental JSON parser if needed; any dependency change must
+For sealed data, select the capture's SQLite row ID without selecting its
+`payload` TEXT, then open that column with Python 3.11's read-only
+`sqlite3.Connection.blobopen`. Feed a reader capped at 64 KiB per read into the
+incremental parser on the same pinned connection. Retrieving the complete TEXT
+value and only then parsing it incrementally does not meet this requirement. Use
+a maintained incremental JSON parser if needed; any dependency change must
 regenerate the repository's hashed CI requirements and receive container checks.
 Per-row and metadata limits remain explicit.
+
+Compact series deduplication must also stay bounded. Use a task-owned
+disk-backed index of complete metric/label identities and stream its dictionary
+rows; do not retain an unbounded Python mapping of every series. Include that
+index, parser buffers, individual records, SQLite caches, and compression
+buffers in the memory and disk measurements. High-cardinality labels must remain
+lossless even when almost every observation introduces another series.
 
 Freeze the telemetry projection into a compressed, immutable private sidecar.
 Persist only its generated identifier, format, size, checksum, and component
@@ -116,6 +128,38 @@ sidecar bytes in the live artifact quota. If a genuine output/disk limit is
 reached, return an actionable capacity error and preserve source history.
 Compact format offers a lower-overhead representation of the same observations.
 
+The 256 MiB supplementary-member limit remains a limit on the sum of actual
+uncompressed supplementary members, including journal files, telemetry members,
+dictionary rows, and dataset descriptions. A successful smaller compressed ZIP
+does not bypass it. This design supports larger input histories with bounded
+memory; it does not promise unlimited history. The error must name the capacity
+that was exceeded and must never return a truncated success.
+
+### Ownership and quota transitions
+
+Generate a capture owner ID and reserve storage in the shared export store
+before creating a sidecar or compact index. Track their generated identifiers,
+reserved bytes, actual bytes, state, owning job when attached, and a renewable
+lease. Reserve additional capacity atomically before writing additional bytes;
+an HTTP request's lifetime alone is not an ownership record.
+
+| Transition                                     | Required ownership and cleanup behavior                                                                                                                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Capture before acknowledgment                  | Own `.part` files and the compact index through the capture record; enforce cancellation, deadline, lease, and quota checks before acknowledgment.                                              |
+| Capture failure, disconnect, or deadline       | Close readers and writers, delete only that capture's temporary artifacts, and release its reservations without inserting a queued job.                                                         |
+| Sidecar publication and job attachment         | Flush and sync the sidecar before atomic publication; attach its immutable identity and ownership to the persisted snapshot and queued job before acknowledgment.                               |
+| Reuse of an existing ready job                 | Keep the existing job and its artifacts; dispose of the newly captured duplicate and release its reservations before returning the reused job.                                                  |
+| Assembly                                       | Reserve and count the growing final ZIP while its sidecar still exists. Temporary spools, the sidecar, compact index, and final ZIP must not occupy unaccounted storage concurrently.           |
+| Restart or elected-worker handoff              | Recover attached jobs from their persisted immutable artifacts. Reclaim unattached or abandoned files only after proving the prior lease is no longer valid.                                    |
+| Ready publication                              | Once the final ZIP is durable and published, release sidecar/index data that no longer has a reader or recovery purpose. Retain sufficient immutable metadata for ready-job identity and reuse. |
+| Failure, cancellation, supersession, or expiry | Close any owning worker before removing its files, release reservations idempotently, and preserve source history and other jobs' artifacts.                                                    |
+
+The implementation plan must define transaction boundaries and crash recovery
+for a failure between each filesystem and database step, including deletion
+failure. File ownership, quotas, and leases must work across processes; an
+in-process lock is insufficient. Active readers retain ownership until they
+close, so a cleanup worker cannot remove an artifact still in use.
+
 Completed, failed, cancelled, superseded, expired, interrupted, and abandoned
 jobs must release their owned sidecars when no longer needed. Cleanup must work
 across restart and elected-worker handoff and must never delete recorder source
@@ -141,10 +185,18 @@ queries are not relabeled as the mission archive's individual raw observations.
 
 - Reproduce the original failure with synthetic live observations exceeding the
   old budget, and demonstrate a complete export with matching counts/checksums.
+  The scenario must begin at real archive rows and the actual HTTP preparation
+  boundary, not at already-frozen CSV bytes. Record the old budget calculation,
+  source counts, reconstructed counts, and member digests.
 - Verify full and compact representations reconstruct the same observations,
   including labels, nulls, zero, source times, GEP/IP changes, and concurrent
   series. Verify location, speed, altitude, and heading explicitly.
-- Export a sealed leg after rolling-row deletion; compare its retained evidence.
+- Export a large sealed leg after rolling-row deletion; compare its retained
+  evidence. Measure the entire SQLite-to-parser-to-ZIP read path and reject
+  tests that first load the sealed payload into a full Python string or list.
+- Exercise compact output with high-cardinality label mappings as well as many
+  repeated observations. Verify bounded memory, complete dictionaries, and
+  lossless joins in both cases.
 - Use separate real SQLite connections to prove recording can commit during a
   deliberately paused export read. Measure writer latency and export peak RSS.
 - Change or correct sources after capture and verify ready downloads remain
@@ -153,6 +205,9 @@ queries are not relabeled as the mission archive's individual raw observations.
 - Preserve complete journal audit/corrections/deletions, plan-only import,
   partial labels, all checksums, and existing package/customer-PDF behavior.
 - Verify both selections and readable errors in the rendered mission planner.
+  Exercise both preparation entrypoints through production Nginx, for full and
+  compact output. Cover cancellation, disconnect, deadline, and capacity errors
+  before a queued-job acknowledgment as well as during background assembly.
 - Run applicable canonical backend/frontend/static checks and isolated committed
   production Docker/Nginx/browser acceptance. Record ownership and explicit
   wall-clock limits, then verify all task runtime resources are removed.
