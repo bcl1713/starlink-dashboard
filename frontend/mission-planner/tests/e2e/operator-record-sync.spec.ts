@@ -336,7 +336,12 @@ test('saved records converge across independent laptop and phone contexts with s
           .getByRole('button', { name: 'Finish Call', exact: true })
           .click(),
       async () => {
-        await expect(card(laptop, a.record_id)).toHaveCount(0);
+        await expect(
+          laptop
+            .locator('.ws-calls-lane')
+            .locator(`#operator-record-${a.record_id}`)
+        ).toHaveCount(0);
+        await expect(card(laptop, a.record_id)).toContainText('Completed');
       }
     );
     await propagated(
@@ -511,7 +516,12 @@ test('saved records converge across independent laptop and phone contexts with s
           .getByRole('button', { name: 'Cancel Call', exact: true })
           .click(),
       async () => {
-        await expect(card(laptop, b.record_id)).toHaveCount(0);
+        await expect(
+          laptop
+            .locator('.ws-calls-lane')
+            .locator(`#operator-record-${b.record_id}`)
+        ).toHaveCount(0);
+        await expect(card(laptop, b.record_id)).toContainText('Canceled');
         await expect(
           laptop
             .getByRole('button', {
