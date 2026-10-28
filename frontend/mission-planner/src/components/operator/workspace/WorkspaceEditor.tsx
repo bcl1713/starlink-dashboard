@@ -26,7 +26,8 @@ import { CallEditor, type CallEditorState } from '../CallEditor';
 import { ConferenceEditor } from '../ConferenceEditor';
 import { conferenceDraft, joinCommand } from '../conferenceCommands';
 import { ParticipationEditor } from '../ParticipationEditor';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useWorkspaceRecords } from '@/hooks/api/useWorkspaceRecords';
 import { readTransportCatalog } from '@/services/transportCatalog';
 import { UtcDateTime, type UtcParts } from '../UtcDateTime';
 import {
@@ -171,33 +172,22 @@ export function WorkspaceEditor({
     'issue',
     'transport_decision',
   ].includes(draft?.input.record_type ?? '');
-  const relationships = useInfiniteQuery({
-    queryKey: [
-      'operator-records',
-      draft?.target.missionId,
-      operatorIdentity(health.data),
-      'workspace-all',
-    ],
-    queryFn: ({ pageParam }) =>
-      readOperatorRecords(
-        { mission_id: draft!.target.missionId, include_removed: true },
-        pageParam
-      ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.cursor ?? undefined,
-    enabled: usesRelationships && !!health.data?.ready,
-    retry: false,
-  });
+  const relationships = useWorkspaceRecords(
+    usesRelationships ? (draft?.target.missionId ?? '') : '',
+    operatorIdentity(health.data),
+    false
+  );
   // Share the cockpit snapshot and its authoritative current-record reads.
   // An accepted bridge must not disappear behind a separate relationship query.
   const related = new Map(
-    relationships.data?.pages.flatMap((page) =>
-      page.items.map((item) => [item.record.record_id, item.record] as const)
-    ) ?? []
+    relationships.items.map(
+      (item) => [item.record.record_id, item.record] as const
+    )
   );
   for (const row of workspace.confirmedRecords) {
     const record = row.read.record;
     if (
+      relationships.quarantined ||
       row.identity !== operatorIdentity(health.data) ||
       record.mission_id !== draft?.target.missionId
     )
@@ -209,6 +199,7 @@ export function WorkspaceEditor({
   for (const row of workspace.tray) {
     if (
       row.status === 'accepted' &&
+      !relationships.quarantined &&
       row.current &&
       targetIdentity(row.target) === operatorIdentity(health.data) &&
       row.current.mission_id === draft?.target.missionId

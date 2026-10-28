@@ -17,7 +17,9 @@ import {
   useOperatorWorkspace,
 } from './OperatorWorkspaceProvider';
 import { WorkspaceEditor } from './WorkspaceEditor';
-import { health, input, page, record } from '@/test/operator-fixtures';
+import { failure, health, input, page, record } from '@/test/operator-fixtures';
+import { useWorkspaceRecords } from '@/hooks/api/useWorkspaceRecords';
+import { operatorIdentity } from '@/hooks/api/operatorReadSession';
 import * as api from '@/services/operator';
 import type { DraftTarget } from './types';
 import type { OperatorInput } from '@/types/operator';
@@ -50,7 +52,8 @@ function mount(
   pinned: Partial<DraftTarget> = {},
   source = health,
   editorState?: Record<string, unknown>,
-  restored?: { registry: DraftRegistry; draftId: string }
+  restored?: { registry: DraftRegistry; draftId: string },
+  synchronize = false
 ) {
   const registry = restored?.registry ?? new DraftRegistry(sessionStorage);
   const draft = restored
@@ -102,10 +105,15 @@ function mount(
       />
     );
   }
+  function SyncOwner() {
+    useWorkspaceRecords('mission-a', operatorIdentity(source));
+    return null;
+  }
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={['/operator?workspace=1']}>
         <OperatorWorkspaceProvider registry={registry}>
+          {synchronize && <SyncOwner />}
           <Editor />
         </OperatorWorkspaceProvider>
       </MemoryRouter>
@@ -148,6 +156,75 @@ it('keeps registry-owned unsent text when the editor closes', async () => {
     'Parked note'
   );
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});
+
+it('keeps dirty draft input, target and base version through invalid-checkpoint recovery', async () => {
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+  vi.mocked(api.readOperatorRecords).mockResolvedValue(page());
+  const remote = {
+    ...record,
+    version: 2,
+    journal_seq: 2,
+    payload: { ...record.payload, title: 'Other device saved' },
+  };
+  const changes = vi
+    .spyOn(api, 'readOperatorChanges')
+    .mockResolvedValue({ ...page([]), H: 1 });
+  const save = vi.spyOn(api, 'saveOperatorCommand');
+  const { client, registry, draft } = mount(
+    input,
+    false,
+    false,
+    record,
+    {},
+    health,
+    undefined,
+    undefined,
+    true
+  );
+  fireEvent.change(await screen.findByLabelText('Title'), {
+    target: { value: 'My unsaved input' },
+  });
+  await waitFor(() => expect(changes).toHaveBeenCalled());
+  const originalTarget = registry.resumeDraft(draft.draftId)!.target;
+  changes
+    .mockRejectedValueOnce(failure(422, 'invalid_cursor'))
+    .mockResolvedValue({ ...page([remote]), H: 2 });
+  await act(async () => {
+    await client.refetchQueries({ queryKey: ['operator-record-updates'] });
+  });
+  await waitFor(() =>
+    expect(
+      client.getQueryData<{ pages: unknown[] }>([
+        'operator-records',
+        'mission-a',
+        operatorIdentity(health),
+        'workspace-all',
+      ])?.pages.length
+    ).toBe(1)
+  );
+  await act(async () => {
+    await client.refetchQueries({ queryKey: ['operator-record-updates'] });
+  });
+  await waitFor(() =>
+    expect(
+      client.getQueryData<{ H: number }>([
+        'operator-record-updates',
+        'mission-a',
+        operatorIdentity(health),
+      ])?.H
+    ).toBe(2)
+  );
+  expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe(
+    'My unsaved input'
+  );
+  expect(registry.resumeDraft(draft.draftId)).toMatchObject({
+    target: originalTarget,
+    baseVersion: 1,
+    baseRecord: { version: 1 },
+    input: { payload: { title: 'My unsaved input' } },
+  });
+  expect(save).not.toHaveBeenCalled();
 });
 
 it('uses explicit named scope selectors without changing the pinned mission', async () => {
@@ -292,7 +369,11 @@ it('loads later relationship pages without dropping the pinned draft', async () 
   ).toBeTruthy();
   expect(api.readOperatorRecords).toHaveBeenCalledWith(
     { mission_id: 'mission-a', include_removed: true },
-    'page-2'
+    'page-2',
+    expect.objectContaining({
+      sourceIdentity: JSON.stringify(['store', 'epoch-a', 'live', null]),
+      signal: expect.any(AbortSignal),
+    })
   );
   expect(registry.resumeDraft(draft.draftId)?.target.missionId).toBe(
     'mission-a'
@@ -428,7 +509,10 @@ it('offers an already accepted ordinary-activation conference in the call choose
     },
   };
   vi.mocked(api.getOperatorHealth).mockResolvedValue(source);
-  vi.mocked(api.readOperatorRecords).mockResolvedValue(page([accepted]));
+  vi.mocked(api.readOperatorRecords).mockResolvedValue({
+    ...page([accepted]),
+    source: { ...source, mission_id: 'mission-a' },
+  });
   const { registry, draft } = mount(
     callDraft(undefined, 'planned', 'mission-a'),
     false,

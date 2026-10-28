@@ -241,6 +241,7 @@ export interface ReadRecord {
   };
 }
 export interface RecordPage {
+  source?: OperatorHealth & { mission_id: string };
   schema_version: 1;
   items: ReadRecord[];
   cursor: string | null;

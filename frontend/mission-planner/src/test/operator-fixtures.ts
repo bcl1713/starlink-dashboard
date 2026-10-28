@@ -61,6 +61,7 @@ export const record: SavedRecord = {
   },
 };
 export const page = (records = [record]): RecordPage => ({
+  source: { ...health, mission_id: records[0]?.mission_id ?? 'mission-a' },
   schema_version: 1,
   items: records.map((record) => ({
     schema_version: 1,

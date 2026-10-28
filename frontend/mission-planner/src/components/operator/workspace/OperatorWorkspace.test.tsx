@@ -101,6 +101,23 @@ it('renders a cold workspace before any training context or checked evidence exi
     screen.getByRole('heading', { name: 'Choose A Mission' })
   ).toBeTruthy();
 });
+
+it('retains validated saved cards when a health refresh fails during a network outage', async () => {
+  const saved = { ...record, ...callDraft(undefined, 'planned', 'mission-a') };
+  saved.payload.title = 'Retained remote call';
+  saved.payload.party = 'Retained remote call';
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([saved]));
+  vi.spyOn(api, 'readOperatorChanges').mockResolvedValue(page([]));
+  const { client } = mount('/operator?mission_id=mission-a', true);
+  await screen.findByText('Retained remote call');
+  vi.mocked(api.getOperatorHealth).mockRejectedValue(
+    new Error('backend offline')
+  );
+  await act(async () => {
+    await client.refetchQueries({ queryKey: ['operator-health'] });
+  });
+  expect(screen.getByText('Retained remote call')).toBeTruthy();
+});
 it('explains separate nonproduction setup instead of opening training in an ordinary instance', () => {
   mount();
   fireEvent.click(screen.getByRole('button', { name: 'Help' }));
@@ -315,9 +332,10 @@ it('renders newly accepted and older ordinary-Activate conference definitions wi
     payload: { ...accepted.payload, title: 'Existing accepted conference' },
     provenance: { ...accepted.provenance, operating_context_id: null },
   };
-  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(
-    page([accepted, older])
-  );
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue({
+    ...page([accepted, older]),
+    source: { ...source, mission_id: 'mission-a' },
+  });
   mount(
     '/operator?workspace=1&mission_id=mission-a&view=communications',
     true,

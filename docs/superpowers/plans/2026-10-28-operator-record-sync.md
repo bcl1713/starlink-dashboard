@@ -44,17 +44,17 @@ timeline/event projections without repeatedly reloading snapshot history.
 `GET /api/v2/operator/record-changes` accepts mission, `after_seq`, optional
 cursor and limit; returns `items`, `H`, `cursor`, `as_of`, `source`.
 
-- [ ] Write API tests for empty source-bound baselines, incremental latest
+- [x] Write API tests for empty source-bound baselines, incremental latest
       revisions/tombstones, frozen multi-page batches, mission isolation,
       invalid watermarks/cursors and context changes. Assert no intermediate
       duplicates.
-- [ ] Run new tests and verify failure for missing source/changes route.
-- [ ] Implement captured identity and delta query using existing
+- [x] Run new tests and verify failure for missing source/changes route.
+- [x] Implement captured identity and delta query using existing
       mission/sequence index, fixed high water and dedicated context-bound
       cursor validation.
-- [ ] Run focused tests plus existing Operator API/pagination tests; expect
+- [x] Run focused tests plus existing Operator API/pagination tests; expect
       pass.
-- [ ] Commit backend contract and tests.
+- [x] Commit backend contract and tests.
 
 ### Task 2: Workspace query synchronization and safe reset
 
@@ -68,18 +68,18 @@ for snapshots. `useWorkspaceRecords(missionId, identity)` returns the existing
 infinite query controls plus merged saved items, synchronization failure and
 quarantine state. Passive editor observers consume the same overlay/cache.
 
-- [ ] Write failing tests for periodic remote updates, highest-version merging,
+- [x] Write failing tests for periodic remote updates, highest-version merging,
       cursor retention, hidden/resume/reconnect behavior, failure recovery and
       cleanup.
-- [ ] Include source changes during bootstrap and paginated batches, empty
+- [x] Include source changes during bootstrap and paginated batches, empty
       baseline validation, invalid-checkpoint reset, late responses and
       dirty-draft input/target/base preservation.
-- [ ] Implement one foreground polling owner, staged complete batches,
+- [x] Implement one foreground polling owner, staged complete batches,
       generation-bound reset, source validation and scoped projection refreshes.
-- [ ] Integrate merged reads into cards/counts/editor relationships and existing
+- [x] Integrate merged reads into cards/counts/editor relationships and existing
       unavailable presentation without changing draft/write behavior.
-- [ ] Run focused tests, frontend unit suite, lint and build; expect pass.
-- [ ] Commit frontend behavior and tests.
+- [x] Run focused tests, frontend unit suite, lint and build; expect pass.
+- [x] Commit frontend behavior and tests.
 
 ### Task 3: Two-client production-path acceptance and review
 
