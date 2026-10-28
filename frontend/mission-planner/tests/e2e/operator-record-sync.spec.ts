@@ -11,7 +11,12 @@ import { writeFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { json, seed, raw } from './operator-coherent-fixture';
 import { unknownTime } from '../../src/components/operator/conferenceCommands';
-import type { CommandReceipt, OperatorInput } from '../../src/types/operator';
+import { callDraft } from '../../src/components/operator/callDraft';
+import type {
+  CommandReceipt,
+  OperatorInput,
+  OperatorHealth,
+} from '../../src/types/operator';
 
 const evidence = process.env.OPERATOR_SYNC_EVIDENCE!;
 const mutatesRecord = (response: Response) =>
@@ -119,7 +124,7 @@ test('saved records converge across independent laptop and phone contexts with s
     heartbeat = setInterval(() => {
       pending = pending.then(() => raw(request, 1764)).then(() => {});
     }, 2000);
-    const health = await json<{ api_epoch: string }>(
+    const health = await json<OperatorHealth>(
       await request.get('/api/v2/operator/health')
     );
     const create = async (input: OperatorInput) =>
@@ -558,6 +563,67 @@ test('saved records converge across independent laptop and phone contexts with s
       path: `${evidence}/sync-phone-390x844.png`,
       fullPage: true,
     });
+    // Freeze the reader while over 200 new records are committed, forcing a
+    // genuine successful multi-page delta batch, separate from snapshot paging.
+    await phone
+      .getByRole('navigation', { name: 'Operator workspace' })
+      .getByRole('button', { name: 'History', exact: true })
+      .click();
+    await phone
+      .getByLabel('Search Loaded Records', { exact: true })
+      .fill('Bulk sync note');
+    const batchPages: number[] = [];
+    phone.on('response', async (response) => {
+      if (
+        response.ok() &&
+        new URL(response.url()).pathname.endsWith('/record-changes')
+      ) {
+        try {
+          const page = await response.json();
+          batchPages.push(page.items.length);
+        } catch {
+          /* Teardown may cancel a final response. */
+        }
+      }
+    });
+    const batchCdp = await phoneContext.newCDPSession(phone);
+    await batchCdp.send('Page.setWebLifecycleState', { state: 'frozen' });
+    for (let n = 0; n < 205; n++)
+      await create({
+        schema_version: 1,
+        record_type: 'journal_entry',
+        mission_id: missionId,
+        scope: 'mission',
+        leg_id: null,
+        time: { ...unknownTime },
+        payload: {
+          schema_version: 1,
+          entry_type: 'note',
+          title: `Bulk sync note ${n}`,
+          note: 'Synthetic paginated delta acceptance',
+          previous_leg_id: null,
+          next_leg_id: null,
+        },
+      });
+    const batchResume = performance.now();
+    await batchCdp.send('Page.setWebLifecycleState', { state: 'active' });
+    await expect(
+      phone
+        .getByRole('region', { name: 'Current journal entries', exact: true })
+        .getByRole('article')
+    ).toHaveCount(205, { timeout: 15_000 });
+    expect(batchPages).toContain(200);
+    expect(batchPages).toContain(5);
+    proof.paginatedDeltaBatch = {
+      records: 205,
+      pageSizes: batchPages,
+      catchUpMs: performance.now() - batchResume,
+    };
+    await batchCdp.detach();
+    await phone
+      .getByRole('navigation', { name: 'Operator workspace' })
+      .getByRole('button', { name: 'Operations', exact: true })
+      .click();
     // SPA navigation unmounts the owner; no polling worker should remain behind.
     await navigate(laptop, '/missions');
     await expect(
@@ -587,6 +653,71 @@ test('saved records converge across independent laptop and phone contexts with s
       card(phone, suspended.receipt.saved_records[0].record_id)
     ).toHaveCount(0);
     proof.navigationAndMissionIsolation = true;
+    // Replace the actual runtime source and store. An empty validated new
+    // baseline must never inherit live records, even with a dirty draft retained.
+    await navigate(phone, `/operator?mission_id=${missionId}`);
+    const config = await json<Record<string, unknown>>(
+      await request.get('/api/config')
+    );
+    await json(
+      await request.post('/api/config', {
+        data: { ...config, mode: 'simulation' },
+      })
+    );
+    const unprovisioned = (await (
+      await request.get('/api/v2/operator/health')
+    ).json()) as OperatorHealth;
+    expect(unprovisioned.source_mode).toBe('simulation');
+    const replacement = await json<OperatorHealth>(
+      await request.post('/api/v2/operator/provision', {
+        data: {
+          schema_version: 1,
+          expected_source_mode: 'simulation',
+          expected_simulation_run_id: unprovisioned.simulation_run_id,
+        },
+      })
+    );
+    expect(replacement.store_id).not.toBe(health.store_id);
+    for (const page of [laptop, phone])
+      await expect(
+        card(page, suspended.receipt.saved_records[0].record_id)
+      ).toHaveCount(0, { timeout: 15_000 });
+    const simulation = callDraft(undefined, 'planned', missionId);
+    simulation.payload.title = 'Simulation source only';
+    simulation.payload.party = 'Simulation source only';
+    const native = await json<CommandReceipt>(
+      await request.post('/api/v2/operator/records', {
+        headers: {
+          'Idempotency-Key': randomUUID(),
+          'X-Operator-Store-Epoch': replacement.api_epoch!,
+          'X-Operator-Replay-Id':
+            replacement.operating_context_id ??
+            replacement.replay_run_id ??
+            `idle:${replacement.simulation_run_id}`,
+        },
+        data: simulation,
+      })
+    );
+    for (const page of [laptop, phone]) {
+      await expect(card(page, native.saved_records[0].record_id)).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(card(page, conference.record_id)).toHaveCount(0);
+    }
+    const retainedSourceDraft = await laptop.evaluate(() =>
+      Object.entries(sessionStorage)
+        .filter(([key]) => key.startsWith('operator-workspace-draft:v1:'))
+        .map(([, value]) => JSON.parse(value))
+        .find((d) => d.input.payload.party === 'Laptop unsaved input')
+    );
+    expect(retainedSourceDraft.target).toEqual(draftBefore.target);
+    expect(retainedSourceDraft.baseVersion).toBe(draftBefore.baseVersion);
+    proof.runtimeSourceReplacement = {
+      from: health.source_mode,
+      to: replacement.source_mode,
+      distinctStore: true,
+      dirtyDraftTargetPreserved: true,
+    };
     expect(proof.errors).toEqual([]);
     proof.passed = true;
   } finally {
