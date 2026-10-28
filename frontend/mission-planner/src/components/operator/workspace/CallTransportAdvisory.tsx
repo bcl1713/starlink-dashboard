@@ -38,8 +38,12 @@ export function CallTransportAdvisory({
             : event.advisory_type === 'concurrency_restriction'
               ? 'Coordinated Concurrency Restriction'
               : 'Scheduled Restriction'}{' '}
-          · {transportLabel(event.transport)} · {eventUtc(event.due_at)} –{' '}
-          {eventUtc(event.end_at)} · {call.payload.title}
+          ·{' '}
+          {event.transport
+            ? transportLabel(event.transport)
+            : 'Customer Communications'}{' '}
+          · {eventUtc(event.due_at)} – {eventUtc(event.end_at)} ·{' '}
+          {call.payload.title}
         </p>
       ))}
     </div>

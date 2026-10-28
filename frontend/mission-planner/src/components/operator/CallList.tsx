@@ -150,6 +150,7 @@ export function CallList({
             Planned: {callUtc(r.time.planned_start_at)} · End:{' '}
             {callUtc(r.time.planned_end_at)}
           </p>
+          {renderAdvisory?.(r)}
           <p className="text-sm">
             Actual: {callUtc(r.time.occurred_at)} · End:{' '}
             {callUtc(r.time.ended_at)}
@@ -299,7 +300,6 @@ export function CallList({
               )}
             </>
           )}
-          {renderAdvisory?.(r)}
           <div className="flex flex-wrap gap-2">
             <button
               className={button}

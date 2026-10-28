@@ -1146,9 +1146,12 @@ export function OperatorWorkspace() {
                 </p>
               )}
               {cue?.length ? (
-                <p role="status">
-                  Local cue: {cue.map((event) => event.title).join(' · ')}
-                </p>
+                <button
+                  className="ws-button"
+                  onClick={() => setOperationalAlerts(true)}
+                >
+                  Operational Alerts · {cue.length}
+                </button>
               ) : null}
               {records.isFetching && records.data && (
                 <p role="status">Refreshing saved records…</p>

@@ -16,10 +16,10 @@ async function zulu(page: Page, label: string, value: string) {
     .getByLabel(new RegExp(`^${label} date \\(Zulu\\)$`, 'i'))
     .fill(value.slice(0, 10));
   await page
-    .getByLabel(new RegExp(`^${label} hour \\(Zulu\\)$`, 'i'))
+    .getByLabel(new RegExp(`^${label} hour \\(Zulu\\)`, 'i'))
     .selectOption(value.slice(11, 13));
   await page
-    .getByLabel(new RegExp(`^${label} minute \\(Zulu\\)$`, 'i'))
+    .getByLabel(new RegExp(`^${label} minute \\(Zulu\\)`, 'i'))
     .selectOption(value.slice(14, 16));
 }
 async function waitRecord(
@@ -315,7 +315,7 @@ test('coherent operations, retained capture and real journal safety across deskt
     await expect(page.getByLabel(/Preparation Lead Minutes/i)).toHaveValue(
       '10'
     );
-    await expect(page.getByLabel(/^Conference \(Optional\)$/i)).toContainText(
+    await expect(page.getByLabel(/^Conference \(Optional\)/i)).toContainText(
       'Inline Conference'
     );
     await page.getByRole('button', { name: /^Save Call$/i }).click();

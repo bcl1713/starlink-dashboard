@@ -145,6 +145,66 @@ export function IssueForm({
             />
           </label>
         )}
+        <div className="space-y-3">
+          {' '}
+          <label>
+            Status
+            <select
+              aria-label="Status"
+              className={issueField}
+              value={input.payload.status}
+              onChange={(e) =>
+                patch({
+                  status: e.target.value as IssueInput['payload']['status'],
+                  ...(e.target.value === 'resolved'
+                    ? { follow_up_at: null }
+                    : {}),
+                })
+              }
+            >
+              {['open', 'monitoring', 'resolved', 'reopened'].map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>{' '}
+          <UtcDateTime
+            key={followUpReset}
+            label="Follow-Up"
+            value={input.payload.follow_up_at ?? null}
+            disabled={input.payload.status === 'resolved'}
+            onChange={(value) =>
+              patch({
+                follow_up_at: value ? new Date(value).toISOString() : null,
+              })
+            }
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={issueButton}
+              disabled={!asOf || input.payload.status === 'resolved'}
+              onClick={() =>
+                patch({
+                  follow_up_at: new Date(
+                    Date.parse(asOf!) + 15 * 60000
+                  ).toISOString(),
+                })
+              }
+            >
+              In 15 Minutes from Snapshot
+            </button>
+            <button
+              type="button"
+              className={issueButton}
+              onClick={() => {
+                patch({ follow_up_at: null });
+                setFollowUpReset((value) => value + 1);
+              }}
+            >
+              Clear Follow-Up
+            </button>
+          </div>
+        </div>
         <details>
           <summary className="min-h-11 cursor-pointer">
             Optional Issue Details
@@ -169,26 +229,7 @@ export function IssueForm({
                 ))}
               </select>
             </label>
-            <label>
-              Status
-              <select
-                aria-label="Status"
-                className={issueField}
-                value={input.payload.status}
-                onChange={(e) =>
-                  patch({
-                    status: e.target.value as IssueInput['payload']['status'],
-                    ...(e.target.value === 'resolved'
-                      ? { follow_up_at: null }
-                      : {}),
-                  })
-                }
-              >
-                {['open', 'monitoring', 'resolved', 'reopened'].map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </label>
+
             <label>
               Mitigation
               <select
@@ -224,43 +265,6 @@ export function IssueForm({
                 </label>
               )
             )}
-            <UtcDateTime
-              key={followUpReset}
-              label="Follow-Up"
-              value={input.payload.follow_up_at ?? null}
-              disabled={input.payload.status === 'resolved'}
-              onChange={(value) =>
-                patch({
-                  follow_up_at: value ? new Date(value).toISOString() : null,
-                })
-              }
-            />
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={issueButton}
-                disabled={!asOf || input.payload.status === 'resolved'}
-                onClick={() =>
-                  patch({
-                    follow_up_at: new Date(
-                      Date.parse(asOf!) + 15 * 60000
-                    ).toISOString(),
-                  })
-                }
-              >
-                In 15 Minutes from Snapshot
-              </button>
-              <button
-                type="button"
-                className={issueButton}
-                onClick={() => {
-                  patch({ follow_up_at: null });
-                  setFollowUpReset((value) => value + 1);
-                }}
-              >
-                Clear Follow-Up
-              </button>
-            </div>
             <label className="flex min-h-11 items-center gap-2">
               <input
                 type="checkbox"
