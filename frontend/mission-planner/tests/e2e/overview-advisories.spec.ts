@@ -203,6 +203,7 @@ test('customizable presets and durable shared advisories across real clients', a
         locale: 'en-US',
       });
       contexts.push(context);
+      await context.tracing.start({ screenshots: true, snapshots: true });
       await context.addInitScript(() => {
         const tracked = window as unknown as { overviewAudio: number };
         tracked.overviewAudio = 0;
@@ -248,7 +249,7 @@ test('customizable presets and durable shared advisories across real clients', a
     await expect(
       tools.getByText('Normal preset saved', { exact: true })
     ).toBeVisible();
-    await flight.check();
+    await flight.click();
     await expect(flight).toBeChecked();
     await tools
       .getByRole('button', { name: 'Save current as Customer', exact: true })
@@ -552,7 +553,22 @@ test('customizable presets and durable shared advisories across real clients', a
     proof.checksPassed = true;
   } finally {
     await stopHeartbeat();
-    await Promise.all(contexts.map((context) => context.close()));
+    await Promise.all(
+      contexts.map(async (context, index) => {
+        try {
+          const page = context.pages()[0];
+          if (page && !page.isClosed())
+            await page
+              .screenshot({ path: `${evidence}/client-${index}-final.png` })
+              .catch(() => {});
+          await context.tracing.stop({
+            path: `${evidence}/client-${index}-trace.zip`,
+          });
+        } finally {
+          await context.close();
+        }
+      })
+    );
     await writeFile(
       `${evidence}/overview-advisories-proof.json`,
       JSON.stringify(proof, null, 2)
