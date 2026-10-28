@@ -156,3 +156,33 @@ remove local generated packages, remove only this task's `dist-bloom/` and
 primary checkout stays on `dev`; the experiment branch stays isolated until an
 explicit owner decision. Follow the normal worktree cleanup after any separately
 approved merge.
+
+## Review evidence and POI interaction
+
+Experiment POIs opt into a 12 CSS-pixel picking radius in A, output-only and B.
+An Object3D raycast disk supplies the target without drawing halo geometry or
+allocating GPU resources. It checks Earth occlusion and the camera frustum. The
+visual halos/core stop contributing hit intersections for these experiment POIs;
+ordinary Overview retains its existing picking. Real raycast and browser
+regressions compare center, offset, overlapping and far-side clicks in A/B/A.
+
+PR #433's **Offline bloom review evidence** Actions run publishes the artifact
+`overview-bloom-<source-sha>` for 30 days. The PR links its exact run/artifact.
+The artifact contains a ready-to-extract offline ZIP, SHA-256 checksum, matched
+A/output/B default/full PNGs, `visual-settings.json`, raw/summary frame-interval
+JSON/CSV, pointer test results and verified runtime teardown. Open `START.txt`
+and `RUN-SHEET.md` inside the package. These remain explicit SwiftShader smoke
+results; physical-laptop acceptance is pending. Rerunning the same source run
+regenerates an expired artifact without deploying or merging anything.
+
+To produce the same bundle locally after a clean build and copied-package smoke:
+
+```sh
+timeout --kill-after=10s 1m node frontend/mission-planner/scripts/bloom-verify-cleanup.mjs
+timeout --kill-after=10s 2m node frontend/mission-planner/scripts/bloom-review-bundle.mjs
+```
+
+The evidence workflow runs only for the isolated experiment branch targeting
+`dev`, or a manual run on that branch. It checks out the PR head SHA explicitly,
+uses read-only repository permission, starts only its private loopback fixture
+server, and has no production origins, deployment steps or operational replay.

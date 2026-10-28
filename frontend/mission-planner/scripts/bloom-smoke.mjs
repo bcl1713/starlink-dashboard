@@ -1,3 +1,4 @@
+import { verifyPoiPicking } from './bloom-picking-smoke.mjs';
 import { chromium } from '@playwright/test';
 import { spawn, execFileSync } from 'node:child_process';
 import {
@@ -86,8 +87,24 @@ const frames = async (page, count = 35) =>
       }),
     count
   );
-const snapshot = async (page) =>
-  JSON.parse(await page.locator('canvas').getAttribute('data-frame'));
+const snapshot = async (page) => ({
+  ...JSON.parse(await page.locator('canvas').getAttribute('data-frame')),
+  settings: {
+    strength: Number(
+      await page.getByLabel('strength', { exact: true }).inputValue()
+    ),
+    threshold: Number(
+      await page.getByLabel('threshold', { exact: true }).inputValue()
+    ),
+    radius: Number(
+      await page.getByLabel('radius', { exact: true }).inputValue()
+    ),
+    maxDimension: Number(
+      await page.getByLabel('Bloom bound', { exact: true }).inputValue()
+    ),
+  },
+  full: await page.getByLabel('Full overlays', { exact: true }).isChecked(),
+});
 const results = {
   sha,
   buildStamp,
@@ -189,11 +206,16 @@ try {
   await mode.selectOption('output');
   await frames(page);
   results.output = await snapshot(page);
+  await page.screenshot({ path: resolve(evidence, 'output-default.png') });
   await mode.selectOption('current');
   await frames(page);
   const restored = await snapshot(page);
   assert.deepEqual(restored.resources, a.resources);
   await page.screenshot({ path: resolve(evidence, 'A-restored.png') });
+  results.picking = await verifyPoiPicking(page, frames, snapshot);
+  results.checks.push(
+    'browser center/offset/overlap POI clicks match in A/B/A; far-side POIs cannot be picked'
+  );
   for (let i = 0; i < 4; i++) {
     await mode.selectOption('bloom');
     await frames(page);
@@ -207,9 +229,15 @@ try {
   );
   await page.getByLabel('Full overlays', { exact: true }).check();
   await frames(page);
+  results.full = { A: await snapshot(page) };
   await page.screenshot({ path: resolve(evidence, 'A-full.png') });
+  await mode.selectOption('output');
+  await frames(page);
+  results.full.output = await snapshot(page);
+  await page.screenshot({ path: resolve(evidence, 'output-full.png') });
   await mode.selectOption('bloom');
   await frames(page);
+  results.full.B = await snapshot(page);
   await page.screenshot({ path: resolve(evidence, 'B-full.png') });
   await page.getByLabel('Bloom bound', { exact: true }).selectOption('480');
   await frames(page);
@@ -285,6 +313,20 @@ try {
   await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
   await (await csvDownload).saveAs(resolve(evidence, 'diagnostic-runs.csv'));
   results.browserVersion = browser.version();
+  writeFileSync(
+    resolve(evidence, 'visual-settings.json'),
+    JSON.stringify(
+      {
+        sha,
+        buildStamp,
+        browserVersion: results.browserVersion,
+        default: { A: results.a, output: results.output, B: results.b },
+        full: results.full,
+      },
+      null,
+      2
+    )
+  );
   assert.deepEqual(results.errors, []);
   assert.deepEqual(results.external, []);
   results.checks.push(

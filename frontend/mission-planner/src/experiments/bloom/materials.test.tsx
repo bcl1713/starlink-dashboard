@@ -25,7 +25,7 @@ it('removes only synthetic star halos in B and restores A in the same scene', as
   expect(view.scene.findAllByType('Points').length).toBeGreaterThan(1);
   await view.unmount();
 });
-it('B keeps the chevron body, picking and far-side visibility but removes its halo', async () => {
+it('B keeps the chevron body and far-side visibility but removes its halo', async () => {
   const view = await create(
     <OverviewBloomMode value={true}>
       <StarMarker

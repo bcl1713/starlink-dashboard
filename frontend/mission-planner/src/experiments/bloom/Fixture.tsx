@@ -79,7 +79,12 @@ export function Fixture({
             onPick(poi.id);
           }}
         >
-          <StarMarker coordinate={poi} size={0.1} color={poi.color} />
+          <StarMarker
+            coordinate={poi}
+            size={0.1}
+            color={poi.color}
+            pickRadiusPixels={12}
+          />
           <OverviewMapLabel
             id={poi.id}
             kind="poi"
