@@ -1,7 +1,7 @@
 # Operator saved-record synchronization
 
-Status: proposed for approval. Implements issue #430 after merged PR #428. Base:
-`origin/dev`, `f0c1bd49`.
+Status: approved after incorporating PR #431's baseline/reset clarification.
+Implements issue #430 after merged PR #428. Base: `origin/dev`, `f0c1bd49`.
 
 ## Intent and constraints
 
@@ -18,8 +18,8 @@ browsers, arbitrary workloads or unavailable networks.
 
 ## Approaches
 
-The issue prefers bounded visibility-aware polling. The implementation choices
-below are proposals by the implementer; user selection is pending.
+The approved approach is bounded incremental polling (option 2), as preferred by
+the issue and accepted subject to the baseline/reset clarification.
 
 1. Poll the existing infinite records query. Small frontend change, but each
    interval rereads all loaded pages. Polling only its first page misses changes
@@ -65,6 +65,38 @@ mode, simulation run, replay run and operating-context identifiers. Validate
 identity before displaying or merging the response. Reject invalid watermarks,
 foreign/obsolete cursors and identity mismatches through existing error
 patterns. No database migration or mutation behavior change is expected.
+
+## Baseline identity and safe rebaselining
+
+Extend the records list response with captured `source` metadata containing the
+requested mission ID and the full runtime health identity, including store,
+epoch, mode, simulation namespace, replay and operating context. Capture
+metadata under the same runtime binding as the snapshot read. Return it even
+when `items` is empty and `H` is zero. Workspace readers validate this metadata
+against their intended mission and identity before accepting the page or using
+its `H`. A query key or a separate health read alone is not source validation.
+Bind workspace continuation cursors to source/context too; preserve the existing
+snapshot contents and cursor behavior for other readers.
+
+Retry network failures, timeouts and temporary storage/service unavailability
+from the same completed checkpoint. Never advance it after a partial batch.
+Invalid watermark/cursor errors and source/epoch/context changes invalidate the
+checkpoint: abandon the batch, refresh health/context, and obtain a fresh,
+identity-validated first snapshot page before restarting incremental reads. For
+an invalid checkpoint in an unchanged identity, replace the old snapshot
+pagination generation; never append its old cursors to the new baseline.
+
+Every baseline/reset has a generation. Abort owned requests and ignore late
+responses from an obsolete generation, including bootstrap and intermediate
+delta pages. Discard incompatible overlays, page cursors and watermarks. On a
+source mismatch, quarantine data from the old generation immediately while
+health/context catch up. Last-known data may remain visibly stale only in its
+original scope; it must not appear as current data for a replacement context.
+
+Resetting saved reads never resets the draft registry. Keep dirty draft input,
+original mission/context targets and base versions unchanged. The existing
+explicit stale-version/409 reconciliation remains necessary before a stale write
+can succeed. Do not rebase or resubmit a write automatically.
 
 ## Refresh ownership and merging
 
@@ -116,7 +148,10 @@ updates/removal/restoration, cursor and watermark validation, mission/store
 isolation and restart/replay context identity. Frontend tests cover version
 precedence, stable snapshot cursors, shared relationship views, draft
 preservation, hidden/foreground and reconnect behavior, failed reads, teardown
-and deduplication.
+and deduplication. Include empty-baseline identity, identity changing during
+bootstrap and during a paginated batch, invalid-checkpoint rebaselining without
+endless obsolete retries, late old-generation responses, and recovery while a
+dirty draft remains open with its original target/base version.
 
 Run two independent Playwright browser contexts against the same disposable
 production-image backend through Nginx, using synthetic simulation data. Keep
