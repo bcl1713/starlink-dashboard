@@ -58,6 +58,11 @@ Terminal replay cancellation/failure removes its mission children. Persisted
 selection reconciliation does not resurrect terminal replay metrics while that
 replay selection remains attached.
 
+After a simulation → live → simulation round trip, live reconciliation may have
+legitimately published the persisted mission. Reconciliation in the terminal
+simulation context explicitly clears that owner, including after an external
+persisted deactivation. Running and completed replay metrics remain intact.
+
 The existing reconciliation owner also restores unpaced simulation/live mission
 identity after restart and handles external deactivation. Simulation now uses
 the same reconciliation loop as live: executor wakeups every 250 ms, with the

@@ -128,6 +128,94 @@ def test_reconciliation_cannot_resurrect_terminal_replay(timed_api, terminal):
     )
 
 
+@pytest.mark.parametrize("initial_state", ["running", "failed"])
+async def test_mode_round_trip_clears_live_owner_for_terminal_replay(
+    timed_api, monkeypatch, initial_state
+):
+    import json
+
+    from app.mission import active_context_cache, storage
+    from app.mission.active_context_owner import ActiveContextOwner
+
+    client, service, _clocks = timed_api
+    assert start(client).status_code == 200
+    if initial_state == "failed":
+        service.runtime.fail("test", "Failed before switching modes")
+    reconciliation_clock = [0.0]
+    monkeypatch.setattr(
+        active_context_cache, "monotonic", lambda: reconciliation_clock[0]
+    )
+    owner = ActiveContextOwner(
+        service.route_manager, lambda: service.status().service_mode, service.status
+    )
+    labels = {"mission_id": "mission-1", "route_id": "replay"}
+    service.runtime.set_service_mode("live")
+    assert service.status().state == (
+        "cancelled" if initial_state == "running" else "failed"
+    )
+    assert metrics.REGISTRY.get_sample_value("mission_active_info", labels) is None
+    await owner.refresh()
+    assert metrics.REGISTRY.get_sample_value("mission_active_info", labels) == 1
+
+    service.runtime.set_service_mode("simulation")
+    await owner.refresh()
+    assert all(
+        not family.samples
+        for family in metrics.REGISTRY.collect()
+        if family.name.startswith("mission_")
+    )
+
+    # Simulate a durable edit by another process, without local notifications.
+    path = storage.get_mission_leg_file_path("mission-1", "leg-1")
+    payload = json.loads(path.read_text())
+    payload["is_active"] = False
+    path.write_text(json.dumps(payload))
+    reconciliation_clock[0] += 2
+    snapshot = await owner.refresh()
+    assert snapshot.state == "no_active_mission"
+    assert all(
+        not family.samples
+        for family in metrics.REGISTRY.collect()
+        if family.name.startswith("mission_")
+    )
+
+
+@pytest.mark.parametrize("complete", [False, True])
+async def test_reconciliation_preserves_current_running_or_completed_replay(
+    timed_api, complete
+):
+    from app.mission.active_context_owner import ActiveContextOwner
+
+    client, service, clocks = timed_api
+    assert start(client).status_code == 200
+    if complete:
+        clocks.advance(120)
+        service.collect(service.coordinator, service.publish)
+    assert service.status().state == ("completed" if complete else "running")
+    before = [
+        sample
+        for family in metrics.REGISTRY.collect()
+        if family.name.startswith("mission_")
+        for sample in family.samples
+    ]
+    owner = ActiveContextOwner(
+        service.route_manager, lambda: service.status().service_mode, service.status
+    )
+    await owner.refresh()
+    assert (
+        metrics.REGISTRY.get_sample_value(
+            "mission_active_info", {"mission_id": "mission-1", "route_id": "replay"}
+        )
+        == 1
+    )
+    assert [
+        sample
+        for family in metrics.REGISTRY.collect()
+        if family.name.startswith("mission_")
+        for sample in family.samples
+    ] == before
+
+
 def test_failure_inside_real_runtime_commit_never_publishes(timing, monkeypatch):
     service, clocks, coordinator, prepare = timing
     old = metrics.FRAME_STORE.read()

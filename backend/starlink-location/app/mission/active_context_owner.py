@@ -64,9 +64,12 @@ class ActiveContextOwner:
                 and replay is not None
                 and replay.run is not None
             )
-            if not replay_owns_selection and active_mission_snapshot_is_current(
-                self.manager, snapshot
-            ):
+            if replay_owns_selection:
+                # Live reconciliation may have published an owner since replay
+                # cancellation. Re-entering terminal replay must clear it too.
+                if replay.state in ("cancelled", "failed"):
+                    MISSION_METRICS.clear_current()
+            elif active_mission_snapshot_is_current(self.manager, snapshot):
                 if snapshot.binding is not None:
                     binding = snapshot.binding
                     MISSION_METRICS.activate(

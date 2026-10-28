@@ -62,3 +62,19 @@ Future benchmark/acceptance resources use `issue393` names and cleanup handlers.
 PR: [#432](https://github.com/bcl1713/starlink-dashboard/pull/432), draft
 against `dev`; implementation and scoped controls are complete. The worktree is
 retained for review. All task runtime resources are stopped.
+
+## Review follow-up: service mode round trip
+
+[Review finding](https://github.com/bcl1713/starlink-dashboard/pull/432#issuecomment-6464401442)
+reproduced for cancelled and failed replay: live reconciliation republished an
+owner that remained present on returning to terminal simulation. Terminal replay
+reconciliation now clears the current owner under repository admission.
+
+- Both round-trip regressions failed before the fix and passed afterward.
+- Tests cover live publication between mode changes, raw external persisted
+  deactivation, and preservation of running/completed replay values.
+- 316 affected tests passed in 32.17 seconds; scoped Black/Ruff checks passed.
+- Independent follow-up review found no actionable issues.
+- Test ownership and retained logs: `/tmp/issue393-review-roundtrip`; disposable
+  data and pytest paths are removed after checks. No Compose projects or
+  listening services were started for this follow-up.
