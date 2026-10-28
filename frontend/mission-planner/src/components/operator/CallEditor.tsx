@@ -330,6 +330,7 @@ export function CallEditor({
           <button
             type="button"
             className={buttonClass}
+            disabled={saveDisabled}
             onClick={onCreateConference}
           >
             Create Conference

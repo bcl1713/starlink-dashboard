@@ -1,4 +1,11 @@
 import type { ReadRecord, SavedRecord } from '@/types/operator';
+import { eventUtc } from './eventFormatting';
+const occurrenceLabel = (value: string | null) => {
+  const formatted = eventUtc(value);
+  return formatted === 'Time Unknown'
+    ? 'Occurrence time unknown'
+    : `${formatted.slice(0, 16)} Zulu`;
+};
 interface Props {
   items: ReadRecord[];
   context?: { name: string; legs: { id: string; name: string }[] };
@@ -44,10 +51,25 @@ export function JournalList({
             {record.deleted ? ' · Removed' : ''}
           </p>
           <p className="text-sm">
-            {record.time.occurred_at
-              ? `${record.time.occurred_at} (UTC, ${record.time.precision})`
-              : 'Occurrence time unknown'}
+            {record.time.occurred_at ? (
+              <time dateTime={record.time.occurred_at}>
+                {occurrenceLabel(record.time.occurred_at)}
+              </time>
+            ) : (
+              occurrenceLabel(null)
+            )}
           </p>
+          <details>
+            <summary className="min-h-11 cursor-pointer py-2">
+              Timestamp Details
+            </summary>
+            <dl className="text-sm text-muted-foreground">
+              <dt>Occurrence (stored UTC)</dt>
+              <dd>{record.time.occurred_at ?? 'Unknown'}</dd>
+              <dt>Historical Precision</dt>
+              <dd>{record.time.precision}</dd>
+            </dl>
+          </details>
           {record.scope === 'between_legs' && (
             <p className="text-sm">
               Previous leg: {legName(record.payload.previous_leg_id)} · Next

@@ -358,13 +358,7 @@ export function WorkspaceEditor({
     );
   }
   function createInlineConference() {
-    if (
-      !draft ||
-      draft.input.record_type !== 'call' ||
-      wrongStore ||
-      unavailable
-    )
-      return;
+    if (!draft || draft.input.record_type !== 'call' || saveDisabled) return;
     const retained = workspace.registry.resumeDraft(draft.draftId) ?? draft;
     const childId = retained.editorState?.inlineConferenceDraftId;
     if (
