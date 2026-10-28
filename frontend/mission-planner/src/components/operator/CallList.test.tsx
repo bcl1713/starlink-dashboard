@@ -229,3 +229,97 @@ it('keeps an unresolved conference actionable rather than implying a direct conn
   ).toBeTruthy();
   expect(screen.queryByText('Direct Connection')).toBeNull();
 });
+
+it('finishes after a restored customer leaves instead of restoring the superseded interruption again', () => {
+  const props = controls();
+  const call = {
+    ...scheduled(),
+    time: { ...scheduled().time, occurred_at: '2026-10-17T15:00:00Z' },
+  };
+  const old = {
+    ...record,
+    record_id: 'interrupted',
+    record_type: 'participation',
+    payload: {
+      schema_version: 1,
+      entry_type: 'participation',
+      title: 'Old interval',
+      call_id: 'call',
+      conference_id: 'bridge',
+      state: 'interrupted',
+    },
+  } as SavedRecord;
+  const resumed = {
+    ...old,
+    record_id: 'successor',
+    payload: {
+      ...old.payload,
+      state: 'left',
+      resumes_participation_id: 'interrupted',
+    },
+  } as SavedRecord;
+  render(
+    <CallList
+      {...props}
+      items={page([call, bridge(true), old, resumed]).items}
+    />
+  );
+  expect(
+    screen
+      .getByRole('button', { name: 'Finish Call' })
+      .hasAttribute('data-primary-action')
+  ).toBe(true);
+  expect(screen.queryByRole('button', { name: 'Restore Customer' })).toBeNull();
+});
+it.each(['direct', 'bridge'] as const)(
+  'retains %s establishment recovery in Details when a connected customer is the primary work',
+  (kind) => {
+    const props = controls();
+    const call = {
+      ...scheduled(),
+      payload: {
+        ...scheduled().payload,
+        conference_id: kind === 'direct' ? null : 'bridge',
+      },
+      time: { ...scheduled().time, occurred_at: '2026-10-17T15:00:00Z' },
+    } as SavedRecord;
+    const customer = {
+      ...record,
+      record_id: 'connected',
+      record_type: 'participation',
+      payload: {
+        schema_version: 1,
+        entry_type: 'participation',
+        title: 'Customer',
+        call_id: 'call',
+        conference_id: kind === 'direct' ? null : 'bridge',
+        state: 'connected',
+      },
+    } as SavedRecord;
+    render(
+      <CallList
+        {...props}
+        items={page([call, bridge(false), customer]).items}
+      />
+    );
+    expect(
+      screen
+        .getByRole('button', { name: 'Report Customer Left' })
+        .hasAttribute('data-primary-action')
+    ).toBe(true);
+    fireEvent.click(screen.getByText('Call Details'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: kind === 'direct' ? 'Establish' : 'Establish Bridge',
+        exact: true,
+      })
+    );
+    if (kind === 'direct')
+      expect(props.onCallAction).toHaveBeenCalledWith(call, 'establish');
+    else
+      expect(props.onConferenceAction).toHaveBeenCalledWith(
+        bridge(false),
+        'establish'
+      );
+  }
+);

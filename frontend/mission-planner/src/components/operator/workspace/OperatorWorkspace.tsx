@@ -1150,7 +1150,9 @@ export function OperatorWorkspace() {
                 </p>
               )}
               {records.isFetching && records.data && (
-                <p role="status">Refreshing saved records…</p>
+                <p role="status" className="sr-only">
+                  Refreshing saved records…
+                </p>
               )}
               {actionError && <p role="alert">{actionError}</p>}
               {view === 'Operations' ? (

@@ -102,7 +102,23 @@ export function CallList({
           record.payload.entry_type === 'participation' &&
           record.payload.call_id === r.record_id
       );
-      const connected = customers.filter(
+      const resumed = new Set(
+        customers.flatMap((customer) =>
+          customer.payload.entry_type === 'participation' &&
+          customer.payload.resumes_participation_id
+            ? [customer.payload.resumes_participation_id]
+            : []
+        )
+      );
+      const currentCustomers = customers.filter(
+        (customer) => !resumed.has(customer.record_id)
+      );
+      const unresolvedCustomer = currentCustomers.some(
+        (customer) =>
+          customer.payload.entry_type === 'participation' &&
+          customer.payload.state === 'unknown'
+      );
+      const connected = currentCustomers.filter(
         (record) =>
           record.payload.entry_type === 'participation' &&
           record.payload.state === 'connected'
@@ -118,7 +134,7 @@ export function CallList({
             !sessionOutsideContext(target, currentAssociation))
       );
       const direct = !payload.conference_id;
-      const interrupted = customers.find(
+      const interrupted = currentCustomers.find(
         (customer) =>
           customer.payload.entry_type === 'participation' &&
           customer.payload.state === 'interrupted'
@@ -129,19 +145,46 @@ export function CallList({
           ? ` · ${customer.payload.participant ?? customer.payload.title}`
           : '');
       const canFinish =
-        !!r.time.occurred_at && !incomplete && connected.length === 0;
+        !!r.time.occurred_at &&
+        !incomplete &&
+        !unresolvedCustomer &&
+        connected.length === 0;
       const finishedCustomers =
-        customers.length > 0 &&
-        customers.every(
+        currentCustomers.length > 0 &&
+        currentCustomers.every(
           (customer) =>
             customer.payload.entry_type === 'participation' &&
             customer.payload.state === 'left'
         );
-      let primary: {
-        label: string;
-        disabled: boolean;
-        run: () => void;
-      } | null = null;
+      type NextAction = { label: string; disabled: boolean; run: () => void };
+      let establishment: NextAction | null = null;
+      if (ongoing && onCallAction && !ready) {
+        if (direct)
+          establishment = {
+            label: 'Establish',
+            disabled,
+            run: () => onCallAction(r, 'establish'),
+          };
+        else if (bridge && bridgePayload && onConferenceAction) {
+          const restore =
+            !previousSession && bridgePayload.status === 'interrupted';
+          establishment = {
+            label: restore ? 'Restore Bridge' : 'Establish Bridge',
+            disabled,
+            run: () =>
+              onConferenceAction(
+                bridge,
+                restore ? 'restore_connection' : 'establish'
+              ),
+          };
+        } else
+          establishment = {
+            label: 'Choose Conference',
+            disabled,
+            run: () => onEdit(r),
+          };
+      }
+      let primary: NextAction | null = null;
       if (ongoing && onCallAction) {
         if (connected.length) {
           primary = {
@@ -155,41 +198,18 @@ export function CallList({
             disabled: disabled || !canFinish,
             run: () => onCallAction(r, 'finish'),
           };
-        } else if (!ready) {
-          if (direct)
-            primary = {
-              label: 'Establish',
-              disabled,
-              run: () => onCallAction(r, 'establish'),
-            };
-          else if (bridge && bridgePayload && onConferenceAction) {
-            const restore =
-              !previousSession && bridgePayload.status === 'interrupted';
-            primary = {
-              label: restore ? 'Restore Bridge' : 'Establish Bridge',
-              disabled,
-              run: () =>
-                onConferenceAction(
-                  bridge,
-                  restore ? 'restore_connection' : 'establish'
-                ),
-            };
-          } else
-            primary = {
-              label: 'Choose Conference',
-              disabled,
-              run: () => onEdit(r),
-            };
+        } else if (establishment) {
+          primary = establishment;
         } else if (interrupted && onCustomerAction) {
           primary = {
             label: 'Restore Customer',
-            disabled: disabled || incomplete,
+            disabled: disabled || incomplete || unresolvedCustomer,
             run: () => onCustomerAction(interrupted, 'restore'),
           };
         } else
           primary = {
             label: 'Connect Customer',
-            disabled: disabled || incomplete,
+            disabled: disabled || incomplete || unresolvedCustomer,
             run: () => onCallAction(r, 'connect'),
           };
       }
@@ -263,6 +283,17 @@ export function CallList({
               {interrupted && (
                 <p role="status">Customer connection interrupted.</p>
               )}
+              {unresolvedCustomer && (
+                <p role="status">
+                  Customer state unknown. Review customer reports before
+                  connecting or finishing.
+                </p>
+              )}
+              {!!connected.length && establishment && (
+                <p role="status">
+                  Establishment needs updating. Open Call Details.
+                </p>
+              )}
               {incomplete && (
                 <p role="status">
                   Customer reports incomplete. Load remaining records before
@@ -332,6 +363,15 @@ export function CallList({
               <div className="flex flex-wrap gap-2">
                 {ongoing && onCallAction && (
                   <>
+                    {establishment && primary !== establishment && (
+                      <button
+                        className={button}
+                        disabled={establishment.disabled}
+                        onClick={establishment.run}
+                      >
+                        {establishment.label}
+                      </button>
+                    )}
                     {connected.slice(1).map((customer) => (
                       <button
                         key={customer.record_id}
@@ -346,7 +386,12 @@ export function CallList({
                       primary?.label !== 'Connect Customer' && (
                         <button
                           className={button}
-                          disabled={disabled || incomplete || !ready}
+                          disabled={
+                            disabled ||
+                            incomplete ||
+                            unresolvedCustomer ||
+                            !ready
+                          }
                           onClick={() => onCallAction(r, 'connect')}
                         >
                           Connect Customer
