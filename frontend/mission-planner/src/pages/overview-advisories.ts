@@ -13,6 +13,13 @@ export interface OverviewAdvisoryContext {
   operatingContextId: string | null;
   replayRunId: string | null;
 }
+export interface OverviewAdvisoryClock {
+  sourceMode: 'live' | 'simulation' | null;
+  runId: string | null;
+  missionId: string | null;
+  legId: string | null;
+  available: boolean;
+}
 export interface OverviewAdvisoryState {
   items: { id: string; title: string; detail: string }[];
   notice:
@@ -79,6 +86,7 @@ export function deriveOverviewAdvisories({
   snapshot,
   context,
   missionNowMs,
+  clock,
   receivedAgeMs,
   visible,
   failed,
@@ -86,6 +94,7 @@ export function deriveOverviewAdvisories({
   snapshot?: EventSnapshot;
   context: OverviewAdvisoryContext | null;
   missionNowMs: number;
+  clock: OverviewAdvisoryClock;
   receivedAgeMs: number;
   visible: boolean;
   failed: boolean;
@@ -98,6 +107,13 @@ export function deriveOverviewAdvisories({
     failed ||
     !snapshot ||
     !context ||
+    !clock.available ||
+    clock.sourceMode !== context.sourceMode ||
+    (clock.sourceMode === 'live'
+      ? clock.runId !== null || context.replayRunId !== null
+      : clock.runId !== context.replayRunId ||
+        clock.missionId !== context.missionId ||
+        clock.legId !== context.legId) ||
     !Number.isFinite(missionNowMs) ||
     !snapshotMatchesOverviewContext(snapshot, context)
   )

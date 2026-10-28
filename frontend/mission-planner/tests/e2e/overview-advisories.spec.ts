@@ -273,6 +273,63 @@ test('customizable presets and durable shared advisories across real clients', a
         'Zulu'
       );
     }
+    const advisoryBounds = await overviewA
+      .getByLabel('Transport Advisories')
+      .evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          top: rect.top,
+          bottom: rect.bottom,
+          viewport: innerHeight,
+          overflow: getComputedStyle(element).overflowY,
+          tabIndex: (element as HTMLElement).tabIndex,
+        };
+      });
+    expect(advisoryBounds.top).toBeGreaterThanOrEqual(0);
+    expect(advisoryBounds.bottom).toBeLessThanOrEqual(advisoryBounds.viewport);
+    expect(advisoryBounds.overflow).toBe('auto');
+    expect(advisoryBounds.tabIndex).toBe(0);
+    proof.advisoryBounds = advisoryBounds;
+    // Rendering-only stress: extra DOM copies exercise rail bounds/keyboard access;
+    // all advisory prediction/acknowledgment assertions below use real backend events.
+    const rail = overviewA.getByLabel('Transport Advisories');
+    await rail.evaluate((element) => {
+      const sample = element.querySelector('.overview-transport-advisory')!;
+      for (let i = 0; i < 12; i++) {
+        const copy = sample.cloneNode(true) as HTMLElement;
+        copy.dataset.visualStress = 'true';
+        element.append(copy);
+      }
+    });
+    await rail.focus();
+    await rail.press('End');
+    await expect
+      .poll(() => rail.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    const stress = await rail.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const last = element.lastElementChild!.getBoundingClientRect();
+      return {
+        top: bounds.top,
+        bottom: bounds.bottom,
+        lastBottom: last.bottom,
+        viewport: innerHeight,
+        scrollable: element.scrollHeight > element.clientHeight,
+      };
+    });
+    expect(stress.bottom).toBeLessThanOrEqual(stress.viewport);
+    expect(stress.lastBottom).toBeLessThanOrEqual(stress.bottom + 1);
+    proof.renderOnlyOverflowStress = stress;
+    await overviewA.screenshot({
+      path: `${evidence}/advisories-overflow-keyboard-1920x1080.png`,
+    });
+    await rail.evaluate((element) => {
+      element
+        .querySelectorAll('[data-visual-stress]')
+        .forEach((node) => node.remove());
+      element.scrollTop = 0;
+    });
+
     await overviewA.screenshot({ path: `${evidence}/customer-1920x1080.png` });
     await tools
       .getByRole('button', { name: 'Apply Normal', exact: true })
@@ -368,7 +425,23 @@ test('customizable presets and durable shared advisories across real clients', a
       row.getByRole('button', { name: 'Acknowledged', exact: true })
     ).toBeVisible();
     proof.lostResponseIdempotentRetry = true;
+    const reloadedSnapshots = [overviewA, overviewB].map((overview) =>
+      overview.waitForResponse(
+        (response) =>
+          response.url().includes('/api/v2/operator/events?') &&
+          response.status() === 200
+      )
+    );
     await Promise.all([overviewA.reload(), overviewB.reload()]);
+    for (const response of await Promise.all(reloadedSnapshots)) {
+      const snapshot: EventSnapshot = await response.json();
+      expect(
+        snapshot.events.find(
+          (event) =>
+            event.notification.generation === pop.notification.generation
+        )?.notification.acknowledged
+      ).toBe(true);
+    }
     for (const overview of [overviewA, overviewB]) {
       await expect(
         overview.getByRole('heading', { name: /Next Flight Event/ })
@@ -385,6 +458,9 @@ test('customizable presets and durable shared advisories across real clients', a
       ).toBe(0);
     }
     proof.reloadPersistenceAndNoOverviewAudio = true;
+    const beforeDrift = (await feed(request, missionId)).events.find(
+      (event) => event.notification.generation === pop.notification.generation
+    )!;
     elapsed = 1801;
     await raw(request, elapsed);
     const drift = await feed(request, missionId);
@@ -392,6 +468,7 @@ test('customizable presets and durable shared advisories across real clients', a
       (event) => event.notification.generation === pop.notification.generation
     );
     expect(retained?.notification.acknowledged).toBe(true);
+    expect(retained?.due_at).not.toBe(beforeDrift.due_at);
     proof.etaDriftRetainsAcknowledgment = true;
     await alerts.getByRole('checkbox', { name: 'Recent History' }).check();
     await expect(

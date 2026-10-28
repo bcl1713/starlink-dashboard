@@ -3,6 +3,7 @@
 
 import argparse
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -53,11 +54,20 @@ if __name__ == "__main__":
     parser.add_argument("--evidence", required=True, type=Path)
     args = parser.parse_args()
     transport.journal.Owner = transport.AvailabilityOwner
-    print(
-        json.dumps(
-            transport.journal.run(
-                args.candidate, args.project, args.evidence, qualification=qualify
-            ),
-            indent=2,
+    try:
+        report = transport.journal.run(
+            args.candidate, args.project, args.evidence, qualification=qualify
         )
-    )
+    finally:
+        summary = args.evidence / "summary.json"
+        if summary.exists():
+            report = json.loads(summary.read_text())
+            report["fixture"] = (
+                "Synthetic raw KML, RF catalogs and controlled telemetry/clock inputs; normal production startup, active context, prediction, ledger and Nginx; live wall clock; no aircraft dependencies"
+            )
+            summary.write_text(json.dumps(report, indent=2))
+            hashes = args.evidence / "hashes.json"
+            values = json.loads(hashes.read_text())
+            values["summary.json"] = hashlib.sha256(summary.read_bytes()).hexdigest()
+            hashes.write_text(json.dumps(values, indent=2))
+    print(json.dumps(report, indent=2))

@@ -737,3 +737,21 @@
     }
   }
 }
+
+/* Simultaneous transport windows remain reachable within the existing rail. */
+.overview-page .overview-right-overlays > .overview-transport-advisories {
+  max-height: 55dvh;
+  overflow-y: auto;
+  pointer-events: auto;
+  scrollbar-gutter: stable;
+}
+.overview-page[data-layout='desktop']
+  .overview-right-overlays
+  > .overview-transport-advisories {
+  flex: 0 1 auto;
+  min-height: 96px;
+}
+.overview-transport-advisories:focus-visible {
+  outline: 2px solid var(--overview-text);
+  outline-offset: 2px;
+}

@@ -95,12 +95,12 @@ test('AR boundaries render and each POI event layer can be toggled independently
     await editing.goto('/configuration');
     const groups = [
       {
-        label: 'Flight events',
+        label: 'Flight Events',
         field: 'flight_events_enabled',
         kinds: ['departure', 'arrival', 'aar_start', 'aar_end'],
       },
       {
-        label: 'X-band events',
+        label: 'X-Band Events',
         field: 'x_band_events_enabled',
         kinds: [
           'x_band_transition',
@@ -109,7 +109,7 @@ test('AR boundaries render and each POI event layer can be toggled independently
         ],
       },
       {
-        label: 'Ka-band events',
+        label: 'KA Events',
         field: 'ka_events_enabled',
         kinds: [
           'ka_transition',
@@ -120,7 +120,7 @@ test('AR boundaries render and each POI event layer can be toggled independently
         ],
       },
       {
-        label: 'Starshield events',
+        label: 'Starshield Events',
         field: 'starshield_events_enabled',
         kinds: ['starshield_outage_start', 'starshield_outage_end'],
       },
@@ -153,7 +153,7 @@ test('AR boundaries render and each POI event layer can be toggled independently
     const arMarkers = editing.locator('.leaflet-marker-icon[title="AR Start"]');
     await expect(arMarkers).toHaveCount(2);
     const flight = editing.getByRole('checkbox', {
-      name: 'Flight events',
+      name: 'Flight Events',
       exact: true,
     });
     await flight.uncheck();

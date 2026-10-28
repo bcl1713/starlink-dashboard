@@ -11,6 +11,7 @@ export function OverviewPopAdvisories({
   return (
     <section
       role="status"
+      tabIndex={0}
       className="overview-transport-advisories"
       aria-label="Transport Advisories"
     >

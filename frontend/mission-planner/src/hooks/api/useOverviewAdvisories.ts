@@ -7,13 +7,17 @@ import {
 } from '@/services/operator';
 import { readEventSnapshot } from '@/services/operatorEvents';
 import {
+  type OverviewAdvisoryClock,
   deriveOverviewAdvisories,
   overviewAdvisoryContext,
   snapshotMatchesOverviewContext,
 } from '@/pages/overview-advisories';
 
 /** Passive reader: no acknowledgment recovery, local alerts or operational commands. */
-export function useOverviewAdvisories(missionNowMs: number) {
+export function useOverviewAdvisories(
+  missionNowMs: number,
+  clock: OverviewAdvisoryClock
+) {
   const client = useQueryClient();
   const [visible, setVisible] = useState(() => !document.hidden);
   const [receiptClock, setReceiptClock] = useState(() => ({
@@ -110,6 +114,7 @@ export function useOverviewAdvisories(missionNowMs: number) {
     snapshot: query.data?.snapshot,
     context,
     missionNowMs,
+    clock,
     receivedAgeMs: Math.max(
       0,
       receiptClock.monotonic - (query.data?.receivedAt ?? -Infinity)

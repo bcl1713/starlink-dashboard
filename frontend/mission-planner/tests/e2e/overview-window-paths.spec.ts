@@ -32,12 +32,14 @@ for (const fullscreen of [false, true]) {
       .elementHandle();
     const editing = await context.newPage();
     await editing.goto('/configuration');
-    await editing.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
+    await editing
+      .getByRole('tab', { name: 'Network Traffic', exact: true })
+      .click();
     await editing.bringToFront();
     try {
       for (const [label, field, legend] of [
         ['Starshield data link', 'starshield_link_enabled', 'Traffic path'],
-        ['X-band data link', 'x_band_link_enabled', 'Planned satellite link'],
+        ['X-Band data link', 'x_band_link_enabled', 'Planned satellite link'],
       ] as const) {
         await expect(overview.getByLabel('Globe legend')).toContainText(legend);
         const save = editing.waitForResponse(

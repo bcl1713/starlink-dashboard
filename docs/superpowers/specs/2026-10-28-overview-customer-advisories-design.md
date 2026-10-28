@@ -282,6 +282,8 @@ Record resource ownership before acceptance; bound checks with wall-clock
 timeouts and termination grace, install cleanup handlers, and verify task-owned
 processes, listeners, containers, networks and disposable volumes are gone. Keep
 the open-PR worktree and evidence. Push a feature PR against `dev`; do not merge
-or deploy as part of this request. Backout is reverting the feature PR; no
-schema change or acknowledgment-history deletion is intended. Synthetic
-acceptance is software evidence, not flight-readiness certification.
+or deploy as part of this request. Backout requires the
+[preset compatibility preparation](../../development/overview-preset-backout.md)
+before reverting the feature PR. No schema change or acknowledgment-history
+deletion is intended. Synthetic acceptance is software evidence, not
+flight-readiness certification.

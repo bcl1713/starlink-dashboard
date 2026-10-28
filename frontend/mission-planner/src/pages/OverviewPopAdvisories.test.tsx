@@ -55,3 +55,21 @@ it('communicates unavailable coverage without an all-clear or raw PoP fallback',
     'Transport Advisories Unavailable'
   );
 });
+it('keeps long simultaneous advisory lists keyboard reachable as a labeled scroll region', () => {
+  render(
+    <OverviewPopAdvisories
+      state={{
+        items: Array.from({ length: 12 }, (_, i) => ({
+          id: String(i),
+          title: `Window ${i}`,
+          detail: 'Current · Modeled',
+        })),
+        notice: null,
+      }}
+    />
+  );
+  const region = screen.getByLabelText('Transport Advisories');
+  expect(region.tabIndex).toBe(0);
+  region.focus();
+  expect(document.activeElement).toBe(region);
+});

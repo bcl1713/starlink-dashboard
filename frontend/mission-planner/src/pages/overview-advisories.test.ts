@@ -55,6 +55,13 @@ function view(data = snapshot(), overrides = {}) {
     snapshot: data,
     context,
     missionNowMs: now,
+    clock: {
+      sourceMode: 'live',
+      runId: null,
+      missionId: null,
+      legId: null,
+      available: true,
+    },
     receivedAgeMs: 0,
     visible: true,
     failed: false,
@@ -237,4 +244,53 @@ it('does not trust an all-available flag over misaligned source evidence even wi
   const data = snapshot([]);
   data.sources[0].aligned = false;
   expect(view(data).notice).toBe('Transport Advisories Unavailable');
+});
+
+it('quarantines a current event snapshot while an independently polled clock still belongs to the previous mode/run', () => {
+  expect(
+    view(snapshot(), {
+      clock: {
+        sourceMode: 'simulation',
+        runId: 'previous-run',
+        missionId: 'mission-a',
+        legId: 'leg-a',
+        available: true,
+      },
+    }).items
+  ).toHaveLength(0);
+  expect(
+    view(snapshot(), {
+      clock: {
+        sourceMode: 'live',
+        runId: null,
+        missionId: null,
+        legId: null,
+        available: false,
+      },
+    }).items
+  ).toHaveLength(0);
+  const replay = {
+    ...context,
+    sourceMode: 'simulation' as const,
+    replayRunId: 'new-run',
+    sourceIdentity: 'ctx-new',
+    operatingContextId: 'ctx-new',
+    missionJournal: true,
+  };
+  const data = snapshot(
+    [event({ replay_run_id: 'new-run', operating_context_id: 'ctx-new' })],
+    { source_mode: 'simulation', simulation_run_id: 'ctx-new' }
+  );
+  expect(
+    view(data, {
+      context: replay,
+      clock: {
+        sourceMode: 'simulation',
+        runId: 'previous-run',
+        missionId: 'mission-a',
+        legId: 'leg-a',
+        available: true,
+      },
+    }).items
+  ).toHaveLength(0);
 });

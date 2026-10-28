@@ -73,11 +73,21 @@ function setup() {
     defaultOptions: { queries: { retry: false } },
   });
   clients.push(client);
-  const hook = renderHook(() => useOverviewAdvisories(now), {
-    wrapper: ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    ),
-  });
+  const hook = renderHook(
+    () =>
+      useOverviewAdvisories(now, {
+        sourceMode: 'live',
+        runId: null,
+        missionId: null,
+        legId: null,
+        available: true,
+      }),
+    {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    }
+  );
   return { client, hook };
 }
 afterEach(() => {

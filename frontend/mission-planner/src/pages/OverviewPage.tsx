@@ -516,12 +516,23 @@ export function OverviewPage() {
     true
   );
   const missionNow = simulationClock.missionNowMs;
+  const advisoryReplay =
+    simulationRun?.service_mode === 'simulation' &&
+    ['running', 'completed'].includes(simulationRun.state)
+      ? simulationRun.run
+      : null;
   const transportAdvisories = useOverviewAdvisories(
-    pacedRunning && simulationClock.stale
-      ? NaN
-      : simulationRun?.state === 'completed' && simulationRun.run
-        ? Date.parse(simulationRun.run.simulation_time)
-        : missionNow
+    advisoryReplay && simulationRun?.state === 'completed'
+      ? Date.parse(advisoryReplay.simulation_time)
+      : missionNow,
+    {
+      sourceMode: simulationRun?.service_mode ?? null,
+      runId: advisoryReplay?.run_id ?? null,
+      missionId: advisoryReplay?.mission_id ?? null,
+      legId: advisoryReplay?.leg_id ?? null,
+      available:
+        !!simulationRun && !simulationRefreshFailed && !simulationClock.stale,
+    }
   );
   const replaySelected = Boolean(
     replayGeometry &&

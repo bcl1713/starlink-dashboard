@@ -219,10 +219,12 @@ for (const fullscreen of [false, true]) {
       await expect(overview.getByLabel('Globe legend')).toContainText(
         'Traffic path'
       );
-      await editing.getByRole('tab', { name: 'Network Traffic', exact: true }).click();
+      await editing
+        .getByRole('tab', { name: 'Network Traffic', exact: true })
+        .click();
       for (const [label, field] of [
         ['Starshield data link', 'starshield_link_enabled'],
-        ['X-band data link', 'x_band_link_enabled'],
+        ['X-Band data link', 'x_band_link_enabled'],
       ]) {
         const saved = editing.waitForResponse(
           (r) =>
