@@ -47,10 +47,12 @@ export function Fixture({
   full,
   paused,
   onPick,
+  citiesOnly = false,
 }: {
   full: boolean;
   paused: boolean;
   onPick: (id: string) => void;
+  citiesOnly?: boolean;
 }) {
   const globe = useRef<THREE.Group>(null!);
   return (
@@ -62,49 +64,54 @@ export function Fixture({
         <CityLitGlobe sunPosition={SUN} />
       </group>
       <OverviewLabelLayout paths={[ROUTE, ...LINKS]} />
-      <FixtureFlow index={0} points={ROUTE} step={paused ? 0 : 1 / 60} />
-      {LINKS.map((points, index) => (
-        <FixtureFlow
-          key={index}
-          index={index + 1}
-          points={points}
-          step={paused ? 0 : 1 / 60}
+      <group visible={!citiesOnly}>
+        <FixtureFlow index={0} points={ROUTE} step={paused ? 0 : 1 / 60} />
+        {LINKS.map((points, index) => (
+          <FixtureFlow
+            key={index}
+            index={index + 1}
+            points={points}
+            step={paused ? 0 : 1 / 60}
+          />
+        ))}
+        {POIS.map((poi) => (
+          <group
+            key={poi.id}
+            onClick={(event) => {
+              if (citiesOnly) return;
+              event.stopPropagation();
+              onPick(poi.id);
+            }}
+          >
+            <StarMarker
+              coordinate={poi}
+              size={0.1}
+              color={poi.color}
+              pickRadiusPixels={12}
+            />
+            {!citiesOnly && (
+              <OverviewMapLabel
+                id={poi.id}
+                kind="poi"
+                text={`SYN ${poi.id.toUpperCase()}`}
+                position={globePosition(poi.latitude, poi.longitude, 2.006)}
+                globeOccluder={globe}
+                color={poi.color}
+              />
+            )}
+          </group>
+        ))}
+        <StarMarker
+          coordinate={{ latitude: 32, longitude: -65 }}
+          color="#72b7ff"
+          size={0.1}
+          shape="chevron"
+          ownAircraft
+          headingDegrees={75}
         />
-      ))}
-      {POIS.map((poi) => (
-        <group
-          key={poi.id}
-          onClick={(event) => {
-            event.stopPropagation();
-            onPick(poi.id);
-          }}
-        >
-          <StarMarker
-            coordinate={poi}
-            size={0.1}
-            color={poi.color}
-            pickRadiusPixels={12}
-          />
-          <OverviewMapLabel
-            id={poi.id}
-            kind="poi"
-            text={`SYN ${poi.id.toUpperCase()}`}
-            position={globePosition(poi.latitude, poi.longitude, 2.006)}
-            globeOccluder={globe}
-            color={poi.color}
-          />
-        </group>
-      ))}
-      <StarMarker
-        coordinate={{ latitude: 32, longitude: -65 }}
-        color="#72b7ff"
-        size={0.1}
-        shape="chevron"
-        ownAircraft
-        headingDegrees={75}
-      />
+      </group>
       {full && (
-        <>
+        <group visible={!citiesOnly}>
           {TRAFFIC.map((aircraft) => (
             <StarMarker
               key={aircraft.id}
@@ -156,7 +163,7 @@ export function Fixture({
               toneMapped={false}
             />
           </mesh>
-        </>
+        </group>
       )}
     </>
   );

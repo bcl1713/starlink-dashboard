@@ -1,15 +1,20 @@
+export type BloomView = 'final' | 'bright' | 'bloom';
 export type BloomMode = 'current' | 'output' | 'bloom';
 export interface BloomSettings {
   strength: number;
   threshold: number;
   radius: number;
   maxDimension: number;
+  exposure: number;
+  view: BloomView;
 }
 export const DEFAULT_BLOOM: BloomSettings = {
   strength: 0.4,
   threshold: 1.2,
   radius: 0.2,
   maxDimension: 960,
+  exposure: 1,
+  view: 'final',
 };
 
 // Input sizes are actual drawing-buffer pixels, never CSS pixels.

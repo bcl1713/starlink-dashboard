@@ -1,20 +1,46 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useOverviewBloom } from './overview-bloom-mode';
+import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+  useOverviewCityIsolation,
+  updateCityEmissionUniforms,
+} from './overview-bloom-mode';
 import { TERMINATOR_HALF_WIDTH } from './night-side-factor';
 
 interface CityLitGlobeProps {
   sunPosition: [number, number, number];
 }
 
-const CITY_LIGHT_INTENSITY = 0.35;
-const CITY_LIGHT_COLOR = 'vec3(0.92, 0.96, 1.0)';
-
 type CompiledShader = Parameters<THREE.Material['onBeforeCompile']>[0];
 
 export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
   const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
+  const isolateCities = useOverviewCityIsolation();
+  const emissionUniforms = useMemo(
+    () => ({
+      cityEmissionIntensity: { value: 0.35 },
+      citySurfaceScale: { value: 1 },
+      cityEmissionColor: { value: new THREE.Color() },
+    }),
+    []
+  );
+  useLayoutEffect(() => {
+    updateCityEmissionUniforms(
+      emissionUniforms,
+      bloom,
+      emission,
+      isolateCities
+    );
+  }, [emissionUniforms, bloom, emission, isolateCities]);
   const [sourceDayMap, sourceCityLightMask] = useLoader(THREE.TextureLoader, [
     '/earth-day-hi.jpg',
     '/city-lights-mask.png',
@@ -49,6 +75,7 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
 
   const onBeforeCompile = useCallback(
     (shader: CompiledShader) => {
+      Object.assign(shader.uniforms, emissionUniforms);
       shader.uniforms.cityLightMask = { value: cityLightMask };
       shader.uniforms.citySunDirection = {
         value: sunDirection.current,
@@ -71,6 +98,9 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
       shader.fragmentShader =
         `
           uniform sampler2D cityLightMask;
+          uniform vec3 cityEmissionColor;
+          uniform float cityEmissionIntensity;
+          uniform float citySurfaceScale;
           uniform vec3 citySunDirection;
 
           varying vec3 vCityWorldNormal;
@@ -95,14 +125,18 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
             );
 
             totalEmissiveRadiance +=
-              ${CITY_LIGHT_COLOR} *
+              cityEmissionColor *
               cityStrength *
               nightFactor *
-              ${bloom ? '5.0' : CITY_LIGHT_INTENSITY};
+              cityEmissionIntensity;
           `
         );
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <opaque_fragment>',
+        'if (citySurfaceScale < 0.5) outgoingLight = totalEmissiveRadiance;\n#include <opaque_fragment>'
+      );
     },
-    [cityLightMask, bloom]
+    [cityLightMask, emissionUniforms]
   );
 
   return (

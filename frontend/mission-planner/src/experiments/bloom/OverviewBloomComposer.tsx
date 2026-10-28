@@ -33,8 +33,17 @@ export function OverviewBloomComposer({
   }, [gl, scene, camera, useComposer]);
   useLayoutEffect(() => {
     const buffer = gl.getDrawingBufferSize(new THREE.Vector2());
-    pipeline.current?.resize(buffer.x, buffer.y, settings);
-  }, [gl, size.width, size.height, viewport.dpr, settings, useComposer]);
+    pipeline.current?.resize(buffer.x, buffer.y, {
+      maxDimension: settings.maxDimension,
+    });
+  }, [
+    gl,
+    size.width,
+    size.height,
+    viewport.dpr,
+    settings.maxDimension,
+    useComposer,
+  ]);
   useLayoutEffect(() => {
     pipeline.current?.configure(mode, settings);
   }, [mode, settings, useComposer]);

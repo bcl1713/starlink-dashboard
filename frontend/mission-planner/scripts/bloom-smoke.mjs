@@ -2,6 +2,7 @@ import {
   stopExperimentServer,
   downloadAfterClick,
 } from './bloom-lifecycle.mjs';
+import { verifyBloomTuning } from './bloom-tuning-smoke.mjs';
 import { verifyPoiPicking } from './bloom-picking-smoke.mjs';
 import { chromium } from '@playwright/test';
 import { spawn, execFileSync } from 'node:child_process';
@@ -83,24 +84,30 @@ const frames = async (page, count = 35) =>
       }),
     count
   );
-const snapshot = async (page) => ({
-  ...JSON.parse(await page.locator('canvas').getAttribute('data-frame')),
-  settings: {
-    strength: Number(
-      await page.getByLabel('strength', { exact: true }).inputValue()
-    ),
-    threshold: Number(
-      await page.getByLabel('threshold', { exact: true }).inputValue()
-    ),
-    radius: Number(
-      await page.getByLabel('radius', { exact: true }).inputValue()
-    ),
-    maxDimension: Number(
-      await page.getByLabel('Bloom bound', { exact: true }).inputValue()
-    ),
-  },
-  full: await page.getByLabel('Full overlays', { exact: true }).isChecked(),
-});
+const snapshot = async (page) => {
+  const frame = JSON.parse(
+    await page.locator('canvas').getAttribute('data-frame')
+  );
+  return {
+    ...frame,
+    settings: {
+      ...frame.settings,
+      strength: Number(
+        await page.getByLabel('strength', { exact: true }).inputValue()
+      ),
+      threshold: Number(
+        await page.getByLabel('threshold', { exact: true }).inputValue()
+      ),
+      radius: Number(
+        await page.getByLabel('radius', { exact: true }).inputValue()
+      ),
+      maxDimension: Number(
+        await page.getByLabel('Bloom bound', { exact: true }).inputValue()
+      ),
+    },
+    full: await page.getByLabel('Full overlays', { exact: true }).isChecked(),
+  };
+};
 const results = {
   sha,
   buildStamp,
@@ -178,7 +185,15 @@ try {
     return route.abort();
   });
   page = await context.newPage();
+  page.setDefaultTimeout(90_000);
   page.on('pageerror', (error) => results.errors.push(error.message));
+  page.on('console', (message) => {
+    if (
+      message.type() === 'error' &&
+      /Shader Error|VALIDATE_STATUS|WebGLProgram/.test(message.text())
+    )
+      results.errors.push(message.text());
+  });
   await page.goto(origin, { waitUntil: 'networkidle' });
   await page
     .locator('[data-overview-label-id]')
@@ -235,6 +250,10 @@ try {
   await frames(page);
   results.full.B = await snapshot(page);
   await page.screenshot({ path: resolve(evidence, 'B-full.png') });
+  results.tuning = await verifyBloomTuning(page, frames, snapshot, evidence);
+  results.checks.push(
+    'warm city emission, bright/bloom-only views, clipboard fallback and settings download work before any timing run'
+  );
   await page.getByLabel('Bloom bound', { exact: true }).selectOption('480');
   await frames(page);
   const small = await snapshot(page);

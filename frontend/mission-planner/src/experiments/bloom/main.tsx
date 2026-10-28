@@ -2,7 +2,13 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas, type RootState } from '@react-three/fiber';
 import * as THREE from 'three';
-import { OverviewBloomMode } from '../../pages/overview-bloom-mode';
+import {
+  DEFAULT_EMISSION,
+  OverviewBloomEmission,
+  OverviewBloomCityIsolation,
+  OverviewBloomMode,
+  type BloomEmission,
+} from '../../pages/overview-bloom-mode';
 import { DEFAULT_BLOOM, type BloomMode, type BloomSettings } from './contracts';
 import { capturePhase, type ViewportSignature } from './contracts';
 import { CameraReplay } from './CameraReplay';
@@ -19,10 +25,14 @@ import {
   type Run,
   type RunConfig,
 } from './metrics';
+import { measurementSeries } from './measurement-series';
+import { TuningPanel } from './TuningPanel';
+import { tuningReport } from './tuning-report';
 import { INITIAL_CAMERA } from './scenario';
 import '../../pages/OverviewPage.css';
 import './style.css';
 declare const __BLOOM_SHA__: string;
+declare const __BLOOM_DIRTY__: boolean;
 
 interface Capture {
   config: RunConfig;
@@ -33,6 +43,11 @@ interface Capture {
 export function App() {
   const [mode, setMode] = useState<BloomMode>('current');
   const [settings, setSettings] = useState<BloomSettings>(DEFAULT_BLOOM);
+  const [emissions, setEmissions] = useState<BloomEmission>({
+    ...DEFAULT_EMISSION,
+  });
+  const [tuningOpen, setTuningOpen] = useState(false),
+    [isolateCities, setIsolateCities] = useState(false);
   const [full, setFull] = useState(false),
     [path, setPath] = useState(false),
     [paused, setPaused] = useState(false);
@@ -52,6 +67,36 @@ export function App() {
   const ready = useRef(false),
     screenshot = useRef(false);
   const latest = useRef<Record<string, unknown>>({});
+  const lastRenderedFrame = useRef<{
+    state: RootState;
+    dimensions: FrameEvidence;
+  } | null>(null);
+  const getReport = () => {
+    const last = lastRenderedFrame.current;
+    return tuningReport({
+      sourceSha: __BLOOM_SHA__,
+      sourceDirty: __BLOOM_DIRTY__,
+      mode,
+      settings,
+      emissions,
+      isolateCities,
+      scene: { full, path, paused, epoch },
+      power,
+      frame: last
+        ? {
+            ...describeFrame(last.state, last.dimensions),
+            camera: last.state.camera.position.toArray(),
+            quaternion: last.state.camera.quaternion.toArray(),
+            zoom: last.state.camera.zoom,
+            up: last.state.camera.up.toArray(),
+            fov:
+              last.state.camera instanceof THREE.PerspectiveCamera
+                ? last.state.camera.fov
+                : null,
+          }
+        : null,
+    });
+  };
 
   const cancel = useCallback((reason: string) => {
     capture.current = null;
@@ -90,33 +135,17 @@ export function App() {
       return;
     }
     seriesViewport.current = viewport.current;
+    setTuningOpen(false);
+    setIsolateCities(false);
     const base = {
-      settings: { ...settings },
+      settings: { ...settings, view: 'final' as const },
+      emissions: { ...emissions },
       full,
       path: true,
       power,
       sampleFrames,
     };
-    queue.current = diagnostic
-      ? [
-          { ...base, mode: 'output' as const },
-          {
-            ...base,
-            mode: 'bloom' as const,
-            settings: { ...settings, maxDimension: 480 },
-          },
-          {
-            ...base,
-            mode: 'bloom' as const,
-            settings: { ...settings, maxDimension: 1920 },
-          },
-        ]
-      : Array.from({ length: 3 }, () =>
-          ['current', 'bloom', 'current'].map((mode) => ({
-            ...base,
-            mode: mode as BloomMode,
-          }))
-        ).flat();
+    queue.current = measurementSeries(base, diagnostic);
     setBusy(true);
     next();
   };
@@ -125,6 +154,7 @@ export function App() {
     dimensions: FrameEvidence,
     delta: number
   ) => {
+    lastRenderedFrame.current = { state, dimensions };
     viewport.current = {
       css: [state.size.width, state.size.height],
       drawing: [state.gl.domElement.width, state.gl.domElement.height],
@@ -139,6 +169,9 @@ export function App() {
         dimensions,
         resources: { ...state.gl.info.memory },
         drawCalls: state.gl.info.render.calls,
+        emissions,
+        settings,
+        isolateCities,
       };
       Object.assign(state.gl.domElement.dataset, {
         frame: JSON.stringify(latest.current),
@@ -147,6 +180,12 @@ export function App() {
     if (screenshot.current) {
       screenshot.current = false;
       // Called immediately after rendering; preserveDrawingBuffer is unnecessary.
+      const report = getReport();
+      download(
+        `bloom-${mode}-${__BLOOM_SHA__.slice(0, 8)}-${settings.maxDimension}-settings.json`,
+        JSON.stringify(report, null, 2),
+        'application/json'
+      );
       state.gl.domElement.toBlob((blob) => {
         if (blob)
           download(
@@ -222,14 +261,32 @@ export function App() {
               type="range"
               disabled={busy}
               min="0"
-              max={key === 'radius' ? 1 : 3}
+              max={key === 'radius' ? 1 : key === 'threshold' ? 10 : 3}
               step="0.05"
               value={settings[key]}
               onChange={(e) =>
                 setSettings((s) => ({ ...s, [key]: Number(e.target.value) }))
               }
             />
-            <output>{settings[key].toFixed(2)}</output>
+            <input
+              aria-label={`${key} value`}
+              className="bloom-numeric"
+              type="number"
+              min="0"
+              max={key === 'radius' ? 1 : key === 'threshold' ? 10 : 3}
+              step="0.01"
+              disabled={busy}
+              value={settings[key]}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  [key]: Math.min(
+                    key === 'radius' ? 1 : key === 'threshold' ? 10 : 3,
+                    Math.max(0, Number(e.target.value) || 0)
+                  ),
+                }))
+              }
+            />
           </label>
         ))}
         <label>
@@ -245,7 +302,7 @@ export function App() {
               }))
             }
           >
-            {[480, 960, 1920].map((n) => (
+            {[480, 960, 1920, 3840].map((n) => (
               <option key={n}>{n}</option>
             ))}
           </select>
@@ -276,6 +333,9 @@ export function App() {
         <button disabled={busy} onClick={() => setEpoch((e) => e + 1)}>
           Reset / replay
         </button>
+        <button disabled={busy} onClick={() => setTuningOpen((open) => !open)}>
+          Bloom tuning
+        </button>
       </div>
       <section
         className="overview-page overview-map-stage"
@@ -291,27 +351,64 @@ export function App() {
           }}
         >
           <CameraReplay epoch={epoch} path={path} paused={paused} />
-          <OverviewBloomMode value={mode === 'bloom'}>
-            <Suspense fallback={null}>
-              <Fixture
-                key={epoch}
-                full={full}
-                paused={paused}
-                onPick={(id) => setStatus(`Picked synthetic POI: ${id}`)}
-              />
-              <Loaded
-                onReady={() => {
-                  ready.current = true;
-                }}
-              />
-            </Suspense>
-          </OverviewBloomMode>
+          <OverviewBloomEmission value={emissions}>
+            <OverviewBloomCityIsolation
+              value={mode === 'bloom' && isolateCities}
+            >
+              <OverviewBloomMode value={mode === 'bloom'}>
+                <Suspense fallback={null}>
+                  <Fixture
+                    key={epoch}
+                    full={full}
+                    paused={paused}
+                    citiesOnly={mode === 'bloom' && isolateCities}
+                    onPick={(id) => setStatus(`Picked synthetic POI: ${id}`)}
+                  />
+                  <Loaded
+                    onReady={() => {
+                      ready.current = true;
+                    }}
+                  />
+                </Suspense>
+              </OverviewBloomMode>
+            </OverviewBloomCityIsolation>
+          </OverviewBloomEmission>
           <OverviewBloomComposer
             mode={mode}
             settings={settings}
             onFrame={onFrame}
           />
         </Canvas>
+        {tuningOpen && (
+          <TuningPanel
+            active={mode === 'bloom'}
+            busy={busy}
+            settings={settings}
+            emissions={emissions}
+            isolateCities={isolateCities}
+            onSettings={setSettings}
+            onEmissions={setEmissions}
+            onIsolate={setIsolateCities}
+            getReport={getReport}
+            onCityPreset={() => {
+              setMode('bloom');
+              setSettings({
+                ...DEFAULT_BLOOM,
+                strength: 1,
+                threshold: 0.4,
+                radius: 0.3,
+                maxDimension: 1920,
+              });
+              setEmissions({ ...DEFAULT_EMISSION, cities: 30 });
+              setIsolateCities(true);
+            }}
+            onReset={() => {
+              setSettings({ ...DEFAULT_BLOOM });
+              setEmissions({ ...DEFAULT_EMISSION });
+              setIsolateCities(false);
+            }}
+          />
+        )}
         <div className="scene-caption">
           {mode === 'current'
             ? 'A · CURRENT'

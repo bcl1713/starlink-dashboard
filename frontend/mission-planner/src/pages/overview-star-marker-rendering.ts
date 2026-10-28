@@ -497,7 +497,8 @@ export function starMarkerHeadingDirection(
 
 export function setStarMarkerChevronBloom(
   resources: ReturnType<typeof createStarMarkerChevronResources>,
-  enabled: boolean
+  enabled: boolean,
+  intensity = 4
 ): void {
-  resources.material.uniforms.uEmission.value = enabled ? 4 : 1;
+  resources.material.uniforms.uEmission.value = enabled ? intensity : 1;
 }

@@ -1,4 +1,7 @@
-import { useOverviewBloom } from './overview-bloom-mode';
+import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+} from './overview-bloom-mode';
 import { useFrame } from '@react-three/fiber';
 import {
   useCallback,
@@ -114,13 +117,12 @@ function FlowLine({
   fallbackBlending?: THREE.Blending;
 }) {
   const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const group = useMemo(() => new THREE.Group(), []);
   const resources = useRef<FlowLineResources | null>(null);
   useLayoutEffect(() => {
     const active = createFlowLineResources(points, {
-      color: bloom
-        ? new THREE.Color(layer.color).multiplyScalar(4)
-        : layer.color,
+      color: layer.color,
       linewidth: layer.linewidth,
       opacity: layer.opacity,
       blending: layer.blending ?? fallbackBlending,
@@ -139,7 +141,14 @@ function FlowLine({
       group.remove(active.line);
       disposeFlowLineResources(active);
     };
+    // Recreate the core on A/B changes alongside its halo siblings so transparent
+    // Line2 insertion order remains outer -> glow -> core after returning to A.
   }, [bloom, depthTest, depthWrite, fallbackBlending, group, layer, points]);
+  useLayoutEffect(() => {
+    resources.current?.material.color
+      .set(layer.color)
+      .multiplyScalar(bloom ? emission.lines : 1);
+  });
   useFrame((state) => {
     resources.current?.material.resolution.set(
       state.size.width,
@@ -179,6 +188,7 @@ function FlowParticles({
   discardDeltaRef: RefObject<boolean>;
 }) {
   const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
   const group = useMemo(() => new THREE.Group(), []);
   const branch = useRef<ParticleBranch | null>(null);
@@ -259,7 +269,7 @@ function FlowParticles({
       pixelRatio,
       state.size.height * pixelRatio
     );
-    setAnimatedFlowBloom(active.resources, bloom);
+    setAnimatedFlowBloom(active.resources, bloom, emission.particles);
     active.pool.update(replayStep ?? Math.min(delta, 0.1), path.totalLength);
     writeFlowParticles(active.resources, path, active.pool.snapshot());
   });

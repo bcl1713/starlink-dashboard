@@ -1,3 +1,4 @@
+import type { BloomEmission } from '../../pages/overview-bloom-mode';
 import type { RootState } from '@react-three/fiber';
 import * as THREE from 'three';
 import { frameSummary, type BloomMode, type BloomSettings } from './contracts';
@@ -9,6 +10,7 @@ declare const __BLOOM_DIRTY__: boolean;
 export interface RunConfig {
   mode: BloomMode;
   settings: BloomSettings;
+  emissions: BloomEmission;
   full: boolean;
   path: boolean;
   power: string;
@@ -36,6 +38,8 @@ export function describeFrame(state: RootState, dimensions: FrameEvidence) {
     cssViewport: [state.size.width, state.size.height],
     drawingBuffer: [drawing.x, drawing.y],
     dpr: gl.getPixelRatio(),
+    rendererExposure: gl.toneMappingExposure,
+    toneMapping: gl.toneMapping,
     bloomTargets: dimensions,
     vendor,
     renderer,
@@ -100,6 +104,14 @@ export function runsCsv(runs: Run[]) {
       'strength',
       'threshold',
       'radius',
+      'exposure',
+      'view',
+      'cityEmission',
+      'cityColor',
+      'lineEmission',
+      'particleEmission',
+      'poiEmission',
+      'aircraftEmission',
       'full',
       'path',
       'power',
@@ -117,6 +129,14 @@ export function runsCsv(runs: Run[]) {
       r.settings.strength,
       r.settings.threshold,
       r.settings.radius,
+      r.settings.exposure,
+      r.settings.view,
+      r.emissions.cities,
+      r.emissions.cityColor,
+      r.emissions.lines,
+      r.emissions.particles,
+      r.emissions.pois,
+      r.emissions.aircraft,
       r.full,
       r.path,
       r.power,

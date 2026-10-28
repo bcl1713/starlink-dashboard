@@ -107,12 +107,13 @@ disposed on returning to A or unmount. Output-only uses A materials to isolate
 compositor overhead.
 
 A retains current component rendering and settlement texture. B raises city
-emission to 5, line/particle emission by 4 and chevron emission by 4. Star
-emission keeps intensity 8 with its semantic color. B hides the extra simulated
-line/marker halos and narrows particle sprites around their cores. This is an
-initial material-range experiment, with threshold/strength/radius controls;
-bright terrain may still enter bloom at low thresholds. It uses no extra city or
-particle PointLights and no extra scene pass for emission selection.
+emission to a configurable warm value (default 20), line/particle emission by 4
+and chevron emission by 4. Star emission keeps intensity 8 with its semantic
+color. B hides the extra simulated line/marker halos and narrows particle
+sprites around their cores. This is an initial material-range experiment, with
+live per-element emission and bloom controls; bright terrain may still enter
+bloom at low thresholds. It uses no extra city or particle PointLights and no
+extra scene pass for emission selection.
 
 The fixture uses the existing CityLitGlobe, AnimatedFlowLine, StarMarker,
 OverviewMapLabel and label-layout worker. It has synthetic POIs, crossing
@@ -186,3 +187,44 @@ The evidence workflow runs only for the isolated experiment branch targeting
 `dev`, or a manual run on that branch. It checks out the PR head SHA explicitly,
 uses read-only repository permission, starts only its private loopback fixture
 server, and has no production origins, deployment steps or operational replay.
+
+## Temporary bloom tuning and sending preferences back
+
+Open **Bloom tuning**, then choose B or click **Find city glow**. This preset
+isolates cities, mutes the terrain, raises city emission, lowers the threshold
+and increases bloom resolution. The original settlement mask and fixed sun are
+retained. A remains the original comparison baseline.
+
+- **Final scene** shows the result. **Bright pass** shows pixels that survive
+  the actual downsampled luminance threshold before blur. **Bloom only** shows
+  the actual blurred light contribution, including strength, on black.
+- **Isolate cities** hides other luminous layers and mutes reflected terrain
+  lighting. It retains Earth depth/occlusion and the existing particle pools.
+  Turn it off to judge the complete synthetic specimen again.
+- Adjust city emission and warm color, routes/link emission, particles, POI
+  cores, aircraft emission, exposure, threshold, strength, radius and bloom
+  bound. Emission controls update live uniforms without resetting the camera.
+  Bloom bounds include 3840 for checking small lights at higher resolution.
+- City emission defaults to warm amber `#ffb15c`, intensity 20 in B. The earlier
+  fixed value was 5 with cool-white color. A keeps intensity 0.35 and its
+  original color. Other B defaults remain line/particle/aircraft gain 4 and POI
+  intensity 8.
+- The displayed city luminance is an upper bound at full mask/full night, **not
+  a sampled pixel value**. Texture filtering, night fade and reduction into the
+  bright-pass target can leave small lights below the threshold even when they
+  are visible in the final surface image. Use Bright pass/Bloom only to inspect
+  the actual result rather than judging from nominal intensity.
+
+Click **Copy settings** and paste the JSON into chat, or attach the file from
+**Download settings.json**. These work before any timing run. If clipboard
+permission is unavailable, the panel selects a readable JSON text box for manual
+copy. The report includes build SHA/dirty flag, scenario, all bloom/emission
+values, warm color and linear RGB, isolation/view, camera, viewport/DPR, actual
+bloom target sizes, renderer identity and scene/power information. It takes an
+independent snapshot; later adjustments do not rewrite an earlier export. **Save
+canvas PNG** also downloads a companion settings JSON for that frame.
+
+Measurement series close the panel, disable isolation and use Final scene in all
+modes while retaining the chosen emission/exposure values. Each timing JSON/CSV
+records those values. The temporary controls exist only in this offline
+experiment; they do not create a permanent settings subsystem.

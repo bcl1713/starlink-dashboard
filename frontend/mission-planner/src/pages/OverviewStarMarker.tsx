@@ -1,4 +1,7 @@
-import { useOverviewBloom } from './overview-bloom-mode';
+import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+} from './overview-bloom-mode';
 import { useEffect, useMemo, useRef } from 'react';
 import {
   starMarkerPickRaycast,
@@ -57,6 +60,7 @@ export type StarMarkerProps = StarMarkerPositionProps & {
 function PhysicalCore({
   color,
   emissionColor,
+  emissionIntensity,
   raycast,
   configuredRadius,
   maxCorePixels,
@@ -64,6 +68,7 @@ function PhysicalCore({
 }: {
   color: string;
   emissionColor: string;
+  emissionIntensity: number;
   raycast: THREE.Mesh['raycast'];
   configuredRadius: number;
   maxCorePixels: number;
@@ -101,7 +106,7 @@ function PhysicalCore({
       <meshStandardMaterial
         color={color}
         emissive={emissionColor}
-        emissiveIntensity={8}
+        emissiveIntensity={emissionIntensity}
         roughness={0.15}
         toneMapped={false}
       />
@@ -132,6 +137,7 @@ function StarMarkerPickTarget({
 
 function GlowingStarMarker(props: StarMarkerProps) {
   const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const {
     color,
     size,
@@ -186,6 +192,7 @@ function GlowingStarMarker(props: StarMarkerProps) {
       <PhysicalCore
         color={coreColor}
         emissionColor={bloom ? color : coreColor}
+        emissionIntensity={bloom ? emission.pois : 8}
         raycast={
           props.pickRadiusPixels !== undefined
             ? ignoreStarMarkerRaycast
@@ -217,6 +224,7 @@ function GlowingStarMarker(props: StarMarkerProps) {
 
 function ChevronMarker(props: StarMarkerProps) {
   const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const mesh = useRef<THREE.Mesh>(null);
   const position = resolveStarMarkerPosition(props);
   const headingDirection = starMarkerHeadingDirection(
@@ -246,8 +254,8 @@ function ChevronMarker(props: StarMarkerProps) {
   const sizePixels = props.chevronSizePixels ?? settings.ownSizePixels;
   useEffect(() => {
     updateStarMarkerChevronStyle(resources, settings, sizePixels);
-    setStarMarkerChevronBloom(resources, bloom);
-  }, [bloom, resources, settings, sizePixels]);
+    setStarMarkerChevronBloom(resources, bloom, emission.aircraft);
+  }, [bloom, emission.aircraft, resources, settings, sizePixels]);
   useFrame((state) => {
     if (!mesh.current) return;
     state.camera.updateMatrixWorld();

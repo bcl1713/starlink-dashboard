@@ -61,6 +61,9 @@ it('B ribbon retains the depth-tested core, emits HDR, and restores all A layers
   const group = view.scene.children[0].instance as THREE.Group;
   expect(group.children).toHaveLength(3);
   await view.update(scene(true));
+  await act(async () => {
+    await view.advanceFrames(1, 1 / 60);
+  });
   expect(group.children).toHaveLength(1);
   const material = (group.children[0] as THREE.Mesh)
     .material as THREE.ShaderMaterial;
@@ -137,4 +140,38 @@ it('fixed-step replay preserves the particle pool across mode switches and repea
   );
   expect(again.geometry.drawRange.count).toBe(count);
   await replay.unmount();
+});
+
+it('restores the transparent two-point link layer order through A/B/A', async () => {
+  const { AnimatedFlowLine } = await import('../../pages/AnimatedFlowLine');
+  const points = [
+    [0, 0, 2.01],
+    [0.8, 0, 2.01],
+  ] as const;
+  const element = (bloom: boolean) => (
+    <OverviewBloomMode value={bloom}>
+      <group name="layer-order">
+        <AnimatedFlowLine points={points} />
+      </group>
+    </OverviewBloomMode>
+  );
+  const view = await create(element(false));
+  for (const bloom of [false, true, false]) {
+    await view.update(element(bloom));
+    const group = view.scene.findByProps({ name: 'layer-order' })
+      .instance as THREE.Group;
+    const lines: THREE.Mesh[] = [];
+    group.traverse((object) => {
+      if ((object as THREE.Object3D & { isLine2?: boolean }).isLine2)
+        lines.push(object as THREE.Mesh);
+    });
+    const widths = lines
+      .sort((a, b) => a.id - b.id)
+      .map(
+        (line) =>
+          (line.material as THREE.ShaderMaterial).uniforms.linewidth.value
+      );
+    expect(widths).toEqual(bloom ? [1.25] : [8, 4, 1.25]);
+  }
+  await view.unmount();
 });
