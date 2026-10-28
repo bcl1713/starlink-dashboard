@@ -134,6 +134,16 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
     return {
         "status": "passed",
         "activation": "browser-observed-200",
+        "routeBinding": {
+            "source": "browser-upload-and-route-detail",
+            "uploadStatus": 201,
+            "detailStatus": 200,
+            "routeId": "v2-activation-route",
+            "routeName": "V2 Acceptance Route KAAA-KBBB",
+            "pointCount": 3,
+            "coordinates": [[-100, 35], [-99.95, 35.05], [-99.9, 35.1]],
+            "contextKey": "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2",
+        },
         "lifecycle": {
             "frameId": "frame",
             "loaderId": "loader",
@@ -141,11 +151,12 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
             "polling": {
                 "navigationScoped": True,
                 "endpoint": "/api/overview-history",
-                "periodMs": 5000,
-                "cadenceMinMs": 4500,
-                "cadenceMaxMs": 7500,
+                "periodMs": 1000,
+                "cadenceMinMs": 900,
+                "cadenceMaxMs": 2500,
+                "cadenceBasis": "previous-completion-to-next-start",
                 "windowStart": 10.1,
-                "windowEnd": 15.1,
+                "windowEnd": 11.2,
                 "minimumScheduledRequests": 1,
                 "observedScheduledRequests": 1,
             },
@@ -164,17 +175,23 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
                     "path": "/api/overview-history",
                     "outcome": "finished",
                     "status": 200,
-                    "startedAt": 15.0,
-                    "finishedAt": 15.1,
+                    "startedAt": 11.1,
+                    "finishedAt": 11.2,
                     "cycle": "scheduled",
                 },
             ],
             "overflow": False,
         },
         "visible": {
-            "routeName": "V2 Acceptance Route KAAA-KBBB",
-            "firstPoi": "KAAA",
-            "poiRows": 2,
+            "missionLegRoute": "Route: v2-activation-route",
+            "planningRouteName": "V2 Acceptance Route KAAA-KBBB",
+            "planningRouteStatus": "Active",
+            "overviewRouteLegend": "Planned route",
+            "overviewRouteContextKey": "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2",
+            "poiMarkers": [
+                {"id": "poi:aaa", "name": "KAAA", "label": "Takeoff · KAAA"},
+                {"id": "poi:bbb", "name": "KBBB", "label": "Landing · KBBB"},
+            ],
         },
         "artifacts": {
             "journey-pre.png": encoded,
@@ -1490,17 +1507,154 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     assert observation["lifecycle"]["requests"][0]["startedAt"] == 10.0
     assert observation["lifecycle"]["requests"][1]["cycle"] == "scheduled"
     assert observation["lifecycle"]["polling"] == {
-        "cadenceMaxMs": 7500,
-        "cadenceMinMs": 4500,
+        "cadenceMaxMs": 2500,
+        "cadenceBasis": "previous-completion-to-next-start",
+        "cadenceMinMs": 900,
         "endpoint": "/api/overview-history",
         "minimumScheduledRequests": 1,
         "navigationScoped": True,
         "observedScheduledRequests": 1,
-        "periodMs": 5000,
-        "windowEnd": 15.1,
+        "periodMs": 1000,
+        "windowEnd": 11.2,
         "windowStart": 10.1,
     }
-    assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
+    assert (
+        observation["visible"]["planningRouteName"] == "V2 Acceptance Route KAAA-KBBB"
+    )
+    assert observation["visible"]["overviewRouteLegend"] == "Planned route"
+    assert (
+        observation["routeBinding"]["contextKey"]
+        == "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2"
+    )
+
+
+@pytest.mark.parametrize(
+    "change", ["table", "duplicate-id", "decoy-name", "wrong-route", "hidden-label"]
+)
+def test_adapter_observation_requires_distinct_current_route_map_markers(
+    change: str,
+) -> None:
+    payload = _adapter_payload()
+    visible = payload["visible"]
+    if change == "table":
+        visible.pop("poiMarkers")
+        visible.update({"firstPoi": "KAAA", "poiRows": 2})
+    elif change == "duplicate-id":
+        visible["poiMarkers"][1]["id"] = "poi:aaa"
+    elif change == "decoy-name":
+        visible["poiMarkers"][1]["name"] = "prefix-KBBB"
+    elif change == "wrong-route":
+        visible["planningRouteName"] = "Unrelated route"
+    else:
+        visible["poiMarkers"][1]["label"] = ""
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "missing-legend",
+        "wrong-context",
+        "wrong-route-id",
+        "wrong-geometry",
+        "wrong-source",
+        "wrong-upload-status",
+        "missing-leg-binding",
+    ],
+)
+def test_adapter_observation_binds_public_upload_to_current_overview(
+    change: str,
+) -> None:
+    payload = _adapter_payload()
+    if change == "missing-legend":
+        payload["visible"].pop("overviewRouteLegend")
+    elif change == "wrong-context":
+        payload["visible"]["overviewRouteContextKey"] = "f" * 64
+    elif change == "wrong-route-id":
+        payload["routeBinding"]["routeId"] = "unrelated-route"
+    elif change == "wrong-geometry":
+        payload["routeBinding"]["coordinates"][1][0] = -98
+    elif change == "wrong-source":
+        payload["routeBinding"]["source"] = "api-seeded"
+    elif change == "wrong-upload-status":
+        payload["routeBinding"]["uploadStatus"] = 500
+    else:
+        payload["visible"].pop("missionLegRoute")
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "old-label",
+        "unknown-reason",
+        "missing-plot",
+        "plot-not-unavailable",
+        "wrong-plot",
+    ],
+)
+def test_adapter_observation_requires_current_degraded_history_surface(
+    change: str,
+) -> None:
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["history"] = {
+        "mode": "degraded",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
+    }
+    lifecycle["requests"] = [lifecycle["requests"][0]]
+    lifecycle["requests"][0].update({"outcome": "degraded", "status": 503})
+    lifecycle["polling"].update(
+        {
+            "periodMs": 5000,
+            "cadenceMinMs": 4500,
+            "cadenceMaxMs": 7500,
+            "minimumScheduledRequests": 0,
+            "observedScheduledRequests": 0,
+            "windowEnd": 10.1,
+        }
+    )
+    fallback = lifecycle["history"]["fallback"]
+    if change == "old-label":
+        lifecycle["history"]["fallback"] = "Aircraft history unavailable"
+    elif change == "unknown-reason":
+        fallback["reason"] = "Loading history"
+    elif change == "missing-plot":
+        fallback.pop("plotLabel")
+    elif change == "plot-not-unavailable":
+        fallback["plotLabel"] = "Network latency time history; ms; Waiting for history"
+    else:
+        fallback["plotLabel"] = "Packet loss time history; %; History unavailable"
+    payload["visible"]["historyFallback"] = lifecycle["history"]["fallback"]
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+def test_adapter_observation_uses_completion_to_next_start_cadence() -> None:
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["requests"][0]["finishedAt"] = 12.0
+    lifecycle["requests"][1].update({"startedAt": 13.0, "finishedAt": 13.1})
+    lifecycle["polling"].update({"windowStart": 12.0, "windowEnd": 13.1})
+    observation = json.loads(
+        runner._decode_adapter_artifacts(payload)["adapter-observation.json"]
+    )
+    assert observation["lifecycle"]["requests"][1]["startedAt"] == 13.0
+
+
+def test_adapter_observation_rejects_stale_five_second_live_polling() -> None:
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
+    lifecycle["polling"]["windowEnd"] = 15.2
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
 
 
 def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> None:
@@ -1508,9 +1662,16 @@ def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> 
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
+    lifecycle["polling"].update(
+        {"periodMs": 5000, "cadenceMinMs": 4500, "cadenceMaxMs": 7500}
+    )
     lifecycle["history"] = {
         "mode": "degraded",
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
     }
     lifecycle["requests"] = [lifecycle["requests"][0]]
     lifecycle["requests"][0]["outcome"] = "degraded"
@@ -1518,13 +1679,21 @@ def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> 
     lifecycle["polling"]["windowEnd"] = 10.1
     lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 0
-    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+    payload["visible"]["historyFallback"] = {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+    }
 
     artifacts = runner._decode_adapter_artifacts(payload)
 
     observation = json.loads(artifacts["adapter-observation.json"])
     assert observation["lifecycle"]["history"] == {
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
         "mode": "degraded",
     }
     assert observation["lifecycle"]["polling"]["minimumScheduledRequests"] == 0
@@ -1547,27 +1716,40 @@ def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> Non
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
+    lifecycle["polling"].update(
+        {"periodMs": 5000, "cadenceMinMs": 4500, "cadenceMaxMs": 7500}
+    )
     lifecycle["history"] = {
         "mode": "degraded",
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
     }
+    lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
+    lifecycle["polling"]["windowEnd"] = 15.2
     for record in lifecycle["requests"]:
         record["outcome"] = "degraded"
         record["status"] = 503
     lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 1
-    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+    payload["visible"]["historyFallback"] = {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+    }
 
     artifacts = runner._decode_adapter_artifacts(payload)
 
     observation = json.loads(artifacts["adapter-observation.json"])
     assert observation["lifecycle"]["requests"][1] == {
         "cycle": "scheduled",
-        "finishedAt": 15.1,
+        "finishedAt": 15.2,
         "id": "2",
         "outcome": "degraded",
         "path": "/api/overview-history",
-        "startedAt": 15.0,
+        "startedAt": 15.1,
         "status": 503,
     }
 
@@ -1583,17 +1765,30 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
+    lifecycle["polling"].update(
+        {"periodMs": 5000, "cadenceMinMs": 4500, "cadenceMaxMs": 7500}
+    )
     lifecycle["history"] = {
         "mode": "degraded",
-        "fallback": "Aircraft history unavailable",
+        "fallback": {
+            "surface": "network-history",
+            "reason": "History refresh unavailable",
+            "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+        },
     }
+    lifecycle["requests"][1].update({"startedAt": 15.1, "finishedAt": 15.2})
+    lifecycle["polling"]["windowEnd"] = 15.2
     for record in lifecycle["requests"]:
         record["outcome"] = "degraded"
         record["status"] = 503
     lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 1
     lifecycle["requests"][1].update({"outcome": outcome, "status": status})
-    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+    payload["visible"]["historyFallback"] = {
+        "surface": "network-history",
+        "reason": "History refresh unavailable",
+        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+    }
 
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
@@ -1604,7 +1799,16 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
     [
         lambda payload: payload["visible"].update({"historyFallback": None}),
         lambda payload: payload["lifecycle"].update(
-            {"history": {"mode": "degraded", "fallback": "Aircraft history unavailable"}}
+            {
+                "history": {
+                    "mode": "degraded",
+                    "fallback": {
+                        "surface": "network-history",
+                        "reason": "History refresh unavailable",
+                        "plotLabel": "Network latency time history; ms; cyan observed, dashed five-minute average, shaded five-minute low–high range; History unavailable",
+                    },
+                }
+            }
         ),
     ],
 )
@@ -2181,14 +2385,14 @@ def test_v2_adapter_has_no_platform_authority() -> None:
     assert "record budget exceeded" in source
     assert "navigationScoped: true" in source
     assert "loaderId" in source
-    assert "Upcoming POIs" in source
+    assert 'data-label-kind="poi"' in source
 
 
 def test_v2_adapter_declares_navigation_scoped_history_polling_window() -> None:
     source = V2_ADAPTER.read_text(encoding="utf-8")
 
     assert "const POLLING_ENDPOINT = '/api/overview-history';" in source
-    assert "const POLLING_PERIOD_MS = 5_000;" in source
+    assert "const POLLING_PERIOD_MS = 1_000;" in source
     assert "beginHistoryObservation" in source
     assert "waitForScheduledPoll" in source
     assert "cadenceMinMs" in source
@@ -2372,3 +2576,106 @@ def test_final_dependency_preparation_installs_frontend_without_scripts(
     assert words == ["npm", "ci", "--ignore-scripts"]
     assert cwd == ROOT / "frontend/mission-planner"
     assert env["CI"] == "1"
+
+
+@pytest.mark.parametrize(
+    "failure_stage",
+    ["control-status", "control-request", "browser-card", "journey", "adapter"],
+)
+def test_post_build_failure_seals_build_and_partial_runtime_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure_stage: str
+) -> None:
+    """A failed final must keep completed build provenance and primary diagnostics."""
+    image_ids = {
+        "starlink-location": "sha256:" + "1" * 64,
+        "mission-planner": "sha256:" + "2" * 64,
+    }
+    primary_detail = f"{failure_stage} failed after usable build"
+
+    def executor(retain: Callable[[str], None]) -> object:
+        retain("BuildKit: production images built successfully\n")
+        return object()
+
+    def request(control: object, _: object) -> int:
+        if control.name == "frontend":
+            if failure_stage == "control-request":
+                raise OSError(primary_detail)
+            if failure_stage == "control-status":
+                return 503
+        return control.expected_status
+
+    def browser_card(_: object) -> None:
+        if failure_stage == "browser-card":
+            raise runner._EnvironmentBlocked(primary_detail)
+
+    def journey(*_: object) -> dict[str, bytes]:
+        if failure_stage == "adapter":
+            raise runner._AdapterProcessFailure(
+                primary_detail,
+                runner._AdapterProcessResult(
+                    b"bounded adapter stdout",
+                    b"bounded adapter stderr",
+                    1,
+                    False,
+                    False,
+                    False,
+                ),
+            )
+        raise ValueError(primary_detail)
+
+    monkeypatch.setattr(runner, "SubprocessComposeExecutor", executor)
+    monkeypatch.setattr(runner, "render_task_override", lambda *_, **__: object())
+    monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
+    monkeypatch.setattr(
+        runner, "build_final", lambda *_: BuildReconciliation(True, False, image_ids)
+    )
+    monkeypatch.setattr(runner, "start_no_build", lambda *_: None)
+    monkeypatch.setattr(runner, "_request", request)
+    monkeypatch.setattr(runner, "_run_journey", journey)
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: _profile(),
+            validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=lambda *_: None,
+            static=lambda *_: None,
+            browser_card=browser_card,
+            start_browser_session=lambda *_: _Session(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    root = tmp_path / "evidence" / "candidates" / SHA
+    assert (root / "compose.output.log").read_bytes() == (
+        b"BuildKit: production images built successfully\n"
+    )
+    observation = json.loads((root / "runtime-observation.json").read_bytes())
+    assert observation["build"]["image_ids"] == image_ids
+    assert observation["browser"]["session"] == "http://127.0.0.1:9"
+    assert observation["controls"][0] == {
+        "name": "backend-health",
+        "path": "/health",
+        "expected_status": 200,
+        "status": 200,
+    }
+    if failure_stage == "control-status":
+        assert observation["controls"][-1]["status"] == 503
+        assert len(observation["controls"]) == 2
+        primary_detail = "runtime control failed: frontend"
+    elif failure_stage == "control-request":
+        assert len(observation["controls"]) == 1
+    else:
+        assert len(observation["controls"]) == 5
+    if failure_stage == "adapter":
+        assert (root / "adapter.stdout.log").read_bytes() == b"bounded adapter stdout"
+        assert (root / "adapter.stderr.log").read_bytes() == b"bounded adapter stderr"
+    assert result.manifest["primary"]["detail"] == primary_detail
+    assert result.manifest["outcome"] == (
+        "environment_blocked" if failure_stage == "browser-card" else "failed"
+    )
+    assert result.exit_code == (2 if failure_stage == "browser-card" else 1)
+    assert result.manifest["final_acceptance"] is False
+    assert result.manifest["maximum_evidence_claim"] != "final_acceptance"
+    verify_manifest(root)
+    read_fingerprint_authority(root)

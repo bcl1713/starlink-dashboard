@@ -14,6 +14,7 @@ import shlex
 import shutil
 import signal
 import stat
+import struct
 import subprocess
 import sys
 import threading
@@ -799,10 +800,56 @@ def _png_dimensions(content: bytes) -> tuple[int, int]:
 def _adapter_observation(payload: Mapping[str, object]) -> bytes:
     """Project only bounded terminal browser observations into sealed evidence."""
     lifecycle, visible = payload.get("lifecycle"), payload.get("visible")
+    route_binding = payload.get("routeBinding")
     if (
         payload.get("activation") != "browser-observed-200"
         or not isinstance(lifecycle, Mapping)
         or not isinstance(visible, Mapping)
+        or not isinstance(route_binding, Mapping)
+    ):
+        raise ValueError("adapter observation is invalid")
+    route_id = route_binding.get("routeId")
+    route_name = "V2 Acceptance Route KAAA-KBBB"
+    coordinates = [[-100, 35], [-99.95, 35.05], [-99.9, 35.1]]
+    if (
+        set(route_binding)
+        != {
+            "source",
+            "uploadStatus",
+            "detailStatus",
+            "routeId",
+            "routeName",
+            "pointCount",
+            "coordinates",
+            "contextKey",
+        }
+        or route_binding.get("source") != "browser-upload-and-route-detail"
+        or route_binding.get("uploadStatus") != 201
+        or route_binding.get("detailStatus") != 200
+        or not isinstance(route_id, str)
+        or len(route_id) > 256
+        or re.fullmatch(r"v2-activation-route(?:-[1-9][0-9]*)?", route_id) is None
+        or route_binding.get("routeName") != route_name
+        or route_binding.get("pointCount") != 3
+        or route_binding.get("coordinates") != coordinates
+    ):
+        raise ValueError("adapter observation is invalid")
+    context_bytes = bytearray(b"route-context-v1\0")
+    for field in ("ordinary", route_id, "", ""):
+        encoded_field = field.encode()
+        context_bytes.extend(struct.pack(">I", len(encoded_field)))
+        context_bytes.extend(encoded_field)
+    context_bytes.extend(struct.pack(">I", len(coordinates)))
+    for longitude, latitude in coordinates:
+        context_bytes.extend(struct.pack(">dd", longitude, latitude))
+    context_key = hashlib.sha256(context_bytes).hexdigest()
+    if (
+        route_binding.get("contextKey") != context_key
+        or visible.get("missionLegRoute") != f"Route: {route_id}"
+        or visible.get("planningRouteName") != route_name
+        or visible.get("planningRouteStatus") != "Active"
+        or visible.get("overviewRouteLegend") != "Planned route"
+        or visible.get("overviewRouteContextKey") != context_key
     ):
         raise ValueError("adapter observation is invalid")
     frame, loader, history, polling, requests = (
@@ -822,25 +869,43 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         raise ValueError("adapter observation is invalid")
     history_mode = history.get("mode")
     if history_mode == "live" and set(history) == {"mode"}:
-        history_fallback: str | None = None
-    elif (
-        history_mode == "degraded"
-        and set(history) == {"mode", "fallback"}
-        and history.get("fallback") == "Aircraft history unavailable"
-    ):
-        history_fallback = "Aircraft history unavailable"
+        history_fallback = None
+    elif history_mode == "degraded" and set(history) == {"mode", "fallback"}:
+        history_fallback = history.get("fallback")
+        if (
+            not isinstance(history_fallback, Mapping)
+            or set(history_fallback) != {"surface", "reason", "plotLabel"}
+            or history_fallback.get("surface") != "network-history"
+            or history_fallback.get("reason")
+            not in {
+                "History refresh unavailable",
+                "Network source unavailable",
+                "Paced simulation · network measurements unavailable",
+            }
+            or not isinstance(history_fallback.get("plotLabel"), str)
+            or len(history_fallback["plotLabel"]) > 1024
+            or re.fullmatch(
+                r"Network latency time history; ms;.*; History unavailable",
+                history_fallback["plotLabel"],
+            )
+            is None
+        ):
+            raise ValueError("adapter observation is invalid")
     else:
         raise ValueError("adapter observation is invalid")
     minimum, observed = polling.get("minimumScheduledRequests"), polling.get(
         "observedScheduledRequests"
     )
     cadence_min, cadence_max = polling.get("cadenceMinMs"), polling.get("cadenceMaxMs")
+    expected_polling = (
+        (1000, 900, 2500) if history_mode == "live" else (5000, 4500, 7500)
+    )
     if (
         lifecycle.get("overflow") is not False
         or polling.get("navigationScoped") is not True
         or polling.get("endpoint") != "/api/overview-history"
-        or polling.get("periodMs") != 5000
-        or (cadence_min, cadence_max) != (4500, 7500)
+        or polling.get("cadenceBasis") != "previous-completion-to-next-start"
+        or (polling.get("periodMs"), cadence_min, cadence_max) != expected_polling
         or not all(
             isinstance(polling.get(key), (int, float))
             for key in ("windowStart", "windowEnd")
@@ -850,7 +915,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or not isinstance(observed, int)
         or (history_mode == "live" and (minimum < 1 or observed < minimum))
         or (history_mode == "degraded" and minimum != 0)
-        ):
+    ):
         raise ValueError("adapter observation is invalid")
     records: list[dict[str, object]] = []
     for record in requests:
@@ -885,15 +950,11 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         )
     bootstrap = [record for record in records if record["cycle"] == "bootstrap"]
     scheduled = [record for record in records if record["cycle"] == "scheduled"]
-    if (
-        len(bootstrap) != 1
-        or len(scheduled) != observed
-        or len(scheduled) < minimum
-    ):
+    if len(bootstrap) != 1 or len(scheduled) != observed or len(scheduled) < minimum:
         raise ValueError("adapter observation is invalid")
     ordered = [bootstrap[0], *sorted(scheduled, key=lambda record: record["startedAt"])]
     for previous, record in pairwise(ordered):
-        cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
+        cadence_ms = (record["startedAt"] - previous["finishedAt"]) * 1000
         if (
             record["startedAt"] < previous["finishedAt"]
             or cadence_ms < cadence_min
@@ -905,21 +966,32 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or polling["windowEnd"] != ordered[-1]["finishedAt"]
     ):
         raise ValueError("adapter observation is invalid")
-    if (
-        not isinstance(visible.get("routeName"), str)
-        or not isinstance(visible.get("firstPoi"), str)
-        or not isinstance(visible.get("poiRows"), int)
-        or visible["poiRows"] < 2
-    ):
+    markers = visible.get("poiMarkers")
+    if not isinstance(markers, list) or len(markers) != 2:
         raise ValueError("adapter observation is invalid")
-    if (
-        visible.get("historyFallback") != history_fallback
-        or (history_fallback is None and "historyFallback" in visible)
+    for marker, name, label in zip(
+        markers, ("KAAA", "KBBB"), ("Takeoff · KAAA", "Landing · KBBB"), strict=True
+    ):
+        if (
+            not isinstance(marker, Mapping)
+            or set(marker) != {"id", "name", "label"}
+            or not isinstance(marker.get("id"), str)
+            or not marker["id"].startswith("poi:")
+            or len(marker["id"]) <= 4
+            or marker.get("name") != name
+            or marker.get("label") != label
+        ):
+            raise ValueError("adapter observation is invalid")
+    if markers[0]["id"] == markers[1]["id"]:
+        raise ValueError("adapter observation is invalid")
+    if visible.get("historyFallback") != history_fallback or (
+        history_fallback is None and "historyFallback" in visible
     ):
         raise ValueError("adapter observation is invalid")
     encoded = json.dumps(
         {
             "activation": payload["activation"],
+            "routeBinding": dict(route_binding),
             "lifecycle": {
                 "frameId": frame,
                 "loaderId": loader,
@@ -930,6 +1002,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                     "periodMs": polling["periodMs"],
                     "cadenceMinMs": cadence_min,
                     "cadenceMaxMs": cadence_max,
+                    "cadenceBasis": polling["cadenceBasis"],
                     "windowStart": polling["windowStart"],
                     "windowEnd": polling["windowEnd"],
                     "minimumScheduledRequests": minimum,
@@ -938,9 +1011,12 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                 "requests": records,
             },
             "visible": {
-                "routeName": visible["routeName"],
-                "firstPoi": visible["firstPoi"],
-                "poiRows": visible["poiRows"],
+                "missionLegRoute": visible["missionLegRoute"],
+                "planningRouteName": visible["planningRouteName"],
+                "planningRouteStatus": visible["planningRouteStatus"],
+                "overviewRouteLegend": visible["overviewRouteLegend"],
+                "overviewRouteContextKey": visible["overviewRouteContextKey"],
+                "poiMarkers": [dict(marker) for marker in markers],
                 **(
                     {"historyFallback": history_fallback}
                     if history_fallback is not None
@@ -1034,20 +1110,39 @@ def _final_steps(
             error, artifacts={"compose.output.log": diagnostics.output}
         )
     control_results: list[dict[str, object]] = []
-    for control in contract.controls:
-        status = _request(control, inputs)
-        control_results.append(
-            {
-                "name": control.name,
-                "path": control.path,
-                "expected_status": control.expected_status,
-                "status": status,
-            }
-        )
-        if status != control.expected_status:
-            raise ValueError(f"runtime control failed: {control.name}")
-    browser_card(inputs)
-    artifacts = _run_journey(inputs, contract, adapter)
+    artifacts: dict[str, bytes] = {}
+    failure: BaseException | None = None
+    try:
+        for control in contract.controls:
+            status = _request(control, inputs)
+            control_results.append(
+                {
+                    "name": control.name,
+                    "path": control.path,
+                    "expected_status": control.expected_status,
+                    "status": status,
+                }
+            )
+            if status != control.expected_status:
+                raise ValueError(f"runtime control failed: {control.name}")
+        browser_card(inputs)
+        artifacts.update(_run_journey(inputs, contract, adapter))
+    except (
+        OSError,
+        RuntimeError,
+        KeyboardInterrupt,
+        TypeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ) as error:
+        failure = error
+        if isinstance(error, _AdapterProcessFailure):
+            artifacts.update(
+                {
+                    "adapter.stdout.log": error.result.stdout,
+                    "adapter.stderr.log": error.result.stderr,
+                }
+            )
     artifacts["compose.output.log"] = diagnostics.output
     artifacts["runtime-observation.json"] = json.dumps(
         {
@@ -1065,6 +1160,8 @@ def _final_steps(
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
+    if failure is not None:
+        raise_with_platform_metadata(failure, artifacts=artifacts)
     return artifacts
 
 

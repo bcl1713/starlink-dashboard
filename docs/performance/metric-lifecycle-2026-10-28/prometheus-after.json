@@ -1,0 +1,144 @@
+{
+  "project": "issue393-2302186",
+  "seconds": 17.17519998550415,
+  "switches": 202,
+  "baseline": false,
+  "current_mission_info_series_before_clear": 1,
+  "current_mission_info_series_after_clear": 0,
+  "scrape_duration_quantiles_seconds_last_10s": {
+    "0.5": [
+      {
+        "metric": {
+          "instance": "exporter:8000",
+          "job": "synthetic-lifecycle"
+        },
+        "value": [1793173505.741, "0.0014535795"]
+      }
+    ],
+    "0.95": [
+      {
+        "metric": {
+          "instance": "exporter:8000",
+          "job": "synthetic-lifecycle"
+        },
+        "value": [1793173505.742, "0.0017395896499999997"]
+      }
+    ],
+    "0.99": [
+      {
+        "metric": {
+          "instance": "exporter:8000",
+          "job": "synthetic-lifecycle"
+        },
+        "value": [1793173505.743, "0.00187366913"]
+      }
+    ]
+  },
+  "retained_history": [
+    {
+      "metric": {
+        "instance": "exporter:8000",
+        "job": "synthetic-lifecycle",
+        "mission_id": "synthetic-0",
+        "route_id": "renamed-route-0"
+      },
+      "value": [1793173507.947, "2"]
+    },
+    {
+      "metric": {
+        "instance": "exporter:8000",
+        "job": "synthetic-lifecycle",
+        "mission_id": "synthetic-1",
+        "route_id": "renamed-route-1"
+      },
+      "value": [1793173507.947, "2"]
+    }
+  ],
+  "scrape_up": [
+    {
+      "metric": {
+        "__name__": "up",
+        "instance": "localhost:9090",
+        "job": "prometheus"
+      },
+      "value": [1793173507.947, "1"]
+    },
+    {
+      "metric": {
+        "__name__": "up",
+        "instance": "exporter:8000",
+        "job": "synthetic-lifecycle"
+      },
+      "value": [1793173507.947, "1"]
+    }
+  ],
+  "scrape_duration": [
+    {
+      "metric": {
+        "__name__": "scrape_duration_seconds",
+        "instance": "localhost:9090",
+        "job": "prometheus"
+      },
+      "value": [1793173507.948, "0.002608748"]
+    },
+    {
+      "metric": {
+        "__name__": "scrape_duration_seconds",
+        "instance": "exporter:8000",
+        "job": "synthetic-lifecycle"
+      },
+      "value": [1793173507.948, "0.001369941"]
+    }
+  ],
+  "scrape_samples": [
+    {
+      "metric": {
+        "__name__": "scrape_samples_scraped",
+        "instance": "localhost:9090",
+        "job": "prometheus"
+      },
+      "value": [1793173507.949, "590"]
+    },
+    {
+      "metric": {
+        "__name__": "scrape_samples_scraped",
+        "instance": "exporter:8000",
+        "job": "synthetic-lifecycle"
+      },
+      "value": [1793173507.949, "64"]
+    }
+  ],
+  "tsdb_head_series_including_retained_history": [
+    {
+      "metric": {
+        "__name__": "prometheus_tsdb_head_series",
+        "instance": "localhost:9090",
+        "job": "prometheus"
+      },
+      "value": [1793173507.949, "691"]
+    }
+  ],
+  "images": [
+    {
+      "ID": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+      "ContainerName": "issue393-2302186-prometheus-1",
+      "Repository": "prom/prometheus",
+      "Tag": "v3.5.0",
+      "Platform": "linux/amd64",
+      "Size": 439761253,
+      "Created": "2025-07-14T16:46:29.345043083Z",
+      "LastTagTime": "2026-10-01T12:44:24.457631016Z"
+    },
+    {
+      "ID": "sha256:a703a9660e84b151e3e2ffa86c09c5b6d17c490bb4a34003d121c97e6fad5046",
+      "ContainerName": "issue393-2302186-exporter-1",
+      "Repository": "perf391-diag-408-corrected-c-backend",
+      "Tag": "31b1fbbf",
+      "Platform": "linux/amd64",
+      "Size": 2231276162,
+      "Created": "2026-10-23T18:13:07.682355225Z",
+      "LastTagTime": "2026-10-23T18:13:07.773554148Z"
+    }
+  ],
+  "retained_history_identity_count": 3
+}

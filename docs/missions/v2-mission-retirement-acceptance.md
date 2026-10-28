@@ -26,6 +26,10 @@ The acceptance lane verifies these public controls through the deployed product:
 The legacy paths are intentionally unavailable. The supported activation route
 is `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
 
+Backend static checks use the tracked `requirements-ci.txt` lock, matching CI's
+reviewed dependency versions. Unbounded development ranges must not select a
+different test framework for final acceptance.
+
 ## Deterministic route asset
 
 The journey uploads the tracked asset
@@ -43,11 +47,17 @@ pre-existing state or navigating directly to a hidden state:
 3. On the mission detail view, select **Add Leg**.
 4. Select **Upload KML**, upload `v2-activation-route.kml`, then select
    **Add Leg** to save the route-bound leg.
-5. Select **Activate** and observe a successful activation response.
-6. Navigate through the visible **Overview** control.
-7. Confirm the visible active route context, route name
-   `V2 Acceptance Route KAAA-KBBB`, and the **Upcoming POIs** panel with
-   separate visible body rows for `KAAA` and `KBBB` (at least two POI rows).
+5. Confirm the saved leg visibly identifies the route ID returned by the browser's
+   KML upload response, then select **Activate** and observe success.
+6. Use the public **Routes** control, confirm the uploaded route is **Active**,
+   and select **View route details**. Confirm the visible heading
+   `V2 Acceptance Route KAAA-KBBB` and **Active** status. The browser-observed
+   route-detail response must match the uploaded identity and the asset's three
+   coordinates. Close the dialog and navigate through **Overview**.
+7. Confirm the visible **Planned route** legend and distinct generated map POIs
+   for `KAAA` and `KBBB`, labelled **Takeoff · KAAA** and **Landing · KBBB**.
+   When close labels are grouped, open the public crowded-label disclosure to
+   see both exact labels. Hidden accessible POI text alone is insufficient.
 
 Upcoming POI visibility derives from active-route position; ETA remains
 anticipated/estimated metadata. Before planned departure, anticipated ETA is
@@ -55,7 +65,23 @@ calendar-based. After a missed planned departure but before actual departure,
 planned route durations are re-anchored at now. Once in flight, ETA is estimated
 from the current route position; POI visibility remains route-relative.
 
-The journey records a pre-journey and post-journey visual state. A successful
+Overview displays a route layer legend rather than the route name. The journey
+compares its rendered `data-route-context-key` with an independently calculated
+hash of the public uploaded route ID and observed geometry. This DOM identity
+is binding evidence, not a claim that the route name is visible on Overview.
+The evidence separates browser-response provenance (`routeBinding`) from the
+planning name/status and Overview legend/marker observations (`visible`).
+
+The journey records a pre-journey and post-journey visual state, distinct map
+marker identities, and a bounded navigation-scoped history request lifecycle.
+Successful live history must complete a bootstrap and a scheduled poll using the
+current one-second default, timed from prior completion to next start without
+overlap. An explicit HTTP 503 requires the current visible **Network history
+context** reason (**History refresh unavailable**, **Network source unavailable**,
+or **Paced simulation · network measurements unavailable**) together with a
+visible **Network latency** plot whose accessible name states **History
+unavailable**. Hidden error paragraphs alone cannot satisfy this observation.
+That error state retains the intentional five-second backoff. A successful
 final product result requires the public controls and this visible journey; a
 successful endpoint response alone does not prove that the active route context
 is visible to an operator.

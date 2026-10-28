@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from app.simulation.run_replay import ReplayFrame
 
 from app.core.metrics.prometheus_metrics import (
-    mission_active_info,
+    MISSION_METRICS,
     mission_comm_state,
     mission_critical_seconds,
     mission_degraded_seconds,
@@ -189,28 +189,43 @@ def _observe_independent_metrics(telemetry, config, simulation_plan, simulation_
             histogram.labels(mode=mode, status=status).observe(
                 getattr(telemetry.network, field)
             )
-    if simulation_plan is not None and simulation_frame is not None:
-        plan, frame = simulation_plan, simulation_frame
-        mission_phase_state.labels(mission_id=plan.mission_id).set(
-            2 if frame.phase.value == "post_arrival" else 1
-        )
-        for transport, state in frame.transport_states.items():
-            mission_comm_state.labels(
-                mission_id=plan.mission_id, transport=transport.value
-            ).set({"available": 0, "degraded": 1, "offline": 2}[state.value])
-        conflict = next(
+
+
+def publish_replay_mission_metrics(plan, frame):
+    """Publish transient state only after the replay runtime commits its tick."""
+    conflict = next(
+        (
+            event
+            for event in plan.replay_events[frame.processed_event_count :]
+            if event.severity in ("warning", "critical")
+        ),
+        None,
+    )
+    values = [
+        (
+            mission_phase_state,
+            (plan.mission_id,),
+            2 if frame.phase.value == "post_arrival" else 1,
+        ),
+        (
+            mission_next_conflict_seconds,
+            (plan.mission_id,),
             (
-                event
-                for event in plan.replay_events[frame.processed_event_count :]
-                if event.severity in ("warning", "critical")
+                (conflict.timestamp - frame.simulation_time).total_seconds()
+                if conflict
+                else -1
             ),
-            None,
+        ),
+    ]
+    values.extend(
+        (
+            mission_comm_state,
+            (plan.mission_id, transport.value),
+            {"available": 0, "degraded": 1, "offline": 2}[state.value],
         )
-        mission_next_conflict_seconds.labels(mission_id=plan.mission_id).set(
-            (conflict.timestamp - frame.simulation_time).total_seconds()
-            if conflict
-            else -1
-        )
+        for transport, state in frame.transport_states.items()
+    )
+    MISSION_METRICS.publish(plan.mission_id, plan.route_id, values)
 
 
 @model_input_write
@@ -528,279 +543,49 @@ def set_service_info(version: str, mode: str) -> None:
 
 
 def update_mission_active_metric(mission_id: str, route_id: str) -> None:
-    """Update mission active info metric when a mission is activated.
-
-    This function sets the mission_active_info gauge to 1 for the specified mission
-    and route combination, indicating that this mission is currently active. Only one
-    mission should be active at a time; activating a new mission should deactivate
-    the previous one (handled by caller).
-
-    Args:
-        mission_id: Unique identifier of the activated mission.
-        route_id: Unique identifier of the route associated with this mission.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored to prevent
-        disrupting mission activation workflows.
-    """
-    try:
-        mission_active_info.labels(mission_id=mission_id, route_id=route_id).set(1)
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover - defensive guard
-        logger.warning(f"Failed to update mission active metric: {e}")
+    """Replace the transient mission owner on successful activation/route edit."""
+    MISSION_METRICS.activate(mission_id, route_id)
 
 
 def clear_mission_metrics(mission_id: str) -> None:
-    """Clear mission metrics when a mission is deactivated or deleted.
-
-    This function resets all mission-related metrics to NaN or 0 to indicate they
-    are no longer active. Prometheus doesn't support deleting label combinations
-    directly, so we use NaN for gauges (making them absent in queries) and 0 for
-    the active info metric (explicitly showing inactive state).
-
-    Args:
-        mission_id: Unique identifier of the mission to clear metrics for.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored to prevent
-        disrupting mission deactivation workflows.
-    """
-    try:
-        # Clear all mission metrics with this mission_id label
-        # Note: Prometheus doesn't have a direct way to delete labels,
-        # so we set them to NaN or 0 to indicate they're not active
-        mission_phase_state.labels(mission_id=mission_id).set(math.nan)
-        mission_next_conflict_seconds.labels(mission_id=mission_id).set(math.nan)
-        mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(math.nan)
-
-        # For mission_active_info, we need to set to 0 for all label combinations
-        # Since we don't track all combinations, we'll just set to 0 with empty route_id
-        mission_active_info.labels(mission_id=mission_id, route_id="").set(0)
-        for transport in ["X", "Ka", "Ku"]:
-            mission_comm_state.labels(mission_id=mission_id, transport=transport).set(
-                math.nan
-            )
-        mission_degraded_seconds.labels(mission_id=mission_id).set(math.nan)
-        mission_critical_seconds.labels(mission_id=mission_id).set(math.nan)
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover - defensive guard
-        logger.warning(f"Failed to clear mission metrics: {e}")
+    """Remove exact children on deactivation/deletion; never create fake zeros."""
+    MISSION_METRICS.clear(mission_id)
 
 
 def update_mission_phase_metric(mission_id: str, phase: str) -> None:
-    """Update mission phase state metric.
-
-    This function encodes the mission phase as a numeric value for Prometheus
-    gauges. The encoding allows time series queries to track phase transitions
-    and calculate time spent in each phase.
-
-    Args:
-        mission_id: Unique identifier of the mission.
-        phase: Mission phase as a string. Valid values are 'pre_departure' (0),
-            'in_flight' (1), or 'post_arrival' (2). Unknown phases default to 0.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored.
-    """
-    try:
-        phase_map = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}
-        phase_value = phase_map.get(phase, 0)
-        mission_phase_state.labels(mission_id=mission_id).set(phase_value)
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover - defensive guard
-        logger.warning(f"Failed to update mission phase metric: {e}")
+    phase_value = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}.get(phase, 0)
+    MISSION_METRICS.update(
+        mission_id, ((mission_phase_state, (mission_id,), phase_value),)
+    )
 
 
 def update_mission_timeline_timestamp(mission_id: str, timestamp: float) -> None:
-    """Update mission timeline generation timestamp.
-
-    This function records when the mission's communication timeline was last computed,
-    allowing operators to track timeline freshness and identify when recomputation
-    may be needed.
-
-    Args:
-        mission_id: Unique identifier of the mission.
-        timestamp: Unix timestamp (seconds since epoch) of timeline generation.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored.
-    """
-    try:
-        mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(
-            timestamp
-        )
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover - defensive guard
-        logger.warning(f"Failed to update mission timeline timestamp metric: {e}")
+    MISSION_METRICS.update(
+        mission_id, ((mission_timeline_generated_timestamp, (mission_id,), timestamp),)
+    )
 
 
 def update_mission_comm_state_metric(
     mission_id: str, transport: str, state_value: int
 ) -> None:
-    """Update mission communication state metric for a given transport.
-
-    This function tracks the planned state of each communication transport (X, Ka, Ku)
-    throughout the mission timeline. States are encoded numerically to allow queries
-    that track availability windows and identify degraded/offline periods.
-
-    Args:
-        mission_id: Unique identifier of the mission.
-        transport: Transport band identifier ('X', 'Ka', or 'Ku').
-        state_value: Numeric state encoding: 0=available, 1=degraded, 2=offline.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored.
-    """
-    try:
-        mission_comm_state.labels(mission_id=mission_id, transport=transport).set(
-            state_value
-        )
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover
-        logger.warning(f"Failed to update mission comm state metric: {e}")
+    MISSION_METRICS.update(
+        mission_id, ((mission_comm_state, (mission_id, transport), state_value),)
+    )
 
 
 def update_mission_duration_metrics(
     mission_id: str, degraded_seconds: float, critical_seconds: float
 ) -> None:
-    """Update degraded/critical mission duration gauges.
-
-    This function publishes the total planned durations for degraded and critical
-    communication states in the mission timeline. These metrics help operators
-    understand mission risk profile and assess whether communication constraints
-    are acceptable.
-
-    Args:
-        mission_id: Unique identifier of the mission.
-        degraded_seconds: Total seconds when one or more transports are degraded.
-        critical_seconds: Total seconds when all transports are offline (critical state).
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored.
-    """
-    try:
-        mission_degraded_seconds.labels(mission_id=mission_id).set(degraded_seconds)
-        mission_critical_seconds.labels(mission_id=mission_id).set(critical_seconds)
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover
-        logger.warning(f"Failed to update mission duration metrics: {e}")
+    MISSION_METRICS.update(
+        mission_id,
+        (
+            (mission_degraded_seconds, (mission_id,), degraded_seconds),
+            (mission_critical_seconds, (mission_id,), critical_seconds),
+        ),
+    )
 
 
 def update_mission_next_conflict_metric(mission_id: str, seconds: float) -> None:
-    """Update countdown to next degraded/critical event.
-
-    This function tracks the time remaining until the next communication degradation
-    or outage in the mission timeline. This allows real-time alerting and helps
-    operators prepare for upcoming communication constraints.
-
-    Args:
-        mission_id: Unique identifier of the mission.
-        seconds: Seconds until next degraded/critical event. Set to -1 if no
-            upcoming events are scheduled in the timeline.
-
-    Returns:
-        None. The function updates Prometheus metrics in-place as a side effect.
-
-    Raises:
-        Does not raise exceptions. Failures are logged and ignored.
-    """
-    try:
-        mission_next_conflict_seconds.labels(mission_id=mission_id).set(seconds)
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as e:  # pragma: no cover
-        logger.warning(f"Failed to update mission next conflict metric: {e}")
+    MISSION_METRICS.update(
+        mission_id, ((mission_next_conflict_seconds, (mission_id,), seconds),)
+    )

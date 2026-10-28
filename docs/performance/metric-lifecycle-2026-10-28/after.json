@@ -1,0 +1,77 @@
+[
+  {
+    "python": "3.11.16",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "switches": 200,
+    "scrapes": 100,
+    "active": {
+      "mission_samples": 9,
+      "exporter_samples": 61,
+      "exporter_bytes": 12089
+    },
+    "cleared": {
+      "mission_samples": 0,
+      "exporter_samples": 52,
+      "exporter_bytes": 11502
+    },
+    "retained_python_bytes_delta": 206048,
+    "peak_rss_kib": 66340,
+    "mutation_seconds": 0.1251275739632547,
+    "scrape_cpu_seconds": 0.034939666000000036,
+    "scrape_ms": {
+      "p50": 0.3488746006041765,
+      "p95": 0.360680278390646,
+      "p99": 0.37366803735494614
+    }
+  },
+  {
+    "python": "3.11.16",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "switches": 200,
+    "scrapes": 100,
+    "active": {
+      "mission_samples": 9,
+      "exporter_samples": 61,
+      "exporter_bytes": 12090
+    },
+    "cleared": {
+      "mission_samples": 0,
+      "exporter_samples": 52,
+      "exporter_bytes": 11503
+    },
+    "retained_python_bytes_delta": 206048,
+    "peak_rss_kib": 66376,
+    "mutation_seconds": 0.12873282236978412,
+    "scrape_cpu_seconds": 0.04512814199999998,
+    "scrape_ms": {
+      "p50": 0.35593542270362377,
+      "p95": 0.6448919884860516,
+      "p99": 0.6490857340395451
+    }
+  },
+  {
+    "python": "3.11.16",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "switches": 200,
+    "scrapes": 100,
+    "active": {
+      "mission_samples": 9,
+      "exporter_samples": 61,
+      "exporter_bytes": 12090
+    },
+    "cleared": {
+      "mission_samples": 0,
+      "exporter_samples": 52,
+      "exporter_bytes": 11503
+    },
+    "retained_python_bytes_delta": 206048,
+    "peak_rss_kib": 66912,
+    "mutation_seconds": 0.13758054608479142,
+    "scrape_cpu_seconds": 0.03725418800000002,
+    "scrape_ms": {
+      "p50": 0.3516899887472391,
+      "p95": 0.5065742880105972,
+      "p99": 0.5966238677501678
+    }
+  }
+]

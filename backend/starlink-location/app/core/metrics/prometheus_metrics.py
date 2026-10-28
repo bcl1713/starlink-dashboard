@@ -21,6 +21,7 @@ from app.core.metrics.frames import (
     GaugeDefinition,
     TelemetryFrameCollector,
 )
+from app.core.metrics.mission_state import MissionMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -436,52 +437,63 @@ starlink_metrics_generation_errors_total = Counter(
 # ============================================================================
 mission_active_info = Gauge(
     "mission_active_info",
-    "Currently active mission information (1 when active, 0 when not)",
+    "Currently active mission information (1 when active, absent when inactive)",
     labelnames=["mission_id", "route_id"],
-    registry=REGISTRY,
+    registry=None,
 )
 
 mission_phase_state = Gauge(
     "mission_phase_state",
     "Current mission phase state (0=pre_departure, 1=in_flight, 2=post_arrival)",
     labelnames=["mission_id"],
-    registry=REGISTRY,
+    registry=None,
 )
 
 mission_next_conflict_seconds = Gauge(
     "mission_next_conflict_seconds",
     "Seconds until next degraded/critical event in mission timeline (-1 if none)",
     labelnames=["mission_id"],
-    registry=REGISTRY,
+    registry=None,
 )
 
 mission_timeline_generated_timestamp = Gauge(
     "mission_timeline_generated_timestamp",
     "Unix timestamp of last mission timeline computation",
     labelnames=["mission_id"],
-    registry=REGISTRY,
+    registry=None,
 )
 
 mission_comm_state = Gauge(
     "mission_comm_state",
     "Planned state per transport (0=available, 1=degraded, 2=offline)",
     labelnames=["mission_id", "transport"],
-    registry=REGISTRY,
+    registry=None,
 )
 
 mission_degraded_seconds = Gauge(
     "mission_degraded_seconds",
     "Planned degraded duration for mission timeline (seconds)",
     labelnames=["mission_id"],
-    registry=REGISTRY,
+    registry=None,
 )
 
 mission_critical_seconds = Gauge(
     "mission_critical_seconds",
     "Planned critical duration for mission timeline (seconds)",
     labelnames=["mission_id"],
-    registry=REGISTRY,
+    registry=None,
 )
+
+MISSION_METRICS = MissionMetrics(
+    mission_active_info,
+    mission_phase_state,
+    mission_next_conflict_seconds,
+    mission_timeline_generated_timestamp,
+    mission_comm_state,
+    mission_degraded_seconds,
+    mission_critical_seconds,
+)
+REGISTRY.register(MISSION_METRICS)
 
 # ============================================================================
 # Simulation metrics (only in simulation mode)

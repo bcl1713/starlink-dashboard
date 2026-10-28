@@ -1,0 +1,85 @@
+{
+  "services": {
+    "starlink-location": {
+      "image": "starlink-operator-issue393-production-soak-backend:bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+      "command": [
+        "uvicorn",
+        "performance.fixture:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "environment": {
+        "PYTHONPATH": "/acceptance:/app",
+        "PERF_SYNTHETIC": "1",
+        "STARLINK_MODE": "simulation",
+        "SIMULATION_MODE": "true",
+        "OPERATOR_ENABLED": "true",
+        "STARLINK_PROMETHEUS_URL": "http://prometheus:9090",
+        "STARLINK_ROUTE_LATITUDE_START": "0",
+        "STARLINK_ROUTE_LONGITUDE_START": "-10",
+        "STARLINK_GROUND_ENTRY_LATITUDE": "0",
+        "STARLINK_GROUND_ENTRY_LONGITUDE": "0",
+        "NO_PROXY": "prometheus,localhost,127.0.0.1"
+      },
+      "volumes": [
+        "data:/app/data",
+        "routes:/data",
+        "<candidate-worktree>/tools/acceptance/performance:/acceptance/performance:ro",
+        "<diagnostic-evidence>/production-soak/source/tools/acceptance/operator-journal:/acceptance/journal:ro",
+        "<diagnostic-evidence>/production-soak/source/tools/acceptance/overview_history:/acceptance/overview_history:ro"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8000/health"
+        ],
+        "interval": "2s",
+        "timeout": "5s",
+        "retries": 60
+      },
+      "cpus": 2,
+      "mem_limit": "2g"
+    },
+    "prometheus": {
+      "image": "prom/prometheus:v3.5.0",
+      "ports": [
+        "127.0.0.1:45755:9090"
+      ],
+      "volumes": [
+        "metrics:/prometheus",
+        "<diagnostic-evidence>/production-soak/source/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+        "<diagnostic-evidence>/production-soak/source/monitoring/prometheus/rules:/etc/prometheus/rules:ro",
+        "<diagnostic-evidence>/production-soak/history.openmetrics:/seed/history.openmetrics:ro"
+      ],
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.retention.time=12h",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "cpus": 2,
+      "mem_limit": "2g"
+    },
+    "mission-planner": {
+      "image": "starlink-operator-issue393-production-soak-frontend:bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+      "ports": [
+        "127.0.0.1:53041:80"
+      ],
+      "depends_on": {
+        "starlink-location": {
+          "condition": "service_healthy"
+        }
+      },
+      "cpus": 2,
+      "mem_limit": "2g"
+    }
+  },
+  "volumes": {
+    "data": {},
+    "routes": {},
+    "metrics": {}
+  }
+}

@@ -532,6 +532,22 @@ class TestMissionV2GlobalActivationLifecycle:
         assert response.status_code == 200
         assert load_mission_v2(mission_a.id).legs[0].is_active is False
         assert load_mission_v2(mission_b.id).legs[0].is_active is True
+        from app.core.metrics import REGISTRY
+
+        assert (
+            REGISTRY.get_sample_value(
+                "mission_active_info",
+                {"mission_id": mission_a.id, "route_id": mission_a.legs[0].route_id},
+            )
+            is None
+        )
+        assert (
+            REGISTRY.get_sample_value(
+                "mission_active_info",
+                {"mission_id": mission_b.id, "route_id": mission_b.legs[0].route_id},
+            )
+            == 1
+        )
         assert (
             client.app.state.route_manager.get_active_route_id()
             == mission_b.legs[0].route_id

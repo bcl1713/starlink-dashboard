@@ -13,6 +13,25 @@ from tests.unit.test_active_mission_context import route_manager, v2_mission
 __all__ = ["route_manager", "v2_mission"]
 
 
+@pytest.mark.parametrize("mode", ["live", "simulation"])
+async def test_reconciliation_publishes_persisted_mission_and_clears_deactivation(
+    route_manager, v2_mission, mode
+):
+    from app.core.metrics import REGISTRY
+
+    v2_mission.legs[0].is_active = True
+    save_mission_v2(v2_mission)
+    route_manager.activate_route("route-a")
+    owner = active_context_owner.ActiveContextOwner(route_manager, lambda: mode)
+    await owner.refresh()
+    labels = {"mission_id": v2_mission.id, "route_id": "route-a"}
+    assert REGISTRY.get_sample_value("mission_active_info", labels) == 1
+    v2_mission.legs[0].is_active = False
+    save_mission_v2(v2_mission)
+    await owner.refresh()
+    assert REGISTRY.get_sample_value("mission_active_info", labels) is None
+
+
 async def test_owner_scans_off_loop_and_drains_repeated_cancellation(
     monkeypatch, route_manager, v2_mission
 ):

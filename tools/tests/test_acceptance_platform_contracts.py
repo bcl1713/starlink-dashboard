@@ -20,7 +20,7 @@ assets = ['fixtures/example.kml']
 [[static_groups]]
 name = 'backend'
 working_directory = 'backend/api'
-commands = ['uv run --with-requirements requirements-dev.txt pytest -q']
+commands = ['uv run --with-requirements requirements-ci.txt pytest -q']
 
 [[controls]]
 name = 'health'
@@ -88,7 +88,7 @@ def test_contract_rejects_package_manager_or_install_commands(
     path = _write_contract(tmp_path)
     path.write_text(
         path.read_text(encoding="utf-8").replace(
-            "commands = ['uv run --with-requirements requirements-dev.txt pytest -q']",
+            "commands = ['uv run --with-requirements requirements-ci.txt pytest -q']",
             f"commands = [{json.dumps(command)}]",
         ),
         encoding="utf-8",
@@ -101,18 +101,19 @@ def test_contract_rejects_package_manager_or_install_commands(
 @pytest.mark.parametrize(
     "command",
     [
+        "uv run --with-requirements requirements-dev.txt pytest -q",
         "black --check app tests",
         "ruff check app tests",
-        "uv run --with-requirements requirements-dev.txt -q pytest",
+        "uv run --with-requirements requirements-ci.txt -q pytest",
         "uv run --with-requirements requirements.txt pytest -q",
-        "uv run --with-requirements requirements-dev.txt pytest -q tests/unit",
-        "uv pip install -r requirements-dev.txt",
-        "uv run --with-requirements requirements-dev.txt pytest -q && echo unsafe",
-        "uv  run --with-requirements requirements-dev.txt pytest -q",
-        "uv run --with-requirements 'requirements-dev.txt' pytest -q",
-        'uv run --with-requirements "requirements-dev.txt" pytest -q',
-        "uv run --with-requirements requirements-dev.txt pytest -q ",
-        "uv run --with-requirements requirements-dev.txt pytest -q\t",
+        "uv run --with-requirements requirements-ci.txt pytest -q tests/unit",
+        "uv pip install -r requirements-ci.txt",
+        "uv run --with-requirements requirements-ci.txt pytest -q && echo unsafe",
+        "uv  run --with-requirements requirements-ci.txt pytest -q",
+        "uv run --with-requirements 'requirements-ci.txt' pytest -q",
+        'uv run --with-requirements "requirements-ci.txt" pytest -q',
+        "uv run --with-requirements requirements-ci.txt pytest -q ",
+        "uv run --with-requirements requirements-ci.txt pytest -q\t",
     ],
 )
 def test_contract_rejects_noncanonical_static_commands(
@@ -121,7 +122,7 @@ def test_contract_rejects_noncanonical_static_commands(
     path = _write_contract(tmp_path)
     path.write_text(
         path.read_text(encoding="utf-8").replace(
-            "commands = ['uv run --with-requirements requirements-dev.txt pytest -q']",
+            "commands = ['uv run --with-requirements requirements-ci.txt pytest -q']",
             f"commands = [{json.dumps(command)}]",
         ),
         encoding="utf-8",
@@ -162,9 +163,9 @@ def test_v2_contract_has_only_product_authority() -> None:
     assert len(contract.static_groups) == 2
     assert all(isinstance(group, StaticGroup) for group in contract.static_groups)
     assert contract.static_groups[0].commands == (
-        "uv run --with-requirements requirements-dev.txt black --check app tests",
-        "uv run --with-requirements requirements-dev.txt ruff check app tests",
-        "uv run --with-requirements requirements-dev.txt pytest -q",
+        "uv run --with-requirements requirements-ci.txt black --check app tests",
+        "uv run --with-requirements requirements-ci.txt ruff check app tests",
+        "uv run --with-requirements requirements-ci.txt pytest -q",
     )
     assert all(".venv" not in command for command in contract.static_groups[0].commands)
     assert contract.static_groups[1].commands == ("lint", "test:unit")

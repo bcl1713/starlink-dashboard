@@ -616,7 +616,9 @@ async def startup_event():
             from app.mission.active_context_owner import ActiveContextOwner
 
             context_owner = ActiveContextOwner(
-                _route_manager, lambda: _current_runtime_config().mode
+                _route_manager,
+                lambda: _current_runtime_config().mode,
+                run_service.status,
             )
             app.state.active_context_owner = context_owner
             await context_owner.start()

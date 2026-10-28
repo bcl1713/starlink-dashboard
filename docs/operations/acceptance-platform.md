@@ -130,19 +130,14 @@ contract checksum requires a new final build-ledger record.
 
 ## V2 visible journey observation
 
-For the V2 mission-retirement product contract, the adapter must prove the
-operator-visible binding created by the public KML upload and activation flow:
-the active route name and a genuine **Upcoming POIs** table containing separate
-visible body rows for `KAAA` and `KBBB` (at least two POI rows). This is a
-visible
-browser observation, not API seeding, hidden navigation, a synthetic clock, or
-hidden application state. POI
-eligibility is route-relative; ETA is anticipated/estimated metadata and does
-not determine whether a route-relative POI row is visible.
+The [V2 product contract](../missions/v2-mission-retirement-acceptance.md)
+defines the current public KML flow, visible planning name, map POI binding,
+route-context observation, one-second live polling and explicit degraded state.
+The journey uses public UI and browser-observed responses. Hidden application
+state, API seeding and synthetic clocks cannot establish acceptance. The platform
+retains bounded provenance and visible observations separately and owns sealing.
 
 ## Final browser execution and interruption recovery
-
-Use this operator sequence for final acceptance:
 
 1. Run `health` and checksum-verify its sealed fingerprint and evidence
    manifest.

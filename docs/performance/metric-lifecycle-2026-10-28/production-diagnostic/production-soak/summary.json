@@ -1,0 +1,493 @@
+{
+  "metadata": {
+    "candidate_sha": "bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+    "harness_sha": "bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+    "status": "measured",
+    "source_archive_sha256": "a6424604de63ad3896d6c28e60e42430aa805656cee6bc3dc5f124a08c16b562",
+    "hardware": {
+      "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+      "machine": "x86_64",
+      "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+      "docker": {
+        "ServerVersion": "29.8.1",
+        "Driver": "overlayfs",
+        "NCPU": 20,
+        "MemTotal": 65915523072,
+        "KernelVersion": "7.0.0-34-generic",
+        "OperatingSystem": "Ubuntu 26.04.1 LTS",
+        "Architecture": "x86_64"
+      },
+      "filesystem": "ext2/ext3 4096"
+    },
+    "images": {
+      "backend": {
+        "tag": "starlink-operator-issue393-production-soak-backend:bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+        "id": "sha256:f4cbf42fed80373c2ec39762ad2a427347794dcf818dff0370886700482e3687",
+        "revision": "bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+        "filesystem_config_sha256": "eaff3472cce3f3f96fdb4220a9667929723afc2da958b401f522a8d442a271c2"
+      },
+      "frontend": {
+        "tag": "starlink-operator-issue393-production-soak-frontend:bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+        "id": "sha256:4fe7bf67cc4be2183b32bab70a0c5b7710b583c239003d4556961d0a12573a98",
+        "revision": "bba55c5209eafc5f4f56a2dd2a99fe7f539de2ef",
+        "filesystem_config_sha256": "9a0e9144a370f56d8afd9d6a3433c5fb8f02d0991b4c2cbd7484c2eb7861c03b"
+      },
+      "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+    },
+    "backend_python": "Python 3.11.18",
+    "backend_packages_sha256": "32882128661ba7c0c6ba836eccbe66b333b050fa4c7844bcb916b0968985fa4c",
+    "fixture_hashes": {
+      "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+      "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+      "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+      "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+    },
+    "workload": {
+      "fixture": "perf390-v1",
+      "fixture_hashes": {
+        "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+        "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+        "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+        "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+      },
+      "viewers": 1,
+      "operator": true,
+      "window": 1800,
+      "cadence": 1,
+      "warmup": 120,
+      "duration": 3600,
+      "operations": true,
+      "fullscreen": true
+    },
+    "instrumentation": "off",
+    "runtime": {
+      "mode": "simulation",
+      "backend_python": "Python 3.11.18",
+      "backend_packages_sha256": "32882128661ba7c0c6ba836eccbe66b333b050fa4c7844bcb916b0968985fa4c",
+      "scrape_seconds": 1,
+      "evaluation_seconds": 1,
+      "cpus_per_service": 2,
+      "memory_limit": "2g",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "optional_layers": "default-off",
+      "transport": "published-port",
+      "history_step_seconds": 1
+    },
+    "browser": {
+      "node_version": "v22.12.0",
+      "mode": "headless-diagnostic",
+      "fullscreen": true,
+      "physical_fullscreen": false,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "version": "153.0.8010.12",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "history_step_seconds": 1,
+      "executable_sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+    },
+    "request_outcomes": {
+      "unexpected_failures": 0,
+      "client_cancellations": 0
+    }
+  },
+  "measured_span_seconds": 3599.9999547059997,
+  "sustained_60_minutes": false,
+  "resources": {
+    "backend.cpu_seconds": {
+      "samples": 721,
+      "first": 114.994872,
+      "last": 816.409724,
+      "max": 816.409724,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 11.909485084880531,
+      "cores_used": 0.19483746134026889
+    },
+    "backend.memory_bytes": {
+      "samples": 721,
+      "first": 347074560,
+      "last": 365899776,
+      "max": 956289024,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 558893.8628579305
+    },
+    "backend.anonymous_bytes": {
+      "samples": 721,
+      "first": 315625472,
+      "last": 329281536,
+      "max": 899485696,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 460007.8798530377
+    },
+    "prometheus.cpu_seconds": {
+      "samples": 721,
+      "first": 2.354042,
+      "last": 58.680706,
+      "max": 58.680706,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 0.9512970030642081,
+      "cores_used": 0.015646295752412036
+    },
+    "prometheus.memory_bytes": {
+      "samples": 721,
+      "first": 66506752,
+      "last": 84160512,
+      "max": 93356032,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 171931.9672455466
+    },
+    "prometheus.anonymous_bytes": {
+      "samples": 721,
+      "first": 29720576,
+      "last": 42614784,
+      "max": 52760576,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 120447.06510533257
+    },
+    "browser.cpu_seconds": {
+      "samples": 721,
+      "first": 1084.86,
+      "last": 31833.77,
+      "max": 31833.77,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 487.4023585890894,
+      "cores_used": 8.541363996353484
+    },
+    "browser.rss_bytes": {
+      "samples": 721,
+      "first": 1541144576,
+      "last": 1852710912,
+      "max": 1916047360,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 3833789.7213678407
+    },
+    "browser.pss_bytes": {
+      "samples": 721,
+      "first": 1168772096,
+      "last": 1479212032,
+      "max": 1542163456,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 3828329.7271446176
+    },
+    "browser.heap_bytes": {
+      "samples": 721,
+      "first": 52547904,
+      "last": 67050248,
+      "max": 165238252,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 289245.49462372647
+    },
+    "browser.task_seconds": {
+      "samples": 721,
+      "first": 122.844094,
+      "last": 3654.040787,
+      "max": 3654.040787,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 58.52463610030462
+    },
+    "browser.frame_count": {
+      "samples": 721,
+      "first": 4,
+      "last": 218,
+      "max": 293,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": 0.6485551276891373
+    },
+    "browser.long_task_ms": {
+      "samples": 721,
+      "first": 201,
+      "last": 4651,
+      "max": 5327,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": -23.434406720409605
+    },
+    "instrumentation.sample_wall_ms": {
+      "samples": 721,
+      "first": 119.89609200000996,
+      "last": 273.79763699974865,
+      "max": 1722.7453860000242,
+      "span_seconds": 3599.9999547059997,
+      "slope_per_minute": -1.5692642934423027
+    },
+    "prometheus.prometheus_tsdb_head_chunks_storage_size_bytes": {
+      "samples": 110,
+      "first": 0,
+      "last": 131072,
+      "max": 131072,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 233.578093610188
+    },
+    "prometheus.prometheus_tsdb_head_series": {
+      "samples": 110,
+      "first": 171,
+      "last": 202,
+      "max": 202,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 0.05524384233029044
+    },
+    "prometheus.prometheus_tsdb_head_series_created_total": {
+      "samples": 110,
+      "first": 171,
+      "last": 202,
+      "max": 202,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 0.05524384233029044
+    },
+    "prometheus.prometheus_tsdb_head_series_removed_total": {
+      "samples": 110,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_storage_blocks_bytes": {
+      "samples": 110,
+      "first": 235124,
+      "last": 235124,
+      "max": 235124,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 0.0
+    },
+    "prometheus.prometheus_tsdb_wal_storage_size_bytes": {
+      "samples": 110,
+      "first": 137255,
+      "last": 4759038,
+      "max": 4759038,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 77846.35649271362
+    },
+    "sqlite.database_bytes": {
+      "samples": 110,
+      "first": 1998848,
+      "last": 2023424,
+      "max": 2023424,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 482.96305554758663
+    },
+    "sqlite.wal_bytes": {
+      "samples": 110,
+      "first": 0,
+      "last": 0,
+      "max": 0,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 0.0
+    },
+    "storage.mission_bytes": {
+      "samples": 110,
+      "first": 1845687,
+      "last": 1864887,
+      "max": 1864887,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 358.2290276096778
+    },
+    "storage.mission_allocated_bytes": {
+      "samples": 110,
+      "first": 1871872,
+      "last": 1892352,
+      "max": 1892352,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 382.4890467205445
+    },
+    "storage.operator_bytes": {
+      "samples": 110,
+      "first": 164025,
+      "last": 176313,
+      "max": 176313,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 255.7796306145745
+    },
+    "storage.operator_allocated_bytes": {
+      "samples": 110,
+      "first": 167936,
+      "last": 180224,
+      "max": 180224,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 255.7796306145745
+    },
+    "storage.data_bytes": {
+      "samples": 110,
+      "first": 2074838,
+      "last": 2106326,
+      "max": 2106326,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 613.963268170206
+    },
+    "storage.data_allocated_bytes": {
+      "samples": 110,
+      "first": 2113536,
+      "last": 2146304,
+      "max": 2146304,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 638.2686773351192
+    },
+    "storage.routes_cache_export_bytes": {
+      "samples": 110,
+      "first": 2456,
+      "last": 2666,
+      "max": 2666,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 3.9812232147682884
+    },
+    "storage.routes_cache_export_allocated_bytes": {
+      "samples": 110,
+      "first": 8192,
+      "last": 8192,
+      "max": 8192,
+      "span_seconds": 3569.999881272,
+      "slope_per_minute": 0.0
+    }
+  },
+  "latency": {
+    "frame": {
+      "p50_ms": 33.39999999990687,
+      "p95_ms": 116.60000000009313,
+      "p99_ms": 183.30000000004657,
+      "samples": 149047
+    },
+    "observer_status": {
+      "p50_ms": 8.600347000174224,
+      "p95_ms": 79.57416299998295,
+      "p99_ms": 97.18691299995407,
+      "samples": 721
+    },
+    "observer_operator_read": {
+      "p50_ms": 11.138762999995379,
+      "p95_ms": 61.48853600025177,
+      "p99_ms": 178.73438799986616,
+      "samples": 721
+    },
+    "/api/v2/operator/health": {
+      "p50_ms": 4.542,
+      "p95_ms": 75.558,
+      "p99_ms": 120.213,
+      "samples": 479
+    },
+    "observer_delivery_error_ms": {
+      "p50_ms": 79.69714600006864,
+      "p95_ms": 184.78650399989075,
+      "p99_ms": 335.00297799991444,
+      "samples": 22002
+    },
+    "/api/status": {
+      "p50_ms": 8.725,
+      "p95_ms": 77.085,
+      "p99_ms": 104.318,
+      "samples": 3044
+    },
+    "/api/active-x-link": {
+      "p50_ms": 8.615,
+      "p95_ms": 81.256,
+      "p99_ms": 107.995,
+      "samples": 3046
+    },
+    "/api/v2/operator/events/mission-timeline": {
+      "p50_ms": 14.334,
+      "p95_ms": 131.951,
+      "p99_ms": 262.393,
+      "samples": 180
+    },
+    "/api/v2/operator/events": {
+      "p50_ms": 15.832,
+      "p95_ms": 98.317,
+      "p99_ms": 191.131,
+      "samples": 359
+    },
+    "/api/simulation/run": {
+      "p50_ms": 3.767,
+      "p95_ms": 76.924,
+      "p99_ms": 102.602,
+      "samples": 3077
+    },
+    "/api/overview-history": {
+      "p50_ms": 193.855,
+      "p95_ms": 306.198,
+      "p99_ms": 397.824,
+      "samples": 2571
+    },
+    "/api/overview-adsb/settings": {
+      "p50_ms": 3.64,
+      "p95_ms": 56.845,
+      "p99_ms": 98.05,
+      "samples": 695
+    },
+    "/api/overview-weather/settings": {
+      "p50_ms": 3.779,
+      "p95_ms": 57.748,
+      "p99_ms": 92.43,
+      "samples": 696
+    },
+    "/api/v2/operator/context": {
+      "p50_ms": 6.264,
+      "p95_ms": 81.956,
+      "p99_ms": 145.012,
+      "samples": 2476
+    },
+    "/api/overview-history/settings": {
+      "p50_ms": 3.692,
+      "p95_ms": 59.142,
+      "p99_ms": 99.586,
+      "samples": 696
+    },
+    "/api/overview-clocks/settings": {
+      "p50_ms": 3.51,
+      "p95_ms": 52.738,
+      "p99_ms": 89.154,
+      "samples": 697
+    },
+    "/api/satellites": {
+      "p50_ms": 5.15,
+      "p95_ms": 60.533,
+      "p99_ms": 99.338,
+      "samples": 695
+    },
+    "/api/aviation-weather/v1/settings": {
+      "p50_ms": 5.683,
+      "p95_ms": 57.012,
+      "p99_ms": 92.563,
+      "samples": 694
+    },
+    "/api/routes/synthetic-route": {
+      "p50_ms": 6.417,
+      "p95_ms": 60.192,
+      "p99_ms": 91.999,
+      "samples": 520
+    },
+    "/api/overview-links/settings": {
+      "p50_ms": 5.983,
+      "p95_ms": 60.232,
+      "p99_ms": 97.01,
+      "samples": 694
+    },
+    "/api/overview/upcoming-pois": {
+      "p50_ms": 7.582,
+      "p95_ms": 81.916,
+      "p99_ms": 106.033,
+      "samples": 694
+    },
+    "/api/routes/": {
+      "p50_ms": 4.217,
+      "p95_ms": 86.798,
+      "p99_ms": 139.959,
+      "samples": 685
+    },
+    "/api/v2/operator/records": {
+      "p50_ms": 27.05,
+      "p95_ms": 75.722,
+      "p99_ms": 75.722,
+      "samples": 3
+    },
+    "/api/v2/missions/synthetic-mission-a": {
+      "p50_ms": 13.843,
+      "p95_ms": 13.843,
+      "p99_ms": 13.843,
+      "samples": 1
+    }
+  }
+}
