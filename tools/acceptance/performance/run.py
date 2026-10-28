@@ -343,6 +343,8 @@ def run(args):
                 "duration": args.duration,
                 "operations": args.operations,
                 "fullscreen": args.fullscreen,
+                "qualification_protocol": "issue393-coordinated-operator-v1",
+                "operator_transition_scheduling": "native quarter offsets, then fresh read completion and natural idle; no request suppression",
             },
             instrumentation=args.instrumentation,
             runtime={
@@ -355,7 +357,7 @@ def run(args):
                 "memory_limit": args.memory,
                 "viewport": [1920, 1080],
                 "dpr": 1,
-                "optional_layers": "default-off",
+                "optional_layers": "candidate defaults; no UI layers toggled by harness",
                 "transport": "exec-relay" if owner.relay else "published-port",
             },
         )
@@ -381,6 +383,11 @@ def run(args):
         result["request_outcomes"] = json.loads(
             (owner.root / "request-outcomes.json").read_text()
         )
+        result["api_capture"] = json.loads(
+            (owner.root / "api-capture-summary.json").read_text()
+        )
+        if not result["api_capture"]["qualification_clean"]:
+            raise ValueError("Captured API outcomes do not qualify a clean soak")
         rows = [
             json.loads(line)
             for line in (owner.root / "samples.jsonl").read_text().splitlines()

@@ -12,6 +12,13 @@ import {
   pollingCovered,
   validateHistory,
 } from "./polling.mjs";
+import { createApiCapture, identityFromHealth } from "./capture.mjs";
+import { qualifyCapture } from "./qualify-capture.mjs";
+import {
+  waitForReadBoundary,
+  waitForSource,
+  waitForAllIdle,
+} from "./coordination.mjs";
 
 const executeFile = promisify(execFile);
 
@@ -120,6 +127,8 @@ const cpuByPid = new Map(),
   subscriptions = [];
 const started = performance.now();
 const seconds = () => (performance.now() - started) / 1000;
+const capture = createApiCapture({ append, clock: seconds });
+let captureStopped = false;
 let measuring = false,
   inflight = 0,
   maxInflight = 0;
@@ -138,6 +147,9 @@ const browserMeta = {
   dpr: 1,
   version: null,
   renderer: null,
+  qualification_protocol: "issue393-coordinated-operator-v1",
+  browser_executable_override: process.env.PERF_BROWSER_EXECUTABLE ?? null,
+  negative_capture_controls: process.env.PERF_CAPTURE_PROBES === "1",
 };
 try {
   await api("/api/overview-history/settings", "PUT", {
@@ -172,6 +184,7 @@ try {
     )("@playwright/test");
     server = await chromium.launchServer({
       headless: true,
+      executablePath: process.env.PERF_BROWSER_EXECUTABLE || undefined,
       args: ["--enable-unsafe-swiftshader", "--window-size=1920,1080"],
       timeout: 30000,
     });
@@ -220,6 +233,7 @@ try {
       });
       const page = await context.newPage();
       pages.push(page);
+      capture.attach(page, i);
       const subscription = {
         page: i,
         overview: i < options.viewers,
@@ -319,6 +333,13 @@ try {
         });
     }
   }
+  if (process.env.PERF_CAPTURE_PROBES === "1") {
+    if (!browser) throw new Error("Capture qualification needs a browser");
+    out(
+      "capture-probe-summary.json",
+      await qualifyCapture(browser, options.origin, append),
+    );
+  }
   out("browser.json", browserMeta);
   const readyAt = seconds();
   const end = readyAt + options.warmup + options.duration;
@@ -329,6 +350,7 @@ try {
     const now = seconds(),
       elapsed = now - readyAt;
     if (!measuring && elapsed >= options.warmup) {
+      capture.phase("measured");
       measuring = true;
       if (options.instrumentation === "counters")
         await api("/api/_acceptance/performance");
@@ -338,6 +360,7 @@ try {
           window.__perf.longTasks = [];
         });
     }
+    if (measuring) capture.assertHealthy();
     if (now < nextSample) {
       await new Promise((accept) =>
         setTimeout(accept, Math.min(200, (nextSample - now) * 1000)),
@@ -500,6 +523,18 @@ try {
       operation < 3
     ) {
       const action = operation++;
+      if (options.operator) {
+        const boundary = await waitForReadBoundary(capture, options.viewers, {
+          recordsActive: action !== 2,
+          clock: seconds,
+        });
+        append("coordination.jsonl", {
+          seconds: seconds() - readyAt,
+          operation: action,
+          stage: "before-transition",
+          ...boundary,
+        });
+      }
       const path =
         action === 0
           ? "/api/v2/missions/synthetic-mission-a/legs/synthetic-leg-2/activate"
@@ -509,12 +544,26 @@ try {
       const t = performance.now();
       const result = await api(path, "POST");
       append("operations.jsonl", {
-        seconds: elapsed,
+        seconds: seconds() - readyAt,
         path,
         elapsed_ms: performance.now() - t,
         result,
       });
       const health = await api("/api/v2/operator/health");
+      if (options.operator) {
+        const recovered = await waitForSource(capture, options.viewers, {
+          identity: identityFromHealth(health),
+          recordsActive: action !== 1,
+          missionId: "synthetic-mission-a",
+          clock: seconds,
+        });
+        append("coordination.jsonl", {
+          seconds: seconds() - readyAt,
+          operation: action,
+          stage: "source-recovered",
+          ...recovered,
+        });
+      }
       const receipt = await api(
         "/api/v2/operator/records",
         "POST",
@@ -544,7 +593,7 @@ try {
         },
       );
       append("operations.jsonl", {
-        seconds: elapsed,
+        seconds: seconds() - readyAt,
         operation: "journal_write",
         receipt,
       });
@@ -582,6 +631,14 @@ try {
     await pages[i].screenshot({
       path: resolve(options.output, `page-${i}.png`),
     });
+  await waitForAllIdle(capture, pages.length, { clock: seconds });
+  await capture.drain();
+  capture.assertHealthy();
+  measuring = false;
+  capture.phase("post");
+  capture.stop();
+  captureStopped = true;
+  out("api-capture-summary.json", capture.summary());
   out("failures.json", failures);
   out("cancellations.json", cancellations);
   out("request-outcomes.json", {
@@ -598,9 +655,25 @@ try {
     await new Promise((accept) => setTimeout(accept, 3000));
   }
 } finally {
+  if (!captureStopped) {
+    capture.phase("teardown");
+    await capture
+      .drain()
+      .catch((error) =>
+        append("capture-cleanup-errors.jsonl", { error: error.message }),
+      );
+  }
   for (const context of contexts) await context.close().catch(() => {});
   await browser?.close();
   await server?.close();
+  if (!captureStopped) {
+    await capture
+      .drain()
+      .catch((error) =>
+        append("capture-cleanup-errors.jsonl", { error: error.message }),
+      );
+    out("api-capture-summary.json", capture.summary());
+  }
   out("browser-cleanup.json", {
     closed: true,
     pid: server?.process().pid ?? null,
