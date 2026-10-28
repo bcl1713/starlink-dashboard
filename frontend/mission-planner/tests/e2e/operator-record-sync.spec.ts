@@ -450,6 +450,11 @@ test('saved records converge across independent laptop and phone contexts with s
     await expect(
       laptop.getByLabel('Party / Participant (Optional)', { exact: true })
     ).toHaveValue('Laptop unsaved input');
+    // The 409 path finishes an authoritative reread before releasing its lane.
+    // Wait for that existing owner to finish before requesting explicit review.
+    await expect(
+      laptop.getByRole('button', { name: 'Save Call', exact: true })
+    ).toBeEnabled();
     await laptop
       .getByRole('button', { name: 'Reread and reconcile', exact: true })
       .first()
