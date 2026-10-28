@@ -244,10 +244,10 @@ test('customizable presets and durable shared advisories across real clients', a
     const [overviewA, overviewB, operator] = pages;
     await operator.goto('/operator');
     await operator
-      .getByRole('button', { name: 'Display tools', exact: true })
+      .getByRole('button', { name: 'Display Controls', exact: true })
       .click();
     const tools = operator.getByRole('dialog', {
-      name: 'Display tools',
+      name: 'Display Controls',
       exact: true,
     });
     const flight = tools.getByRole('switch', { name: 'Flight Events Only' });
