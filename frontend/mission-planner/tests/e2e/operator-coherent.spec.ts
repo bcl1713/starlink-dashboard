@@ -355,6 +355,7 @@ test('coherent operations, retained capture and real journal safety across deskt
     await page.getByRole('button', { name: /^Save Call$/i }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(bravoCall.locator('.ws-call-advisory-warning')).toHaveCount(0);
+    await bravoCall.getByText('Call Details', { exact: true }).click();
     proof.rescheduleUpdatesOverlap = true;
     await page
       .getByRole('button', { name: 'Schedule Call', exact: true })
@@ -395,6 +396,7 @@ test('coherent operations, retained capture and real journal safety across deskt
     const overnightCard = page.locator(
       `#operator-record-${overnight.record_id}`
     );
+    await overnightCard.getByText('Call Details', { exact: true }).click();
     await overnightCard.getByRole('button', { name: /^Cancel Call$/i }).click();
     await waitRecord(
       page,
