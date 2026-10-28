@@ -7,9 +7,11 @@ import {
 import { conferenceCloseBlockers } from './callCommands';
 import type { CallAssociation } from './callAssociation';
 import { revisionUtc } from './revisionUtc';
+import { eventUtc } from './eventFormatting';
 const button =
   'min-h-11 rounded-lg border bg-background px-4 py-2 font-medium shadow-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
-const primary = button + ' min-w-40 bg-primary text-primary-foreground';
+const primary =
+  button + ' ws-conference-primary bg-primary text-primary-foreground';
 const transport = (id: string | null | undefined) =>
   id === 'Ka' ? 'Ka Commercial' : id === 'X' ? 'X-Band' : (id ?? 'Unknown');
 export function ConferenceCard({
@@ -111,7 +113,9 @@ export function ConferenceCard({
         {record.deleted ? ' · Removed' : ''}
       </h4>
       <p className="inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold">
-        {previousSession ? 'Previous Session' : (p.status ?? 'Unknown')}
+        {previousSession
+          ? 'Previous Session'
+          : (p.status ?? 'Unknown').replace(/\b\w/g, (c) => c.toUpperCase())}
       </p>
       <p className="text-sm">
         Reported Transport: <strong>{transport(p.configured_transport)}</strong>
@@ -120,10 +124,14 @@ export function ConferenceCard({
           : ''}
       </p>
       {advisory}
-      <div className="grid min-h-14 grid-cols-2 gap-3 text-sm">
+      <div className="ws-conference-facts grid grid-cols-2 gap-3 text-sm">
         <div>
           <p className="text-muted-foreground">Two-Way Distant-End Check</p>
-          <p>{revisionUtc(p.verified_at ?? null)}</p>
+          <p title={revisionUtc(p.verified_at ?? null)}>
+            {p.verified_at
+              ? `${eventUtc(p.verified_at).slice(0, 16)} Zulu`
+              : 'Unknown'}
+          </p>
         </div>
         <div>
           <p className="text-muted-foreground">Customers Reported Connected</p>

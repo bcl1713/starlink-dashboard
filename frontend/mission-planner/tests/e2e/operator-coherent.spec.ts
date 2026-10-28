@@ -522,12 +522,32 @@ test('coherent operations, retained capture and real journal safety across deskt
         });
         await establishIdle.scrollIntoViewIfNeeded();
         const idleBefore = await idleCard.boundingBox();
+        const layoutBefore = await idleCard.evaluate((el) =>
+          [...el.children].map((child) => ({
+            tag: child.tagName,
+            cls: child.className,
+            h: child.getBoundingClientRect().height,
+          }))
+        );
         await establishIdle.click();
         const closeIdle = idleCard.getByRole('button', {
           name: /^Close Conference$/i,
         });
         await expect(closeIdle).toBeEnabled();
         const idleEstablished = await idleCard.boundingBox();
+        const layoutAfter = await idleCard.evaluate((el) =>
+          [...el.children].map((child) => ({
+            tag: child.tagName,
+            cls: child.className,
+            h: child.getBoundingClientRect().height,
+          }))
+        );
+        console.log('Phone Geometry', width, height, {
+          idleBefore,
+          idleEstablished,
+          layoutBefore,
+          layoutAfter,
+        });
         expect(
           Math.abs(idleBefore!.height - idleEstablished!.height)
         ).toBeLessThanOrEqual(1);

@@ -870,3 +870,19 @@
     min-height: 2.5rem;
   }
 }
+
+.ws-conference-facts {
+  min-height: 5.5rem;
+}
+.ws-conference-primary {
+  width: 11.5rem;
+  height: 44px;
+  flex: 0 0 11.5rem;
+  max-width: 100%;
+  white-space: nowrap;
+}
+@media (min-width: 600px) {
+  .ws-conference-facts {
+    min-height: 3.5rem;
+  }
+}

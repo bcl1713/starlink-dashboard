@@ -142,9 +142,16 @@ export function CallList({
             {r.payload.status === 'cancelled'
               ? 'Canceled'
               : r.time.occurred_at && ongoing
-                ? 'In progress'
-                : r.payload.status}{' '}
-            · {r.payload.communications_kind ?? 'Type unknown'}
+                ? 'In Progress'
+                : r.payload.status.replace(/\b\w/g, (c) =>
+                    c.toUpperCase()
+                  )}{' '}
+            ·{' '}
+            {r.payload.communications_kind
+              ? { voice: 'Voice', vtc: 'VTC', other: 'Other' }[
+                  r.payload.communications_kind
+                ]
+              : 'Type Unknown'}
           </p>
           <p className="text-sm">
             Planned: {callUtc(r.time.planned_start_at)} · End:{' '}
