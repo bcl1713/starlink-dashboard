@@ -37,9 +37,11 @@ running deployment. No production/device access was used.
 - Production frontend TypeScript/Vite build passed (existing browser
   externalization and large-chunk warnings).
 - Scoped ESLint, Prettier, Black, Ruff, and whitespace checks passed.
-- Aggregate frontend suite remains unverified: fork-worker runs on Node 24 and
-  Node 22 produced no test results before being stopped; a bounded thread-worker
-  attempt was also made. These are incomplete runs, not passing suites.
+- Complete frontend suite passed in eight bounded shards on Node 22.22.2: 326
+  files and 2,286 tests, every discovered file completed exactly once. Earlier
+  unsharded runs were incomplete; a later instrumented unsharded run progressed
+  normally through 51 files before its diagnostic time limit. No memory or
+  process-limit events occurred. The earlier silence is unexplained.
 - Independent review found no critical or important issues.
 - System Chromium rendered the actual API snapshot through the production
   projection/component before and after the change. The false warning cleared;
