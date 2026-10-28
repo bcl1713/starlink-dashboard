@@ -24,6 +24,51 @@ def x_window(snapshot, leg_id="leg-a"):
     )
 
 
+@pytest.mark.parametrize("action", ["cancel", "remove"])
+def test_call_milestones_disappear_after_cancellation_or_removal(
+    api, production, service, record_data, action
+):
+    from app.operator.models import RemoveRecord, RestoreRecord
+    from tests.operator.service_helpers import create, submit, update
+    from tests.operator.test_call_api import call_data
+
+    call = create(service, call_data(record_data, prep_lead_minutes=10))
+    retained = create(service, call_data(record_data, prep_lead_minutes=10))
+    completed = create(service, call_data(record_data, status="completed"))
+
+    def milestones(snapshot, record):
+        return {
+            event["kind"]
+            for event in snapshot["events"]
+            if event["source_ref"] == str(record.record_id)
+        }
+
+    assert milestones(read(api, production), call) == {"call_start", "call_prep"}
+    command = (
+        update(
+            service,
+            call,
+            payload=call.payload.model_copy(update={"status": "cancelled"}),
+        )
+        if action == "cancel"
+        else RemoveRecord(record_id=call.record_id, expected_version=call.version)
+    )
+    changed = submit(service, command).saved_records[0]
+    snapshot = read(api, production)
+    assert milestones(snapshot, call) == set()
+    assert milestones(snapshot, retained) == {"call_start", "call_prep"}
+    assert milestones(snapshot, completed) == {"call_start"}
+
+    # Hiding milestones must not destroy the record or prevent its return.
+    command = (
+        update(service, changed, payload=call.payload)
+        if action == "cancel"
+        else RestoreRecord(record_id=call.record_id, expected_version=changed.version)
+    )
+    submit(service, command)
+    assert milestones(read(api, production), call) == {"call_start", "call_prep"}
+
+
 def test_preflight_without_telemetry_is_current_schedule_and_never_writes_ledger(
     api, production
 ):

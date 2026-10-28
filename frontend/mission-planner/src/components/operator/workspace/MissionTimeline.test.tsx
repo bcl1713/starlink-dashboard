@@ -30,6 +30,22 @@ const state = (events = [eventFixture()]) => ({
   refreshing: false,
   refresh: vi.fn(),
 });
+
+// JSDOM has no layout. Model the marker's position in a scrollable 400px body.
+function timelineGeometry() {
+  const position = { markerOffset: 900 };
+  vi.spyOn(Element.prototype, 'clientHeight', 'get').mockReturnValue(400);
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+    function (this: Element) {
+      const body = this.closest('.ws-timeline-body');
+      const top = this.classList.contains('ws-timeline-now')
+        ? 100 + position.markerOffset - (body?.scrollTop ?? 0)
+        : 100;
+      return DOMRect.fromRect({ x: 0, y: top, width: 300, height: 400 });
+    }
+  );
+  return position;
+}
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -305,4 +321,105 @@ it('keeps a directly selectable compact chronology on phones without opening the
     expect.objectContaining({ title: 'Bravo Preparation' })
   );
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it('automatically positions Now when the first snapshot arrives', () => {
+  timelineGeometry();
+  const query = state();
+  const view = render(
+    <MissionTimeline
+      timeline={{ ...query, snapshot: undefined, loading: true }}
+    />
+  );
+  const body = view.container.querySelector('.ws-timeline-body')!;
+  expect(body.scrollTop).toBe(0);
+  view.rerender(<MissionTimeline timeline={query} />);
+  expect(body.scrollTop).toBe(640);
+});
+
+it('keeps following Now across clock ticks, refreshed events and resizes', () => {
+  vi.useFakeTimers();
+  const monotonic = vi.spyOn(performance, 'now').mockReturnValue(0);
+  const position = timelineGeometry();
+  const query = state();
+  const view = render(<MissionTimeline timeline={query} />);
+  const body = view.container.querySelector('.ws-timeline-body')!;
+  // A scroll event from automatic positioning must not pause following.
+  fireEvent.scroll(body);
+  position.markerOffset = 1000;
+  monotonic.mockReturnValue(1000);
+  act(() => vi.advanceTimersByTime(1000));
+  expect(body.scrollTop).toBe(740);
+  position.markerOffset = 1100;
+  view.rerender(
+    <MissionTimeline timeline={{ ...query, snapshot: { ...query.snapshot } }} />
+  );
+  expect(body.scrollTop).toBe(840);
+  position.markerOffset = 1200;
+  fireEvent(window, new Event('resize'));
+  expect(body.scrollTop).toBe(940);
+});
+
+it('leaves manual browsing in place until Jump to now resumes following', () => {
+  vi.useFakeTimers();
+  const monotonic = vi.spyOn(performance, 'now').mockReturnValue(0);
+  const position = timelineGeometry();
+  const query = state();
+  const view = render(<MissionTimeline timeline={query} />);
+  const body = view.container.querySelector('.ws-timeline-body')!;
+  body.scrollTop = 100;
+  fireEvent.scroll(body);
+  position.markerOffset = 1000;
+  monotonic.mockReturnValue(1000);
+  act(() => vi.advanceTimersByTime(1000));
+  view.rerender(
+    <MissionTimeline timeline={{ ...query, snapshot: { ...query.snapshot } }} />
+  );
+  fireEvent(window, new Event('resize'));
+  expect(body.scrollTop).toBe(100);
+  fireEvent.click(screen.getByRole('button', { name: 'Jump to now' }));
+  expect(body.scrollTop).toBe(740);
+  fireEvent.scroll(body);
+  position.markerOffset = 1100;
+  monotonic.mockReturnValue(2000);
+  act(() => vi.advanceTimersByTime(1000));
+  expect(body.scrollTop).toBe(840);
+});
+
+it('starts following again when switching missions after manual browsing', () => {
+  timelineGeometry();
+  const query = state();
+  const view = render(<MissionTimeline timeline={query} />);
+  const body = view.container.querySelector('.ws-timeline-body')!;
+  body.scrollTop = 100;
+  fireEvent.scroll(body);
+  view.rerender(
+    <MissionTimeline
+      timeline={{
+        ...query,
+        snapshot: { ...query.snapshot, mission_id: 'mission-b' },
+      }}
+    />
+  );
+  expect(body.scrollTop).toBe(640);
+});
+
+it('positions Now each time the phone timeline opens', () => {
+  timelineGeometry();
+  vi.stubGlobal('matchMedia', () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  render(<MissionTimeline timeline={state()} />);
+  const launch = screen.getByRole('button', { name: 'Open mission timeline' });
+  fireEvent.click(launch);
+  let body = screen.getByRole('dialog').querySelector('.ws-timeline-body')!;
+  expect(body.scrollTop).toBe(640);
+  body.scrollTop = 100;
+  fireEvent.scroll(body);
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  fireEvent.click(launch);
+  body = screen.getByRole('dialog').querySelector('.ws-timeline-body')!;
+  expect(body.scrollTop).toBe(640);
 });
