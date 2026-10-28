@@ -122,6 +122,8 @@ it('shows independent source status and provider attribution', () => {
     </>
   );
   expect(screen.getByText(/Provider acquisition failed/)).toBeVisible();
+  expect(screen.getByText(/Last success:/)).toHaveTextContent('Zulu');
+  expect(screen.getByText(/Retry after:/)).toHaveTextContent('Zulu');
   expect(screen.getByRole('link', { name: 'adsb.fi' })).toHaveAttribute(
     'href',
     'https://adsb.fi/'

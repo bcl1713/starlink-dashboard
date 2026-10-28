@@ -1,3 +1,4 @@
+import { UtcDateTime } from './UtcDateTime';
 import type {
   IssueInput,
   OperatorCommand,
@@ -6,14 +7,7 @@ import type {
 } from '@/types/operator';
 import type { DraftIdentity } from '@/hooks/api/useOperatorIssueDraft';
 import { useOperatorIssueDraft } from '@/hooks/api/useOperatorIssueDraft';
-import {
-  instant,
-  issueButton,
-  issueField,
-  issueInput,
-  parseUtc,
-  utcValue,
-} from './issueForms';
+import { instant, issueButton, issueField, issueInput } from './issueForms';
 export interface IssueEditorDraft {
   input: IssueInput;
   baseVersion: number | null;
@@ -228,19 +222,16 @@ export function IssueForm({
                 </label>
               )
             )}
-            <label>
-              Follow-up UTC
-              <input
-                type="datetime-local"
-                step="1"
-                className={issueField}
-                disabled={input.payload.status === 'resolved'}
-                value={utcValue(input.payload.follow_up_at)}
-                onChange={(e) =>
-                  patch({ follow_up_at: parseUtc(e.target.value) })
-                }
-              />
-            </label>
+            <UtcDateTime
+              label="Follow-up"
+              value={input.payload.follow_up_at ?? null}
+              disabled={input.payload.status === 'resolved'}
+              onChange={(value) =>
+                patch({
+                  follow_up_at: value ? new Date(value).toISOString() : null,
+                })
+              }
+            />
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -274,19 +265,17 @@ export function IssueForm({
               />
               Use current backend UTC when saved
             </label>
-            <label>
-              Action occurred UTC (optional)
-              <input
-                type="datetime-local"
-                step="1"
-                className={issueField}
-                disabled={draft.useCurrentTime ?? true}
-                value={utcValue(draft.occurredAt)}
-                onChange={(e) =>
-                  setDraft({ ...draft, occurredAt: parseUtc(e.target.value) })
-                }
-              />
-            </label>
+            <UtcDateTime
+              label="Action occurred"
+              value={draft.occurredAt}
+              disabled={draft.useCurrentTime ?? true}
+              onChange={(value) =>
+                setDraft({
+                  ...draft,
+                  occurredAt: value ? new Date(value).toISOString() : null,
+                })
+              }
+            />
             <label hidden={contextual}>
               Scope
               <select

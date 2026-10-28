@@ -1,3 +1,4 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import { useState } from 'react';
 import {
   Table,
@@ -21,16 +22,6 @@ interface KaOutageConfigProps {
   outages: KaOutage[];
   onOutagesChange: (outages: KaOutage[]) => void;
 }
-
-/**
- * Formats a local Date for the datetime-local input used by this form.
- */
-const toDatetimeLocalValue = (date: Date): string => {
-  const pad = (value: number) => value.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
 
 // Signed decimal input reaches range validation so negative values receive
 // the actionable minimum-duration feedback instead of a generic format error.
@@ -86,7 +77,7 @@ interface NewOutageInput {
  * Features:
  * - Display existing outage windows with start time, duration, and end time
  * - Add new outage windows using a start time and duration in hours
- * - Automatic calculated end time using the local datetime input semantics
+ * - Automatic calculated end time using the Zulu calendar input semantics
  * - Validation for required fields and duration limits (0-24 hours)
  * - Helper text indicating 24-hour format requirement
  *
@@ -109,7 +100,7 @@ export function KaOutageConfig({
     durationHoursPattern.test(durationHours) &&
     Number.isFinite(duration) &&
     duration > 0
-      ? toDatetimeLocalValue(new Date(startDate.getTime() + duration * 3600000))
+      ? new Date(startDate.getTime() + duration * 3600000).toISOString()
       : '';
 
   const handleAddOutage = () => {
@@ -183,27 +174,13 @@ export function KaOutageConfig({
             <TableRow>
               <TableCell>
                 <div>
-                  <Label htmlFor="ka-outage-start-time" className="sr-only">
-                    Ka outage start time
-                  </Label>
-                  <Input
-                    id="ka-outage-start-time"
-                    type="datetime-local"
-                    step="60"
-                    value={newOutage.start_time ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setNewOutage({
-                        ...newOutage,
-                        start_time: value,
-                      });
-                      setStartTimeError(validateDatetime(value));
+                  <UtcDateTime
+                    label="Ka outage start"
+                    value={newOutage.start_time || null}
+                    onChange={(value) => {
+                      setNewOutage({ ...newOutage, start_time: value ?? '' });
+                      setStartTimeError(validateDatetime(value ?? ''));
                     }}
-                    aria-describedby={
-                      startTimeError ? 'ka-outage-start-time-error' : undefined
-                    }
-                    aria-invalid={Boolean(startTimeError)}
-                    className={startTimeError ? 'border-destructive' : ''}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     24-hour format (HH:mm)
@@ -259,16 +236,11 @@ export function KaOutageConfig({
                   <Label htmlFor="ka-outage-end-time" className="sr-only">
                     Calculated Ka outage end time
                   </Label>
-                  <Input
-                    id="ka-outage-end-time"
-                    type="datetime-local"
-                    step="60"
-                    value={calculatedEndTime}
-                    readOnly
-                    aria-live="polite"
-                  />
+                  <output id="ka-outage-end-time" aria-live="polite">
+                    {formatTime24Hour(calculatedEndTime)}
+                  </output>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Calculated from the local start time and duration.
+                    Calculated from the Zulu start time and duration.
                   </p>
                 </div>
               </TableCell>

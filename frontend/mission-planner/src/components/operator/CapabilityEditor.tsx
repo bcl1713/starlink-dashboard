@@ -1,3 +1,4 @@
+import { UtcDateTime } from './UtcDateTime';
 import { capabilityInput } from './capabilityInput';
 import type {
   CapabilityInput,
@@ -8,13 +9,7 @@ import {
   useOperatorIssueDraft,
   type DraftIdentity,
 } from '@/hooks/api/useOperatorIssueDraft';
-import {
-  instant,
-  issueButton,
-  issueField,
-  utcValue,
-  parseUtc,
-} from './issueForms';
+import { instant, issueButton, issueField } from './issueForms';
 export interface CapabilityEditorDraft {
   input: CapabilityInput;
   version: number | null;
@@ -182,30 +177,29 @@ export function CapabilityForm({
                 />
                 Use current UTC for {dimension} observation
               </label>
-              <label className="block">
-                {dimension === 'functional'
-                  ? 'Functional observation UTC'
-                  : 'Redundancy observation UTC'}
-                <input
-                  className={issueField}
-                  type="datetime-local"
-                  step="1"
-                  disabled={(draft.currentDimensions ?? []).includes(dimension)}
-                  value={utcValue(input.payload[`${dimension}_observed_at`])}
-                  onChange={(e) =>
-                    patch(
-                      {
-                        [`${dimension}_observed_at`]: parseUtc(e.target.value),
-                        [`${dimension}_time_precision`]: e.target.value
-                          ? 'exact'
-                          : 'unknown',
-                      },
-                      dimension,
-                      false
-                    )
-                  }
-                />
-              </label>
+              <UtcDateTime
+                label={
+                  dimension === 'functional'
+                    ? 'Functional observation'
+                    : 'Redundancy observation'
+                }
+                disabled={(draft.currentDimensions ?? []).includes(dimension)}
+                value={input.payload[`${dimension}_observed_at`]}
+                onChange={(value) =>
+                  patch(
+                    {
+                      [`${dimension}_observed_at`]: value
+                        ? new Date(value).toISOString()
+                        : null,
+                      [`${dimension}_time_precision`]: value
+                        ? 'exact'
+                        : 'unknown',
+                    },
+                    dimension,
+                    false
+                  )
+                }
+              />
               <label className="block">
                 {dimension === 'functional'
                   ? 'Functional time precision'

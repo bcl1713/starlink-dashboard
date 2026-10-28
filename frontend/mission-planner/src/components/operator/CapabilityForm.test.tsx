@@ -1,3 +1,4 @@
+import { enterZulu } from '@/test/utc-controls';
 /** @vitest-environment jsdom */
 import { useState } from 'react';
 import { record } from '@/test/operator-fixtures';
@@ -61,12 +62,12 @@ it('submits distinct functional and redundancy UTC observations and preserves th
   fireEvent.click(
     screen.getByLabelText('Use current UTC for functional observation')
   );
-  change('Functional observation UTC', '2026-10-17T15:00:00');
+  enterZulu('Functional observation', '2026-10-17T15:00:00');
   change('Redundancy', 'unavailable');
   fireEvent.click(
     screen.getByLabelText('Use current UTC for redundancy observation')
   );
-  change('Redundancy observation UTC', '2026-10-17T15:30:00');
+  enterZulu('Redundancy observation', '2026-10-17T15:30:00');
   change('Redundancy time precision', 'approximate');
   fireEvent.click(screen.getByRole('button', { name: 'Save assessment' }));
   expect(save.mock.calls[0][0].payload).toMatchObject({

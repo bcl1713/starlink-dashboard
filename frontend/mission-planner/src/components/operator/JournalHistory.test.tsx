@@ -72,14 +72,14 @@ it('exposes corrected intervals, retained planning times, scope, legs and attrib
     </QueryClientProvider>
   );
   const items = await screen.findAllByRole('listitem');
-  expect(items[0].textContent).toContain('2026-10-17 15:45:00 UTC');
-  expect(items[1].textContent).toContain('2026-10-17 15:35:00 UTC');
+  expect(items[0].textContent).toContain('2026-10-17 15:45:00 Zulu');
+  expect(items[1].textContent).toContain('2026-10-17 15:35:00 Zulu');
   expect(items[0].textContent).toContain('wrong-leg');
   expect(items[1].textContent).toContain('correct-leg');
   for (const item of items.slice(0, 2)) {
-    expect(item.textContent).toContain('2026-10-17 10:11:12.123456 UTC');
-    expect(item.textContent).toContain('2026-10-17 15:00:00 UTC');
-    expect(item.textContent).toContain('2026-10-17 15:50:00 UTC');
+    expect(item.textContent).toContain('2026-10-17 10:11:12.123456 Zulu');
+    expect(item.textContent).toContain('2026-10-17 15:00:00 Zulu');
+    expect(item.textContent).toContain('2026-10-17 15:50:00 Zulu');
     expect(item.textContent).toContain('approximate');
     expect(item.textContent).toContain('known');
     expect(item.textContent).toContain('Alex');
@@ -180,7 +180,7 @@ it('retains original revisions after a next-page failure and exposes explicit re
   await screen.findByRole('heading', { name: 'Restored' });
   expect(screen.getAllByRole('listitem')).toHaveLength(4);
   expect(
-    screen.getByText(/Version 1 · create · 2026-10-17 10:00:00 UTC/)
+    screen.getByText(/Version 1 · create · 2026-10-17 10:00:00 Zulu/)
   ).toBeTruthy();
   expect(screen.getByText(/Version 4 · restore/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'More history' })).toBeNull();

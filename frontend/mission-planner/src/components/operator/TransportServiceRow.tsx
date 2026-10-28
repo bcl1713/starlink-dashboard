@@ -1,10 +1,11 @@
+import { UtcDateTime } from './UtcDateTime';
 import type {
   ReportTime,
   TransportServiceRow as Row,
   TransportValue,
 } from '@/types/operatorTransport';
 import { emptyReportTime, replaceApplication } from './transportForms';
-import { issueButton, issueField, parseUtc, utcValue } from './issueForms';
+import { issueButton, issueField } from './issueForms';
 
 export function TransportReportTime({
   label,
@@ -17,26 +18,21 @@ export function TransportReportTime({
 }) {
   return (
     <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-      <label>
-        {label} UTC
-        <input
-          className={issueField}
-          type="datetime-local"
-          step="1"
-          value={utcValue(time.at)}
-          onChange={(e) => {
-            const at = parseUtc(e.target.value);
-            onChange({
-              at,
-              precision: at
-                ? time.precision === 'unknown'
-                  ? 'exact'
-                  : time.precision
-                : 'unknown',
-            });
-          }}
-        />
-      </label>
+      <UtcDateTime
+        label={label}
+        value={time.at}
+        onChange={(value) => {
+          const at = value ? new Date(value).toISOString() : null;
+          onChange({
+            at,
+            precision: at
+              ? time.precision === 'unknown'
+                ? 'exact'
+                : time.precision
+              : 'unknown',
+          });
+        }}
+      />
       <label>
         {label} precision
         <select

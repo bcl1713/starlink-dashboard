@@ -1,3 +1,4 @@
+import { enterZulu } from '@/test/utc-controls';
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import {
@@ -39,9 +40,7 @@ it('lets an operator create a missing observed event with a reason', async () =>
     </QueryClientProvider>
   );
   await screen.findByText(/Movement uncertain/);
-  fireEvent.change(screen.getByLabelText('Observed time (UTC)'), {
-    target: { value: '2026-01-01T00:00' },
-  });
+  enterZulu('Observed time', '2026-01-01T00:00');
   fireEvent.change(screen.getByLabelText('Reason'), {
     target: { value: 'Crew confirmation' },
   });

@@ -1,3 +1,4 @@
+import { enterZulu } from '@/test/utc-controls';
 /** @vitest-environment jsdom */
 import { useState } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -150,11 +151,11 @@ it('submits independent intended and requested reports, explicit precision, reas
   change('Intended transport 1', 'Ka');
   fireEvent.click(screen.getByLabelText('Requested 1'));
   change('Requested transport 1', 'X');
-  change('Requested time 1 UTC', '2026-10-17T15:00:00');
+  enterZulu('Requested time 1', '2026-10-17T15:00:00');
   change('Requested time 1 precision', 'approximate');
   fireEvent.click(screen.getByLabelText('Reported Applied 1'));
   change('Applied transport 1', 'Starshield');
-  change('Applied time 1 UTC', '2026-10-17T15:02:00');
+  enterZulu('Applied time 1', '2026-10-17T15:02:00');
   fireEvent.click(screen.getByLabelText('Operator Checked 1'));
   change('Check result 1', 'satisfactory');
   fireEvent.click(screen.getByRole('button', { name: 'Add service' }));

@@ -116,7 +116,7 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
-                    hour12: false,
+                    hourCycle: 'h23',
                     timeZone: 'UTC',
                   }
                 )}{' '}
@@ -127,10 +127,11 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
-                    hour12: false,
+                    hourCycle: 'h23',
                     timeZone: 'UTC',
                   }
-                )}
+                )}{' '}
+                Zulu
               </div>
             </div>
           </Popup>

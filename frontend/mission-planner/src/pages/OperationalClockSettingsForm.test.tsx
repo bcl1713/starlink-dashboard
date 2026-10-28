@@ -6,7 +6,7 @@ afterEach(() => {
   cleanup();
 });
 describe('OperationalClockSettingsForm', () => {
-  it('renders editable label and timezone fields for all four clocks', () => {
+  it('renders editable labels with a fixed Zulu timezone for all four clocks', () => {
     render(
       <OperationalClockSettingsForm
         clocks={[
@@ -25,7 +25,12 @@ describe('OperationalClockSettingsForm', () => {
     expect(screen.getByLabelText('Clock 1 label')).not.toBeNull();
     expect(screen.getByLabelText('Clock 1 timezone')).not.toBeNull();
     expect(screen.getByLabelText('Clock 4 label')).not.toBeNull();
-    expect(screen.getByLabelText('Clock 4 timezone')).not.toBeNull();
+    expect(
+      (screen.getByLabelText('Clock 4 timezone') as HTMLInputElement).value
+    ).toBe('UTC');
+    expect(
+      (screen.getByLabelText('Clock 4 timezone') as HTMLInputElement).readOnly
+    ).toBe(true);
   });
   it('updates a clock label while editing', () => {
     render(
@@ -71,15 +76,9 @@ describe('OperationalClockSettingsForm', () => {
     const labelInput = screen.getByLabelText(
       'Clock 3 label'
     ) as HTMLInputElement;
-    const timezoneInput = screen.getByLabelText(
-      'Clock 3 timezone'
-    ) as HTMLInputElement;
     const form = labelInput.closest('form') as HTMLFormElement;
     fireEvent.change(labelInput, {
       target: { value: 'Andrews AFB, MD' },
-    });
-    fireEvent.change(timezoneInput, {
-      target: { value: 'America/New_York' },
     });
     const submitEvent = new Event('submit', {
       bubbles: true,
@@ -90,9 +89,9 @@ describe('OperationalClockSettingsForm', () => {
     expect(onSave).toHaveBeenCalledWith({
       clocks: [
         { label: 'Zulu / UTC', time_zone: 'UTC' },
-        { label: 'Washington, DC', time_zone: 'America/New_York' },
-        { label: 'Andrews AFB, MD', time_zone: 'America/New_York' },
-        { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+        { label: 'Washington, DC', time_zone: 'UTC' },
+        { label: 'Andrews AFB, MD', time_zone: 'UTC' },
+        { label: 'Tokyo, JP', time_zone: 'UTC' },
       ],
     });
   });

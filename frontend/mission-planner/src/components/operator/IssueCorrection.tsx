@@ -1,15 +1,10 @@
+import { UtcDateTime } from './UtcDateTime';
 import type { SavedRecord, OperatorCommand } from '@/types/operator';
 import {
   useOperatorIssueDraft,
   type DraftIdentity,
 } from '@/hooks/api/useOperatorIssueDraft';
-import {
-  issueInput,
-  issueButton,
-  issueField,
-  utcValue,
-  parseUtc,
-} from './issueForms';
+import { issueInput, issueButton, issueField } from './issueForms';
 export function IssueCorrection({
   current,
   target,
@@ -87,18 +82,16 @@ export function IssueCorrection({
             onChange={(e) => setDraft({ ...draft, text: e.target.value })}
           />
         </label>
-        <label className="block">
-          Corrected occurred UTC
-          <input
-            type="datetime-local"
-            step="1"
-            className={issueField}
-            value={utcValue(draft.at)}
-            onChange={(e) =>
-              setDraft({ ...draft, at: parseUtc(e.target.value) })
-            }
-          />
-        </label>
+        <UtcDateTime
+          label="Corrected occurred"
+          value={draft.at}
+          onChange={(value) =>
+            setDraft({
+              ...draft,
+              at: value ? new Date(value).toISOString() : null,
+            })
+          }
+        />
         <button className={issueButton}>Save correction</button>
         <button type="button" className={issueButton} onClick={onClose}>
           Close correction

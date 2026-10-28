@@ -15,6 +15,7 @@ export function OperationalClock({
       aria-label={`${label} operational clock`}
     >
       <p className="operational-clock__label">{label}</p>
+      <p className="text-xs text-muted-foreground">Zulu</p>
       <time
         className="operational-clock__time"
         dateTime={new Date(currentTime).toISOString()}

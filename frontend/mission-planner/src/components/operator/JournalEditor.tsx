@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { UtcDateTime, type UtcParts } from './UtcDateTime';
+import { createNoteTime } from './noteTime';
 import type {
   JournalInput,
   OperatorCommand,
@@ -19,6 +21,8 @@ interface Props {
   onAuditNoteChange?: (value: string) => void;
   contextual?: boolean;
   saveDisabled?: boolean;
+  occurrenceParts?: UtcParts;
+  onOccurrencePartsChange?: (parts: UtcParts) => void;
 }
 const control =
   'min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2';
@@ -36,6 +40,8 @@ export function JournalEditor({
   onAuditNoteChange,
   contextual = false,
   saveDisabled = false,
+  occurrenceParts,
+  onOccurrencePartsChange,
 }: Props) {
   const [base] = useState(record);
   const [localDraft, setDraft] = useState<JournalInput>(() => ({
@@ -44,16 +50,7 @@ export function JournalEditor({
     mission_id: record?.mission_id ?? missionId,
     leg_id: record?.leg_id ?? null,
     scope: record?.scope ?? 'mission',
-    time: record
-      ? { ...record.time }
-      : {
-          occurred_at: null,
-          ended_at: null,
-          precision: 'unknown',
-          end_state: 'unknown',
-          planned_start_at: null,
-          planned_end_at: null,
-        },
+    time: record ? { ...record.time } : createNoteTime(),
     payload: record
       ? {
           ...record.payload,
@@ -93,26 +90,28 @@ export function JournalEditor({
       className="min-w-0 space-y-4 rounded-lg border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (disabled || saveDisabled || !draft.payload.title.trim()) return;
+        const title =
+          draft.payload.title.trim() ||
+          draft.payload.note.trim().split(/\r?\n/)[0].slice(0, 200);
+        if (disabled || saveDisabled || !title) return;
+        const body = { ...draft, payload: { ...draft.payload, title } };
         onSave(
           target
             ? {
                 operation: 'update',
                 record_id: target.record_id,
                 body: {
-                  ...draft,
+                  ...body,
                   expected_version: target.version,
                   ...(audit.trim() ? { audit_note: audit } : {}),
                 },
               }
-            : { operation: 'create', body: draft }
+            : { operation: 'create', body }
         );
       }}
     >
       <h2 className="text-lg font-semibold">
-        {target
-          ? `Edit entry · version ${target.version}`
-          : 'New journal entry'}
+        {target ? `Edit entry · version ${target.version}` : 'New note'}
       </h2>
       <fieldset
         disabled={disabled}
@@ -188,114 +187,155 @@ export function JournalEditor({
           </>
         )}
         <label className="block">
-          Entry type
-          <select
-            className={control}
-            value={draft.payload.entry_type}
-            onChange={(e) =>
-              payload({
-                entry_type: e.target.value as 'note' | 'call_observation',
-              })
-            }
-          >
-            <option value="note">Note</option>
-            <option value="call_observation">Call observation</option>
-          </select>
-        </label>
-        <label className="block">
-          Title
-          <input
-            name="title"
-            className={control}
-            required
-            maxLength={200}
-            value={draft.payload.title}
-            onChange={(e) => payload({ title: e.target.value })}
-          />
-        </label>
-        <label className="block">
           Note
           <textarea
             className={control}
             rows={5}
             maxLength={8000}
             value={draft.payload.note}
-            onChange={(e) => payload({ note: e.target.value })}
+            onChange={(e) =>
+              payload({
+                note: e.target.value,
+                ...(!target && draft.payload.entry_type === 'note'
+                  ? {
+                      title: e.target.value
+                        .trim()
+                        .split(/\r?\n/)[0]
+                        .slice(0, 200),
+                    }
+                  : {}),
+              })
+            }
           />
         </label>
-        <label className="block">
-          Time precision
-          <select
-            className={control}
-            value={draft.time.precision}
-            onChange={(e) =>
-              time(
-                e.target.value === 'unknown'
-                  ? {
-                      precision: 'unknown',
-                      occurred_at: null,
-                      ended_at: null,
-                      end_state: 'unknown',
-                    }
-                  : { precision: e.target.value as 'exact' | 'approximate' }
-              )
-            }
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm">
+            Occurrence:{' '}
+            {draft.time.occurred_at
+              ? `${draft.time.occurred_at.slice(0, 16).replace('T', ' ')} Zulu`
+              : 'Unknown'}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 rounded-md border px-3"
+            onClick={() => {
+              const nextTime = createNoteTime();
+              onOccurrencePartsChange?.({
+                date: nextTime.occurred_at!.slice(0, 10),
+                time: nextTime.occurred_at!.slice(11, 16),
+              });
+              change({ time: nextTime });
+            }}
           >
-            <option value="unknown">Unknown</option>
-            <option value="approximate">Approximate</option>
-            <option value="exact">Exact</option>
-          </select>
-        </label>
-        <p className="text-sm text-muted-foreground">
-          All times are UTC. Enter YYYY-MM-DDTHH:mm:ss.ssssssZ; leave unknown
-          times blank.
-        </p>
-        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-          <label>
-            Occurred at (UTC)
-            <input
-              className={control}
-              type="text"
-              placeholder="2026-10-17T12:00:00Z"
-              disabled={draft.time.precision === 'unknown'}
-              required={draft.time.precision !== 'unknown'}
-              pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z"
-              value={draft.time.occurred_at ?? ''}
-              onChange={(e) => time({ occurred_at: e.target.value || null })}
-            />
-          </label>
-          <label>
-            End state
-            <select
-              className={control}
-              disabled={draft.time.precision === 'unknown'}
-              value={draft.time.end_state}
-              onChange={(e) =>
-                time({
-                  end_state: e.target
-                    .value as JournalInput['time']['end_state'],
-                  ...(e.target.value === 'known' ? {} : { ended_at: null }),
-                })
-              }
-            >
-              <option value="unknown">Unknown</option>
-              <option value="instant">Instant</option>
-              <option value="ongoing">Ongoing</option>
-              <option value="known">Known</option>
-            </select>
-          </label>
-          {draft.time.end_state === 'known' && (
-            <label>
-              Ended at (UTC)
-              <input
+            Now
+          </button>
+        </div>
+        <details>
+          <summary className="min-h-11 cursor-pointer">
+            Backdate / change occurrence
+          </summary>
+          <UtcDateTime
+            label="Occurred at"
+            value={draft.time.occurred_at}
+            parts={occurrenceParts}
+            onPartsChange={onOccurrencePartsChange}
+            onChange={(value) =>
+              time({
+                occurred_at: value,
+                ...(!target
+                  ? {
+                      precision: value ? 'exact' : 'unknown',
+                      end_state: value ? 'instant' : 'unknown',
+                    }
+                  : {}),
+              })
+            }
+          />
+        </details>
+        <details>
+          <summary className="min-h-11 cursor-pointer">
+            Historical entry details
+          </summary>
+          <div className="space-y-3">
+            <label className="block">
+              Entry type
+              <select
                 className={control}
-                required
-                value={draft.time.ended_at ?? ''}
-                onChange={(e) => time({ ended_at: e.target.value || null })}
+                value={draft.payload.entry_type}
+                onChange={(e) =>
+                  payload({
+                    entry_type: e.target.value as 'note' | 'call_observation',
+                  })
+                }
+              >
+                <option value="note">Note</option>
+                <option value="call_observation">Call observation</option>
+              </select>
+            </label>
+            <label className="block">
+              Title
+              <input
+                name="title"
+                className={control}
+                maxLength={200}
+                value={draft.payload.title}
+                onChange={(e) => payload({ title: e.target.value })}
               />
             </label>
-          )}
-        </div>
+            <label className="block">
+              Time precision
+              <select
+                className={control}
+                value={draft.time.precision}
+                onChange={(e) =>
+                  time(
+                    e.target.value === 'unknown'
+                      ? {
+                          precision: 'unknown',
+                          occurred_at: null,
+                          ended_at: null,
+                          end_state: 'unknown',
+                        }
+                      : { precision: e.target.value as 'exact' | 'approximate' }
+                  )
+                }
+              >
+                <option value="unknown">Unknown</option>
+                <option value="approximate">Approximate</option>
+                <option value="exact">Exact</option>
+              </select>
+            </label>
+            <label>
+              End state
+              <select
+                className={control}
+                disabled={draft.time.precision === 'unknown'}
+                value={draft.time.end_state}
+                onChange={(e) =>
+                  time({
+                    end_state: e.target
+                      .value as JournalInput['time']['end_state'],
+                    ...(e.target.value === 'known' ? {} : { ended_at: null }),
+                  })
+                }
+              >
+                <option value="unknown">Unknown</option>
+                <option value="instant">Instant</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="known">Known</option>
+              </select>
+            </label>
+
+            {draft.time.end_state === 'known' && (
+              <UtcDateTime
+                label="Ended at"
+                value={draft.time.ended_at}
+                required
+                onChange={(value) => time({ ended_at: value })}
+              />
+            )}
+          </div>
+        </details>
         {target && (
           <label className="block">
             Audit note (optional)

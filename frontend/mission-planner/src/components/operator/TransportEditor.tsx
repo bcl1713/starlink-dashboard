@@ -1,3 +1,4 @@
+import { UtcDateTime } from './UtcDateTime';
 import { useState } from 'react';
 import type { TransportDraft } from '@/types/operatorTransport';
 import type { OperatorCommand, SavedRecord, Scope } from '@/types/operator';
@@ -11,7 +12,7 @@ import {
   toTransportCommand,
 } from './transportForms';
 import { TransportServiceRow } from './TransportServiceRow';
-import { issueButton, issueField, parseUtc, utcValue } from './issueForms';
+import { issueButton, issueField } from './issueForms';
 
 export function TransportEditor({
   missionId,
@@ -263,27 +264,23 @@ export function TransportForm({
             )}
             {(['planned_start_at', 'planned_end_at'] as const).map(
               (name, index) => (
-                <label key={name}>
-                  Planned change {index ? 'end' : 'start'} UTC
-                  <input
-                    className={issueField}
-                    type="datetime-local"
-                    step="1"
-                    value={utcValue(input.time[name])}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        input: {
-                          ...input,
-                          time: {
-                            ...input.time,
-                            [name]: parseUtc(e.target.value),
-                          },
+                <UtcDateTime
+                  key={name}
+                  label={`Planned change ${index ? 'end' : 'start'}`}
+                  value={input.time[name]}
+                  onChange={(value) =>
+                    setDraft({
+                      ...draft,
+                      input: {
+                        ...input,
+                        time: {
+                          ...input.time,
+                          [name]: value ? new Date(value).toISOString() : null,
                         },
-                      })
-                    }
-                  />
-                </label>
+                      },
+                    })
+                  }
+                />
               )
             )}
             {records !== undefined ? (

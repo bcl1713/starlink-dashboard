@@ -55,9 +55,9 @@ it('selects the next scheduled requirement by backend UTC time, excluding comple
   );
   const section = screen.getByRole('region', { name: 'Next requirement' });
   expect(within(section).getByText('Next call')).toBeTruthy();
-  expect(within(section).getByText(/16:30:00 UTC/)).toBeTruthy();
+  expect(within(section).getByText(/16:30:00 Zulu/)).toBeTruthy();
   expect(within(section).queryByText('Finished')).toBeNull();
-  expect(screen.getByText(/Snapshot.*16:00:00 UTC/)).toBeTruthy();
+  expect(screen.getByText(/Snapshot.*16:00:00 Zulu/)).toBeTruthy();
 });
 it('keeps modeled risks separate from reported issues and discloses unresolved and stale data', () => {
   const rows = page([
@@ -232,7 +232,7 @@ it('shows delayed preparation from saved lead and excludes terminal call reminde
   expect(
     screen.getByRole('region', { name: 'Next requirement' }).textContent
   ).toContain('Original');
-  expect(screen.getByText(/Prepare:.*11:05:00 UTC/)).toBeTruthy();
+  expect(screen.getByText(/Prepare:.*11:05:00 Zulu/)).toBeTruthy();
 });
 it('labels overdue tentative and delayed calls with their actual recorded statuses', () => {
   render(

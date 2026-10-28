@@ -1,3 +1,4 @@
+import { enterZulu } from '@/test/utc-controls';
 /** @vitest-environment jsdom */
 import {
   cleanup,
@@ -281,9 +282,7 @@ it('preserves deliberate retrospective issue time instead of capturing current U
   });
   fireEvent.click(screen.getByText('Optional issue details'));
   fireEvent.click(screen.getByLabelText('Use current backend UTC when saved'));
-  fireEvent.change(screen.getByLabelText('Action occurred UTC (optional)'), {
-    target: { value: '2026-10-17T10:00:00' },
-  });
+  enterZulu('Action occurred', '2026-10-17T10:00:00');
   await waitFor(() =>
     expect(
       screen

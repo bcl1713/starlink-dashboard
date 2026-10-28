@@ -17,7 +17,9 @@ export function toISO8601(localDateTime: string): string {
   const normalized = localDateTime.replace(' ', 'T');
 
   // Parse and convert to ISO 8601 with seconds and Z suffix
-  const date = new Date(normalized);
+  const date = new Date(
+    /(?:Z|[+-]\d{2}:?\d{2})$/.test(normalized) ? normalized : normalized + 'Z'
+  );
   return date.toISOString();
 }
 
@@ -53,13 +55,14 @@ export function formatTime24Hour(iso8601: string): string {
 
   // Use toLocaleString with explicit 24-hour format options
   // hour12: false ensures 24-hour format (14:00 instead of 2:00 PM)
-  return date.toLocaleString('en-US', {
+  return `${date.toLocaleString('en-US', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false,
-  });
+    hourCycle: 'h23',
+  })} Zulu`;
 }

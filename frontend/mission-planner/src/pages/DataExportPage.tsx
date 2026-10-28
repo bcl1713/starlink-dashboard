@@ -1,6 +1,6 @@
+import { UtcDateTime } from '@/components/operator/UtcDateTime';
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import {
   Card,
@@ -115,7 +115,9 @@ export function DataExportPage() {
 
   // Validate that start is before end
   const isValid =
-    startTime && endTime && new Date(startTime) < new Date(endTime);
+    startTime &&
+    endTime &&
+    Date.parse(toZuluISO(startTime)) < Date.parse(toZuluISO(endTime));
 
   return (
     <div className="app-page">
@@ -135,27 +137,18 @@ export function DataExportPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Start Time */}
-          <div className="space-y-2">
-            <Label htmlFor="start-time">Start Time (Z)</Label>
-            <Input
-              id="start-time"
-              type="datetime-local"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-          </div>
-
-          {/* End Time */}
-          <div className="space-y-2">
-            <Label htmlFor="end-time">End Time (Z)</Label>
-            <Input
-              id="end-time"
-              type="datetime-local"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
-          </div>
+          <UtcDateTime
+            label="Start time"
+            value={startTime ? toZuluISO(startTime) : null}
+            required
+            onChange={(value) => setStartTime(value?.slice(0, 16) ?? '')}
+          />
+          <UtcDateTime
+            label="End time"
+            value={endTime ? toZuluISO(endTime) : null}
+            required
+            onChange={(value) => setEndTime(value?.slice(0, 16) ?? '')}
+          />
 
           {/* Step Interval */}
           <div className="space-y-2">
