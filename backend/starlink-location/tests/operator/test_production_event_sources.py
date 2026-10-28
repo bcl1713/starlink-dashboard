@@ -488,3 +488,43 @@ def test_validation_reuses_parsed_inputs_but_detects_other_active_missions(
     storage.save_mission_v2(other)
     with pytest.raises(OperatorError):
         adapter._validate("demo-mission", first.revision)
+
+
+def test_live_feed_keeps_active_leg_authority_when_future_leg_has_no_timeline(
+    api, production, clock
+):
+    """Mission-wide partial coverage is not an active-leg source failure."""
+    from app.operator.production_event_sources import ProductionEventSources
+    from tests.operator.api_helpers import BASE
+
+    adapter, *_ = production
+    mission = storage.load_mission_v2("demo-mission")
+    mission.legs.append(
+        mission.legs[0].model_copy(update={"id": "future-leg", "is_active": False})
+    )
+    storage.save_mission_v2(mission)
+    api.app.state.operator_event_source_factory = (
+        lambda runtime: ProductionEventSources(
+            runtime.service,
+            clock=runtime.clock,
+            publication=runtime.event_publication,
+            route_manager=adapter.route_manager,
+            poi_manager=adapter.poi_manager,
+            config_provider=adapter.config_provider,
+            telemetry_provider=adapter.telemetry_provider,
+            context_provider=adapter.context_provider,
+        )
+    )
+    response = api.get(BASE + "/events", params={"mission_id": mission.id})
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["coverage"] == "partial"
+    sources = {source["source"]: source for source in snapshot["sources"]}
+    assert sources["model:leg-a"]["freshness"] == "fresh"
+    assert sources["model:leg-a"]["aligned"] is True
+    assert sources["model:future-leg"]["freshness"] == "unknown"
+    assert sources["model:future-leg"]["reason"] == "Timeline unavailable"
+    assert any(
+        event["leg_id"] == "leg-a" and event["notification"]["available"]
+        for event in snapshot["events"]
+    )
