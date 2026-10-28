@@ -986,7 +986,10 @@ it('keeps a departed confirmation and editor relationship absent after navigatin
   const retained = registry
     .listDrafts()
     .find((d) => d.input.record_type === 'call')!;
-  expect(retained.input.payload.conference_id).toBe(saved.record_id);
+  expect(retained.input.payload).toHaveProperty(
+    'conference_id',
+    saved.record_id
+  );
   baselineH = 52;
   delta = {
     ...page([]),
