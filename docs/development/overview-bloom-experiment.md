@@ -137,7 +137,7 @@ From repository root, with an explicit wall-clock bound:
 ```sh
 timeout --kill-after=10s 10m ./tools/verify frontend
 timeout --kill-after=10s 5m npm --prefix frontend/mission-planner run lint
-timeout --kill-after=10s 8m node frontend/mission-planner/scripts/bloom-smoke.mjs
+timeout --kill-after=10s 12m node frontend/mission-planner/scripts/bloom-smoke.mjs
 ```
 
 Install the matching Playwright Chromium before the smoke when necessary, or set

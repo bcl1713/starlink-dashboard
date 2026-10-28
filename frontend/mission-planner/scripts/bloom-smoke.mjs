@@ -1,3 +1,7 @@
+import {
+  stopExperimentServer,
+  downloadAfterClick,
+} from './bloom-lifecycle.mjs';
 import { verifyPoiPicking } from './bloom-picking-smoke.mjs';
 import { chromium } from '@playwright/test';
 import { spawn, execFileSync } from 'node:child_process';
@@ -52,20 +56,12 @@ let cleaning;
 async function cleanup() {
   if (cleaning) return cleaning;
   cleaning = (async () => {
+    // Stop the detached HTTP child first, even if closing Chromium rejects
+    // outstanding page/download operations during a timeout.
+    await stopExperimentServer(child);
     await context?.close().catch(() => {});
     await browser?.close().catch(() => {});
     await browserServer?.close().catch(() => {});
-    if (child && child.exitCode === null) {
-      child.kill('SIGTERM');
-      await Promise.race([
-        new Promise((r) => child.once('exit', r)),
-        new Promise((r) => setTimeout(r, 3000)),
-      ]);
-      if (child.exitCode === null) {
-        process.kill(-child.pid, 'SIGKILL');
-        await new Promise((r) => child.once('exit', r));
-      }
-    }
     ownership.cleanedAt = new Date().toISOString();
     record();
   })();
@@ -302,16 +298,19 @@ try {
     .filter({ hasText: 'Capture series complete' })
     .waitFor({ timeout: 240000 });
   console.log('Diagnostic timing series complete');
-  const pendingDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export JSON', exact: true }).click();
-  const download = await pendingDownload;
+  const download = await downloadAfterClick(
+    () => page.waitForEvent('download'),
+    () => page.getByRole('button', { name: 'Export JSON', exact: true }).click()
+  );
   await download.saveAs(resolve(evidence, 'diagnostic-runs.json'));
   results.checks.push(
     'production-built diagnostic/output and bounded-B timing captures complete and export JSON (software smoke only)'
   );
-  const csvDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
-  await (await csvDownload).saveAs(resolve(evidence, 'diagnostic-runs.csv'));
+  const csvDownload = await downloadAfterClick(
+    () => page.waitForEvent('download'),
+    () => page.getByRole('button', { name: 'Export CSV', exact: true }).click()
+  );
+  await csvDownload.saveAs(resolve(evidence, 'diagnostic-runs.csv'));
   results.browserVersion = browser.version();
   writeFileSync(
     resolve(evidence, 'visual-settings.json'),

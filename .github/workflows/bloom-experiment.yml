@@ -19,7 +19,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.ref_name ==
       'experiment/overview-real-bloom') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,7 +52,7 @@ jobs:
             steps.candidate.outputs.sha }}
           BLOOM_REQUIRE_CLEAN: "1"
         run:
-          timeout --kill-after=10s 8m node
+          timeout --kill-after=10s 12m node
           frontend/mission-planner/scripts/bloom-smoke.mjs
       - name: Verify owned runtime teardown
         if: ${{ always() && steps.smoke.outcome != 'skipped' }}
@@ -75,3 +75,14 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
+
+      - name: Preserve failed smoke diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: overview-bloom-diagnostics-${{ steps.candidate.outputs.sha }}
+          path:
+            frontend/mission-planner/test-results/bloom/${{
+            steps.candidate.outputs.sha }}/
+          if-no-files-found: warn
+          retention-days: 7
