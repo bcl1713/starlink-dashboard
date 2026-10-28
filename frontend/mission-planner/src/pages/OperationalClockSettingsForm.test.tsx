@@ -6,7 +6,7 @@ afterEach(() => {
   cleanup();
 });
 describe('OperationalClockSettingsForm', () => {
-  it('renders editable labels with a fixed Zulu timezone for all four clocks', () => {
+  it('renders saved IANA time zones as editable fields', () => {
     render(
       <OperationalClockSettingsForm
         clocks={[
@@ -27,10 +27,10 @@ describe('OperationalClockSettingsForm', () => {
     expect(screen.getByLabelText('Clock 4 label')).not.toBeNull();
     expect(
       (screen.getByLabelText('Clock 4 timezone') as HTMLInputElement).value
-    ).toBe('UTC');
+    ).toBe('Asia/Tokyo');
     expect(
       (screen.getByLabelText('Clock 4 timezone') as HTMLInputElement).readOnly
-    ).toBe(true);
+    ).toBe(false);
   });
   it('updates a clock label while editing', () => {
     render(
@@ -56,7 +56,7 @@ describe('OperationalClockSettingsForm', () => {
     });
     expect(labelInput.value).toBe('Zulu Custom');
   });
-  it('submits the current edited clock collection', () => {
+  it('submits edited labels and time zones while preserving other saved zones', () => {
     const onSave = vi.fn();
     render(
       <OperationalClockSettingsForm
@@ -80,6 +80,9 @@ describe('OperationalClockSettingsForm', () => {
     fireEvent.change(labelInput, {
       target: { value: 'Andrews AFB, MD' },
     });
+    fireEvent.change(screen.getByLabelText('Clock 3 timezone'), {
+      target: { value: 'America/New_York' },
+    });
     const submitEvent = new Event('submit', {
       bubbles: true,
       cancelable: true,
@@ -89,9 +92,9 @@ describe('OperationalClockSettingsForm', () => {
     expect(onSave).toHaveBeenCalledWith({
       clocks: [
         { label: 'Zulu / UTC', time_zone: 'UTC' },
-        { label: 'Washington, DC', time_zone: 'UTC' },
-        { label: 'Andrews AFB, MD', time_zone: 'UTC' },
-        { label: 'Tokyo, JP', time_zone: 'UTC' },
+        { label: 'Washington, DC', time_zone: 'America/New_York' },
+        { label: 'Andrews AFB, MD', time_zone: 'America/New_York' },
+        { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
       ],
     });
   });
