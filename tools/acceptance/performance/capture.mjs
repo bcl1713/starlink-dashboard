@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 const BODY_LIMIT = 64 * 1024;
 const BODY_TIMEOUT_MS = 5000;
 const PHASES = ["warmup", "measured", "post", "teardown"];
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const RECORD_PATHS = new Set([
   "/api/v2/operator/records",
   "/api/v2/operator/record-changes",
@@ -186,6 +187,32 @@ export function createApiCapture({ append, clock }) {
     if (allowedGPS503) phases[entry.startedPhase].allowedGPS503++;
     else if (entry.status >= 400) phases[entry.startedPhase].http_errors++;
     entry.allowedGPS503 = allowedGPS503;
+    if (REDIRECT_STATUSES.has(entry.status)) {
+      const headers = response.headers();
+      entry.redirect = true;
+      entry.classification = "http_redirect";
+      entry.redirectLocation = headers.location ?? null;
+      const body = {
+        contentType: headers["content-type"] ?? null,
+        bytes: null,
+        sha256: null,
+        truncated: false,
+        error: null,
+        unavailableByProtocol: true,
+        notCapturedReason: "chromium_redirect_body_unavailable",
+      };
+      // Chromium does not expose redirect bodies through Playwright. Preserve
+      // the response/chain metadata rather than requesting an unavailable body.
+      if (
+        typeof entry.redirectLocation !== "string" ||
+        !entry.redirectLocation.trim()
+      ) {
+        body.error = "Redirect response is missing its Location header";
+        observerError(entry.startedPhase);
+      }
+      entry.bodyPending = Promise.resolve(body);
+      return;
+    }
     const metadata =
       entry.method === "GET" &&
       entry.status === 200 &&
@@ -226,7 +253,9 @@ export function createApiCapture({ append, clock }) {
         outcome =
           entry.status >= 400 && !entry.allowedGPS503
             ? "http_error"
-            : "success";
+            : entry.redirect
+              ? "redirect"
+              : "success";
       const at = clock();
       const page = pages.get(entry.page);
       if (!failed && !body?.error && entry.method === "GET") {
@@ -262,6 +291,7 @@ export function createApiCapture({ append, clock }) {
           status: entry.status ?? null,
           outcome,
           classification: entry.classification ?? null,
+          redirectLocation: entry.redirectLocation ?? null,
           errorText,
           cancellationCause:
             outcome === "client_cancellation"
@@ -343,6 +373,7 @@ export function createApiCapture({ append, clock }) {
         guard((req) => {
           const url = readUrl(req);
           if (!url || requests.has(req)) return;
+          const redirectedFrom = req.redirectedFrom?.();
           let frameURL = null;
           try {
             frameURL = req.frame().url();
@@ -363,6 +394,8 @@ export function createApiCapture({ append, clock }) {
             url: req.url(),
             query: Object.fromEntries(url.searchParams),
             sourceIdentity: url.searchParams.get("source_identity"),
+            redirectedFromId: requests.get(redirectedFrom)?.id ?? null,
+            redirectedFromURL: redirectedFrom?.url() ?? null,
             frameURL,
             pageURL: page.url(),
           };

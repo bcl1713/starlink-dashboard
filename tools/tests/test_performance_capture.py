@@ -18,8 +18,9 @@ page.url = () => 'http://fixture/operator';
 capture.attach(page, 1);
 const health = {store_id:'store-a', api_epoch:'epoch-a', source_mode:'simulation',
   simulation_run_id:'run-a', mission_journal:true, operating_context_id:'context-a', replay_run_id:null};
-function request(path, method='GET') {
+function request(path, method='GET', redirectedFrom=null) {
   const req = {url: () => 'http://fixture'+path, method: () => method,
+    redirectedFrom: () => redirectedFrom,
     frame: () => ({url: () => 'http://fixture/operator'}),
     failure: () => req.failureValue, response: async () => req.res ?? null};
   page.emit('request', req);
@@ -246,6 +247,62 @@ response(req,200,{...health,operating_context_id:null,simulation_run_id:undefine
 await capture.drain(100);
 assert.equal(capture.summary().qualification_clean,false);
 assert.match(terminals()[0].body.error,/identity/);
+""",
+    "canonical_redirect_chain_records_location_without_reading_protocol_body": r"""
+for (const status of [301,302,303,307,308]) {
+  const previous=terminals().length;
+  const initial=request('/api/routes?redirect_test='+status);
+  response(initial,status,null,{headers:{location:'/api/routes/?redirect_test='+status},
+    body:async()=>{throw Error('Response body is unavailable for redirect responses')}});
+  page.emit('requestfinished',initial);
+  const followed=request('/api/routes/?redirect_test='+status,'GET',initial);
+  response(followed,200,{routes:[]});page.emit('requestfinished',followed);
+  await capture.drain(100);
+  const redirect=terminals().slice(previous).find(row=>row.status===status);
+  const success=terminals().slice(previous).find(row=>row.status===200);
+  assert.equal(redirect.status,status);
+  assert.equal(redirect.outcome,'redirect');
+  assert.equal(redirect.classification,'http_redirect');
+  assert.equal(redirect.redirectLocation,'/api/routes/?redirect_test='+status);
+  assert.equal(redirect.body.unavailableByProtocol,true);
+  assert.equal(redirect.body.notCapturedReason,'chromium_redirect_body_unavailable');
+  assert.equal(redirect.body.bytes,null);assert.equal(redirect.body.sha256,null);
+  assert.equal(redirect.body.text,undefined);assert.equal(redirect.body.error,null);
+  assert.equal(success.outcome,'success');
+  assert.equal(success.redirectedFromId,redirect.id);
+  assert.equal(rows.find(row=>row.event==='start'&&row.id===success.id).redirectedFromId,redirect.id);
+}
+assert.equal(capture.summary().phases.measured.started,10);
+assert.equal(capture.summary().phases.measured.terminal,10);
+assert.equal(capture.summary().phases.measured.http_errors,0);
+assert.equal(capture.summary().capture_errors,0);
+assert.equal(capture.summary().qualification_clean,true);
+assert.doesNotThrow(()=>capture.assertHealthy());
+""",
+    "redirect_without_location_cannot_look_like_complete_capture": r"""
+const req=request('/api/routes');
+response(req,307,null,{body:async()=>{throw Error('must not request redirect body')}});
+page.emit('requestfinished',req);await capture.drain(100);
+assert.equal(capture.summary().capture_errors,1);
+assert.equal(capture.summary().qualification_clean,false);
+assert.match(terminals()[0].body.error,/Location/);
+assert.throws(()=>capture.assertHealthy(),/capture|observer/);
+""",
+    "location_header_does_not_hide_http_errors_or_other_body_failures": r"""
+const conflict=request('/api/v2/operator/records');
+response(conflict,409,{error:{code:'store_context_changed'}},{headers:{location:'/api/routes/'}});
+page.emit('requestfinished',conflict);await capture.drain(100);
+assert.equal(terminals()[0].outcome,'http_error');
+assert.equal(terminals()[0].classification,'store_context_changed');
+assert.ok(terminals()[0].body.text);
+assert.equal(capture.summary().phases.measured.http_errors,1);
+const notModified=request('/api/routes');
+response(notModified,304,null,{headers:{location:'/api/routes/'},
+  body:async()=>{throw Error('ordinary body retrieval failure')}});
+page.emit('requestfinished',notModified);await capture.drain(100);
+assert.equal(capture.summary().capture_errors,1);
+assert.match(terminals()[1].body.error,/ordinary body retrieval failure/);
+assert.equal(capture.summary().qualification_clean,false);
 """,
 }
 
