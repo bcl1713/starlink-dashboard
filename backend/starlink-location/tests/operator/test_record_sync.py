@@ -196,3 +196,69 @@ def test_replay_replacement_rejects_checkpoint_even_when_operating_context_is_un
     finally:
         del api.app.state.operator_binding
         binding.close()
+
+
+@pytest.mark.parametrize("return_to_a", [False, True])
+def test_mission_departures_and_returns_across_frozen_pages(
+    api, record_data, return_to_a
+):
+    moved = create(api, record_data).json()["saved_records"][0]
+    checkpoint = moved["journal_seq"]
+    moved_path = BASE + "/records/" + moved["record_id"]
+    response = api.put(
+        moved_path,
+        json=dict(record_data, mission_id="other-mission", expected_version=1),
+        headers=headers(api),
+    )
+    assert response.status_code == 200
+    # Both a reader that already saw A and a newly catching-up reader must
+    # receive a departure, never the obsolete A revision or B's payload.
+    for after in (0, checkpoint):
+        delta = changes(api, after).json()
+        assert delta["items"] == []
+        assert delta.get("departures") == [
+            {
+                "record_id": moved["record_id"],
+                "version": 2,
+                "journal_seq": 2,
+            }
+        ]
+    for _ in range(3):
+        create(api, record_data)
+    first = changes(api, checkpoint, limit=1).json()
+    assert first["cursor"]
+    # Membership is pinned to H even if the record returns during pagination.
+    if return_to_a:
+        response = api.put(
+            moved_path, json=dict(record_data, expected_version=2), headers=headers(api)
+        )
+        assert response.status_code == 200
+    pages = [first]
+    while pages[-1]["cursor"]:
+        pages.append(
+            changes(api, checkpoint, limit=1, cursor=pages[-1]["cursor"]).json()
+        )
+    assert all(p["H"] == 5 for p in pages)
+    assert sum(len(p["items"]) + len(p.get("departures", [])) for p in pages) == 4
+    assert [d for p in pages for d in p.get("departures", [])] == [
+        {
+            "record_id": moved["record_id"],
+            "version": 2,
+            "journal_seq": 2,
+        }
+    ]
+    if return_to_a:
+        tail = changes(api, 5).json()
+        assert tail.get("departures") == []
+        assert [
+            (r["record"]["record_id"], r["record"]["version"]) for r in tail["items"]
+        ] == [(moved["record_id"], 3)]
+        full = changes(api, checkpoint, limit=1).json()
+        all_items = list(full["items"])
+        while full["cursor"]:
+            full = changes(api, checkpoint, limit=1, cursor=full["cursor"]).json()
+            all_items.extend(full["items"])
+            assert full.get("departures") == []
+        assert [(r["record"]["record_id"], r["record"]["version"]) for r in all_items][
+            -1
+        ] == (moved["record_id"], 3)

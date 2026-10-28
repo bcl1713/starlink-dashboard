@@ -24,7 +24,7 @@ import {
 } from '@/services/transportAvailability';
 import * as timelineApi from '@/services/missionTimeline';
 import { eventSnapshot, eventFixture } from '@/test/operator-event-fixtures';
-import { health, page, record } from '@/test/operator-fixtures';
+import { failure, health, page, record } from '@/test/operator-fixtures';
 const missionState = vi.hoisted(() => ({
   pending: false,
   error: false,
@@ -367,94 +367,148 @@ it.each(['now', 'communications'])(
   }
 );
 
-it('shows pending immediately and the authoritative accepted conference while list refresh is still waiting', async () => {
-  missionState.mission = {
-    id: 'mission-a',
-    name: 'Fictional mission',
-    legs: [],
-  };
-  let acknowledged = false;
-  let accept!: (value: {
-    schema_version: 1;
-    command_id: string;
-    saved_records: (typeof accepted)[];
-  }) => void;
-  const accepted = {
-    ...record,
-    ...conferenceDraft('mission-a'),
-    payload: { ...conferenceDraft('mission-a').payload, title: 'FAST BRIDGE' },
-  };
-  const releaseReads: (() => void)[] = [];
-  const reads = vi
-    .spyOn(api, 'readOperatorRecords')
-    .mockImplementation(async () => {
-      if (acknowledged)
-        await new Promise<void>((resolve) => releaseReads.push(resolve));
-      return page([]);
-    });
-  vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
-    page([accepted]).items[0]
-  );
-  const save = vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        accept = resolve;
-      })
-  );
-  const { client } = mount(
-    '/operator?workspace=1&mission_id=mission-a&view=communications',
-    true
-  );
-  const createButton = (
-    await screen.findAllByRole('button', { name: 'Create Conference' })
-  )[0] as HTMLButtonElement;
-  await waitFor(() => expect(createButton.disabled).toBe(false));
-  fireEvent.click(createButton);
-  fireEvent.change(await screen.findByLabelText('Conference name (optional)'), {
-    target: { value: 'FAST BRIDGE' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
-  expect(
-    screen.getAllByText(/saving.*FAST BRIDGE|FAST BRIDGE.*saving/).length
-  ).toBeGreaterThan(0);
-  expect(screen.queryByRole('heading', { name: 'FAST BRIDGE' })).toBeNull();
-  const started = performance.now();
-  try {
-    await act(async () => {
-      acknowledged = true;
-      accept({
-        schema_version: 1,
-        command_id: 'fast-receipt',
-        saved_records: [accepted],
+it.each(['departure', 'rebaseline'])(
+  'shows an authoritative accepted conference while list refresh waits, then suppresses departed membership (%s)',
+  async (recovery) => {
+    missionState.mission = {
+      id: 'mission-a',
+      name: 'Fictional mission',
+      legs: [],
+    };
+    let acknowledged = false;
+    let accept!: (value: {
+      schema_version: 1;
+      command_id: string;
+      saved_records: (typeof accepted)[];
+    }) => void;
+    const accepted = {
+      ...record,
+      ...conferenceDraft('mission-a'),
+      payload: {
+        ...conferenceDraft('mission-a').payload,
+        title: 'FAST BRIDGE',
+      },
+    };
+    let delta = { ...page([]), H: 0 };
+    vi.spyOn(api, 'readOperatorChanges').mockImplementation(async () => delta);
+    const releaseReads: (() => void)[] = [];
+    const reads = vi
+      .spyOn(api, 'readOperatorRecords')
+      .mockImplementation(async () => {
+        if (acknowledged)
+          await new Promise<void>((resolve) => releaseReads.push(resolve));
+        return { ...page([]), H: 0 };
       });
-    });
-    await screen.findByRole('heading', { name: 'FAST BRIDGE' });
-    expect(performance.now() - started).toBeLessThan(300);
-    expect(save).toHaveBeenCalledTimes(1);
-    expect(releaseReads.length).toBeGreaterThan(0);
-    await waitFor(() =>
-      expect(
-        (screen.getByRole('button', { name: 'Establish' }) as HTMLButtonElement)
-          .disabled
-      ).toBe(false)
+    vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
+      page([accepted]).items[0]
     );
-    const snapshot = client
-      .getQueryCache()
-      .findAll({ queryKey: ['operator-records', 'mission-a'] })
-      .find(
-        (query) =>
-          query.queryKey[3] === 'workspace-all' &&
-          query.state.data !== undefined
-      )?.state.data;
-    expect(snapshot).toMatchObject({ pages: [{ items: [] }] });
-    expect(reads).toHaveBeenCalled();
-  } finally {
-    await act(async () => {
-      releaseReads.forEach((resolve) => resolve());
-    });
+    const save = vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          accept = resolve;
+        })
+    );
+    const { client } = mount(
+      '/operator?workspace=1&mission_id=mission-a&view=communications',
+      true
+    );
+    const createButton = (
+      await screen.findAllByRole('button', { name: 'Create Conference' })
+    )[0] as HTMLButtonElement;
+    await waitFor(() => expect(createButton.disabled).toBe(false));
+    fireEvent.click(createButton);
+    fireEvent.change(
+      await screen.findByLabelText('Conference name (optional)'),
+      {
+        target: { value: 'FAST BRIDGE' },
+      }
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(
+      screen.getAllByText(/saving.*FAST BRIDGE|FAST BRIDGE.*saving/).length
+    ).toBeGreaterThan(0);
+    expect(screen.queryByRole('heading', { name: 'FAST BRIDGE' })).toBeNull();
+    const started = performance.now();
+    try {
+      await act(async () => {
+        acknowledged = true;
+        accept({
+          schema_version: 1,
+          command_id: 'fast-receipt',
+          saved_records: [accepted],
+        });
+      });
+      await screen.findByRole('heading', { name: 'FAST BRIDGE' });
+      expect(performance.now() - started).toBeLessThan(300);
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(releaseReads.length).toBeGreaterThan(0);
+      await waitFor(() =>
+        expect(
+          (
+            screen.getByRole('button', {
+              name: 'Establish',
+            }) as HTMLButtonElement
+          ).disabled
+        ).toBe(false)
+      );
+      const snapshot = client
+        .getQueryCache()
+        .findAll({ queryKey: ['operator-records', 'mission-a'] })
+        .find(
+          (query) =>
+            query.queryKey[3] === 'workspace-all' &&
+            query.state.data !== undefined
+        )?.state.data;
+      expect(snapshot).toMatchObject({ pages: [{ items: [] }] });
+      expect(reads).toHaveBeenCalled();
+      if (recovery === 'rebaseline') {
+        reads.mockResolvedValue({ ...page([]), H: 2 });
+        vi.mocked(api.readOperatorChanges).mockRejectedValueOnce(
+          failure(422, 'invalid_cursor')
+        );
+        delta = { ...page([]), H: 2 };
+      } else
+        delta = {
+          ...page([]),
+          H: 2,
+          departures: [
+            { record_id: accepted.record_id, version: 2, journal_seq: 2 },
+          ],
+        } as typeof delta;
+      await act(async () => {
+        await client.refetchQueries({
+          queryKey: ['operator-record-updates', 'mission-a'],
+        });
+      });
+      if (recovery === 'rebaseline') {
+        await waitFor(() =>
+          expect(
+            client.getQueryData([
+              'operator-record-current',
+              'mission-a',
+              JSON.stringify(['store', 'epoch-a', 'live', null]),
+            ])
+          ).toMatchObject({ quarantined: false })
+        );
+        await act(async () => {
+          await client.refetchQueries({
+            queryKey: ['operator-record-updates', 'mission-a'],
+          });
+        });
+      }
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('heading', { name: 'FAST BRIDGE' })
+        ).toBeNull()
+      );
+    } finally {
+      await act(async () => {
+        releaseReads.forEach((resolve) => resolve());
+      });
+    }
   }
-});
+);
 
 it('offers manual destination in shared Display Controls without a mission or ready operator journal', async () => {
   const { manualDestinationApi } = await import(

@@ -205,7 +205,8 @@ export function OperatorWorkspace() {
       !records.quarantined &&
       !contextMismatch &&
       row.identity === identity &&
-      row.read.record.mission_id === missionId
+      row.read.record.mission_id === missionId &&
+      records.acceptsOverlay(row.read.record)
   );
   const merged = new Map(
     records.items.map((item) => [item.record.record_id, item])

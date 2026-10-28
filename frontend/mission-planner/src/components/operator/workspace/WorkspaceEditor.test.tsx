@@ -603,21 +603,31 @@ function retainedCall() {
   };
   return call;
 }
-async function prepareInline() {
+async function prepareInline(synchronize = false) {
   const call = retainedCall();
-  const mounted = mount(call, false, false, undefined, {}, health, {
-    associationMode: 'manual',
-    associationExpanded: true,
-    call: {
-      lead: '1.5',
-      duration: '12.',
-      shift: '-2',
-      unit: 'hours',
-      originalTime: call.time,
-      originalDuration: '30',
-      timeParts: { occurred_at: { date: '2026-10-28', time: '23:' } },
+  const mounted = mount(
+    call,
+    false,
+    false,
+    undefined,
+    {},
+    health,
+    {
+      associationMode: 'manual',
+      associationExpanded: true,
+      call: {
+        lead: '1.5',
+        duration: '12.',
+        shift: '-2',
+        unit: 'hours',
+        originalTime: call.time,
+        originalDuration: '30',
+        timeParts: { occurred_at: { date: '2026-10-28', time: '23:' } },
+      },
     },
-  });
+    undefined,
+    synchronize
+  );
   await screen.findByLabelText('Party / Participant (Optional)');
   const parent = mounted.registry.resumeDraft(mounted.draft.draftId)!;
   fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
@@ -1182,3 +1192,75 @@ it('retargets newer parent input after acceptance but blocks saving and inline e
   });
   expect(save).toHaveBeenCalledTimes(1);
 });
+
+it.each(['departure', 'rebaseline'])(
+  'removes old inline conference overlays from choices while preserving the selected dirty draft (%s)',
+  async (recovery) => {
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    const saved = savedInline();
+    vi.spyOn(api, 'saveOperatorCommand').mockResolvedValue({
+      schema_version: 1,
+      command_id: 'receipt',
+      saved_records: [saved],
+    });
+    vi.spyOn(api, 'readOperatorRecord').mockResolvedValue(
+      page([saved]).items[0]
+    );
+    const changes = vi
+      .spyOn(api, 'readOperatorChanges')
+      .mockResolvedValue({ ...page([]), H: 0 });
+    const { client, registry, parent } = await prepareInline(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+    await screen.findByLabelText('Party / Participant (Optional)');
+    expect(
+      await screen.findByRole('option', { name: 'Charlie bridge' })
+    ).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
+      target: { value: 'Still unsaved' },
+    });
+    const retained = registry.resumeDraft(parent.draftId)!;
+    if (recovery === 'departure') {
+      changes.mockResolvedValue({
+        ...page([]),
+        H: 2,
+        departures: [
+          { record_id: saved.record_id, version: 2, journal_seq: 2 },
+        ],
+      });
+    } else {
+      vi.mocked(api.readOperatorRecords).mockResolvedValue({
+        ...page([]),
+        H: 2,
+      });
+      changes
+        .mockRejectedValueOnce(failure(422, 'invalid_cursor'))
+        .mockResolvedValue({ ...page([]), H: 2 });
+    }
+    await act(async () => {
+      await client.refetchQueries({ queryKey: ['operator-record-updates'] });
+    });
+    if (recovery === 'rebaseline') {
+      await waitFor(() =>
+        expect(
+          client.getQueryData([
+            'operator-record-current',
+            'mission-a',
+            operatorIdentity(health),
+          ])
+        ).toMatchObject({ quarantined: false, overlayFloor: 2 })
+      );
+      await act(async () => {
+        await client.refetchQueries({ queryKey: ['operator-record-updates'] });
+      });
+    }
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('option', { name: 'Charlie bridge' })
+      ).toBeNull()
+    );
+    expect(
+      screen.getByRole('option', { name: 'Unresolved conference · new-bridge' })
+    ).toBeTruthy();
+    expect(registry.resumeDraft(parent.draftId)).toEqual(retained);
+  }
+);

@@ -188,6 +188,7 @@ export function WorkspaceEditor({
     const record = row.read.record;
     if (
       relationships.quarantined ||
+      !relationships.acceptsOverlay(record) ||
       row.identity !== operatorIdentity(health.data) ||
       record.mission_id !== draft?.target.missionId
     )
@@ -201,6 +202,7 @@ export function WorkspaceEditor({
       row.status === 'accepted' &&
       !relationships.quarantined &&
       row.current &&
+      relationships.acceptsOverlay(row.current) &&
       targetIdentity(row.target) === operatorIdentity(health.data) &&
       row.current.mission_id === draft?.target.missionId
     ) {
@@ -212,6 +214,7 @@ export function WorkspaceEditor({
   if (
     recoveredConference &&
     !relationships.quarantined &&
+    relationships.acceptsOverlay(recoveredConference.record) &&
     recoveredConference.identity === operatorIdentity(health.data) &&
     recoveredConference.record.mission_id === draft?.target.missionId
   ) {

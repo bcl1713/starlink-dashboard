@@ -17,7 +17,13 @@ import {
   readOperatorChanges,
   readOperatorRecords,
 } from '@/services/operator';
-import type { OperatorHealth, ReadRecord, RecordPage } from '@/types/operator';
+import type {
+  OperatorHealth,
+  ReadRecord,
+  RecordPage,
+  RecordDeparture,
+  SavedRecord,
+} from '@/types/operator';
 import { operatorIdentity } from './operatorReadSession';
 
 class RecordSourceChanged extends Error {}
@@ -52,6 +58,18 @@ function validate(
     throw new RecordSourceChanged(
       'Saved records source changed; waiting for current context.'
     );
+  if (
+    (page.departures ?? []).some(
+      (row) =>
+        !row.record_id ||
+        !Number.isSafeInteger(row.version) ||
+        row.version < 1 ||
+        !Number.isSafeInteger(row.journal_seq) ||
+        row.journal_seq < 1 ||
+        row.journal_seq > page.H
+    )
+  )
+    throw new InvalidRecordCheckpoint('Invalid saved records departure.');
   if (!Number.isSafeInteger(page.H) || page.H < 0)
     throw new InvalidRecordCheckpoint('Invalid saved records checkpoint.');
 }
@@ -94,12 +112,27 @@ export function mergeWorkspaceRecords(...groups: ReadRecord[][]): ReadRecord[] {
   return [...merged.values()];
 }
 
+function mergeDepartures(...groups: RecordDeparture[][]): RecordDeparture[] {
+  const merged = new Map<string, RecordDeparture>();
+  for (const row of groups.flat()) {
+    const previous = merged.get(row.record_id);
+    if (!previous || previous.version < row.version)
+      merged.set(row.record_id, row);
+  }
+  return [...merged.values()];
+}
+
 interface Updates {
+  departures: RecordDeparture[];
   H: number;
   items: ReadRecord[];
   changed: boolean;
 }
 interface CurrentRecords {
+  departures: RecordDeparture[];
+  source?: string;
+  overlayFloor?: number;
+  resetOverlays?: boolean;
   items: ReadRecord[];
   quarantined: boolean;
 }
@@ -129,8 +162,8 @@ export function useWorkspaceRecords(
   const currentKey = ['operator-record-current', missionId, identity];
   const current = useQuery<CurrentRecords>({
     queryKey: currentKey,
-    queryFn: async () => ({ items: [], quarantined: true }),
-    initialData: { items: [], quarantined: true },
+    queryFn: async () => ({ items: [], departures: [], quarantined: true }),
+    initialData: { items: [], departures: [], quarantined: true },
     enabled: false,
   });
   const enabled = !!missionId && !!identity;
@@ -158,6 +191,7 @@ export function useWorkspaceRecords(
       let cursor: string | undefined;
       let H: number | undefined;
       const staged: ReadRecord[] = [];
+      const departures: RecordDeparture[] = [];
       const seen = new Set<string>();
       do {
         const page = await readOperatorChanges(
@@ -173,6 +207,7 @@ export function useWorkspaceRecords(
           throw new InvalidRecordCheckpoint('Saved records batch changed.');
         H = page.H;
         staged.push(...page.items);
+        departures.push(...(page.departures ?? []));
         cursor = page.cursor ?? undefined;
         if (cursor && seen.has(cursor))
           throw new InvalidRecordCheckpoint('Repeated saved records cursor.');
@@ -181,7 +216,8 @@ export function useWorkspaceRecords(
       return {
         H: H!,
         items: mergeWorkspaceRecords(previous?.items ?? [], staged),
-        changed: staged.length > 0,
+        departures: mergeDepartures(previous?.departures ?? [], departures),
+        changed: staged.length > 0 || departures.length > 0,
       };
     },
     retry: false,
@@ -240,10 +276,13 @@ export function useWorkspaceRecords(
     handled.current = resetError;
     // Quarantine belongs to the shared read generation, not a query error that
     // resetQueries clears. Passive editors must observe the same barrier.
-    client.setQueryData<CurrentRecords>(currentKey, {
+    client.setQueryData<CurrentRecords>(currentKey, (previous) => ({
+      ...previous,
+      resetOverlays: true,
       items: [],
+      departures: previous?.departures ?? [],
       quarantined: true,
-    });
+    }));
     // Query cancellation reverts/ignores old promises even if a transport ignores
     // abort. Reset discards every page/cursor and the old overlay generation.
     void client.cancelQueries({ queryKey: updateKey, exact: true });
@@ -266,6 +305,21 @@ export function useWorkspaceRecords(
         records.data.pages.flatMap((page) => page.items),
         updates.data?.items ?? []
       ),
+      departures: mergeDepartures(
+        previous?.source === sourceStamp(records.data.pages[0].source!)
+          ? previous.departures
+          : [],
+        updates.data?.departures ?? []
+      ),
+      // A replacement baseline supersedes pre-reset local confirmations, even
+      // when a moved record is absent and no departure was observed. Its later
+      // snapshot pages supply authoritative members; drafts/base versions stay
+      // in their separate registry. New confirmations above H still supplement.
+      overlayFloor: previous?.resetOverlays
+        ? records.data.pages[0].H
+        : (previous?.overlayFloor ?? 0),
+      resetOverlays: false,
+      source: sourceStamp(records.data.pages[0].source!),
       quarantined: false,
     }));
     // Primitive key contents identify the generation; current.data is deliberately
@@ -294,12 +348,28 @@ export function useWorkspaceRecords(
   }, [client, owner, sourceChanged]);
   useEffect(() => {
     if (!owner || !updates.data?.changed) return;
-    for (const name of ['mission-timeline', 'operator-events'])
-      void client.invalidateQueries(
-        { queryKey: [name, missionId, identity], exact: true },
-        { cancelRefetch: false }
-      );
+    let active = true;
+    for (const name of ['mission-timeline', 'operator-events']) {
+      const filters = { queryKey: [name, missionId, identity], exact: true };
+      // Explicit cancellation also covers a bootstrap request with no cached
+      // data. Its late pre-save result must not absorb the post-change refresh.
+      void client.cancelQueries(filters).then(() => {
+        if (active) return client.invalidateQueries(filters);
+      });
+    }
+    return () => {
+      active = false;
+    };
   }, [client, owner, missionId, identity, updates.data]);
+  const departures = mergeDepartures(
+    current.data?.departures ?? [],
+    updates.data?.departures ?? []
+  );
+  const departedVersions = new Map(
+    departures.map((row) => [row.record_id, row.version])
+  );
+  const isCurrentMember = (record: SavedRecord) =>
+    (departedVersions.get(record.record_id) ?? 0) < record.version;
   return {
     ...records,
     items:
@@ -309,9 +379,13 @@ export function useWorkspaceRecords(
             current.data?.items ?? [],
             records.data?.pages.flatMap((page) => page.items) ?? [],
             updates.data?.items ?? []
-          ),
+          ).filter((item) => isCurrentMember(item.record)),
     isError: records.isError || updates.isError,
     quarantined,
+    acceptsOverlay: (record: SavedRecord) =>
+      !quarantined &&
+      isCurrentMember(record) &&
+      record.journal_seq > (current.data?.overlayFloor ?? 0),
     refresh,
   };
 }

@@ -7,6 +7,11 @@ import * as api from '@/services/operator';
 import { failure, health, page, record } from '@/test/operator-fixtures';
 import type { RecordPage } from '@/types/operator';
 import { operatorIdentity } from './operatorReadSession';
+import * as timelineApi from '@/services/missionTimeline';
+import * as eventApi from '@/services/operatorEvents';
+import { eventSnapshot } from '@/test/operator-event-fixtures';
+import { useMissionTimeline } from './useMissionTimeline';
+import { useOperatorEvents } from './useOperatorEvents';
 import { useWorkspaceRecords } from './useWorkspaceRecords';
 
 const identity = operatorIdentity(health)!;
@@ -371,4 +376,103 @@ it('keeps shared quarantine until an identity-validated replacement baseline suc
   await tick();
   expect(hook.result.current.owner.quarantined).toBe(false);
   expect(hook.result.current.editor.quarantined).toBe(false);
+});
+
+it.each([false, true])(
+  'restarts pre-save projections when a delta arrives (cached=%s)',
+  async (cached) => {
+    vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(snapshot());
+    let remote = snapshot([], 1);
+    vi.spyOn(api, 'readOperatorChanges').mockImplementation(async () => remote);
+    let releaseTimeline!: (
+      value: ReturnType<typeof eventSnapshot> & { legs: [] }
+    ) => void;
+    let releaseEvents!: (value: ReturnType<typeof eventSnapshot>) => void;
+    const old = eventSnapshot();
+    const fresh = eventSnapshot({ H: 2, events: [] });
+    const timeline = vi.spyOn(timelineApi, 'readMissionTimeline');
+    const events = vi.spyOn(eventApi, 'readEventSnapshot');
+    if (cached) {
+      timeline.mockResolvedValueOnce({ ...old, legs: [] });
+      events.mockResolvedValueOnce(old);
+    }
+    timeline
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseTimeline = resolve;
+          })
+      )
+      .mockResolvedValue({ ...fresh, legs: [] });
+    events
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseEvents = resolve;
+          })
+      )
+      .mockResolvedValue(fresh);
+    const { client, wrapper } = setup();
+    const hook = renderHook(
+      () => ({
+        records: useWorkspaceRecords('mission-a', identity),
+        timeline: useMissionTimeline('mission-a', identity),
+        events: useOperatorEvents('mission-a', identity),
+      }),
+      { wrapper }
+    );
+    await tick();
+    if (cached) {
+      act(() => {
+        for (const name of ['mission-timeline', 'operator-events'])
+          void client.invalidateQueries({
+            queryKey: [name, 'mission-a', identity],
+            exact: true,
+          });
+      });
+      await tick();
+    }
+    remote = snapshot([{ ...record, version: 2, journal_seq: 2 }], 2);
+    await tick(2050);
+    await act(async () => {
+      releaseTimeline({ ...old, legs: [] });
+      releaseEvents(old);
+    });
+    await tick();
+    expect(hook.result.current.records.items[0].record.version).toBe(2);
+    expect(hook.result.current.timeline.snapshot?.H).toBe(2);
+    expect(hook.result.current.events.snapshot?.H).toBe(2);
+  }
+);
+
+it('removes departed membership from retained snapshot/current versions and passive relationships, then permits a newer return', async () => {
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(snapshot());
+  let remote: RecordPage & {
+    departures?: { record_id: string; version: number; journal_seq: number }[];
+  } = snapshot([], 1);
+  vi.spyOn(api, 'readOperatorChanges').mockImplementation(async () => remote);
+  const { wrapper } = setup();
+  const hook = renderHook(
+    () => ({
+      owner: useWorkspaceRecords('mission-a', identity),
+      editor: useWorkspaceRecords('mission-a', identity, false),
+    }),
+    { wrapper }
+  );
+  await tick();
+  expect(hook.result.current.owner.items).toHaveLength(1);
+  remote = {
+    ...snapshot([], 2),
+    departures: [{ record_id: record.record_id, version: 2, journal_seq: 2 }],
+  };
+  await tick(2050);
+  expect(hook.result.current.owner.items).toEqual([]);
+  expect(hook.result.current.editor.items).toEqual([]);
+  remote = snapshot([], 2);
+  await tick(2050);
+  expect(hook.result.current.owner.items).toEqual([]);
+  remote = snapshot([{ ...record, version: 3, journal_seq: 3 }], 3);
+  await tick(2050);
+  expect(hook.result.current.owner.items[0].record.version).toBe(3);
+  expect(hook.result.current.editor.items[0].record.version).toBe(3);
 });

@@ -726,6 +726,52 @@ test('saved records converge across independent laptop and phone contexts with s
     // Replace the actual runtime source and store. An empty validated new
     // baseline must never inherit live records, even with a dirty draft retained.
     await navigate(phone, `/operator?mission_id=${missionId}`);
+    // Move an existing UI-created call across missions while both clients are
+    // open in A. Its snapshot, delta and any local-confirmation overlays must
+    // all release membership; returning the same record restores its new version.
+    const movedId = suspended.receipt.saved_records[0].record_id;
+    const moving = await json<{ record: OperatorInput & { version: number } }>(
+      await request.get(`/api/v2/operator/records/${movedId}`)
+    );
+    const moveBody = Object.fromEntries(
+      [
+        'schema_version',
+        'record_type',
+        'mission_id',
+        'scope',
+        'leg_id',
+        'time',
+        'payload',
+      ].map((key) => [key, moving.record[key as keyof typeof moving.record]])
+    );
+    const move = async (mission: string, expectedVersion: number) =>
+      json<CommandReceipt>(
+        await request.put(`/api/v2/operator/records/${movedId}`, {
+          headers: {
+            'Idempotency-Key': randomUUID(),
+            'X-Operator-Store-Epoch': health.api_epoch,
+          },
+          data: {
+            ...moveBody,
+            mission_id: mission,
+            expected_version: expectedVersion,
+          },
+        })
+      );
+    for (const page of [laptop, phone])
+      await expect(card(page, movedId)).toBeVisible();
+    const departed = await move(otherMission, moving.record.version);
+    const departureAt = performance.now();
+    for (const page of [laptop, phone])
+      await expect(card(page, movedId)).toHaveCount(0);
+    proof.missionDepartureMs = performance.now() - departureAt;
+    expect(proof.missionDepartureMs).toBeLessThanOrEqual(5000);
+    await move(missionId, departed.saved_records[0].version);
+    const returnedAt = performance.now();
+    for (const page of [laptop, phone])
+      await expect(card(page, movedId)).toBeVisible();
+    proof.missionReturnMs = performance.now() - returnedAt;
+    expect(proof.missionReturnMs).toBeLessThanOrEqual(5000);
     const config = await json<Record<string, unknown>>(
       await request.get('/api/config')
     );

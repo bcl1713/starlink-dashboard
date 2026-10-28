@@ -384,7 +384,23 @@ def record_changes(
         page = service.changes(
             mission_id, source=source, after_seq=after_seq, limit=limit, cursor=cursor
         )
-        return dict(read_page(page, runtime), source=source)
+        # A departure conveys membership/version only; never expose another
+        # mission's saved payload or pretend the record itself was deleted.
+        departures = [
+            {
+                "record_id": str(row.record_id),
+                "version": row.version,
+                "journal_seq": row.journal_seq,
+            }
+            for row in page.items
+            if row.mission_id != mission_id
+        ]
+        members = page.model_copy(
+            update={
+                "items": [row for row in page.items if row.mission_id == mission_id]
+            }
+        )
+        return dict(read_page(members, runtime), source=source, departures=departures)
 
 
 @router.get("/records/{record_id}")

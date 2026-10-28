@@ -240,7 +240,13 @@ export interface ReadRecord {
     as_of: string;
   };
 }
+export interface RecordDeparture {
+  record_id: string;
+  version: number;
+  journal_seq: number;
+}
 export interface RecordPage {
+  departures?: RecordDeparture[];
   source?: OperatorHealth & { mission_id: string };
   schema_version: 1;
   items: ReadRecord[];

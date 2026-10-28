@@ -106,13 +106,34 @@ def changes(
             utc_timestamp(state["as_of"])
         except (ValueError, TypeError, KeyError, UnicodeError) as error:
             raise OperatorError("invalid_cursor") from error
+    # Include both incoming revisions and departures whose predecessor belonged
+    # to this mission. Choose the latest revision globally inside the frozen
+    # interval: filtering before this choice can resurrect an obsolete member.
     records = select_records(
         connection,
-        "WITH changed AS (SELECT record_id, max(journal_seq) AS seq FROM revisions "
-        "WHERE mission_id=? AND journal_seq>? AND journal_seq<=? GROUP BY record_id) "
+        "WITH touched AS ("
+        "SELECT record_id FROM revisions WHERE mission_id=? AND journal_seq>? AND journal_seq<=? "
+        "UNION SELECT v.record_id FROM revisions v CROSS JOIN revisions p "
+        "ON p.record_id=v.record_id AND p.version=v.previous_version "
+        "WHERE v.journal_seq>? AND v.journal_seq<=? AND p.mission_id=? AND v.mission_id<>?), "
+        "changed AS (SELECT v.record_id, max(v.journal_seq) AS seq FROM revisions v "
+        "JOIN touched t ON t.record_id=v.record_id "
+        "WHERE v.journal_seq>? AND v.journal_seq<=? GROUP BY v.record_id) "
         "SELECT v.* FROM revisions v JOIN changed c ON v.journal_seq=c.seq "
         "WHERE v.journal_seq>? ORDER BY v.journal_seq LIMIT ?",
-        (mission_id, after_seq, state["H"], state["last"], limit + 1),
+        (
+            mission_id,
+            after_seq,
+            state["H"],
+            after_seq,
+            state["H"],
+            mission_id,
+            mission_id,
+            after_seq,
+            state["H"],
+            state["last"],
+            limit + 1,
+        ),
     )
     more = len(records) > limit
     records = records[:limit]
