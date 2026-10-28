@@ -311,13 +311,13 @@ export function useWorkspaceRecords(
           : [],
         updates.data?.departures ?? []
       ),
-      // A replacement baseline supersedes pre-reset local confirmations, even
-      // when a moved record is absent and no departure was observed. Its later
+      // A fresh or replacement baseline supersedes older local confirmations,
+      // even when a moved record is absent and no departure was observed. Later
       // snapshot pages supply authoritative members; drafts/base versions stay
       // in their separate registry. New confirmations above H still supplement.
       overlayFloor: previous?.resetOverlays
         ? records.data.pages[0].H
-        : (previous?.overlayFloor ?? 0),
+        : (previous?.overlayFloor ?? records.data.pages[0].H),
       resetOverlays: false,
       source: sourceStamp(records.data.pages[0].source!),
       quarantined: false,

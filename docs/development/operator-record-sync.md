@@ -38,11 +38,12 @@ Network/service failures retain last-known data and retry on the foreground
 interval. Invalid checkpoints or replaced sources cancel the old read generation
 and request a fresh identity-validated baseline. Quarantine remains shared with
 the editor until that baseline succeeds. Previously displayed saved versions
-never regress when newer snapshot pagination displaces a record. After a reset,
-local confirmations at or below the replacement baseline H no longer supplement
-that baseline; only its validated pages and subsequent changes establish saved
-membership. This also handles departures that occurred before a reset and were
-never observed. Unsaved draft inputs, targets and base versions remain intact.
+never regress when newer snapshot pagination displaces a record. On fresh
+bootstrap, after cache expiry, or after a reset, local confirmations at or below
+the replacement baseline H no longer supplement that baseline; only its
+validated pages and subsequent changes establish saved membership. This also
+handles departures that occurred before a bootstrap/reset and were never
+observed. Unsaved draft inputs, targets and base versions remain intact.
 
 One workspace hook owns the timer. Editor observers share its saved data without
 starting another polling owner. Visibility, focus and online events request

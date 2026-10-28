@@ -579,14 +579,11 @@ test('saved records converge across independent laptop and phone contexts with s
         ).toHaveCount(0);
         await expect(card(laptop, b.record_id)).toContainText('Canceled');
         await expect(
-          laptop
-            .getByRole('button', {
-              name: 'Focus Prepare: Phone saved edit',
-              exact: true,
-            })
-            .first()
-            .locator('xpath=ancestor::li[1]')
-        ).toContainText('Inactive');
+          laptop.getByRole('button', {
+            name: 'Focus Prepare: Phone saved edit',
+            exact: true,
+          })
+        ).toHaveCount(0);
       }
     );
     const idleStart = performance.now();

@@ -476,3 +476,26 @@ it('removes departed membership from retained snapshot/current versions and pass
   expect(hook.result.current.owner.items[0].record.version).toBe(3);
   expect(hook.result.current.editor.items[0].record.version).toBe(3);
 });
+
+it('uses a fresh baseline H as authority for retained overlays while admitting newer confirmations', async () => {
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(snapshot([], 52));
+  vi.spyOn(api, 'readOperatorChanges').mockResolvedValue(snapshot([], 52));
+  const { wrapper } = setup();
+  const hook = renderHook(
+    () => ({
+      owner: useWorkspaceRecords('mission-a', identity),
+      editor: useWorkspaceRecords('mission-a', identity, false),
+    }),
+    { wrapper }
+  );
+  await tick();
+  for (const observer of [
+    hook.result.current.owner,
+    hook.result.current.editor,
+  ]) {
+    expect(observer.quarantined).toBe(false);
+    expect(observer.acceptsOverlay({ ...record, journal_seq: 51 })).toBe(false);
+    expect(observer.acceptsOverlay({ ...record, journal_seq: 52 })).toBe(false);
+    expect(observer.acceptsOverlay({ ...record, journal_seq: 53 })).toBe(true);
+  }
+});
