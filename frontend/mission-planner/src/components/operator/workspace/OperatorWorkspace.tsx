@@ -1106,57 +1106,44 @@ export function OperatorWorkspace() {
             </section>
           ) : (
             <>
-              <div
-                className="ws-quick-actions"
-                role="group"
-                aria-label="Create Records"
-              >
-                <button
-                  className="ws-button ws-primary"
-                  disabled={disabled}
-                  onClick={plannedCall}
+              <div className="ws-work-entry">
+                <div
+                  className="ws-quick-actions"
+                  role="group"
+                  aria-label="Create Records"
                 >
-                  Schedule Call
-                </button>
-                <button
-                  className="ws-button"
-                  disabled={disabled}
-                  onClick={() => openInput(issueInput(missionId))}
-                >
-                  Add Issue
-                </button>
-                <button
-                  className="ws-button"
-                  ref={noteButton}
-                  disabled={disabled}
-                  onClick={note}
-                >
-                  Add Note
-                </button>
-                {cue?.length ? (
+                  <button
+                    className="ws-button ws-primary"
+                    disabled={disabled}
+                    onClick={plannedCall}
+                  >
+                    Schedule Call
+                  </button>
                   <button
                     className="ws-button"
-                    onClick={() => setOperationalAlerts(true)}
+                    disabled={disabled}
+                    onClick={() => openInput(issueInput(missionId))}
                   >
-                    Alerts · {cue.length}
+                    Add Issue
                   </button>
-                ) : null}
-              </div>
-              {disabled && (
-                <p role="status">
-                  {health.data?.enabled === false
-                    ? 'Operator store is disabled.'
-                    : 'Operator store unavailable. Retained drafts remain available below.'}
-                </p>
-              )}
-              {records.isFetching && records.data && (
-                <p role="status" className="sr-only">
-                  Refreshing saved records…
-                </p>
-              )}
-              {actionError && <p role="alert">{actionError}</p>}
-              {view === 'Operations' ? (
-                <>
+                  <button
+                    className="ws-button"
+                    ref={noteButton}
+                    disabled={disabled}
+                    onClick={note}
+                  >
+                    Add Note
+                  </button>
+                  {cue?.length ? (
+                    <button
+                      className="ws-button"
+                      onClick={() => setOperationalAlerts(true)}
+                    >
+                      Alerts · {cue.length}
+                    </button>
+                  ) : null}
+                </div>
+                {view === 'Operations' && (
                   <section className="ws-next-action" aria-label="Next Action">
                     <button
                       className="ws-button"
@@ -1193,6 +1180,23 @@ export function OperatorWorkspace() {
                       <span aria-hidden="true">→</span>
                     </button>
                   </section>
+                )}
+              </div>
+              {disabled && (
+                <p role="status">
+                  {health.data?.enabled === false
+                    ? 'Operator store is disabled.'
+                    : 'Operator store unavailable. Retained drafts remain available below.'}
+                </p>
+              )}
+              {records.isFetching && records.data && (
+                <p role="status" className="sr-only">
+                  Refreshing saved records…
+                </p>
+              )}
+              {actionError && <p role="alert">{actionError}</p>}
+              {view === 'Operations' ? (
+                <>
                   <CommunicationsView
                     showCaptureActions={false}
                     selectedRecordId={selectedRecordId}

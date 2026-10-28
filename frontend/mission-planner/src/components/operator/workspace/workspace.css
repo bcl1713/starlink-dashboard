@@ -1066,3 +1066,34 @@
     max-width: 100%;
   }
 }
+
+.ws-work-entry {
+  display: contents;
+}
+@media (min-width: 600px) and (max-width: 900px) and (max-height: 500px) {
+  .ws-work-entry {
+    display: flex;
+    gap: 0.5rem;
+    align-items: start;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--background);
+    margin-bottom: 0.5rem;
+  }
+  .ws-work-entry .ws-quick-actions {
+    position: static;
+    flex: 0 1 auto;
+  }
+  .ws-work-entry .ws-next-action {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+  }
+  .ws-work-entry .ws-next-action .ws-button {
+    min-height: 54px;
+  }
+  .ws-lane-header {
+    margin-bottom: 0;
+  }
+}
