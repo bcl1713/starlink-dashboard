@@ -70,6 +70,7 @@ import {
 } from './globe-render-radii';
 import { OverviewBoundaryLayer } from './OverviewBoundaryLayer';
 import { useOverviewBoundaries } from '@/hooks/useOverviewBoundaries';
+import { useOverviewAtmosphereIntensity } from './overview-bloom-mode';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
@@ -169,6 +170,7 @@ const atmosphereVertexShader = `
 `;
 
 const atmosphereFragmentShader = `
+  uniform float atmosphereIntensity;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
 
@@ -181,7 +183,7 @@ const atmosphereFragmentShader = `
     float rim = pow(1.0 - viewAngle, 3.0);
     vec3 atmosphereColor = vec3(0.16, 0.55, 1.0);
 
-    gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
+    gl_FragColor = vec4(atmosphereColor * rim * atmosphereIntensity, rim * 0.22);
   }
 `;
 
@@ -274,6 +276,8 @@ function ConfiguredXBandSatelliteMarker({
 }
 
 function Atmosphere() {
+  const intensity = useOverviewAtmosphereIntensity();
+  const uniforms = useMemo(() => ({ atmosphereIntensity: { value: 1 } }), []);
   return (
     <mesh scale={1.025}>
       <sphereGeometry args={[2, 64, 64]} />
@@ -283,6 +287,8 @@ function Atmosphere() {
         blending={THREE.AdditiveBlending}
         vertexShader={atmosphereVertexShader}
         fragmentShader={atmosphereFragmentShader}
+        uniforms={uniforms}
+        uniforms-atmosphereIntensity-value={intensity}
       />
     </mesh>
   );

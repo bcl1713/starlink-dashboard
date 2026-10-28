@@ -10,6 +10,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { OverviewBloom, OverviewBloomScene } from './OverviewBloom';
 import {
   useOverviewAmbientIntensity,
+  useOverviewAtmosphereIntensity,
   useOverviewBloom,
   useOverviewBloomEmission,
 } from './overview-bloom-mode';
@@ -31,9 +32,15 @@ function Scene() {
   const active = useOverviewBloom(),
     emission = useOverviewBloomEmission();
   const ambientIntensity = useOverviewAmbientIntensity();
+  const atmosphereIntensity = useOverviewAtmosphereIntensity();
   return (
     <output data-testid="actual-scene">
-      {JSON.stringify({ active, emission, ambientIntensity })}
+      {JSON.stringify({
+        active,
+        emission,
+        ambientIntensity,
+        atmosphereIntensity,
+      })}
     </output>
   );
 }
@@ -86,9 +93,13 @@ it('applies controls to the existing scene and copies all current values without
     cityColor: '#ffbe6f',
     lines: 1.7,
     particles: 0.1,
-    pois: 4,
+    pois: 25,
     aircraft: 1.7,
   });
+  fireEvent.change(
+    screen.getByRole('slider', { name: 'Atmosphere glow slider' }),
+    { target: { value: '0.35' } }
+  );
   fireEvent.change(
     screen.getByRole('slider', { name: 'Ambient lighting slider' }),
     { target: { value: '0.15' } }
@@ -129,7 +140,10 @@ it('applies controls to the existing scene and copies all current values without
     aircraft: 12,
   });
   expect(report.emissionOverridesActive).toBe(true);
-  expect(report.lighting).toEqual({ ambientIntensity: 0.15 });
+  expect(report.lighting).toEqual({
+    ambientIntensity: 0.15,
+    atmosphereIntensity: 0.35,
+  });
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).ambientIntensity
   ).toBe(0.15);
@@ -143,6 +157,10 @@ it('applies controls to the existing scene and copies all current values without
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).ambientIntensity
   ).toBe(0.5);
+  expect(
+    JSON.parse(screen.getByTestId('actual-scene').textContent!)
+      .atmosphereIntensity
+  ).toBe(1);
   fireEvent.change(screen.getByLabelText('Rendering mode'), {
     target: { value: 'bloom' },
   });
@@ -153,6 +171,10 @@ it('applies controls to the existing scene and copies all current values without
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).ambientIntensity
   ).toBe(0.1);
+  expect(
+    JSON.parse(screen.getByTestId('actual-scene').textContent!)
+      .atmosphereIntensity
+  ).toBe(0.65);
   rerender(
     <OverviewBloom debug={false}>
       <Scene />

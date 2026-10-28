@@ -12,6 +12,8 @@ export function TuningPanel({
   allowIsolation = true,
   ambientIntensity,
   onAmbientIntensity,
+  atmosphereIntensity,
+  onAtmosphereIntensity,
   busy,
   settings,
   emissions,
@@ -29,6 +31,8 @@ export function TuningPanel({
   allowIsolation?: boolean;
   ambientIntensity?: number;
   onAmbientIntensity?: (value: number) => void;
+  atmosphereIntensity?: number;
+  onAtmosphereIntensity?: (value: number) => void;
   busy: boolean;
   settings: BloomSettings;
   emissions: BloomEmission;
@@ -130,34 +134,49 @@ export function TuningPanel({
         </label>
       )}
       <fieldset disabled={busy || !active}>
-        {onAmbientIntensity && ambientIntensity !== undefined && (
-          <div className="tuning-control">
-            Ambient lighting{' '}
-            <div className="tuning-value">
-              <input
-                aria-label="Ambient lighting slider"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={ambientIntensity}
-                onChange={(e) => onAmbientIntensity(Number(e.target.value))}
-              />
-              <input
-                aria-label="Ambient lighting"
-                type="number"
-                min="0"
-                max="1"
-                step="0.01"
-                value={ambientIntensity}
-                onChange={(e) =>
-                  onAmbientIntensity(
-                    Math.min(1, Math.max(0, Number(e.target.value) || 0))
-                  )
-                }
-              />
-            </div>
-          </div>
+        {[
+          {
+            label: 'Ambient lighting',
+            value: ambientIntensity,
+            onChange: onAmbientIntensity,
+          },
+          {
+            label: 'Atmosphere glow',
+            value: atmosphereIntensity,
+            onChange: onAtmosphereIntensity,
+          },
+        ].map(
+          ({ label, value, onChange }) =>
+            onChange &&
+            value !== undefined && (
+              <div className="tuning-control" key={label}>
+                {label}{' '}
+                <div className="tuning-value">
+                  <input
+                    aria-label={`${label} slider`}
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={value}
+                    onChange={(e) => onChange(Number(e.target.value))}
+                  />
+                  <input
+                    aria-label={label}
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={value}
+                    onChange={(e) =>
+                      onChange(
+                        Math.min(1, Math.max(0, Number(e.target.value) || 0))
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            )
         )}
         {onMode && (
           <>

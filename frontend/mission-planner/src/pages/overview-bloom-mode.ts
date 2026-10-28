@@ -11,6 +11,9 @@ export const OverviewAmbientIntensity = createContext(
 );
 export const useOverviewAmbientIntensity = () =>
   useContext(OverviewAmbientIntensity);
+export const OverviewAtmosphereIntensity = createContext(1);
+export const useOverviewAtmosphereIntensity = () =>
+  useContext(OverviewAtmosphereIntensity);
 export interface BloomEmission {
   cities: number;
   cityColor: string;

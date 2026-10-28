@@ -16,6 +16,7 @@ import { describeFrame } from '../experiments/bloom/metrics';
 import {
   DEFAULT_OVERVIEW_AMBIENT_INTENSITY,
   OverviewAmbientIntensity,
+  OverviewAtmosphereIntensity,
   useOverviewAmbientIntensity,
   OverviewBloomEmission,
   OverviewBloomMode,
@@ -24,6 +25,7 @@ import {
 import {
   OVERVIEW_BLOOM_SETTINGS,
   OVERVIEW_BLOOM_AMBIENT_INTENSITY,
+  OVERVIEW_BLOOM_ATMOSPHERE_INTENSITY,
   OVERVIEW_BLOOM_EMISSIONS,
 } from './overview-bloom-tuning';
 
@@ -50,6 +52,9 @@ export function OverviewBloom({
   const [ambientIntensity, setAmbientIntensity] = useState(
     OVERVIEW_BLOOM_AMBIENT_INTENSITY
   );
+  const [atmosphereIntensity, setAtmosphereIntensity] = useState(
+    OVERVIEW_BLOOM_ATMOSPHERE_INTENSITY
+  );
   const frame = useRef<RenderedFrame | null>(null);
   const active = mode === 'bloom';
   const getReport = () => {
@@ -61,7 +66,7 @@ export function OverviewBloom({
       mode,
       settings,
       emissions,
-      lighting: { ambientIntensity },
+      lighting: { ambientIntensity, atmosphereIntensity },
       lightingOverridesActive: active,
       emissionOverridesActive: active,
       frame: last
@@ -89,45 +94,52 @@ export function OverviewBloom({
       <OverviewAmbientIntensity.Provider
         value={active ? ambientIntensity : DEFAULT_OVERVIEW_AMBIENT_INTENSITY}
       >
-        <OverviewBloomMode.Provider value={active}>
-          <OverviewBloomEmission.Provider value={emissions}>
-            {children}
-            {debug && (
-              <TuningPanel
-                active={active}
-                busy={false}
-                ambientIntensity={ambientIntensity}
-                onAmbientIntensity={setAmbientIntensity}
-                mode={mode}
-                onMode={setMode}
-                settings={settings}
-                emissions={emissions}
-                isolateCities={false}
-                allowIsolation={false}
-                onIsolate={() => {}}
-                onSettings={setSettings}
-                onEmissions={setEmissions}
-                onCityPreset={() => {
-                  setMode('bloom');
-                  setSettings({
-                    ...OVERVIEW_BLOOM_SETTINGS,
-                    strength: 1,
-                    threshold: 0.4,
-                    radius: 0.3,
-                    maxDimension: 1920,
-                  });
-                  setEmissions({ ...OVERVIEW_BLOOM_EMISSIONS, cities: 30 });
-                }}
-                onReset={() => {
-                  setSettings(OVERVIEW_BLOOM_SETTINGS);
-                  setEmissions(OVERVIEW_BLOOM_EMISSIONS);
-                  setAmbientIntensity(OVERVIEW_BLOOM_AMBIENT_INTENSITY);
-                }}
-                getReport={getReport}
-              />
-            )}
-          </OverviewBloomEmission.Provider>
-        </OverviewBloomMode.Provider>
+        <OverviewAtmosphereIntensity.Provider
+          value={active ? atmosphereIntensity : 1}
+        >
+          <OverviewBloomMode.Provider value={active}>
+            <OverviewBloomEmission.Provider value={emissions}>
+              {children}
+              {debug && (
+                <TuningPanel
+                  active={active}
+                  busy={false}
+                  ambientIntensity={ambientIntensity}
+                  onAmbientIntensity={setAmbientIntensity}
+                  atmosphereIntensity={atmosphereIntensity}
+                  onAtmosphereIntensity={setAtmosphereIntensity}
+                  mode={mode}
+                  onMode={setMode}
+                  settings={settings}
+                  emissions={emissions}
+                  isolateCities={false}
+                  allowIsolation={false}
+                  onIsolate={() => {}}
+                  onSettings={setSettings}
+                  onEmissions={setEmissions}
+                  onCityPreset={() => {
+                    setMode('bloom');
+                    setSettings({
+                      ...OVERVIEW_BLOOM_SETTINGS,
+                      strength: 1,
+                      threshold: 0.4,
+                      radius: 0.3,
+                      maxDimension: 1920,
+                    });
+                    setEmissions({ ...OVERVIEW_BLOOM_EMISSIONS, cities: 30 });
+                  }}
+                  onReset={() => {
+                    setSettings(OVERVIEW_BLOOM_SETTINGS);
+                    setEmissions(OVERVIEW_BLOOM_EMISSIONS);
+                    setAmbientIntensity(OVERVIEW_BLOOM_AMBIENT_INTENSITY);
+                    setAtmosphereIntensity(OVERVIEW_BLOOM_ATMOSPHERE_INTENSITY);
+                  }}
+                  getReport={getReport}
+                />
+              )}
+            </OverviewBloomEmission.Provider>
+          </OverviewBloomMode.Provider>
+        </OverviewAtmosphereIntensity.Provider>
       </OverviewAmbientIntensity.Provider>
     </BloomScene.Provider>
   );

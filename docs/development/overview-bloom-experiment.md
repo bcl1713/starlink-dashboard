@@ -4,8 +4,9 @@
 
 Bloom is enabled on `/overview` using the owner-selected October 28 preset:
 strength 0.15, threshold 0, radius 0, bloom bound 3840, exposure 1; cities 2.9
-at `#ffbe6f`, route/link cores 1.7, particles 0.1, POI cores 4, aircraft 1.7 and
-ambient intensity 0.1. The ordinary map has no debug panel.
+at `#ffbe6f`, route/link cores 1.7, particles 0.1, POI cores 25, aircraft 1.7,
+ambient intensity 0.1 and atmosphere intensity 0.65. The ordinary map has no
+debug panel.
 
 Open `/overview?bloomDebug=1` to show temporary live controls on the same scene,
 using the current mission, layers, camera and animations. No separate package or
@@ -13,9 +14,13 @@ app is needed. The flag controls panel visibility; bloom stays enabled without
 it.
 
 Adjust **Bloom strength**, **Bloom threshold**, **Bloom radius**, **Exposure**,
-resolution, **Ambient lighting**, city color and the emission values. Ambient
-ranges from 0 to 1 in steps of 0.01 and changes terrain fill independently of
-emission and exposure. **Find city glow** provides a stronger starting point.
+resolution, **Ambient lighting**, **Atmosphere glow**, city color and the
+emission values. Ambient ranges from 0 to 1 in steps of 0.01 and changes terrain
+fill independently of emission and exposure. Atmosphere glow also ranges from 0
+to 1 in steps of 0.01; the new 0.65 default gives 35% less atmosphere
+contribution than before. Its JSON value is `lighting.atmosphereIntensity`. Zero
+switches the glow off without replacing its shader material; legacy Current
+appearance uses 1. **Find city glow** provides a stronger starting point.
 Inspect **Bright pass** or **Bloom only**, then return to **Final scene** to
 judge the whole map. These views process WebGL content; DOM labels remain
 visible.
