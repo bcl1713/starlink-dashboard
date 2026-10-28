@@ -542,6 +542,7 @@ export function OverviewPage() {
     isError: arrivalRefreshFailed,
     isLoading: isLoadingUpcomingPois,
   } = useOverviewUpcomingPois(pacedRunning);
+  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const arrivalState = deriveArrivalPanel(
     upcomingPoisResponse,
     currentTime,
@@ -550,9 +551,9 @@ export function OverviewPage() {
       upcomingPoisResponse?.mission_time &&
       upcomingPoisResponse.mission_time.run_id === simulationRun.run?.run_id
       ? Date.parse(upcomingPoisResponse.mission_time.simulation_time)
-      : missionNow
+      : missionNow,
+    overviewLinkSettings?.next_flight_events_only ?? false
   );
-  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const upcomingPoiView = useMemo(
     () =>
       overviewPoiView(

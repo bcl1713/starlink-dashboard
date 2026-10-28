@@ -12,6 +12,12 @@ export interface ArrivalTiming {
   anticipated: boolean;
 }
 export interface ArrivalSection {
+  key:
+    | 'destination'
+    | 'scheduled_departure'
+    | 'movement'
+    | 'next_event'
+    | 'landing';
   label: string;
   name: string | null;
   timing: ArrivalTiming | null;
@@ -50,7 +56,7 @@ function timing(
   if (!Number.isFinite(target)) return null;
   const iso = new Date(target).toISOString();
   const day = iso.slice(0, 10);
-  const utc = `${day === new Date(now).toISOString().slice(0, 10) ? '' : `${day} `}${iso.slice(11, 16)}Z`;
+  const utc = `${day === new Date(now).toISOString().slice(0, 10) ? '' : `${day} `}${iso.slice(11, 16)} Zulu`;
   const late = departure && target < now;
   return {
     utc,
@@ -78,7 +84,8 @@ export function deriveArrivalPanel(
   response: OverviewUpcomingPoisResponse | undefined,
   now: number,
   refreshFailed = false,
-  missionNowMs = now
+  missionNowMs = now,
+  flightEventsOnly = false
 ): ArrivalPanelState {
   const empty: ArrivalPanelState = {
     sections: [],
@@ -112,7 +119,8 @@ export function deriveArrivalPanel(
       exception: refreshException,
       sections: [
         {
-          label: 'DESTINATION',
+          key: 'destination',
+          label: 'Destination',
           name: destination?.name ?? null,
           timing:
             usable && destination
@@ -138,11 +146,11 @@ export function deriveArrivalPanel(
     : null;
   const movementFresh = movementAge !== null && movementAge < 10_000;
   const groundLabels: Record<string, string> = {
-    taxi_out: 'TAXI OUT',
-    probable_landed_rollout: 'LANDED · INFERRED',
-    taxi_in: 'TAXI IN',
-    parked_at_stop: 'PARKED · INTERMEDIATE STOP',
-    parked: 'PARKED',
+    taxi_out: 'Taxi Out',
+    probable_landed_rollout: 'Landed · Inferred',
+    taxi_in: 'Taxi In',
+    parked_at_stop: 'Parked · Intermediate Stop',
+    parked: 'Parked',
   };
   if (
     movement &&
@@ -156,6 +164,7 @@ export function deriveArrivalPanel(
       exception: uncertain ? 'Movement state uncertain or stale' : null,
       sections: [
         {
+          key: 'movement',
           label: groundLabels[movement],
           name: null,
           timing: null,
@@ -175,7 +184,8 @@ export function deriveArrivalPanel(
       exception: refreshException,
       sections: [
         {
-          label: 'SCHEDULED DEPARTURE',
+          key: 'scheduled_departure',
+          label: 'Scheduled Departure',
           name: departures.length === 1 ? departures[0].name : null,
           timing: refreshUnavailable
             ? null
@@ -191,7 +201,8 @@ export function deriveArrivalPanel(
       exception: refreshException,
       sections: [
         {
-          label: refreshUnavailable ? 'LANDING' : 'LANDED',
+          key: 'landing',
+          label: refreshUnavailable ? 'Landing' : 'Landed',
           name: destination?.name ?? null,
           timing: null,
           unavailable: refreshUnavailable
@@ -236,6 +247,10 @@ export function deriveArrivalPanel(
         .filter(
           (p) =>
             p.upcoming &&
+            (!flightEventsOnly ||
+              p.kind === 'arrival' ||
+              p.kind === 'aar_start' ||
+              p.kind === 'aar_end') &&
             p.kind !== 'departure' &&
             routeProgress(p) !== null &&
             (p.kind !== 'arrival' || p.poi_id === destination?.poi_id)
@@ -248,9 +263,11 @@ export function deriveArrivalPanel(
         )[0]
     : null;
   const section = (
+    key: 'next_event' | 'landing',
     label: string,
     poi: OverviewUpcomingPoi | null
   ): ArrivalSection => ({
+    key,
     label,
     name: poi?.name ?? null,
     timing:
@@ -273,13 +290,21 @@ export function deriveArrivalPanel(
           : routeProgress(poi) === null
             ? 'Destination route position unavailable'
             : 'Route position unavailable — ETA unavailable'
-      : label === 'LANDING'
+      : key === 'landing'
         ? 'Destination unavailable'
-        : 'Next POI unavailable',
+        : flightEventsOnly
+          ? 'Next flight event unavailable'
+          : 'Next POI unavailable',
   });
   const sections = [];
   if (!next || next.poi_id !== destination?.poi_id)
-    sections.push(section('NEXT POI', next ?? null));
-  sections.push(section('LANDING', destination));
+    sections.push(
+      section(
+        'next_event',
+        flightEventsOnly ? 'Next Flight Event' : 'Next POI',
+        next ?? null
+      )
+    );
+  sections.push(section('landing', 'Landing', destination));
   return { ...empty, sections, exception };
 }

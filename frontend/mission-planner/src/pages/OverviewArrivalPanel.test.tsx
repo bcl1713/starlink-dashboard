@@ -20,7 +20,7 @@ const response: OverviewUpcomingPoisResponse = {
 it('renders accessible UTC provenance and late departure independently of GPS', () => {
   render(<OverviewArrivalPanel state={deriveArrivalPanel(response, now)} />);
   expect(
-    screen.getByRole('heading', { name: 'SCHEDULED DEPARTURE' })
+    screen.getByRole('heading', { name: 'Scheduled Departure' })
   ).toBeTruthy();
   expect(screen.getByText('12 MIN AGO').className).toContain('countdown--late');
   expect(
