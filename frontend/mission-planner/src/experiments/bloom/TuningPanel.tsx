@@ -10,6 +10,8 @@ export function TuningPanel({
   mode,
   onMode,
   allowIsolation = true,
+  ambientIntensity,
+  onAmbientIntensity,
   busy,
   settings,
   emissions,
@@ -25,6 +27,8 @@ export function TuningPanel({
   mode?: BloomMode;
   onMode?: (mode: BloomMode) => void;
   allowIsolation?: boolean;
+  ambientIntensity?: number;
+  onAmbientIntensity?: (value: number) => void;
   busy: boolean;
   settings: BloomSettings;
   emissions: BloomEmission;
@@ -126,6 +130,35 @@ export function TuningPanel({
         </label>
       )}
       <fieldset disabled={busy || !active}>
+        {onAmbientIntensity && ambientIntensity !== undefined && (
+          <div className="tuning-control">
+            Ambient lighting{' '}
+            <div className="tuning-value">
+              <input
+                aria-label="Ambient lighting slider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={ambientIntensity}
+                onChange={(e) => onAmbientIntensity(Number(e.target.value))}
+              />
+              <input
+                aria-label="Ambient lighting"
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={ambientIntensity}
+                onChange={(e) =>
+                  onAmbientIntensity(
+                    Math.min(1, Math.max(0, Number(e.target.value) || 0))
+                  )
+                }
+              />
+            </div>
+          </div>
+        )}
         {onMode && (
           <>
             {(

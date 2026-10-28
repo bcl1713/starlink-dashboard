@@ -4,6 +4,12 @@ import { Color } from 'three';
 // Opt-in only. Ordinary Overview keeps bloom disabled; temporary debug mode opts in.
 export const OverviewBloomMode = createContext(false);
 export const useOverviewBloom = () => useContext(OverviewBloomMode);
+export const DEFAULT_OVERVIEW_AMBIENT_INTENSITY = 0.5;
+export const OverviewAmbientIntensity = createContext(
+  DEFAULT_OVERVIEW_AMBIENT_INTENSITY
+);
+export const useOverviewAmbientIntensity = () =>
+  useContext(OverviewAmbientIntensity);
 export interface BloomEmission {
   cities: number;
   cityColor: string;

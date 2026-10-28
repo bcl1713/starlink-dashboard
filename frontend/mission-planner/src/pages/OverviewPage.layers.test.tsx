@@ -613,7 +613,7 @@ it('offers temporary bloom controls only on the opted-in real Overview', () => {
     expect(screen.getByLabelText('Temporary bloom tuning')).toBeTruthy();
     expect(screen.getByLabelText('City light color')).toHaveProperty(
       'value',
-      '#ffb15c'
+      '#ffbe6f'
     );
     fireEvent.change(
       screen.getByRole('spinbutton', { name: 'Cities emission' }),

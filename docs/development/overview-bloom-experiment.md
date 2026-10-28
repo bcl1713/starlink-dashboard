@@ -6,10 +6,21 @@ Open the normal application at `/overview?bloomDebug=1`. The temporary panel
 renders on the real Overview, using the current mission, map layers, camera,
 city texture and animations. No separate package or app is needed.
 
+The live defaults now use the owner-selected October 28 values: strength 0.35,
+threshold 0.8, radius 1, bloom bound 3840, exposure 1; cities 17 at `#ffbe6f`,
+route/link cores 3.9, particles 0.2, POI cores 40 and aircraft 2.8.
+
+Use **Ambient lighting** to reduce terrain fill independently of emission and
+exposure. The slider and numeric input range from 0 to 1 in steps of 0.01; 0.5
+is the previous ambient level. Copied/downloaded JSON includes
+`lighting.ambientIntensity`. Current appearance and ordinary Overview retain
+their original 0.5 ambient level; Reset tuning restores 0.5 and the selected
+bloom/emission defaults.
+
 Adjust **Bloom strength**, **Bloom threshold**, **Bloom radius**, **Exposure**
 and the bloom resolution bound. Emission controls apply immediately to warm city
 lights, route/link cores, particles, POI/ground-entry/satellite marker cores and
-both our aircraft and ADS-B aircraft. City color starts at amber `#ffb15c`.
+both our aircraft and ADS-B aircraft. City color starts at warm amber `#ffbe6f`.
 **Find city glow** provides a stronger starting point while keeping the actual
 scene visible. Inspect **Bright pass** or **Bloom only**, then return to **Final
 scene** to judge the whole map. These debug views process WebGL content; DOM map

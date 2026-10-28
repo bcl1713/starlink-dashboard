@@ -5,7 +5,7 @@ import {
   settledOverviewCamera,
 } from './support/overview-camera';
 import type { RootState } from '@react-three/fiber';
-import type { Material, Mesh } from 'three';
+import type { AmbientLight, Material, Mesh } from 'three';
 
 test.use({
   launchOptions: {
@@ -30,10 +30,14 @@ test('tunes real Overview bloom and exports the current settings', async ({
   await page.goto('/overview?bloomDebug=1');
   const panel = page.getByLabel('Temporary bloom tuning');
   await expect(panel).toBeVisible();
-  await expect(panel.getByLabel('City light color')).toHaveValue('#ffb15c');
+  await expect(panel.getByLabel('City light color')).toHaveValue('#ffbe6f');
   const camera = await settledOverviewCamera(page);
   const numeric = (name: string) =>
     panel.getByRole('spinbutton', { name, exact: true });
+  await numeric('Ambient lighting').fill('0.15');
+  await expect(
+    panel.getByRole('slider', { name: 'Ambient lighting slider', exact: true })
+  ).toHaveValue('0.15');
   await numeric('Cities emission').fill('36');
   await numeric('Bloom strength').fill('1.1');
   await numeric('Bloom threshold').fill('0.4');
@@ -58,8 +62,11 @@ test('tunes real Overview bloom and exports the current settings', async ({
           document.contains(root.containerInfo.getState().gl.domElement)
       )!.containerInfo!.getState!();
       let city = -1;
+      let ambientIntensity = -1;
       const aircraft: number[] = [];
       state.scene.traverse((object) => {
+        if (object.type === 'AmbientLight')
+          ambientIntensity = (object as AmbientLight).intensity;
         const material = (object as Mesh).material as Material | undefined;
         if (!material || Array.isArray(material)) return;
         const uniforms = state.gl.properties.get(material).uniforms;
@@ -71,7 +78,12 @@ test('tunes real Overview bloom and exports the current settings', async ({
         if (shader.uniforms?.uEmission)
           aircraft.push(shader.uniforms.uEmission.value);
       });
-      return { city, aircraft, renderOwners: state.internal.priority };
+      return {
+        city,
+        aircraft,
+        ambientIntensity,
+        renderOwners: state.internal.priority,
+      };
     });
   await expect
     .poll(async () => (await applied()).city, { timeout: 30_000 })
@@ -80,6 +92,7 @@ test('tunes real Overview bloom and exports the current settings', async ({
     .poll(async () => (await applied()).aircraft, { timeout: 30_000 })
     .toContain(12);
   expect((await applied()).renderOwners).toBe(1);
+  expect((await applied()).ambientIntensity).toBe(0.15);
   const after = await settledOverviewCamera(page);
   expect(after.position).toEqual(camera.position);
   expect(after.quaternion).toEqual(camera.quaternion);
@@ -89,6 +102,7 @@ test('tunes real Overview bloom and exports the current settings', async ({
   const json = panel.getByLabel('Feedback JSON');
   const report = JSON.parse(await json.inputValue());
   expect(report.scene).toBe('overview');
+  expect(report.lighting).toEqual({ ambientIntensity: 0.15 });
   expect(report.settings).toMatchObject({
     strength: 1.1,
     threshold: 0.4,
@@ -97,7 +111,7 @@ test('tunes real Overview bloom and exports the current settings', async ({
   });
   expect(report.emissions).toEqual({
     cities: 36,
-    cityColor: '#ffb15c',
+    cityColor: '#ffbe6f',
     lines: 6,
     particles: 7,
     pois: 9,
@@ -106,6 +120,10 @@ test('tunes real Overview bloom and exports the current settings', async ({
   expect(report.frame.bloomTargets).not.toBeNull();
   await numeric('Cities emission').fill('38');
   expect(JSON.parse(await json.inputValue()).emissions.cities).toBe(38);
+  await numeric('Ambient lighting').fill('0.12');
+  expect(JSON.parse(await json.inputValue()).lighting.ambientIntensity).toBe(
+    0.12
+  );
   await panel.getByLabel('Bloom debug view').selectOption('bright');
   await page.screenshot({ path: info.outputPath('overview-bright-pass.png') });
   await panel.getByLabel('Bloom debug view').selectOption('bloom');
@@ -116,13 +134,16 @@ test('tunes real Overview bloom and exports the current settings', async ({
   await expect
     .poll(async () => (await applied()).city, { timeout: 30_000 })
     .toBe(0.35);
+  expect((await applied()).ambientIntensity).toBe(0.5);
   await panel.getByLabel('Rendering mode').selectOption('bloom');
   await expect
     .poll(async () => (await applied()).city, { timeout: 30_000 })
     .toBe(38);
+  expect((await applied()).ambientIntensity).toBe(0.12);
   await page.goto('/overview');
   await expect(panel).toHaveCount(0);
   await settledOverviewCamera(page);
   expect((await applied()).renderOwners).toBe(0);
+  expect((await applied()).ambientIntensity).toBe(0.5);
   expect(errors).toEqual([]);
 });

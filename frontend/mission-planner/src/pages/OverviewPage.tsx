@@ -54,6 +54,7 @@ import {
 import { StarMarker } from './OverviewStarMarker';
 import {
   OverviewBloomDebug,
+  OverviewBloomAmbientLight,
   OverviewBloomDebugScene,
 } from './OverviewBloomDebug';
 import { OverviewMarkerDebug } from './OverviewMarkerDebug';
@@ -1072,7 +1073,7 @@ export function OverviewPage() {
                 ]}
               />
               <color attach="background" args={['#030307']} />
-              <ambientLight intensity={0.5} />
+              <OverviewBloomAmbientLight />
               <directionalLight position={sunPosition} intensity={5} />
               <Stars
                 radius={50}
