@@ -310,7 +310,11 @@ test('saved records converge across independent laptop and phone contexts with s
           .getByRole('button', { name: 'Connect Customer', exact: true })
           .click(),
       async () => {
-        await expect(phone.getByText(/Reported connected · 1/)).toBeVisible();
+        await expect(
+          card(phone, conference.record_id)
+            .getByText('Customers Reported Connected', { exact: true })
+            .locator('..')
+        ).toContainText(/Customers Reported Connected\s*1/);
       }
     );
     await propagated(
