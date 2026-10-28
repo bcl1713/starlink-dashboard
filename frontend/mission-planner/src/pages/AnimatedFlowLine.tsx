@@ -1,3 +1,4 @@
+import { useOverviewBloom } from './overview-bloom-mode';
 import { useFrame } from '@react-three/fiber';
 import {
   useCallback,
@@ -22,6 +23,7 @@ import {
   FlowParticlePool,
   prepareFlowPath,
   setAnimatedFlowViewport,
+  setAnimatedFlowBloom,
   type AnimatedFlowResources,
   type PreparedFlowPath,
   type FlowEmitterConfig,
@@ -39,6 +41,7 @@ export interface FlowLineLayer {
 
 export interface AnimatedFlowLineProps {
   points: readonly FlowPoint[];
+  replayStep?: number;
   outer?: FlowLineLayer;
   glow?: FlowLineLayer;
   core?: FlowLineLayer;
@@ -110,11 +113,14 @@ function FlowLine({
   depthWrite: boolean;
   fallbackBlending?: THREE.Blending;
 }) {
+  const bloom = useOverviewBloom();
   const group = useMemo(() => new THREE.Group(), []);
   const resources = useRef<FlowLineResources | null>(null);
   useLayoutEffect(() => {
     const active = createFlowLineResources(points, {
-      color: layer.color,
+      color: bloom
+        ? new THREE.Color(layer.color).multiplyScalar(4)
+        : layer.color,
       linewidth: layer.linewidth,
       opacity: layer.opacity,
       blending: layer.blending ?? fallbackBlending,
@@ -133,7 +139,7 @@ function FlowLine({
       group.remove(active.line);
       disposeFlowLineResources(active);
     };
-  }, [depthTest, depthWrite, fallbackBlending, group, layer, points]);
+  }, [bloom, depthTest, depthWrite, fallbackBlending, group, layer, points]);
   useFrame((state) => {
     resources.current?.material.resolution.set(
       state.size.width,
@@ -162,15 +168,17 @@ function FlowParticles({
   canAnimate,
   particleKey,
   discardDeltaRef,
+  replayStep,
 }: Pick<
   AnimatedFlowLineProps,
-  'forward' | 'reverse' | 'random' | 'canAnimate' | 'particleKey'
+  'forward' | 'reverse' | 'random' | 'canAnimate' | 'particleKey' | 'replayStep'
 > & {
   path: PreparedFlowPath;
   depthTest: boolean;
   depthWrite: boolean;
   discardDeltaRef: RefObject<boolean>;
 }) {
+  const bloom = useOverviewBloom();
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
   const group = useMemo(() => new THREE.Group(), []);
   const branch = useRef<ParticleBranch | null>(null);
@@ -251,7 +259,8 @@ function FlowParticles({
       pixelRatio,
       state.size.height * pixelRatio
     );
-    active.pool.update(Math.min(delta, 0.1), path.totalLength);
+    setAnimatedFlowBloom(active.resources, bloom);
+    active.pool.update(replayStep ?? Math.min(delta, 0.1), path.totalLength);
     writeFlowParticles(active.resources, path, active.pool.snapshot());
   });
 
@@ -271,7 +280,9 @@ export function AnimatedFlowLine({
   showLine = true,
   canAnimate,
   particleKey,
+  replayStep,
 }: AnimatedFlowLineProps) {
+  const bloom = useOverviewBloom();
   const reducedMotion = usePrefersReducedMotion();
   const discardDeltaRef = useRef(pageHidden());
   const subscribeVisibility = useCallback((notify: () => void) => {
@@ -312,18 +323,22 @@ export function AnimatedFlowLine({
       )}
       {showLine && !useContinuousRibbon && (
         <>
-          <FlowLine
-            points={points}
-            layer={outer}
-            depthTest={depthTest}
-            depthWrite={depthWrite}
-          />
-          <FlowLine
-            points={points}
-            layer={glow}
-            depthTest={depthTest}
-            depthWrite={depthWrite}
-          />
+          {!bloom && (
+            <FlowLine
+              points={points}
+              layer={outer}
+              depthTest={depthTest}
+              depthWrite={depthWrite}
+            />
+          )}
+          {!bloom && (
+            <FlowLine
+              points={points}
+              layer={glow}
+              depthTest={depthTest}
+              depthWrite={depthWrite}
+            />
+          )}
           <FlowLine
             points={points}
             layer={core}
@@ -344,6 +359,7 @@ export function AnimatedFlowLine({
           canAnimate={canAnimate}
           particleKey={particleKey}
           discardDeltaRef={discardDeltaRef}
+          replayStep={replayStep}
         />
       )}
     </group>

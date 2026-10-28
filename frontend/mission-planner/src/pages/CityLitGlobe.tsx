@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useOverviewBloom } from './overview-bloom-mode';
 import { TERMINATOR_HALF_WIDTH } from './night-side-factor';
 
 interface CityLitGlobeProps {
@@ -13,6 +14,7 @@ const CITY_LIGHT_COLOR = 'vec3(0.92, 0.96, 1.0)';
 type CompiledShader = Parameters<THREE.Material['onBeforeCompile']>[0];
 
 export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
+  const bloom = useOverviewBloom();
   const [sourceDayMap, sourceCityLightMask] = useLoader(THREE.TextureLoader, [
     '/earth-day-hi.jpg',
     '/city-lights-mask.png',
@@ -96,18 +98,21 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
               ${CITY_LIGHT_COLOR} *
               cityStrength *
               nightFactor *
-              ${CITY_LIGHT_INTENSITY};
+              ${bloom ? '5.0' : CITY_LIGHT_INTENSITY};
           `
         );
     },
-    [cityLightMask]
+    [cityLightMask, bloom]
   );
 
   return (
     <mesh>
       <sphereGeometry args={[2, 64, 64]} />
       <meshStandardMaterial
-        customProgramCacheKey={() => 'city-lights-surface-v1'}
+        key={bloom ? 'bloom' : 'current'}
+        customProgramCacheKey={() =>
+          bloom ? 'city-lights-bloom-v1' : 'city-lights-surface-v1'
+        }
         map={dayMap}
         metalness={0.05}
         onBeforeCompile={onBeforeCompile}

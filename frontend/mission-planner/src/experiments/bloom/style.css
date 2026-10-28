@@ -1,0 +1,145 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #dbe8f4;
+  background: #030307;
+  font-synthesis: none;
+  --text-primary: #edf4fc;
+  --text-secondary: #a9bed2;
+  --bg-primary: #07111d;
+  --border-color: #364c64;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #24374e;
+}
+header strong {
+  font-size: 20px;
+}
+header span {
+  color: #85b9d7;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+header small {
+  margin-left: auto;
+  color: #8095aa;
+}
+.controls,
+footer {
+  padding: 12px 24px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #0b1420;
+}
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.controls input[type='range'] {
+  width: 85px;
+}
+select,
+button,
+input {
+  color: #dbe8f4;
+  background: #122338;
+  border: 1px solid #3c526e;
+  border-radius: 4px;
+  padding: 6px;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+output {
+  min-width: 30px;
+}
+section.overview-map-stage {
+  height: calc(100vh - 265px);
+  min-height: 420px;
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  isolation: isolate;
+}
+.scene-caption {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  pointer-events: none;
+  line-height: 1.6;
+  font-size: 15px;
+  color: #a2d9f6;
+}
+.scene-caption small {
+  font-size: 11px;
+  color: #8ca4ba;
+}
+footer {
+  font-size: 12px;
+}
+footer label input {
+  width: 285px;
+}
+footer p {
+  margin: 0;
+  width: 100%;
+  color: #93a9bf;
+  font-size: 11px;
+  max-width: 1100px;
+}
+footer [role='status'] {
+  color: #93d5ba;
+}
+table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+td,
+th {
+  padding: 4px 12px;
+  text-align: right;
+  border-bottom: 1px solid #24374e;
+}
+.overview-map-stage canvas {
+  touch-action: none;
+}
+
+/* Results must never resize the drawing buffer between measured modes. */
+main {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header,
+.controls {
+  flex-shrink: 0;
+}
+section.overview-map-stage {
+  flex: 1;
+  height: auto;
+  min-height: 200px;
+}
+footer {
+  flex: 0 0 155px;
+  overflow: auto;
+  align-content: flex-start;
+}
