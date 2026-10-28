@@ -317,7 +317,9 @@ function observedRouteBinding(upload, detail) {
 
 async function observePlanningRoute(page, upload) {
   await page.getByRole('link', { name: 'Routes', exact: true }).click();
-  const row = page.getByRole('row').filter({ has: page.getByRole('cell', { name: upload.name, exact: true }) });
+  const row = page.getByRole('row')
+    .filter({ has: page.getByRole('cell', { name: upload.name, exact: true }) })
+    .filter({ has: page.getByText('Active', { exact: true }) });
   await row.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
   if (await row.count() !== 1) throw new Error('public uploaded route row is ambiguous');
   await row.getByText('Active', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });

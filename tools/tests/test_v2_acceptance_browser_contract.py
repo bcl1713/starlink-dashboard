@@ -332,6 +332,7 @@ function planningPage(missingHeading = false) {
   });
   const row = {
     ...visible(''), count: async () => 1,
+    filter: ({ has }) => { if (has.text !== 'Active') throw new Error('wrong active row predicate'); return row; },
     getByText: (name, { exact }) => { if (name !== 'Active' || !exact) throw new Error('wrong planning state'); return visible('Active'); },
     getByTitle: (name, { exact }) => { if (name !== 'View route details' || !exact) throw new Error('wrong public detail control'); return { click: async () => { if (!resolveResponse) throw new Error('response observation was not armed'); resolveResponse(response); } }; },
   };
@@ -345,6 +346,7 @@ function planningPage(missingHeading = false) {
     getByText: row.getByText,
   };
   return {
+    getByText: (text, { exact }) => { if (!exact) throw new Error('planning status must be exact'); return { text }; },
     getByRole: (role, options) => {
       if (role === 'link' && options.name === 'Routes' && options.exact) return { click: async () => {} };
       if (role === 'cell' && options.name === upload.name && options.exact) return { cell: upload.name };
@@ -487,6 +489,83 @@ for (const [start, finish] of [[15, 15.1], [11, 11.1], [12.1, 12.2]]) {
   let rejected = false; try { bad.lifecycle.assertHealthy(); } catch { rejected = true; }
   if (!rejected) throw new Error('stale, overlapping or immediate refetch was accepted');
 }
+"""
+    completed = subprocess.run(
+        ["node", "--input-type=module", "--eval", program, adapter.as_uri()],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=10,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_planning_route_selects_active_duplicate_and_preserves_uploaded_identity(
+    tmp_path: Path,
+) -> None:
+    """Retained same-name routes must not make qualification ambiguous or bind an old ID."""
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    package = repository / "frontend/mission-planner/package.json"
+    playwright = package.parent / "node_modules/@playwright/test"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text(
+        ADAPTER_SCRIPT.read_text(encoding="utf-8")
+        + "\nexport { observePlanningRoute };\n",
+        encoding="utf-8",
+    )
+    package.parent.mkdir(parents=True)
+    package.write_text('{"name":"duplicate-route-qualification"}\n', encoding="utf-8")
+    playwright.mkdir(parents=True)
+    (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
+    program = r"""
+const { observePlanningRoute } = await import(process.argv[1]);
+const upload = { id: 'v2-activation-route-1', name: 'V2 Acceptance Route KAAA-KBBB', point_count: 3 };
+const active = { ...upload, is_active: true, points: [{ longitude: -100, latitude: 35 }, { longitude: -99.95, latitude: 35.05 }, { longitude: -99.9, latitude: 35.1 }] };
+const retained = { ...active, id: 'v2-activation-route', is_active: false };
+function pageWithRoutes(routes, detailOverride) {
+  let observe;
+  const visible = (text) => ({ waitFor: async () => {}, innerText: async () => text });
+  const rows = (matches) => ({
+    filter: ({ has }) => rows(matches.filter(has.matches)),
+    count: async () => matches.length,
+    waitFor: async () => { if (matches.length !== 1) throw new Error(`strict row locator resolved to ${matches.length} rows`); },
+    getByText: (text, { exact }) => {
+      if (!exact || matches.length !== 1 || (matches[0].is_active ? 'Active' : 'Inactive') !== text) throw new Error('route status not visible');
+      return visible(text);
+    },
+    getByTitle: () => ({ click: async () => {
+      if (matches.length !== 1) throw new Error('ambiguous details control');
+      const route = detailOverride ?? matches[0];
+      const response = { request: () => ({ method: () => 'GET' }), url: () => `http://product/api/routes/${matches[0].id}`, status: () => 200, json: async () => route };
+      observe(response);
+    } }),
+  });
+  return {
+    getByText: (text, { exact }) => ({ matches: (route) => exact && (route.is_active ? 'Active' : 'Inactive') === text }),
+    getByRole: (role, options) => {
+      if (role === 'link') return { click: async () => {} };
+      if (role === 'row') return rows(routes);
+      if (role === 'cell') return { matches: (route) => options.exact && route.name === options.name };
+      if (role === 'dialog') return {
+        getByRole: (kind) => kind === 'button' ? { click: async () => {} } : visible(active.name),
+        getByText: () => visible('Active'),
+      };
+      throw new Error('unexpected public route control');
+    },
+    waitForResponse: (predicate) => new Promise((resolve, reject) => {
+      observe = (response) => predicate(response) ? resolve(response) : reject(new Error('unexpected route detail response ID'));
+    }),
+  };
+}
+for (const routes of [[retained, active], [active, retained]]) {
+  const observed = await observePlanningRoute(pageWithRoutes(routes), upload);
+  if (observed.routeBinding.routeId !== 'v2-activation-route-1' || observed.planning.planningRouteStatus !== 'Active') throw new Error('qualification did not bind the newly uploaded active duplicate');
+}
+for (const routes of [[retained], [active, { ...active, id: 'v2-activation-route-2' }]]) {
+  await observePlanningRoute(pageWithRoutes(routes), upload).then(() => { throw new Error('missing or ambiguous active route was accepted'); }, () => {});
+}
+await observePlanningRoute(pageWithRoutes([retained, active], retained), upload).then(() => { throw new Error('stale route detail identity was accepted'); }, () => {});
 """
     completed = subprocess.run(
         ["node", "--input-type=module", "--eval", program, adapter.as_uri()],
