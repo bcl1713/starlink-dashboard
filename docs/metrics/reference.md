@@ -81,6 +81,13 @@ pre-departure, 1 in-flight, 2 post-arrival; `starlink_eta_mode` uses 0
 anticipated, 1 estimated. Route and mission series depend on active data and
 timing. Planning values describe the plan, not measured link performance.
 
+Transient mission gauges publish only the current mission/route owner.
+Switching, deactivation and deletion remove old label children rather than
+retaining stale active values or manufacturing empty-route zeros. POI/route
+frame replacement likewise removes old names, categories and ETA modes. Removal
+stops new samples; retained Prometheus history remains available. See the
+[lifecycle inventory and verification](../performance/perf-393-metric-lifecycle.md).
+
 ## Metadata and instrumentation limitations
 
 `starlink_service_info{version,mode}` and `starlink_mode_info{mode}` are

@@ -24,9 +24,10 @@ async def _drain(task):
 class ActiveContextOwner:
     """One serial executor job at a time; close drains every owned worker."""
 
-    def __init__(self, manager, mode_provider):
+    def __init__(self, manager, mode_provider, replay_provider=lambda: None):
         self.manager = manager
         self.mode_provider = mode_provider
+        self.replay_provider = replay_provider
         self.stopping = asyncio.Event()
         self.task = None
         self.failed = False
@@ -47,21 +48,43 @@ class ActiveContextOwner:
         )
 
     async def refresh(self):
-        worker = asyncio.create_task(
-            asyncio.to_thread(get_active_mission_snapshot, self.manager)
-        )
+        worker = asyncio.create_task(asyncio.to_thread(self._reconcile))
         return await _drain(worker)
+
+    def _reconcile(self):
+        from app.core.metrics.prometheus_metrics import MISSION_METRICS
+        from app.mission.active_context_cache import active_mission_snapshot_is_current
+        from app.mission.storage import get_active_leg_lock
+
+        snapshot = get_active_mission_snapshot(self.manager)
+        with get_active_leg_lock():
+            replay = self.replay_provider()
+            replay_owns_selection = (
+                self.mode_provider() == "simulation"
+                and replay is not None
+                and replay.run is not None
+            )
+            if not replay_owns_selection and active_mission_snapshot_is_current(
+                self.manager, snapshot
+            ):
+                if snapshot.binding is not None:
+                    binding = snapshot.binding
+                    MISSION_METRICS.activate(
+                        binding.parent_mission_id, binding.route_id
+                    )
+                else:
+                    MISSION_METRICS.clear_current()
+            return snapshot
 
     async def _run(self):
         while not self.stopping.is_set():
-            if self.mode_provider() == "live":
-                try:
-                    await self.refresh()
-                    self.failed = False
-                except Exception:
-                    if not self.failed:
-                        logger.exception("Active mission reconciliation owner failed")
-                    self.failed = True
+            try:
+                await self.refresh()
+                self.failed = False
+            except Exception:
+                if not self.failed:
+                    logger.exception("Active mission reconciliation owner failed")
+                self.failed = True
             try:
                 await asyncio.wait_for(self.stopping.wait(), timeout=0.25)
             except TimeoutError:

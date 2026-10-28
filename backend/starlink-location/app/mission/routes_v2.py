@@ -487,6 +487,9 @@ async def delete_mission_endpoint(
                         422,
                         detail={"code": "invalid_owned_deletion", "message": str(exc)},
                     ) from exc
+                from app.core.metrics.metric_updater import clear_mission_metrics
+
+                clear_mission_metrics(mission_id)
                 return
 
             # Verify the complete foreign inventory before any legacy cascade mutation.
@@ -631,6 +634,9 @@ async def delete_mission_endpoint(
                 f"Mission {mission_id} deleted successfully with {leg_count} leg(s), "
                 f"{deleted_routes_count} route(s), {deleted_pois_count} POI(s)"
             )
+            from app.core.metrics.metric_updater import clear_mission_metrics
+
+            clear_mission_metrics(mission_id)
             return
     except HTTPException:
         raise
@@ -2017,6 +2023,9 @@ async def activate_leg(
 
             if run_service:
                 run_service.runtime.clear_selection()
+            from app.core.metrics.metric_updater import update_mission_active_metric
+
+            update_mission_active_metric(mission_id, active_leg.route_id)
             return {"status": "success", "active_leg_id": leg_id}
     except HTTPException:
         raise
@@ -2125,6 +2134,9 @@ async def deactivate_all_legs(
                     # Don't fail the overall deactivation if route deactivation fails
 
             logger.info(f"Deactivated all legs in mission {mission_id}")
+            from app.core.metrics.metric_updater import clear_mission_metrics
+
+            clear_mission_metrics(mission_id)
 
             return {"status": "success", "message": "All legs deactivated"}
     except HTTPException:

@@ -202,10 +202,17 @@ class SimulationRunRuntime(MetricsChangeSource):
         )
         self._plan = None
         self._frame = None
+        from app.core.metrics.metric_updater import clear_mission_metrics
+
+        clear_mission_metrics(run.mission_id)
 
     @model_input_write
     @metrics_changed("replay:clear_selection", key="_metrics_key")
     def clear_selection(self) -> None:
+        if self._status.run is not None:
+            from app.core.metrics.metric_updater import clear_mission_metrics
+
+            clear_mission_metrics(self._status.run.mission_id)
         self._plan = None
         self._frame = None
         self._status = self._status.model_copy(

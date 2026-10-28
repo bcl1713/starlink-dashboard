@@ -183,10 +183,20 @@ class SimulationRunService:
         before the pointer swap. A stale CAS cannot mask or replace a newer head.
         Legacy callbacks returning None do not produce coupled metrics.
         """
-        if frame is None:
-            return False
         from app.core.metrics.frame_builder import coordinator_identity
-        from app.core.metrics.prometheus_metrics import FRAME_STORE
+        from app.core.metrics.prometheus_metrics import FRAME_STORE, MISSION_METRICS
+
+        def invalidate_committed_mission():
+            if (
+                self.runtime.selected_plan() is tick.plan
+                and self.runtime.frame() is tick.frame
+                and self.status().revision == tick.status.revision
+            ):
+                MISSION_METRICS.invalidate(tick.plan.mission_id, tick.plan.route_id)
+
+        if frame is None:
+            invalidate_committed_mission()
+            return False
 
         try:
             status = self.status()
@@ -214,12 +224,20 @@ class SimulationRunService:
                 )
             ):
                 FRAME_STORE.fail(expected, "replay source superseded")
+                invalidate_committed_mission()
                 return False
-            return FRAME_STORE.publish(expected, frame)
+            if not FRAME_STORE.publish(expected, frame):
+                invalidate_committed_mission()
+                return False
+            from app.core.metrics.metric_updater import publish_replay_mission_metrics
+
+            publish_replay_mission_metrics(tick.plan, tick.frame)
+            return True
         except Exception:
             # Runtime and domain state are already committed. Optional metric
             # failure must not enter their pre-commit compensation paths.
             FRAME_STORE.fail(expected, "committed replay metric publication failed")
+            invalidate_committed_mission()
             logger.exception("Committed replay metric publication failed")
             return False
 

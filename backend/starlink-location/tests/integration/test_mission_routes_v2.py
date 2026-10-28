@@ -9,10 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 
-import pytest
-from fastapi.testclient import TestClient
-
 import app.mission.routes_v2 as mission_routes_v2
+import pytest
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -26,6 +24,7 @@ from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import OverviewClockSettingsStore
+from fastapi.testclient import TestClient
 from main import app
 
 
@@ -532,6 +531,22 @@ class TestMissionV2GlobalActivationLifecycle:
         assert response.status_code == 200
         assert load_mission_v2(mission_a.id).legs[0].is_active is False
         assert load_mission_v2(mission_b.id).legs[0].is_active is True
+        from app.core.metrics import REGISTRY
+
+        assert (
+            REGISTRY.get_sample_value(
+                "mission_active_info",
+                {"mission_id": mission_a.id, "route_id": mission_a.legs[0].route_id},
+            )
+            is None
+        )
+        assert (
+            REGISTRY.get_sample_value(
+                "mission_active_info",
+                {"mission_id": mission_b.id, "route_id": mission_b.legs[0].route_id},
+            )
+            == 1
+        )
         assert (
             client.app.state.route_manager.get_active_route_id()
             == mission_b.legs[0].route_id
@@ -840,9 +855,8 @@ class TestMissionV2ListEndpoint:
 
     def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
         """The additive total header lets clients paginate without breaking arrays."""
-        from fastapi import Response
-
         from app.mission.routes_v2 import list_missions
+        from fastapi import Response
 
         missions = [
             Mission(id=f"mission-{index}", name=f"Mission {index}")

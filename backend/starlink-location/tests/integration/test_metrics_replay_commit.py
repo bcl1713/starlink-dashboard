@@ -3,8 +3,8 @@
 from math import isnan
 
 import pytest
-
 from app.core.metrics import prometheus_metrics as metrics
+
 from tests.integration.test_simulation_run_api import start
 from tests.integration.test_simulation_run_time_apis import api, timed_api
 from tests.unit.test_simulation_run_timing import timing
@@ -21,10 +21,23 @@ def test_activation_publishes_only_after_successful_commit(
     commit = service.runtime.commit_tick
     prepare = service.publish
     frames = []
+    from app.core.metrics.metric_updater import update_mission_active_metric
+
+    update_mission_active_metric("previous-mission", "previous-route")
+    previous_mission = metrics.REGISTRY.get_sample_value(
+        "mission_active_info",
+        {"mission_id": "previous-mission", "route_id": "previous-route"},
+    )
 
     def callback(telemetry, tick):
         frames.append(prepare(telemetry, tick))
         assert metrics.FRAME_STORE.read() is old
+        assert (
+            metrics.REGISTRY.get_sample_value(
+                "mission_phase_state", {"mission_id": tick.plan.mission_id}
+            )
+            is None
+        )
         if failure == "before":
             raise RuntimeError("before commit")
         return frames[-1]
@@ -41,6 +54,13 @@ def test_activation_publishes_only_after_successful_commit(
     if failure:
         assert response.status_code == 500
         assert service.status().state == "idle"
+        assert (
+            metrics.REGISTRY.get_sample_value(
+                "mission_active_info",
+                {"mission_id": "previous-mission", "route_id": "previous-route"},
+            )
+            == previous_mission
+        )
         assert metrics.FRAME_STORE.read().frame is old.frame
         assert isnan(
             metrics.REGISTRY.get_sample_value("starlink_dish_latitude_degrees")
@@ -49,6 +69,63 @@ def test_activation_publishes_only_after_successful_commit(
         assert response.status_code == 200
         assert metrics.FRAME_STORE.read().frame is frames[0]
         assert frames[0].identity.replay_revision == str(service.status().revision)
+        assert (
+            metrics.REGISTRY.get_sample_value(
+                "mission_active_info",
+                {
+                    "mission_id": service.status().run.mission_id,
+                    "route_id": service.status().run.route_id,
+                },
+            )
+            == 1
+        )
+        assert (
+            metrics.REGISTRY.get_sample_value(
+                "mission_active_info",
+                {"mission_id": "previous-mission", "route_id": "previous-route"},
+            )
+            is None
+        )
+
+
+def test_replay_cancellation_removes_all_mission_children(timing):
+    service, _clocks, coordinator, publish = timing
+    service.collect(coordinator, publish)
+    assert (
+        metrics.REGISTRY.get_sample_value(
+            "mission_phase_state", {"mission_id": "mission-1"}
+        )
+        == 1
+    )
+    service.runtime.cancel("Lifecycle test")
+    assert all(
+        not family.samples
+        for family in metrics.REGISTRY.collect()
+        if family.name.startswith("mission_")
+    )
+
+
+@pytest.mark.parametrize("terminal", ["cancel", "fail"])
+def test_reconciliation_cannot_resurrect_terminal_replay(timed_api, terminal):
+    from app.mission.active_context_owner import ActiveContextOwner
+    from app.mission.storage import load_mission_v2
+
+    client, service, _clocks = timed_api
+    assert start(client).status_code == 200
+    assert load_mission_v2("mission-1").legs[0].is_active
+    if terminal == "cancel":
+        service.runtime.cancel("Lifecycle test")
+    else:
+        service.runtime.fail("test", "Lifecycle test")
+    owner = ActiveContextOwner(
+        service.route_manager, lambda: "simulation", service.status
+    )
+    owner._reconcile()
+    assert all(
+        not family.samples
+        for family in metrics.REGISTRY.collect()
+        if family.name.startswith("mission_")
+    )
 
 
 def test_failure_inside_real_runtime_commit_never_publishes(timing, monkeypatch):
@@ -91,6 +168,9 @@ def test_postcommit_metric_failure_keeps_successful_runtime_and_domain_state(
     from app.simulation import run_service
 
     client, service, clocks = timed_api
+    from app.core.metrics.metric_updater import update_mission_active_metric
+
+    update_mission_active_metric("previous-mission", "previous-route")
     if not initial:
         assert start(client).status_code == 200
         clocks.advance(120 if complete else 12)
@@ -125,6 +205,25 @@ def test_postcommit_metric_failure_keeps_successful_runtime_and_domain_state(
     )
     assert metrics.FRAME_STORE.read().status == "failed"
     assert metrics.FRAME_STORE.read().frame is old.frame
+    assert (
+        metrics.REGISTRY.get_sample_value(
+            "mission_active_info",
+            {"mission_id": "previous-mission", "route_id": "previous-route"},
+        )
+        is None
+    )
+    assert (
+        metrics.REGISTRY.get_sample_value(
+            "mission_active_info", {"mission_id": "mission-1", "route_id": "replay"}
+        )
+        == 1
+    )
+    assert (
+        metrics.REGISTRY.get_sample_value(
+            "mission_phase_state", {"mission_id": "mission-1"}
+        )
+        is None
+    )
 
 
 @pytest.mark.parametrize("activation", [True, False])
