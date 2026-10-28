@@ -173,15 +173,6 @@ export function ConferenceCard({
               Close Conference
             </button>
           ))}
-        {!record.deleted && (
-          <button
-            className={button}
-            disabled={disabled || incomplete || !ready}
-            onClick={onJoin}
-          >
-            Connect Customer
-          </button>
-        )}
       </div>
       <details className="border-t pt-3">
         <summary className="min-h-11 cursor-pointer py-2">
@@ -198,6 +189,15 @@ export function ConferenceCard({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
+          {!record.deleted && (
+            <button
+              className={button}
+              disabled={disabled || incomplete || !ready}
+              onClick={onJoin}
+            >
+              Connect Customer
+            </button>
+          )}
           {!record.deleted && (
             <>
               {!previousSession && p.status === 'interrupted' && (

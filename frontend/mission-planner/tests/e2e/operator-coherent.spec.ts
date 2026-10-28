@@ -46,6 +46,9 @@ test('coherent operations, retained capture and real journal safety across deskt
   const proof: Record<string, unknown> = {
     synthetic: true,
     productionAPIs: true,
+    browserVersion: browser.version(),
+    locale: 'en-US',
+    timezone: 'Pacific/Honolulu',
     browserErrors: [],
     captures: [],
   };

@@ -455,7 +455,7 @@ it('offers manual destination in shared Display Controls without a mission or re
   expect(screen.getByLabelText('Destination name')).toBeTruthy();
 });
 
-it('keeps_now_view_availability_actions_usable_with_the_journal_disabled', async () => {
+it('keeps_transport_availability_actions_usable_with_the_journal_disabled', async () => {
   const state: AvailabilityView = {
     mission_id: 'mission-a',
     revision: 0,
@@ -474,7 +474,7 @@ it('keeps_now_view_availability_actions_usable_with_the_journal_disabled', async
   const action = vi
     .spyOn(transportAvailabilityApi, 'action')
     .mockResolvedValue({ ...state, revision: 1 });
-  mount('/operator?workspace=1&mission_id=mission-a&view=now', false, {
+  mount('/operator?workspace=1&mission_id=mission-a&view=transport', false, {
     ...health,
     enabled: false,
   });
@@ -761,4 +761,50 @@ it('retains quick note text and partial backdate through park, reopen and a fail
   expect(registry.listDrafts()[0].input.payload.note).toBe(
     'Retained Field Note'
   );
+});
+
+it('opens preserved call history when an inactive timeline requirement is selected', async () => {
+  const call = {
+    ...record,
+    ...callDraft(undefined, 'planned', 'mission-a'),
+    payload: {
+      ...callDraft(undefined, 'planned', 'mission-a').payload,
+      title: 'Finished Call',
+      status: 'cancelled' as const,
+    },
+  };
+  vi.spyOn(api, 'readOperatorRecords').mockResolvedValue(page([call]));
+  vi.spyOn(api, 'readOperatorHistory').mockResolvedValue(page([call]));
+  vi.spyOn(timelineApi, 'readMissionTimeline').mockResolvedValue({
+    ...eventSnapshot({
+      events: [
+        eventFixture({
+          title: 'Retired Call Requirement',
+          source_ref: call.record_id,
+          active: false,
+          state: 'inactive',
+        }),
+      ],
+    }),
+    legs: [],
+  });
+  const { registry } = mount('/operator?mission_id=mission-a', true);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Focus Retired Call Requirement',
+    })
+  );
+  await waitFor(() =>
+    expect(
+      within(
+        screen.getByRole('navigation', {
+          name: 'Operator workspace',
+          hidden: true,
+        })
+      )
+        .getByRole('button', { name: 'History', hidden: true })
+        .getAttribute('aria-current')
+    ).toBe('page')
+  );
+  expect(registry.listDrafts()).toHaveLength(0);
 });

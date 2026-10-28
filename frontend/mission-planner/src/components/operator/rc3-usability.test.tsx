@@ -147,7 +147,7 @@ it('shows contextual actions and independent bridge and customer reports on a ca
     />
   );
   expect(screen.queryByRole('button', { name: 'Start call' })).toBeNull();
-  expect(screen.getByText(/In progress/)).toBeVisible();
+  expect(screen.getByText(/In Progress/)).toBeVisible();
   expect(screen.getByText(/Actual: 20 Oct 2026/)).toBeVisible();
   expect(
     screen.queryByRole('button', { name: /Report Call Tested/i })

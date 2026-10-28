@@ -134,7 +134,18 @@ export function CommunicationsView({
       )}
       <div className="ws-operations-lanes">
         <section className="ws-conferences-lane" aria-label="Conferences">
-          <h2>Conferences</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2>Conferences</h2>
+            {!showCaptureActions && (
+              <button
+                className="ws-button"
+                disabled={disabled}
+                onClick={onCreateConference}
+              >
+                Create Conference
+              </button>
+            )}
+          </div>
           {incomplete && (
             <p role="status">
               Active communications show loaded records only; unread pages may

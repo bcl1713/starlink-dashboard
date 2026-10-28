@@ -886,3 +886,21 @@
     min-height: 3.5rem;
   }
 }
+
+@media (max-width: 900px) {
+  .ws-awareness {
+    grid-template-rows: auto;
+  }
+  .ws-awareness .ws-now,
+  .ws-awareness .ws-next {
+    display: none;
+  }
+  .ws-next-action {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .ws-next-action .ws-button {
+    font-size: 0.75rem;
+    max-width: 8rem;
+  }
+}

@@ -1,4 +1,3 @@
-import { OperatorTransportAvailability } from './OperatorTransportAvailability';
 import { LegacySaveRecovery } from './LegacySaveRecovery';
 import { operatorTiming } from '@/lib/operatorTiming';
 import { readTrainingProviderEvidence } from '../training/trainingProviderEvidence';
@@ -362,6 +361,15 @@ export function OperatorWorkspace() {
         (r) => r.record_id === call_id || r.record_id === conference_id
       );
       if (parent) record = parent;
+    }
+    if (
+      record.payload.entry_type === 'call' &&
+      (record.deleted ||
+        ['completed', 'cancelled'].includes(record.payload.status))
+    ) {
+      navigateView('History');
+      setHistoryId(record.record_id);
+      return;
     }
     setSelection({ missionId, recordId: record.record_id });
     navigateView(record.record_type === 'issue' ? 'Issues' : 'Operations');
@@ -1098,15 +1106,6 @@ export function OperatorWorkspace() {
             </section>
           ) : (
             <>
-              {view === 'Operations' && (
-                <details className="ws-secondary-capture">
-                  <summary>Transport Availability</summary>
-                  <OperatorTransportAvailability
-                    key={missionId}
-                    missionId={missionId}
-                  />
-                </details>
-              )}
               <div className="ws-quick-actions" aria-label="Quick Actions">
                 <button
                   className="ws-button ws-primary"
@@ -1114,13 +1113,6 @@ export function OperatorWorkspace() {
                   onClick={plannedCall}
                 >
                   Schedule
-                </button>
-                <button
-                  className="ws-button"
-                  disabled={disabled}
-                  onClick={() => openInput(conferenceDraft(missionId))}
-                >
-                  Create Conference
                 </button>
                 <button
                   className="ws-button"
@@ -1137,6 +1129,14 @@ export function OperatorWorkspace() {
                 >
                   Note
                 </button>
+                {cue?.length ? (
+                  <button
+                    className="ws-button"
+                    onClick={() => setOperationalAlerts(true)}
+                  >
+                    Alerts · {cue.length}
+                  </button>
+                ) : null}
               </div>
               {disabled && (
                 <p role="status">
@@ -1145,14 +1145,6 @@ export function OperatorWorkspace() {
                     : 'Operator store unavailable. Retained drafts remain available below.'}
                 </p>
               )}
-              {cue?.length ? (
-                <button
-                  className="ws-button"
-                  onClick={() => setOperationalAlerts(true)}
-                >
-                  Operational Alerts · {cue.length}
-                </button>
-              ) : null}
               {records.isFetching && records.data && (
                 <p role="status">Refreshing saved records…</p>
               )}
@@ -1173,6 +1165,30 @@ export function OperatorWorkspace() {
                       Establish Includes The Two-Way Distant-End Check. These
                       Are Operator Reports.
                     </p>
+                    <button
+                      className="ws-button"
+                      disabled={
+                        !selectedRecordId && !nextRequirement(events.snapshot)
+                      }
+                      onClick={() => {
+                        const next = nextRequirement(events.snapshot);
+                        const record =
+                          currentLoaded.find(
+                            (record) => record.record_id === selectedRecordId
+                          ) ??
+                          currentLoaded.find(
+                            (record) =>
+                              record.record_type === 'call' &&
+                              next?.dependent_versions[record.record_id] !==
+                                undefined
+                          );
+                        if (record) focusRecord(record);
+                      }}
+                    >
+                      {selectedRecordId
+                        ? 'Open Selected Work'
+                        : 'Open Next Action'}
+                    </button>
                   </section>
                   <CommunicationsView
                     showCaptureActions={false}
