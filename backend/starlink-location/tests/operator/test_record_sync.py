@@ -4,6 +4,7 @@ import json
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 import pytest
+
 from tests.operator.api_helpers import BASE, create, headers
 
 

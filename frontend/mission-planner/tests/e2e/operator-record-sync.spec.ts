@@ -60,7 +60,7 @@ async function schedule(
   await page.getByLabel(/Preparation Lead Minutes/i).fill('10');
   if (conferenceId)
     await page
-      .getByLabel('Conference (Optional)', { exact: true })
+      .getByRole('combobox', { name: 'Conference (Optional)', exact: true })
       .selectOption(conferenceId);
   await page.getByRole('button', { name: 'Save Call', exact: true }).click();
 }
@@ -204,6 +204,9 @@ test('saved records converge across independent laptop and phone contexts with s
           expect(response.ok(), await response.text()).toBe(true);
           return { receipt: (await response.json()) as CommandReceipt, at };
         });
+      // If a form action fails first, closing its context cancels the outstanding
+      // response wait; observe that rejection without obscuring the form error.
+      void completed.catch(() => {});
       await action();
       return completed;
     }
