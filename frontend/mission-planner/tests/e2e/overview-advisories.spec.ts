@@ -207,10 +207,14 @@ test('customizable presets and durable shared advisories across real clients', a
       await context.addInitScript(() => {
         const tracked = window as unknown as { overviewAudio: number };
         tracked.overviewAudio = 0;
-        localStorage.setItem(
-          'operator-alert-preferences',
-          JSON.stringify({ enabled: false, sound: false, vibration: false })
-        );
+        try {
+          localStorage.setItem(
+            'operator-alert-preferences',
+            JSON.stringify({ enabled: false, sound: false, vibration: false })
+          );
+        } catch {
+          /* The initial opaque document has no storage. */
+        }
         if (globalThis.AudioContext) {
           const original = AudioContext.prototype.createOscillator;
           AudioContext.prototype.createOscillator = function () {
@@ -552,8 +556,10 @@ test('customizable presets and durable shared advisories across real clients', a
     expect(proof.externalRequests).toEqual([]);
     proof.checksPassed = true;
   } finally {
-    await stopHeartbeat();
-    await Promise.all(
+    await stopHeartbeat().catch((error) => {
+      proof.heartbeatCleanupError = String(error);
+    });
+    await Promise.allSettled(
       contexts.map(async (context, index) => {
         try {
           const page = context.pages()[0];
