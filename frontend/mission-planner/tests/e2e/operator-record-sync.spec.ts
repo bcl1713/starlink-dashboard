@@ -753,6 +753,7 @@ test('saved records converge across independent laptop and phone contexts with s
         card(page, suspended.receipt.saved_records[0].record_id)
       ).toHaveCount(0, { timeout: 15_000 });
     const simulation = callDraft(undefined, 'planned', missionId);
+    simulation.time.planned_start_at = start;
     simulation.payload.title = 'Simulation source only';
     simulation.payload.party = 'Simulation source only';
     const native = await json<CommandReceipt>(
