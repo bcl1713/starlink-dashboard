@@ -7,7 +7,7 @@ import { useUpdateOverviewLinkSettings } from '@/hooks/api/useUpdateOverviewLink
 
 const groups = {
   panels: {
-    title: 'Overview panels',
+    title: 'Overview Panels',
     description:
       'Choose the information panels shown on all Overview displays.',
     controls: [
@@ -20,6 +20,12 @@ const groups = {
         field: 'arrival_panel_enabled',
         label: 'Departure and arrival panel',
         description: 'Show departure, arrival and upcoming POI timing.',
+      },
+      {
+        field: 'next_flight_events_only',
+        label: 'Flight Events Only',
+        description:
+          'Select only flight events for Next Flight Event. Save this choice in any display preset; map layers remain independently customizable.',
       },
       {
         field: 'planned_satellite_panel_enabled',
@@ -39,7 +45,7 @@ const groups = {
     ],
   },
   map: {
-    title: 'Route and points of interest',
+    title: 'Route and Points of Interest',
     description: 'Choose the mission layers shown on the globe.',
     controls: [
       {
@@ -55,12 +61,12 @@ const groups = {
       ...MISSION_POI_LAYERS.map(({ field, label }) => ({
         field,
         label,
-        description: `Show ${label.toLowerCase()} POI markers and labels.`,
+        description: `Show ${label} POI markers and labels.`,
       })),
     ],
   },
   network: {
-    title: 'Network map layers',
+    title: 'Network Map Layers',
     description:
       'Choose network links and satellite markers shown on Overview.',
     controls: [
@@ -77,13 +83,13 @@ const groups = {
       },
       {
         field: 'x_band_link_enabled',
-        label: 'X-band data link',
+        label: 'X-Band data link',
         description: 'Show the configured satellite link and its activity.',
       },
       {
         field: 'configured_satellites_enabled',
         label: 'Configured satellite markers',
-        description: 'Show configured X-band satellites and their labels.',
+        description: 'Show configured X-Band satellites and their labels.',
       },
       {
         field: 'ground_entry_point_enabled',
@@ -93,7 +99,7 @@ const groups = {
     ],
   },
   aircraft: {
-    title: 'Own aircraft',
+    title: 'Own Aircraft',
     description: 'Choose the tracked aircraft layers shown on Overview.',
     controls: [
       {
@@ -109,7 +115,7 @@ const groups = {
     ],
   },
   metrics: {
-    title: 'Network metric panels',
+    title: 'Network Metric Panels',
     description: 'Show or hide each network graph independently.',
     controls: [
       {
@@ -174,7 +180,11 @@ export function OverviewLinkSettingsCard({
               </span>
               <Switch
                 aria-label={label}
-                checked={data ? (data[field] ?? true) : false}
+                checked={
+                  data
+                    ? (data[field] ?? field !== 'next_flight_events_only')
+                    : false
+                }
                 disabled={!data || isPending}
                 aria-describedby={`${id}-${field}`}
                 onChange={(event) => mutate({ [field]: event.target.checked })}

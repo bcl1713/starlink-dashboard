@@ -59,8 +59,8 @@ it('opens a compact timeline without removing acknowledged events or unknown pro
     </MemoryRouter>
   );
   expect(screen.queryByRole('dialog')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Open events' }));
-  const dialog = screen.getByRole('dialog', { name: 'Operational timeline' });
+  fireEvent.click(screen.getByRole('button', { name: 'Open Events' }));
+  const dialog = screen.getByRole('dialog', { name: 'Operational Timeline' });
   expect(
     within(dialog).getByText('Synthetic modeled restriction')
   ).toBeTruthy();
@@ -90,7 +90,7 @@ it('acknowledges a notification separately from opening its source and preserves
       <OperatorEventStrip events={events} />
     </MemoryRouter>
   );
-  const trigger = screen.getByRole('button', { name: 'Open events' });
+  const trigger = screen.getByRole('button', { name: 'Open Events' });
   fireEvent.click(trigger);
   const dialog = screen.getByRole('dialog');
   fireEvent.click(within(dialog).getByRole('button', { name: 'Acknowledge' }));
@@ -146,7 +146,7 @@ it('waits for alert output before accepting the enable gesture', async () => {
     ).toBeEnabled()
   );
 });
-it('labels live route timing and keeps original UTC in source details', () => {
+it('labels live route timing and keeps original Zulu in source details', () => {
   const events = state();
   events.snapshot = eventSnapshot({
     events: [
@@ -167,16 +167,16 @@ it('labels live route timing and keeps original UTC in source details', () => {
       <OperatorEventStrip events={events} />
     </MemoryRouter>
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Open events' }));
-  expect(screen.getByText(/Live route ETA/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Open Events' }));
+  expect(screen.getByText(/Live Route ETA/)).toBeVisible();
   expect(screen.getByText(/Plan reference/)).toBeInTheDocument();
-  fireEvent.click(screen.getByText('Source details', { exact: true }));
+  fireEvent.click(screen.getByText('Source Details', { exact: true }));
   expect(
-    screen.getByText(/Captured 2026-10-17 15:33:44 UTC · freshness fresh/)
+    screen.getByText(/Captured 2026-10-17 15:33:44 Zulu · freshness fresh/)
   ).toBeVisible();
   expect(
     screen.getByText(
-      /Plan reference 2026-10-17 15:00:00 UTC — 2026-10-17 15:10:00 UTC/
+      /Plan reference 2026-10-17 15:00:00 Zulu — 2026-10-17 15:10:00 Zulu/
     )
   ).toBeVisible();
   expect(

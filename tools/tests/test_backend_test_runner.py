@@ -495,8 +495,10 @@ def test_copied_source_verifier_produces_bound_reports_accepted_by_real_gate(tmp
         'if args==["--version"]: print("uv 0.12.19 synthetic-argv-adapter");sys.exit(0)\n'
         'assert args.pop(0)=="run"\n'
         "requirements=[];selector=None\n"
-        'while args and args[0] in ("--python","--with-requirements"):\n'
-        "    flag=args.pop(0);value=args.pop(0)\n"
+        'while args and args[0] in ("--python","--with-requirements","--isolated"):\n'
+        "    flag=args.pop(0)\n"
+        '    if flag=="--isolated": continue\n'
+        "    value=args.pop(0)\n"
         '    if flag=="--python": selector=value\n'
         "    else: requirements.append(value)\n"
         "assert selector and len(requirements)==3\n"

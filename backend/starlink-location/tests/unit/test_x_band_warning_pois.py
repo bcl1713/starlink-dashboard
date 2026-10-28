@@ -138,7 +138,10 @@ def test_interference_turns_generate_shutdown_and_turn_on_pois(tmp_path, monkeyp
     assert [(poi.latitude, poi.longitude) for poi in pois] == [(30.5, 0)] * 4
     assert all(poi.mission_id == "parent" and poi.route_id == "turns" for poi in pois)
     assert all("X-test" in poi.description for poi in pois)
-    assert [poi.name for poi in pois] == ["X-Band Shut Down", "X-Band Turn On"] * 2
+    assert [poi.name for poi in pois] == [
+        "X-Band Restriction Begins",
+        "X-Band Restriction Ends",
+    ] * 2
 
 
 @pytest.mark.parametrize(

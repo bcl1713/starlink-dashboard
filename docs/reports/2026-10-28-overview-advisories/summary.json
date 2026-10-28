@@ -1,0 +1,62 @@
+{
+  "candidateSha": "6ad0649b875f9acbdbf9db4e612b97a89f29da5b",
+  "project": "starlink-operator-issue426-r8",
+  "checksPassed": true,
+  "fixture": "Synthetic raw KML, RF catalogs and controlled telemetry/clock inputs; normal production startup, active context, prediction, ledger and Nginx; live wall clock; no aircraft dependencies",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-issue426-r8-backend:6ad0649b875f9acbdbf9db4e612b97a89f29da5b",
+      "id": "sha256:ce8897646f8ebae98888eabe4993ef98451c8ca73f2afc3562ca28bb3e37f381",
+      "revision": "6ad0649b875f9acbdbf9db4e612b97a89f29da5b"
+    },
+    "frontend": {
+      "tag": "starlink-operator-issue426-r8-frontend:6ad0649b875f9acbdbf9db4e612b97a89f29da5b",
+      "id": "sha256:e16554fd814c915f848b07c90f0f1d9699b943c4ab7ac8f0df00506dc23f9e92",
+      "revision": "6ad0649b875f9acbdbf9db4e612b97a89f29da5b"
+    }
+  },
+  "sourceArchiveSha256": "91d119c1852dca55bfcfc005fda4ad2fdda9fafa30560c3263dfb495245928a6",
+  "qualification": {
+    "synthetic": true,
+    "rawInputsOnly": true,
+    "browserErrors": [],
+    "externalRequests": [],
+    "allTransportSources": true,
+    "advisoryBounds": {
+      "top": 393.75,
+      "bottom": 874.546875,
+      "viewport": 1080,
+      "overflow": "auto",
+      "tabIndex": 0
+    },
+    "renderOnlyOverflowStress": {
+      "top": 393.75,
+      "bottom": 951.71875,
+      "lastBottom": 937.453125,
+      "viewport": 1080,
+      "scrollable": true
+    },
+    "customizableSharedPresets": true,
+    "twoClientPollingSuppression": true,
+    "lostResponseIdempotentRetry": true,
+    "reloadPersistenceAndNoOverviewAudio": true,
+    "etaDriftRetainsAcknowledgment": true,
+    "operatorHistoryRetained": true,
+    "newActiveLegRearmsAndIsolates": true,
+    "expiredSnapshotRejected": true,
+    "sourceFailureDoesNotClaimAllClear": true,
+    "checksPassed": true
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}

@@ -79,7 +79,7 @@ export function MissionTimelineContents({
     <li className="ws-timeline-now" ref={nowMarker} key="now">
       Now
       {Number.isFinite(now)
-        ? ` · ${eventUtc(new Date(now).toISOString()).slice(0, 16)} UTC`
+        ? ` · ${eventUtc(new Date(now).toISOString()).slice(0, 16)} Zulu`
         : ''}
     </li>
   );
@@ -104,7 +104,7 @@ export function MissionTimelineContents({
       : !event
         ? 'Route schedule'
         : event.time_basis === 'live_route_eta'
-          ? 'Live route ETA'
+          ? 'Live Route ETA'
           : event.kind === 'restriction' || event.kind === 'pop_advisory'
             ? 'Scheduled route time'
             : 'Fixed time';
@@ -235,7 +235,7 @@ export function MissionTimelineContents({
                 index === nowIndex && marker,
                 newDay && (
                   <li key={`date:${date}`} className="ws-timeline-date">
-                    {date} {entry.at ? 'UTC' : ''}
+                    {date} {entry.at ? 'Zulu' : ''}
                   </li>
                 ),
                 row(entry),

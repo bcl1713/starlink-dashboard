@@ -3,7 +3,7 @@ import './OverviewArrivalPanel.css';
 
 export function OverviewArrivalPanel({ state }: { state: ArrivalPanelState }) {
   return (
-    <aside className="overview-arrival" aria-label="Departure and arrival">
+    <aside className="overview-arrival" aria-label="Departure and Arrival">
       {state.message ? (
         <p className="overview-arrival__message">{state.message}</p>
       ) : (
@@ -11,7 +11,7 @@ export function OverviewArrivalPanel({ state }: { state: ArrivalPanelState }) {
           {state.sections.map((section) => (
             <section
               className="overview-arrival__section"
-              key={section.label}
+              key={section.key}
               aria-label={section.label}
             >
               <h2>
@@ -26,16 +26,16 @@ export function OverviewArrivalPanel({ state }: { state: ArrivalPanelState }) {
                     {section.timing.countdown}
                   </p>
                   <p className="overview-arrival__utc">
-                    {section.label === 'SCHEDULED DEPARTURE'
-                      ? 'SCHEDULED '
+                    {section.key === 'scheduled_departure'
+                      ? 'Scheduled '
                       : 'ETA '}
                     <time
                       dateTime={section.timing.timestamp}
-                      aria-label={section.timing.timestamp}
+                      aria-label={section.timing.utc}
                     >
                       {section.timing.utc}
                     </time>
-                    {section.timing.anticipated ? ' · anticipated' : ''}
+                    {section.timing.anticipated ? ' · Anticipated' : ''}
                   </p>
                 </>
               ) : section.unavailable ? (

@@ -1,4 +1,4 @@
-.overview-starshield-advisory {
+.overview-transport-advisories {
   padding: 14px 18px;
   border: var(--overview-border);
   border-left: 4px solid #f2ba57;
@@ -9,20 +9,37 @@
   text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
   pointer-events: none;
 }
-.overview-starshield-advisory strong {
+.overview-transport-advisories strong {
   display: block;
   font-size: clamp(1.125rem, 1.5vw, 1.75rem);
   line-height: 1.3;
 }
-.overview-starshield-advisory span {
+.overview-transport-advisories span {
   display: block;
   margin-top: 4px;
   color: var(--overview-secondary);
   font-size: 1rem;
 }
 @supports (backdrop-filter: blur(1px)) {
-  .overview-starshield-advisory {
+  .overview-transport-advisories {
     background: var(--overview-glass);
     backdrop-filter: var(--overview-blur);
   }
+}
+
+.overview-transport-advisory + .overview-transport-advisory {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: var(--overview-border);
+}
+.overview-transport-advisories__notice {
+  margin: 8px 0 0;
+  color: var(--overview-secondary);
+  font-size: 1rem;
+}
+.overview-transport-advisories__notice:first-child {
+  margin-top: 0;
+}
+.overview-transport-advisories {
+  overflow-wrap: anywhere;
 }

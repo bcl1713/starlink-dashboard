@@ -120,7 +120,7 @@ describe('arrival derivation', () => {
       pois: [poi('origin', 0, { kind: 'departure' })],
     });
     const section = deriveArrivalPanel(input, now).sections[0];
-    expect(section.label).toBe('SCHEDULED DEPARTURE');
+    expect(section.label).toBe('Scheduled Departure');
     expect(section.timing?.countdown).toBe('1 HR 39 MIN');
     expect(
       deriveArrivalPanel({ ...input, scheduled_departure_time: null }, now)
@@ -155,7 +155,7 @@ describe('arrival derivation', () => {
     expect(
       deriveArrivalPanel({ ...input, flight_phase: 'post_arrival' }, now)
         .sections[0]
-    ).toMatchObject({ label: 'LANDED', timing: null });
+    ).toMatchObject({ label: 'Landed', timing: null });
     expect(
       deriveArrivalPanel(
         response({
@@ -200,7 +200,7 @@ describe('arrival derivation', () => {
     ];
     expect(
       deriveArrivalPanel(response({ pois }), now).sections[0].timing?.utc
-    ).toBe('2026-10-02 00:05Z');
+    ).toBe('2026-10-02 00:05 Zulu');
     expect(
       deriveArrivalPanel(
         response({ pois: [{ ...pois[0], estimated_arrival_time: 'invalid' }] }),
@@ -230,10 +230,10 @@ it.each([
 
 it('shows taxi out and arrival ground phases independently of legacy phase', () => {
   for (const [movement, label] of [
-    ['taxi_out', 'TAXI OUT'],
-    ['probable_landed_rollout', 'LANDED · INFERRED'],
-    ['taxi_in', 'TAXI IN'],
-    ['parked', 'PARKED'],
+    ['taxi_out', 'Taxi Out'],
+    ['probable_landed_rollout', 'Landed · Inferred'],
+    ['taxi_in', 'Taxi In'],
+    ['parked', 'Parked'],
   ] as const) {
     const state = deriveArrivalPanel(
       response({
@@ -285,13 +285,13 @@ describe('manual destination arrival', () => {
         }),
       ],
     });
-  it('shows a DESTINATION with direct UTC and countdown using wall clock, regardless of mission phase or replay clock', () => {
+  it('shows a Destination with direct UTC and countdown using wall clock, regardless of mission phase or replay clock', () => {
     const view = deriveArrivalPanel(manual(), now, false, now + 2 * 3600_000);
     expect(view.sections).toHaveLength(1);
     expect(view.sections[0]).toMatchObject({
-      label: 'DESTINATION',
+      label: 'Destination',
       name: 'Heathrow',
-      timing: { utc: '12:39Z', countdown: '39 MIN', anticipated: false },
+      timing: { utc: '12:39 Zulu', countdown: '39 MIN', anticipated: false },
     });
   });
   it.each([
@@ -312,5 +312,58 @@ describe('manual destination arrival', () => {
     expect(
       deriveArrivalPanel(manual(), now + 10_000).sections[0].timing
     ).toBeNull();
+  });
+});
+
+it('filters typed candidates before selecting next flight event without changing response or destination', () => {
+  const input = response({
+    pois: [
+      poi('handover', 5),
+      poi('planned outage', 7, { kind: 'ka_outage_start' }),
+      poi('AR\nStart', 20, { kind: 'aar_start', estimated_arrival_time: null }),
+      poi('landing', 100, { kind: 'arrival' }),
+    ],
+  });
+  const original = structuredClone(input);
+  expect(deriveArrivalPanel(input, now).sections[0].name).toBe('handover');
+  const view = deriveArrivalPanel(input, now, false, now, true);
+  expect(view.sections[0]).toMatchObject({
+    key: 'next_event',
+    label: 'Next Flight Event',
+    name: 'AR\nStart',
+    timing: null,
+  });
+  expect(view.sections.at(-1)?.name).toBe('landing');
+  expect(input).toEqual(original);
+});
+
+it('does not substitute transport POIs when no flight candidate remains', () => {
+  const input = response({ pois: [poi('handover', 5)] });
+  const view = deriveArrivalPanel(input, now, false, now, true);
+  expect(view.sections[0]).toMatchObject({
+    key: 'next_event',
+    label: 'Next Flight Event',
+    name: null,
+    timing: null,
+    unavailable: 'Next flight event unavailable',
+  });
+});
+
+it('keeps semantic sections and replay timing in flight-only selection', () => {
+  const input = response({
+    flight_phase: 'pre_departure',
+    scheduled_departure_time: '2026-10-02T00:05:00Z',
+  });
+  const view = deriveArrivalPanel(
+    input,
+    now,
+    false,
+    Date.parse('2026-10-01T23:55:00Z'),
+    true
+  );
+  expect(view.sections[0]).toMatchObject({
+    key: 'scheduled_departure',
+    label: 'Scheduled Departure',
+    timing: { countdown: '10 MIN', utc: '2026-10-02 00:05 Zulu' },
   });
 });

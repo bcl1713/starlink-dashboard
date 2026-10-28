@@ -50,7 +50,18 @@ def live_pop_events(adapter, inputs, leg, *, as_of):
         source_ref = "model:" + leg.id + ":live-pop"
         source = SourceCapture(
             source=source_ref,
-            revision=identity(result),
+            # Forecast window UTCs and reconciliation timestamps advance with
+            # the clock even for identical captured inputs. Guard actual source
+            # evidence; current occurrence/expiry is rechecked by event_ack.
+            revision=identity(
+                published.get("input_identity"),
+                result["pop_forecast"]["status"],
+                {
+                    key: value
+                    for key, value in result["pop_observation"].items()
+                    if key not in ("sampled_at", "lookup_at")
+                },
+            ),
             generation=identity(inputs.revision, sample),
             input_identity=inputs.revision,
             captured_at=as_of,

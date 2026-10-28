@@ -91,7 +91,7 @@ test('Operator display controls use shared server settings and same-browser ackn
     // Two independently cached clients change disjoint fields without loss.
     await Promise.all([
       page.getByRole('switch', { name: 'Starshield data link' }).click(),
-      other.getByRole('switch', { name: 'X-band data link' }).click(),
+      other.getByRole('switch', { name: 'X-Band data link' }).click(),
     ]);
     await expect
       .poll(async () => {

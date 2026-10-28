@@ -98,7 +98,7 @@ export function useOverviewLayout(
         // Corner actions and display identity don't occupy an information rail.
         // Keep this content test in sync with OverviewOverlayLayout.css.
         const hasRightPanels = page.querySelector(
-          '.overview-satellite-overlays, .overview-starshield-advisory, .overview-map-overlays > :not(.overview-display-label)'
+          '.overview-satellite-overlays, .overview-transport-advisories, .overview-map-overlays > :not(.overview-display-label)'
         );
         const controls = hasRightPanels
           ? panel('.overview-right-overlays')

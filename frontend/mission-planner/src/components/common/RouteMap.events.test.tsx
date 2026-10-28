@@ -65,10 +65,10 @@ it('shows AR boundaries and independently hides each event group on the real rou
   expect(marker('AR End')).not.toBeNull();
   expect(marker('Starshield Loss')).not.toBeNull();
   for (const [layer, title] of [
-    ['Flight events', 'AR Start'],
-    ['X-band events', 'X-Band Transition'],
-    ['Ka-band events', 'Ka Transition'],
-    ['Starshield events', 'Starshield Loss'],
+    ['Flight Events', 'AR Start'],
+    ['X-Band Events', 'X-Band Transition'],
+    ['KA Events', 'Ka Transition'],
+    ['Starshield Events', 'Starshield Loss'],
   ]) {
     const control = screen.getByRole('checkbox', { name: layer });
     fireEvent.click(control);

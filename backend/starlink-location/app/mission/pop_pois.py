@@ -1,5 +1,6 @@
 """Customer map cues at the route positions entering and leaving a PoP window."""
 
+from app.mission.poi_display import MISSION_POI_LABELS
 from app.mission.timeline_builder.event_pois import route_position
 from app.services.poi_manager import POICreate
 
@@ -17,7 +18,7 @@ def transition_window_pois(mission, forecast, projector, parent_mission_id=None)
                 continue
             latitude, longitude, segment = route_position(projector, timestamp)
             poi = POICreate(
-                name=f"Starshield transition {label}",
+                name=MISSION_POI_LABELS[f"starshield_transition_{edge}"],
                 latitude=latitude,
                 longitude=longitude,
                 icon="satellite",

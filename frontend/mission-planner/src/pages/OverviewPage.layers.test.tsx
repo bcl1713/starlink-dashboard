@@ -1,3 +1,6 @@
+vi.mock('@/hooks/api/useOverviewAdvisories', () => ({
+  useOverviewAdvisories: () => ({ items: [], notice: null }),
+}));
 vi.mock('./useOverviewLayout', () => ({
   useOverviewLayout: () => ({
     mode: queries.layoutMode,
@@ -272,7 +275,7 @@ describe('Overview layer and exception integration', () => {
       screen.getByRole('region', { name: 'Planned satellite' }).textContent
     ).toContain('X-6');
     expect(screen.getAllByLabelText('Globe legend')).toHaveLength(1);
-    expect(screen.getAllByLabelText('Departure and arrival')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Departure and Arrival')).toHaveLength(1);
     expect(
       screen.getAllByRole('button', { name: 'Enter fullscreen overview' })
     ).toHaveLength(1);
@@ -533,7 +536,7 @@ it('keeps passive weather independent of core map failures and adds no controls'
 
 it.each([
   ['operational_clocks_enabled', 'Operational clocks'],
-  ['arrival_panel_enabled', 'Departure and arrival'],
+  ['arrival_panel_enabled', 'Departure and Arrival'],
   ['planned_satellite_panel_enabled', 'Planned satellite'],
   ['map_status_enabled', 'Map status'],
   ['legend_enabled', 'Globe legend'],

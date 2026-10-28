@@ -343,3 +343,119 @@ def test_live_eta_work_tracks_merged_restrictions_instead_of_sample_count(
         (start + step * 600).isoformat(),
         (start + step * 700).isoformat(),
     }
+
+
+def test_live_pop_ack_allows_clock_advance_without_source_input_change(
+    production, clock, monkeypatch
+):
+    from types import SimpleNamespace
+    from uuid import uuid4
+
+    from app.mission.pop_status import PopStatusService
+    from app.models.flight_status import FlightPhase
+    from app.operator.event_ack import acknowledge
+    from app.operator.event_models import AckRequest
+
+    departure = clock.now() - timedelta(minutes=10)
+    monkeypatch.setattr(
+        "app.services.flight_state.get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(
+                phase=FlightPhase.IN_FLIGHT, departure_time=departure
+            )
+        ),
+    )
+    runtime, adapter = runtime_for(production, clock)
+    adapter.pop_service = PopStatusService(production[4], lambda: production[3])
+    first = build_snapshot(runtime, "demo-mission", adapter)
+    event = next(e for e in first.events if e.advisory_type == "transition_window")
+    clock.advance(1)
+    receipt, replayed = acknowledge(
+        AckRequest(
+            occurrence_id=event.notification.generation,
+            severity_generation=event.notification.severity_generation,
+            snapshot_token=first.snapshot_token,
+        ),
+        key=str(uuid4()),
+        epoch=first.api_epoch,
+        runtime=runtime,
+        adapter=adapter,
+    )
+    assert not replayed
+    current = build_snapshot(runtime, "demo-mission", adapter)
+    updated = next(
+        e for e in current.events if e.notification.generation == receipt.occurrence_id
+    )
+    assert updated.notification.acknowledged
+    assert updated.due_at != event.due_at
+
+
+@pytest.mark.parametrize(
+    "change", ["observation_refresh", "new_observation", "telemetry"]
+)
+def test_live_pop_ack_keeps_material_input_guards(
+    production, clock, monkeypatch, change
+):
+    from types import SimpleNamespace
+    from uuid import uuid4
+
+    from app.mission.pop_status import PopStatusService
+    from app.models.flight_status import FlightPhase
+    from app.operator.event_ack import acknowledge
+    from app.operator.event_models import AckRequest
+    from app.services.pop.models import PopObservation
+
+    departure = clock.now() - timedelta(minutes=10)
+    monkeypatch.setattr(
+        "app.services.flight_state.get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(
+                phase=FlightPhase.IN_FLIGHT, departure_time=departure
+            )
+        ),
+    )
+    observation = [PopObservation(ip=None, entry=None, status="unknown", source="live")]
+    runtime, adapter = runtime_for(production, clock)
+    adapter.pop_service = PopStatusService(
+        production[4],
+        lambda: production[3],
+        observation_provider=lambda *_: observation[0],
+    )
+    first = build_snapshot(runtime, "demo-mission", adapter)
+    event = next(e for e in first.events if e.advisory_type == "transition_window")
+    clock.advance(1)
+    if change == "telemetry":
+        production[2]["telemetry"].position.observed_at = clock.now()
+    elif change == "new_observation":
+        observation[0] = observation[0].model_copy(update={"ip": "192.0.2.2"})
+    else:
+        observation[0] = observation[0].model_copy(
+            update={
+                "sampled_at": clock.now().isoformat(),
+                "lookup_at": clock.now().isoformat(),
+            }
+        )
+
+    def command():
+        return acknowledge(
+            AckRequest(
+                occurrence_id=event.notification.generation,
+                severity_generation=event.notification.severity_generation,
+                snapshot_token=first.snapshot_token,
+            ),
+            key=str(uuid4()),
+            epoch=first.api_epoch,
+            runtime=runtime,
+            adapter=adapter,
+        )
+
+    if change == "observation_refresh":
+        assert command()[0].occurrence_id == event.notification.generation
+    else:
+        with pytest.raises(OperatorError, match="event_snapshot_changed"):
+            command()
+        with runtime.service.store.connect() as db:
+            assert (
+                db.execute("SELECT count(*) FROM event_acknowledgments").fetchone()[0]
+                == 0
+            )

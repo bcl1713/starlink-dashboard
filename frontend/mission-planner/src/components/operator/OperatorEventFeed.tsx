@@ -24,7 +24,7 @@ export function OperatorEventFeed({
           disabled={events.refreshing}
           onClick={events.refresh}
         >
-          Refresh events
+          Refresh Events
         </button>
         <label className="flex min-h-11 items-center gap-2">
           <input
@@ -32,7 +32,7 @@ export function OperatorEventFeed({
             checked={history}
             onChange={(event) => setHistory(event.target.checked)}
           />
-          Recent history
+          Recent History
         </label>
       </div>
       {events.failed && (
@@ -124,12 +124,21 @@ export function OperatorEventFeed({
               className={`min-w-0 space-y-2 break-words rounded-lg border p-3 [overflow-wrap:anywhere] ${event.protected_participation_ids.length ? 'border-amber-500/60' : ''}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs tracking-wide text-muted-foreground">
                   {event.provenance === 'operator_reported'
-                    ? 'Operator-reported'
+                    ? 'Operator Reported'
                     : event.provenance[0].toUpperCase() +
                       event.provenance.slice(1)}{' '}
-                  · {event.active ? event.state : 'History'}
+                  ·{' '}
+                  {event.active
+                    ? {
+                        upcoming: 'Upcoming',
+                        active: 'Active',
+                        overdue: 'Overdue',
+                        inactive: 'Inactive',
+                        unknown: 'Unknown',
+                      }[event.state]
+                    : 'History'}
                 </span>
                 {event.protected_participation_ids.length > 0 && (
                   <span className="text-xs font-semibold text-amber-400">
@@ -145,11 +154,11 @@ export function OperatorEventFeed({
               {event.provenance === 'modeled' && (
                 <p className="text-xs text-muted-foreground">
                   {event.time_basis === 'live_route_eta'
-                    ? 'Live route ETA'
+                    ? 'Live Route ETA'
                     : event.time_basis === 'planned_utc'
-                      ? 'Preflight plan UTC'
+                      ? 'Preflight Plan Zulu'
                       : event.time_basis === 'live_unavailable'
-                        ? 'Live timing unavailable'
+                        ? 'Live Timing Unavailable'
                         : 'Best current estimate'}{' '}
                   · {event.freshness}
                 </p>
@@ -206,7 +215,7 @@ export function OperatorEventFeed({
               )}
               <details className="text-xs text-muted-foreground">
                 <summary className="min-h-9 cursor-pointer py-2">
-                  Source details
+                  Source Details
                 </summary>
                 <p>
                   Captured {eventUtc(event.source_captured_at)} · freshness{' '}

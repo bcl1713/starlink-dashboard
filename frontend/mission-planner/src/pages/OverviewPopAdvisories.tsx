@@ -1,34 +1,29 @@
-import type { StatusResponse } from '@/services/status';
-import { isStatusStale } from './status-freshness';
+import type { OverviewAdvisoryState } from './overview-advisories';
 import './OverviewPopAdvisories.css';
 
-/** Customer-facing 10-foot cue; planning and diagnostic details stay off the map. */
+/** Concise shared transport cues; details and acknowledgment stay in Operator. */
 export function OverviewPopAdvisories({
-  status,
-  realNowMs,
-  refreshFailed,
+  state,
 }: {
-  status?: StatusResponse;
-  realNowMs: number;
-  refreshFailed: boolean;
+  state: OverviewAdvisoryState;
 }) {
-  if (
-    !status ||
-    refreshFailed ||
-    isStatusStale(status.timestamp, realNowMs) ||
-    status.pop_forecast?.status === 'disabled'
-  )
-    return null;
-  const active = status.pop_advisories?.find(({ kind }) => kind === 'window');
-  if (!active) return null;
+  if (!state.items.length && !state.notice) return null;
   return (
     <section
       role="status"
-      className="overview-starshield-advisory"
-      aria-label="Starshield advisory"
+      tabIndex={0}
+      className="overview-transport-advisories"
+      aria-label="Transport Advisories"
     >
-      <strong>Starshield transition window</strong>
-      <span>Brief interruption possible</span>
+      {state.items.map((item) => (
+        <div key={item.id} className="overview-transport-advisory">
+          <strong>{item.title}</strong>
+          <span>{item.detail}</span>
+        </div>
+      ))}
+      {state.notice && (
+        <p className="overview-transport-advisories__notice">{state.notice}</p>
+      )}
     </section>
   );
 }

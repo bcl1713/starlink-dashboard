@@ -143,7 +143,7 @@ export function MissionTimeline({
             <div className="ws-timeline-dialog-header">
               <DialogTitle>Mission timeline</DialogTitle>
               <DialogDescription>
-                Whole mission · times in UTC
+                Whole mission · times in Zulu
               </DialogDescription>
               {controls}
             </div>
@@ -163,7 +163,7 @@ export function MissionTimeline({
             <h2>Mission timeline</h2>
           </div>
           <p className="ws-meta">
-            {snapshot ? 'Whole mission · UTC' : summary}
+            {snapshot ? 'Whole mission · Zulu' : summary}
           </p>
           {controls}
           <div className="ws-timeline-body">{contents}</div>

@@ -42,6 +42,7 @@ def backend_commands(root, python_selector):
         "run",
         "--python",
         python_selector,
+        "--isolated",
         "--with-requirements",
         str(backend / "requirements-dev.txt"),
         "--with-requirements",

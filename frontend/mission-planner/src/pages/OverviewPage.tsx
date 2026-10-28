@@ -1,3 +1,4 @@
+import { useOverviewAdvisories } from '@/hooks/api/useOverviewAdvisories';
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 import {
   Suspense,
@@ -515,6 +516,24 @@ export function OverviewPage() {
     true
   );
   const missionNow = simulationClock.missionNowMs;
+  const advisoryReplay =
+    simulationRun?.service_mode === 'simulation' &&
+    ['running', 'completed'].includes(simulationRun.state)
+      ? simulationRun.run
+      : null;
+  const transportAdvisories = useOverviewAdvisories(
+    advisoryReplay && simulationRun?.state === 'completed'
+      ? Date.parse(advisoryReplay.simulation_time)
+      : missionNow,
+    {
+      sourceMode: simulationRun?.service_mode ?? null,
+      runId: advisoryReplay?.run_id ?? null,
+      missionId: advisoryReplay?.mission_id ?? null,
+      legId: advisoryReplay?.leg_id ?? null,
+      available:
+        !!simulationRun && !simulationRefreshFailed && !simulationClock.stale,
+    }
+  );
   const replaySelected = Boolean(
     replayGeometry &&
       simulationRun &&
@@ -542,6 +561,7 @@ export function OverviewPage() {
     isError: arrivalRefreshFailed,
     isLoading: isLoadingUpcomingPois,
   } = useOverviewUpcomingPois(pacedRunning);
+  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const arrivalState = deriveArrivalPanel(
     upcomingPoisResponse,
     currentTime,
@@ -550,9 +570,9 @@ export function OverviewPage() {
       upcomingPoisResponse?.mission_time &&
       upcomingPoisResponse.mission_time.run_id === simulationRun.run?.run_id
       ? Date.parse(upcomingPoisResponse.mission_time.simulation_time)
-      : missionNow
+      : missionNow,
+    overviewLinkSettings?.next_flight_events_only ?? false
   );
-  const { data: overviewLinkSettings } = useOverviewLinkSettings(true);
   const upcomingPoiView = useMemo(
     () =>
       overviewPoiView(
@@ -1268,11 +1288,7 @@ export function OverviewPage() {
                   <OverviewPlannedSatelliteCard state={plannedSatelliteState} />
                 </div>
               )}
-              <OverviewPopAdvisories
-                status={status}
-                realNowMs={currentTime}
-                refreshFailed={statusRequestFailed || simulationClock.stale}
-              />
+              <OverviewPopAdvisories state={transportAdvisories} />
               <OverviewMapControls
                 exploring={exploring}
                 intent={cameraIntent}

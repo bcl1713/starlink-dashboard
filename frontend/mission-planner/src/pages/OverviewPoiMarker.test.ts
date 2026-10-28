@@ -66,6 +66,6 @@ describe('OverviewPoiMarker', () => {
         size: 0.1,
       })
     );
-    expect(screen.getByText('KADW')).not.toBeNull();
+    expect(screen.getByText('Takeoff · KADW')).not.toBeNull();
   });
 });

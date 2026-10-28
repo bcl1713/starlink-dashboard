@@ -67,13 +67,13 @@ async function acknowledge(
 async function openFeed(page: Page) {
   if (
     !(await page
-      .getByRole('dialog', { name: 'Operational timeline' })
+      .getByRole('dialog', { name: 'Operational Timeline' })
       .isVisible())
   )
     await page
-      .getByRole('button', { name: 'Open events', exact: true })
+      .getByRole('button', { name: 'Open Events', exact: true })
       .click();
-  return page.getByRole('dialog', { name: 'Operational timeline' });
+  return page.getByRole('dialog', { name: 'Operational Timeline' });
 }
 async function refresh(page: Page) {
   const drawer = await openFeed(page);
@@ -81,13 +81,13 @@ async function refresh(page: Page) {
     (r) => r.url().includes(`${path}/events?`) && r.request().method() === 'GET'
   );
   await drawer
-    .getByRole('button', { name: 'Refresh events', exact: true })
+    .getByRole('button', { name: 'Refresh Events', exact: true })
     .click();
   await response;
   return drawer;
 }
 async function closeFeed(page: Page) {
-  const drawer = page.getByRole('dialog', { name: 'Operational timeline' });
+  const drawer = page.getByRole('dialog', { name: 'Operational Timeline' });
   if (await drawer.isVisible())
     await drawer.getByRole('button', { name: 'Close', exact: true }).click();
 }
@@ -149,7 +149,7 @@ test('unified event timeline: local alerts, source races, two clients and restar
     await ready(page);
     await ready(other);
     await expect(
-      page.getByRole('button', { name: 'Open events' })
+      page.getByRole('button', { name: 'Open Events' })
     ).toBeVisible();
     await expect(page.getByText(/^Local cue:/)).toBeVisible({ timeout: 15000 });
     const draft = page.getByLabel('Title', { exact: true });
@@ -412,9 +412,9 @@ test('unified event timeline: local alerts, source races, two clients and restar
     // Journal drafts are page-local; only the frozen acknowledgment survives reload.
     await draft.fill('Synthetic unsent event-review note');
     await context.setOffline(true);
-    await page.getByRole('button', { name: 'Open events' }).click();
+    await page.getByRole('button', { name: 'Open Events' }).click();
     await page
-      .getByRole('button', { name: 'Refresh events', exact: true })
+      .getByRole('button', { name: 'Refresh Events', exact: true })
       .click();
     await expect(page.getByText(/Feed unavailable/).first()).toBeVisible({
       timeout: 20000,
@@ -495,7 +495,7 @@ test('unified event timeline: local alerts, source races, two clients and restar
       await page.setViewportSize(viewport);
       await refresh(page);
       await expect(
-        page.getByRole('dialog', { name: 'Operational timeline' })
+        page.getByRole('dialog', { name: 'Operational Timeline' })
       ).toBeVisible();
       await noOverflow(page);
       await page.screenshot({
@@ -511,7 +511,7 @@ test('unified event timeline: local alerts, source races, two clients and restar
       ]) {
         await page.getByRole('link', { name: section, exact: true }).click();
         await expect(
-          page.getByRole('button', { name: 'Open events' })
+          page.getByRole('button', { name: 'Open Events' })
         ).toBeVisible();
       }
       await noOverflow(page);

@@ -493,7 +493,7 @@ export function OperatorWorkspace() {
           <h1>Operator</h1>
           <p className="ws-mode ws-meta">
             {health.data?.source_mode === 'simulation' ? 'Simulation · ' : ''}
-            UTC · Coverage {events.snapshot?.coverage ?? 'unknown'}
+            Zulu · Coverage {events.snapshot?.coverage ?? 'unknown'}
             {events.failed ? ' · Feed unavailable' : ''}
           </p>
         </div>
@@ -1458,14 +1458,14 @@ export function OperatorWorkspace() {
           )}
           <p>
             Missions owns itinerary planning and mission records. Configuration
-            owns global settings. All times are UTC; unknown times remain
+            owns global settings. All times are Zulu; unknown times remain
             unknown.
           </p>
         </DialogContent>
       </Dialog>
       <Dialog open={operationalAlerts} onOpenChange={setOperationalAlerts}>
         <DialogContent className="ws-editor">
-          <DialogTitle>Operational alerts</DialogTitle>
+          <DialogTitle>Operational Alerts</DialogTitle>
           <DialogDescription>
             Current operational alert window. Optional acknowledgment changes
             alerts only.

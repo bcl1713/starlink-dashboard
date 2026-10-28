@@ -138,9 +138,9 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
         )
         .toBe(1);
       await page
-        .getByRole('button', { name: 'Open events', exact: true })
+        .getByRole('button', { name: 'Open Events', exact: true })
         .click();
-      const drawer = page.getByRole('dialog', { name: 'Operational timeline' });
+      const drawer = page.getByRole('dialog', { name: 'Operational Timeline' });
       await expect(
         drawer.getByText(restriction.title, { exact: true }).first()
       ).toBeVisible();
@@ -172,7 +172,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
         });
       }
       await drawer
-        .getByRole('button', { name: 'Refresh events', exact: true })
+        .getByRole('button', { name: 'Refresh Events', exact: true })
         .click();
       expect(
         await page.evaluate(
@@ -246,7 +246,7 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     );
     const page = contexts[1].pages()[0];
     await page
-      .getByRole('button', { name: 'Refresh events', exact: true })
+      .getByRole('button', { name: 'Refresh Events', exact: true })
       .click();
     await expect(
       page.getByText('Position or speed evidence stale or unavailable', {
@@ -285,14 +285,14 @@ test('real model foreground warning: current inputs, acknowledgment, replacement
     await contexts[0].setOffline(true);
     const offlinePage = contexts[0].pages()[0];
     await offlinePage
-      .getByRole('button', { name: 'Refresh events', exact: true })
+      .getByRole('button', { name: 'Refresh Events', exact: true })
       .click();
     await expect(
       offlinePage.getByText(/Feed unavailable. Last-known events/)
     ).toBeVisible();
     await contexts[0].setOffline(false);
     await offlinePage
-      .getByRole('button', { name: 'Refresh events', exact: true })
+      .getByRole('button', { name: 'Refresh Events', exact: true })
       .click();
     proof.offlineReconnect = true;
     control('restart');
@@ -390,9 +390,9 @@ test('real model foreground warning follows airborne progress after late departu
       await page.getByLabel('In-app cues', { exact: true }).check();
       await page.getByRole('button', { name: 'Close settings' }).click();
       await page
-        .getByRole('button', { name: 'Open events', exact: true })
+        .getByRole('button', { name: 'Open Events', exact: true })
         .click();
-      const dialog = page.getByRole('dialog', { name: 'Operational timeline' });
+      const dialog = page.getByRole('dialog', { name: 'Operational Timeline' });
       await expect(
         dialog.getByText('Live route ETA · fresh').first()
       ).toBeVisible();
@@ -415,7 +415,7 @@ test('real model foreground warning follows airborne progress after late departu
     for (const context of contexts) {
       const page = context.pages()[0];
       await page
-        .getByRole('button', { name: 'Refresh events', exact: true })
+        .getByRole('button', { name: 'Refresh Events', exact: true })
         .click();
       const card = page
         .getByRole('listitem')
@@ -449,7 +449,7 @@ test('real model foreground warning follows airborne progress after late departu
     for (const context of contexts) {
       const page = context.pages()[0];
       await page
-        .getByRole('button', { name: 'Refresh events', exact: true })
+        .getByRole('button', { name: 'Refresh Events', exact: true })
         .click();
       const card = page
         .getByRole('listitem')
@@ -480,7 +480,7 @@ test('real model foreground warning follows airborne progress after late departu
     for (const context of contexts) {
       const page = context.pages()[0];
       await page
-        .getByRole('button', { name: 'Refresh events', exact: true })
+        .getByRole('button', { name: 'Refresh Events', exact: true })
         .click();
       expect(
         await page.evaluate(

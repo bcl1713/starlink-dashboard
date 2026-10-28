@@ -1,3 +1,4 @@
+import { overviewPoiLabel } from './overview-upcoming-pois';
 import { describe, expect, it } from 'vitest';
 import type { OverviewUpcomingPoi } from '@/services/overview-upcoming-pois';
 import {
@@ -167,4 +168,16 @@ it('never presents inactive transport POIs as upcoming or retained map markers',
       poi('eligible'),
     ]).markers.map((row) => row.poi_id)
   ).toEqual(['eligible']);
+});
+
+it('retains endpoint names with explicit Takeoff/Landing map vocabulary', () => {
+  expect(overviewPoiLabel({ kind: 'departure', name: 'McGuire AFB' })).toBe(
+    'Takeoff · McGuire AFB'
+  );
+  expect(overviewPoiLabel({ kind: 'arrival', name: 'McGuire AFB' })).toBe(
+    'Landing · McGuire AFB'
+  );
+  expect(overviewPoiLabel({ kind: 'aar_start', name: 'AR Begins' })).toBe(
+    'AR Begins'
+  );
 });

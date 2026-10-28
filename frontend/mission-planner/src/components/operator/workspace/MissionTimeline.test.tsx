@@ -36,7 +36,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
-it('labels a route-based scheduled restriction separately from fixed UTC requirements', () => {
+it('labels a route-based scheduled restriction separately from fixed Zulu requirements', () => {
   render(
     <MissionTimeline
       timeline={state([
@@ -91,7 +91,7 @@ it('dates the Now marker even when the final known event was yesterday', () => {
   const query = state();
   query.snapshot.as_of = '2026-10-18T00:05:00Z';
   render(<MissionTimeline timeline={query} />);
-  expect(screen.getByText('Now · 2026-10-18 00:05 UTC')).toBeTruthy();
+  expect(screen.getByText('Now · 2026-10-18 00:05 Zulu')).toBeTruthy();
 });
 it('shows the complete mission in time order, including earlier events without expansion', () => {
   const events = [
@@ -145,7 +145,7 @@ it('shows the complete mission in time order, including earlier events without e
     'Ka restriction',
   ]);
   expect(within(rows[1]).getByText('Recovery in 12 min')).toBeTruthy();
-  expect(within(rows[1]).getByText(/Live route ETA/)).toBeTruthy();
+  expect(within(rows[1]).getByText(/Live Route ETA/)).toBeTruthy();
   expect(within(rows[3]).getByText('Atlantic leg')).toBeTruthy();
   expect(screen.getByText('Earlier window').closest('details')).toBeNull();
   expect(screen.getByText(/^Now ·/)).toBeTruthy();
@@ -178,7 +178,7 @@ it('shows every family and source navigation without offering timeline-only ackn
   expect(open.mock.calls[0][0].kind).toBe('call_start');
   expect(screen.queryByRole('button', { name: /acknowledge/i })).toBeNull();
 });
-it('keeps unavailable live timing unknown and labels planned UTC as reference', () => {
+it('keeps unavailable live timing unknown and labels planned Zulu as reference', () => {
   const query = state([
     eventFixture({
       title: 'Unknown X',
@@ -192,7 +192,7 @@ it('keeps unavailable live timing unknown and labels planned UTC as reference', 
   expect(screen.getByText('Timing unavailable')).toBeTruthy();
   expect(screen.queryByText(/^In /)).toBeNull();
   expect(
-    screen.getByText(/Schedule reference: 2026-10-17 16:45:00 UTC/)
+    screen.getByText(/Schedule reference: 2026-10-17 16:45:00 Zulu/)
   ).toBeTruthy();
 });
 it.each(['failed', 'aged', 'source'] as const)(

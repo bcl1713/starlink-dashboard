@@ -25,6 +25,7 @@ export const OVERVIEW_VISIBILITY_DEFAULTS = {
   starshield_events_enabled: true,
   ground_entry_point_enabled: true,
   configured_satellites_enabled: true,
+  next_flight_events_only: false,
 } as const;
 
 export type OverviewVisibilityField = keyof typeof OVERVIEW_VISIBILITY_DEFAULTS;
@@ -67,7 +68,9 @@ function confirmedSettings(data: unknown): OverviewLinkSettings {
     ...Object.fromEntries(
       Object.keys(OVERVIEW_VISIBILITY_DEFAULTS).map((field) => [
         field,
-        field in data ? Reflect.get(data, field) : true,
+        field in data
+          ? Reflect.get(data, field)
+          : OVERVIEW_VISIBILITY_DEFAULTS[field as OverviewVisibilityField],
       ])
     ),
     starshield_link_enabled: data.starshield_link_enabled,
@@ -112,7 +115,12 @@ export const overviewLinkSettingsApi = {
   },
 };
 
-export const PRESET_NAMES = ['normal', 'communications', 'weather'] as const;
+export const PRESET_NAMES = [
+  'normal',
+  'communications',
+  'weather',
+  'customer',
+] as const;
 export type OverviewPresetName = (typeof PRESET_NAMES)[number];
 export interface OverviewPreset {
   weather_visibility?: PresetWeatherVisibility;
@@ -158,13 +166,15 @@ export const overviewPresetsApi = {
     if (
       !data ||
       typeof data !== 'object' ||
-      PRESET_NAMES.some((name) => !(name in data))
+      PRESET_NAMES.some((name) => name !== 'customer' && !(name in data))
     )
       throw new Error('Invalid Overview presets response');
     return Object.fromEntries(
       PRESET_NAMES.map((name) => [
         name,
-        data[name] === null ? null : confirmedPreset(data[name]),
+        data[name] === null || (name === 'customer' && data[name] === undefined)
+          ? null
+          : confirmedPreset(data[name]),
       ])
     ) as OverviewPresets;
   },

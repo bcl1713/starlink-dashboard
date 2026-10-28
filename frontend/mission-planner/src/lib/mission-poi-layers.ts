@@ -1,8 +1,8 @@
 export const MISSION_POI_LAYERS = [
-  { field: 'flight_events_enabled', label: 'Flight events' },
-  { field: 'x_band_events_enabled', label: 'X-band events' },
-  { field: 'ka_events_enabled', label: 'Ka-band events' },
-  { field: 'starshield_events_enabled', label: 'Starshield events' },
+  { field: 'flight_events_enabled', label: 'Flight Events' },
+  { field: 'x_band_events_enabled', label: 'X-Band Events' },
+  { field: 'ka_events_enabled', label: 'KA Events' },
+  { field: 'starshield_events_enabled', label: 'Starshield Events' },
 ] as const;
 
 export type MissionPoiLayerField = (typeof MISSION_POI_LAYERS)[number]['field'];

@@ -108,7 +108,7 @@ export function WorkspaceAwareness({
               onClick={onOpenNext ?? onOpenEvents}
               title={next.title}
             >
-              {next.title.replace(/^Customer requirement: /, '')}
+              {next.title}
             </button>
             <p className="ws-meta">
               <Timing event={next} asOf={snapshot?.as_of} />

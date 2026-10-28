@@ -120,7 +120,7 @@ for (const [traffic, xBand] of [
       .click();
     for (const [label, enabled] of [
       ['Starshield data link', traffic],
-      ['X-band data link', xBand],
+      ['X-Band data link', xBand],
     ] as const) {
       const control = page.getByRole('switch', { name: label });
       await expect(control).toBeEnabled();
@@ -188,7 +188,7 @@ for (const [traffic, xBand] of [
       .click();
     for (const [name, checked] of [
       ['Starshield data link', traffic],
-      ['X-band data link', xBand],
+      ['X-Band data link', xBand],
     ] as const)
       await expect(page.getByRole('switch', { name })).toBeChecked({ checked });
   });

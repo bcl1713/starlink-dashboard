@@ -60,3 +60,18 @@ it('assembles pinned pages before publishing and rejects mismatched sources', as
     'Event snapshot changed'
   );
 });
+it.each([
+  { truncated: true, cursor: null },
+  { source_mode: 'simulation', simulation_run_id: 'another-run' },
+])('rejects incomplete or wrong-source pages %j', async (patch) => {
+  vi.spyOn(apiClient, 'get')
+    .mockResolvedValueOnce({
+      data: eventSnapshot({ cursor: 'next', truncated: true }),
+    })
+    .mockResolvedValueOnce({
+      data: eventSnapshot(
+        patch as Partial<import('@/types/operatorEvents').EventSnapshot>
+      ),
+    });
+  await expect(readEventSnapshot('mission-a')).rejects.toThrow();
+});

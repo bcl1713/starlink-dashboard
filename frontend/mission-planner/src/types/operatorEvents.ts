@@ -25,6 +25,15 @@ export interface OperationalEvent {
     | 'pop_advisory'
     | 'restriction';
   title: string;
+  advisory_type?:
+    | 'transition_window'
+    | 'concurrency_restriction'
+    | 'observation_unknown'
+    | 'observation_mismatch'
+    | 'handover_unconfirmed'
+    | null;
+  operating_context_id?: string | null;
+  replay_run_id?: string | null;
   due_at: string | null;
   end_at: string | null;
   state: 'upcoming' | 'active' | 'overdue' | 'inactive' | 'unknown';

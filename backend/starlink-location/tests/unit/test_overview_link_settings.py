@@ -14,6 +14,7 @@ from app.services.overview_link_settings import (
 )
 
 VISIBLE_DEFAULTS = {
+    "next_flight_events_only": False,
     "operational_clocks_enabled": True,
     "arrival_panel_enabled": True,
     "planned_satellite_panel_enabled": True,

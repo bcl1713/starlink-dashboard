@@ -20,12 +20,12 @@ const response: OverviewUpcomingPoisResponse = {
 it('renders accessible UTC provenance and late departure independently of GPS', () => {
   render(<OverviewArrivalPanel state={deriveArrivalPanel(response, now)} />);
   expect(
-    screen.getByRole('heading', { name: 'SCHEDULED DEPARTURE' })
+    screen.getByRole('heading', { name: 'Scheduled Departure' })
   ).toBeTruthy();
   expect(screen.getByText('12 MIN AGO').className).toContain('countdown--late');
-  expect(
-    screen.getByLabelText('2026-10-01T11:48:00.000Z').getAttribute('datetime')
-  ).toBe('2026-10-01T11:48:00.000Z');
+  expect(screen.getByLabelText('11:48 Zulu').getAttribute('datetime')).toBe(
+    '2026-10-01T11:48:00.000Z'
+  );
   expect(screen.queryByRole('table')).toBeNull();
 });
 it('removes timing when refresh fails and communicates the exception in text', () => {
