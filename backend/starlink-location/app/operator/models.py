@@ -87,7 +87,7 @@ class RecordInput(StrictModel):
             }
             if fields:
                 raise OperatorError("validation_error", fields=fields)
-        if self.record_type == "conference":
+        if self.record_type in ("conference", "call"):
             from datetime import timedelta
 
             from .errors import OperatorError
@@ -96,7 +96,11 @@ class RecordInput(StrictModel):
             latest = utc_timestamp(clock.now()) + timedelta(seconds=60)
             fields = {
                 f"payload.{name}": "Actual time exceeds the acceptance clock tolerance"
-                for name in ("verified_at", "configuration_reported_at")
+                for name in (
+                    ("verified_at", "configuration_reported_at")
+                    if self.record_type == "conference"
+                    else ("established_at",)
+                )
                 if (value := getattr(self.payload, name)) is not None and value > latest
             }
             if fields:
@@ -104,11 +108,13 @@ class RecordInput(StrictModel):
 
 
 class CreateRecord(RecordInput):
+    connect_customer: bool = False
     operation: Literal["create"] = "create"
     operator_label: str | None = Field(default=None, max_length=200)
 
 
 class UpdateRecord(RecordInput):
+    begin_customer_connect: bool = False
     establish_session: bool = False
     replacement_check_row_ids: list[RecordId] = Field(default_factory=list)
     operation: Literal["update"] = "update"

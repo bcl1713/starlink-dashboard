@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import type { ReadRecord, SavedRecord } from '@/types/operator';
 import { preparationAt } from './callTiming';
-import { callTestReported, type CallAction } from './callCommands';
+import { customerConnectionReady, type CallAction } from './callCommands';
 import {
   sessionOutsideContext,
   type ConferenceAction,
@@ -8,7 +9,7 @@ import {
 import type { CallAssociation } from './callAssociation';
 const callUtc = (value: string | null) =>
   value
-    ? `${new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))} UTC`
+    ? `${new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))} Zulu`
     : 'Unknown';
 const button =
   'min-h-11 rounded-lg border bg-background px-4 py-2 font-medium shadow-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
@@ -27,8 +28,12 @@ export function CallList({
   onCustomerAction,
   currentAssociation,
   isSessionCurrent = () => true,
+  selectedRecordId,
+  renderAdvisory,
 }: {
   isSessionCurrent?: (record: SavedRecord) => boolean;
+  selectedRecordId?: string | null;
+  renderAdvisory?: (call: SavedRecord) => ReactNode;
   items: ReadRecord[];
   activeOnly?: boolean;
   archivedOnly?: boolean;
@@ -104,15 +109,29 @@ export function CallList({
       );
       const ongoing =
         !r.deleted && !['completed', 'cancelled'].includes(payload.status);
-      const tested = callTestReported(r, records);
+      const ready = customerConnectionReady(
+        r,
+        records,
+        (target) =>
+          isSessionCurrent(target) &&
+          (target.record_type !== 'conference' ||
+            !sessionOutsideContext(target, currentAssociation))
+      );
+      const direct = !payload.conference_id;
       return (
         <li
           key={r.record_id}
+          id={`operator-record-${r.record_id}`}
+          data-record-id={r.record_id}
+          data-selected={selectedRecordId === r.record_id || undefined}
           className={
             'min-w-0 space-y-3 break-words rounded-xl border p-4 [overflow-wrap:anywhere] ' +
             (ongoing && onCallAction
               ? 'border-2 border-l-4 border-l-sky-500 border-sky-500/60 bg-sky-500/5 shadow-md'
-              : 'bg-card shadow-sm')
+              : 'bg-card shadow-sm') +
+            (selectedRecordId === r.record_id
+              ? ' ring-2 ring-primary ring-offset-2'
+              : '')
           }
         >
           <h4 className="text-xl font-bold">
@@ -161,7 +180,7 @@ export function CallList({
                   ? `${bridgePayload.status ?? 'unknown'} · ${bridgePayload.verified_at ? 'verification reported' : 'not verified'}`
                   : payload.conference_id
                     ? 'Unresolved'
-                    : 'Not assigned (optional for voice)'}
+                    : 'Direct call'}
               </p>
               <p className="text-sm">
                 Customer:{' '}
@@ -172,29 +191,27 @@ export function CallList({
                     : customers.length
                       ? 'No current connection reported'
                       : 'No connection reported'}{' '}
-                · Call test: {tested ? 'reported in Notes' : 'not reported'}
+                · Two-way check:{' '}
+                {direct
+                  ? payload.established_at
+                    ? 'reported'
+                    : 'not reported'
+                  : bridgePayload?.verified_at
+                    ? 'reported'
+                    : 'not reported'}
               </p>
               <p className="text-xs text-muted-foreground">
                 Operator reports; these actions do not control hardware.
               </p>
               {ongoing && (
                 <div className="flex flex-wrap gap-2">
-                  {!r.time.occurred_at && (
+                  {direct && !ready && (
                     <button
                       className={button + ' bg-primary text-primary-foreground'}
                       disabled={disabled}
-                      onClick={() => onCallAction(r, 'start')}
+                      onClick={() => onCallAction(r, 'establish')}
                     >
-                      Start call
-                    </button>
-                  )}
-                  {!bridge && (
-                    <button
-                      className={button}
-                      disabled={disabled}
-                      onClick={() => onEdit(r)}
-                    >
-                      Choose bridge
+                      Establish
                     </button>
                   )}
                   {bridge && bridgePayload && onConferenceAction && (
@@ -202,7 +219,9 @@ export function CallList({
                       {(['preparing', 'unknown', 'closed'].includes(
                         bridgePayload.status ?? 'unknown'
                       ) ||
-                        previousSession) && (
+                        previousSession ||
+                        (bridgePayload.status === 'established' &&
+                          !bridgePayload.verified_at)) && (
                         <button
                           className={button}
                           disabled={disabled}
@@ -210,9 +229,7 @@ export function CallList({
                             onConferenceAction(bridge, 'establish')
                           }
                         >
-                          {bridgePayload.status === 'closed' || previousSession
-                            ? 'Reopen bridge'
-                            : 'Establish bridge'}
+                          Establish Bridge
                         </button>
                       )}
                       {!previousSession &&
@@ -224,44 +241,22 @@ export function CallList({
                               onConferenceAction(bridge, 'restore_connection')
                             }
                           >
-                            Restore bridge
-                          </button>
-                        )}
-                      {!previousSession &&
-                        bridgePayload.status === 'established' &&
-                        !bridgePayload.verified_at && (
-                          <button
-                            className={button}
-                            disabled={disabled}
-                            onClick={() => onConferenceAction(bridge, 'verify')}
-                          >
-                            Verify bridge
+                            Restore Bridge
                           </button>
                         )}
                     </>
                   )}
+                  {!connected.length && (
+                    <button
+                      className={button + ' bg-primary text-primary-foreground'}
+                      disabled={disabled || incomplete || !ready}
+                      onClick={() => onCallAction(r, 'connect')}
+                    >
+                      Connect Customer
+                    </button>
+                  )}
                   {r.time.occurred_at && (
                     <>
-                      {!connected.length && (
-                        <button
-                          className={
-                            button + ' bg-primary text-primary-foreground'
-                          }
-                          disabled={disabled || incomplete}
-                          onClick={() => onCallAction(r, 'connect')}
-                        >
-                          Report customer connected
-                        </button>
-                      )}
-                      {!tested && (
-                        <button
-                          className={button}
-                          disabled={disabled}
-                          onClick={() => onCallAction(r, 'test')}
-                        >
-                          Report call tested
-                        </button>
-                      )}
                       {connected.map((customer) => (
                         <button
                           key={customer.record_id}
@@ -269,7 +264,7 @@ export function CallList({
                           disabled={disabled}
                           onClick={() => onCustomerAction?.(customer, 'left')}
                         >
-                          Report customer left
+                          Report Customer Left
                           {connected.length > 1 &&
                           customer.payload.entry_type === 'participation'
                             ? ` · ${customer.payload.participant ?? customer.payload.title}`
@@ -283,7 +278,7 @@ export function CallList({
                         }
                         onClick={() => onCallAction(r, 'finish')}
                       >
-                        Finish call
+                        Finish Call
                       </button>
                       {connected.length > 0 && (
                         <p className="text-sm">
@@ -298,12 +293,13 @@ export function CallList({
                     disabled={disabled || !!r.time.occurred_at}
                     onClick={() => onCallAction(r, 'cancel')}
                   >
-                    Cancel call
+                    Cancel Call
                   </button>
                 </div>
               )}
             </>
           )}
+          {renderAdvisory?.(r)}
           <div className="flex flex-wrap gap-2">
             <button
               className={button}
@@ -312,17 +308,17 @@ export function CallList({
             >
               {onCallAction && ongoing && !r.time.occurred_at
                 ? 'Reschedule'
-                : 'Edit call'}
+                : 'Edit Call'}
             </button>
             <button className={button} onClick={() => onHistory(r.record_id)}>
-              Call history
+              Call History
             </button>
             <button
               className={button}
               disabled={disabled}
               onClick={() => onTransition(r)}
             >
-              {r.deleted ? 'Restore call' : 'Remove call'}
+              {r.deleted ? 'Restore Call' : 'Remove Call'}
             </button>
           </div>
         </li>

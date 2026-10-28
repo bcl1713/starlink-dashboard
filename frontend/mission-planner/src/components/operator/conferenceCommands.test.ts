@@ -43,6 +43,7 @@ describe('captured conference commands', () => {
     const command = resumeCommand(participation, now);
     expect(command.operation).toBe('create');
     expect(command.body).toMatchObject({
+      connect_customer: true,
       time: { occurred_at: now, ended_at: null, end_state: 'ongoing' },
       payload: { state: 'connected', resumes_participation_id: 'record-a' },
     });
@@ -113,7 +114,7 @@ it('reestablishes the saved configuration on a later leg with fresh verification
       leg_id: 'return',
       payload: {
         status: 'established',
-        verified_at: null,
+        verified_at: now,
         coordinator: 'Saved coordinator',
         configured_transport: 'Ka',
       },
@@ -241,8 +242,24 @@ it('explicitly reestablishes a retained verified definition without duplicating 
     body: {
       establish_session: true,
       expected_version: retained.version,
-      payload: { status: 'established', verified_at: null },
+      payload: { status: 'established', verified_at: now },
     },
   });
   expect(retained.payload.verified_at).toBe(now);
+});
+
+it('establishes and reports the two-way distant-end check in one versioned command', () => {
+  const preparing = {
+    ...conference,
+    payload: { ...conference.payload, status: 'preparing' },
+  } as SavedRecord;
+  expect(conferenceCommand(preparing, 'establish', now)).toMatchObject({
+    operation: 'update',
+    body: {
+      expected_version: 1,
+      establish_session: true,
+      time: { occurred_at: now },
+      payload: { status: 'established', verified_at: now },
+    },
+  });
 });

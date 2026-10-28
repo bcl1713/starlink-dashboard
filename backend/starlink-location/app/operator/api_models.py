@@ -62,6 +62,8 @@ class CallCreate(RecordInput):
 
 
 class CallUpdate(CallCreate):
+    begin_customer_connect: bool = False
+    establish_session: bool = False
     expected_version: PositiveVersion
     audit_note: AuditNote | None = None
 
@@ -97,12 +99,16 @@ class ConferenceUpdate(ConferenceCreate):
 
 
 class ParticipationCreate(RecordInput):
+    connect_customer: bool = False
     record_type: Literal["participation"]
     payload: ParticipationPayload
     operator_label: str | None = Field(default=None, max_length=200)
 
 
-class ParticipationUpdate(ParticipationCreate):
+class ParticipationUpdate(RecordInput):
+    record_type: Literal["participation"]
+    payload: ParticipationPayload
+    operator_label: str | None = Field(default=None, max_length=200)
     expected_version: PositiveVersion
     audit_note: AuditNote | None = None
 

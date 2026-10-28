@@ -116,7 +116,8 @@ export function conferenceCommand(
     (action === 'restore_connection' && status !== 'interrupted') ||
     (action === 'establish' &&
       !previousSession &&
-      (status === 'established' || status === 'interrupted')) ||
+      ((status === 'established' && !!input.payload.verified_at) ||
+        status === 'interrupted')) ||
     (action === 'close' && status === 'closed') ||
     (action === 'interrupt' &&
       (status === 'closed' || status === 'interrupted'))
@@ -146,7 +147,7 @@ export function conferenceCommand(
         : action === 'interrupt'
           ? 'interrupted'
           : 'established';
-    input.payload.verified_at = null;
+    input.payload.verified_at = action === 'establish' ? now : null;
   }
   return {
     operation: 'update',
@@ -210,6 +211,7 @@ export function resumeCommand(
   )
     throw new Error('Select an interrupted customer connection');
   input.payload.resumes_participation_id = record.record_id;
+  input.connect_customer = true;
   return joinCommand(input, now);
 }
 

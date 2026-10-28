@@ -1,4 +1,5 @@
-import type { ConferenceInput, Transport } from '@/types/operator';
+import type { ConferenceInput } from '@/types/operator';
+import { UtcDateTime } from './UtcDateTime';
 const field = 'min-h-11 w-full rounded border bg-background p-2';
 export function ConferenceEditor({
   formId,
@@ -6,16 +7,31 @@ export function ConferenceEditor({
   disabled,
   onChange,
   onSubmit,
+  transportOptions = [],
 }: {
   formId?: string;
   draft: ConferenceInput;
   disabled: boolean;
   onChange: (draft: ConferenceInput) => void;
   onSubmit: (draft: ConferenceInput) => void;
+  transportOptions?: { id: string; name: string }[];
 }) {
   function payload(patch: Partial<ConferenceInput['payload']>) {
     onChange({ ...draft, payload: { ...draft.payload, ...patch } });
   }
+  const transports = new Map([
+    ['Ka', 'Ka Commercial'],
+    ['X', 'X-Band'],
+    ['Starshield', 'Starshield'],
+    ...transportOptions
+      .filter((t) => !['Ka', 'X', 'Starshield'].includes(t.id))
+      .map((t) => [t.id, t.name] as [string, string]),
+  ]);
+  for (const value of [
+    draft.payload.intended_transport,
+    draft.payload.configured_transport,
+  ])
+    if (value && !transports.has(value)) transports.set(value, value);
   return (
     <form
       id={formId}
@@ -34,6 +50,32 @@ export function ConferenceEditor({
           onChange={(e) => payload({ title: e.target.value })}
         />
       </label>
+      {(['intended_transport', 'configured_transport'] as const).map((key) => (
+        <label className="block" key={key}>
+          {key === 'intended_transport'
+            ? 'Intended transport'
+            : 'Operator-reported configuration'}
+          <select
+            className={field}
+            value={draft.payload[key] ?? ''}
+            onChange={(e) =>
+              payload({
+                [key]: e.target.value || null,
+                ...(key === 'configured_transport'
+                  ? { verified_at: null }
+                  : {}),
+              })
+            }
+          >
+            <option value="">Unknown</option>
+            {[...transports].map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ))}
       <details>
         <summary>Conference details and retrospective correction</summary>
         <label className="block">
@@ -67,64 +109,35 @@ export function ConferenceEditor({
             onChange={(e) => payload({ coordinator: e.target.value || null })}
           />
         </label>
-        {(['intended_transport', 'configured_transport'] as const).map(
-          (key) => (
-            <label className="block" key={key}>
-              {key === 'intended_transport'
-                ? 'Intended transport'
-                : 'Operator-reported configuration'}
-              <select
-                className={field}
-                value={draft.payload[key] ?? ''}
-                onChange={(e) =>
-                  payload({
-                    [key]: (e.target.value || null) as Transport | null,
-                    ...(key === 'configured_transport'
-                      ? { verified_at: null }
-                      : {}),
-                  })
-                }
-              >
-                <option value="">Unknown</option>
-                {['Starshield', 'Ka', 'X'].map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-            </label>
-          )
-        )}
-        {(['verified_at', 'configuration_reported_at'] as const).map((key) => (
-          <label className="block" key={key}>
-            {key === 'verified_at'
-              ? 'Operator verification UTC'
-              : 'Configuration report UTC'}
-            <input
-              className={field}
-              placeholder="YYYY-MM-DDTHH:MM:SSZ or unknown"
-              value={draft.payload[key] ?? ''}
-              onChange={(e) => payload({ [key]: e.target.value || null })}
-            />
-          </label>
-        ))}
-        <label className="block">
-          Action occurrence UTC (optional)
-          <input
-            className={field}
-            value={draft.time.occurred_at ?? ''}
-            onChange={(e) =>
-              onChange({
-                ...draft,
-                time: {
-                  ...draft.time,
-                  occurred_at: e.target.value || null,
-                  ended_at: null,
-                  precision: e.target.value ? 'approximate' : 'unknown',
-                  end_state: e.target.value ? 'instant' : 'unknown',
-                },
-              })
-            }
-          />
-        </label>
+        <UtcDateTime
+          label="Two-way check"
+          value={draft.payload.verified_at ?? null}
+          disabled={disabled}
+          onChange={(value) => payload({ verified_at: value })}
+        />
+        <UtcDateTime
+          label="Configuration report"
+          value={draft.payload.configuration_reported_at ?? null}
+          disabled={disabled}
+          onChange={(value) => payload({ configuration_reported_at: value })}
+        />
+        <UtcDateTime
+          label="Action occurrence"
+          value={draft.time.occurred_at}
+          disabled={disabled}
+          onChange={(value) =>
+            onChange({
+              ...draft,
+              time: {
+                ...draft.time,
+                occurred_at: value,
+                ended_at: null,
+                precision: value ? 'approximate' : 'unknown',
+                end_state: value ? 'instant' : 'unknown',
+              },
+            })
+          }
+        />
         <label className="block">
           Conference note (optional)
           <textarea

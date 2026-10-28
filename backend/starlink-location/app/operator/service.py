@@ -77,6 +77,14 @@ class OperatorService:
             body.pop("replacement_check_row_ids", None)
         if not body.get("establish_session"):
             body.pop("establish_session", None)
+        if not body.get("begin_customer_connect"):
+            body.pop("begin_customer_connect", None)
+        if not body.get("connect_customer"):
+            body.pop("connect_customer", None)
+        if body.get("payload", {}).get("entry_type") == "call":
+            for name in ("direct_transport", "established_at"):
+                if body["payload"].get(name) is None:
+                    body["payload"].pop(name, None)
         # Optional catalog references leave legacy idempotency hashes unchanged.
         if body.get("payload", {}).get("entry_type") == "transport_decision":
             for row in body["payload"]["services"]:

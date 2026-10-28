@@ -40,3 +40,59 @@ it('orders equal starts stably and warns of missing pages and unknown times', ()
   ).toEqual(['a', 'b', 'Unknown planned timing', 'c']);
   expect(screen.getByRole('status').textContent).toContain('incomplete');
 });
+
+it('treats direct calls as first-class and offers Establish then Connect Customer without separate Test', () => {
+  const direct: SavedRecord = {
+    ...record,
+    record_type: 'call',
+    time: { ...record.time, occurred_at: null, ended_at: null },
+    payload: {
+      ...record.payload,
+      entry_type: 'call',
+      status: 'scheduled',
+      conference_id: null,
+      direct_transport: 'Ka',
+    },
+  };
+  const props = {
+    incomplete: false,
+    disabled: false,
+    onEdit: vi.fn(),
+    onHistory: vi.fn(),
+    onTransition: vi.fn(),
+    onCallAction: vi.fn(),
+  };
+  const view = render(<CallList {...props} items={page([direct]).items} />);
+  expect(screen.getByRole('button', { name: 'Establish' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /choose bridge/i })).toBeNull();
+  expect(
+    screen
+      .getByRole('button', { name: 'Connect Customer' })
+      .hasAttribute('disabled')
+  ).toBe(true);
+  view.rerender(
+    <CallList
+      {...props}
+      items={
+        page([
+          {
+            ...direct,
+            payload: {
+              ...direct.payload,
+              entry_type: 'call',
+              status: 'scheduled',
+              conference_id: null,
+              established_at: '2026-10-17T15:00:00Z',
+            },
+          },
+        ]).items
+      }
+    />
+  );
+  expect(
+    screen
+      .getByRole('button', { name: 'Connect Customer' })
+      .hasAttribute('disabled')
+  ).toBe(false);
+  expect(screen.queryByRole('button', { name: /call tested/i })).toBeNull();
+});

@@ -20,13 +20,17 @@ it('schedules and reschedules with UTC date and time controls and visible prepar
     );
   }
   render(<Form />);
-  expect(screen.getByLabelText('Planned start date (UTC)')).toHaveAttribute(
+  expect(screen.getByLabelText('Planned start date (Zulu)')).toHaveAttribute(
     'type',
     'date'
   );
-  expect(screen.getByLabelText('Planned start time (UTC)')).toHaveAttribute(
-    'type',
-    'time'
+  expect(screen.getByLabelText('Planned start hour (Zulu)')).toHaveProperty(
+    'tagName',
+    'SELECT'
+  );
+  expect(screen.getByLabelText('Planned start minute (Zulu)')).toHaveProperty(
+    'tagName',
+    'SELECT'
   );
   expect(
     screen.getByLabelText('Communications type').closest('details')
@@ -36,18 +40,24 @@ it('schedules and reschedules with UTC date and time controls and visible prepar
       .getByLabelText('Preparation lead minutes (blank = unknown)')
       .closest('details')
   ).toBeNull();
-  fireEvent.change(screen.getByLabelText('Planned start date (UTC)'), {
+  fireEvent.change(screen.getByLabelText('Planned start date (Zulu)'), {
     target: { value: '2026-10-20' },
   });
-  fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
-    target: { value: '14:30' },
+  fireEvent.change(screen.getByLabelText('Planned start hour (Zulu)'), {
+    target: { value: '14' },
+  });
+  fireEvent.change(screen.getByLabelText('Planned start minute (Zulu)'), {
+    target: { value: '30' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
   expect(save.mock.calls[0][0].time.planned_start_at).toBe(
     '2026-10-20T14:30:00Z'
   );
-  fireEvent.change(screen.getByLabelText('Planned start time (UTC)'), {
-    target: { value: '15:45' },
+  fireEvent.change(screen.getByLabelText('Planned start hour (Zulu)'), {
+    target: { value: '15' },
+  });
+  fireEvent.change(screen.getByLabelText('Planned start minute (Zulu)'), {
+    target: { value: '45' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Save call' }));
   expect(save.mock.calls[1][0].time.planned_start_at).toBe(
@@ -66,7 +76,7 @@ it('retains a partially entered date when parked without inventing a timestamp',
       onEditorStateChange={changed}
     />
   );
-  fireEvent.change(screen.getByLabelText('Planned start date (UTC)'), {
+  fireEvent.change(screen.getByLabelText('Planned start date (Zulu)'), {
     target: { value: '2026-10-20' },
   });
   const state = changed.mock.calls.at(-1)![0];
@@ -80,10 +90,10 @@ it('retains a partially entered date when parked without inventing a timestamp',
       editorState={state}
     />
   );
-  expect(screen.getByLabelText('Planned start date (UTC)')).toHaveValue(
+  expect(screen.getByLabelText('Planned start date (Zulu)')).toHaveValue(
     '2026-10-20'
   );
-  expect(screen.getByLabelText('Planned start time (UTC)')).toHaveValue('');
+  expect(screen.getByLabelText('Planned start hour (Zulu)')).toHaveValue('');
 });
 
 import { CallList } from './CallList';
@@ -107,10 +117,11 @@ it('shows contextual actions and independent bridge and customer reports on a ca
       onHistory={vi.fn()}
       onTransition={vi.fn()}
       onCallAction={action}
+      onConferenceAction={action}
     />
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Start call' }));
-  expect(action).toHaveBeenCalledWith(call, 'start');
+  fireEvent.click(screen.getByRole('button', { name: /Establish Bridge/i }));
+  expect(action).toHaveBeenCalledWith(bridge, 'establish');
   expect(screen.getByText(/Bridge: .*preparing/)).toBeVisible();
   expect(screen.getByRole('button', { name: 'Reschedule' })).toBeVisible();
   const running = {
@@ -132,18 +143,19 @@ it('shows contextual actions and independent bridge and customer reports on a ca
       onHistory={vi.fn()}
       onTransition={vi.fn()}
       onCallAction={action}
+      onConferenceAction={action}
     />
   );
   expect(screen.queryByRole('button', { name: 'Start call' })).toBeNull();
   expect(screen.getByText(/In progress/)).toBeVisible();
   expect(screen.getByText(/Actual: 20 Oct 2026/)).toBeVisible();
   expect(
-    screen.getByRole('button', { name: 'Report call tested' })
-  ).toBeVisible();
+    screen.queryByRole('button', { name: /Report Call Tested/i })
+  ).toBeNull();
   expect(
-    screen.getByRole('button', { name: 'Report customer left' })
+    screen.getByRole('button', { name: 'Report Customer Left' })
   ).toBeVisible();
-  expect(screen.getByRole('button', { name: 'Finish call' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Finish Call' })).toBeDisabled();
 });
 it('names the retained draft as soon as the participant is entered', () => {
   const change = vi.fn();

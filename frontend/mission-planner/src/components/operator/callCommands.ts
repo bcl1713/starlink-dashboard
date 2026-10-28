@@ -5,7 +5,13 @@ import type {
 } from '@/types/operator';
 import { callDraft } from './callDraft';
 import { unknownTime } from './conferenceCommands';
-export type CallAction = 'start' | 'test' | 'finish' | 'cancel' | 'connect';
+export type CallAction =
+  | 'establish'
+  | 'start'
+  | 'test'
+  | 'finish'
+  | 'cancel'
+  | 'connect';
 const reference = (record: SavedRecord) =>
   `Call record: ${record.record_id}\nOperator-reported call test; bridge verification is separate.`;
 export function callTestReported(call: SavedRecord, records: SavedRecord[]) {
@@ -58,7 +64,20 @@ export function callCommand(
     };
     return { operation: 'create', body: observation };
   }
-  if (intent === 'start') {
+  if (intent === 'establish') {
+    if (input.payload.conference_id)
+      throw new Error(
+        'Establish the associated conference before connecting this customer.'
+      );
+    input.payload.established_at = now;
+    if (!input.time.occurred_at)
+      input.time = {
+        ...input.time,
+        occurred_at: now,
+        precision: 'exact',
+        end_state: 'ongoing',
+      };
+  } else if (intent === 'start') {
     if (input.time.occurred_at)
       throw new Error('This call has already started.');
     input.time = {
@@ -79,6 +98,79 @@ export function callCommand(
   return {
     operation: 'update',
     record_id: record.record_id,
-    body: { ...input, expected_version: record.version },
+    body: {
+      ...input,
+      expected_version: record.version,
+      ...(intent === 'establish' ? { establish_session: true } : {}),
+    },
   };
+}
+
+/** Readiness is reported evidence, never inferred from a selected transport. */
+export function customerConnectionReady(
+  call: SavedRecord,
+  records: SavedRecord[],
+  isSessionCurrent: (record: SavedRecord) => boolean = () => true
+): boolean {
+  if (
+    call.deleted ||
+    call.payload.entry_type !== 'call' ||
+    ['completed', 'cancelled'].includes(call.payload.status)
+  )
+    return false;
+  if (!call.payload.conference_id)
+    return (
+      !!call.payload.established_at &&
+      Number.isFinite(Date.parse(call.payload.established_at)) &&
+      isSessionCurrent(call)
+    );
+  const conferenceId = call.payload.conference_id;
+  const bridge = records.find(
+    (r) => r.record_id === conferenceId && r.mission_id === call.mission_id
+  );
+  return (
+    !!bridge &&
+    !bridge.deleted &&
+    bridge.payload.entry_type === 'conference' &&
+    bridge.payload.status === 'established' &&
+    !!bridge.payload.verified_at &&
+    isSessionCurrent(bridge)
+  );
+}
+
+/** Future requirements do not consume a bridge until actual activity begins. */
+export function conferenceCloseBlockers(
+  conference: SavedRecord,
+  records: SavedRecord[]
+): SavedRecord[] {
+  const associatedCalls = records.filter(
+    (r) =>
+      !r.deleted &&
+      r.mission_id === conference.mission_id &&
+      r.payload.entry_type === 'call' &&
+      r.payload.conference_id === conference.record_id
+  );
+  const callIds = new Set(associatedCalls.map((r) => r.record_id));
+  return records.filter((r) => {
+    if (r.deleted || r.mission_id !== conference.mission_id) return false;
+    if (r.payload.entry_type === 'call')
+      return (
+        callIds.has(r.record_id) &&
+        !!r.time.occurred_at &&
+        !r.time.ended_at &&
+        !['completed', 'cancelled'].includes(r.payload.status)
+      );
+    if (
+      r.payload.entry_type !== 'participation' ||
+      (r.payload.conference_id !== conference.record_id &&
+        !callIds.has(r.payload.call_id ?? ''))
+    )
+      return false;
+    return (
+      r.payload.state !== 'left' &&
+      (r.payload.state !== 'interrupted' ||
+        !r.time.ended_at ||
+        r.time.end_state !== 'known')
+    );
+  });
 }

@@ -1,16 +1,25 @@
+import type { ReactNode } from 'react';
 import type { SavedRecord } from '@/types/operator';
 import {
   sessionOutsideContext,
   type ConferenceAction,
 } from './conferenceCommands';
+import { conferenceCloseBlockers } from './callCommands';
 import type { CallAssociation } from './callAssociation';
 import { revisionUtc } from './revisionUtc';
 const button =
   'min-h-11 rounded-lg border bg-background px-4 py-2 font-medium shadow-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
+const primary = button + ' min-w-40 bg-primary text-primary-foreground';
+const transport = (id: string | null | undefined) =>
+  id === 'Ka' ? 'Ka Commercial' : id === 'X' ? 'X-Band' : (id ?? 'Unknown');
 export function ConferenceCard({
   record,
   sessionCurrent = true,
   participations,
+  calls = [],
+  incomplete = false,
+  selected = false,
+  advisory,
   disabled,
   onAction,
   onEdit,
@@ -25,6 +34,10 @@ export function ConferenceCard({
   sessionCurrent?: boolean;
   record: SavedRecord;
   participations: SavedRecord[];
+  calls?: SavedRecord[];
+  incomplete?: boolean;
+  selected?: boolean;
+  advisory?: ReactNode;
   disabled: boolean;
   onAction: (action: ConferenceAction) => void;
   onEdit: () => void;
@@ -48,36 +61,51 @@ export function ConferenceCard({
       r.payload.state === 'connected' &&
       r.payload.conference_id === record.record_id
   ).length;
+  const blockers = conferenceCloseBlockers(record, [
+    ...calls,
+    ...participations,
+  ]);
+  const closeDisabled = disabled || incomplete || blockers.length > 0;
+  const ready =
+    !previousSession && p.status === 'established' && !!p.verified_at;
+  const needsEstablish =
+    previousSession ||
+    !['established', 'interrupted'].includes(p.status ?? '') ||
+    (p.status === 'established' && !p.verified_at);
   return (
     <article
+      id={`operator-record-${record.record_id}`}
+      data-record-id={record.record_id}
+      data-selected={selected || undefined}
+      aria-label={`Conference ${p.title}`}
       className={
-        'min-w-0 space-y-3 rounded-xl border p-4 break-words ' +
+        'min-w-0 space-y-3 rounded-xl border-2 border-l-4 p-4 break-words ' +
         (prominentActions
           ? 'border-2 border-l-4 border-teal-500/60 border-l-teal-500 bg-teal-500/5 shadow-md'
-          : 'bg-card shadow-sm')
+          : 'border-l-transparent bg-card shadow-sm') +
+        (selected ? ' ring-2 ring-primary ring-offset-2' : '')
       }
-      aria-label={`Conference ${p.title}`}
     >
       <h4 className="text-xl font-bold">
         {p.title}
         {record.deleted ? ' · Removed' : ''}
       </h4>
-      <p className="rounded bg-muted p-2 text-sm">
+      <p className="min-h-24 rounded bg-muted p-2 text-sm">
         {previousSession
           ? 'This session is not assumed available here. Establish again for the current leg; previous reports remain in history.'
           : p.status === 'closed'
             ? 'Closed. Establish again to reuse this bridge.'
             : p.status === 'interrupted'
-              ? 'Connection interrupted. Restore the bridge, then verify it again.'
-              : p.status === 'established'
-                ? p.verified_at
-                  ? 'Bridge verification reported for this session. Report each customer joining and leaving.'
-                  : 'Established. Verify the bridge next; each call test is reported separately.'
-                : 'Next: establish this bridge, then verify it before use.'}
+              ? 'Connection interrupted. Restore the bridge, then Establish with the two-way check.'
+              : ready
+                ? 'Established with a two-way distant-end check. Connect Customer when ready.'
+                : p.status === 'established'
+                  ? 'Earlier establishment has no completed two-way check. Establish to report the check; earlier evidence stays in history.'
+                  : 'Establish includes the two-way distant-end check. Then Connect Customer.'}
       </p>
-      <p className="inline-block rounded-full border bg-background px-3 py-1 text-sm font-semibold">
+      <p className="inline-block min-h-20 rounded-full border bg-background px-3 py-1 text-sm font-semibold">
         Conference: {previousSession ? 'Historical session report · ' : ''}
-        {p.status ?? 'Unknown'} · Operator verification:{' '}
+        {p.status ?? 'Unknown'} · Two-way check:{' '}
         {revisionUtc(p.verified_at ?? null)}
       </p>
       {compactActions && (
@@ -103,114 +131,107 @@ export function ConferenceCard({
             {record.deleted ? 'removed' : p.status}. Continuity unknown.
           </p>
         )}
-      <div className="flex flex-wrap gap-2">
+      <div
+        className="flex min-h-11 flex-wrap items-start gap-2"
+        aria-label="Conference primary action"
+      >
+        {!record.deleted &&
+          (needsEstablish ? (
+            <button
+              className={primary}
+              disabled={disabled}
+              onClick={() => onAction('establish')}
+            >
+              Establish
+            </button>
+          ) : (
+            <button
+              className={primary}
+              disabled={closeDisabled}
+              onClick={() => onAction('close')}
+            >
+              Close Conference
+            </button>
+          ))}
         {!record.deleted && (
-          <>
-            {(!p.status ||
-              ['unknown', 'preparing', 'closed'].includes(p.status) ||
-              previousSession) && (
-              <button
-                className={button + ' bg-primary text-primary-foreground'}
-                disabled={disabled}
-                onClick={() => onAction('establish')}
-              >
-                {(p.status === 'closed' || previousSession) &&
-                currentAssociation
-                  ? `Reestablish · ${currentAssociation.label}`
-                  : 'Establish'}
-              </button>
-            )}
-            {!previousSession &&
-              p.status === 'established' &&
-              !p.verified_at && (
+          <button
+            className={button}
+            disabled={disabled || incomplete || !ready}
+            onClick={onJoin}
+          >
+            Connect Customer
+          </button>
+        )}
+      </div>
+      <p className="min-h-16 text-sm text-muted-foreground">
+        {blockers.length > 0
+          ? 'Finish active calls and resolve connected or unknown customer reports before closing.'
+          : incomplete
+            ? 'Load remaining activity before closing.'
+            : 'Establish reports the two-way check; Close keeps the saved bridge available for reuse.'}
+      </p>
+      <p>
+        Intended transport: {transport(p.intended_transport)} ·
+        Operator-reported configuration: {transport(p.configured_transport)}
+      </p>
+      {advisory}
+      <details className="border-t pt-3">
+        <summary className="min-h-11 cursor-pointer py-2">
+          Conference Details
+        </summary>
+        <div className="flex flex-wrap gap-2">
+          {!record.deleted && (
+            <>
+              {!previousSession && p.status === 'interrupted' && (
                 <button
                   className={button}
                   disabled={disabled}
-                  onClick={() => onAction('verify')}
+                  onClick={() => onAction('restore_connection')}
                 >
-                  Verify
+                  Restore Conference Connection
                 </button>
               )}
-            {!previousSession && p.status === 'interrupted' && (
-              <button
-                className={button}
-                disabled={disabled}
-                onClick={() => onAction('restore_connection')}
-              >
-                Restore conference connection
-              </button>
-            )}
-            {prominentActions && !previousSession && p.status !== 'closed' && (
-              <button
-                className={button}
-                disabled={disabled}
-                onClick={() => onAction('close')}
-              >
-                Close conference
-              </button>
-            )}
-            <div className="flex flex-wrap gap-2">
               {!previousSession &&
-                p.status !== 'closed' &&
-                p.status !== 'interrupted' && (
+                !['closed', 'interrupted'].includes(p.status ?? '') && (
                   <button
                     className={button}
                     disabled={disabled}
                     onClick={() => onAction('interrupt')}
                   >
-                    Interrupt conference
+                    Interrupt Conference
                   </button>
                 )}
-              {!prominentActions &&
-                !previousSession &&
-                p.status !== 'closed' && (
-                  <button
-                    className={button}
-                    disabled={disabled}
-                    onClick={() => onAction('close')}
-                  >
-                    Close conference
-                  </button>
-                )}
-              {(!compactActions || prominentActions) && (
-                <button className={button} disabled={disabled} onClick={onJoin}>
-                  Customer Joined
+              {needsEstablish && p.status !== 'closed' && (
+                <button
+                  className={button}
+                  disabled={closeDisabled}
+                  onClick={() => onAction('close')}
+                >
+                  Close Unverified Session
                 </button>
               )}
               <button className={button} disabled={disabled} onClick={onEdit}>
-                Correct conference
+                Correct Conference
               </button>
-            </div>
-          </>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2 border-t pt-3">
-        <button className={button} onClick={onHistory}>
-          Conference history
-        </button>
-        <button className={button} disabled={disabled} onClick={onRemove}>
-          {record.deleted ? 'Restore record' : 'Remove conference record'}
-        </button>
-      </div>
-      <p>
-        Intended transport: {p.intended_transport ?? 'Unknown'} ·
-        Operator-reported configuration: {p.configured_transport ?? 'Unknown'}
-      </p>
-      {compactActions && (
-        <p className="text-sm text-muted-foreground">
-          Close at leg end. Configuration stays saved; a later leg requires an
-          explicit reestablishment and verification.
+            </>
+          )}
+          <button className={button} onClick={onHistory}>
+            Conference History
+          </button>
+          <button className={button} disabled={disabled} onClick={onRemove}>
+            {record.deleted ? 'Restore Record' : 'Remove Conference Record'}
+          </button>
+        </div>
+        <p className="text-sm">
+          Configuration reported:{' '}
+          {revisionUtc(p.configuration_reported_at ?? null)} · Coordinator:{' '}
+          {p.coordinator ?? 'Unknown'}
         </p>
-      )}
-      <p className="text-sm text-muted-foreground">
-        Closing this bridge does not disconnect customer reports or finish
-        calls.
-      </p>
-      <p className="text-sm">
-        Configuration reported:{' '}
-        {revisionUtc(p.configuration_reported_at ?? null)} · Coordinator:{' '}
-        {p.coordinator ?? 'Unknown'}
-      </p>
+        <p className="text-sm text-muted-foreground">
+          Operator reports do not control hardware. Closing never finishes calls
+          or changes customer intervals.
+        </p>
+      </details>
     </article>
   );
 }
