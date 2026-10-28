@@ -1,11 +1,15 @@
 import { useRef, useState } from 'react';
+import './TuningPanel.css';
 import type { BloomEmission } from '../../pages/overview-bloom-mode';
 import { resolveCityEmission } from '../../pages/overview-bloom-mode';
-import type { BloomSettings, BloomView } from './contracts';
+import type { BloomMode, BloomSettings, BloomView } from './contracts';
 import { download } from './metrics';
 
 export function TuningPanel({
   active,
+  mode,
+  onMode,
+  allowIsolation = true,
   busy,
   settings,
   emissions,
@@ -18,6 +22,9 @@ export function TuningPanel({
   getReport,
 }: {
   active: boolean;
+  mode?: BloomMode;
+  onMode?: (mode: BloomMode) => void;
+  allowIsolation?: boolean;
   busy: boolean;
   settings: BloomSettings;
   emissions: BloomEmission;
@@ -29,8 +36,9 @@ export function TuningPanel({
   onReset: () => void;
   getReport: () => object;
 }) {
-  const [text, setText] = useState(''),
-    [message, setMessage] = useState('');
+  const [showJson, setShowJson] = useState(false);
+  const [message, setMessage] = useState('');
+  const text = showJson ? JSON.stringify(getReport(), null, 2) : '';
   const area = useRef<HTMLTextAreaElement>(null);
   const city = resolveCityEmission(true, emissions);
   const luminance =
@@ -38,7 +46,7 @@ export function TuningPanel({
     (city.color.r * 0.299 + city.color.g * 0.587 + city.color.b * 0.114);
   const capture = () => {
     const value = JSON.stringify(getReport(), null, 2);
-    setText(value);
+    setShowJson(true);
     return value;
   };
   const copy = async () => {
@@ -62,9 +70,23 @@ export function TuningPanel({
       <strong>Temporary bloom tuning</strong>
       <p>
         {active
-          ? 'Live in B · changes keep camera and particles.'
-          : 'Select B to apply emission and debug controls.'}
+          ? 'Live preview · changes keep camera and particles.'
+          : 'Select Bloom to apply emission and debug controls.'}
       </p>
+      {onMode && (
+        <label>
+          Rendering mode{' '}
+          <select
+            aria-label="Rendering mode"
+            value={mode}
+            onChange={(e) => onMode(e.target.value as BloomMode)}
+          >
+            <option value="current">Current appearance</option>
+            <option value="output">Output pass only</option>
+            <option value="bloom">Bloom</option>
+          </select>
+        </label>
+      )}
       <div className="tuning-actions">
         <button disabled={busy} onClick={onCityPreset}>
           Find city glow
@@ -104,6 +126,71 @@ export function TuningPanel({
         </label>
       )}
       <fieldset disabled={busy || !active}>
+        {onMode && (
+          <>
+            {(
+              [
+                ['strength', 'Bloom strength', 5, 0.05],
+                ['threshold', 'Bloom threshold', 5, 0.05],
+                ['radius', 'Bloom radius', 1, 0.01],
+              ] as const
+            ).map(([key, label, max, step]) => (
+              <div className="tuning-control" key={key}>
+                {label}{' '}
+                <div className="tuning-value">
+                  <input
+                    aria-label={`${label} slider`}
+                    type="range"
+                    min="0"
+                    max={max}
+                    step={step}
+                    value={settings[key]}
+                    onChange={(e) =>
+                      onSettings({ ...settings, [key]: Number(e.target.value) })
+                    }
+                  />
+                  <input
+                    aria-label={label}
+                    type="number"
+                    min="0"
+                    max={max}
+                    step={step}
+                    value={settings[key]}
+                    onChange={(e) =>
+                      onSettings({
+                        ...settings,
+                        [key]: Math.min(
+                          max,
+                          Math.max(0, Number(e.target.value) || 0)
+                        ),
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            ))}
+            <label>
+              Bloom resolution bound{' '}
+              <select
+                aria-label="Bloom resolution bound"
+                value={settings.maxDimension}
+                onChange={(e) =>
+                  onSettings({
+                    ...settings,
+                    maxDimension: Number(e.target.value),
+                  })
+                }
+              >
+                {[480, 960, 1920, 3840].map((value) => (
+                  <option key={value} value={value}>
+                    {value} px
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+
         <label>
           View{' '}
           <select
@@ -118,15 +205,17 @@ export function TuningPanel({
             <option value="bloom">Bloom only · light spill</option>
           </select>
         </label>
-        <label>
-          <input
-            aria-label="Cities only"
-            type="checkbox"
-            checked={isolateCities}
-            onChange={(e) => onIsolate(e.target.checked)}
-          />
-          Isolate cities · mute terrain
-        </label>
+        {allowIsolation && (
+          <label>
+            <input
+              aria-label="Cities only"
+              type="checkbox"
+              checked={isolateCities}
+              onChange={(e) => onIsolate(e.target.checked)}
+            />
+            Isolate cities · mute terrain
+          </label>
+        )}
         <label>
           Exposure{' '}
           <input
@@ -168,7 +257,7 @@ export function TuningPanel({
             ['aircraft', 'Aircraft', 30],
           ] as const
         ).map(([key, label, max]) => (
-          <label key={key}>
+          <div className="tuning-control" key={key}>
             {label} emission{' '}
             <div className="tuning-value">
               <input
@@ -200,7 +289,7 @@ export function TuningPanel({
                 }
               />
             </div>
-          </label>
+          </div>
         ))}
       </fieldset>
       <p className="tuning-readout">

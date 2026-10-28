@@ -1,4 +1,4 @@
-name: Offline bloom review evidence
+name: Overview bloom review evidence
 
 on:
   pull_request:
@@ -38,6 +38,11 @@ jobs:
         run: |
           timeout --kill-after=10s 5m npm ci
           timeout --kill-after=10s 5m npx playwright install --with-deps chromium
+      - name: Verify bloom controls on actual Overview
+        working-directory: frontend/mission-planner
+        run: >-
+          timeout --kill-after=10s 8m npx playwright test
+          overview-bloom-debug.spec.ts --output=test-results/overview-bloom-live
       - name: Build and package exact source
         working-directory: frontend/mission-planner
         run: |
@@ -71,6 +76,7 @@ jobs:
             .bloom-work/overview-bloom-${{ steps.candidate.outputs.sha }}.zip
             .bloom-work/overview-bloom-${{ steps.candidate.outputs.sha }}.zip.sha256
             frontend/mission-planner/test-results/bloom/${{ steps.candidate.outputs.sha }}/
+            frontend/mission-planner/test-results/overview-bloom-live/
           include-hidden-files: true
           if-no-files-found: error
           compression-level: 0
@@ -81,8 +87,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: overview-bloom-diagnostics-${{ steps.candidate.outputs.sha }}
-          path:
-            frontend/mission-planner/test-results/bloom/${{
-            steps.candidate.outputs.sha }}/
+          path: |
+            frontend/mission-planner/test-results/bloom/${{ steps.candidate.outputs.sha }}/
+            frontend/mission-planner/test-results/overview-bloom-live/
           if-no-files-found: warn
           retention-days: 7

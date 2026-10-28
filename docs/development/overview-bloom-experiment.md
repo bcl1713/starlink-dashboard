@@ -1,9 +1,45 @@
-# Offline Overview bloom experiment (#429)
+# Overview bloom tuning (#429)
 
-This branch is an isolated synthetic laptop experiment based on `origin/dev`
+## Tune the actual Overview
+
+Open the normal application at `/overview?bloomDebug=1`. The temporary panel
+renders on the real Overview, using the current mission, map layers, camera,
+city texture and animations. No separate package or app is needed.
+
+Adjust **Bloom strength**, **Bloom threshold**, **Bloom radius**, **Exposure**
+and the bloom resolution bound. Emission controls apply immediately to warm city
+lights, route/link cores, particles, POI/ground-entry/satellite marker cores and
+both our aircraft and ADS-B aircraft. City color starts at amber `#ffb15c`.
+**Find city glow** provides a stronger starting point while keeping the actual
+scene visible. Inspect **Bright pass** or **Bloom only**, then return to **Final
+scene** to judge the whole map. These debug views process WebGL content; DOM map
+labels remain visible.
+
+Choose **Current appearance** to compare the original rendering or **Output pass
+only** to isolate the postprocessing output. Changing controls preserves the
+camera and animation pools. Normal `/overview` omits the panel and composer.
+Values are temporary to this page session and do not write saved settings.
+
+Click **Copy settings** and paste the JSON into chat, or use **Download
+settings.json**. If clipboard access is denied, select and copy **Feedback
+JSON** manually. The displayed JSON updates after further control edits. It
+includes all current controls, the active rendering mode, camera, renderer,
+viewport/DPR and actual target sizes, with `scene: "overview"`. It excludes
+mission records and route/location lists.
+
+This PR remains unmerged and undeployed pending the separate integration
+decision. Browser verification uses the production-built Overview with local API
+fixtures, never a production backend.
+
+## Supplemental synthetic regression fixture
+
+The standalone fixture below is retained for repeatable rendering/performance
+regression evidence. It is separate from the live tuning workflow above.
+
+This fixture is a synthetic laptop experiment based on `origin/dev`
 `f0c1bd490cc8ab084bca481e93257f062788172c`, including Operator #428. It is not
-approved for merge, production testing or deployment. Stop the local server to
-roll back; the normal frontend entrypoint has no experiment controls/composer.
+approved for merge, production testing or deployment. The fixture has its own
+local server; stop it to end that regression session.
 
 ## Prepare while online
 

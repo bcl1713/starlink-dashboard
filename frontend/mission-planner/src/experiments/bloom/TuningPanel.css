@@ -1,0 +1,82 @@
+.bloom-tuning.overview-marker-debug {
+  position: absolute;
+  right: 16px;
+  left: auto;
+  top: 16px;
+  width: min(340px, calc(100% - 32px));
+  color: #eef5ff;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  background: #0c1929f5;
+  border: 1px solid #55708a;
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 50;
+  font-size: 12px;
+}
+.bloom-tuning p {
+  color: #adc0d2;
+  line-height: 1.45;
+  margin: 8px 0;
+}
+.bloom-tuning fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.bloom-tuning label,
+.bloom-tuning .tuning-control {
+  display: block;
+  margin: 9px 0;
+}
+.bloom-tuning select {
+  max-width: 100%;
+}
+.bloom-tuning input[type='number'] {
+  width: 70px;
+}
+.bloom-tuning .tuning-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bloom-tuning .tuning-value input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+.bloom-tuning .tuning-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.bloom-tuning textarea {
+  width: 100%;
+  height: 130px;
+  color: #dbe8f4;
+  background: #07111d;
+  font: 10px monospace;
+}
+
+.bloom-tuning input[type='color'] {
+  width: 44px;
+  vertical-align: middle;
+}
+.bloom-tuning input[type='checkbox'] {
+  width: auto;
+}
+.bloom-tuning button,
+.bloom-tuning select,
+.bloom-tuning input[type='number'] {
+  background: #182b40;
+  color: #eef5ff;
+  border: 1px solid #55708a;
+  border-radius: 4px;
+  padding: 4px;
+}
+.bloom-tuning button:disabled,
+.bloom-tuning fieldset:disabled {
+  opacity: 0.55;
+}
