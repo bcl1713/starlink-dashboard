@@ -906,83 +906,116 @@ it('retains conference edits made during the accepted read as a correction to th
   expect(retained.editorState?.inlineConferenceAccepted).toBeUndefined();
 });
 
-it('blocks inline entry during a pending parent create and later updates that same saved call with its independent conference', async () => {
-  const call = callDraft(undefined, 'planned', 'mission-a');
-  call.time.planned_start_at = '2026-10-28T12:00:00Z';
-  const savedCall = { ...record, ...call, record_id: 'saved-call' };
-  const bridge = savedInline();
-  let resolveSave!: (
-    value: Awaited<ReturnType<typeof api.saveOperatorCommand>>
-  ) => void;
-  const save = vi
-    .spyOn(api, 'saveOperatorCommand')
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveSave = resolve;
-        })
-    )
-    .mockResolvedValueOnce({
-      schema_version: 1,
-      command_id: 'bridge-receipt',
-      saved_records: [bridge],
-    })
-    .mockResolvedValueOnce({
-      schema_version: 1,
-      command_id: 'call-update',
-      saved_records: [
-        {
-          ...savedCall,
-          version: 2,
-          payload: { ...savedCall.payload, conference_id: bridge.record_id },
-        },
-      ],
+it.each([false, true])(
+  'blocks inline entry during a pending parent create and updates that same saved call (newer input: %s)',
+  async (newerInput) => {
+    const call = callDraft(undefined, 'planned', 'mission-a');
+    call.time.planned_start_at = '2026-10-28T12:00:00Z';
+    const savedCall = { ...record, ...call, record_id: 'saved-call' };
+    const bridge = savedInline();
+    let resolveSave!: (
+      value: Awaited<ReturnType<typeof api.saveOperatorCommand>>
+    ) => void;
+    const save = vi
+      .spyOn(api, 'saveOperatorCommand')
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSave = resolve;
+          })
+      )
+      .mockResolvedValueOnce({
+        schema_version: 1,
+        command_id: 'bridge-receipt',
+        saved_records: [bridge],
+      })
+      .mockResolvedValueOnce({
+        schema_version: 1,
+        command_id: 'call-update',
+        saved_records: [
+          {
+            ...savedCall,
+            version: 2,
+            payload: { ...savedCall.payload, conference_id: bridge.record_id },
+          },
+        ],
+      });
+    vi.spyOn(api, 'readOperatorRecord').mockImplementation(
+      async (id) =>
+        page([id === bridge.record_id ? bridge : savedCall]).items[0]
+    );
+    const { registry, draft } = mount(call);
+    await screen.findByLabelText('Party / Participant (Optional)');
+    fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    if (newerInput)
+      fireEvent.change(
+        screen.getByLabelText('Party / Participant (Optional)'),
+        { target: { value: 'Newer retained party' } }
+      );
+    const submitted = registry.resumeDraft(draft.draftId)!;
+    const inline = screen.getByRole('button', { name: 'Create Conference' });
+    expect((inline as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(inline);
+    expect(registry.listDrafts()).toHaveLength(1);
+    expect(registry.resumeDraft(draft.draftId)?.revision).toBe(
+      submitted.revision
+    );
+    await act(async () =>
+      resolveSave({
+        schema_version: 1,
+        command_id: 'call-receipt',
+        saved_records: [savedCall],
+      })
+    );
+    if (newerInput) {
+      await waitFor(() =>
+        expect(registry.resumeDraft(draft.draftId)?.target.recordId).toBe(
+          savedCall.record_id
+        )
+      );
+      expect(registry.resumeDraft(draft.draftId)?.baseVersion).toBe(
+        savedCall.version
+      );
+      expect(registry.resumeDraft(draft.draftId)?.input.payload).toMatchObject({
+        party: 'Newer retained party',
+      });
+      expect(registry.resumeDraft(draft.draftId)?.target.newDraftId).toBeNull();
+    } else {
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(registry.listDrafts()).toHaveLength(0);
+      cleanup();
+      mount(call, false, false, savedCall);
+      await screen.findByLabelText('Party / Participant (Optional)');
+    }
+    await waitFor(() =>
+      expect(
+        (
+          screen.getByRole('button', {
+            name: 'Create Conference',
+          }) as HTMLButtonElement
+        ).disabled
+      ).toBe(false)
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
+    await screen.findByLabelText('Conference name (optional)');
+    fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
+    await screen.findByLabelText('Party / Participant (Optional)');
+    fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(3));
+    expect(
+      save.mock.calls.filter(
+        ([command]) =>
+          command.operation === 'create' && command.body.record_type === 'call'
+      )
+    ).toHaveLength(1);
+    expect(save.mock.calls[2][0]).toMatchObject({
+      operation: 'update',
+      record_id: 'saved-call',
+      body: { payload: { conference_id: bridge.record_id } },
     });
-  vi.spyOn(api, 'readOperatorRecord').mockImplementation(
-    async (id) => page([id === bridge.record_id ? bridge : savedCall]).items[0]
-  );
-  const { registry, draft } = mount(call);
-  await screen.findByLabelText('Party / Participant (Optional)');
-  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
-  const submitted = registry.resumeDraft(draft.draftId)!;
-  const inline = screen.getByRole('button', { name: 'Create Conference' });
-  expect((inline as HTMLButtonElement).disabled).toBe(true);
-  fireEvent.click(inline);
-  expect(registry.listDrafts()).toHaveLength(1);
-  expect(registry.resumeDraft(draft.draftId)?.revision).toBe(
-    submitted.revision
-  );
-  await act(async () =>
-    resolveSave({
-      schema_version: 1,
-      command_id: 'call-receipt',
-      saved_records: [savedCall],
-    })
-  );
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  expect(registry.listDrafts()).toHaveLength(0);
-  cleanup();
-  mount(call, false, false, savedCall);
-  await screen.findByLabelText('Party / Participant (Optional)');
-  fireEvent.click(screen.getByRole('button', { name: 'Create Conference' }));
-  await screen.findByLabelText('Conference name (optional)');
-  fireEvent.click(screen.getByRole('button', { name: 'Save Conference' }));
-  await screen.findByLabelText('Party / Participant (Optional)');
-  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(3));
-  expect(
-    save.mock.calls.filter(
-      ([command]) =>
-        command.operation === 'create' && command.body.record_type === 'call'
-    )
-  ).toHaveLength(1);
-  expect(save.mock.calls[2][0]).toMatchObject({
-    operation: 'update',
-    record_id: 'saved-call',
-    body: { payload: { conference_id: bridge.record_id } },
-  });
-});
+  }
+);
 it('keeps inline entry blocked after the parent response is lost without modifying the submitted parent revision', async () => {
   const save = vi
     .spyOn(api, 'saveOperatorCommand')
@@ -999,5 +1032,68 @@ it('keeps inline entry blocked after the parent response is lost without modifyi
   fireEvent.click(inline);
   expect(registry.listDrafts()).toHaveLength(1);
   expect(registry.resumeDraft(draft.draftId)).toEqual(submitted);
+  expect(save).toHaveBeenCalledTimes(1);
+});
+
+it('retargets newer parent input after acceptance but blocks saving and inline entry until the accepted call can be read', async () => {
+  const call = callDraft(undefined, 'planned', 'mission-a');
+  call.time.planned_start_at = '2026-10-28T12:00:00Z';
+  const saved = { ...record, ...call, record_id: 'accepted-parent' };
+  let resolveSave!: (
+    value: Awaited<ReturnType<typeof api.saveOperatorCommand>>
+  ) => void;
+  const save = vi.spyOn(api, 'saveOperatorCommand').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveSave = resolve;
+      })
+  );
+  vi.spyOn(api, 'readOperatorRecord')
+    .mockRejectedValueOnce(new Error('Read unavailable'))
+    .mockResolvedValue(page([saved]).items[0]);
+  const { registry, draft } = mount(call);
+  await screen.findByLabelText('Party / Participant (Optional)');
+  fireEvent.click(screen.getByRole('button', { name: 'Save Call' }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  fireEvent.change(screen.getByLabelText('Party / Participant (Optional)'), {
+    target: { value: 'Retained after acceptance' },
+  });
+  await act(async () =>
+    resolveSave({
+      schema_version: 1,
+      command_id: 'parent-receipt',
+      saved_records: [saved],
+    })
+  );
+  const reread = await screen.findByRole('button', {
+    name: 'Reread and reconcile',
+  });
+  expect(registry.resumeDraft(draft.draftId)?.target.recordId).toBe(
+    saved.record_id
+  );
+  expect(
+    (screen.getByRole('button', { name: 'Save Call' }) as HTMLButtonElement)
+      .disabled
+  ).toBe(true);
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'Create Conference',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  fireEvent.click(reread);
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Create Conference',
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false)
+  );
+  expect(registry.resumeDraft(draft.draftId)?.input.payload).toMatchObject({
+    party: 'Retained after acceptance',
+  });
   expect(save).toHaveBeenCalledTimes(1);
 });

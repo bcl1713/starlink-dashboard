@@ -292,10 +292,38 @@ export function OperatorWorkspaceProvider({
         },
       });
     } else if (request.workspace) {
-      registry.retireSubmitted(
-        request.workspace.draftId,
-        request.workspace.revision
-      );
+      const retained = registry.resumeDraft(request.workspace.draftId);
+      const accepted = value.saved_records[0];
+      if (
+        request.command.operation === 'create' &&
+        request.command.body.record_type === 'call' &&
+        retained?.input.record_type === 'call' &&
+        !retained.target.recordId &&
+        retained.revision > request.workspace.revision &&
+        targetIdentity(retained.target) === request.identity &&
+        accepted.record_type === 'call' &&
+        accepted.mission_id === retained.target.missionId
+      ) {
+        // Keep edits made during the request as a correction of the accepted
+        // create. Its receipt version remains the optimistic concurrency base;
+        // a newer current row still requires the existing conflict review.
+        registry.parkDraft({
+          ...retained,
+          target: {
+            ...retained.target,
+            recordId: accepted.record_id,
+            newDraftId: null,
+          },
+          baseRecord: accepted,
+          baseVersion: accepted.version,
+          revision: retained.revision + 1,
+        });
+      } else {
+        registry.retireSubmitted(
+          request.workspace.draftId,
+          request.workspace.revision
+        );
+      }
     }
     update(lane, {
       receipt: value,

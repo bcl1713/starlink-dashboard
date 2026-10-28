@@ -269,6 +269,8 @@ export function WorkspaceEditor({
     wrongStore ||
     !!tray?.pending ||
     tray?.status === 'saving' ||
+    (tray?.draftId === draft.draftId &&
+      tray.status === 'accepted_unreadable') ||
     (!!inlineParentId && (!!inlineTray?.receipt || !!acceptedRecordId)) ||
     readingInline ||
     workspace.busyLanes.includes(commandLane(draft.target));
@@ -625,7 +627,8 @@ export function WorkspaceEditor({
               </div>
             )}
           {tray &&
-            (tray.pending ||
+            (tray.draftId === draft.draftId ||
+              tray.pending ||
               (draft.target.recordId
                 ? tray.target.recordId === draft.target.recordId
                 : tray.target.newDraftId === draft.target.newDraftId)) && (

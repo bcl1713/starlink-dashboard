@@ -155,6 +155,22 @@ test('coherent operations, retained capture and real journal safety across deskt
         direct_transport: null,
       },
     });
+    await create({
+      schema_version: 1,
+      record_type: 'journal_entry',
+      mission_id: missionId,
+      scope: 'mission',
+      leg_id: null,
+      time: { ...unknownTime },
+      payload: {
+        schema_version: 1,
+        entry_type: 'note',
+        title: 'Unknown Occurrence Note',
+        note: 'Unknown occurrence remains unknown',
+        previous_leg_id: null,
+        next_leg_id: null,
+      },
+    });
     const context = await browser.newContext({
       viewport: { width: 1920, height: 1080 },
       locale: 'en-US',
@@ -416,6 +432,110 @@ test('coherent operations, retained capture and real journal safety across deskt
       ).record.deleted
     ).toBe(false);
     proof.cancelPreservesConference = true;
+    // Hold the response after a real durable call create, then retain a newer
+    // party edit. Inline entry must wait; its later save must update that call.
+    await page
+      .getByRole('button', { name: 'Schedule Call', exact: true })
+      .click();
+    await page.getByLabel(/Party \/ Participant/i).fill('Pending Parent Guard');
+    await zulu(page, 'Planned Start', future);
+    let releaseParent!: () => void;
+    const parentResponse = new Promise<void>((resolve) => {
+      releaseParent = resolve;
+    });
+    let parentCommitted = false;
+    await page.route('**/api/v2/operator/records', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      const body = route.request().postDataJSON();
+      if (
+        body.record_type !== 'call' ||
+        body.payload?.title !== 'Pending Parent Guard'
+      ) {
+        await route.continue();
+        return;
+      }
+      const response = await route.fetch();
+      parentCommitted = true;
+      await parentResponse;
+      await route.fulfill({ response });
+    });
+    try {
+      await page
+        .getByRole('button', { name: 'Save Call', exact: true })
+        .click();
+      await expect.poll(() => parentCommitted).toBe(true);
+      await page
+        .getByLabel(/Party \/ Participant/i)
+        .fill('Pending Parent Updated');
+      const inline = page.getByRole('button', {
+        name: 'Create Conference',
+        exact: true,
+      });
+      await expect(inline).toBeDisabled();
+      await inline.evaluate((button) => (button as HTMLButtonElement).click());
+      await expect(page.getByLabel('Conference name (optional)')).toHaveCount(
+        0
+      );
+    } finally {
+      releaseParent();
+    }
+    await expect(
+      page
+        .getByRole('dialog')
+        .getByRole('heading', { name: 'Edit Call', exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Create Conference', exact: true })
+    ).toBeEnabled();
+    await page.unroute('**/api/v2/operator/records');
+    const pendingCalls = await json<{ items: { record: SavedRecord }[] }>(
+      await request.get(
+        `/api/v2/operator/records?mission_id=${missionId}&record_type=call&limit=200`
+      )
+    );
+    const originalParent = pendingCalls.items.filter(
+      ({ record }) => record.payload.title === 'Pending Parent Guard'
+    );
+    expect(originalParent).toHaveLength(1);
+    await page
+      .getByRole('button', { name: 'Create Conference', exact: true })
+      .click();
+    await page
+      .getByLabel('Conference name (optional)')
+      .fill('Pending Parent Conference');
+    await page
+      .getByRole('button', { name: 'Save Conference', exact: true })
+      .click();
+    await expect(page.getByLabel(/Party \/ Participant/i)).toHaveValue(
+      'Pending Parent Updated'
+    );
+    await page.getByRole('button', { name: 'Save Call', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await waitRecord(
+      page,
+      originalParent[0].record.record_id,
+      (record) =>
+        record.payload.entry_type === 'call' &&
+        record.payload.party === 'Pending Parent Updated' &&
+        !!record.payload.conference_id
+    );
+    const afterParent = await json<{ items: { record: SavedRecord }[] }>(
+      await request.get(
+        `/api/v2/operator/records?mission_id=${missionId}&record_type=call&limit=200`
+      )
+    );
+    expect(
+      afterParent.items.filter(({ record }) =>
+        ['Pending Parent Guard', 'Pending Parent Updated'].includes(
+          record.payload.title
+        )
+      )
+    ).toHaveLength(1);
+    proof.pendingParentInlineNoDuplicate = true;
+
     await page.getByRole('button', { name: 'Add Issue', exact: true }).click();
     await page
       .getByLabel(/Problem Description/i)
@@ -529,6 +649,66 @@ test('coherent operations, retained capture and real journal safety across deskt
       await expect(
         page.getByRole('region', { name: 'Mission timeline' })
       ).toBeVisible();
+      if (section === 'Issues') {
+        for (const name of ['Schedule Call', 'Add Issue', 'Add Note']) {
+          await page.locator('.ws-body').evaluate((el) => {
+            el.scrollTop = el.scrollHeight;
+          });
+          const capture = page.getByRole('button', { name, exact: true });
+          await expect(capture).toBeInViewport({ ratio: 1 });
+          expect(
+            await capture.evaluate((button) => {
+              const bounds = button.getBoundingClientRect();
+              return button.contains(
+                document.elementFromPoint(
+                  bounds.x + bounds.width / 2,
+                  bounds.y + bounds.height / 2
+                )
+              );
+            })
+          ).toBe(true);
+          await capture.click();
+          await expect(page.getByRole('dialog')).toBeVisible();
+          await page
+            .getByRole('button', { name: 'Discard draft', exact: true })
+            .click();
+          await expect(page.getByRole('dialog')).toHaveCount(0);
+        }
+        await page.locator('.ws-body').evaluate((el) => {
+          el.scrollTop = el.scrollHeight;
+        });
+        await page.screenshot({
+          path: `${evidence}/issues-scrolled-1920x1080.png`,
+        });
+        proof.scrolledIssuesCaptureUnobscured = true;
+      }
+      if (section === 'Notes' || section === 'History') {
+        const knownNote = page.getByRole('article').filter({
+          has: page.getByRole('heading', {
+            name: 'Backdated Note Retained On Interrupted Save',
+            exact: true,
+          }),
+        });
+        await expect(knownNote.locator('time')).toHaveText(
+          /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} Zulu$/
+        );
+        const unknownNote = page.getByRole('article').filter({
+          has: page.getByRole('heading', {
+            name: 'Unknown Occurrence Note',
+            exact: true,
+          }),
+        });
+        await expect(
+          unknownNote.getByText('Occurrence time unknown', { exact: true })
+        ).toBeVisible();
+        await expect(
+          knownNote.getByText('Timestamp Details').locator('..')
+        ).not.toHaveAttribute('open');
+        proof.readableJournalTimes = true;
+      }
+      await page.locator('.ws-body').evaluate((el) => {
+        el.scrollTop = 0;
+      });
       await page.screenshot({
         path: `${evidence}/${section.toLowerCase()}-1920x1080.png`,
       });
