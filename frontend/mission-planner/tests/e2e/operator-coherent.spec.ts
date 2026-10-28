@@ -515,6 +515,36 @@ test('coherent operations, retained capture and real journal safety across deskt
         .getByRole('button', { name: 'Operations', exact: true })
         .click();
       await expect(page.locator('.ws-conferences-lane')).toBeVisible();
+      if (width < 900) {
+        const establishIdle = idleCard.getByRole('button', {
+          name: 'Establish',
+          exact: true,
+        });
+        await establishIdle.scrollIntoViewIfNeeded();
+        const idleBefore = await idleCard.boundingBox();
+        await establishIdle.click();
+        const closeIdle = idleCard.getByRole('button', {
+          name: /^Close Conference$/i,
+        });
+        await expect(closeIdle).toBeEnabled();
+        const idleEstablished = await idleCard.boundingBox();
+        expect(
+          Math.abs(idleBefore!.height - idleEstablished!.height)
+        ).toBeLessThanOrEqual(1);
+        const closeBox = await closeIdle.boundingBox();
+        await closeIdle.click();
+        await expect(establishIdle).toBeEnabled();
+        const idleClosed = await idleCard.boundingBox();
+        const establishBox = await establishIdle.boundingBox();
+        expect(
+          Math.abs(idleEstablished!.height - idleClosed!.height)
+        ).toBeLessThanOrEqual(1);
+        expect(Math.abs(closeBox!.y - establishBox!.y)).toBeLessThanOrEqual(1);
+      }
+      await page.locator('.ws-body').evaluate((el) => {
+        el.scrollTop = 0;
+      });
+
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth
