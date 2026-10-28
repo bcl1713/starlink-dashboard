@@ -1,7 +1,7 @@
 # Operator workspace acceptance — issue 425
 
 Current UX evidence:
-[review corrections and screenshots](review-6461501430/README.md). The report
+[review corrections and screenshots](review-6462224267/README.md). The report
 below archives candidate `4b7da4d`; the linked review report covers the
 corrected workspace and has separate checksums.
 

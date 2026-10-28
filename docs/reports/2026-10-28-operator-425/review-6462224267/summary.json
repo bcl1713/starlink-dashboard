@@ -1,0 +1,132 @@
+{
+  "candidateSha": "33903dd748d2342ba58cd1cf68e32b8ad2811744",
+  "project": "starlink-operator-425-r14",
+  "checksPassed": true,
+  "fixture": "Synthetic raw KML, RF catalogs and controlled telemetry inputs; live source clock; normal production startup, mission context, prediction, journal and Nginx; no aircraft or RF hardware claims",
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-425-r14-backend:33903dd748d2342ba58cd1cf68e32b8ad2811744",
+      "id": "sha256:a9f7f08f0bfa815486a87c0b0912d59d5ef215f13ec896d398c0736af691faf6",
+      "revision": "33903dd748d2342ba58cd1cf68e32b8ad2811744"
+    },
+    "frontend": {
+      "tag": "starlink-operator-425-r14-frontend:33903dd748d2342ba58cd1cf68e32b8ad2811744",
+      "id": "sha256:d2f319e856648ef79bde0c18eee54e0676879ebab6bfb58d583f33dc64d666a9",
+      "revision": "33903dd748d2342ba58cd1cf68e32b8ad2811744"
+    }
+  },
+  "sourceArchiveSha256": "dcb76068d244f4ed5d58254993a16e3558a9762863168298b01c2aa870300dc2",
+  "qualification": {
+    "synthetic": true,
+    "productionAPIs": true,
+    "browserVersion": "156.0.8078.4",
+    "locale": "en-US",
+    "timezone": "Pacific/Honolulu",
+    "browserErrors": [],
+    "captures": [
+      "1920x1080",
+      "390x844",
+      "844x390"
+    ],
+    "laneAlignment": {
+      "normal": {
+        "conference": {
+          "x": 360,
+          "y": 392.578125,
+          "width": 706.96875,
+          "height": 422.578125
+        },
+        "call": {
+          "x": 1082.96875,
+          "y": 392.578125,
+          "width": 813.015625,
+          "height": 442.578125
+        }
+      },
+      "wrapped": {
+        "conference": {
+          "x": 360,
+          "y": 429.375,
+          "width": 706.96875,
+          "height": 422.578125
+        },
+        "call": {
+          "x": 1082.96875,
+          "y": 429.375,
+          "width": 813.015625,
+          "height": 442.578125
+        }
+      }
+    },
+    "stableCloseGeometry": {
+      "before": {
+        "x": 360,
+        "y": 392.578125,
+        "width": 706.96875,
+        "height": 422.578125
+      },
+      "established": {
+        "x": 360,
+        "y": 392.578125,
+        "width": 706.96875,
+        "height": 422.578125
+      },
+      "closed": {
+        "x": 360,
+        "y": 392.578125,
+        "width": 706.96875,
+        "height": 422.578125
+      },
+      "actionBefore": {
+        "x": 380,
+        "y": 688.15625,
+        "width": 184,
+        "height": 44
+      },
+      "actionAfter": {
+        "x": 380,
+        "y": 688.15625,
+        "width": 184,
+        "height": 44
+      },
+      "neighborBefore": {
+        "x": 360,
+        "y": 831.15625,
+        "width": 706.96875,
+        "height": 359
+      },
+      "neighborAfter": {
+        "x": 360,
+        "y": 831.15625,
+        "width": 706.96875,
+        "height": 359
+      }
+    },
+    "bridgeReuseAndIndependentCustomers": true,
+    "directCall": true,
+    "repeatedTimelineSelection": true,
+    "rescheduleUpdatesOverlap": true,
+    "inlineRetainsOvernightDraft": true,
+    "cancelPreservesConference": true,
+    "pendingParentInlineNoDuplicate": true,
+    "problemAndUpdate": true,
+    "adHocServiceTransport": true,
+    "interruptedSaveSameKey": true,
+    "scrolledIssuesCaptureUnobscured": true,
+    "readableJournalTimes": true,
+    "displayControlParity": true,
+    "firstScreenCaptureAndWork": true
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true
+  }
+}
