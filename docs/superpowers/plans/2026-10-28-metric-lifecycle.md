@@ -78,3 +78,21 @@ reconciliation now clears the current owner under repository admission.
 - Test ownership and retained logs: `/tmp/issue393-review-roundtrip`; disposable
   data and pytest paths are removed after checks. No Compose projects or
   listening services were started for this follow-up.
+
+## Review follow-up: canonical static gate
+
+[Review finding](https://github.com/bcl1713/starlink-dashboard/pull/432#pullrequestreview-5680868990)
+reproduced all seven Ruff I001 errors. The earlier scoped invocation ran from
+repository root, whose import classification differs from the backend working
+directory used by the canonical gate. Normalized the five affected test files
+from `backend/starlink-location`; no runtime behavior changed.
+
+- Integrated current dev `854d77dde6fcbf83a4efd7a8a1569e38f78a885d` into the
+  isolated feature branch without modifying the shared dev checkout.
+- Full `./tools/verify static` passed at `168f4da8`, including Black, backend
+  Ruff, frontend formatting/ESLint, Markdownlint, filename policy, internal
+  links and all 152 tooling tests. Remote-link availability produced a
+  nonblocking advisory.
+- Full local evidence/ownership: `/tmp/issue393-static-review`; disposable
+  temporary paths and the frontend dependency symlink are removed after checks.
+- Keep the PR draft pending production-image/browser and sustained-soak gates.
