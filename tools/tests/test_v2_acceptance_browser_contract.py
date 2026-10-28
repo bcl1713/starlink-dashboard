@@ -290,7 +290,7 @@ def test_v2_adapter_executes_current_map_marker_readiness(tmp_path: Path) -> Non
     adapter.parent.mkdir(parents=True)
     adapter.write_text(
         ADAPTER_SCRIPT.read_text(encoding="utf-8")
-        + "\nexport { assertSemanticOverview, scopedLifecycle };\n",
+        + "\nexport { assertSemanticOverview, scopedLifecycle, observedRouteBinding, observePlanningRoute };\n",
         encoding="utf-8",
     )
     package.parent.mkdir(parents=True)
@@ -298,7 +298,57 @@ def test_v2_adapter_executes_current_map_marker_readiness(tmp_path: Path) -> Non
     playwright.mkdir(parents=True)
     (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
     program = r"""
-const { assertSemanticOverview, scopedLifecycle } = await import(process.argv[1]);
+const { assertSemanticOverview, scopedLifecycle, observedRouteBinding, observePlanningRoute } = await import(process.argv[1]);
+const contextKey = '6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2';
+const overview = (page) => assertSemanticOverview(page, contextKey);
+const upload = { id: 'v2-activation-route', name: 'V2 Acceptance Route KAAA-KBBB', point_count: 3 };
+const detail = { ...upload, is_active: true, points: [{ longitude: -100, latitude: 35 }, { longitude: -99.95, latitude: 35.05 }, { longitude: -99.9, latitude: 35.1 }] };
+const binding = observedRouteBinding(upload, detail);
+if (binding.contextKey !== contextKey || binding.routeId !== 'v2-activation-route') throw new Error('public route identity did not hash to the hand-derived context');
+for (const wrong of [{ ...detail, id: 'other-route' }, { ...detail, name: 'Other route' }, { ...detail, is_active: false }, { ...detail, points: [{ longitude: -98, latitude: 35 }] }]) {
+  let rejected = false; try { observedRouteBinding(upload, wrong); } catch { rejected = true; }
+  if (!rejected) throw new Error('wrong public route identity or geometry was accepted');
+}
+// Only the public Routes/detail interaction supplies geometry. No direct fetch
+// or hidden page navigation exists in this page boundary fixture.
+function planningPage(missingHeading = false) {
+  let resolveResponse;
+  const response = { request: () => ({ method: () => 'GET' }), url: () => 'http://product/api/routes/v2-activation-route', status: () => 200, json: async () => detail };
+  const visible = (text, absent = false) => ({
+    waitFor: async ({ state, timeout }) => { if (absent || state !== 'visible' || timeout !== 10_000) throw new Error('planning text not visible'); },
+    innerText: async () => text,
+  });
+  const row = {
+    ...visible(''), count: async () => 1,
+    getByText: (name, { exact }) => { if (name !== 'Active' || !exact) throw new Error('wrong planning state'); return visible('Active'); },
+    getByTitle: (name, { exact }) => { if (name !== 'View route details' || !exact) throw new Error('wrong public detail control'); return { click: async () => { if (!resolveResponse) throw new Error('response observation was not armed'); resolveResponse(response); } }; },
+  };
+  const dialog = {
+    getByRole: (role, { name, exact }) => {
+      if (!exact) throw new Error('planning locator must be exact');
+      if (role === 'heading' && name === upload.name) return visible(upload.name, missingHeading);
+      if (role === 'button' && name === 'Close') return { click: async () => {} };
+      throw new Error('wrong planning dialog locator');
+    },
+    getByText: row.getByText,
+  };
+  return {
+    getByRole: (role, options) => {
+      if (role === 'link' && options.name === 'Routes' && options.exact) return { click: async () => {} };
+      if (role === 'cell' && options.name === upload.name && options.exact) return { cell: upload.name };
+      if (role === 'row') return { filter: ({ has }) => { if (has.cell !== upload.name) throw new Error('unbound route row'); return row; } };
+      if (role === 'dialog') return dialog;
+      throw new Error('unexpected planning navigation');
+    },
+    waitForResponse: (predicate, { timeout }) => {
+      if (timeout !== 10_000 || !predicate(response)) throw new Error('wrong public route response predicate');
+      return new Promise((resolve) => { resolveResponse = resolve; });
+    },
+  };
+}
+const planning = await observePlanningRoute(planningPage(), upload);
+if (planning.planning.planningRouteName !== upload.name || planning.planning.planningRouteStatus !== 'Active' || planning.routeBinding.contextKey !== contextKey) throw new Error('public planning identity and geometry were not observed');
+await observePlanningRoute(planningPage(true), upload).then(() => { throw new Error('hidden planning route name was accepted'); }, () => {});
 class Locator {
   constructor(page, kind, marker = null) { Object.assign(this, { page, kind, marker }); }
   getByText(text, options = {}) {
@@ -308,6 +358,7 @@ class Locator {
     throw new Error(`unexpected getByText on ${this.kind}`);
   }
   locator(selector) {
+    if (this.kind === 'page' && selector === 'main.overview-page') return new Locator(this.page, 'overview');
     if (this.kind === 'page' && selector === '.overview-map-stage') return new Locator(this.page, 'map');
     if (this.kind === 'map' && selector.startsWith('[data-label-kind="poi"]')) {
       const label = selector.match(/data-label-text="([^"]+)"/)[1];
@@ -324,6 +375,7 @@ class Locator {
   }
   async count() { return this.marker ? 1 : 0; }
   async getAttribute(name) {
+    if (name === 'data-route-context-key') return this.page.contextKey;
     if (name === 'data-overview-label-id') return this.marker?.id;
     if (name === 'data-group-ids') return JSON.stringify(this.page.groupIds);
     if (name === 'open') return this.page.open ? '' : null;
@@ -359,12 +411,17 @@ const markers = () => [
   { name: 'KBBB', label: 'Landing · KBBB', id: 'poi:bbb', visible: true },
 ];
 const page = (items = markers(), groupIds = null) => ({
-  route: 'V2 Acceptance Route KAAA-KBBB', markers: items, groupIds, open: false, clicks: 0,
+  route: 'Planned route', contextKey, markers: items, groupIds, open: false, clicks: 0,
   getByLabel(name) { if (name !== 'Globe legend') throw new Error('hidden accessible list cannot prove visible readiness'); return new Locator(this, 'legend'); },
   locator(selector) { return new Locator(this, 'page').locator(selector); },
   evaluate: async () => {},
   waitForTimeout: async () => { throw new Error('test fixture has no visible map marker'); },
 });
+const missingLegend = page(); missingLegend.route = 'Track history';
+const wrongContext = page(); wrongContext.contextKey = 'f'.repeat(64);
+for (const wrong of [missingLegend, wrongContext]) {
+  await overview(wrong).then(() => { throw new Error('missing planned-route legend or wrong rendered context accepted'); }, () => {});
+}
 const decoy = markers(); decoy[1].label = 'prefix-Landing · KBBB';
 const duplicate = markers(); duplicate[1].id = 'poi:aaa';
 const offscreen = markers(); offscreen[1].box = { x: -400, y: 200, width: 150, height: 30 };
@@ -372,20 +429,20 @@ const offscreen = markers(); offscreen[1].box = { x: -400, y: 200, width: 150, h
 // client viewport, even though its box is comfortably inside the map bounds.
 const clipped = markers().map((m) => ({ ...m, visible: false }));
 clipped[1].box = { x: 500, y: 520, width: 150, height: 30 }; clipped[1].clip = true;
-await assertSemanticOverview(page(clipped, ['poi:aaa', 'poi:bbb'])).then(
+await overview(page(clipped, ['poi:aaa', 'poi:bbb'])).then(
   () => { throw new Error('a disclosure item below its scroll clip was accepted'); },
   () => {},
 );
 const scrollable = clipped.map((m) => ({ ...m, scrollable: true }));
-await assertSemanticOverview(page(scrollable, ['poi:aaa', 'poi:bbb']));
+await overview(page(scrollable, ['poi:aaa', 'poi:bbb']));
 for (const candidate of [page([]), page(decoy), page(duplicate), page(markers().map((m) => ({ ...m, visible: false }))), page(offscreen)]) {
-  await assertSemanticOverview(candidate).then(
+  await overview(candidate).then(
     () => { throw new Error('hidden, decoy, duplicate or offscreen POIs were accepted'); },
     () => {},
   );
 }
 for (const candidate of [page(), page(markers().map((m) => ({ ...m, visible: false })), ['poi:aaa', 'poi:bbb'])]) {
-  const visible = await assertSemanticOverview(candidate);
+  const visible = await overview(candidate);
   if (JSON.stringify(visible.poiMarkers) !== JSON.stringify(markers().map(({ name, label, id }) => ({ name, id, label })))) throw new Error('exact distinct map identities were not returned');
   if (candidate.groupIds && candidate.clicks !== 1) throw new Error('crowded map labels were not opened through the public control');
 }

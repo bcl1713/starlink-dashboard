@@ -130,17 +130,12 @@ contract checksum requires a new final build-ledger record.
 
 ## V2 visible journey observation
 
-Public KML upload/activation must bind the active route name to distinct
-`KAAA` / `KBBB` map identities labelled `Takeoff · KAAA` / `Landing · KBBB`.
-Crowded labels use public disclosure/scrolling, member IDs and clipping checks;
-the hidden **Map POIs** list alone is insufficient. Eligibility is route-relative,
-not ETA-based. No API seeding, hidden navigation, synthetic clocks or state apply.
-
-Navigation-scoped CDP requires live bootstrap plus a scheduled poll, timed from
-completion to next start at one second (900–2500 ms), without overlap or failures.
-HTTP 503 requires visible **Aircraft history unavailable** and five-second backoff.
-Bounded waits close the network window before screenshots, dropping no requests.
-Only the platform seals observations and grants final authority.
+The [V2 product contract](../missions/v2-mission-retirement-acceptance.md)
+defines the current public KML flow, visible planning name, map POI binding,
+route-context observation, one-second live polling and explicit degraded state.
+The journey uses public UI and browser-observed responses. Hidden application
+state, API seeding and synthetic clocks cannot establish acceptance. The platform
+retains bounded provenance and visible observations separately and owns sealing.
 
 ## Final browser execution and interruption recovery
 

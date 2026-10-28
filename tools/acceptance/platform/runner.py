@@ -14,6 +14,7 @@ import shlex
 import shutil
 import signal
 import stat
+import struct
 import subprocess
 import sys
 import threading
@@ -799,10 +800,56 @@ def _png_dimensions(content: bytes) -> tuple[int, int]:
 def _adapter_observation(payload: Mapping[str, object]) -> bytes:
     """Project only bounded terminal browser observations into sealed evidence."""
     lifecycle, visible = payload.get("lifecycle"), payload.get("visible")
+    route_binding = payload.get("routeBinding")
     if (
         payload.get("activation") != "browser-observed-200"
         or not isinstance(lifecycle, Mapping)
         or not isinstance(visible, Mapping)
+        or not isinstance(route_binding, Mapping)
+    ):
+        raise ValueError("adapter observation is invalid")
+    route_id = route_binding.get("routeId")
+    route_name = "V2 Acceptance Route KAAA-KBBB"
+    coordinates = [[-100, 35], [-99.95, 35.05], [-99.9, 35.1]]
+    if (
+        set(route_binding)
+        != {
+            "source",
+            "uploadStatus",
+            "detailStatus",
+            "routeId",
+            "routeName",
+            "pointCount",
+            "coordinates",
+            "contextKey",
+        }
+        or route_binding.get("source") != "browser-upload-and-route-detail"
+        or route_binding.get("uploadStatus") != 201
+        or route_binding.get("detailStatus") != 200
+        or not isinstance(route_id, str)
+        or len(route_id) > 256
+        or re.fullmatch(r"v2-activation-route(?:-[1-9][0-9]*)?", route_id) is None
+        or route_binding.get("routeName") != route_name
+        or route_binding.get("pointCount") != 3
+        or route_binding.get("coordinates") != coordinates
+    ):
+        raise ValueError("adapter observation is invalid")
+    context_bytes = bytearray(b"route-context-v1\0")
+    for field in ("ordinary", route_id, "", ""):
+        encoded_field = field.encode()
+        context_bytes.extend(struct.pack(">I", len(encoded_field)))
+        context_bytes.extend(encoded_field)
+    context_bytes.extend(struct.pack(">I", len(coordinates)))
+    for longitude, latitude in coordinates:
+        context_bytes.extend(struct.pack(">dd", longitude, latitude))
+    context_key = hashlib.sha256(context_bytes).hexdigest()
+    if (
+        route_binding.get("contextKey") != context_key
+        or visible.get("missionLegRoute") != f"Route: {route_id}"
+        or visible.get("planningRouteName") != route_name
+        or visible.get("planningRouteStatus") != "Active"
+        or visible.get("overviewRouteLegend") != "Planned route"
+        or visible.get("overviewRouteContextKey") != context_key
     ):
         raise ValueError("adapter observation is invalid")
     frame, loader, history, polling, requests = (
@@ -905,11 +952,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
     ):
         raise ValueError("adapter observation is invalid")
     markers = visible.get("poiMarkers")
-    if (
-        visible.get("routeName") != "V2 Acceptance Route KAAA-KBBB"
-        or not isinstance(markers, list)
-        or len(markers) != 2
-    ):
+    if not isinstance(markers, list) or len(markers) != 2:
         raise ValueError("adapter observation is invalid")
     for marker, name, label in zip(
         markers, ("KAAA", "KBBB"), ("Takeoff · KAAA", "Landing · KBBB"), strict=True
@@ -933,6 +976,7 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
     encoded = json.dumps(
         {
             "activation": payload["activation"],
+            "routeBinding": dict(route_binding),
             "lifecycle": {
                 "frameId": frame,
                 "loaderId": loader,
@@ -952,7 +996,11 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                 "requests": records,
             },
             "visible": {
-                "routeName": visible["routeName"],
+                "missionLegRoute": visible["missionLegRoute"],
+                "planningRouteName": visible["planningRouteName"],
+                "planningRouteStatus": visible["planningRouteStatus"],
+                "overviewRouteLegend": visible["overviewRouteLegend"],
+                "overviewRouteContextKey": visible["overviewRouteContextKey"],
                 "poiMarkers": [dict(marker) for marker in markers],
                 **(
                     {"historyFallback": history_fallback}
@@ -1047,20 +1095,39 @@ def _final_steps(
             error, artifacts={"compose.output.log": diagnostics.output}
         )
     control_results: list[dict[str, object]] = []
-    for control in contract.controls:
-        status = _request(control, inputs)
-        control_results.append(
-            {
-                "name": control.name,
-                "path": control.path,
-                "expected_status": control.expected_status,
-                "status": status,
-            }
-        )
-        if status != control.expected_status:
-            raise ValueError(f"runtime control failed: {control.name}")
-    browser_card(inputs)
-    artifacts = _run_journey(inputs, contract, adapter)
+    artifacts: dict[str, bytes] = {}
+    failure: BaseException | None = None
+    try:
+        for control in contract.controls:
+            status = _request(control, inputs)
+            control_results.append(
+                {
+                    "name": control.name,
+                    "path": control.path,
+                    "expected_status": control.expected_status,
+                    "status": status,
+                }
+            )
+            if status != control.expected_status:
+                raise ValueError(f"runtime control failed: {control.name}")
+        browser_card(inputs)
+        artifacts.update(_run_journey(inputs, contract, adapter))
+    except (
+        OSError,
+        RuntimeError,
+        KeyboardInterrupt,
+        TypeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ) as error:
+        failure = error
+        if isinstance(error, _AdapterProcessFailure):
+            artifacts.update(
+                {
+                    "adapter.stdout.log": error.result.stdout,
+                    "adapter.stderr.log": error.result.stderr,
+                }
+            )
     artifacts["compose.output.log"] = diagnostics.output
     artifacts["runtime-observation.json"] = json.dumps(
         {
@@ -1078,6 +1145,8 @@ def _final_steps(
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
+    if failure is not None:
+        raise_with_platform_metadata(failure, artifacts=artifacts)
     return artifacts
 
 

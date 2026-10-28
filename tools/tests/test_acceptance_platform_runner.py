@@ -134,6 +134,16 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
     return {
         "status": "passed",
         "activation": "browser-observed-200",
+        "routeBinding": {
+            "source": "browser-upload-and-route-detail",
+            "uploadStatus": 201,
+            "detailStatus": 200,
+            "routeId": "v2-activation-route",
+            "routeName": "V2 Acceptance Route KAAA-KBBB",
+            "pointCount": 3,
+            "coordinates": [[-100, 35], [-99.95, 35.05], [-99.9, 35.1]],
+            "contextKey": "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2",
+        },
         "lifecycle": {
             "frameId": "frame",
             "loaderId": "loader",
@@ -173,7 +183,11 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
             "overflow": False,
         },
         "visible": {
-            "routeName": "V2 Acceptance Route KAAA-KBBB",
+            "missionLegRoute": "Route: v2-activation-route",
+            "planningRouteName": "V2 Acceptance Route KAAA-KBBB",
+            "planningRouteStatus": "Active",
+            "overviewRouteLegend": "Planned route",
+            "overviewRouteContextKey": "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2",
             "poiMarkers": [
                 {"id": "poi:aaa", "name": "KAAA", "label": "Takeoff · KAAA"},
                 {"id": "poi:bbb", "name": "KBBB", "label": "Landing · KBBB"},
@@ -1504,7 +1518,14 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
         "windowEnd": 11.2,
         "windowStart": 10.1,
     }
-    assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
+    assert (
+        observation["visible"]["planningRouteName"] == "V2 Acceptance Route KAAA-KBBB"
+    )
+    assert observation["visible"]["overviewRouteLegend"] == "Planned route"
+    assert (
+        observation["routeBinding"]["contextKey"]
+        == "6bdf2864e4b67b5462844b8434d75f7eeecc852ee6c8bb4b8ed171a5274a0cc2"
+    )
 
 
 @pytest.mark.parametrize(
@@ -1523,9 +1544,43 @@ def test_adapter_observation_requires_distinct_current_route_map_markers(
     elif change == "decoy-name":
         visible["poiMarkers"][1]["name"] = "prefix-KBBB"
     elif change == "wrong-route":
-        visible["routeName"] = "Unrelated route"
+        visible["planningRouteName"] = "Unrelated route"
     else:
         visible["poiMarkers"][1]["label"] = ""
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "missing-legend",
+        "wrong-context",
+        "wrong-route-id",
+        "wrong-geometry",
+        "wrong-source",
+        "wrong-upload-status",
+        "missing-leg-binding",
+    ],
+)
+def test_adapter_observation_binds_public_upload_to_current_overview(
+    change: str,
+) -> None:
+    payload = _adapter_payload()
+    if change == "missing-legend":
+        payload["visible"].pop("overviewRouteLegend")
+    elif change == "wrong-context":
+        payload["visible"]["overviewRouteContextKey"] = "f" * 64
+    elif change == "wrong-route-id":
+        payload["routeBinding"]["routeId"] = "unrelated-route"
+    elif change == "wrong-geometry":
+        payload["routeBinding"]["coordinates"][1][0] = -98
+    elif change == "wrong-source":
+        payload["routeBinding"]["source"] = "api-seeded"
+    elif change == "wrong-upload-status":
+        payload["routeBinding"]["uploadStatus"] = 500
+    else:
+        payload["visible"].pop("missionLegRoute")
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
 
@@ -2433,3 +2488,106 @@ def test_final_dependency_preparation_installs_frontend_without_scripts(
     assert words == ["npm", "ci", "--ignore-scripts"]
     assert cwd == ROOT / "frontend/mission-planner"
     assert env["CI"] == "1"
+
+
+@pytest.mark.parametrize(
+    "failure_stage",
+    ["control-status", "control-request", "browser-card", "journey", "adapter"],
+)
+def test_post_build_failure_seals_build_and_partial_runtime_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure_stage: str
+) -> None:
+    """A failed final must keep completed build provenance and primary diagnostics."""
+    image_ids = {
+        "starlink-location": "sha256:" + "1" * 64,
+        "mission-planner": "sha256:" + "2" * 64,
+    }
+    primary_detail = f"{failure_stage} failed after usable build"
+
+    def executor(retain: Callable[[str], None]) -> object:
+        retain("BuildKit: production images built successfully\n")
+        return object()
+
+    def request(control: object, _: object) -> int:
+        if control.name == "frontend":
+            if failure_stage == "control-request":
+                raise OSError(primary_detail)
+            if failure_stage == "control-status":
+                return 503
+        return control.expected_status
+
+    def browser_card(_: object) -> None:
+        if failure_stage == "browser-card":
+            raise runner._EnvironmentBlocked(primary_detail)
+
+    def journey(*_: object) -> dict[str, bytes]:
+        if failure_stage == "adapter":
+            raise runner._AdapterProcessFailure(
+                primary_detail,
+                runner._AdapterProcessResult(
+                    b"bounded adapter stdout",
+                    b"bounded adapter stderr",
+                    1,
+                    False,
+                    False,
+                    False,
+                ),
+            )
+        raise ValueError(primary_detail)
+
+    monkeypatch.setattr(runner, "SubprocessComposeExecutor", executor)
+    monkeypatch.setattr(runner, "render_task_override", lambda *_, **__: object())
+    monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
+    monkeypatch.setattr(
+        runner, "build_final", lambda *_: BuildReconciliation(True, False, image_ids)
+    )
+    monkeypatch.setattr(runner, "start_no_build", lambda *_: None)
+    monkeypatch.setattr(runner, "_request", request)
+    monkeypatch.setattr(runner, "_run_journey", journey)
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: _profile(),
+            validate_health=lambda *_: _current_health(),
+            prepare_final_dependencies=lambda *_: None,
+            static=lambda *_: None,
+            browser_card=browser_card,
+            start_browser_session=lambda *_: _Session(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    root = tmp_path / "evidence" / "candidates" / SHA
+    assert (root / "compose.output.log").read_bytes() == (
+        b"BuildKit: production images built successfully\n"
+    )
+    observation = json.loads((root / "runtime-observation.json").read_bytes())
+    assert observation["build"]["image_ids"] == image_ids
+    assert observation["browser"]["session"] == "http://127.0.0.1:9"
+    assert observation["controls"][0] == {
+        "name": "backend-health",
+        "path": "/health",
+        "expected_status": 200,
+        "status": 200,
+    }
+    if failure_stage == "control-status":
+        assert observation["controls"][-1]["status"] == 503
+        assert len(observation["controls"]) == 2
+        primary_detail = "runtime control failed: frontend"
+    elif failure_stage == "control-request":
+        assert len(observation["controls"]) == 1
+    else:
+        assert len(observation["controls"]) == 5
+    if failure_stage == "adapter":
+        assert (root / "adapter.stdout.log").read_bytes() == b"bounded adapter stdout"
+        assert (root / "adapter.stderr.log").read_bytes() == b"bounded adapter stderr"
+    assert result.manifest["primary"]["detail"] == primary_detail
+    assert result.manifest["outcome"] == (
+        "environment_blocked" if failure_stage == "browser-card" else "failed"
+    )
+    assert result.exit_code == (2 if failure_stage == "browser-card" else 1)
+    assert result.manifest["final_acceptance"] is False
+    assert result.manifest["maximum_evidence_claim"] != "final_acceptance"
+    verify_manifest(root)
+    read_fingerprint_authority(root)

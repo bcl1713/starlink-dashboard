@@ -4,6 +4,7 @@
  * The adapter attaches to the platform-owned browser session and returns bounded
  * observations/artifact bytes on stdout. The platform is the sole evidence writer.
  */
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { createInflate } from 'node:zlib';
@@ -296,18 +297,62 @@ async function visibleMapPoi(page, map, name, label) {
   return { name, id, label };
 }
 
-async function assertSemanticOverview(page) {
+function observedRouteBinding(upload, detail) {
+  const routeName = 'V2 Acceptance Route KAAA-KBBB';
+  const coordinates = detail.points?.map((point) => [point.longitude, point.latitude]);
+  if (typeof upload.id !== 'string' || !/^v2-activation-route(?:-[1-9][0-9]*)?$/.test(upload.id) || upload.id.length > 256 || upload.name !== routeName || upload.point_count !== 3 || detail.id !== upload.id || detail.name !== routeName || detail.point_count !== 3 || detail.is_active !== true || JSON.stringify(coordinates) !== JSON.stringify([[-100, 35], [-99.95, 35.05], [-99.9, 35.1]])) throw new Error('public uploaded route identity, active state, or geometry does not match the accepted KML');
+  // Independently encode the published route-context-v1 byte protocol. This
+  // binds observed public response geometry to the Overview's rendered context.
+  const chunks = [Buffer.from('route-context-v1\0')];
+  for (const field of ['ordinary', upload.id, '', '']) {
+    const bytes = Buffer.from(field); const length = Buffer.alloc(4);
+    length.writeUInt32BE(bytes.length); chunks.push(length, bytes);
+  }
+  const count = Buffer.alloc(4); count.writeUInt32BE(coordinates.length); chunks.push(count);
+  for (const [longitude, latitude] of coordinates) {
+    const point = Buffer.alloc(16); point.writeDoubleBE(longitude, 0); point.writeDoubleBE(latitude, 8); chunks.push(point);
+  }
+  return { source: 'browser-upload-and-route-detail', uploadStatus: 201, detailStatus: 200, routeId: upload.id, routeName, pointCount: 3, coordinates, contextKey: createHash('sha256').update(Buffer.concat(chunks)).digest('hex') };
+}
+
+async function observePlanningRoute(page, upload) {
+  await page.getByRole('link', { name: 'Routes', exact: true }).click();
+  const row = page.getByRole('row').filter({ has: page.getByRole('cell', { name: upload.name, exact: true }) });
+  await row.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  if (await row.count() !== 1) throw new Error('public uploaded route row is ambiguous');
+  await row.getByText('Active', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  const detailResponse = page.waitForResponse((response) => response.request().method() === 'GET' && new URL(response.url()).pathname === `/api/routes/${encodeURIComponent(upload.id)}` && response.status() === 200, { timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await row.getByTitle('View route details', { exact: true }).click();
+  const detail = await (await detailResponse).json();
+  const routeBinding = observedRouteBinding(upload, detail);
+  const dialog = page.getByRole('dialog');
+  const title = dialog.getByRole('heading', { name: routeBinding.routeName, exact: true });
+  const active = dialog.getByText('Active', { exact: true });
+  await title.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await active.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  const planning = { planningRouteName: await title.innerText(), planningRouteStatus: await active.innerText() };
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  return { routeBinding, planning };
+}
+
+async function assertSemanticOverview(page, expectedContextKey) {
   const legend = page.getByLabel('Globe legend');
-  const routeName = legend.getByText('V2 Acceptance Route KAAA-KBBB', { exact: true });
+  const routeLegend = legend.getByText('Planned route', { exact: true });
   const map = page.locator('.overview-map-stage');
-  await routeName.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await routeLegend.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  const overview = page.locator('main.overview-page');
+  const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
+  while (await overview.getAttribute('data-route-context-key') !== expectedContextKey) {
+    if (Date.now() >= deadline) throw new Error('Overview rendered route context does not match the public uploaded route');
+    await page.waitForTimeout(50);
+  }
   await settleAnimations(page);
   const poiMarkers = [
     await visibleMapPoi(page, map, 'KAAA', 'Takeoff · KAAA'),
     await visibleMapPoi(page, map, 'KBBB', 'Landing · KBBB'),
   ];
   if (poiMarkers[0].id === poiMarkers[1].id) throw new Error('KAAA/KBBB map markers are not distinct');
-  return { routeName: await routeName.innerText(), poiMarkers };
+  return { overviewRouteLegend: await routeLegend.innerText(), overviewRouteContextKey: await overview.getAttribute('data-route-context-key'), poiMarkers };
 }
 
 export async function runV2MissionRetirement({ page, origin, kmlPath }) {
@@ -323,12 +368,19 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
     await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
     await page.getByRole('button', { name: 'Upload KML', exact: true }).click();
     await page.locator('input[type=file]').setInputFiles(kmlPath);
+    const uploaded = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/routes/upload' && response.status() === 201, { timeout: SEMANTIC_READINESS_TIMEOUT_MS });
     await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
+    const upload = await (await uploaded).json();
+    if (typeof upload.id !== 'string' || upload.name !== 'V2 Acceptance Route KAAA-KBBB') throw new Error('public KML upload did not return the expected route');
+    const legRoute = page.getByText(`Route: ${upload.id}`, { exact: true });
+    await legRoute.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+    const missionLegRoute = await legRoute.innerText();
     const activation = page.waitForResponse((response) => new URL(response.url()).pathname.includes('/activate') && response.status() === 200);
     await page.getByRole('button', { name: 'Activate', exact: true }).click();
     await activation;
+    const { routeBinding, planning } = await observePlanningRoute(page, upload);
     await page.getByRole('link', { name: 'Overview', exact: true }).click();
-    const visible = await assertSemanticOverview(page);
+    const visible = await assertSemanticOverview(page, routeBinding.contextKey);
     const historyMode = await lifecycle.beginHistoryObservation();
     const historyFallback = historyMode === 'degraded'
       ? await page.getByText('Aircraft history unavailable', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS }).then(() => 'Aircraft history unavailable')
@@ -337,7 +389,7 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
     await lifecycle.finishObservation();
     const post = await viewportArtifact(page, 'journey-post');
     lifecycle.assertHealthy();
-    return { missionName, activation: 'browser-observed-200', lifecycle: lifecycle.observation(), visible: { ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };
+    return { missionName, activation: 'browser-observed-200', routeBinding, lifecycle: lifecycle.observation(), visible: { missionLegRoute, ...planning, ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };
   } finally {
     await lifecycle.close();
   }

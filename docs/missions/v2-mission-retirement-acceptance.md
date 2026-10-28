@@ -47,11 +47,15 @@ pre-existing state or navigating directly to a hidden state:
 3. On the mission detail view, select **Add Leg**.
 4. Select **Upload KML**, upload `v2-activation-route.kml`, then select
    **Add Leg** to save the route-bound leg.
-5. Select **Activate** and observe a successful activation response.
-6. Navigate through the visible **Overview** control.
-7. Confirm the visible active route context, route name
-   `V2 Acceptance Route KAAA-KBBB`, and distinct generated map POIs for `KAAA`
-   and `KBBB` with visible **Takeoff · KAAA** and **Landing · KBBB** labels.
+5. Confirm the saved leg visibly identifies the route ID returned by the browser's
+   KML upload response, then select **Activate** and observe success.
+6. Use the public **Routes** control, confirm the uploaded route is **Active**,
+   and select **View route details**. Confirm the visible heading
+   `V2 Acceptance Route KAAA-KBBB` and **Active** status. The browser-observed
+   route-detail response must match the uploaded identity and the asset's three
+   coordinates. Close the dialog and navigate through **Overview**.
+7. Confirm the visible **Planned route** legend and distinct generated map POIs
+   for `KAAA` and `KBBB`, labelled **Takeoff · KAAA** and **Landing · KBBB**.
    When close labels are grouped, open the public crowded-label disclosure to
    see both exact labels. Hidden accessible POI text alone is insufficient.
 
@@ -60,6 +64,13 @@ anticipated/estimated metadata. Before planned departure, anticipated ETA is
 calendar-based. After a missed planned departure but before actual departure,
 planned route durations are re-anchored at now. Once in flight, ETA is estimated
 from the current route position; POI visibility remains route-relative.
+
+Overview displays a route layer legend rather than the route name. The journey
+compares its rendered `data-route-context-key` with an independently calculated
+hash of the public uploaded route ID and observed geometry. This DOM identity
+is binding evidence, not a claim that the route name is visible on Overview.
+The evidence separates browser-response provenance (`routeBinding`) from the
+planning name/status and Overview legend/marker observations (`visible`).
 
 The journey records a pre-journey and post-journey visual state, distinct map
 marker identities, and a bounded navigation-scoped history request lifecycle.
