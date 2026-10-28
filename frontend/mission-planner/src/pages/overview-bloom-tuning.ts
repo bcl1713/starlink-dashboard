@@ -11,7 +11,7 @@ export const OVERVIEW_BLOOM_SETTINGS: BloomSettings = {
   view: 'final',
 };
 export const OVERVIEW_BLOOM_EMISSIONS: BloomEmission = {
-  cities: 2.9,
+  cities: 4,
   cityColor: '#ffbe6f',
   lines: 1.7,
   particles: 0.1,
@@ -21,4 +21,4 @@ export const OVERVIEW_BLOOM_EMISSIONS: BloomEmission = {
 
 export const OVERVIEW_BLOOM_AMBIENT_INTENSITY = 0.1;
 
-export const OVERVIEW_BLOOM_ATMOSPHERE_INTENSITY = 0.65;
+export const OVERVIEW_BLOOM_ATMOSPHERE_INTENSITY = 0;

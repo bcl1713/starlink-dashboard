@@ -3,10 +3,10 @@
 ## Default Overview and live tuning
 
 Bloom is enabled on `/overview` using the owner-selected October 28 preset:
-strength 0.15, threshold 0, radius 0, bloom bound 3840, exposure 1; cities 2.9
-at `#ffbe6f`, route/link cores 1.7, particles 0.1, POI cores 25, aircraft 1.7,
-ambient intensity 0.1 and atmosphere intensity 0.65. The ordinary map has no
-debug panel.
+strength 0.15, threshold 0, radius 0, bloom bound 3840, exposure 1; cities 4 at
+`#ffbe6f`, route/link cores 1.7, particles 0.1, POI cores 25, aircraft 1.7,
+ambient intensity 0.1 and atmosphere intensity 0. The ordinary map has no debug
+panel.
 
 Open `/overview?bloomDebug=1` to show temporary live controls on the same scene,
 using the current mission, layers, camera and animations. No separate package or
@@ -17,13 +17,12 @@ Adjust **Bloom strength**, **Bloom threshold**, **Bloom radius**, **Exposure**,
 resolution, **Ambient lighting**, **Atmosphere glow**, city color and the
 emission values. Ambient ranges from 0 to 1 in steps of 0.01 and changes terrain
 fill independently of emission and exposure. Atmosphere glow also ranges from 0
-to 1 in steps of 0.01; the new 0.65 default gives 35% less atmosphere
-contribution than before. Its JSON value is `lighting.atmosphereIntensity`. Zero
-switches the glow off without replacing its shader material; legacy Current
-appearance uses 1. **Find city glow** provides a stronger starting point.
-Inspect **Bright pass** or **Bloom only**, then return to **Final scene** to
-judge the whole map. These views process WebGL content; DOM labels remain
-visible.
+to 1 in steps of 0.01; the default is now 0, so atmosphere glow is off. Its JSON
+value is `lighting.atmosphereIntensity`. Zero switches the glow off without
+replacing its shader material; legacy Current appearance uses 1. **Find city
+glow** provides a stronger starting point. Inspect **Bright pass** or **Bloom
+only**, then return to **Final scene** to judge the whole map. These views
+process WebGL content; DOM labels remain visible.
 
 Choose **Current appearance** to compare the legacy renderer, including its
 original 0.5 ambient level, or **Output pass only** to isolate postprocessing

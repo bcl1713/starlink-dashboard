@@ -46,7 +46,7 @@ test('tunes real Overview bloom and exports the current settings', async ({
     view: 'final',
   });
   expect(defaults.emissions).toEqual({
-    cities: 2.9,
+    cities: 4,
     cityColor: '#ffbe6f',
     lines: 1.7,
     particles: 0.1,
@@ -55,7 +55,7 @@ test('tunes real Overview bloom and exports the current settings', async ({
   });
   expect(defaults.lighting).toEqual({
     ambientIntensity: 0.1,
-    atmosphereIntensity: 0.65,
+    atmosphereIntensity: 0,
   });
   const camera = await settledOverviewCamera(page);
   const numeric = (name: string) =>
@@ -215,10 +215,10 @@ test('tunes real Overview bloom and exports the current settings', async ({
   await settledOverviewCamera(page);
   await expect
     .poll(async () => (await applied()).city, { timeout: 30_000 })
-    .toBe(2.9);
+    .toBe(4);
   expect((await applied()).renderOwners).toBe(1);
   expect((await applied()).ambientIntensity).toBe(0.1);
-  expect((await applied()).atmosphereIntensity).toBe(0.65);
+  expect((await applied()).atmosphereIntensity).toBe(0);
   expect((await applied()).cores).toContain(25);
   expect((await applied()).aircraft).toContain(1.7);
   await page.screenshot({

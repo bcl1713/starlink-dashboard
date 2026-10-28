@@ -89,7 +89,7 @@ it('applies controls to the existing scene and copies all current values without
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!).emission
   ).toEqual({
-    cities: 2.9,
+    cities: 4,
     cityColor: '#ffbe6f',
     lines: 1.7,
     particles: 0.1,
@@ -174,7 +174,7 @@ it('applies controls to the existing scene and copies all current values without
   expect(
     JSON.parse(screen.getByTestId('actual-scene').textContent!)
       .atmosphereIntensity
-  ).toBe(0.65);
+  ).toBe(0);
   rerender(
     <OverviewBloom debug={false}>
       <Scene />
