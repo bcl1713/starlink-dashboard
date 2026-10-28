@@ -7,11 +7,47 @@ import json
 import os
 import subprocess
 import sys
+import venv
 from pathlib import Path
 
 import pytest
 
 TOOLS = Path(__file__).resolve().parents[1]
+
+
+def test_backend_inventory_does_not_inherit_host_distributions(tmp_path):
+    import backend_ci
+
+    host = tmp_path / "host-python"
+    venv.EnvBuilder(with_pip=False).create(host)
+    site = (
+        host
+        / f"lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
+    )
+    package = site / "ambient_ci_probe-99.0.dist-info"
+    package.mkdir()
+    (package / "METADATA").write_text("Name: ambient-ci-probe\nVersion: 99.0\n")
+    command = backend_ci.backend_commands(TOOLS.parent, str(host / "bin/python"))[0][0]
+    # Exercise the canonical interpreter/environment flags without downloading
+    # application dependencies: a package installed only on the host must vanish.
+    command = command[: command.index("--with-requirements")]
+    result = subprocess.run(
+        command
+        + [
+            "python",
+            "-c",
+            (
+                "import importlib.metadata as m, json; "
+                "print(json.dumps([d.metadata['Name'] for d in m.distributions()]))"
+            ),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=True,
+    )
+    assert "ambient-ci-probe" not in json.loads(result.stdout)
 
 
 def run_suite(tmp_path, source, *args, conftest="", plugin=True):
