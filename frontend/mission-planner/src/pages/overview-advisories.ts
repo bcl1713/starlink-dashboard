@@ -1,6 +1,6 @@
 import type { OperatingContext } from '@/components/operator/workspace/operatingContext';
 import type { OperatorHealth } from '@/types/operator';
-import type { EventSnapshot } from '@/types/operatorEvents';
+import type { EventSnapshot, SourceCapture } from '@/types/operatorEvents';
 
 export interface OverviewAdvisoryContext {
   missionId: string;
@@ -124,16 +124,27 @@ export function deriveOverviewAdvisories({
     receivedAgeMs > (visible ? 45_000 : 150_000)
   )
     return { items: [], notice: 'Transport Advisories Stale' };
+  // The feed covers the whole mission; Overview covers only the active leg.
+  // Keep shared authority and every active-leg dependency (including PoP and
+  // prerequisites). An unprepared future leg cannot invalidate this display.
+  const activeSource = `model:${context.legId}`;
+  const relevant = (source: SourceCapture) =>
+    !source.source.startsWith('model:') ||
+    source.source === activeSource ||
+    source.source.startsWith(`${activeSource}:`);
+  const available = (source: SourceCapture) =>
+    source.freshness === 'disabled' ||
+    (source.freshness === 'fresh' && source.aligned);
+  const sources = snapshot.sources.filter(relevant);
+  const explainedPartial =
+    snapshot.coverage === 'partial' &&
+    snapshot.sources.some((source) => !relevant(source) && !available(source));
   const view: OverviewAdvisoryState = {
     items: [],
     notice:
-      snapshot.coverage === 'available' &&
-      snapshot.sources.length > 0 &&
-      snapshot.sources.every(
-        (source) =>
-          source.freshness === 'disabled' ||
-          (source.freshness === 'fresh' && source.aligned)
-      )
+      (snapshot.coverage === 'available' || explainedPartial) &&
+      sources.some((source) => source.source === activeSource) &&
+      sources.every(available)
         ? null
         : unavailable.notice,
   };
