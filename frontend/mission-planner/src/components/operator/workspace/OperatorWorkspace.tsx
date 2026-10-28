@@ -349,7 +349,7 @@ export function OperatorWorkspace() {
       const action = row?.querySelector<HTMLButtonElement>(
         '[aria-label="Conference primary action"] button, button.ws-primary, button[data-primary-action], button'
       );
-      action?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      action?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
       action?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
