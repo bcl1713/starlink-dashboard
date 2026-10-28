@@ -29,14 +29,21 @@ export function HistoryView({
       !notesOnly ||
       ['note', 'call_observation'].includes(record.payload.entry_type)
   );
-  const filtered = eligible.filter(
-    ({ record }) =>
-      (!type || record.payload.entry_type === type) &&
-      (!scope || record.scope === scope) &&
-      [record.payload.title, record.payload.note].some((text) =>
-        text.toLocaleLowerCase().includes(search.toLocaleLowerCase())
-      )
-  );
+  const filtered = eligible
+    .filter(
+      ({ record }) =>
+        (!type || record.payload.entry_type === type) &&
+        (!scope || record.scope === scope) &&
+        [record.payload.title, record.payload.note].some((text) =>
+          text.toLocaleLowerCase().includes(search.toLocaleLowerCase())
+        )
+    )
+    .sort(
+      ({ record: a }, { record: b }) =>
+        Date.parse(b.time.occurred_at ?? b.recorded_at) -
+          Date.parse(a.time.occurred_at ?? a.recorded_at) ||
+        b.journal_seq - a.journal_seq
+    );
   return (
     <section aria-label={notesOnly ? 'Notes' : 'History'} className="space-y-3">
       <h2>{notesOnly ? 'Notes And Observations' : 'History'}</h2>
