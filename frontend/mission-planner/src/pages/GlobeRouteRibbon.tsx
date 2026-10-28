@@ -1,3 +1,7 @@
+import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+} from './overview-bloom-mode';
 import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -130,6 +134,8 @@ export function GlobeRouteRibbon({
   core = DEFAULT_CORE,
   depthTest = true,
 }: GlobeRouteRibbonProps) {
+  const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const group = useMemo(() => new THREE.Group(), []);
   const resources = useRef<{
     outerMaterial: THREE.ShaderMaterial;
@@ -144,14 +150,15 @@ export function GlobeRouteRibbon({
     const outerMaterial = createRibbonMaterial(outer, depthTest);
     const glowMaterial = createRibbonMaterial(glow, depthTest);
     const coreMaterial = createRibbonMaterial(core, depthTest);
+
     resources.current = { outerMaterial, glowMaterial, coreMaterial };
-    const meshes = [outerMaterial, glowMaterial, coreMaterial].map(
-      (material, index) => {
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.renderOrder = index + 1;
-        return mesh;
-      }
-    );
+    const meshes = (
+      bloom ? [coreMaterial] : [outerMaterial, glowMaterial, coreMaterial]
+    ).map((material, index) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.renderOrder = index + 1;
+      return mesh;
+    });
     group.add(...meshes);
 
     return () => {
@@ -162,7 +169,14 @@ export function GlobeRouteRibbon({
       glowMaterial.dispose();
       coreMaterial.dispose();
     };
-  }, [core, depthTest, glow, group, outer, points]);
+  }, [bloom, core, depthTest, glow, group, outer, points]);
+
+  // Apply after allocation or a tuning edit; no per-frame color parsing.
+  useLayoutEffect(() => {
+    resources.current?.coreMaterial.uniforms.uColor.value
+      .set(core.color)
+      .multiplyScalar(bloom ? emission.lines : 1);
+  });
 
   useFrame((state) => {
     const active = resources.current;

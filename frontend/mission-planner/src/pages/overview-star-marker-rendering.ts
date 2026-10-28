@@ -239,6 +239,7 @@ const chevronDistanceShader = `
   }
 `;
 const chevronBodyShader = `
+  uniform float uEmission;
   uniform vec3 uColor;
   uniform vec3 uCoreColor;
   uniform float uCoreWidth;
@@ -248,6 +249,7 @@ const chevronBodyShader = `
   void main() {
     float core = smoothstep(0.0, uCoreWidth, chevronDistance(vPoint));
     gl_FragColor = vRing > 0.5 ? vec4(uColor, 0.8) : vec4(mix(uColor, uCoreColor, core), 1.0);
+    gl_FragColor.rgb *= uEmission;
     #include <colorspace_fragment>
   }
 `;
@@ -327,6 +329,7 @@ export function createStarMarkerChevronResources({
   const material = new THREE.ShaderMaterial({
     ...common,
     uniforms: {
+      uEmission: { value: 1 },
       uColor: { value: new THREE.Color(color) },
       uCoreColor: { value: new THREE.Color(coreColor) },
       uCoreWidth: { value: 0.1 },
@@ -490,4 +493,12 @@ export function starMarkerHeadingDirection(
       new THREE.Vector3(-Math.sin(longitude), 0, -Math.cos(longitude)),
       Math.sin(heading)
     );
+}
+
+export function setStarMarkerChevronBloom(
+  resources: ReturnType<typeof createStarMarkerChevronResources>,
+  enabled: boolean,
+  intensity = 4
+): void {
+  resources.material.uniforms.uEmission.value = enabled ? intensity : 1;
 }

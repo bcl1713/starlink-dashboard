@@ -615,6 +615,20 @@ class FlightStateManager(MetricsChangeSource):
     # ------------------------------------------------------------------ #
 
     @model_input_write
+    @metrics_changed("FlightStateManager:resume_in_flight", key="_metrics_key")
+    def resume_in_flight(self, departure_time: datetime | None = None) -> None:
+        """Restore live timing; a missed takeoff remains an unknown timestamp."""
+        with self._lock:
+            if self._status.phase == FlightPhase.IN_FLIGHT:
+                if departure_time is not None:
+                    self._status.departure_time = _normalize_to_utc(departure_time)
+                return
+            self._status.departure_time = _normalize_to_utc(departure_time)
+            self._status.arrival_time = None
+            self._reset_detection()
+            self._transition_to_phase(FlightPhase.IN_FLIGHT)
+
+    @model_input_write
     @metrics_changed("FlightStateManager:trigger_departure", key="_metrics_key")
     def trigger_departure(
         self, timestamp: datetime | None = None, reason: str | None = None

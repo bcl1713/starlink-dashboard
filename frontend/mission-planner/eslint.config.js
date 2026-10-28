@@ -12,6 +12,8 @@ export default defineConfig([
       '.venv/',
       'venv/',
       'dist/',
+      'dist-bloom/',
+      'bloom-offline/',
       'build/',
       '*.egg-info/',
       'coverage/',

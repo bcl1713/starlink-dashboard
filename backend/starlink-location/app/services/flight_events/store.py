@@ -157,6 +157,11 @@ class FlightEventStore:
     @staticmethod
     def _validate_order(events):
         previous = None
+        movement_events = [
+            event
+            for event in events
+            if event.kind not in ("correction", "stop_classified")
+        ]
         allowed = {
             None: {"off_blocks"},
             "off_blocks": {"takeoff"},
@@ -164,10 +169,28 @@ class FlightEventStore:
             "landed": {"on_blocks"},
             "on_blocks": {"off_blocks"},
         }
-        for event in events:
-            if event.kind in ("correction", "stop_classified"):
-                continue
-            if event.kind not in allowed[previous]:
+        for index, event in enumerate(movement_events):
+            # Recovery can legitimately start history at landing. Let operators
+            # correct it and supply the missing departure prefix incrementally;
+            # each recovered segment can carry its own missing departure history.
+            missing_departure = (
+                event.kind == "landed"
+                and event.evidence.get("missing_departure_history")
+                and previous in (None, "off_blocks", "on_blocks")
+            )
+            following = (
+                movement_events[index + 1] if index + 1 < len(movement_events) else None
+            )
+            missing_off_blocks = (
+                event.kind == "takeoff"
+                and previous in (None, "on_blocks")
+                and following is not None
+                and following.kind == "landed"
+                and following.evidence.get("missing_departure_history")
+            )
+            if event.kind not in allowed[previous] and not (
+                missing_departure or missing_off_blocks
+            ):
                 raise ValueError("Missing preceding event or invalid event ordering")
             previous = event.kind
 
@@ -218,12 +241,26 @@ class FlightEventStore:
         state = self._state(db, mission_id, leg_id)
         if movement_events:
             last = movement_events[-1]
-            state.movement = {
+            movement = {
                 "off_blocks": "taxi_out",
                 "takeoff": "airborne",
                 "landed": "taxi_in",
                 "on_blocks": "parked_at_stop",
             }[last.kind]
+            # Backfilling departure history must not rewind a newer recovered
+            # cruise observation to taxi. Corrections to arrival still rebuild
+            # movement normally.
+            keep_recovered_movement = (
+                state.recovered_airborne
+                and state.movement == "airborne"
+                and last.kind in ("off_blocks", "takeoff")
+                and state.last_observed_at is not None
+                and last.occurred_at <= state.last_observed_at
+            )
+            if not keep_recovered_movement:
+                state.movement = movement
+            if last.kind == "takeoff":
+                state.recovered_airborne = False
             classifications = {
                 event.evidence.get("stop_id"): event.evidence.get("classification")
                 for event in events

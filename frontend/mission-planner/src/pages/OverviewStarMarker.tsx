@@ -1,5 +1,13 @@
+import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+} from './overview-bloom-mode';
 import { useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import {
+  starMarkerPickRaycast,
+  ignoreStarMarkerRaycast,
+} from './overview-star-marker-picking';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
   CORE_COLOR,
@@ -8,6 +16,7 @@ import {
   starMarkerHeadingDirection,
   updateStarMarkerChevronStyle,
   setStarMarkerChevronMatrix,
+  setStarMarkerChevronBloom,
   DEFAULT_GLOW_SIZE_PIXELS,
   createStarMarkerHaloResources,
   disposeStarMarkerHaloResources,
@@ -44,15 +53,23 @@ export type StarMarkerProps = StarMarkerPositionProps & {
   lightDistance?: number;
   lightDecay?: number;
   maxCorePixels?: number;
+  /** Optional experiment hit target in CSS pixels; independent of visual halos. */
+  pickRadiusPixels?: number;
 };
 
 function PhysicalCore({
   color,
+  emissionColor,
+  emissionIntensity,
+  raycast,
   configuredRadius,
   maxCorePixels,
   position,
 }: {
   color: string;
+  emissionColor: string;
+  emissionIntensity: number;
+  raycast: THREE.Mesh['raycast'];
   configuredRadius: number;
   maxCorePixels: number;
   position: [number, number, number];
@@ -80,6 +97,7 @@ function PhysicalCore({
   return (
     <mesh
       ref={mesh}
+      raycast={raycast}
       position={position}
       scale={configuredRadius}
       renderOrder={5}
@@ -87,8 +105,8 @@ function PhysicalCore({
       <sphereGeometry args={[1, 12, 12]} />
       <meshStandardMaterial
         color={color}
-        emissive={color}
-        emissiveIntensity={8}
+        emissive={emissionColor}
+        emissiveIntensity={emissionIntensity}
         roughness={0.15}
         toneMapped={false}
       />
@@ -96,7 +114,30 @@ function PhysicalCore({
   );
 }
 
+function StarMarkerPickTarget({
+  position,
+  radiusPixels,
+}: {
+  position: [number, number, number];
+  radiusPixels: number;
+}) {
+  const height = useThree((state) => state.size.height);
+  const raycast = useMemo(
+    () => starMarkerPickRaycast(radiusPixels, height),
+    [radiusPixels, height]
+  );
+  return (
+    <object3D
+      name="overview-star-pick-target"
+      position={position}
+      raycast={raycast}
+    />
+  );
+}
+
 function GlowingStarMarker(props: StarMarkerProps) {
+  const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const {
     color,
     size,
@@ -133,21 +174,40 @@ function GlowingStarMarker(props: StarMarkerProps) {
 
   return (
     <>
-      {halo.layers.map((layer) => (
-        <points
-          key={layer.renderOrder}
-          position={position}
-          geometry={halo.geometry}
-          material={layer.material}
-          renderOrder={layer.renderOrder}
-        />
-      ))}
+      {!bloom &&
+        halo.layers.map((layer) => (
+          <points
+            key={layer.renderOrder}
+            position={position}
+            geometry={halo.geometry}
+            material={layer.material}
+            raycast={
+              props.pickRadiusPixels !== undefined
+                ? ignoreStarMarkerRaycast
+                : THREE.Points.prototype.raycast
+            }
+            renderOrder={layer.renderOrder}
+          />
+        ))}
       <PhysicalCore
         color={coreColor}
+        emissionColor={bloom ? color : coreColor}
+        emissionIntensity={bloom ? emission.pois : 8}
+        raycast={
+          props.pickRadiusPixels !== undefined
+            ? ignoreStarMarkerRaycast
+            : THREE.Mesh.prototype.raycast
+        }
         configuredRadius={coreRadius}
         maxCorePixels={maxCorePixels}
         position={position}
       />
+      {props.pickRadiusPixels !== undefined && (
+        <StarMarkerPickTarget
+          position={position}
+          radiusPixels={props.pickRadiusPixels}
+        />
+      )}
       {lightIntensity > 0 && (
         <pointLight
           color={lightColor}
@@ -163,6 +223,8 @@ function GlowingStarMarker(props: StarMarkerProps) {
 }
 
 function ChevronMarker(props: StarMarkerProps) {
+  const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const mesh = useRef<THREE.Mesh>(null);
   const position = resolveStarMarkerPosition(props);
   const headingDirection = starMarkerHeadingDirection(
@@ -192,7 +254,8 @@ function ChevronMarker(props: StarMarkerProps) {
   const sizePixels = props.chevronSizePixels ?? settings.ownSizePixels;
   useEffect(() => {
     updateStarMarkerChevronStyle(resources, settings, sizePixels);
-  }, [resources, settings, sizePixels]);
+    setStarMarkerChevronBloom(resources, bloom, emission.aircraft);
+  }, [bloom, emission.aircraft, resources, settings, sizePixels]);
   useFrame((state) => {
     if (!mesh.current) return;
     state.camera.updateMatrixWorld();
@@ -219,14 +282,16 @@ function ChevronMarker(props: StarMarkerProps) {
       userData={{ starMarkerShape: 'chevron' }}
       renderOrder={props.renderOrder ?? 1000}
     >
-      <mesh
-        geometry={resources.haloGeometry}
-        material={resources.haloMaterial}
-        renderOrder={(props.renderOrder ?? 1000) - 1}
-        frustumCulled={false}
-        raycast={() => {}}
-        dispose={null}
-      />
+      {!bloom && (
+        <mesh
+          geometry={resources.haloGeometry}
+          material={resources.haloMaterial}
+          renderOrder={(props.renderOrder ?? 1000) - 1}
+          frustumCulled={false}
+          raycast={() => {}}
+          dispose={null}
+        />
+      )}
     </mesh>
   );
 }

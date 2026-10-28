@@ -1,3 +1,7 @@
+import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+} from './overview-bloom-mode';
 import { useFrame } from '@react-three/fiber';
 import {
   useCallback,
@@ -22,6 +26,7 @@ import {
   FlowParticlePool,
   prepareFlowPath,
   setAnimatedFlowViewport,
+  setAnimatedFlowBloom,
   type AnimatedFlowResources,
   type PreparedFlowPath,
   type FlowEmitterConfig,
@@ -39,6 +44,7 @@ export interface FlowLineLayer {
 
 export interface AnimatedFlowLineProps {
   points: readonly FlowPoint[];
+  replayStep?: number;
   outer?: FlowLineLayer;
   glow?: FlowLineLayer;
   core?: FlowLineLayer;
@@ -110,6 +116,8 @@ function FlowLine({
   depthWrite: boolean;
   fallbackBlending?: THREE.Blending;
 }) {
+  const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const group = useMemo(() => new THREE.Group(), []);
   const resources = useRef<FlowLineResources | null>(null);
   useLayoutEffect(() => {
@@ -133,7 +141,14 @@ function FlowLine({
       group.remove(active.line);
       disposeFlowLineResources(active);
     };
-  }, [depthTest, depthWrite, fallbackBlending, group, layer, points]);
+    // Recreate the core on A/B changes alongside its halo siblings so transparent
+    // Line2 insertion order remains outer -> glow -> core after returning to A.
+  }, [bloom, depthTest, depthWrite, fallbackBlending, group, layer, points]);
+  useLayoutEffect(() => {
+    resources.current?.material.color
+      .set(layer.color)
+      .multiplyScalar(bloom ? emission.lines : 1);
+  });
   useFrame((state) => {
     resources.current?.material.resolution.set(
       state.size.width,
@@ -162,15 +177,18 @@ function FlowParticles({
   canAnimate,
   particleKey,
   discardDeltaRef,
+  replayStep,
 }: Pick<
   AnimatedFlowLineProps,
-  'forward' | 'reverse' | 'random' | 'canAnimate' | 'particleKey'
+  'forward' | 'reverse' | 'random' | 'canAnimate' | 'particleKey' | 'replayStep'
 > & {
   path: PreparedFlowPath;
   depthTest: boolean;
   depthWrite: boolean;
   discardDeltaRef: RefObject<boolean>;
 }) {
+  const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
   const group = useMemo(() => new THREE.Group(), []);
   const branch = useRef<ParticleBranch | null>(null);
@@ -251,7 +269,8 @@ function FlowParticles({
       pixelRatio,
       state.size.height * pixelRatio
     );
-    active.pool.update(Math.min(delta, 0.1), path.totalLength);
+    setAnimatedFlowBloom(active.resources, bloom, emission.particles);
+    active.pool.update(replayStep ?? Math.min(delta, 0.1), path.totalLength);
     writeFlowParticles(active.resources, path, active.pool.snapshot());
   });
 
@@ -271,7 +290,9 @@ export function AnimatedFlowLine({
   showLine = true,
   canAnimate,
   particleKey,
+  replayStep,
 }: AnimatedFlowLineProps) {
+  const bloom = useOverviewBloom();
   const reducedMotion = usePrefersReducedMotion();
   const discardDeltaRef = useRef(pageHidden());
   const subscribeVisibility = useCallback((notify: () => void) => {
@@ -312,18 +333,22 @@ export function AnimatedFlowLine({
       )}
       {showLine && !useContinuousRibbon && (
         <>
-          <FlowLine
-            points={points}
-            layer={outer}
-            depthTest={depthTest}
-            depthWrite={depthWrite}
-          />
-          <FlowLine
-            points={points}
-            layer={glow}
-            depthTest={depthTest}
-            depthWrite={depthWrite}
-          />
+          {!bloom && (
+            <FlowLine
+              points={points}
+              layer={outer}
+              depthTest={depthTest}
+              depthWrite={depthWrite}
+            />
+          )}
+          {!bloom && (
+            <FlowLine
+              points={points}
+              layer={glow}
+              depthTest={depthTest}
+              depthWrite={depthWrite}
+            />
+          )}
           <FlowLine
             points={points}
             layer={core}
@@ -344,6 +369,7 @@ export function AnimatedFlowLine({
           canAnimate={canAnimate}
           particleKey={particleKey}
           discardDeltaRef={discardDeltaRef}
+          replayStep={replayStep}
         />
       )}
     </group>

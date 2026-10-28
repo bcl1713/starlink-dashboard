@@ -1,4 +1,8 @@
 import {
+  useOverviewBloom,
+  useOverviewBloomEmission,
+} from '../overview-bloom-mode';
+import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -13,6 +17,7 @@ import * as THREE from 'three';
 import {
   createStarMarkerChevronResources,
   updateStarMarkerChevronStyle,
+  setStarMarkerChevronBloom,
 } from '../overview-star-marker-rendering';
 import { globePosition } from '../globe-coordinates';
 import {
@@ -31,6 +36,12 @@ import {
   DEFAULT_CHEVRON_SETTINGS,
   type ChevronSettings,
 } from '../overview-chevron-settings';
+
+function setAdsbBloomHalos(group: THREE.Group, bloom: boolean) {
+  for (const child of group.children) {
+    if (child.userData.adsbHaloBatch) child.visible = !bloom;
+  }
+}
 
 function visualKey(contacts: readonly AdsbContactView[]): string {
   return contacts
@@ -54,6 +65,8 @@ export function OverviewAdsbLayer({
   onVisibleHexesChange: (hexes: readonly string[]) => void;
 }) {
   const { camera, gl, size } = useThree();
+  const bloom = useOverviewBloom();
+  const emission = useOverviewBloomEmission();
   const key = visualKey(contacts);
   const [visual, setVisual] = useState(() => ({ key, contacts }));
   if (visual.key !== key) setVisual({ key, contacts });
@@ -132,6 +145,11 @@ export function OverviewAdsbLayer({
         chevronSettings.trafficSizePixels
       );
   }, [instances, chevronSettings]);
+  useLayoutEffect(() => {
+    setAdsbBloomHalos(group, bloom);
+    for (const resources of markerResources.current)
+      setStarMarkerChevronBloom(resources, bloom, emission.aircraft);
+  }, [group, instances, bloom, emission.aircraft]);
   const markerMatrix = useMemo(() => new THREE.Matrix4(), []);
   const resizeMarkers = useCallback(() => {
     resizeAdsbMarkerMeshes(

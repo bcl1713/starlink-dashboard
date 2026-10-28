@@ -1,13 +1,19 @@
+import { useState } from 'react';
 import type { OverviewAdvisoryState } from './overview-advisories';
 import './OverviewPopAdvisories.css';
 
-/** Concise shared transport cues; details and acknowledgment stay in Operator. */
+/** Concise shared cues; dismissing a coverage notice never acknowledges events. */
 export function OverviewPopAdvisories({
   state,
 }: {
   state: OverviewAdvisoryState;
 }) {
-  if (!state.items.length && !state.notice) return null;
+  const [dismissed, setDismissed] = useState(false);
+  // A dismissal covers one continuous failure, including stale/unavailable
+  // changes. Healthy coverage rearms a later failure without polling reopening it.
+  if (!state.notice && dismissed) setDismissed(false);
+  const notice = state.notice && !dismissed ? state.notice : null;
+  if (!state.items.length && !notice) return null;
   return (
     <section
       role="status"
@@ -21,8 +27,17 @@ export function OverviewPopAdvisories({
           <span>{item.detail}</span>
         </div>
       ))}
-      {state.notice && (
-        <p className="overview-transport-advisories__notice">{state.notice}</p>
+      {notice && (
+        <div className="overview-transport-advisories__notice">
+          <p>{notice}</p>
+          <button
+            type="button"
+            aria-label="Dismiss transport advisory notice"
+            onClick={() => setDismissed(true)}
+          >
+            ×
+          </button>
+        </div>
       )}
     </section>
   );

@@ -66,3 +66,8 @@ frontend/mission-planner/dist-mission-export/
 
 /test-results/gfs-wind-synthetic/
 /test-results/gfs-presentation/
+
+# Isolated offline bloom experiment artifacts
+.bloom-work/
+frontend/mission-planner/dist-bloom/
+frontend/mission-planner/bloom-offline/
