@@ -1,5 +1,10 @@
 # Operator workspace acceptance — issue 425
 
+Current UX evidence:
+[review corrections and screenshots](review-6461501430/README.md). The report
+below archives candidate `4b7da4d`; the linked review report covers the
+corrected workspace and has separate checksums.
+
 The coherent Operator workflow is implemented in
 [PR #428](https://github.com/bcl1713/starlink-dashboard/pull/428), against
 `dev`. Application candidate: `4b7da4d89cec22a92d52f148ce4fa5ec079d7c7d`. The
