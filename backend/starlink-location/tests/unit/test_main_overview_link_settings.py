@@ -53,6 +53,7 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
         "starshield_events_enabled": True,
         "ground_entry_point_enabled": True,
         "configured_satellites_enabled": True,
+        "next_flight_events_only": True,
     }
     with TestClient(main.app) as client:
         assert client.get(URL).json() == {
@@ -81,6 +82,7 @@ def test_lifespan_exposes_persists_and_cleans_up_link_settings(monkeypatch, tmp_
             "starshield_events_enabled": True,
             "ground_entry_point_enabled": True,
             "configured_satellites_enabled": True,
+            "next_flight_events_only": False,
         }
         assert (
             main.app.state.overview_link_settings_store
