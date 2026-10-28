@@ -182,10 +182,25 @@ class OperatorService:
                 cursor=cursor,
             )
 
-    def list(self, filters: RecordFilter, *, limit=50, cursor=None) -> RecordPage:
-        return self._page(
-            "records", filters.model_dump(mode="json"), limit=limit, cursor=cursor
-        )
+    def list(
+        self, filters: RecordFilter, *, limit=50, cursor=None, source=None
+    ) -> RecordPage:
+        parameters = filters.model_dump(mode="json")
+        if source is not None:
+            parameters["source"] = source
+        return self._page("records", parameters, limit=limit, cursor=cursor)
+
+    def changes(self, mission_id, *, source, after_seq, limit=200, cursor=None):
+        with self.store.connect() as connection:
+            return queries.changes(
+                connection,
+                clock=self.clock,
+                mission_id=mission_id,
+                source=source,
+                after_seq=after_seq,
+                limit=limit,
+                cursor=cursor,
+            )
 
     def history(self, record_id: str, *, limit=50, cursor=None) -> HistoryPage:
         # Distinguish an absent record from an existing empty history page.

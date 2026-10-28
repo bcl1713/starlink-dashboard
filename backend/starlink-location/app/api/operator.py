@@ -25,7 +25,7 @@ from app.operator.models import (
     Scope,
     UpdateRecord,
 )
-from app.operator.read_metadata import read_page, read_record
+from app.operator.read_metadata import captured_source, read_page, read_record
 from app.operator.runtime import enabled, runtime_for
 
 
@@ -331,9 +331,11 @@ def records(
     include_removed: bool = False,
     limit: int = Query(50, ge=1, le=200),
     cursor: str | None = Query(None, max_length=8192),
+    source_identity: str | None = Query(None, max_length=2048),
 ):
     with runtime_for(request) as runtime:
         service = require_service(runtime)
+        source = captured_source(runtime, mission_id, source_identity)
         filters = RecordFilter(
             mission_id=mission_id,
             scope=scope,
@@ -341,7 +343,48 @@ def records(
             record_type=record_type,
             include_removed=include_removed,
         )
-        return read_page(service.list(filters, limit=limit, cursor=cursor), runtime)
+        # Existing readers retain their cursor contract. Workspace readers opt in
+        # to context binding in addition to the existing store/epoch binding.
+        bound = (
+            {
+                key: source.get(key)
+                for key in (
+                    "store_id",
+                    "api_epoch",
+                    "source_mode",
+                    "simulation_run_id",
+                    "replay_run_id",
+                    "operating_context_id",
+                    "mission_journal",
+                )
+            }
+            if source_identity is not None
+            else None
+        )
+        return dict(
+            read_page(
+                service.list(filters, limit=limit, cursor=cursor, source=bound), runtime
+            ),
+            source=source,
+        )
+
+
+@router.get("/record-changes")
+def record_changes(
+    request: Request,
+    mission_id: Identifier,
+    after_seq: int = Query(..., ge=0),
+    limit: int = Query(200, ge=1, le=200),
+    cursor: str | None = Query(None, max_length=8192),
+    source_identity: str | None = Query(None, max_length=2048),
+):
+    with runtime_for(request) as runtime:
+        service = require_service(runtime)
+        source = captured_source(runtime, mission_id, source_identity)
+        page = service.changes(
+            mission_id, source=source, after_seq=after_seq, limit=limit, cursor=cursor
+        )
+        return dict(read_page(page, runtime), source=source)
 
 
 @router.get("/records/{record_id}")
