@@ -3,10 +3,11 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from app.core.metrics import metric_updater as updater
-from app.core.metrics import prometheus_metrics as metrics
 from prometheus_client import generate_latest
 from prometheus_client.parser import text_string_to_metric_families
+
+from app.core.metrics import metric_updater as updater
+from app.core.metrics import prometheus_metrics as metrics
 
 
 def mission_samples():

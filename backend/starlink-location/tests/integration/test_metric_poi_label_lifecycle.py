@@ -2,12 +2,12 @@
 
 from math import isnan
 
-import main
 import pytest
+
+import main
 from app.core.metrics import prometheus_metrics as metrics
 from app.models.flight_status import FlightPhase
 from app.models.poi import POICreate, POIUpdate
-
 from tests.integration.test_live_background_route import background_runtime
 
 __all__ = ["background_runtime"]

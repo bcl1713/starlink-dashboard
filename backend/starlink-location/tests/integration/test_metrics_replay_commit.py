@@ -3,8 +3,8 @@
 from math import isnan
 
 import pytest
-from app.core.metrics import prometheus_metrics as metrics
 
+from app.core.metrics import prometheus_metrics as metrics
 from tests.integration.test_simulation_run_api import start
 from tests.integration.test_simulation_run_time_apis import api, timed_api
 from tests.unit.test_simulation_run_timing import timing

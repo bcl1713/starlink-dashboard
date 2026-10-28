@@ -4,10 +4,10 @@ import asyncio
 import threading
 
 import pytest
+
 from app.mission import active_context_owner
 from app.mission.active_context_cache import get_active_mission_snapshot
 from app.mission.storage import save_mission_v2
-
 from tests.unit.test_active_mission_context import route_manager, v2_mission
 
 __all__ = ["route_manager", "v2_mission"]
@@ -84,6 +84,7 @@ async def test_expired_overview_resolution_does_not_block_event_loop(
     from types import SimpleNamespace
 
     import httpx
+
     import main
     from app.api import overview_upcoming_pois
     from app.mission.dependencies import get_poi_manager, get_route_manager
