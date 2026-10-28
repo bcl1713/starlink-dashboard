@@ -343,7 +343,7 @@ def run(args):
                 "duration": args.duration,
                 "operations": args.operations,
                 "fullscreen": args.fullscreen,
-                "qualification_protocol": "issue393-coordinated-operator-v1",
+                "qualification_protocol": "issue393-coordinated-operator-v2",
                 "operator_transition_scheduling": "native quarter offsets, then fresh read completion and natural idle; no request suppression",
             },
             instrumentation=args.instrumentation,
@@ -388,6 +388,9 @@ def run(args):
         )
         if not result["api_capture"]["qualification_clean"]:
             raise ValueError("Captured API outcomes do not qualify a clean soak")
+        result["cancellation_qualification"] = json.loads(
+            (owner.root / "cancellation-qualification.json").read_text()
+        )
         rows = [
             json.loads(line)
             for line in (owner.root / "samples.jsonl").read_text().splitlines()

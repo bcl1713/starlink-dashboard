@@ -9,6 +9,7 @@ PRELUDE = r"""
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { createHash } from 'node:crypto';
+import { runInNewContext } from 'node:vm';
 const { createApiCapture, identityFromHealth } = await import(process.argv[2]);
 let now = 10;
 const rows = [];
@@ -18,12 +19,17 @@ page.url = () => 'http://fixture/operator';
 capture.attach(page, 1);
 const health = {store_id:'store-a', api_epoch:'epoch-a', source_mode:'simulation',
   simulation_run_id:'run-a', mission_journal:true, operating_context_id:'context-a', replay_run_id:null};
-function request(path, method='GET', redirectedFrom=null) {
+function request(path, method='GET', redirectedFrom=null, options={}) {
   const req = {url: () => 'http://fixture'+path, method: () => method,
     redirectedFrom: () => redirectedFrom,
+    resourceType: () => options.resourceType ?? 'xhr', timing: () => ({startTime: options.startTime ?? 1000}),
     frame: () => ({url: () => 'http://fixture/operator'}),
     failure: () => req.failureValue, response: async () => req.res ?? null};
   page.emit('request', req);
+  if (page.cdpSession && options.cdp !== false)
+    page.cdpSession.emit('Network.requestWillBeSent',{requestId:'cdp-'+(++page.cdpSequence),
+      wallTime:options.cdpWallTime ?? ((options.startTime ?? 1000)/1000),
+      request:{url:req.url(),method:req.method()}});
   return req;
 }
 function response(req, status, value, options={}) {
@@ -37,6 +43,21 @@ function response(req, status, value, options={}) {
 }
 const terminals = () => rows.filter(row => row.event === 'terminal');
 const tick = () => new Promise(resolve => setImmediate(resolve));
+async function installAbortHook() {
+  page.cdpSequence=0;page.cdpSession=new EventEmitter();
+  page.cdpSession.send=async()=>{};page.cdpSession.detach=async()=>{};
+  page.context=()=>({newCDPSession:async()=>page.cdpSession});
+  page.exposeBinding=async(name,callback)=>{page.abortBinding=callback;page.abortBindingName=name};
+  page.addInitScript=async(fn,arg)=>{page.abortInit=fn;page.abortInitArg=arg};
+  return capture.observeClientAborts(page,1);
+}
+function proofFor(requestId,abortId='p1-a-probe') {
+  return {protocol:'issue393-client-abort-v2',clean:true,source_sha256:'a'.repeat(64),
+    input_sha256:{api:'b'.repeat(64),abort:'c'.repeat(64),transition:'d'.repeat(64)},
+    expected:[{request_id:requestId,abort_id:abortId,transition_id:'transition-0',page:1,
+      recovery_ids:{health:'health-1',context:'context-1',fresh_source:'events-1',
+        operator_health:'health-2',operator_context:'context-2',operator_records:null},proof:{}}],unexpected:[]};
+}
 capture.phase('measured');
 """
 
@@ -303,6 +324,182 @@ page.emit('requestfinished',notModified);await capture.drain(100);
 assert.equal(capture.summary().capture_errors,1);
 assert.match(terminals()[1].body.error,/ordinary body retrieval failure/);
 assert.equal(capture.summary().qualification_clean,false);
+""",
+    "event_and_context_metadata_bind_real_response_source_and_wall_clocks": r"""
+const req=request('/api/v2/operator/events?mission_id=mission-a&include_history=true');
+response(req,200,{store_id:'store-a',api_epoch:'epoch-a',source_mode:'simulation',
+  simulation_run_id:'context-a',mission_id:'mission-a',events:[{title:'PRIVATE EVENT PAYLOAD'}]});
+page.emit('requestfinished',req);await capture.drain(100);
+const row=terminals()[0];
+assert.deepEqual(row.eventSource,{identity:'["store-a","epoch-a","simulation","context-a"]',missionId:'mission-a'});
+assert.equal(row.resourceType,'xhr');assert.equal(row.wallStartTimeMs,1000);
+assert.ok(Number.isFinite(row.wallTimeMs));assert.equal(row.body.text,undefined);
+assert.equal(JSON.stringify(rows).includes('PRIVATE EVENT PAYLOAD'),false);
+const ctx=request('/api/v2/operator/context');
+response(ctx,200,{mission_id:'mission-a',operating_context_id:'context-a'});page.emit('requestfinished',ctx);
+await capture.drain(100);
+assert.deepEqual(terminals()[1].context,{missionId:'mission-a',operatingContextId:'context-a'});
+""",
+    "xhr_hook_records_actual_abort_and_preserves_native_calls_and_exceptions": r"""
+assert.equal(await installAbortHook(),true);
+const sentinel=Error('native abort exception');
+class NativeXHR {
+  open(...args){this.openArgs=args;return 'opened'}
+  send(...args){this.sendArgs=args;return 'sent'}
+  abort(...args){this.abortArgs=args;if(this.throwAbort)throw sentinel;return 'aborted'}
+}
+let wall=5;
+const realm={XMLHttpRequest:NativeXHR,URL,location:{href:'http://fixture/operator'},
+  performance:{timeOrigin:1000,now:()=>wall},
+  [page.abortBindingName]:(value)=>Promise.resolve(page.abortBinding({page},value))};
+runInNewContext('('+page.abortInit.toString()+')(arg)',{...realm,arg:page.abortInitArg});
+const xhr=new NativeXHR();
+assert.equal(xhr.open('get','/api/v2/operator/events?mission_id=mission-a',true),'opened');
+assert.equal(xhr.send(null),'sent');wall=12;
+assert.equal(xhr.abort('original-argument'),'aborted');await tick();
+const aborts=rows.filter(row=>row.file==='client-aborts.jsonl');
+assert.equal(aborts.length,1);assert.equal(aborts[0].mechanism,'xhr.abort');
+assert.equal(aborts[0].method,'GET');assert.equal(aborts[0].page,1);
+assert.equal(aborts[0].url,'http://fixture/api/v2/operator/events?mission_id=mission-a');
+assert.equal(aborts[0].sendWallTimeMs,1005);assert.equal(aborts[0].abortWallTimeMs,1012);
+assert.deepEqual(xhr.abortArgs,['original-argument']);assert.deepEqual(xhr.sendArgs,[null]);
+xhr.throwAbort=true;assert.throws(()=>xhr.abort(),error=>error===sentinel);await tick();
+assert.equal(rows.filter(row=>row.file==='client-aborts.jsonl').length,1);
+const other=new NativeXHR();other.open('GET','/outside-api');other.send();other.abort();await tick();
+assert.equal(rows.filter(row=>row.file==='client-aborts.jsonl').length,1);
+capture.stop();xhr.throwAbort=false;xhr.abort();await tick();
+assert.equal(rows.filter(row=>row.file==='client-aborts.jsonl').length,1);
+""",
+    "planned_cancellation_requires_actual_abort_and_complete_scoped_proof": r"""
+await installAbortHook();
+capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const req=request('/api/v2/operator/events?mission_id=mission-a&include_history=true');
+await page.abortBinding({page},{id:'a-probe',url:req.url(),method:'GET',sendWallTimeMs:1000,abortWallTimeMs:1010,mechanism:'xhr.abort'});
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(100);
+assert.doesNotThrow(()=>capture.assertHealthy());
+assert.equal(capture.summary().qualification_clean,false);
+assert.equal(capture.summary().unexpected_cancellations,1);
+const proof=proofFor(terminals()[0].id);
+capture.applyCancellationQualification(proof);
+assert.equal(capture.summary().phases.measured.cancellations,1);
+assert.equal(capture.summary().expected_control_cancellations,1);
+assert.equal(capture.summary().unexpected_cancellations,0);
+assert.equal(capture.summary().qualification_clean,true);
+""",
+    "proof_cannot_approve_unplanned_wrong_scope_or_duplicate_cancellations": r"""
+const req=request('/api/v2/operator/events?mission_id=other-mission');
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(100);
+const proof=proofFor(terminals()[0].id);
+assert.throws(()=>capture.applyCancellationQualification(proof),/qualification|scope|transition|abort/i);
+assert.throws(()=>capture.assertHealthy(),/cancellation/);
+assert.equal(capture.summary().qualification_clean,false);
+""",
+    "planned_scope_cap_and_resource_type_still_fail_fast": r"""
+capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const first=request('/api/v2/operator/events?mission_id=mission-a');
+first.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',first);await capture.drain(100);
+assert.doesNotThrow(()=>capture.assertHealthy());
+const second=request('/api/v2/operator/events?mission_id=mission-a');
+second.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',second);await capture.drain(100);
+assert.throws(()=>capture.assertHealthy(),/cancellation/);
+""",
+    "malformed_or_missing_proof_never_clears_deferred_cancellation": r"""
+await installAbortHook();capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const req=request('/api/v2/operator/events?mission_id=mission-a');
+await page.abortBinding({page},{id:'a-probe',url:req.url(),method:'GET',sendWallTimeMs:1000,abortWallTimeMs:1010,mechanism:'xhr.abort'});
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(100);
+const valid=proofFor(terminals()[0].id);
+for(const change of [
+  {protocol:'v1'},{clean:false},{expected:[]},{expected:[...valid.expected,...valid.expected]},
+  {unexpected:[{request_id:terminals()[0].id}]},{source_sha256:'unhashed'},
+  {expected:[{...valid.expected[0],transition_id:'not-planned'}]},
+  {expected:[{...valid.expected[0],abort_id:'unobserved-abort'}]},
+  {expected:[{...valid.expected[0],page:0}]},
+]) {
+ assert.throws(()=>capture.applyCancellationQualification({...valid,...change}),/qualification|proof|scope|transition|abort/i);
+ assert.equal(capture.summary().qualification_clean,false);
+}
+capture.applyCancellationQualification(valid);assert.equal(capture.summary().qualification_clean,true);
+""",
+    "observer_installation_and_abort_sink_failures_are_fatal": r"""
+page.exposeBinding=async()=>{throw Error('binding unavailable')};
+await assert.rejects(capture.observeClientAborts(page,1),/binding unavailable/);
+assert.throws(()=>capture.assertHealthy(),/capture|observer/);
+""",
+    "known_abort_from_another_request_cannot_approve_a_cancellation": r"""
+await installAbortHook();capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const req=request('/api/v2/operator/events?mission_id=mission-a');
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(100);
+for (const [id,change] of [
+ ['wrong-url',{url:'http://fixture/api/v2/operator/events?mission_id=other'}],
+ ['wrong-method',{method:'POST'}],['wrong-send',{sendWallTimeMs:1200,abortWallTimeMs:1210}],
+ ['after-terminal',{abortWallTimeMs:Date.now()+10000}],
+]) {
+ await page.abortBinding({page},{id,url:req.url(),method:'GET',sendWallTimeMs:1000,abortWallTimeMs:1010,mechanism:'xhr.abort',...change});
+ assert.throws(()=>capture.applyCancellationQualification(proofFor(terminals()[0].id,'p1-'+id)),/qualification|abort|proof/i);
+ assert.equal(capture.summary().qualification_clean,false);
+}
+""",
+    "non_xhr_or_outside_transition_window_cancel_cannot_be_deferred": r"""
+capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const req=request('/api/v2/operator/events?mission_id=mission-a','GET',null,{resourceType:'fetch'});
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(100);
+assert.throws(()=>capture.assertHealthy(),/cancellation/);
+assert.equal(capture.summary().qualification_clean,false);
+""",
+    "cdp_wall_time_proves_cancellation_when_playwright_timing_is_initially_zero": r"""
+await installAbortHook();capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const req=request('/api/v2/operator/events?mission_id=mission-a','GET',null,{startTime:0,cdpWallTime:1});
+await page.abortBinding({page},{id:'a-probe',url:req.url(),method:'GET',sendWallTimeMs:1000,abortWallTimeMs:1010,mechanism:'xhr.abort'});
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(100);
+assert.equal(terminals()[0].wallStartTimeMs,1000);
+assert.equal(terminals()[0].wallStartTimeSource,'cdp');
+assert.equal(terminals()[0].cdpRequestId,'cdp-1');
+capture.applyCancellationQualification(proofFor(terminals()[0].id));
+assert.equal(capture.summary().qualification_clean,true);
+capture.stop();await capture.drain(100);
+assert.equal(page.cdpSession.listenerCount('Network.requestWillBeSent'),0);
+""",
+    "late_cdp_join_keeps_same_url_requests_in_original_network_order": r"""
+await installAbortHook();
+const one=request('/api/status','GET',null,{startTime:0,cdp:false});
+const two=request('/api/status','GET',null,{startTime:0,cdp:false});
+response(one,200,{});page.emit('requestfinished',one);
+response(two,200,{});page.emit('requestfinished',two);
+await tick();
+page.cdpSession.emit('Network.requestWillBeSent',{requestId:'net-1',wallTime:2,request:{url:one.url(),method:'GET'}});
+page.cdpSession.emit('Network.requestWillBeSent',{requestId:'net-2',wallTime:3,request:{url:two.url(),method:'GET'}});
+await capture.drain(100);
+const sorted=terminals().sort((a,b)=>a.id.localeCompare(b.id));
+assert.equal(sorted[0].wallStartTimeMs,2000);assert.equal(sorted[0].cdpRequestId,'net-1');
+assert.equal(sorted[1].wallStartTimeMs,3000);assert.equal(sorted[1].cdpRequestId,'net-2');
+capture.stop();await capture.drain(100);
+""",
+    "unpaired_cdp_cancellation_remains_an_observer_failure": r"""
+await installAbortHook();capture.beginTransition({id:'transition-0',operation:0,at:10,missionId:'mission-a'});
+const req=request('/api/v2/operator/events?mission_id=mission-a','GET',null,{cdp:false,startTime:0});
+req.failureValue={errorText:'net::ERR_ABORTED'};page.emit('requestfailed',req);await capture.drain(1000);
+assert.ok(capture.summary().capture_errors>0);
+assert.equal(capture.summary().qualification_clean,false);
+assert.throws(()=>capture.assertHealthy(),/capture|observer/);
+""",
+    "xhr_abort_during_native_send_is_observed_without_changing_native_exceptions": r"""
+await installAbortHook();const sentinel=Error('native error');
+class NativeXHR {
+ open(method){if(method==='THROW')throw sentinel;return 1}
+ send(){if(this.throwSend)throw sentinel;this.abort();return 2}
+ abort(){return 3}
+}
+const realm={XMLHttpRequest:NativeXHR,URL,location:{href:'http://fixture/operator'},
+ performance:{timeOrigin:1000,now:()=>10},
+ [page.abortBindingName]:(value)=>Promise.resolve(page.abortBinding({page},value))};
+runInNewContext('('+page.abortInit.toString()+')(arg)',{...realm,arg:page.abortInitArg});
+const xhr=new NativeXHR();assert.equal(xhr.open('GET','/api/status'),1);
+assert.equal(xhr.send(),2);await tick();
+assert.equal(rows.filter(row=>row.file==='client-aborts.jsonl').length,1);
+assert.throws(()=>xhr.open('THROW','/api/status'),error=>error===sentinel);
+xhr.throwSend=true;assert.throws(()=>xhr.send(),error=>error===sentinel);
+assert.equal(rows.filter(row=>row.file==='client-aborts.jsonl').length,1);
 """,
 }
 

@@ -30,25 +30,42 @@ outcome. Error response bodies are retained up to 64 KiB, with explicit size,
 hash and capture errors. Oversized, unavailable or timed-out captures prevent
 qualification. Playwright uses a whole-body API, so unknown-length responses can
 allocate more before the retained-size check. Successful Operator health,
-context, records and record-change responses retain source metadata and body
-hashes rather than journal payloads. Other successes retain request and terminal
-metadata.
+context, events, records and record-change responses retain source metadata and
+body hashes rather than journal payloads. Other successes retain request and
+terminal metadata.
 
 The existing HTTP failure gate remains in force, including its existing exact
-GPS-config 503 exception. Every other measured HTTP error, measured
-cancellation, network error, unknown terminal request or capture error prevents
+GPS-config 503 exception. Every other measured HTTP error, network error,
+unexplained cancellation, unknown terminal request or capture error prevents
 qualification. An observed `store_context_changed` response is recorded and
-still fails. Cancellation error text is recorded; an unobserved internal abort
-cause is not invented. Measurement ends only at an idle, fully drained capture
-fence before the known harness teardown. Outcome counts and raw request records
-must reconcile.
+still fails. Protocol v2 permits a cancellation only with a recorded actual
+`XMLHttpRequest.abort()` invocation for the same page, method and URL, matched
+within 100 ms to the authoritative CDP network start. The request must be a
+measured GET of this synthetic mission's Operator events, start no earlier than
+two seconds before a declared transition, and finish within ten seconds after
+it. At most one cancellation per page and transition can qualify. The control
+must succeed, change the operating identity while preserving store, epoch and
+mode, and produce successful health/context recovery on the affected page and
+Operator page within that window. A fresh event read must recover the new source
+when active; a fresh context read must confirm no mission when inactive.
+
+The XHR wrapper preserves native arguments, return values and exceptions and
+never initiates cancellation. The separate CDP observer enables network events
+with an 8 MiB total buffer, 1 MiB resource buffer and zero POST-data buffer per
+page. These observers add overhead. No cache or request interception settings
+are changed. Raw cancellations and their unknown internal cause remain intact;
+the classifier writes separate, hash-bound proof. Missing or ambiguous abort,
+transition, source or recovery evidence fails qualification. Measurement ends
+only at an idle, fully drained capture fence before the known harness teardown.
+Outcome counts and raw request records must reconcile.
 
 A separate short preflight uses the same services, capture code, 120-second
 warmup and all three controls within a 120-second measured window. Its explicit
-negative capture controls exercise a real stale-source 409 and a deliberate
-browser cancellation in an isolated qualification context. These intentionally
-failing probe outcomes are recorded separately and are never part of the
-sustained measurement. The hour-long run has no injected negative controls.
+negative capture controls exercise a real stale-source 409 and a deliberate XHR
+cancellation with actual abort-invocation proof in an isolated qualification
+context. These intentionally failing probe outcomes are recorded separately and
+are never part of the sustained measurement. The hour-long run has no injected
+negative controls.
 
 Independent Prometheus observations must show healthy scrapes, current mission
 identity counts following 1 → 0 → 1, and no current mission gauges while
@@ -56,7 +73,10 @@ inactive. All three control writes and source recoveries must succeed. Cleanup
 must verify that task processes, listeners, containers, networks, images,
 disposable volumes and temporary runtime inputs are gone after each run.
 
-The previous failed soak and final results remain immutable. This protocol
-qualifies a coordinated lifecycle workload with a diagnostic headless browser.
-It makes no matched speedup, production capacity or leak-freedom claim. The
-software renderer, observation overhead and actual memory growth remain visible.
+The previous failed soak and final results remain immutable. Preflights 001 and
+002 used the stricter v1 cancellation gate and remain failed; v2 does not
+reclassify them. The v2 protocol and harness are committed before further runs.
+This protocol qualifies a coordinated lifecycle workload with a diagnostic
+headless browser. It makes no matched speedup, production capacity or
+leak-freedom claim. The software renderer, observation overhead and actual
+memory growth remain visible.

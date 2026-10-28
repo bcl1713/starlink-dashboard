@@ -6,11 +6,17 @@ import { createApiCapture } from "./capture.mjs";
 export async function qualifyCapture(browser, origin, append) {
   const context = await browser.newContext();
   const terminal = new Map();
+  let abortInvocation = null;
+  let abortInvocationCount = 0;
   const capture = createApiCapture({
     append(name, value) {
       append(`negative-control-${name}`, value);
       if (value.event === "terminal" && terminal.size < 2)
         terminal.set(value.path, value);
+      if (name === "client-aborts.jsonl") {
+        abortInvocation = value;
+        abortInvocationCount++;
+      }
     },
     clock: () => performance.now() / 1000,
   });
@@ -21,11 +27,12 @@ export async function qualifyCapture(browser, origin, append) {
   });
   let slowTimer;
   let slowHandler = Promise.resolve();
-  let cancellationFetch;
+  let cancellationXHR;
   let slowReleaseError = null;
   try {
     const page = await context.newPage();
     capture.attach(page, 0);
+    assert.equal(await capture.observeClientAborts(page, 0), true);
     capture.phase("measured");
     await page.route(`${origin}/__capture_probe__`, (route) =>
       route.fulfill({
@@ -95,26 +102,28 @@ export async function qualifyCapture(browser, origin, append) {
     void requestObserved.catch(() => {});
     void failureObserved.catch(() => {});
     slowTimer = setTimeout(releaseSlow, 5000);
-    cancellationFetch = page.evaluate(async (url) => {
-      window.__captureProbeAbort = new AbortController();
-      try {
-        await fetch(url, { signal: window.__captureProbeAbort.signal });
-        return { resolved: true };
-      } catch (error) {
-        return { resolved: false, name: error.name };
-      }
-    }, slowURL);
-    void cancellationFetch.catch(() => {});
+    cancellationXHR = page.evaluate(
+      (url) =>
+        new Promise((resolve) => {
+          const xhr = new XMLHttpRequest();
+          window.__captureProbeXHR = xhr;
+          xhr.open("GET", url, true);
+          xhr.onabort = () => resolve({ aborted: true });
+          xhr.onload = () => resolve({ aborted: false, status: xhr.status });
+          xhr.onerror = () =>
+            resolve({ aborted: false, error: "network_error" });
+          xhr.send();
+        }),
+      slowURL,
+    );
+    void cancellationXHR.catch(() => {});
     await requestObserved;
-    await page.evaluate(() => window.__captureProbeAbort.abort());
+    await page.evaluate(() => window.__captureProbeXHR.abort());
     releaseSlow();
     clearTimeout(slowTimer);
     const canceled = await failureObserved;
     assert.equal(canceled.failure()?.errorText, "net::ERR_ABORTED");
-    assert.deepEqual(await cancellationFetch, {
-      resolved: false,
-      name: "AbortError",
-    });
+    assert.deepEqual(await cancellationXHR, { aborted: true });
     await slowHandler;
     await capture.drain(10000);
     const cancellation = terminal.get("/api/__capture_slow__");
@@ -122,8 +131,24 @@ export async function qualifyCapture(browser, origin, append) {
     assert.equal(cancellation.outcome, "client_cancellation");
     assert.equal(cancellation.errorText, "net::ERR_ABORTED");
     assert.equal(cancellation.cancellationCause, "unknown");
+    const abortDeadline = performance.now() + 1000;
+    while (!abortInvocation && performance.now() < abortDeadline)
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.equal(abortInvocationCount, 1);
+    assert.equal(abortInvocation.mechanism, "xhr.abort");
+    assert.equal(abortInvocation.page, cancellation.page);
+    assert.equal(abortInvocation.method, cancellation.method);
+    assert.equal(abortInvocation.url, cancellation.url);
+    assert.equal(cancellation.resourceType, "xhr");
+    assert.ok(
+      Math.abs(abortInvocation.sendWallTimeMs - cancellation.wallStartTimeMs) <=
+        100,
+    );
+    assert.ok(abortInvocation.abortWallTimeMs >= cancellation.wallStartTimeMs);
+    assert.ok(abortInvocation.abortWallTimeMs <= cancellation.wallTimeMs + 100);
     capture.phase("post");
     capture.stop();
+    await capture.drain(10000);
     const summary = capture.summary();
     assert.equal(summary.phases.measured.started, 2);
     assert.equal(summary.phases.measured.terminal, 2);
@@ -143,10 +168,11 @@ export async function qualifyCapture(browser, origin, append) {
         client_abort: cancellation.id,
       },
       summary,
+      abort_invocation_proof: abortInvocation,
       fixture: {
         intercepted_paths: ["/__capture_probe__", "/api/__capture_slow__"],
         stale_source_request_intercepted: false,
-        cancellation_trigger: "deliberate qualification AbortController.abort",
+        cancellation_trigger: "deliberate qualification XMLHttpRequest.abort",
         cancellation_cause_in_network_evidence: "unknown",
         slow_route_release_error: slowReleaseError,
       },
@@ -158,6 +184,6 @@ export async function qualifyCapture(browser, origin, append) {
     releaseSlow();
     await slowHandler;
     await context.close();
-    await cancellationFetch?.catch(() => {});
+    await cancellationXHR?.catch(() => {});
   }
 }

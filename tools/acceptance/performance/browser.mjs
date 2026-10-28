@@ -14,6 +14,7 @@ import {
 } from "./polling.mjs";
 import { createApiCapture, identityFromHealth } from "./capture.mjs";
 import { qualifyCapture } from "./qualify-capture.mjs";
+import { qualifyCancellations } from "./cancellations.mjs";
 import {
   waitForReadBoundary,
   waitForSource,
@@ -64,7 +65,12 @@ function stats(id) {
     req.end();
   });
 }
-async function api(path, method = "GET", body = undefined, headers = {}) {
+async function apiEnvelope(
+  path,
+  method = "GET",
+  body = undefined,
+  headers = {},
+) {
   const response = await fetch(options.origin + path, {
     method,
     headers: { "Content-Type": "application/json", ...headers },
@@ -75,7 +81,13 @@ async function api(path, method = "GET", body = undefined, headers = {}) {
     throw new Error(
       `${method} ${path}: ${response.status} ${await response.text()}`,
     );
-  return response.status === 204 ? null : response.json();
+  return {
+    status: response.status,
+    body: response.status === 204 ? null : await response.json(),
+  };
+}
+async function api(...args) {
+  return (await apiEnvelope(...args)).body;
 }
 const memory = (data) => ({
   cpu_seconds: data.cpu_stats.cpu_usage.total_usage / 1e9,
@@ -127,6 +139,12 @@ const cpuByPid = new Map(),
   subscriptions = [];
 const started = performance.now();
 const seconds = () => (performance.now() - started) / 1000;
+writeFileSync(resolve(options.output, "client-aborts.jsonl"), "", {
+  flag: "wx",
+});
+writeFileSync(resolve(options.output, "coordination.jsonl"), "", {
+  flag: "wx",
+});
 const capture = createApiCapture({ append, clock: seconds });
 let captureStopped = false;
 let measuring = false,
@@ -147,7 +165,7 @@ const browserMeta = {
   dpr: 1,
   version: null,
   renderer: null,
-  qualification_protocol: "issue393-coordinated-operator-v1",
+  qualification_protocol: "issue393-coordinated-operator-v2",
   browser_executable_override: process.env.PERF_BROWSER_EXECUTABLE ?? null,
   negative_capture_controls: process.env.PERF_CAPTURE_PROBES === "1",
 };
@@ -234,6 +252,7 @@ try {
       const page = await context.newPage();
       pages.push(page);
       capture.attach(page, i);
+      await capture.observeClientAborts(page, i);
       const subscription = {
         page: i,
         overview: i < options.viewers,
@@ -523,6 +542,7 @@ try {
       operation < 3
     ) {
       const action = operation++;
+      const beforeHealth = await api("/api/v2/operator/health");
       if (options.operator) {
         const boundary = await waitForReadBoundary(capture, options.viewers, {
           recordsActive: action !== 2,
@@ -542,7 +562,30 @@ try {
             ? "/api/v2/missions/synthetic-mission-a/legs/deactivate"
             : "/api/v2/missions/synthetic-mission-a/legs/synthetic-leg-1/activate";
       const t = performance.now();
-      const result = await api(path, "POST");
+      const transitionId = `transition-${action}`;
+      const transitionStart = seconds();
+      const beforeIdentity = identityFromHealth(beforeHealth);
+      capture.beginTransition({
+        id: transitionId,
+        operation: action,
+        at: transitionStart,
+        missionId: "synthetic-mission-a",
+        beforeIdentity,
+      });
+      append("coordination.jsonl", {
+        stage: "transition-begin",
+        transition_id: transitionId,
+        operation: action,
+        clock_seconds: transitionStart,
+        wall_time_ms: Date.now(),
+        mission_id: "synthetic-mission-a",
+        before_identity: beforeIdentity,
+        records_active_after: action !== 1,
+      });
+      const { status: controlStatus, body: result } = await apiEnvelope(
+        path,
+        "POST",
+      );
       append("operations.jsonl", {
         seconds: seconds() - readyAt,
         path,
@@ -550,6 +593,18 @@ try {
         result,
       });
       const health = await api("/api/v2/operator/health");
+      append("coordination.jsonl", {
+        stage: "transition-confirmed",
+        transition_id: transitionId,
+        operation: action,
+        clock_seconds: seconds(),
+        wall_time_ms: Date.now(),
+        mission_id: "synthetic-mission-a",
+        target_identity: identityFromHealth(health),
+        records_active_after: action !== 1,
+        control_path: path,
+        control_result: { ok: true, status: controlStatus },
+      });
       if (options.operator) {
         const recovered = await waitForSource(capture, options.viewers, {
           identity: identityFromHealth(health),
@@ -638,7 +693,19 @@ try {
   capture.phase("post");
   capture.stop();
   captureStopped = true;
-  out("api-capture-summary.json", capture.summary());
+  await capture.drain();
+  out("api-capture-raw-summary.json", capture.summary());
+  const cancellationQualification = await qualifyCancellations({
+    apiPath: resolve(options.output, "api-outcomes.jsonl"),
+    abortPath: resolve(options.output, "client-aborts.jsonl"),
+    transitionPath: resolve(options.output, "coordination.jsonl"),
+  });
+  out("cancellation-qualification.json", cancellationQualification);
+  try {
+    capture.applyCancellationQualification(cancellationQualification);
+  } finally {
+    out("api-capture-summary.json", capture.summary());
+  }
   out("failures.json", failures);
   out("cancellations.json", cancellations);
   out("request-outcomes.json", {
