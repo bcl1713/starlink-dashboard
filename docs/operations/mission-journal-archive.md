@@ -89,27 +89,31 @@ spool; a near-limit upload can temporarily use approximately 4 GiB across the
 two services. The limits apply to legacy and enhanced packages alike. The import
 rate limit is unchanged.
 
-Export still uses the existing local capture/build architecture. Each journal
-and telemetry capture has a **128 MiB input budget**; journal rows and unsealed
-telemetry rows include a conservative per-row allowance, and sealed telemetry
-JSON is checked by byte length before loading. The complete added UTF-8 member
-set is limited to **256 MiB**. JSON-escaped persisted snapshots have a **384 MiB
-per-job** limit and a **768 MiB aggregate live-payload quota** in the existing
-slide-cache database. These are deliberately finite initial archive capacities,
-not promises that arbitrarily long or dense telemetry histories fit. Source
-records and telemetry are never deleted to fit an export. Large histories that
-exceed a capacity fail the entire preparation and require a future streaming
-archive implementation or a deliberately reviewed capacity change.
+Journal capture retains its **128 MiB input budget**. Mission telemetry instead
+streams active rows and sealed SQLite TEXT through bounded readers, with a **2
+MiB per-record** and **8 MiB metadata** limit. Full detail preserves the
+existing observation columns; optional Compact lossless uses a disk-backed
+series dictionary without dropping observations. Frozen telemetry is retained as
+an immutable sidecar rather than large CSV strings inside snapshot JSON.
 
-Only one request capture per export service runs at a time; a concurrent request
-receives a retryable archive-unavailable response. Snapshot strings are escaped
-in 16 KiB chunks, and cache fingerprints are hashed incrementally. Capacity
-checks and the queued-job insert are atomic: rejection creates no acknowledged
-job or partial archive. The elected worker still bounds assembly concurrency.
-These bounds constrain data volume; Python row/model expansion and overlapping
-capture/assembly can use several times the raw bytes in memory. Deployment
-memory must account for that amplification. Production acceptance reports
-measured peak RSS rather than claiming constant-memory export.
+The complete added UTF-8 member set remains limited to **256 MiB**, including
+journal, telemetry, compact dictionaries and dataset descriptions. JSON-escaped
+inline snapshot metadata retains its **384 MiB per-job** cap. A **768 MiB live
+export storage quota** accounts for inline snapshot bytes and reserved/actual
+sidecars, compact indexes, overlapping planning spools and final ZIPs. Old ready
+downloads are included when upgrading. These finite capacities do not promise
+arbitrarily long histories; rejection names the limit and never truncates or
+deletes source evidence. Compact reduces repeated metadata, while `/export`
+retains its separate resolution-based Prometheus CSV workflow.
+
+Only one request capture per export service runs at a time. Cross-process disk
+reservations protect unacknowledged captures and queued jobs; snapshot ownership
+attaches atomically with the job. A pinned telemetry WAL reader allows recording
+writes to commit. Disconnects, deadlines and cancellation close source readers
+and release unacknowledged files. The elected worker serializes assembly and
+cleanup, including restart/handoff recovery. Python journal/model expansion
+remains relevant to deployment memory; production acceptance reports actual peak
+RSS and recording-writer latency.
 
 Failed, cancelled, superseded and expired jobs delete their snapshot rows.
 SQLite reuses freed pages; the database file need not shrink on disk, and the

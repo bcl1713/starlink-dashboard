@@ -102,7 +102,17 @@ main.app.state.blocked = False
 main.app.state.fail_next = False
 
 
-def build(mission, route_manager, poi_manager, *, enabled, cancel, on_stage):
+def build(
+    mission,
+    route_manager,
+    poi_manager,
+    *,
+    enabled,
+    cancel,
+    on_stage,
+    snapshot=None,
+    briefing=None,
+):
     if main.app.state.fail_next:
         main.app.state.fail_next = False
         raise RuntimeError("Controlled assembly worker failure")
@@ -116,6 +126,8 @@ def build(mission, route_manager, poi_manager, *, enabled, cancel, on_stage):
         enabled=enabled,
         cancel=cancel,
         on_stage=on_stage,
+        snapshot=snapshot,
+        briefing=briefing,
     )
 
 

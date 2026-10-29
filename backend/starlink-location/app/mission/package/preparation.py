@@ -4,20 +4,24 @@ import json
 import logging
 import threading
 import time
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from hashlib import sha256
 from uuid import uuid4
 
+from app.mission.exporter.export_cancel import check_cancelled
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.slide_cache.capture import capture_is_current, capture_raw
+from app.mission.slide_cache.capture import capture_raw
 from app.mission.slide_cache.identity import renderer_revision
 from app.mission.slide_cache.store import default_store
 
+from .archive_files import ArchiveFiles
 from .customer_artifacts import (
     CustomerBriefingOutcome,
     MissionPackageDownload,
     build_mission_package_download,
 )
+from .frozen_planning import CaptureCancel, capture_planning
 from .json_stream import iter_json
 from .preparation_store import ExportPreparation, PreparationStore
 from .preparation_worker import PreparationWorker
@@ -37,14 +41,17 @@ class ExportPreparationService(PreparationWorker):
         clock=time.time,
         builder=None,
         archive_capture=None,
+        archive_capture_owned=None,
     ):
         self.route_manager, self.poi_manager = route_manager, poi_manager
         self.enabled, self.clock = enabled, clock
         self.archive_capture = archive_capture
+        self.archive_capture_owned = archive_capture_owned
         self.capture_guard = threading.Lock()
         self.builder = builder or build_mission_package_download
         self.cache = cache or default_store()
         self.jobs = PreparationStore(self.cache)
+        self.files = ArchiveFiles(self.cache, clock=clock)
         self.artifacts = self.cache.path.parent / "exports"
         self.artifacts.mkdir(mode=0o700, exist_ok=True)
         self.stop, self.wake, self.guard = (
@@ -68,8 +75,13 @@ class ExportPreparationService(PreparationWorker):
         return renderer_revision() + (":enabled" if enabled else ":disabled")
 
     def capture(self, mission_id):
+        from app.mission.slide_cache.persisted_pois import persisted_pois
+
         return capture_raw(
-            mission_id, self.route_manager, self.poi_manager, self.capture_revision()
+            mission_id,
+            self.route_manager,
+            persisted_pois(self.poi_manager),
+            self.capture_revision(),
         )
 
     @staticmethod
@@ -80,11 +92,18 @@ class ExportPreparationService(PreparationWorker):
             else {
                 "schema_version": archive["schema_version"],
                 "files": archive["files"],
+                "attachments": [
+                    {k: v for k, v in attachment.items() if k != "id"}
+                    for attachment in archive.get("attachments", [])
+                ],
                 "components": {
                     name: {
                         k: v
                         for k, v in component.items()
                         if k not in ("capture_started_at", "capture_finished_at")
+                        # Raw dependencies already identify planning changes;
+                        # the evidence digest also contains routine sample times.
+                        and not (name == "planning" and k == "fingerprint")
                     }
                     for name, component in archive["components"].items()
                 },
@@ -100,25 +119,49 @@ class ExportPreparationService(PreparationWorker):
         identity.update(raw.renderer_revision.encode())
         return identity.hexdigest()
 
-    def start(self, mission_id):
+    def start(self, mission_id, *, telemetry_format="full", cancel=None):
+        if telemetry_format not in ("full", "compact"):
+            raise ValueError("Unknown telemetry format")
         if not self.capture_guard.acquire(blocking=False):
             raise RuntimeError("Archive capture already in progress; retry")
         try:
-            return self._start(mission_id)
+
+            def check():
+                check_cancelled(cancel)
+                check_cancelled(self.stop)
+
+            ownership = (
+                self.files.capture(check=check)
+                if self.archive_capture_owned
+                else nullcontext(None)
+            )
+            with ownership as owner:
+                return self._start(
+                    mission_id,
+                    owner=owner,
+                    telemetry_format=telemetry_format,
+                    cancel=CaptureCancel(owner.check if owner else check),
+                )
         finally:
             self.capture_guard.release()
 
-    def _start(self, mission_id):
+    def _start(self, mission_id, *, owner=None, telemetry_format="full", cancel=None):
         if self.stop.is_set():
             raise RuntimeError("Export preparation is stopping")
         now = self.clock()
         capture_started = time.monotonic()
         raw = self.capture(mission_id)
+        enabled = self.enabled() if callable(self.enabled) else self.enabled
+        planning = capture_planning(raw, self.cache, enabled=enabled, cancel=cancel)
+        if owner is not None:
+            owner.leg_ids = tuple(leg.leg_id for leg in planning.snapshot.legs)
         planning_captured_at = self.clock()
-        archive = self.archive_capture(mission_id) if self.archive_capture else None
+        archive = (
+            self.archive_capture_owned(mission_id, owner, telemetry_format)
+            if self.archive_capture_owned
+            else self.archive_capture(mission_id) if self.archive_capture else None
+        )
         if archive is not None:
-            if not capture_is_current(raw):
-                raise RuntimeError("Mission changed during archive capture; retry")
             archive = {
                 **archive,
                 "components": {
@@ -130,7 +173,7 @@ class ExportPreparationService(PreparationWorker):
                         "capture_finished_at": datetime.fromtimestamp(
                             planning_captured_at, timezone.utc
                         ).isoformat(),
-                        "fingerprint": self.fingerprint(raw),
+                        "fingerprint": planning.snapshot.fingerprint,
                         "metadata_sha256": sha256(raw.metadata).hexdigest(),
                     },
                 },
@@ -157,11 +200,12 @@ class ExportPreparationService(PreparationWorker):
                 state="queued",
                 fingerprint=fingerprint,
                 revision=revision,
+                snapshot_policy="captured",
                 queued_at=now,
                 deadline=now + 600,
                 stage_timings={"capture": time.monotonic() - capture_started},
             )
-            self.jobs.write(job, archive=archive)
+            self.jobs.write(job, archive=archive, owner=owner, planning=planning)
             self.captures[job.id] = raw
             self.wake.set()
             return job
@@ -188,7 +232,8 @@ class ExportPreparationService(PreparationWorker):
                     }
                 )
                 self.jobs.write(job)
-                self.path(job.id).unlink(missing_ok=True)
+            if job.state == "expired":
+                self.files.expire_download(job)
             if job.state not in TERMINAL:
                 job.leg_states = {
                     leg: record["state"]
@@ -239,7 +284,7 @@ class ExportPreparationService(PreparationWorker):
                 if job.briefing_status
                 else None
             )
-            return MissionPackageDownload(self.path(job.id).open("rb"), briefing)
+            return MissionPackageDownload(self.files.open_download(job), briefing)
 
     def close(self):
         self.stop.set()

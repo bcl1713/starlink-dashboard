@@ -29,8 +29,16 @@ export const apiClient = axios.create({
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (axios.isCancel(error)) return Promise.reject(error);
+    // ZIP requests still receive JSON for capacity/deadline failures.
+    if (error.response?.data instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text());
+      } catch {
+        // Unknown/non-JSON failures retain their existing generic handling.
+      }
+    }
     const errorMessage =
       readableError(error.response?.data?.detail) ||
       readableError(error.response?.data?.message) ||

@@ -26,6 +26,7 @@ from app.satellites.rules import ConstraintConfig, EventType
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
+from .export_cancel import check_cancelled
 from .snapshot_inputs import (
     SnapshotCaptureError,
     SourcePayload,
@@ -243,7 +244,7 @@ def capture_export_snapshot(
     return prepare_export_snapshot(metadata, sources, warnings)
 
 
-def prepare_export_snapshot(metadata, sources, warnings=()):
+def prepare_export_snapshot(metadata, sources, warnings=(), *, cancel=None):
     """Prepare copied inputs in a cancellable background process."""
     mission = Mission.model_validate_json(metadata)
     from app.mission.availability_context import snapshot_for_leg
@@ -266,6 +267,7 @@ def prepare_export_snapshot(metadata, sources, warnings=()):
         sampler, coverage_error = None, type(exc).__name__
     legs = []
     for leg in mission.legs:
+        check_cancelled(cancel)
         availability = snapshot_for_leg(mission, leg)
         leg_json = canonical_json(leg.model_dump(mode="json"))
         notes = []

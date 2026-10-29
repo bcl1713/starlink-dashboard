@@ -21,6 +21,7 @@ class ExportPreparation(BaseModel):
     ]
     fingerprint: str
     revision: int | None = None
+    snapshot_policy: Literal["legacy", "captured"] = "legacy"
     stage: str = "queued"
     stage_started_at: float | None = None
     stage_timings: dict[str, float] = Field(default_factory=dict)
@@ -47,6 +48,22 @@ class PreparationStore:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS export_archive_snapshots (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
             )
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS export_planning_snapshots (id TEXT PRIMARY KEY, payload BLOB NOT NULL)"
+            )
+
+    def planning(self, job_id):
+        from .frozen_planning import FrozenPlanning
+
+        with self.cache.connection() as db:
+            row = db.execute(
+                "SELECT payload FROM export_planning_snapshots WHERE id=?", (job_id,)
+            ).fetchone()
+        return FrozenPlanning.decode(row[0]) if row else None
+
+    def discard_planning(self, job_id):
+        with self.cache.connection() as db:
+            db.execute("DELETE FROM export_planning_snapshots WHERE id=?", (job_id,))
 
     def archive(self, job_id):
         with self.cache.connection() as db:
@@ -58,9 +75,11 @@ class PreparationStore:
     def discard_archive(self, job_id):
         with self.cache.connection() as db:
             db.execute("DELETE FROM export_archive_snapshots WHERE id=?", (job_id,))
+            db.execute("DELETE FROM export_planning_snapshots WHERE id=?", (job_id,))
 
-    def write(self, job, *, archive=None):
+    def write(self, job, *, archive=None, owner=None, planning=None):
         payload = None
+        size = 0
         if archive is not None:
             # Count while encoding, before constructing a potentially huge joined
             # string or starting a DB transaction. Never truncate a snapshot.
@@ -71,14 +90,27 @@ class PreparationStore:
                     raise RuntimeError("Archive snapshot size limit exceeded")
                 chunks.append(chunk)
             payload = "".join(chunks)
+        planning_payload = planning.encode() if planning is not None else None
+        size += len(planning_payload) if planning_payload is not None else 0
+        if size > MAX_ARCHIVE_SNAPSHOT_BYTES:
+            raise RuntimeError("Archive snapshot size limit exceeded")
         with self.cache.connection() as db:
-            if payload is not None:
+            if payload is not None or owner is not None or planning_payload is not None:
                 # Reserve capacity and job acknowledgment in one transaction.
                 # SQLite's freed pages are reused; quota is for live payloads.
                 db.execute("BEGIN IMMEDIATE")
                 used = db.execute(
                     "SELECT coalesce(sum(length(CAST(payload AS BLOB))), 0) FROM export_archive_snapshots"
                 ).fetchone()[0]
+                used += db.execute(
+                    "SELECT coalesce(sum(length(payload)),0) FROM export_planning_snapshots"
+                ).fetchone()[0]
+                if db.execute(
+                    "SELECT 1 FROM sqlite_master WHERE name='export_artifact_owners'"
+                ).fetchone():
+                    used += db.execute(
+                        "SELECT coalesce(sum(reserved),0) FROM export_artifact_owners"
+                    ).fetchone()[0]
                 if used + size > MAX_ARCHIVE_STORAGE_BYTES:
                     raise RuntimeError(
                         "Archive storage size limit exceeded; retry after expiry"
@@ -91,6 +123,13 @@ class PreparationStore:
                 db.execute(
                     "INSERT INTO export_archive_snapshots VALUES (?,?)",
                     (job.id, payload),
+                )
+            if owner is not None:
+                owner.attach(db, job.id)
+            if planning_payload is not None:
+                db.execute(
+                    "INSERT INTO export_planning_snapshots VALUES (?,?)",
+                    (job.id, planning_payload),
                 )
 
     def write_pending(self, job):

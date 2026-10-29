@@ -12,6 +12,43 @@ from .customer_artifacts import build_mission_package_download
 from .streams import iter_zip_blocks
 
 
+async def prepare_for_request(request, service, mission_id, *, telemetry_format="full"):
+    """Disconnects cancel capture too, before any job has been acknowledged."""
+    cancel = threading.Event()
+    worker = asyncio.create_task(
+        asyncio.to_thread(
+            service.start, mission_id, telemetry_format=telemetry_format, cancel=cancel
+        )
+    )
+
+    async def discard():
+        while not worker.done():
+            try:
+                await asyncio.gather(asyncio.shield(worker), return_exceptions=True)
+            except asyncio.CancelledError:
+                continue
+        if not worker.cancelled() and worker.exception() is None:
+            job = worker.result()
+            await asyncio.to_thread(service.cancel, mission_id, job.id)
+
+    try:
+        while not worker.done():
+            if await request.is_disconnected():
+                cancel.set()
+                await discard()
+                raise ExportCancelled("Export capture cancelled")
+            await asyncio.wait({worker}, timeout=0.05)
+        if await request.is_disconnected():
+            cancel.set()
+            await discard()
+            raise ExportCancelled("Export capture cancelled")
+        return worker.result()
+    except BaseException:
+        cancel.set()
+        await discard()
+        raise
+
+
 async def _discard_worker_result(worker):
     # Repeated task cancellation must not abandon an already running thread.
     while not worker.done():

@@ -49,6 +49,8 @@ class ArchiveStore:
     def __init__(self, path: Path):
         self.ledger = FlightEventStore(path)
         with self.ledger.connect() as db:
+            # Pinned export readers must not prevent live recording commits.
+            db.execute("PRAGMA journal_mode=WAL")
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS samples (
                     ts REAL, metric TEXT, labels TEXT, value REAL, mode TEXT,
