@@ -20,6 +20,7 @@ MISSION = "synthetic-mission-a"
 START = datetime(2026, 1, 1, tzinfo=timezone.utc)
 END = START + timedelta(days=1)
 COUNT = 300000
+ARCHIVE_ROOT = root / "operator" / "large-export"
 control = {"pause": False, "entered": False, "offset": 0, "limit": None}
 original_samples = stream_reader.active_samples
 
@@ -134,7 +135,7 @@ def seed(high_cardinality=False):
 def seal():
     flight = app.state.flight_event_runtime
     archive, info = flight.archive, app.state.large_export_source
-    body = root / "large-export" / "sealed-input.json"
+    body = ARCHIVE_ROOT / "sealed-input.json"
     with archive.ledger.connect() as db:
         metadata = json.loads(
             db.execute(
@@ -172,7 +173,7 @@ def seal():
 def initialize():
     if os.getenv("OPERATOR_ACCEPTANCE_FIXTURE") != "synthetic-local-only":
         raise RuntimeError("Synthetic acceptance only")
-    main.app.state.flight_event_runtime = FlightEventRuntime(root / "large-export")
+    main.app.state.flight_event_runtime = FlightEventRuntime(ARCHIVE_ROOT)
     service = main.app.state.export_preparation_service
     # This probe isolates archive behavior; customer-PDF contracts have separate tests.
     service.enabled = False
