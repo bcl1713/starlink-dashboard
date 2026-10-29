@@ -101,6 +101,9 @@ class ExportPreparationService(PreparationWorker):
                         k: v
                         for k, v in component.items()
                         if k not in ("capture_started_at", "capture_finished_at")
+                        # Raw dependencies already identify planning changes;
+                        # the evidence digest also contains routine sample times.
+                        and not (name == "planning" and k == "fingerprint")
                     }
                     for name, component in archive["components"].items()
                 },
