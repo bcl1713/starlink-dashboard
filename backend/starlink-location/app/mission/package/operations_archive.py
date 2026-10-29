@@ -182,6 +182,7 @@ def capture_archive(request, mission_id, *, owner=None, telemetry_format="full")
                 mission_id,
                 [leg.id for leg in mission.legs],
                 check=owner.check,
+                workdir=owner.directory,
             ) as captures, owner.open_sidecar() as output:
                 metadata = write_telemetry_package(
                     output,

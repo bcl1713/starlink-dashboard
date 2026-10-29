@@ -227,3 +227,80 @@ def test_upgrade_accounts_for_existing_ready_download_without_changing_it(tmp_pa
     jobs.write(job)
     files.sweep(jobs)
     assert not path.exists()
+
+
+@pytest.mark.parametrize("failure", ["directory-sync", "reservation-update"])
+def test_failure_after_download_rename_removes_published_file_and_quota(
+    tmp_path, monkeypatch, failure
+):
+    from app.mission.package.archive_files import ArchiveFiles
+
+    files = ArchiveFiles(SlideStore(tmp_path / "cache.db"))
+    files.downloads.mkdir()
+    target = files.downloads / "job.zip"
+
+    def fail(*args):
+        raise OSError("publication interrupted")
+
+    with pytest.raises(OSError, match="publication interrupted"), files.capture(
+        kind="assembly", job_id="job"
+    ) as owner:
+        with owner.open_download() as stream:
+            stream.write(b"complete package")
+        if failure == "directory-sync":
+            monkeypatch.setattr(files, "sync_directory", fail)
+        else:
+            monkeypatch.setattr(owner, "resize", fail)
+        owner.publish_download(target, 16)
+    assert not target.exists()
+    with files.cache.connection() as db:
+        assert (
+            db.execute("SELECT count(*) FROM export_artifact_owners").fetchone()[0] == 0
+        )
+
+
+def test_expiry_keeps_cross_process_reader_bytes_reserved_until_close(tmp_path):
+    from app.mission.package.archive_files import ArchiveFiles
+    from app.mission.package.preparation_store import (
+        ExportPreparation,
+        PreparationStore,
+    )
+
+    now = [1000.0]
+    cache = SlideStore(tmp_path / "cache.db")
+    files = ArchiveFiles(cache, clock=lambda: now[0])
+    jobs = PreparationStore(cache)
+    files.downloads.mkdir()
+    path = files.downloads / "job.zip"
+    path.write_bytes(b"download in progress")
+    job = ExportPreparation(
+        id="job",
+        mission_id="m",
+        state="ready",
+        fingerprint="f",
+        queued_at=1,
+        deadline=601,
+        expires_at=1001,
+    )
+    jobs.write(job)
+    files.sweep(jobs)
+    stream = files.open_download(job)
+    try:
+        now[0] += 700
+        job.state = "expired"
+        jobs.write(job)
+        other = ArchiveFiles(cache, clock=lambda: now[0])
+        other.sweep(jobs)
+        assert path.exists()
+        assert stream.read() == b"download in progress"
+        with cache.connection() as db:
+            assert (
+                db.execute(
+                    "SELECT sum(reserved) FROM export_artifact_owners"
+                ).fetchone()[0]
+                == 20
+            )
+    finally:
+        stream.close()
+    other.sweep(jobs)
+    assert not path.exists()

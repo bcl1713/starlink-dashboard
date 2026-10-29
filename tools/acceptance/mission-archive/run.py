@@ -237,6 +237,11 @@ def qualify(owner):
         owner, origin, "sealed-full", "export-preparations", "full"
     )
     proof["sealed_compact"] = case(owner, origin, "sealed-compact", "export", "compact")
+    data(origin, body={"action": "recover"})
+    proof["recovering_full"] = case(owner, origin, "recovering-full", "export", "full")
+    proof["recovering_compact"] = case(
+        owner, origin, "recovering-compact", "export-preparations", "compact"
+    )
     data(origin, body={"action": "seed", "high_cardinality": True})
     proof["cardinality_compact"] = case(
         owner, origin, "cardinality-compact", "export-preparations", "compact"
@@ -260,10 +265,11 @@ if __name__ == "__main__":
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True)
     args = parser.parse_args()
+    os.environ["OPERATOR_ACCEPTANCE_ENTRYPOINT"] = "large_export_fixture"
+    os.environ["OPERATOR_ACCEPTANCE_HEALTH_PATH"] = "/health"
     runner.run(
         args.candidate,
         args.project,
         args.evidence,
         qualification=qualify,
-        entrypoint="large_export_fixture",
     )

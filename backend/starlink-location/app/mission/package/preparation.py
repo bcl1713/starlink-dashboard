@@ -217,7 +217,8 @@ class ExportPreparationService(PreparationWorker):
                     }
                 )
                 self.jobs.write(job)
-                self.path(job.id).unlink(missing_ok=True)
+            if job.state == "expired":
+                self.files.expire_download(job)
             if job.state not in TERMINAL:
                 job.leg_states = {
                     leg: record["state"]
@@ -268,7 +269,7 @@ class ExportPreparationService(PreparationWorker):
                 if job.briefing_status
                 else None
             )
-            return MissionPackageDownload(self.path(job.id).open("rb"), briefing)
+            return MissionPackageDownload(self.files.open_download(job), briefing)
 
     def close(self):
         self.stop.set()

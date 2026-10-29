@@ -51,7 +51,7 @@ class TestCustomerBriefingDownload:
         stream = io.BytesIO(b"PK-qualified-zip")
 
         class ReadyService:
-            def start(self, mission_id):
+            def start(self, mission_id, *, telemetry_format="full", cancel=None):
                 return ExportPreparation(
                     id="ready",
                     mission_id=mission_id,
@@ -69,6 +69,9 @@ class TestCustomerBriefingDownload:
                     else None
                 )
                 return MissionPackageDownload(stream, outcome)
+
+            def close(self):
+                stream.close()
 
         monkeypatch.setattr(
             app.state, "export_preparation_service", ReadyService(), raising=False

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 import psutil
@@ -180,7 +181,17 @@ def initialize():
     seed()
 
 
-app.add_event_handler("startup", initialize)
+original_lifespan = app.router.lifespan_context
+
+
+@asynccontextmanager
+async def lifespan(application):
+    async with original_lifespan(application):
+        initialize()
+        yield
+
+
+app.router.lifespan_context = lifespan
 
 
 @app.get("/api/_synthetic/large-export")
@@ -203,6 +214,30 @@ def configure(body: dict):
     action = body.get("action")
     if action == "seal":
         seal()
+    elif action == "recover":
+        archive = app.state.flight_event_runtime.archive
+        info = app.state.large_export_source
+        with archive.ledger.connect() as db:
+            rowid = db.execute(
+                "SELECT c.rowid FROM captures c JOIN capture_heads h ON c.mission=h.mission AND c.leg=h.leg AND c.revision=h.revision WHERE h.mission=? AND h.leg=?",
+                (MISSION, info["leg_id"]),
+            ).fetchone()[0]
+            metadata = stream_reader.read_capture(db, rowid, lambda: None)
+            metadata.update(
+                revision="synthetic-correction",
+                state="recovering",
+                complete=False,
+                samples=[],
+            )
+            db.execute(
+                "INSERT OR REPLACE INTO captures VALUES (?,?,?,?)",
+                (MISSION, info["leg_id"], metadata["revision"], json.dumps(metadata)),
+            )
+            db.execute(
+                "UPDATE capture_heads SET revision=? WHERE mission=? AND leg=?",
+                (metadata["revision"], MISSION, info["leg_id"]),
+            )
+        info["state"] = "recovering"
     elif action == "seed":
         seed(high_cardinality=bool(body.get("high_cardinality")))
     elif action == "pause":

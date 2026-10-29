@@ -45,7 +45,10 @@ came from that export.
 
 - Full format keeps the existing mission ZIP, planning/import members, customer
   PDF behavior, Operator archive, and telemetry CSV schemas. All retained live
-  observations and per-leg revisions remain represented.
+  observations within each pinned per-leg revision's capture range remain
+  represented, including history retained in earlier sealed revisions when a
+  correction reopens a leg. Revision identity and provenance remain explicit;
+  the export need not duplicate whole historical revision packages.
 - Compact format keeps planning and complete journal/event history, but encodes
   telemetry using a per-leg series dictionary and observation rows referencing
   series IDs. It explicitly identifies its format and schema in the manifest. It
@@ -102,6 +105,11 @@ rows; do not retain an unbounded Python mapping of every series. Include that
 index, parser buffers, individual records, SQLite caches, and compression
 buffers in the memory and disk measurements. High-cardinality labels must remain
 lossless even when almost every observation introduces another series.
+
+For a recovering head, stream earlier sealed observations within its declared
+range and merge rolling observations with rolling precedence. Use the same
+bounded disk index for deduplication and compact series so additional history
+does not introduce an unreserved second index.
 
 Freeze the telemetry projection into a compressed, immutable private sidecar.
 Persist only its generated identifier, format, size, checksum, and component

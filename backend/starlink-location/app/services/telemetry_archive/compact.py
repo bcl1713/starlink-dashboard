@@ -22,6 +22,9 @@ class SeriesIndex:
             self.db.execute(
                 "CREATE TABLE series (id TEXT PRIMARY KEY, metric TEXT, labels TEXT)"
             )
+            self.db.execute(
+                "CREATE TABLE observations (ts REAL,metric TEXT,labels TEXT,stamp TEXT,value REAL,observed TEXT,PRIMARY KEY(ts,metric,labels)) WITHOUT ROWID"
+            )
         except BaseException:
             self.db.close()
             self.path.unlink(missing_ok=True)
@@ -44,6 +47,44 @@ class SeriesIndex:
 
     def rows(self):
         yield from self.db.execute("SELECT id,metric,labels FROM series ORDER BY id")
+
+    def add_observation(self, sample):
+        from datetime import datetime
+
+        try:
+            self.db.execute(
+                "INSERT OR REPLACE INTO observations VALUES (?,?,?,?,?,?)",
+                (
+                    datetime.fromisoformat(sample["timestamp"]).timestamp(),
+                    sample["metric"],
+                    json.dumps(sample["labels"], sort_keys=True),
+                    sample["timestamp"],
+                    sample["value"],
+                    sample.get("observed_at"),
+                ),
+            )
+        except sqlite3.OperationalError as error:
+            if getattr(error, "sqlite_errorcode", None) == sqlite3.SQLITE_FULL:
+                raise ArchiveCapacityError(
+                    "retained-observation-index", self.max_bytes
+                ) from error
+            raise
+
+    def observations(self):
+        cursor = self.db.execute(
+            "SELECT stamp,metric,labels,value,observed FROM observations ORDER BY ts,metric,labels"
+        )
+        try:
+            for stamp, metric, labels, value, observed in cursor:
+                yield {
+                    "timestamp": stamp,
+                    "metric": metric,
+                    "labels": json.loads(labels),
+                    "value": value,
+                    "observed_at": observed,
+                }
+        finally:
+            cursor.close()
 
     def close(self):
         self.db.close()

@@ -4,8 +4,11 @@ import codecs
 import json
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from app.mission.package.archive_errors import ArchiveCapacityError
+
+from .compact import SeriesIndex
 
 BLOCK = 65536
 MAX_RECORD_BYTES = 2 * 1024 * 1024
@@ -132,7 +135,7 @@ def active_samples(db, metadata, check):
 
 
 @contextmanager
-def stream_captures(archive, mission_id, legs, *, check=lambda: None):
+def stream_captures(archive, mission_id, legs, *, check=lambda: None, workdir=None):
     with archive.ledger.connect() as db:
         db.execute("BEGIN")
 
@@ -159,15 +162,64 @@ def stream_captures(archive, mission_id, legs, *, check=lambda: None):
                     }
                     continue
                 metadata = read_capture(db, row[0], check)
-                samples = (
-                    iter_capture_samples(db, row[0], check)
-                    if metadata["state"] == "sealed"
-                    else active_samples(db, metadata, check)
-                )
+                index = None
                 try:
-                    yield metadata | {"samples": samples}
+                    if metadata["state"] != "sealed":
+                        start = datetime.fromisoformat(metadata["start"]).timestamp()
+                        end = datetime.fromisoformat(
+                            metadata["available_until"]
+                        ).timestamp()
+                        history = db.execute(
+                            "SELECT rowid FROM captures WHERE mission=? AND leg=? AND rowid!=? ORDER BY rowid",
+                            (mission_id, leg, row[0]),
+                        )
+                        try:
+                            for prior in history:
+                                prior_metadata = read_capture(db, prior[0], check)
+                                if (
+                                    prior_metadata.get("state") != "sealed"
+                                    or prior_metadata.get("source_mode") != "live"
+                                ):
+                                    continue
+                                if index is None:
+                                    if workdir is None:
+                                        raise ValueError(
+                                            "Retained observation export requires an owned work directory"
+                                        )
+                                    index = SeriesIndex(
+                                        workdir / f"source-{uuid4().hex}.sqlite3",
+                                        256 * 1024 * 1024,
+                                    )
+                                for sample in iter_capture_samples(db, prior[0], check):
+                                    if (
+                                        start
+                                        <= datetime.fromisoformat(
+                                            sample["timestamp"]
+                                        ).timestamp()
+                                        <= end
+                                    ):
+                                        index.add_observation(sample)
+                        finally:
+                            history.close()
+                        if index is not None:
+                            for sample in active_samples(db, metadata, check):
+                                index.add_observation(sample)
+                    samples = (
+                        index.observations()
+                        if index
+                        else (
+                            iter_capture_samples(db, row[0], check)
+                            if metadata["state"] == "sealed"
+                            else active_samples(db, metadata, check)
+                        )
+                    )
+                    try:
+                        yield metadata | {"samples": samples, "_index": index}
+                    finally:
+                        samples.close()
                 finally:
-                    samples.close()
+                    if index:
+                        index.close()
 
         values = captures()
         try:

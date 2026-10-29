@@ -113,7 +113,8 @@ def write_telemetry_package(
                 )
             prefix, leg_count = f"legs/{index:03d}", [0]
             series = (
-                SeriesIndex(workdir / f"series-{uuid4().hex}.sqlite3", max_bytes)
+                capture.get("_index")
+                or SeriesIndex(workdir / f"series-{uuid4().hex}.sqlite3", max_bytes)
                 if representation == "compact"
                 else None
             )
@@ -180,7 +181,9 @@ def write_telemetry_package(
                 checksums["events.csv"] = writer.write(
                     f"{prefix}/events.csv", csv_blocks(EVENT_COLUMNS, event_rows)
                 )
-                metadata = {k: v for k, v in capture.items() if k != "samples"}
+                metadata = {
+                    k: v for k, v in capture.items() if k not in ("samples", "_index")
+                }
                 metadata.update(
                     checksum=checksums,
                     observation_count=leg_count[0],
@@ -206,7 +209,7 @@ def write_telemetry_package(
                 )
                 count += leg_count[0]
             finally:
-                if series:
+                if series and series is not capture.get("_index"):
                     series.close()
         partial = any(
             not leg.get("complete") or leg.get("state") != "sealed" for leg in legs

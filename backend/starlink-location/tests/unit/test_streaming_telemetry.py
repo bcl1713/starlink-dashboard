@@ -164,3 +164,57 @@ def test_truncated_sealed_capture_fails_instead_of_exporting_partial_success(tmp
     with pytest.raises(ValueError), stream_captures(archive, "m", ["one"]) as captures:
         for item in captures:
             list(item["samples"])
+
+
+@pytest.mark.parametrize("representation", ["full", "compact"])
+def test_recovering_head_includes_retained_sealed_samples_after_gc(
+    tmp_path, representation
+):
+    from app.services.telemetry_archive.stream_package import write_telemetry_package
+    from app.services.telemetry_archive.stream_reader import stream_captures
+
+    archive = ArchiveStore(tmp_path / "archive.db")
+    expected = seed(archive, sealed=True)
+    head = capture("one", complete=False) | {
+        "revision": "corrected",
+        "state": "recovering",
+        "available_until": "2026-01-01T01:00:00+00:00",
+        "samples": [],
+    }
+    with archive.ledger.connect() as db:
+        db.execute(
+            "INSERT INTO captures VALUES (?,?,?,?)",
+            ("m", "one", "corrected", json.dumps(head)),
+        )
+        db.execute("UPDATE capture_heads SET revision='corrected'")
+    archive.append(
+        datetime.fromisoformat(expected[2]["timestamp"]),
+        expected[2]["metric"],
+        expected[2]["labels"],
+        999,
+        "live",
+        datetime.fromisoformat(expected[2]["observed_at"]),
+    )
+    expected[2]["value"] = 999.0
+    output = io.BytesIO()
+    with stream_captures(archive, "m", ["one"], workdir=tmp_path) as captures:
+        result = write_telemetry_package(
+            output,
+            "m",
+            captures,
+            representation=representation,
+            workdir=tmp_path,
+            check=lambda: None,
+        )
+    assert result["observation_count"] == len(expected) == 7
+    with zipfile.ZipFile(output) as package:
+        rows = list(
+            csv.DictReader(
+                io.StringIO(package.read("legs/001/observations.csv").decode())
+            )
+        )
+        assert [
+            (row["timestamp_utc"], float(row["value"]) if row["value"] else None)
+            for row in rows
+        ] == [(item["timestamp"], item["value"]) for item in expected]
+    assert not list(tmp_path.glob("source-*.sqlite3"))

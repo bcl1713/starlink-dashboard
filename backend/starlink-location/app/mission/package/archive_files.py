@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from uuid import uuid4
 
 from .archive_errors import ArchiveCapacityError, ArchiveDeadlineError
+from .download_readers import DownloadReaders
 
 MIB = 1024 * 1024
 CAPTURE_RESERVATION = 513 * MIB  # 256 MiB index plus ZIP worst-case headroom.
@@ -131,6 +132,7 @@ class ArchiveFiles:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS export_artifact_owners (id TEXT PRIMARY KEY, job TEXT, kind TEXT, state TEXT, reserved INTEGER, lease_until REAL)"
             )
+        self.readers = DownloadReaders(cache, clock)
 
     @staticmethod
     def sync_directory(directory):
@@ -196,13 +198,64 @@ class ArchiveFiles:
     def release(self, identity, *, download=None):
         if not re.fullmatch(r"[0-9a-f]{32}", identity):
             raise ValueError("Invalid export artifact identity")
-        directory = self.root / identity
-        if directory.exists():
-            shutil.rmtree(directory)
-        if download is not None:
-            download.unlink(missing_ok=True)
         with self.cache.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT job,kind FROM export_artifact_owners WHERE id=?", (identity,)
+            ).fetchone()
+            if row and row[1] == "assembly" and row[0]:
+                current = (
+                    db.execute(
+                        "SELECT json_extract(payload,'$.state') FROM export_jobs WHERE id=?",
+                        (row[0],),
+                    ).fetchone()
+                    if db.execute(
+                        "SELECT 1 FROM sqlite_master WHERE name='export_jobs'"
+                    ).fetchone()
+                    else None
+                )
+                if current and current[0] == "ready":
+                    # A ready-state commit may have succeeded before a later
+                    # publication bookkeeping error. Preserve the valid result.
+                    return
+                if self.readers.active(db, row[0]):
+                    return
+                download = self.downloads / f"{row[0]}.zip"
+            directory = self.root / identity
+            if directory.exists():
+                shutil.rmtree(directory)
+            if download is not None:
+                download.unlink(missing_ok=True)
             db.execute("DELETE FROM export_artifact_owners WHERE id=?", (identity,))
+
+    def open_download(self, job):
+        return self.readers.open(job, self.downloads / f"{job.id}.zip")
+
+    def expire_download(self, job):
+        # Published files no longer have an assembly writer. Serialize expiry
+        # with reader registration; live readers keep both pathname and quota.
+        with self.cache.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute(
+                "SELECT json_extract(payload,'$.state') FROM export_jobs WHERE id=?",
+                (job.id,),
+            ).fetchone()
+            if (
+                not current
+                or current[0] != "expired"
+                or self.readers.active(db, job.id)
+            ):
+                return
+            owners = db.execute(
+                "SELECT id FROM export_artifact_owners WHERE job=? AND kind='assembly'",
+                (job.id,),
+            ).fetchall()
+            (self.downloads / f"{job.id}.zip").unlink(missing_ok=True)
+            for owner in owners:
+                directory = self.root / owner[0]
+                if directory.exists():
+                    shutil.rmtree(directory)
+                db.execute("DELETE FROM export_artifact_owners WHERE id=?", (owner[0],))
 
     def sweep(self, jobs):
         # Called only by the elected assembly worker under its process file lock.
