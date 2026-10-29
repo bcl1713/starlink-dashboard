@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from app.mission.exporter.export_cancel import check_cancelled
 from app.mission.exporter.snapshot_inputs import canonical_json
-from app.mission.slide_cache.capture import capture_is_current, capture_raw
+from app.mission.slide_cache.capture import capture_raw
 from app.mission.slide_cache.identity import renderer_revision
 from app.mission.slide_cache.store import default_store
 
@@ -21,6 +21,7 @@ from .customer_artifacts import (
     MissionPackageDownload,
     build_mission_package_download,
 )
+from .frozen_planning import capture_planning
 from .json_stream import iter_json
 from .preparation_store import ExportPreparation, PreparationStore
 from .preparation_worker import PreparationWorker
@@ -74,8 +75,13 @@ class ExportPreparationService(PreparationWorker):
         return renderer_revision() + (":enabled" if enabled else ":disabled")
 
     def capture(self, mission_id):
+        from app.mission.slide_cache.persisted_pois import persisted_pois
+
         return capture_raw(
-            mission_id, self.route_manager, self.poi_manager, self.capture_revision()
+            mission_id,
+            self.route_manager,
+            persisted_pois(self.poi_manager),
+            self.capture_revision(),
         )
 
     @staticmethod
@@ -139,6 +145,10 @@ class ExportPreparationService(PreparationWorker):
         now = self.clock()
         capture_started = time.monotonic()
         raw = self.capture(mission_id)
+        enabled = self.enabled() if callable(self.enabled) else self.enabled
+        planning = capture_planning(raw, self.cache, enabled=enabled)
+        if owner is not None:
+            owner.leg_ids = tuple(leg.leg_id for leg in planning.snapshot.legs)
         planning_captured_at = self.clock()
         archive = (
             self.archive_capture_owned(mission_id, owner, telemetry_format)
@@ -146,8 +156,6 @@ class ExportPreparationService(PreparationWorker):
             else self.archive_capture(mission_id) if self.archive_capture else None
         )
         if archive is not None:
-            if not capture_is_current(raw):
-                raise RuntimeError("Mission changed during archive capture; retry")
             archive = {
                 **archive,
                 "components": {
@@ -159,7 +167,7 @@ class ExportPreparationService(PreparationWorker):
                         "capture_finished_at": datetime.fromtimestamp(
                             planning_captured_at, timezone.utc
                         ).isoformat(),
-                        "fingerprint": self.fingerprint(raw),
+                        "fingerprint": planning.snapshot.fingerprint,
                         "metadata_sha256": sha256(raw.metadata).hexdigest(),
                     },
                 },
@@ -186,11 +194,12 @@ class ExportPreparationService(PreparationWorker):
                 state="queued",
                 fingerprint=fingerprint,
                 revision=revision,
+                snapshot_policy="captured",
                 queued_at=now,
                 deadline=now + 600,
                 stage_timings={"capture": time.monotonic() - capture_started},
             )
-            self.jobs.write(job, archive=archive, owner=owner)
+            self.jobs.write(job, archive=archive, owner=owner, planning=planning)
             self.captures[job.id] = raw
             self.wake.set()
             return job

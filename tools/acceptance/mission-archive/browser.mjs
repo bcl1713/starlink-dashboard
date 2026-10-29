@@ -6,7 +6,7 @@ const [origin, evidence, playwrightPath] = process.argv.slice(2);
 const { chromium } = await import(pathToFileURL(playwrightPath));
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
-  viewport: { width: 1280, height: 900 },
+  viewport: { width: 1920, height: 1080 },
   acceptDownloads: true,
 });
 const page = await context.newPage();

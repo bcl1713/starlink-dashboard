@@ -5,8 +5,10 @@ Mission ZIP exports use explicit preparation. POST
 the returned job path for queued/preparing/ready state and DELETE it to cancel
 that export's work. Download only through the ready job's `download_url`.
 Preparation has a 600-second aggregate deadline; ready files expire after 30
-minutes. A saved change supersedes a pending export. A completed download keeps
-its labeled snapshot and does not switch to later edits.
+minutes. Each request freezes committed planning inputs before telemetry
+generation; later mission saves and live updates do not cancel that snapshot. A
+completed download keeps its labeled snapshot and does not switch to later
+edits.
 
 Legacy POST `/api/v2/missions/{mission_id}/export` returns 200 for a current
 already-ready ZIP, otherwise 202 JSON with a `Location` status URL. Clients must
@@ -18,6 +20,12 @@ A retry after an omitted customer PDF creates a new preparation for the same
 inputs. Its original ready ZIP remains an immutable download until expiry.
 Terminal-job cleanup releases local captures, including requests assembled by
 another elected worker.
+
+Requests copy matching prepared customer pages with the planning inputs. An
+optional PDF that is still preparing is omitted with the existing warning; data
+delivery does not wait for new rendering. The planning snapshot and copied pages
+are persisted with the job so another worker or a restart does not replace them
+with a later plan. Their bytes count toward the shared export storage quota.
 
 ## Observed telemetry artifact
 

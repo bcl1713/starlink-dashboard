@@ -21,21 +21,18 @@ class JobCancel:
     def __init__(self, service, job, raw):
         self.service, self.job, self.raw = service, job, raw
         self.reason = None
+        self.next_poll = 0.0
 
     def is_set(self):
         service = self.service
-        if (
-            service.stop.is_set()
-            or service.jobs.read(self.job.mission_id, self.job.id).state == "cancelled"
-        ):
+        if service.stop.is_set():
             self.reason = "cancelled"
         elif service.clock() >= self.job.deadline:
             self.reason = "deadline"
-        elif (
-            not capture_is_current(self.raw)
-            or self.raw.renderer_revision != service.capture_revision()
-        ):
-            self.reason = "superseded"
+        elif time.monotonic() >= self.next_poll:
+            self.next_poll = time.monotonic() + 0.05
+            if service.jobs.read(self.job.mission_id, self.job.id).state == "cancelled":
+                self.reason = "cancelled"
         return self.reason is not None
 
     def wait(self, seconds):
@@ -133,6 +130,7 @@ class PreparationWorker:
         finally:
             partial.unlink(missing_ok=True)
             self.captures.pop(job.id, None)
+            self.jobs.discard_planning(job.id)
             if self.jobs.read(job.mission_id, job.id).state != "ready":
                 self.jobs.discard_archive(job.id)
 
@@ -145,7 +143,14 @@ class PreparationWorker:
             deadline=job.deadline,
             check=lambda: check_cancelled(cancel),
         ) as owner, budgeted_spools():
-            enabled = self.enabled() if callable(self.enabled) else self.enabled
+            planning = self.jobs.planning(job.id)
+            if job.snapshot_policy == "captured" and planning is None:
+                raise RuntimeError("Captured planning snapshot is unavailable")
+            enabled = (
+                planning.briefing is not None
+                if planning is not None
+                else self.enabled() if callable(self.enabled) else self.enabled
+            )
             download = self.builder(
                 job.mission_id,
                 self.route_manager,
@@ -153,6 +158,11 @@ class PreparationWorker:
                 enabled=enabled,
                 cancel=cancel,
                 on_stage=lambda stage: self.stage(job, stage),
+                **(
+                    {"snapshot": planning.snapshot, "briefing": planning.briefing}
+                    if planning is not None
+                    else {}
+                ),
             )
             with download.stream as source, owner.open_download() as target:
                 source.seek(0, 2)
@@ -164,7 +174,11 @@ class PreparationWorker:
                     append_archive(
                         source,
                         archive,
-                        planning_fingerprint=self.fingerprint(raw),
+                        planning_fingerprint=(
+                            planning.snapshot.fingerprint
+                            if planning is not None
+                            else self.fingerprint(raw)
+                        ),
                         cancel=cancel,
                         output=target,
                         artifact_store=self.files,
@@ -246,15 +260,18 @@ class PreparationWorker:
                             with self.guard:
                                 self.executing.add(job.id)
                             try:
-                                raw = self.captures.get(job.id) or self.capture(
-                                    job.mission_id
-                                )
-                                if (
-                                    self.fingerprint(raw, self.jobs.archive(job.id))
-                                    != job.fingerprint
-                                ):
-                                    self.finish(job, "superseded")
-                                    continue
+                                raw = self.captures.get(job.id)
+                                if job.snapshot_policy == "legacy":
+                                    raw = raw or self.capture(job.mission_id)
+                                    if (
+                                        not capture_is_current(raw)
+                                        or self.fingerprint(
+                                            raw, self.jobs.archive(job.id)
+                                        )
+                                        != job.fingerprint
+                                    ):
+                                        self.finish(job, "superseded")
+                                        continue
                                 self.captures[job.id] = raw
                                 self.work(job)
                             except (

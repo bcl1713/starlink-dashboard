@@ -166,10 +166,13 @@ def capture_archive(request, mission_id, *, owner=None, telemetry_format="full")
         )
         from app.services.telemetry_archive.stream_reader import stream_captures
 
-        mission = flight.preparations.load_mission(mission_id)
-        if mission is None:
-            raise KeyError("Mission not found")
-        if not mission.legs:
+        legs = owner.leg_ids
+        if legs is None:
+            mission = flight.preparations.load_mission(mission_id)
+            if mission is None:
+                raise KeyError("Mission not found")
+            legs = [leg.id for leg in mission.legs]
+        if not legs:
             components["telemetry"] = {
                 "status": "not_applicable",
                 "reason": "no_executable_legs",
@@ -180,7 +183,7 @@ def capture_archive(request, mission_id, *, owner=None, telemetry_format="full")
             with stream_captures(
                 flight.archive,
                 mission_id,
-                [leg.id for leg in mission.legs],
+                legs,
                 check=owner.check,
                 workdir=owner.directory,
             ) as captures, owner.open_sidecar() as output:

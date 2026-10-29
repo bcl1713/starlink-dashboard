@@ -57,6 +57,7 @@ class CaptureOwner:
         )
         self.elapsed_deadline = time.monotonic() + 600
         self.retained = False
+        self.leg_ids = None
 
     def check(self):
         if self.callback:
@@ -154,6 +155,12 @@ class ArchiveFiles:
             ).fetchone():
                 used += db.execute(
                     "SELECT coalesce(sum(length(CAST(payload AS BLOB))),0) FROM export_archive_snapshots"
+                ).fetchone()[0]
+            if db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='export_planning_snapshots'"
+            ).fetchone():
+                used += db.execute(
+                    "SELECT coalesce(sum(length(payload)),0) FROM export_planning_snapshots"
                 ).fetchone()[0]
             if used + size > DISK_QUOTA:
                 raise ArchiveCapacityError("live-export-storage", DISK_QUOTA)

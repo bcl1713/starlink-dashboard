@@ -1,5 +1,6 @@
 """Synthetic-only dense archive input for the real mission preparation APIs."""
 
+import asyncio
 import hashlib
 import json
 import os
@@ -189,10 +190,25 @@ original_lifespan = app.router.lifespan_context
 async def lifespan(application):
     async with original_lifespan(application):
         initialize()
-        yield
+        from export_metrics_fixture import publish_metrics
+
+        stop = asyncio.Event()
+        publisher = asyncio.create_task(publish_metrics(main, stop))
+        try:
+            yield
+        finally:
+            stop.set()
+            await publisher
 
 
 app.router.lifespan_context = lifespan
+
+
+@app.get("/api/_synthetic/export-metrics")
+async def export_metrics():
+    from app.api.metrics import metrics
+
+    return await metrics(main._route_manager, app.state.poi_manager)
 
 
 @app.get("/api/_synthetic/large-export")
@@ -263,6 +279,10 @@ def configure(body: dict):
             "live",
         )
         return {"writer_seconds": time.monotonic() - started}
+    elif action == "rename":
+        mission = storage.load_mission_v2(MISSION)
+        mission.name = body["name"]
+        storage.save_mission_v2(mission)
     else:
         raise HTTPException(422, "Unknown synthetic control")
     return status()

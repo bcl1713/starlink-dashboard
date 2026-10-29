@@ -128,14 +128,26 @@ def _publish_pair(stream, artifacts, cancel, pdf_path):
 
 
 def build_mission_package_download(
-    mission_id, route_manager, poi_manager, *, enabled, cancel, on_stage=None
+    mission_id,
+    route_manager,
+    poi_manager,
+    *,
+    enabled,
+    cancel,
+    on_stage=None,
+    snapshot=None,
+    briefing=None,
 ):
     check_cancelled(cancel)
     if not enabled:
         if on_stage:
             on_stage("assembling")
-        stream = export_mission_package(
-            mission_id, route_manager, poi_manager, cancel=cancel
+        stream = (
+            build_snapshot_legacy_package(snapshot, cancel=cancel)
+            if snapshot is not None
+            else export_mission_package(
+                mission_id, route_manager, poi_manager, cancel=cancel
+            )
         )
         if cancel.is_set():
             stream.close()
@@ -144,9 +156,12 @@ def build_mission_package_download(
     stream = None
     try:
         try:
-            snapshot, outcome = get_prepared_package(
-                mission_id, route_manager, poi_manager, cancel=cancel
-            )
+            if snapshot is None:
+                snapshot, outcome = get_prepared_package(
+                    mission_id, route_manager, poi_manager, cancel=cancel
+                )
+            else:
+                outcome = briefing or CustomerBriefingOutcome("omitted", "busy", None)
         except ExportCancelled:
             raise
         except EXPORT_ERRORS:

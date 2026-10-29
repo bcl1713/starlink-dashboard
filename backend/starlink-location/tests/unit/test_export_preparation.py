@@ -143,7 +143,7 @@ def test_cancel_keeps_shared_preparation(tmp_path, monkeypatch):
             assert stream.read() == b"second package"
 
 
-def test_saved_change_supersedes_pending_package(tmp_path, monkeypatch):
+def test_saved_change_does_not_cancel_pending_package(tmp_path, monkeypatch):
     entered = threading.Event()
 
     def build(*args, cancel, **kwargs):
@@ -158,7 +158,9 @@ def test_saved_change_supersedes_pending_package(tmp_path, monkeypatch):
         assert entered.wait(3)
         mission.name = "Changed while preparing"
         storage.save_mission_v2(mission)
-        assert wait_state(service, job, {"superseded"}).state == "superseded"
+        assert service.status("m", job.id).state == "preparing"
+        service.cancel("m", job.id)
+        assert wait_state(service, job, {"cancelled"}).state == "cancelled"
         assert not list(service.artifacts.glob("*.zip"))
 
 

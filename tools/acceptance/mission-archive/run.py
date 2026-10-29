@@ -18,6 +18,8 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from responsiveness import dashboard
+
 ROOT = Path(__file__).resolve().parents[3]
 OPERATOR = ROOT / "tools/acceptance/operator-journal"
 sys.path.insert(0, str(OPERATOR))
@@ -156,17 +158,33 @@ def case(owner, origin, label, endpoint, representation):
     path = owner.root / (label + ".zip")
     before, peak = expected["rss_bytes"], expected["rss_bytes"]
     started = time.monotonic()
+    baseline = dashboard(origin)
+    assert baseline["available"], "Synthetic metric source did not initialize"
+    latencies, unavailable = [], 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(download, origin, endpoint, representation, path)
         while not future.done():
+            status = dashboard(origin)
+            latencies.append(status["seconds"])
+            unavailable += int(
+                not baseline["available"] <= status["available"]
+                or not baseline["status_available"] <= status["status_available"]
+            )
             peak = max(peak, data(origin)["rss_bytes"])
             time.sleep(0.1)
         future.result()
+    generated_seconds = time.monotonic() - started
+    assert unavailable == 0, f"Export interrupted metrics {unavailable} times"
+    assert max(latencies, default=0) < 2, "Dashboard status became unresponsive"
     proof = verify(
         path, expected, representation, owner.root / (label + "-verify.sqlite3")
     )
     proof.update(
         seconds=time.monotonic() - started,
+        generation_seconds=generated_seconds,
+        dashboard_polls=len(latencies),
+        dashboard_max_seconds=max(latencies, default=0),
+        dashboard_unavailable=unavailable,
         rss_baseline_bytes=before,
         rss_peak_bytes=peak,
         old_input_accounting=expected["old_input_accounting"],
@@ -243,6 +261,27 @@ def qualify(owner):
             raise AssertionError("Expired capture was acknowledged")
     data(origin, body={"action": "release"})
     assert data(origin)["capture_owners"] == 0
+    # A save during the expensive telemetry capture must retain the original plan.
+    original = data(origin, f"/api/v2/missions/{MISSION}")["name"]
+    data(origin, body={"action": "pause"})
+    target = owner.root / "mid-mission-snapshot.zip"
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        pending = pool.submit(download, origin, "export", "compact", target)
+        deadline = time.monotonic() + 15
+        while not data(origin)["entered"]:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Live snapshot capture was never entered")
+            time.sleep(0.05)
+        data(origin, body={"action": "rename", "name": "Updated while exporting"})
+        data(origin, body={"action": "write"})
+        data(origin, body={"action": "release"})
+        pending.result(timeout=60)
+    with zipfile.ZipFile(target) as archive:
+        assert json.loads(archive.read("mission.json"))["name"] == original
+    proof["mid_mission_snapshot"] = verify(
+        target, data(origin), "compact", owner.root / "mid-mission-verify.sqlite3"
+    )
+    data(origin, body={"action": "rename", "name": original})
     data(origin, body={"action": "capacity", "bytes": 128})
     try:
         data(origin, f"/api/v2/missions/{MISSION}/export", {})
