@@ -94,6 +94,8 @@ async def test_settings_default_off_and_invalid_updates_do_not_acquire(tmp_path)
         assert settings.json() == {
             "metar": False,
             "taf": False,
+            "departure_weather": False,
+            "arrival_weather": False,
             "sigmet": False,
             "sigmet_intersecting_only": False,
             "winds": False,
@@ -139,6 +141,8 @@ async def test_admitted_immutable_snapshot_and_disable_invalidate_payload(tmp_pa
         assert response.json() == {
             "metar": True,
             "taf": False,
+            "departure_weather": False,
+            "arrival_weather": False,
             "sigmet": False,
             "sigmet_intersecting_only": False,
             "winds": False,
@@ -519,3 +523,35 @@ async def test_aviation_cas_conflict_is_409_without_changing_visibility(tmp_path
         assert store.get().sigmet is True
         assert source.calls == []
     await service.aclose()
+
+
+async def test_airfield_switches_persist_and_acquire_both_terminal_products(tmp_path):
+    service, store, source, _now = runtime(tmp_path)
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app_for(service)), base_url="http://test"
+        ) as client:
+            for field in ("departure_weather", "arrival_weather"):
+                response = await client.put(
+                    "/api/aviation-weather/v1/settings", json={field: True}
+                )
+                assert response.status_code == 200
+                assert AviationSettingsStore(store.path).get().model_dump()[field]
+                assert not response.json()["metar"]
+                assert not response.json()["taf"]
+                catalog = (await client.get("/api/aviation-weather/v1/catalog")).json()
+                assert {
+                    p["layer_id"] for p in catalog["products"] if p["state"] == "ready"
+                } == {"metar", "taf"}
+                assert set(source.calls) == {"metar", "taf"}
+                await client.put(
+                    "/api/aviation-weather/v1/settings", json={field: False}
+                )
+                catalog = (await client.get("/api/aviation-weather/v1/catalog")).json()
+                assert all(
+                    p["state"] == "off"
+                    for p in catalog["products"]
+                    if p["layer_id"] in {"metar", "taf"}
+                )
+    finally:
+        await service.aclose()

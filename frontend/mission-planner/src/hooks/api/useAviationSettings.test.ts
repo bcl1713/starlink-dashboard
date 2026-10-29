@@ -26,6 +26,8 @@ beforeEach(() => {
   vi.mocked(aviationWeatherApi.getSettings).mockResolvedValue({
     metar: false,
     taf: false,
+    departure_weather: false,
+    arrival_weather: false,
     sigmet: false,
     sigmet_intersecting_only: false,
     winds: false,

@@ -23,6 +23,8 @@ const weather = {
   radar: true,
   metar: false,
   taf: true,
+  departure_weather: true,
+  arrival_weather: false,
   sigmet: true,
   sigmet_intersecting_only: true,
   winds: true,
@@ -90,6 +92,8 @@ it('applies every visibility store with observed baselines and excludes forecast
   const aviationVisibility = {
     metar: weather.metar,
     taf: weather.taf,
+    departure_weather: weather.departure_weather,
+    arrival_weather: weather.arrival_weather,
     sigmet: weather.sigmet,
     sigmet_intersecting_only: weather.sigmet_intersecting_only,
     winds: weather.winds,

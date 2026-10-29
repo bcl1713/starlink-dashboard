@@ -1,3 +1,8 @@
+import {
+  airfieldCollection,
+  aviationLayerEnabled,
+  type Airfields,
+} from './airfield-weather';
 import { boundedWeatherBytes, weatherDigest } from '@/services/aviation-grid';
 import {
   optionalWeatherBudget,
@@ -153,6 +158,14 @@ export class AviationController {
     this.budget = budget;
     this.options = options;
   }
+  private airfields: Airfields = {};
+  setAirfields(next: Airfields) {
+    this.airfields = next;
+    this.publish();
+  }
+  private selectedData(data: AviationCollection, layer: AviationLayer) {
+    return airfieldCollection(data, layer, this.settings!, this.airfields);
+  }
   snapshot = () => this.view;
   setExternalSigmet(view: AviationLayerView) {
     this.externalSigmet = view;
@@ -180,7 +193,7 @@ export class AviationController {
     if (this.settings && next.revision === this.settings.revision) return;
     this.settings = next;
     this.abort();
-    for (const l of layers) if (!next[l]) this.remove(l);
+    for (const l of layers) if (!aviationLayerEnabled(next, l)) this.remove(l);
     this.failed.clear();
     this.publish();
     void this.refresh();
@@ -211,7 +224,8 @@ export class AviationController {
       !!this.settings &&
       layers.some(
         (l) =>
-          this.settings![l] && !(l === 'sigmet' && this.options.externalSigmet)
+          aviationLayerEnabled(this.settings, l) &&
+          !(l === 'sigmet' && this.options.externalSigmet)
       )
     );
   }
@@ -249,7 +263,7 @@ export class AviationController {
     const now = this.utc();
     const next = {} as Record<AviationLayer, AviationLayerView>;
     for (const l of layers) {
-      if (!this.settings?.[l]) {
+      if (!aviationLayerEnabled(this.settings, l)) {
         next[l] = { state: 'off' };
         continue;
       }
@@ -266,12 +280,15 @@ export class AviationController {
         record = undefined;
       }
       if (record) {
-        const data = {
-          ...record.data,
-          features: record.data.features.filter(
-            (f) => now < f.properties.expires_at_ms
-          ),
-        };
+        const data = this.selectedData(
+          {
+            ...record.data,
+            features: record.data.features.filter(
+              (f) => now < f.properties.expires_at_ms
+            ),
+          },
+          l
+        );
         const signature = this.signature(data, l, now);
         if (signature !== record.signature) {
           try {
@@ -303,7 +320,6 @@ export class AviationController {
           }
         }
         if (record) {
-          record.data = data;
           const featureStale = data.features.some(
             (f) =>
               'fresh_until_ms' in f.properties &&
@@ -367,7 +383,7 @@ export class AviationController {
         this.reservations.clear();
         this.cycle = null;
         for (const l of layers)
-          if (this.settings?.[l]) {
+          if (aviationLayerEnabled(this.settings, l)) {
             this.failed.add(l);
             const r = this.records.get(l);
             if (r) r.failed = true;
@@ -394,7 +410,7 @@ export class AviationController {
         layers
           .filter(
             (l) =>
-              this.settings![l] &&
+              aviationLayerEnabled(this.settings, l) &&
               !(l === 'sigmet' && this.options.externalSigmet)
           )
           .map(async (l) => {
@@ -448,8 +464,9 @@ export class AviationController {
                   ))
               )
                 throw Error('Future weather observation');
+              const selected = this.selectedData(data, l);
               const drawing = createBudgetedAviationDrawing(
-                data,
+                selected,
                 l,
                 this.utc(),
                 this.budget
@@ -463,7 +480,7 @@ export class AviationController {
                 product: p,
                 data,
                 drawing,
-                signature: this.signature(data, l, this.utc()),
+                signature: this.signature(selected, l, this.utc()),
                 failed: false,
                 allocation,
               });
@@ -484,7 +501,7 @@ export class AviationController {
     } catch {
       if (this.generation === generation) {
         for (const l of layers)
-          if (this.settings?.[l]) {
+          if (aviationLayerEnabled(this.settings, l)) {
             this.failed.add(l);
             const r = this.records.get(l);
             if (r) r.failed = true;

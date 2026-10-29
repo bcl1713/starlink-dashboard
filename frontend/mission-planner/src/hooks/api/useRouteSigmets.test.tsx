@@ -16,6 +16,8 @@ it('Configuration alone loads reports and two hook readers share one route reque
     .mockResolvedValue({
       metar: false,
       taf: false,
+      departure_weather: false,
+      arrival_weather: false,
       sigmet: true,
       sigmet_intersecting_only: false,
       winds: false,

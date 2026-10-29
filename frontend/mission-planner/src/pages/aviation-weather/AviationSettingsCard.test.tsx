@@ -22,6 +22,8 @@ afterEach(() => {
 const modelSettings = {
   metar: false,
   taf: false,
+  departure_weather: false,
+  arrival_weather: false,
   sigmet: false,
   sigmet_intersecting_only: false,
   winds: false,
@@ -170,6 +172,8 @@ it('offers independent default-off switches and confirms server changes in share
   const initial = {
     metar: false,
     taf: false,
+    departure_weather: false,
+    arrival_weather: false,
     sigmet: false,
     sigmet_intersecting_only: false,
     winds: false,
@@ -203,7 +207,7 @@ it('offers independent default-off switches and confirms server changes in share
         .hasAttribute('disabled')
     ).toBe(false)
   );
-  expect(screen.getAllByRole('switch')).toHaveLength(6);
+  expect(screen.getAllByRole('switch')).toHaveLength(8);
   fireEvent.click(
     screen.getByRole('switch', { name: 'METAR / SPECI observations' })
   );
@@ -267,6 +271,8 @@ it('keeps the confirmed selection after a failed model save', async () => {
   const initial = {
     metar: false,
     taf: false,
+    departure_weather: false,
+    arrival_weather: false,
     sigmet: false,
     sigmet_intersecting_only: false,
     winds: false,
@@ -312,3 +318,35 @@ it('keeps the confirmed selection after a failed model save', async () => {
   ).toBe('pressure:50000');
   client.clear();
 });
+
+it.each([
+  ['departure_weather', 'Departure weather', 'Arrival weather'],
+  ['arrival_weather', 'Arrival weather', 'Departure weather'],
+] as const)(
+  'independently saves %s without enabling global layers',
+  async (field, name, otherName) => {
+    const initial = {
+      ...modelSettings,
+      departure_weather: false,
+      arrival_weather: false,
+    };
+    const client = await modelCard(initial);
+    vi.mocked(aviationWeatherApi.updateSettings).mockImplementation(
+      async (changes) => ({ ...initial, ...changes, revision: 2 })
+    );
+    fireEvent.click(screen.getByRole('switch', { name }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('switch', { name }) as HTMLInputElement).checked
+      ).toBe(true)
+    );
+    expect(
+      (screen.getByRole('switch', { name: otherName }) as HTMLInputElement)
+        .checked
+    ).toBe(false);
+    expect(client.getQueryData(['aviation-weather', 'settings'])).toMatchObject(
+      { [field]: true, metar: false, taf: false }
+    );
+    client.clear();
+  }
+);

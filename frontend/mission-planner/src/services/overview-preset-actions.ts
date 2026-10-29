@@ -51,6 +51,8 @@ export async function saveCurrentDisplayPreset(
     radar: current.radar.enabled,
     metar,
     taf,
+    departure_weather: current.aviation.departure_weather ?? false,
+    arrival_weather: current.aviation.arrival_weather ?? false,
     sigmet,
     sigmet_intersecting_only,
     winds,

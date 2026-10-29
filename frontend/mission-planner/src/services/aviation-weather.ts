@@ -384,6 +384,8 @@ export type GfsSelection = z.output<typeof gfsSelectionSchema>;
 const settingsSchema = z.strictObject({
   metar: z.boolean(),
   taf: z.boolean(),
+  departure_weather: z.boolean().default(false),
+  arrival_weather: z.boolean().default(false),
   sigmet: z.boolean(),
   sigmet_intersecting_only: z.boolean().default(false),
   winds: z.boolean().default(false),
@@ -403,6 +405,8 @@ export type AviationSettingsChanges = Partial<
   Pick<
     ResolvedAviationSettings,
     | AviationLayer
+    | 'departure_weather'
+    | 'arrival_weather'
     | 'winds'
     | 'temperature'
     | 'gfs_selection'

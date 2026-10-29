@@ -493,6 +493,8 @@ def test_preset_retains_display_weather_only_and_legacy_compatibility(client):
         "radar": True,
         "metar": True,
         "taf": False,
+        "departure_weather": True,
+        "arrival_weather": False,
         "sigmet": True,
         "sigmet_intersecting_only": True,
         "winds": True,
@@ -562,3 +564,29 @@ def test_flight_only_setting_and_customer_preset_are_strict_and_persist(
             client.put(URL, json={"next_flight_events_only": value}).status_code == 422
         )
     assert client.get(URL).json()["next_flight_events_only"] is True
+
+
+def test_legacy_weather_preset_defaults_airfield_switches_off(client):
+    weather = {
+        "radar": False,
+        "metar": True,
+        "taf": False,
+        "sigmet": False,
+        "sigmet_intersecting_only": False,
+        "winds": False,
+        "temperature": False,
+    }
+    response = client.put(
+        "/api/overview-links/presets/weather",
+        json={
+            "settings": {"legend_enabled": True},
+            "weather_visibility": weather,
+            "expected_version": 0,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["weather_visibility"] == {
+        **weather,
+        "departure_weather": False,
+        "arrival_weather": False,
+    }
