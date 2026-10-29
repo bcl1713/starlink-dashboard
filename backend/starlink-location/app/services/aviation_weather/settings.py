@@ -5,17 +5,18 @@ import os
 import tempfile
 from pathlib import Path
 
-from filelock import FileLock
-from pydantic import Field
-
 from app.models.aviation_grid import GfsSelection
 from app.models.aviation_weather import Contract
 from app.services.settings_conflict import SettingsConflict
+from filelock import FileLock
+from pydantic import Field
 
 
 class AviationSettings(Contract):
     metar: bool = False
     taf: bool = False
+    departure_weather: bool = False
+    arrival_weather: bool = False
     sigmet: bool = False
     sigmet_intersecting_only: bool = False
     winds: bool = False
@@ -28,6 +29,8 @@ class AviationSettingsUpdate(Contract):
     expected_revision: int | None = Field(default=None, ge=0, strict=True)
     metar: bool | None = None
     taf: bool | None = None
+    departure_weather: bool | None = None
+    arrival_weather: bool | None = None
     sigmet: bool | None = None
     sigmet_intersecting_only: bool | None = None
     winds: bool | None = None
@@ -133,3 +136,14 @@ class AviationSettingsStore:
         finally:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
+
+
+def layer_enabled(settings: AviationSettings, layer: str) -> bool:
+    """Airfield visibility requires both terminal products without global markers."""
+    return bool(
+        getattr(settings, layer)
+        or (
+            layer in {"metar", "taf"}
+            and (settings.departure_weather or settings.arrival_weather)
+        )
+    )

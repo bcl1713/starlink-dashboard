@@ -13,6 +13,7 @@ from app.services.overview_weather.protocol import WeatherUnavailable
 from .catalog import identity
 from .decode import await_owned, normalize_in_worker
 from .relations import cancellation_matches
+from .settings import layer_enabled
 
 LAYERS = {
     "metar": ("metar-speci", "station-v1", "observation", 300),
@@ -94,7 +95,7 @@ class AviationWeatherService:
             self._settings = settings
             stopped = []
             for layer in LAYERS:
-                if not getattr(settings, layer):
+                if not layer_enabled(settings, layer):
                     lease = self._tasks.pop(layer, None)
                     if lease is not None:
                         self._retiring.add(lease.task)
@@ -104,7 +105,7 @@ class AviationWeatherService:
                     self._snapshots.pop(layer, None)
                     self._current.pop(layer, None)
                     self._next.pop(layer, None)
-                elif previous is not None and not getattr(previous, layer):
+                elif previous is not None and not layer_enabled(previous, layer):
                     self._next.pop(layer, None)
             await await_owned(
                 asyncio.ensure_future(asyncio.gather(*stopped, return_exceptions=True))
@@ -116,7 +117,7 @@ class AviationWeatherService:
         return (
             not self._closed
             and self._settings is not None
-            and getattr(self._settings, layer)
+            and layer_enabled(self._settings, layer)
         )
 
     def _prune(self):

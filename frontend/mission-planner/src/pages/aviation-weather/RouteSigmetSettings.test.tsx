@@ -24,6 +24,8 @@ import { optionalWeatherBudget } from './weather-budget';
 const settings = {
   metar: false,
   taf: false,
+  departure_weather: false,
+  arrival_weather: false,
   sigmet: true,
   sigmet_intersecting_only: false,
   winds: false,

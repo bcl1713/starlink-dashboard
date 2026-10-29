@@ -10,6 +10,8 @@ class PresetWeatherVisibility(BaseModel):
     radar: bool
     metar: bool
     taf: bool
+    departure_weather: bool = False
+    arrival_weather: bool = False
     sigmet: bool
     sigmet_intersecting_only: bool
     winds: bool

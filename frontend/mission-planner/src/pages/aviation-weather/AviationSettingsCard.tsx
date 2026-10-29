@@ -12,9 +12,24 @@ const flightLevels = [50, 100, 180, 240, 300, 340, 390, 450] as const;
 const horizons = [0, 3, 6, 9, 12, 18, 24, 36, 48] as const;
 const options: {
   group: string;
-  layer: AviationLayer | 'winds' | 'temperature';
+  layer:
+    | AviationLayer
+    | 'departure_weather'
+    | 'arrival_weather'
+    | 'winds'
+    | 'temperature';
   label: string;
 }[] = [
+  {
+    group: 'Airfield weather',
+    layer: 'departure_weather',
+    label: 'Departure weather',
+  },
+  {
+    group: 'Airfield weather',
+    layer: 'arrival_weather',
+    label: 'Arrival weather',
+  },
   {
     group: 'Terminal weather',
     layer: 'metar',
@@ -58,61 +73,72 @@ export function AviationSettingsCard({
       title="Aviation weather"
       description="Optional station reports, terminal forecasts and advisories on all Overview displays. Missing coverage means unknown weather."
     >
-      {['Terminal weather', 'Hazards', 'Flight-level atmosphere'].map(
-        (group) => (
-          <fieldset key={group} className="my-3 space-y-2">
-            <legend className="mb-2 text-sm text-muted-foreground">
-              {group}
-            </legend>
-            {group === 'Flight-level atmosphere' && (
-              <p className="text-xs text-muted-foreground">
-                Only one GFS layer can be displayed at a time.
-              </p>
-            )}
-            {options
-              .filter((o) => o.group === group)
-              .map((o) => (
-                <label
-                  key={o.layer}
-                  className="flex min-h-11 items-center justify-between gap-4 text-sm font-medium"
-                >
-                  {o.label}
-                  <Switch
-                    aria-label={o.label}
-                    checked={
-                      o.layer === 'winds' || o.layer === 'temperature'
-                        ? flags[o.layer]
-                        : (query.data?.[o.layer] ?? false)
-                    }
-                    disabled={!query.data || query.isError || save.isPending}
-                    onChange={(e) => {
-                      const enabled = e.target.checked;
-                      save.mutate({
-                        [o.layer]: enabled,
-                        ...(enabled && o.layer === 'winds'
-                          ? { temperature: false }
-                          : {}),
-                        ...(enabled && o.layer === 'temperature'
-                          ? { winds: false }
-                          : {}),
-                      });
-                    }}
-                  />
-                </label>
-              ))}
-            {group === 'Hazards' && (
-              <RouteSigmetSettings
-                enabled={query.data?.sigmet ?? false}
-                intersectingOnly={query.data?.sigmet_intersecting_only ?? false}
-                disabled={disabled}
-                onFilterChange={(enabled) =>
-                  save.mutate({ sigmet_intersecting_only: enabled })
-                }
-              />
-            )}
-          </fieldset>
-        )
-      )}
+      {[
+        'Airfield weather',
+        'Terminal weather',
+        'Hazards',
+        'Flight-level atmosphere',
+      ].map((group) => (
+        <fieldset key={group} className="my-3 space-y-2">
+          <legend className="mb-2 text-sm text-muted-foreground">
+            {group}
+          </legend>
+          {group === 'Airfield weather' && (
+            <p className="text-xs text-muted-foreground">
+              Each airfield switch shows both METAR and TAF for that end of the
+              active route. Uses the nearest reporting station within 10 km;
+              missing reports mean unknown weather. Global terminal weather
+              switches show all stations.
+            </p>
+          )}
+          {group === 'Flight-level atmosphere' && (
+            <p className="text-xs text-muted-foreground">
+              Only one GFS layer can be displayed at a time.
+            </p>
+          )}
+          {options
+            .filter((o) => o.group === group)
+            .map((o) => (
+              <label
+                key={o.layer}
+                className="flex min-h-11 items-center justify-between gap-4 text-sm font-medium"
+              >
+                {o.label}
+                <Switch
+                  aria-label={o.label}
+                  checked={
+                    o.layer === 'winds' || o.layer === 'temperature'
+                      ? flags[o.layer]
+                      : (query.data?.[o.layer] ?? false)
+                  }
+                  disabled={!query.data || query.isError || save.isPending}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    save.mutate({
+                      [o.layer]: enabled,
+                      ...(enabled && o.layer === 'winds'
+                        ? { temperature: false }
+                        : {}),
+                      ...(enabled && o.layer === 'temperature'
+                        ? { winds: false }
+                        : {}),
+                    });
+                  }}
+                />
+              </label>
+            ))}
+          {group === 'Hazards' && (
+            <RouteSigmetSettings
+              enabled={query.data?.sigmet ?? false}
+              intersectingOnly={query.data?.sigmet_intersecting_only ?? false}
+              disabled={disabled}
+              onFilterChange={(enabled) =>
+                save.mutate({ sigmet_intersecting_only: enabled })
+              }
+            />
+          )}
+        </fieldset>
+      ))}
       {!controlsOnly && (
         <fieldset disabled={disabled} className="my-3 space-y-3">
           <legend className="text-sm text-muted-foreground">

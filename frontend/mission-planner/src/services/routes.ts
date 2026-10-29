@@ -41,6 +41,7 @@ export interface RouteDetail extends Route {
 }
 
 export interface Waypoint {
+  role?: 'departure' | 'arrival' | string | null;
   name?: string;
   latitude: number;
   longitude: number;

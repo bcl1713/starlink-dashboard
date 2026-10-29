@@ -1,3 +1,4 @@
+import { routeAirfields } from './aviation-weather/airfield-weather';
 import { useOverviewAdvisories } from '@/hooks/api/useOverviewAdvisories';
 import { OverviewPopAdvisories } from './OverviewPopAdvisories';
 import {
@@ -498,7 +499,8 @@ export function OverviewPage() {
         : { state: 'off' as const },
     [aviationSettings?.sigmet, sigmetPresentation.view]
   );
-  const aviation = useAviationWeather(sigmetView);
+  const airfields = useMemo(() => routeAirfields(activeRoute), [activeRoute]);
+  const aviation = useAviationWeather(sigmetView, airfields);
   if (selectedWeather && !resolveAviationSelection(aviation, selectedWeather))
     setSelectedWeather(null);
 

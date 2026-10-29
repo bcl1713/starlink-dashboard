@@ -563,3 +563,116 @@ it('shares the optional decoded allowance with GFS and highlights before fetchin
     slots: 0,
   });
 });
+
+it('airfield controls show both feeds only at selected endpoints and replace them on route change', async () => {
+  const products = await Promise.all(
+    [false, true].map(async (taf) => {
+      const features = [0, 1, 2].map((longitude, index) => {
+        const feature = station(taf);
+        feature.id = `station-${index}`;
+        feature.properties.station_id = `ST${index}`;
+        feature.geometry.coordinates = [longitude, 0];
+        return feature;
+      });
+      const bytes = new TextEncoder().encode(
+        JSON.stringify(collection(features))
+      );
+      const hash = Array.from(
+        new Uint8Array(await webcrypto.subtle.digest('SHA-256', bytes)),
+        (v) => v.toString(16).padStart(2, '0')
+      ).join('');
+      const { product } = await payload(taf);
+      product.payload = {
+        ...product.payload!,
+        path: `/api/aviation-weather/v1/products/${hash}/${taf ? 'taf' : 'metar'}.json`,
+        sha256: hash,
+        encoded_bytes: bytes.length,
+        decoded_bytes: bytes.length * 4,
+        gpu_bytes: bytes.length * 4,
+      };
+      return { product, bytes };
+    })
+  );
+  const controller = new AviationController(
+    {
+      getCatalog: async () => ({
+        schema: 'aviation-weather-v1',
+        generated_at_ms: NOW,
+        settings_revision: 1,
+        products: products.map((p) => p.product),
+      }),
+    },
+    async (input) => {
+      const p = products.find(
+        (p) => p.product.payload!.path === String(input)
+      )!;
+      return new Response(p.bytes, {
+        headers: { 'Content-Type': 'application/geo+json' },
+      });
+    },
+    new WeatherBudget()
+  );
+  const ids = (layer: 'metar' | 'taf') =>
+    controller.snapshot().layers[layer].data?.features.map((f) => f.id);
+  try {
+    controller.setAirfields({
+      departure: { longitude: 0, latitude: 0 },
+      arrival: { longitude: 1, latitude: 0 },
+    });
+    controller.start();
+    controller.setSettings({
+      ...settings,
+      metar: false,
+      departure_weather: true,
+      arrival_weather: false,
+    });
+    await vi.waitFor(() => expect(ids('metar')).toEqual(['station-0']));
+    expect(ids('taf')).toEqual(['station-0']);
+    controller.setAirfields({
+      departure: { longitude: 2, latitude: 0 },
+      arrival: { longitude: 1, latitude: 0 },
+    });
+    expect(ids('metar')).toEqual(['station-2']);
+    expect(ids('taf')).toEqual(['station-2']);
+    controller.setSettings({
+      ...settings,
+      metar: false,
+      departure_weather: false,
+      arrival_weather: true,
+      revision: 2,
+    });
+    expect(ids('metar')).toEqual(['station-1']);
+    expect(ids('taf')).toEqual(['station-1']);
+    controller.setSettings({
+      ...settings,
+      metar: false,
+      departure_weather: true,
+      arrival_weather: true,
+      revision: 3,
+    });
+    expect(ids('metar')).toEqual(['station-1', 'station-2']);
+    controller.setSettings({
+      ...settings,
+      departure_weather: true,
+      revision: 4,
+    });
+    expect(ids('metar')).toEqual(['station-0', 'station-1', 'station-2']);
+    expect(ids('taf')).toEqual(['station-2']);
+    controller.setSettings({
+      ...settings,
+      metar: false,
+      departure_weather: true,
+      revision: 5,
+    });
+    controller.setAirfields({ departure: { longitude: 4, latitude: 0 } });
+    expect(ids('metar')).toEqual([]);
+    expect(ids('taf')).toEqual([]);
+    controller.setAirfields({});
+    expect(ids('metar')).toEqual([]);
+    controller.setSettings({ ...settings, metar: false, revision: 6 });
+    expect(controller.snapshot().layers.metar.state).toBe('off');
+    expect(controller.snapshot().layers.taf.state).toBe('off');
+  } finally {
+    controller.dispose();
+  }
+});

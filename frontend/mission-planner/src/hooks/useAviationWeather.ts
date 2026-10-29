@@ -1,3 +1,4 @@
+import type { Airfields } from '@/pages/aviation-weather/airfield-weather';
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   aviationWeatherApi,
@@ -10,12 +11,16 @@ import {
 } from '@/pages/aviation-weather/aviation-controller';
 import { useAviationSettings } from './api/useAviationSettings';
 import { useRouteSigmets } from './api/useRouteSigmets';
-export function useAviationWeather(externalSigmet?: AviationLayerView) {
+export function useAviationWeather(
+  externalSigmet?: AviationLayerView,
+  airfields?: Airfields
+) {
   const settings = useAviationSettings().data;
   const source = useRouteSigmets();
   const binding = useMemo(() => createAviationBinding(), []);
   const view = useSyncExternalStore(binding.subscribe, binding.snapshot);
   useEffect(() => binding.setSettings(settings), [binding, settings]);
+  useEffect(() => binding.setAirfields(airfields ?? {}), [binding, airfields]);
   const sigmet = useMemo<AviationLayerView>(
     () =>
       externalSigmet ??
@@ -48,9 +53,14 @@ function createAviationBinding() {
   let controller: AviationController | null = null,
     observed: AviationSettings | undefined,
     view = emptyAviationView,
+    airfields: Airfields = {},
     externalSigmet: AviationLayerView = { state: 'off' };
   return {
     snapshot: () => view,
+    setAirfields: (next: Airfields) => {
+      airfields = next;
+      controller?.setAirfields(next);
+    },
     setSettings: (next: AviationSettings | undefined) => {
       observed = next;
       controller?.setSettings(next);
@@ -74,6 +84,7 @@ function createAviationBinding() {
       owned.setVisible(!document.hidden);
       owned.setOnline(navigator.onLine);
       owned.start();
+      owned.setAirfields(airfields);
       owned.setSettings(observed);
       owned.setExternalSigmet(externalSigmet);
       const visibility = () => owned.setVisible(!document.hidden),
