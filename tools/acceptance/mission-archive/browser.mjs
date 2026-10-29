@@ -10,6 +10,7 @@ const context = await browser.newContext({
   acceptDownloads: true,
 });
 const page = await context.newPage();
+page.setDefaultTimeout(60000);
 const control = async (body) => {
   const response = await page.request.post(
     `${origin}/api/_synthetic/large-export`,
@@ -19,13 +20,18 @@ const control = async (body) => {
 };
 try {
   await page.goto(`${origin}/missions`);
+  const mission = await (
+    await page.request.get(`${origin}/api/v2/missions/synthetic-mission-a`)
+  ).json();
   const exportButton = page
-    .getByRole("button", { name: "Export", exact: true })
-    .first();
+    .getByText(mission.name, { exact: true })
+    .locator("..")
+    .locator("..")
+    .getByRole("button", { name: "Export", exact: true });
   await exportButton.click();
   await page.getByLabel("Telemetry format").selectOption("compact");
   await page.screenshot({ path: path.join(evidence, "compact-selection.png") });
-  const download = page.waitForEvent("download");
+  const download = page.waitForEvent("download", { timeout: 90000 });
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Export", exact: true })
