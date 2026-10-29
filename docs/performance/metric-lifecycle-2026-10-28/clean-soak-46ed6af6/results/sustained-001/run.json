@@ -1,0 +1,99 @@
+{
+  "candidate_sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "harness_sha": "ca551a0e94b93bbcd0b45b2a69567354f5094098",
+  "status": "failed",
+  "source_archive_sha256": "82135b514770c83e408d39d332b2c65cfbec85367f9d18275c7ab0b8e7b1c725",
+  "hardware": {
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "machine": "x86_64",
+    "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+    "docker": {
+      "ServerVersion": "29.8.1",
+      "Driver": "overlayfs",
+      "NCPU": 20,
+      "MemTotal": 65915523072,
+      "KernelVersion": "7.0.0-34-generic",
+      "OperatingSystem": "Ubuntu 26.04.1 LTS",
+      "Architecture": "x86_64"
+    },
+    "filesystem": "ext2/ext3 4096"
+  },
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-issue393-clean-sustained-001-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "id": "sha256:70daa4ab514264af757ccfe25dd098830a0f3535e58b54106dcfc29905841cdf",
+      "revision": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "filesystem_config_sha256": "e16cea039c4804b04fc3a2cf78803b90a28a61d475daad5ccb11e5355e0cf72b"
+    },
+    "frontend": {
+      "tag": "starlink-operator-issue393-clean-sustained-001-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "id": "sha256:dbab3e9b2184011815966a90e844e79fa039a295e51839c7e732652fbf0ac209",
+      "revision": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "filesystem_config_sha256": "5f304268c390df92d2bf8563235b6d2934e56328956465a66b8d7649ae06edf9"
+    },
+    "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+  },
+  "backend_python": "Python 3.11.18",
+  "backend_packages_sha256": "32882128661ba7c0c6ba836eccbe66b333b050fa4c7844bcb916b0968985fa4c",
+  "fixture_hashes": {
+    "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+    "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+    "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+    "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+  },
+  "workload": {
+    "fixture": "perf390-v1",
+    "fixture_hashes": {
+      "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+      "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+      "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+      "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+    },
+    "viewers": 1,
+    "operator": true,
+    "window": 1800,
+    "cadence": 1,
+    "warmup": 120,
+    "duration": 3620,
+    "operations": true,
+    "fullscreen": true,
+    "qualification_protocol": "issue393-coordinated-operator-v2",
+    "operator_transition_scheduling": "native quarter offsets, then fresh read completion and natural idle; no request suppression"
+  },
+  "instrumentation": "off",
+  "runtime": {
+    "mode": "simulation",
+    "backend_python": "Python 3.11.18",
+    "backend_packages_sha256": "32882128661ba7c0c6ba836eccbe66b333b050fa4c7844bcb916b0968985fa4c",
+    "scrape_seconds": 1,
+    "evaluation_seconds": 1,
+    "cpus_per_service": 2,
+    "memory_limit": "2g",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "dpr": 1,
+    "optional_layers": "candidate defaults; no UI layers toggled by harness",
+    "transport": "published-port"
+  },
+  "browser_cleanup": {
+    "started": true,
+    "pid": 1920403,
+    "pgid": 1920403,
+    "remaining": []
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true,
+    "prometheusListenerRemoved": true
+  }
+}

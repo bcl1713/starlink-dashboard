@@ -1,0 +1,24 @@
+{
+  "native_status": "failed",
+  "native_qualification_clean": false,
+  "native_polling_gate_passed": false,
+  "sustained_qualification_claim": false,
+  "purpose": "Classify the one measured cancellation independently after the unchanged native polling failure. Does not repair, qualify or replace the native run.",
+  "raw_api_sha256": "e84572d21f31ad592a58a47be16066ddadbc44cdc21f81c7c6300a3770ec83ba",
+  "derived_api_sha256": "58083194d3882a361669d16951aa5fddda3e2a78ad3fc77b1a73d016846cb002",
+  "filter": "Exclude only rows with startedPhase == teardown; preserve every warmup/measured row byte-for-byte. The failure cleanup had two incomplete teardown requests; they remain in raw evidence.",
+  "excluded_teardown_rows": 8,
+  "excluded_teardown_starts": 5,
+  "excluded_teardown_terminals": 3,
+  "classifier_harness_sha": "ca551a0e94b93bbcd0b45b2a69567354f5094098",
+  "classifier_source_sha256": "4f796b0e2786ec301cf975448006945c94b1f405fe5d57d300b2c02da3694c07",
+  "derived_counts": {
+    "starts": 17154,
+    "terminals": 17154,
+    "measured_cancellations": 1,
+    "expected": 1,
+    "unexpected": 0
+  },
+  "raw_cancellation_cause": "unknown",
+  "derived_cancellation_outcome": "Observed XHR abort in declared reactivation window with matching CDP timing and successful bounded new-source recovery; not an observed internal reason."
+}

@@ -1,0 +1,50 @@
+{
+  "protocol": "issue393-client-abort-v2",
+  "clean": true,
+  "expected": [
+    {
+      "request_id": "p1-r2838",
+      "abort_id": "p1-a1793230022136.9-1",
+      "transition_id": "transition-2",
+      "page": 1,
+      "recovery_ids": {
+        "health": "p1-r2837",
+        "context": "p1-r2835",
+        "fresh_source": "p1-r2846",
+        "operator_health": "p1-r2837",
+        "operator_context": "p1-r2835",
+        "operator_records": "p1-r2841"
+      },
+      "proof": {
+        "before_identity": "[\"99a17681-70b8-4e73-8c84-d0f56697763b\",\"167eb03f-d848-4493-b9fa-712ce9786f54\",\"simulation\",\"idle:default\"]",
+        "target_identity": "[\"99a17681-70b8-4e73-8c84-d0f56697763b\",\"167eb03f-d848-4493-b9fa-712ce9786f54\",\"simulation\",\"ordinary:9db988e0-1cb1-4bfe-abba-0f06724d019b:3:synthetic-route\"]",
+        "records_active_after": true,
+        "request_start": 2852.8460332900004,
+        "request_wall_start_time_ms": 1793232860908.623,
+        "request_wall_start_source": "cdp",
+        "cancellation_terminal": 2852.8600059,
+        "abort_at": 2852.852772005,
+        "transition_begin": 2850.919031883,
+        "transition_confirmed": 2851.0286770939997,
+        "send_wall_time_ms": 1793232860908.2,
+        "abort_wall_time_ms": 1793232860916,
+        "terminal_wall_time_ms": 1793232860925,
+        "mechanism": "xhr.abort"
+      }
+    }
+  ],
+  "unexpected": [],
+  "counts": {
+    "starts": 17154,
+    "terminals": 17154,
+    "measured_cancellations": 1,
+    "expected": 1,
+    "unexpected": 0
+  },
+  "source_sha256": "4f796b0e2786ec301cf975448006945c94b1f405fe5d57d300b2c02da3694c07",
+  "input_sha256": {
+    "api": "58083194d3882a361669d16951aa5fddda3e2a78ad3fc77b1a73d016846cb002",
+    "abort": "bc6a499d3afde18b3bd40f643711167c98af95d3de79af5a32a50e739bb2087b",
+    "transition": "146a660c9075e7e92b41a07066622325087140f37ce2045fed03fe99098432c6"
+  }
+}

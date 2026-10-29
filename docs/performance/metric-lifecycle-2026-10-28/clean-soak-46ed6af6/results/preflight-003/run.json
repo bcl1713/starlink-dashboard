@@ -1,0 +1,199 @@
+{
+  "candidate_sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "harness_sha": "ca551a0e94b93bbcd0b45b2a69567354f5094098",
+  "status": "measured",
+  "source_archive_sha256": "82135b514770c83e408d39d332b2c65cfbec85367f9d18275c7ab0b8e7b1c725",
+  "hardware": {
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "machine": "x86_64",
+    "cpu": "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz",
+    "docker": {
+      "ServerVersion": "29.8.1",
+      "Driver": "overlayfs",
+      "NCPU": 20,
+      "MemTotal": 65915523072,
+      "KernelVersion": "7.0.0-34-generic",
+      "OperatingSystem": "Ubuntu 26.04.1 LTS",
+      "Architecture": "x86_64"
+    },
+    "filesystem": "ext2/ext3 4096"
+  },
+  "images": {
+    "backend": {
+      "tag": "starlink-operator-issue393-clean-preflight-003-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "id": "sha256:55032061552cfbf0c8ab0deda7cde29f1e50f2461d5bbdcb98b28c7859bd77f9",
+      "revision": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "filesystem_config_sha256": "e16cea039c4804b04fc3a2cf78803b90a28a61d475daad5ccb11e5355e0cf72b"
+    },
+    "frontend": {
+      "tag": "starlink-operator-issue393-clean-preflight-003-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "id": "sha256:1344a0eabefd3a5386f0bff84f35efca4e173557ec55e035f0649b337f1d4c74",
+      "revision": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "filesystem_config_sha256": "5f304268c390df92d2bf8563235b6d2934e56328956465a66b8d7649ae06edf9"
+    },
+    "prometheus": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996"
+  },
+  "backend_python": "Python 3.11.18",
+  "backend_packages_sha256": "32882128661ba7c0c6ba836eccbe66b333b050fa4c7844bcb916b0968985fa4c",
+  "fixture_hashes": {
+    "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+    "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+    "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+    "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+  },
+  "workload": {
+    "fixture": "perf390-v1",
+    "fixture_hashes": {
+      "backend/starlink-location/config.yaml": "ceddbc1a57f08444e84d706509fa55aa70967fd666fedd9d43dee1abf49abce9",
+      "monitoring/prometheus/prometheus.yml": "ef299b5b559d30209223ea7ffaa6c0a02d89cf13c3deb1626d69b2fdac569d0c",
+      "tools/acceptance/operator-journal/scenario.py": "188b4c2a8d0e3e3b0f30018a7528d2c1147a5cc95f418cebe4821236b5fbe90d",
+      "tools/acceptance/overview_history/seed.py": "a509cb4b9f1cd4b6c4d7479decc00ca5fa9e2a5a07053511c09d67b74254ca35"
+    },
+    "viewers": 1,
+    "operator": true,
+    "window": 1800,
+    "cadence": 1,
+    "warmup": 120,
+    "duration": 120,
+    "operations": true,
+    "fullscreen": true,
+    "qualification_protocol": "issue393-coordinated-operator-v2",
+    "operator_transition_scheduling": "native quarter offsets, then fresh read completion and natural idle; no request suppression"
+  },
+  "instrumentation": "off",
+  "runtime": {
+    "mode": "simulation",
+    "backend_python": "Python 3.11.18",
+    "backend_packages_sha256": "32882128661ba7c0c6ba836eccbe66b333b050fa4c7844bcb916b0968985fa4c",
+    "scrape_seconds": 1,
+    "evaluation_seconds": 1,
+    "cpus_per_service": 2,
+    "memory_limit": "2g",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "dpr": 1,
+    "optional_layers": "candidate defaults; no UI layers toggled by harness",
+    "transport": "published-port",
+    "history_step_seconds": 1
+  },
+  "browser": {
+    "node_version": "v22.22.2",
+    "mode": "headless-diagnostic",
+    "fullscreen": true,
+    "physical_fullscreen": false,
+    "viewport": [
+      1920,
+      1080
+    ],
+    "dpr": 1,
+    "version": "153.0.8010.12",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "qualification_protocol": "issue393-coordinated-operator-v2",
+    "browser_executable_override": "/srv/starlink-acceptance/browser-store/chromium-1243/chrome-linux64/chrome",
+    "negative_capture_controls": true,
+    "history_step_seconds": 1,
+    "executable_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
+  },
+  "request_outcomes": {
+    "unexpected_failures": 0,
+    "client_cancellations": 0
+  },
+  "api_capture": {
+    "phases": {
+      "warmup": {
+        "started": 623,
+        "terminal": 623,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      },
+      "measured": {
+        "started": 587,
+        "terminal": 587,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      },
+      "post": {
+        "started": 0,
+        "terminal": 0,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      },
+      "teardown": {
+        "started": 0,
+        "terminal": 0,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      }
+    },
+    "capture_errors": 0,
+    "unknown_terminal": 0,
+    "client_abort_hooks": {
+      "0": true,
+      "1": true
+    },
+    "cdp_observer_buffers": {
+      "maxTotalBufferSize": 8388608,
+      "maxResourceBufferSize": 1048576,
+      "maxPostDataSize": 0
+    },
+    "expected_control_cancellations": 0,
+    "unexpected_cancellations": 0,
+    "qualification_clean": true
+  },
+  "cancellation_qualification": {
+    "protocol": "issue393-client-abort-v2",
+    "clean": true,
+    "expected": [],
+    "unexpected": [],
+    "counts": {
+      "starts": 1210,
+      "terminals": 1210,
+      "measured_cancellations": 0,
+      "expected": 0,
+      "unexpected": 0
+    },
+    "source_sha256": "4f796b0e2786ec301cf975448006945c94b1f405fe5d57d300b2c02da3694c07",
+    "input_sha256": {
+      "api": "f87bbbeac5999b12eaeb802a4f11a971c6d8f6aa752b2f42968e11046c26bb0c",
+      "abort": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "transition": "30e64d35b07fe98516202da5d97ea28ca284227d3def1f784261e9e0f32f6314"
+    }
+  },
+  "browser_cleanup": {
+    "started": true,
+    "pid": 1895856,
+    "pgid": 1895856,
+    "remaining": []
+  },
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true,
+    "prometheusListenerRemoved": true
+  }
+}

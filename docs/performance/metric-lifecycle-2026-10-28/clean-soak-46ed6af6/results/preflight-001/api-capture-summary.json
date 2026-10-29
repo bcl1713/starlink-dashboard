@@ -1,0 +1,47 @@
+{
+  "phases": {
+    "warmup": {
+      "started": 619,
+      "terminal": 619,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 20,
+      "allowedGPS503": 0
+    },
+    "measured": {
+      "started": 4,
+      "terminal": 4,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    },
+    "post": {
+      "started": 0,
+      "terminal": 0,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    },
+    "teardown": {
+      "started": 1,
+      "terminal": 1,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    }
+  },
+  "capture_errors": 20,
+  "unknown_terminal": 0,
+  "qualification_clean": false
+}

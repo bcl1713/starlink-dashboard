@@ -1,0 +1,58 @@
+{
+  "phases": {
+    "warmup": {
+      "started": 623,
+      "terminal": 623,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    },
+    "measured": {
+      "started": 587,
+      "terminal": 587,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    },
+    "post": {
+      "started": 0,
+      "terminal": 0,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    },
+    "teardown": {
+      "started": 0,
+      "terminal": 0,
+      "inflight": 0,
+      "cancellations": 0,
+      "http_errors": 0,
+      "network_errors": 0,
+      "observer_errors": 0,
+      "allowedGPS503": 0
+    }
+  },
+  "capture_errors": 0,
+  "unknown_terminal": 0,
+  "client_abort_hooks": {
+    "0": true,
+    "1": true
+  },
+  "cdp_observer_buffers": {
+    "maxTotalBufferSize": 8388608,
+    "maxResourceBufferSize": 1048576,
+    "maxPostDataSize": 0
+  },
+  "expected_control_cancellations": 0,
+  "unexpected_cancellations": 0,
+  "qualification_clean": true
+}

@@ -1,0 +1,85 @@
+{
+  "services": {
+    "starlink-location": {
+      "image": "starlink-operator-issue393-clean-sustained-001-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "command": [
+        "uvicorn",
+        "performance.fixture:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "environment": {
+        "PYTHONPATH": "/acceptance:/app",
+        "PERF_SYNTHETIC": "1",
+        "STARLINK_MODE": "simulation",
+        "SIMULATION_MODE": "true",
+        "OPERATOR_ENABLED": "true",
+        "STARLINK_PROMETHEUS_URL": "http://prometheus:9090",
+        "STARLINK_ROUTE_LATITUDE_START": "0",
+        "STARLINK_ROUTE_LONGITUDE_START": "-10",
+        "STARLINK_GROUND_ENTRY_LATITUDE": "0",
+        "STARLINK_GROUND_ENTRY_LONGITUDE": "0",
+        "NO_PROXY": "prometheus,localhost,127.0.0.1"
+      },
+      "volumes": [
+        "data:/app/data",
+        "routes:/data",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak/tools/acceptance/performance:/acceptance/performance:ro",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/source/tools/acceptance/operator-journal:/acceptance/journal:ro",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/source/tools/acceptance/overview_history:/acceptance/overview_history:ro"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8000/health"
+        ],
+        "interval": "2s",
+        "timeout": "5s",
+        "retries": 60
+      },
+      "cpus": 2,
+      "mem_limit": "2g"
+    },
+    "prometheus": {
+      "image": "prom/prometheus:v3.5.0",
+      "ports": [
+        "127.0.0.1:57891:9090"
+      ],
+      "volumes": [
+        "metrics:/prometheus",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/source/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/source/monitoring/prometheus/rules:/etc/prometheus/rules:ro",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/history.openmetrics:/seed/history.openmetrics:ro"
+      ],
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.retention.time=12h",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "cpus": 2,
+      "mem_limit": "2g"
+    },
+    "mission-planner": {
+      "image": "starlink-operator-issue393-clean-sustained-001-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+      "ports": [
+        "127.0.0.1:35747:80"
+      ],
+      "depends_on": {
+        "starlink-location": {
+          "condition": "service_healthy"
+        }
+      },
+      "cpus": 2,
+      "mem_limit": "2g"
+    }
+  },
+  "volumes": {
+    "data": {},
+    "routes": {},
+    "metrics": {}
+  }
+}

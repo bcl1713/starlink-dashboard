@@ -1,0 +1,19 @@
+{
+  "protocol": "issue393-client-abort-v2",
+  "clean": true,
+  "expected": [],
+  "unexpected": [],
+  "counts": {
+    "starts": 1210,
+    "terminals": 1210,
+    "measured_cancellations": 0,
+    "expected": 0,
+    "unexpected": 0
+  },
+  "source_sha256": "4f796b0e2786ec301cf975448006945c94b1f405fe5d57d300b2c02da3694c07",
+  "input_sha256": {
+    "api": "f87bbbeac5999b12eaeb802a4f11a971c6d8f6aa752b2f42968e11046c26bb0c",
+    "abort": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transition": "30e64d35b07fe98516202da5d97ea28ca284227d3def1f784261e9e0f32f6314"
+  }
+}

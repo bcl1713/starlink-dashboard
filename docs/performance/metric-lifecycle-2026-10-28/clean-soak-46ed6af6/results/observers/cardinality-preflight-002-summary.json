@@ -1,0 +1,60 @@
+{
+  "status": "finished",
+  "qualification_claim": false,
+  "row_count": 44,
+  "counts_by_phase": {
+    "setup": {
+      "rows": 7,
+      "probe_errors": 12,
+      "rows_with_probe_errors": 2
+    },
+    "warmup": {
+      "rows": 24,
+      "probe_errors": 0,
+      "rows_with_probe_errors": 0
+    },
+    "measured": {
+      "rows": 13,
+      "probe_errors": 0,
+      "rows_with_probe_errors": 0
+    }
+  },
+  "signals": [],
+  "fatal_error": null,
+  "wall_utc": "2026-10-28T22:52:34.996709+00:00",
+  "monotonic": 2629534.146036909,
+  "observer_seconds": 220.022344219964,
+  "native_ready_proof": {
+    "ownership.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-002/ownership.json",
+      "bytes": 22100,
+      "sha256": "a57a93460996210d038b88c34b7819fa9d751683e70261d6aef37c56d8406978",
+      "native_status": null
+    },
+    "api-capture-summary.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-002/api-capture-summary.json",
+      "bytes": 970,
+      "sha256": "b89eddfcb1843026b64e7a8c3aef2a68bd4e2731cc77b37791ffacda3f2986c8",
+      "native_status": null,
+      "native_qualification_clean": false
+    },
+    "run.json": null
+  },
+  "observer_owner": {
+    "purpose": "read-only issue393 independent Prometheus cardinality observer",
+    "pid": 1758366,
+    "pgid": 1758365,
+    "start_ticks": 262931407,
+    "wall_utc": "2026-10-28T22:48:54.974476+00:00",
+    "monotonic": 2629314.123692976,
+    "deadline_monotonic": 2630154.123692976,
+    "run_dir": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-002",
+    "output_prefix": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/cardinality-preflight-002",
+    "warmup_seconds": 120,
+    "poll_seconds": 5,
+    "http_timeout_seconds": 5,
+    "body_limit_bytes": 1048576,
+    "source_sha256": "6c9d918cb342a76de991b562486b2a42361d9ad231a4a20c0e7ebab1a98afc5a",
+    "writes_native_run": false
+  }
+}

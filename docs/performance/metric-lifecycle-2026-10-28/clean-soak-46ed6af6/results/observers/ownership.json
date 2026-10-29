@@ -1,0 +1,28 @@
+{
+  "task": "issue393-clean-soak-review5689985912",
+  "candidate_sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "base_sha": "65a4df92b87a27eb8e2ac88985d8ce02f85e8fd8",
+  "started": 1793225694.6083167,
+  "feature_worktree": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-metric-lifecycle",
+  "qualification_worktree": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+  "qualification_branch": "evidence/393-clean-soak-46ed6af6",
+  "resources": [],
+  "temporary_paths": [
+    "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/node-v22.22.2-linux-x64",
+    "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/node-v22.22.2-linux-x64.tar.xz",
+    "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak/frontend/mission-planner/node_modules"
+  ],
+  "purpose": "Current-candidate clean sustainedsoak with complete outcomes, strict failures and measured cancellations fatal, coordinatednaturalidle transition timing; no production sourcechanges.",
+  "projects": [
+    "starlink-operator-issue393-clean-preflight",
+    "starlink-operator-issue393-clean-soak"
+  ],
+  "protocol_v2": {
+    "prepared_at": 1793229596.7793648,
+    "purpose": "Actual XHR abort + CDP timing + declared scope/transition + bounded source recovery; raw outcomes preserved; all unexplained cancellations and unexpected HTTP errors fatal. Preflights001/002 immutable FAILED.",
+    "runs_planned": [
+      "preflight-003",
+      "sustained-001"
+    ]
+  }
+}

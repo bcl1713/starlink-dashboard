@@ -1,0 +1,55 @@
+{
+  "status": "finished",
+  "qualification_claim": false,
+  "row_count": 9,
+  "counts_by_phase": {
+    "warmup": {
+      "rows": 9,
+      "probe_errors": 0,
+      "rows_with_probe_errors": 0
+    }
+  },
+  "signals": [],
+  "fatal_error": null,
+  "wall_utc": "2026-10-28T22:40:16.172531+00:00",
+  "monotonic": 2628795.321855998,
+  "observer_seconds": 45.01629400299862,
+  "native_ready_proof": {
+    "ownership.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-001/ownership.json",
+      "bytes": 27088,
+      "sha256": "038b6b0a0512f034349e9a336b4078afcd9610bbefa3d8197a8449077e9ee912",
+      "native_status": null
+    },
+    "api-capture-summary.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-001/api-capture-summary.json",
+      "bytes": 968,
+      "sha256": "006b6a8ed71e7af860d6d8df66cbd3b441058d05eea56e324ec75be487bade4c",
+      "native_status": null,
+      "native_qualification_clean": false
+    },
+    "run.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-001/run.json",
+      "bytes": 4024,
+      "sha256": "c6a9991c7324d51450efe11e8c915502231d77a574dd59043d8d623dee200526",
+      "native_status": "failed"
+    }
+  },
+  "observer_owner": {
+    "purpose": "read-only issue393 independent Prometheus cardinality observer",
+    "pid": 1722357,
+    "pgid": 1722356,
+    "start_ticks": 262875023,
+    "wall_utc": "2026-10-28T22:39:31.156412+00:00",
+    "monotonic": 2628750.305562201,
+    "deadline_monotonic": 2629590.305562201,
+    "run_dir": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-001",
+    "output_prefix": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/cardinality-preflight-001",
+    "warmup_seconds": 120,
+    "poll_seconds": 5,
+    "http_timeout_seconds": 5,
+    "body_limit_bytes": 1048576,
+    "source_sha256": "6c9d918cb342a76de991b562486b2a42361d9ad231a4a20c0e7ebab1a98afc5a",
+    "writes_native_run": false
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "checked_at": 1793227609.36618,
+  "status": "clean",
+  "actor_uid": 1002,
+  "project": "starlink-operator-issue393-clean-preflight-001",
+  "candidate_sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "run_status": "failed",
+  "remaining_processes": [],
+  "remaining_resources": {
+    "container": [],
+    "network": [],
+    "volume": []
+  },
+  "closed_ports": [
+    34717,
+    33655
+  ],
+  "owned_image_tags_absent": [
+    "starlink-operator-issue393-clean-preflight-001-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+    "starlink-operator-issue393-clean-preflight-001-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+  ],
+  "temporary_inputs_absent": [
+    "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-001/source",
+    "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-001/source.tar"
+  ],
+  "method": "Approved host; exact recorded groups and runtime/profile markers, Docker label/name queries, TCP/UDP listeners; no runtime mutation."
+}

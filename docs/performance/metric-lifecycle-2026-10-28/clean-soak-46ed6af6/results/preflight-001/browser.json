@@ -1,0 +1,18 @@
+{
+  "node_version": "v22.22.2",
+  "mode": "headless-diagnostic",
+  "fullscreen": true,
+  "physical_fullscreen": false,
+  "viewport": [
+    1920,
+    1080
+  ],
+  "dpr": 1,
+  "version": "153.0.8010.12",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "qualification_protocol": "issue393-coordinated-operator-v1",
+  "browser_executable_override": "/srv/starlink-acceptance/browser-store/chromium-1243/chrome-linux64/chrome",
+  "negative_capture_controls": true,
+  "history_step_seconds": 1,
+  "executable_sha256": "8c599d43aec53f2460a31ae2f4af6bd863f8258b34ff519564bc5d4726bfaa1e"
+}

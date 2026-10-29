@@ -1,0 +1,17 @@
+{
+  "purpose": "read-only issue393 independent Prometheus cardinality observer",
+  "pid": 1758366,
+  "pgid": 1758365,
+  "start_ticks": 262931407,
+  "wall_utc": "2026-10-28T22:48:54.974476+00:00",
+  "monotonic": 2629314.123692976,
+  "deadline_monotonic": 2630154.123692976,
+  "run_dir": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-002",
+  "output_prefix": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/cardinality-preflight-002",
+  "warmup_seconds": 120,
+  "poll_seconds": 5,
+  "http_timeout_seconds": 5,
+  "body_limit_bytes": 1048576,
+  "source_sha256": "6c9d918cb342a76de991b562486b2a42361d9ad231a4a20c0e7ebab1a98afc5a",
+  "writes_native_run": false
+}

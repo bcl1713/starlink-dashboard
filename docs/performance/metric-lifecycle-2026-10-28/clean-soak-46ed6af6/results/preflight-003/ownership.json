@@ -1,0 +1,773 @@
+{
+  "pid": 1893079,
+  "pgid": 1893078,
+  "project": "starlink-operator-issue393-clean-preflight-003",
+  "composeFile": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+  "commands": [
+    {
+      "command": [
+        "docker",
+        "container",
+        "ls",
+        "-q",
+        "-a",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-issue393-clean-preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.0636144,
+      "pid": 1893091,
+      "pgid": 1893091,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-001.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.0797536
+    },
+    {
+      "command": [
+        "docker",
+        "container",
+        "ls",
+        "-q",
+        "-a",
+        "--filter",
+        "name=^starlink-operator-issue393-clean-preflight-003[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.0800428,
+      "pid": 1893105,
+      "pgid": 1893105,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-002.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.0960083
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-issue393-clean-preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.0963418,
+      "pid": 1893119,
+      "pgid": 1893119,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-003.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.1122553
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "name=^starlink-operator-issue393-clean-preflight-003[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.112555,
+      "pid": 1893137,
+      "pgid": 1893137,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-004.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.1285026
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-issue393-clean-preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.1287932,
+      "pid": 1893151,
+      "pgid": 1893151,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-005.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.1447163
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "name=^starlink-operator-issue393-clean-preflight-003[-_]"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.1450262,
+      "pid": 1893166,
+      "pgid": 1893166,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-006.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.1609173
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=starlink-operator-issue393-clean-preflight-003-backend:*"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.161215,
+      "pid": 1893180,
+      "pgid": 1893180,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-007.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.1771822
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "--filter",
+        "reference=starlink-operator-issue393-clean-preflight-003-frontend:*"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229687.1774912,
+      "pid": 1893193,
+      "pgid": 1893193,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-008.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.1934788
+    },
+    {
+      "command": [
+        "git",
+        "archive",
+        "--format=tar",
+        "--output=/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source.tar",
+        "46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 60,
+      "started": 1793229687.1939297,
+      "pid": 1893207,
+      "pgid": 1893207,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-009.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229687.7589982
+    },
+    {
+      "command": [
+        "docker",
+        "info",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229688.993595,
+      "pid": 1893324,
+      "pgid": 1893324,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-010.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229689.0257275
+    },
+    {
+      "command": [
+        "stat",
+        "-f",
+        "-c",
+        "%T %S",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 10,
+      "started": 1793229689.0261192,
+      "pid": 1893370,
+      "pgid": 1893370,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-011.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229689.0299985
+    },
+    {
+      "command": [
+        "docker",
+        "build",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source/backend/starlink-location/Dockerfile",
+        "--build-arg",
+        "ACCEPTANCE_CANDIDATE_SHA=46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+        "-t",
+        "starlink-operator-issue393-clean-preflight-003-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 1198.0330169093795,
+      "started": 1793229689.0303516,
+      "pid": 1893371,
+      "pgid": 1893371,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-012.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229697.2080827
+    },
+    {
+      "command": [
+        "docker",
+        "build",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source/frontend/mission-planner/Dockerfile",
+        "--build-arg",
+        "ACCEPTANCE_CANDIDATE_SHA=46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+        "-t",
+        "starlink-operator-issue393-clean-preflight-003-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source/frontend/mission-planner"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 1189.8418380012736,
+      "started": 1793229697.2215316,
+      "pid": 1894011,
+      "pgid": 1894011,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-013.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229697.5863597
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "starlink-operator-issue393-clean-preflight-003-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229697.5867848,
+      "pid": 1894126,
+      "pgid": 1894126,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-014.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229697.6193585
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "inspect",
+        "starlink-operator-issue393-clean-preflight-003-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+        "--format",
+        "{{json .}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229697.6198027,
+      "pid": 1894140,
+      "pgid": 1894140,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-015.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229697.6519566
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source/tools/acceptance/overview_history/seed.py",
+        "--output",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/history.openmetrics",
+        "--end",
+        "1793229677"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229697.652385,
+      "pid": 1894157,
+      "pgid": 1894157,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-016.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229697.7665617
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "run",
+        "--rm",
+        "--no-deps",
+        "--entrypoint",
+        "/bin/promtool",
+        "prometheus",
+        "tsdb",
+        "create-blocks-from",
+        "openmetrics",
+        "/seed/history.openmetrics",
+        "/prometheus"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 120,
+      "started": 1793229697.767019,
+      "pid": 1894160,
+      "pgid": 1894160,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-017.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229698.3327541
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "up",
+        "-d",
+        "--no-build",
+        "--wait",
+        "--wait-timeout",
+        "180"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 210,
+      "started": 1793229698.333235,
+      "pid": 1894348,
+      "pgid": 1894348,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-018.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229704.3709304
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "ps",
+        "-q",
+        "starlink-location"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 15,
+      "started": 1793229704.3714514,
+      "pid": 1895324,
+      "pgid": 1895324,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-019.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229704.448844
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "ps",
+        "-q",
+        "prometheus"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 15,
+      "started": 1793229704.4492302,
+      "pid": 1895367,
+      "pgid": 1895367,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-020.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229704.513516
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "ps",
+        "-q",
+        "mission-planner"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 15,
+      "started": 1793229704.5139225,
+      "pid": 1895432,
+      "pgid": 1895432,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-021.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229704.5781796
+    },
+    {
+      "command": [
+        "docker",
+        "exec",
+        "--user",
+        "appuser",
+        "ac285e3610e49e5f0d814b46e05d11cff3fb33fe22e019aab713ba3ff7e60bc9",
+        "python",
+        "-m",
+        "pip",
+        "--disable-pip-version-check",
+        "list",
+        "--format=json"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229704.578563,
+      "pid": 1895481,
+      "pgid": 1895481,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-022.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229706.6966515
+    },
+    {
+      "command": [
+        "docker",
+        "exec",
+        "ac285e3610e49e5f0d814b46e05d11cff3fb33fe22e019aab713ba3ff7e60bc9",
+        "python",
+        "--version"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 15,
+      "started": 1793229706.6970887,
+      "pid": 1895703,
+      "pgid": 1895703,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-023.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229706.7743053
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "f9df60e4ddec46c079f94a3eabe389a8812a40b32dd353e98666d1a34b9f7e8d",
+        "--format",
+        "{{json .Image}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 15,
+      "started": 1793229706.7748902,
+      "pid": 1895734,
+      "pgid": 1895734,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-024.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229706.7911224
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "bc727c6f115e2a0c0eb03b1ced23c7aeee89816ef0992eb72d70a8cba5fe14ec",
+        "--format",
+        "{{json .NetworkSettings.Ports}}"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 15,
+      "started": 1793229706.7916286,
+      "pid": 1895748,
+      "pgid": 1895748,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-025.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229706.8079278
+    },
+    {
+      "command": [
+        "node",
+        "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak/tools/acceptance/performance/browser.mjs"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 360,
+      "started": 1793229706.808345,
+      "pid": 1895762,
+      "pgid": 1895762,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-026.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229966.5281768
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "logs",
+        "--no-color"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229966.5384414,
+      "pid": 1915731,
+      "pgid": 1915731,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-027.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229966.6561313
+    },
+    {
+      "command": [
+        "docker",
+        "compose",
+        "-p",
+        "starlink-operator-issue393-clean-preflight-003",
+        "-f",
+        "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/compose.json",
+        "down",
+        "--volumes",
+        "--remove-orphans"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 90,
+      "started": 1793229966.6886957,
+      "pid": 1915798,
+      "pgid": 1915798,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-028.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.3578668
+    },
+    {
+      "command": [
+        "docker",
+        "ps",
+        "-aq",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-issue393-clean-preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229969.358271,
+      "pid": 1916139,
+      "pgid": 1916139,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-029.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.38721
+    },
+    {
+      "command": [
+        "docker",
+        "network",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-issue393-clean-preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229969.3875794,
+      "pid": 1916152,
+      "pgid": 1916152,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-030.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.4036598
+    },
+    {
+      "command": [
+        "docker",
+        "volume",
+        "ls",
+        "-q",
+        "--filter",
+        "label=com.docker.compose.project=starlink-operator-issue393-clean-preflight-003"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229969.404061,
+      "pid": 1916166,
+      "pgid": 1916166,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-031.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.420147
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "starlink-operator-issue393-clean-preflight-003-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229969.4208314,
+      "pid": 1916180,
+      "pgid": 1916180,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-032.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.4853396
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "rm",
+        "starlink-operator-issue393-clean-preflight-003-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 60,
+      "started": 1793229969.4857337,
+      "pid": 1916201,
+      "pgid": 1916201,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-033.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.9508862
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "ls",
+        "-q",
+        "starlink-operator-issue393-clean-preflight-003-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 30,
+      "started": 1793229969.951315,
+      "pid": 1916228,
+      "pgid": 1916228,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-034.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229969.9966397
+    },
+    {
+      "command": [
+        "docker",
+        "image",
+        "rm",
+        "starlink-operator-issue393-clean-preflight-003-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+      ],
+      "cwd": "/home/oracle-worker/Work/starlink-dashboard/.worktrees/issue-393-clean-soak",
+      "timeout": 60,
+      "started": 1793229969.9970658,
+      "pid": 1916242,
+      "pgid": 1916242,
+      "log": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/command-035.log",
+      "returncode": 0,
+      "reaped": true,
+      "groupRemaining": false,
+      "finished": 1793229970.1114604
+    }
+  ],
+  "volumes": [
+    "starlink-operator-issue393-clean-preflight-003_data",
+    "starlink-operator-issue393-clean-preflight-003_routes",
+    "starlink-operator-issue393-clean-preflight-003_metrics"
+  ],
+  "containers": [],
+  "images": [
+    "starlink-operator-issue393-clean-preflight-003-backend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+    "starlink-operator-issue393-clean-preflight-003-frontend:46ed6af6d431cd7fac8633a9f3d829d5fc24d831"
+  ],
+  "temporaryPaths": [
+    "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source",
+    "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003/source.tar"
+  ],
+  "dockerHost": "unix:///run/user/1002/docker.sock",
+  "dockerContext": null,
+  "fixture": "perf390-v1; fictional ocean route; real clock; two missions/two legs; six Operator records",
+  "evidence": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003",
+  "port": 53313,
+  "prometheusPort": 52473,
+  "reservation": {
+    "kind": "linux-abstract-socket",
+    "name": "operator-acceptance-ccb0011b052249f65e6e94d5c032ceaa8649036efafaad6cfceef7858596745b",
+    "released": true
+  },
+  "admitted": true,
+  "cleanup": {
+    "remaining": {
+      "containers": "",
+      "networks": "",
+      "volumes": ""
+    },
+    "composeRemoved": true,
+    "childrenReaped": true,
+    "listenerRemoved": true,
+    "temporaryPathsRemoved": true,
+    "imagesRemoved": true,
+    "prometheusListenerRemoved": true
+  }
+}

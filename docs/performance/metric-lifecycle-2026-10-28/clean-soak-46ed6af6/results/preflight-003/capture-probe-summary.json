@@ -1,0 +1,92 @@
+{
+  "negative_controls_passed": true,
+  "http409_body": {
+    "error": {
+      "code": "store_context_changed",
+      "message": "Operator state requires reconciliation",
+      "retryable": false
+    },
+    "request_id": "7ff5eca8-76d5-490a-babb-a6199664f701"
+  },
+  "request_ids": {
+    "stale_source_409": "p0-r1",
+    "client_abort": "p0-r2"
+  },
+  "summary": {
+    "phases": {
+      "warmup": {
+        "started": 0,
+        "terminal": 0,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      },
+      "measured": {
+        "started": 2,
+        "terminal": 2,
+        "inflight": 0,
+        "cancellations": 1,
+        "http_errors": 1,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      },
+      "post": {
+        "started": 0,
+        "terminal": 0,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      },
+      "teardown": {
+        "started": 0,
+        "terminal": 0,
+        "inflight": 0,
+        "cancellations": 0,
+        "http_errors": 0,
+        "network_errors": 0,
+        "observer_errors": 0,
+        "allowedGPS503": 0
+      }
+    },
+    "capture_errors": 0,
+    "unknown_terminal": 0,
+    "client_abort_hooks": {
+      "0": true
+    },
+    "cdp_observer_buffers": {
+      "maxTotalBufferSize": 8388608,
+      "maxResourceBufferSize": 1048576,
+      "maxPostDataSize": 0
+    },
+    "expected_control_cancellations": 0,
+    "unexpected_cancellations": 1,
+    "qualification_clean": false
+  },
+  "abort_invocation_proof": {
+    "id": "p0-a1793229720420.8-1",
+    "page": 0,
+    "method": "GET",
+    "url": "http://127.0.0.1:53313/api/__capture_slow__",
+    "sendWallTimeMs": 1793229720468.3,
+    "abortWallTimeMs": 1793229720483.3,
+    "mechanism": "xhr.abort",
+    "at": 13.67676015
+  },
+  "fixture": {
+    "intercepted_paths": [
+      "/__capture_probe__",
+      "/api/__capture_slow__"
+    ],
+    "stale_source_request_intercepted": false,
+    "cancellation_trigger": "deliberate qualification XMLHttpRequest.abort",
+    "cancellation_cause_in_network_evidence": "unknown",
+    "slow_route_release_error": null
+  }
+}

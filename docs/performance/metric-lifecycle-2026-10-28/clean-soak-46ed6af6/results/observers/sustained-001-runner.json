@@ -1,0 +1,15 @@
+{
+  "pid": 1917615,
+  "pgid": 1917614,
+  "started": 1793229988.7207084,
+  "phase": "sustained",
+  "candidate_sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "harness_sha": "ca551a0e94b93bbcd0b45b2a69567354f5094098",
+  "project": "starlink-operator-issue393-clean-sustained-001",
+  "output": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001",
+  "warmup_seconds": 120,
+  "duration_seconds": 3620,
+  "exit_code": 1,
+  "exception_type": "RuntimeError",
+  "ended": 1793233768.7822855
+}

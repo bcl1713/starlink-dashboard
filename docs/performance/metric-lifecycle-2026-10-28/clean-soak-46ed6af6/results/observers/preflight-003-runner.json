@@ -1,0 +1,14 @@
+{
+  "pid": 1893079,
+  "pgid": 1893078,
+  "started": 1793229687.0495458,
+  "phase": "preflight",
+  "candidate_sha": "46ed6af6d431cd7fac8633a9f3d829d5fc24d831",
+  "harness_sha": "ca551a0e94b93bbcd0b45b2a69567354f5094098",
+  "project": "starlink-operator-issue393-clean-preflight-003",
+  "output": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/preflight-003",
+  "warmup_seconds": 120,
+  "duration_seconds": 120,
+  "exit_code": 0,
+  "ended": 1793229970.1962535
+}

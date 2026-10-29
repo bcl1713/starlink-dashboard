@@ -1,0 +1,60 @@
+{
+  "status": "finished",
+  "qualification_claim": false,
+  "row_count": 756,
+  "counts_by_phase": {
+    "setup": {
+      "rows": 8,
+      "probe_errors": 12,
+      "rows_with_probe_errors": 2
+    },
+    "warmup": {
+      "rows": 24,
+      "probe_errors": 0,
+      "rows_with_probe_errors": 0
+    },
+    "measured": {
+      "rows": 724,
+      "probe_errors": 0,
+      "rows_with_probe_errors": 0
+    }
+  },
+  "signals": [],
+  "fatal_error": null,
+  "wall_utc": "2026-10-29T00:29:28.305147+00:00",
+  "monotonic": 2635347.454473506,
+  "observer_seconds": 3780.213448090013,
+  "native_ready_proof": {
+    "ownership.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/ownership.json",
+      "bytes": 25501,
+      "sha256": "cb666fc6ba36eb8d35f4e2db5906eee385b9e8cb86f80ad10bd4c845c1c570c9",
+      "native_status": null
+    },
+    "api-capture-summary.json": {
+      "path": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001/api-capture-summary.json",
+      "bytes": 1237,
+      "sha256": "2c927381cc0c43a0932f03503e6f350f4157be61083bf854adfcbbcb5190e2ef",
+      "native_status": null,
+      "native_qualification_clean": false
+    },
+    "run.json": null
+  },
+  "observer_owner": {
+    "purpose": "read-only issue393 independent Prometheus cardinality observer",
+    "pid": 1917579,
+    "pgid": 1917578,
+    "start_ticks": 263156719,
+    "wall_utc": "2026-10-28T23:26:28.091799+00:00",
+    "monotonic": 2631567.241025633,
+    "deadline_monotonic": 2637167.241025633,
+    "run_dir": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/sustained-001",
+    "output_prefix": "/home/oracle-worker/Work/starlink-dashboard/.superpowers/sdd/2026-10-28-issue393-clean-soak/cardinality-sustained-001",
+    "warmup_seconds": 120,
+    "poll_seconds": 5,
+    "http_timeout_seconds": 5,
+    "body_limit_bytes": 1048576,
+    "source_sha256": "6c9d918cb342a76de991b562486b2a42361d9ad231a4a20c0e7ebab1a98afc5a",
+    "writes_native_run": false
+  }
+}
