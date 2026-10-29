@@ -137,6 +137,14 @@ def verify(path, expected, representation, index_path):
             "metric_count": len(metrics),
             "journal_revisions": len(audit.splitlines()),
             "bytes": path.stat().st_size,
+            "telemetry_table_bytes": package.getinfo(
+                prefix + "observations.csv"
+            ).file_size
+            + (
+                package.getinfo(prefix + "series.csv").file_size
+                if representation == "compact"
+                else 0
+            ),
         }
     index_path.unlink()
     return result
@@ -167,6 +175,7 @@ def case(owner, origin, label, endpoint, representation):
         source_state=expected["state"],
         high_cardinality=expected["high_cardinality"],
     )
+    (owner.root / (label + ".json")).write_text(json.dumps(proof, indent=2))
     return proof
 
 
@@ -196,7 +205,19 @@ def qualify(owner):
         ]
     )
     proof["original_limit"] = owner.execute(
-        ["docker", "exec", container, "python", "-c", script], timeout=120
+        [
+            "docker",
+            "exec",
+            "--user",
+            "1000:1000",
+            "--env",
+            "PYTHONUSERBASE=/home/appuser/.local",
+            container,
+            "python",
+            "-c",
+            script,
+        ],
+        timeout=120,
     ).strip()
     # Hold a real snapshot, measure an independent recording commit, then expire capture.
     data(origin, body={"action": "pause"})
