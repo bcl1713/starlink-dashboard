@@ -1,10 +1,11 @@
 import json
 
 import pytest
-from app.api import overview_link_settings
-from app.services.overview_link_settings import OverviewLinkSettingsStore
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+from app.api import overview_link_settings
+from app.services.overview_link_settings import OverviewLinkSettingsStore
 
 VISIBLE_DEFAULTS = {
     "next_flight_events_only": False,

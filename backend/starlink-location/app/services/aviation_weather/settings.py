@@ -5,11 +5,12 @@ import os
 import tempfile
 from pathlib import Path
 
+from filelock import FileLock
+from pydantic import Field
+
 from app.models.aviation_grid import GfsSelection
 from app.models.aviation_weather import Contract
 from app.services.settings_conflict import SettingsConflict
-from filelock import FileLock
-from pydantic import Field
 
 
 class AviationSettings(Contract):

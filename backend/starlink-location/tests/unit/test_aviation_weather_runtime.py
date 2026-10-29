@@ -4,13 +4,13 @@ import asyncio
 import json
 
 import httpx
+from fastapi import FastAPI
+
 from app.api import aviation_weather
 from app.models.aviation_weather import AviationCatalog
 from app.services.aviation_weather.runtime import AviationWeatherService
 from app.services.aviation_weather.settings import AviationSettingsStore
 from app.services.overview_weather.protocol import WeatherUnavailable
-from fastapi import FastAPI
-
 from tests.fixtures.weather_streams import WeatherStreams, http_response
 from tests.unit.test_overview_weather_service import NOW, metadata, service_for
 
