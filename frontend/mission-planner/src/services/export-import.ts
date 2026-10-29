@@ -21,6 +21,7 @@ const briefingWarnings = new Set([
 ]);
 
 interface ExportOptions {
+  telemetryFormat?: 'full' | 'compact';
   signal?: AbortSignal;
   onProgress?: (job: ExportPreparation) => void;
 }
@@ -35,7 +36,12 @@ async function prepareMissionExport(
     await apiClient.post<ExportPreparation>(
       preparationPath(missionId),
       {},
-      { signal: options.signal }
+      {
+        signal: options.signal,
+        ...(options.telemetryFormat === 'compact'
+          ? { params: { telemetry_format: 'compact' } }
+          : {}),
+      }
     )
   ).data;
 }
@@ -112,7 +118,13 @@ async function exportMissionDownload(
   const response = await apiClient.post<Blob | ExportPreparation>(
     `/api/v2/missions/${missionId}/export`,
     {},
-    { responseType: 'blob', signal: options.signal }
+    {
+      responseType: 'blob',
+      signal: options.signal,
+      ...(options.telemetryFormat === 'compact'
+        ? { params: { telemetry_format: 'compact' } }
+        : {}),
+    }
   );
   if (response.status !== 202)
     return downloadMetadata(response.data as Blob, response.headers);
@@ -133,7 +145,11 @@ async function exportMissionDownload(
             ? 'Preparation reached its time limit. Please retry.'
             : job.state === 'superseded'
               ? 'The mission changed during preparation. Export again to use the latest changes.'
-              : 'Export preparation failed. Please retry.'
+              : job.error_code === 'mission_archive_capacity'
+                ? 'Mission export exceeds storage capacity. Try Compact lossless or retry after older exports expire.'
+                : job.error_code === 'mission_archive_deadline'
+                  ? 'Mission archive capture reached its time limit. Please retry.'
+                  : 'Export preparation failed. Please retry.'
         );
       }
       job = await readMissionExportPreparation(missionId, job.id, options);

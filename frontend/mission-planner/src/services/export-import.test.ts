@@ -7,6 +7,17 @@ import { apiClient } from './api-client';
 afterEach(() => vi.restoreAllMocks());
 
 describe('mission download metadata', () => {
+  it('requests compact lossless telemetry explicitly', async () => {
+    const post = vi
+      .spyOn(apiClient, 'post')
+      .mockResolvedValue({ data: new Blob(['zip']), headers: {} });
+    await exportImportApi.exportMissionDownload('m', {
+      telemetryFormat: 'compact',
+    });
+    expect(post.mock.calls[0][2]).toMatchObject({
+      params: { telemetry_format: 'compact' },
+    });
+  });
   it('waits for explicit ready state before fetching a cold package', async () => {
     const queued = { id: 'job', state: 'queued', stage: 'queued' };
     const ready = { ...queued, state: 'ready', stage: 'ready' };

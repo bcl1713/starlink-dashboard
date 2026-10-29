@@ -53,6 +53,18 @@ async function download() {
   });
 }
 
+it('lets operators select lossless compact telemetry before exporting', async () => {
+  render(<ExportDialog {...props} />);
+  fireEvent.change(screen.getByLabelText('Telemetry format'), {
+    target: { value: 'compact' },
+  });
+  await download();
+  expect(exportImportApi.exportMissionDownload).toHaveBeenCalledWith(
+    'm',
+    expect.objectContaining({ telemetryFormat: 'compact' })
+  );
+});
+
 it('keeps omission feedback and the legacy ZIP visible until dismissal', async () => {
   vi.mocked(exportImportApi.exportMissionDownload).mockResolvedValue({
     blob: new Blob(['zip']),

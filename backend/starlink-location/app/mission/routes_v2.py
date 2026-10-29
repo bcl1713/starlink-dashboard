@@ -11,7 +11,7 @@ import sqlite3
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import (
     APIRouter,
@@ -659,17 +659,24 @@ async def delete_mission_endpoint(
 async def export_mission(
     request: Request,
     mission_id: str,
+    telemetry_format: Literal["full", "compact"] = "full",
 ) -> StreamingResponse:
     """Return a current ready ZIP, or an explicit 202 preparation reference."""
     from fastapi.responses import JSONResponse
 
-    from app.mission.package.export_job import download_response
+    from app.mission.package.archive_errors import (
+        ArchiveCapacityError,
+        ArchiveDeadlineError,
+    )
+    from app.mission.package.export_job import download_response, prepare_for_request
     from app.mission.package.preparation_routes import get_export_preparation_service
     from app.operator.errors import OperatorError
 
     service = get_export_preparation_service(request)
     try:
-        job = await asyncio.to_thread(service.start, mission_id)
+        job = await prepare_for_request(
+            request, service, mission_id, telemetry_format=telemetry_format
+        )
         if job.state == "ready":
             download = await asyncio.to_thread(
                 service.open_download, mission_id, job.id
@@ -679,6 +686,10 @@ async def export_mission(
         return JSONResponse(
             job.model_dump(mode="json"), status_code=202, headers={"Location": location}
         )
+    except ArchiveCapacityError as error:
+        raise HTTPException(413, detail=error.detail) from error
+    except ArchiveDeadlineError as error:
+        raise HTTPException(504, detail=error.detail) from error
     except (RuntimeError, OSError, sqlite3.Error, OperatorError):
         logger.exception("Mission %s export capture failed", mission_id)
         raise HTTPException(503, detail="Mission export preparation is unavailable")

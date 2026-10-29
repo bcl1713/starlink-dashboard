@@ -7,11 +7,12 @@ import time
 
 from filelock import FileLock, Timeout
 
-from app.mission.exporter.export_cancel import ExportCancelled
+from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
 from app.mission.slide_cache.capture import capture_is_current
 
+from .archive_errors import ArchiveCapacityError, ArchiveDeadlineError
 from .preparation_store import TERMINAL
-from .streams import iter_zip_blocks
+from .streams import budgeted_spools, iter_zip_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,34 @@ class PreparationWorker:
                 )
             ):
                 return
+            self.assemble(job, raw, cancel)
+        except ExportCancelled:
+            reason = cancel.reason or "cancelled"
+            self.finish(
+                job,
+                reason if reason in {"cancelled", "superseded"} else "failed",
+                "deadline" if reason == "deadline" else None,
+            )
+        except (ArchiveCapacityError, ArchiveDeadlineError) as error:
+            self.finish(job, "failed", error.detail["code"])
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError, sqlite3.Error):
+            logger.exception("Mission export preparation failed")
+            self.finish(job, "failed", "runtime")
+        finally:
+            partial.unlink(missing_ok=True)
+            self.captures.pop(job.id, None)
+            if self.jobs.read(job.mission_id, job.id).state != "ready":
+                self.jobs.discard_archive(job.id)
+
+    def assemble(self, job, raw, cancel):
+        from .operations_archive import append_archive
+
+        with self.files.capture(
+            kind="assembly",
+            job_id=job.id,
+            deadline=job.deadline,
+            check=lambda: check_cancelled(cancel),
+        ) as owner, budgeted_spools():
             enabled = self.enabled() if callable(self.enabled) else self.enabled
             download = self.builder(
                 job.mission_id,
@@ -125,36 +154,34 @@ class PreparationWorker:
                 cancel=cancel,
                 on_stage=lambda stage: self.stage(job, stage),
             )
-            archive = self.jobs.archive(job.id)
-            if archive is not None:
-                from .operations_archive import append_archive
-
-                try:
-                    enhanced = append_archive(
-                        download.stream,
+            with download.stream as source, owner.open_download() as target:
+                source.seek(0, 2)
+                if source.tell() > 100 * 1024 * 1024:
+                    raise ArchiveCapacityError("planning-spool", 100 * 1024 * 1024)
+                source.seek(0)
+                archive = self.jobs.archive(job.id)
+                if archive is not None:
+                    append_archive(
+                        source,
                         archive,
                         planning_fingerprint=self.fingerprint(raw),
                         cancel=cancel,
+                        output=target,
+                        artifact_store=self.files,
                     )
-                finally:
-                    download.stream.close()
-                from .customer_artifacts import MissionPackageDownload
-
-                download = MissionPackageDownload(enhanced, download.briefing)
-            with download.stream as source, partial.open("xb") as target:
-                for block in iter_zip_blocks(source):
-                    if cancel.is_set():
-                        raise ExportCancelled("Export preparation cancelled")
-                    target.write(block)
+                    target.seek(0, 2)
+                else:
+                    for block in iter_zip_blocks(source):
+                        check_cancelled(cancel)
+                        target.write(block)
+                size = target.tell()
                 target.flush()
                 os.fsync(target.fileno())
             with self.guard:
-                if cancel.is_set():
-                    raise ExportCancelled("Export preparation cancelled")
-                partial.replace(self.path(job.id))
+                check_cancelled(cancel)
+                owner.publish_download(self.path(job.id), size)
                 current = self.jobs.read(job.mission_id, job.id)
-                now = self.clock()
-                outcome = download.briefing
+                now, outcome = self.clock(), download.briefing
                 published = self.jobs.write_pending(
                     current.model_copy(
                         update={
@@ -178,21 +205,7 @@ class PreparationWorker:
                 )
                 if not published:
                     self.path(job.id).unlink(missing_ok=True)
-        except ExportCancelled:
-            reason = cancel.reason or "cancelled"
-            self.finish(
-                job,
-                reason if reason in {"cancelled", "superseded"} else "failed",
-                "deadline" if reason == "deadline" else None,
-            )
-        except (OSError, ValueError, RuntimeError, KeyError, TypeError, sqlite3.Error):
-            logger.exception("Mission export preparation failed")
-            self.finish(job, "failed", "runtime")
-        finally:
-            partial.unlink(missing_ok=True)
-            self.captures.pop(job.id, None)
-            if self.jobs.read(job.mission_id, job.id).state != "ready":
-                self.jobs.discard_archive(job.id)
+                    owner.retained = False
 
     def finish(self, job, state, error=None):
         with self.guard:
@@ -217,8 +230,10 @@ class PreparationWorker:
                 self.sweep_captures()
                 with lock.acquire(timeout=0):
                     self.recover()
+                    self.files.sweep(self.jobs)
                     while not self.stop.is_set():
                         self.sweep_captures()
+                        self.files.sweep(self.jobs)
                         pending = [j for j in self.jobs.all() if j.state == "queued"]
                         for ready in self.jobs.all():
                             if (
@@ -254,6 +269,7 @@ class PreparationWorker:
                                 with self.guard:
                                     self.executing.discard(job.id)
                                     self.captures.pop(job.id, None)
+                                self.files.sweep(self.jobs)
                         else:
                             self.wake.wait(0.25)
                             self.wake.clear()

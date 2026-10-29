@@ -1,5 +1,6 @@
 """Preparation is explicit; downloads only open already owned ready files."""
 
+import asyncio
 import logging
 import sqlite3
 from typing import Literal
@@ -9,7 +10,8 @@ from fastapi import APIRouter, HTTPException, Request
 from app.mission.exporter.snapshot_inputs import SnapshotCaptureError
 from app.operator.errors import OperatorError
 
-from .export_job import download_response
+from .archive_errors import ArchiveCapacityError, ArchiveDeadlineError
+from .export_job import download_response, prepare_for_request
 from .preparation_store import ExportPreparation
 
 router = APIRouter(prefix="/api/v2/missions", tags=["Mission export preparation"])
@@ -42,19 +44,28 @@ def read_job(service, mission_id, job_id):
     response_model=ExportPreparation,
     status_code=202,
 )
-def start_preparation(
+async def start_preparation(
     request: Request,
     mission_id: str,
     artifact_kind: Literal["planning", "telemetry"] = "planning",
     allow_partial: bool = False,
+    telemetry_format: Literal["full", "compact"] = "full",
 ):
     service = get_export_preparation_service(request, artifact_kind=artifact_kind)
     try:
         return (
-            service.start(mission_id, allow_partial=allow_partial)
+            await asyncio.to_thread(
+                service.start, mission_id, allow_partial=allow_partial
+            )
             if artifact_kind == "telemetry"
-            else service.start(mission_id)
+            else await prepare_for_request(
+                request, service, mission_id, telemetry_format=telemetry_format
+            )
         )
+    except ArchiveCapacityError as error:
+        raise HTTPException(413, detail=error.detail) from error
+    except ArchiveDeadlineError as error:
+        raise HTTPException(504, detail=error.detail) from error
     except (OperatorError, RuntimeError, OSError, sqlite3.Error) as error:
         logger.exception("Mission %s archive capture failed", mission_id)
         raise HTTPException(

@@ -59,8 +59,9 @@ class PreparationStore:
         with self.cache.connection() as db:
             db.execute("DELETE FROM export_archive_snapshots WHERE id=?", (job_id,))
 
-    def write(self, job, *, archive=None):
+    def write(self, job, *, archive=None, owner=None):
         payload = None
+        size = 0
         if archive is not None:
             # Count while encoding, before constructing a potentially huge joined
             # string or starting a DB transaction. Never truncate a snapshot.
@@ -72,13 +73,19 @@ class PreparationStore:
                 chunks.append(chunk)
             payload = "".join(chunks)
         with self.cache.connection() as db:
-            if payload is not None:
+            if payload is not None or owner is not None:
                 # Reserve capacity and job acknowledgment in one transaction.
                 # SQLite's freed pages are reused; quota is for live payloads.
                 db.execute("BEGIN IMMEDIATE")
                 used = db.execute(
                     "SELECT coalesce(sum(length(CAST(payload AS BLOB))), 0) FROM export_archive_snapshots"
                 ).fetchone()[0]
+                if db.execute(
+                    "SELECT 1 FROM sqlite_master WHERE name='export_artifact_owners'"
+                ).fetchone():
+                    used += db.execute(
+                        "SELECT coalesce(sum(reserved),0) FROM export_artifact_owners"
+                    ).fetchone()[0]
                 if used + size > MAX_ARCHIVE_STORAGE_BYTES:
                     raise RuntimeError(
                         "Archive storage size limit exceeded; retry after expiry"
@@ -92,6 +99,8 @@ class PreparationStore:
                     "INSERT INTO export_archive_snapshots VALUES (?,?)",
                     (job.id, payload),
                 )
+            if owner is not None:
+                owner.attach(db, job.id)
 
     def write_pending(self, job):
         with self.cache.connection() as db:

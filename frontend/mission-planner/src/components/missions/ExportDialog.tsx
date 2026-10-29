@@ -26,6 +26,9 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
   const request = useRef<AbortController | null>(null);
   const completionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [briefingOmitted, setBriefingOmitted] = useState(false);
+  const [telemetryFormat, setTelemetryFormat] = useState<'full' | 'compact'>(
+    'full'
+  );
   const [progress, setProgress] = useState<ExportProgress>({
     status: 'preparing',
     message: 'Preparing export...',
@@ -52,6 +55,7 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
       });
 
       const download = await exportImportApi.exportMissionDownload(missionId, {
+        telemetryFormat,
         signal: request.current.signal,
         onProgress: (job) => {
           if (!mounted.current) return;
@@ -74,7 +78,7 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
       const a = document.createElement('a');
       try {
         a.href = url;
-        a.download = `${missionId}.zip`;
+        a.download = `${missionId}${telemetryFormat === 'compact' ? '-compact' : ''}.zip`;
         document.body.appendChild(a);
         a.click();
       } finally {
@@ -102,7 +106,7 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
         status: 'error',
         message:
           error instanceof Error &&
-          /^(Preparation reached|The mission changed|Export preparation failed)/.test(
+          /^(Preparation reached|The mission changed|Export preparation failed|Mission export exceeds|Mission archive capture reached)/.test(
             error.message
           )
             ? error.message
@@ -124,6 +128,33 @@ function ExportContent({ onClose, missionId, missionName }: ExportDialogProps) {
           Export will include all legs, routes, POIs, CSVs, and the customer
           PDF. PDF pages prepare automatically after saved changes.
         </p>
+        <div className="space-y-2">
+          <label
+            htmlFor="mission-telemetry-format"
+            className="text-sm font-medium"
+          >
+            Telemetry format
+          </label>
+          <select
+            id="mission-telemetry-format"
+            value={telemetryFormat}
+            disabled={
+              progress.status === 'exporting' || progress.status === 'complete'
+            }
+            onChange={(event) =>
+              setTelemetryFormat(event.target.value as 'full' | 'compact')
+            }
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="full">Full detail</option>
+            <option value="compact">Compact lossless</option>
+          </select>
+          <p className="text-sm text-muted-foreground">
+            Both retain all recorded observations and complete journal history.
+            Compact stores repeated metric and label information in a separate
+            series dictionary; no samples are downsampled.
+          </p>
+        </div>
 
         {progress.status !== 'preparing' && (
           <div className="space-y-2">

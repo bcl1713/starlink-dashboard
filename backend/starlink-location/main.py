@@ -9,6 +9,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -97,12 +104,6 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -654,8 +655,11 @@ async def startup_event():
             enabled=lambda: ConfigManager()
             .get_config()
             .exports.customer_briefing_enabled,
-            archive_capture=lambda mission_id: capture_archive(
-                SimpleNamespace(app=app), mission_id
+            archive_capture_owned=lambda mission_id, owner, telemetry_format: capture_archive(
+                SimpleNamespace(app=app),
+                mission_id,
+                owner=owner,
+                telemetry_format=telemetry_format,
             ),
         )
         logger.info_json("Starlink Location Backend ready")

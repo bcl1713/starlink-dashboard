@@ -1,17 +1,17 @@
 """Add frozen local journal and #349 telemetry bytes to the portable mission ZIP."""
 
-import copy
 import hashlib
 import io
 import json
 import zipfile
 from datetime import datetime, timezone
 
-from app.mission.exporter.export_cancel import check_cancelled
 from app.operator.projections import capture_projection
 from app.operator.runtime import enabled, runtime_for
 
-from .streams import iter_zip_blocks, new_package_stream
+from .archive_attachment import append_archive
+
+__all__ = ["append_archive", "capture_archive", "journal_files"]
 
 MAX_ARCHIVE_INPUT_BYTES = 128 * 1024 * 1024
 MAX_ARCHIVE_FILES_BYTES = 256 * 1024 * 1024
@@ -115,13 +115,13 @@ def journal_files(bundle):
     return files
 
 
-def capture_archive(request, mission_id):
+def capture_archive(request, mission_id, *, owner=None, telemetry_format="full"):
     """Capture locally, without querying Prometheus or optional model providers.
 
     Each store pins its own revision. Capture intervals explicitly do not claim a
     simultaneous transaction across planning, Operator and per-leg archive stores.
     """
-    components, files = {}, {}
+    components, files, attachments = {}, {}, []
     with runtime_for(request) as runtime:
         if runtime is not None and enabled(runtime):
             if runtime.service is None or not runtime.health().ready:
@@ -160,6 +160,60 @@ def capture_archive(request, mission_id):
             "status": "unavailable",
             "reason": "archive_runtime_unavailable",
         }
+    elif owner is not None:
+        from app.services.telemetry_archive.stream_package import (
+            write_telemetry_package,
+        )
+        from app.services.telemetry_archive.stream_reader import stream_captures
+
+        mission = flight.preparations.load_mission(mission_id)
+        if mission is None:
+            raise KeyError("Mission not found")
+        if not mission.legs:
+            components["telemetry"] = {
+                "status": "not_applicable",
+                "reason": "no_executable_legs",
+            }
+        else:
+            started = datetime.now(timezone.utc).isoformat()
+            journal_bytes = sum(len(body) for body in files.values())
+            with stream_captures(
+                flight.archive,
+                mission_id,
+                [leg.id for leg in mission.legs],
+                check=owner.check,
+            ) as captures, owner.open_sidecar() as output:
+                metadata = write_telemetry_package(
+                    output,
+                    mission_id,
+                    captures,
+                    representation=telemetry_format,
+                    workdir=owner.directory,
+                    check=owner.check,
+                    max_bytes=MAX_ARCHIVE_FILES_BYTES - journal_bytes,
+                )
+            attachments.append(owner.publish(metadata))
+            components["telemetry"] = {
+                "status": "included",
+                "capture_started_at": started,
+                "capture_finished_at": datetime.now(timezone.utc).isoformat(),
+                "telemetry_format": telemetry_format,
+                "observation_count": metadata["observation_count"],
+                "legs": [
+                    {
+                        k: c.get(k)
+                        for k in (
+                            "mission_id",
+                            "leg_id",
+                            "revision",
+                            "state",
+                            "complete",
+                            "source_mode",
+                        )
+                    }
+                    for c in metadata["legs"]
+                ],
+            }
     else:
         started = datetime.now(timezone.utc).isoformat()
         data = flight.preparations.capture_snapshot(
@@ -207,56 +261,12 @@ def capture_archive(request, mission_id):
             }
     if sum(len(body) for body in files.values()) > MAX_ARCHIVE_FILES_BYTES:
         raise RuntimeError("Mission archive file size limit exceeded")
-    return {
+    result = {
         "schema_version": 1,
         "capture_policy": "sequential_component_snapshots",
         "components": components,
         "files": {name: body.decode("utf-8") for name, body in files.items()},
     }
-
-
-def append_archive(stream, snapshot, *, planning_fingerprint, cancel):
-    """Copy existing members byte-for-byte; publish exactly one outer manifest."""
-    result = new_package_stream()
-    try:
-        stream.seek(0)
-        with zipfile.ZipFile(stream) as source, zipfile.ZipFile(
-            result, "w", compression=zipfile.ZIP_DEFLATED
-        ) as target:
-            manifest = json.loads(source.read("manifest.json"))
-            files = snapshot["files"]
-            if set(files) & set(source.namelist()):
-                raise ValueError("Archive component path collision")
-            for entry in source.infolist():
-                check_cancelled(cancel)
-                if entry.filename == "manifest.json":
-                    continue
-                with source.open(entry) as incoming, target.open(
-                    copy.copy(entry), "w"
-                ) as outgoing:
-                    for block in iter_zip_blocks(incoming):
-                        check_cancelled(cancel)
-                        outgoing.write(block)
-            for name, text in files.items():
-                check_cancelled(cancel)
-                target.writestr(name, text.encode("utf-8"))
-            manifest["archive_components"] = {
-                "schema_version": 1,
-                "capture_policy": snapshot["capture_policy"],
-                "planning_fingerprint": planning_fingerprint,
-                "components": snapshot["components"],
-                "checksums": {
-                    name: hashlib.sha256(text.encode("utf-8")).hexdigest()
-                    for name, text in files.items()
-                },
-                "import_policy": "planning_only; archival_components_do_not_restore_active_stores",
-            }
-            manifest["file_structure"]["archive_files"] = sorted(files)
-            manifest["statistics"]["total_files"] = len(target.namelist()) + 1
-            target.writestr("manifest.json", canonical(manifest))
-        check_cancelled(cancel)
-        result.seek(0)
-        return result
-    except BaseException:
-        result.close()
-        raise
+    if attachments:
+        result["attachments"] = attachments
+    return result
