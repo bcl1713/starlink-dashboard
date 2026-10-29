@@ -62,6 +62,7 @@ class PreparationWorker:
                         )
                     )
                 else:
+                    self.jobs.discard_planning(job.id)
                     self.status(job.mission_id, job.id)
             elif job.state in TERMINAL:
                 self.jobs.discard_archive(job.id)
@@ -146,6 +147,8 @@ class PreparationWorker:
             planning = self.jobs.planning(job.id)
             if job.snapshot_policy == "captured" and planning is None:
                 raise RuntimeError("Captured planning snapshot is unavailable")
+            if planning is not None:
+                planning = planning.materialize(cancel)
             enabled = (
                 planning.briefing is not None
                 if planning is not None

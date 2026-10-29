@@ -14,6 +14,25 @@ from app.services.telemetry_archive.store import ArchiveStore
 from tests.unit.test_telemetry_package import capture
 
 
+def test_repeated_compact_series_do_not_repeat_disk_work(tmp_path):
+    from app.services.telemetry_archive.compact import SeriesIndex
+
+    index = SeriesIndex(tmp_path / "series.sqlite3", 1024 * 1024)
+    statements = []
+    index.db.set_trace_callback(statements.append)
+    sample = {
+        "metric": "starlink_dish_speed_knots",
+        "labels": {"source": "accepted_live", "city": "same source"},
+    }
+    try:
+        ids = {index.identify(sample) for _ in range(1000)}
+        assert len(ids) == 1
+        assert len(list(index.rows())) == 1
+        assert len([sql for sql in statements if sql.startswith("INSERT")]) < 10
+    finally:
+        index.close()
+
+
 def seed(archive, *, sealed=False, count=7):
     samples = [
         {

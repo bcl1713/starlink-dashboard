@@ -4,11 +4,13 @@ import base64
 import json
 from dataclasses import dataclass, replace
 
+from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
 from app.mission.exporter.snapshot import ExportSnapshot
 from app.mission.slide_cache.capture import normalize_capture
 from app.mission.slide_cache.identity import decode_snapshot, encode_snapshot
 from app.mission.slide_cache.prepared_export import captured_snapshot
 
+from .archive_errors import ArchiveDeadlineError
 from .customer_artifacts import (
     EXPORT_ERRORS,
     CustomerBriefingArtifacts,
@@ -16,10 +18,43 @@ from .customer_artifacts import (
 )
 
 
+class CaptureCancel:
+    def __init__(self, check):
+        self.check = check
+
+    def is_set(self):
+        self.check()
+        return False
+
+
 @dataclass(frozen=True)
 class FrozenPlanning:
     snapshot: ExportSnapshot
     briefing: CustomerBriefingOutcome | None
+    needs_preparation: bool = False
+
+    def materialize(self, cancel):
+        """Build forecast CSV inputs once, from copied sources, without PDF waits."""
+        from app.mission.exporter.snapshot import prepare_export_snapshot
+
+        check_cancelled(cancel)
+        if not self.needs_preparation:
+            return self
+        leg_warnings = {
+            warning for leg in self.snapshot.legs for warning in leg.warnings
+        }
+        snapshot = prepare_export_snapshot(
+            self.snapshot.metadata_json,
+            self.snapshot.source_payloads,
+            tuple(
+                warning
+                for warning in self.snapshot.warnings
+                if warning not in leg_warnings
+            ),
+            cancel=cancel,
+        )
+        check_cancelled(cancel)
+        return replace(self, snapshot=snapshot, needs_preparation=False)
 
     def encode(self):
         outcome = self.briefing
@@ -37,6 +72,7 @@ class FrozenPlanning:
             {
                 "snapshot": json.loads(encode_snapshot(self.snapshot)),
                 "briefing": briefing,
+                "needs_preparation": self.needs_preparation,
             },
             separators=(",", ":"),
         ).encode("ascii")
@@ -58,19 +94,25 @@ class FrozenPlanning:
             outcome = CustomerBriefingOutcome(
                 briefing["status"], briefing["warning"], artifacts
             )
-        return cls(decode_snapshot(json.dumps(data["snapshot"]).encode()), outcome)
+        return cls(
+            decode_snapshot(json.dumps(data["snapshot"]).encode()),
+            outcome,
+            data.get("needs_preparation", True),
+        )
 
 
-def capture_planning(raw, cache, *, enabled):
+def capture_planning(raw, cache, *, enabled, cancel=None):
     """Copy committed sources once; never wait for new PDF rendering or live edits."""
     from app.mission.slide_cache import coordinator
     from app.mission.slide_cache.assembly import assemble_customer_pdf
 
+    check_cancelled(cancel)
     # Shared slide fingerprints use the renderer revision without export options.
     revision = raw.renderer_revision.removesuffix(":enabled").removesuffix(":disabled")
     metadata, sources, warnings, expected = normalize_capture(
         replace(raw, renderer_revision=revision)
     )
+    check_cancelled(cancel)
     available = cache.records(raw.mission_id)
     records = {}
     for leg, (fingerprint, _) in expected.items():
@@ -90,7 +132,14 @@ def capture_planning(raw, cache, *, enabled):
     outcome = None
     if enabled:
         try:
-            outcome = assemble_customer_pdf(snapshot, records)
+            outcome = assemble_customer_pdf(snapshot, records, cancel=cancel)
+        except (ExportCancelled, ArchiveDeadlineError):
+            raise
         except EXPORT_ERRORS:
             outcome = CustomerBriefingOutcome("omitted", "runtime", None)
-    return FrozenPlanning(snapshot, outcome)
+    check_cancelled(cancel)
+    return FrozenPlanning(
+        snapshot,
+        outcome,
+        any(record["snapshot"] is None for record in records.values()),
+    )

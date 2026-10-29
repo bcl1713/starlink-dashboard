@@ -25,7 +25,10 @@ Requests copy matching prepared customer pages with the planning inputs. An
 optional PDF that is still preparing is omitted with the existing warning; data
 delivery does not wait for new rendering. The planning snapshot and copied pages
 are persisted with the job so another worker or a restart does not replace them
-with a later plan. Their bytes count toward the shared export storage quota.
+with a later plan. Their bytes count toward the shared export storage quota. If
+matching prepared timeline inputs are missing, forecast CSV inputs are rebuilt
+once from the frozen sources; a stale timeline cache is not silently used as the
+new plan's forecast. Optional PDF rendering still does not delay data delivery.
 
 ## Observed telemetry artifact
 

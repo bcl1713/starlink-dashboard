@@ -4,9 +4,14 @@ import json
 import threading
 import zipfile
 
+import pytest
+
 from app.mission import storage
 from app.mission.package.customer_artifacts import build_mission_package_download
 from tests.unit.test_export_preparation import runtime, wait_state
+from tests.unit.test_export_snapshot import BASE, export_inputs
+
+__all__ = ["export_inputs"]
 
 
 def test_saved_change_during_assembly_downloads_original_snapshot(
@@ -242,7 +247,7 @@ def test_prepared_pages_are_copied_and_matched_to_frozen_inputs(tmp_path, monkey
         )
         seen = []
 
-        def assemble(snapshot, records):
+        def assemble(snapshot, records, *, cancel=None):
             seen.append(records["a"]["state"])
             if records["a"]["state"] != "ready":
                 return CustomerBriefingOutcome("omitted", "busy", None)
@@ -266,3 +271,97 @@ def test_prepared_pages_are_copied_and_matched_to_frozen_inputs(tmp_path, monkey
             == "omitted"
         )
         assert seen == ["ready", "failed"]
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("cached_timeline", [False, True])
+def test_forecast_csv_rebuilds_from_frozen_inputs_without_ready_pages(
+    export_inputs, tmp_path, enabled, cached_timeline
+):
+    from datetime import timedelta
+
+    from app.mission.package.preparation import ExportPreparationService
+    from app.mission.slide_cache.store import SlideStore
+
+    mission, routes, pois, _ = export_inputs
+    if cached_timeline:
+        from app.mission.exporter.snapshot import capture_export_snapshot
+        from app.mission.models import MissionLegTimeline
+
+        previous = capture_export_snapshot("m", routes, pois)
+        storage.save_mission_timeline(
+            "l",
+            MissionLegTimeline.model_validate_json(previous.legs[0].timeline_json),
+            "m",
+        )
+    mission.legs[0].adjusted_departure_time = BASE + timedelta(hours=4)
+    storage.save_mission_v2(mission)
+    service = ExportPreparationService(
+        routes,
+        pois,
+        enabled=enabled,
+        cache=SlideStore(tmp_path / "export-cache.sqlite3"),
+    )
+    try:
+        job = service.start("m")
+        ready = wait_state(service, job, {"ready", "failed", "superseded"})
+        assert ready.state == "ready"
+        with service.open_download("m", job.id).stream as source, zipfile.ZipFile(
+            source
+        ) as package:
+            names = [
+                name
+                for name in package.namelist()
+                if name.startswith("exports/legs/") and name.endswith("timeline.csv")
+            ]
+            assert names, "Missing cached customer pages must not omit forecast CSVs"
+            text = package.read(names[0]).decode()
+            assert "2026-10-07T12:00:00" in text
+    finally:
+        service.close()
+
+
+@pytest.mark.parametrize("failure", ["cancel", "deadline"])
+def test_capture_pdf_assembly_propagates_cancellation_and_deadline(
+    tmp_path, monkeypatch, failure
+):
+    from app.mission.exporter.export_cancel import ExportCancelled, check_cancelled
+    from app.mission.package.archive_errors import ArchiveDeadlineError
+    from app.mission.package.frozen_planning import capture_planning
+    from app.mission.slide_cache import assembly
+
+    active = False
+
+    class Cancel:
+        def is_set(self):
+            if active and failure == "deadline":
+                raise ArchiveDeadlineError()
+            return active
+
+    def assemble(snapshot, records, *, cancel=None):
+        nonlocal active
+        active = True
+        check_cancelled(cancel)
+
+    monkeypatch.setattr(assembly, "assemble_customer_pdf", assemble)
+    with runtime(tmp_path, monkeypatch) as (service, _):
+        raw = service.capture("m")
+        with pytest.raises(
+            ArchiveDeadlineError if failure == "deadline" else ExportCancelled
+        ):
+            capture_planning(raw, service.cache, enabled=True, cancel=Cancel())
+
+
+def test_recovered_ready_zip_releases_duplicate_planning_bytes(tmp_path, monkeypatch):
+    from app.mission.package.frozen_planning import capture_planning
+
+    with runtime(tmp_path, monkeypatch) as (service, _):
+        raw = service.capture("m")
+        job = wait_state(service, service.start("m"), {"ready"})
+        service.close()
+        planning = capture_planning(raw, service.cache, enabled=False)
+        service.jobs.write(job, planning=planning)
+        assert service.jobs.planning(job.id) is not None
+        service.recover()
+        assert service.jobs.planning(job.id) is None
+        assert service.path(job.id).is_file()

@@ -33,8 +33,8 @@ telemetry and journal data.
   throughout assembly. Each archive component retains its own declared capture
   interval.
 - Use matching prepared PDF pages when available. An uncached optional PDF must
-  not delay telemetry delivery; retain captured planning/timeline inputs and
-  report the existing omission status.
+  not delay telemetry delivery; rebuild missing forecast timeline/CSV inputs
+  once from the frozen sources and report the existing PDF omission status.
 - No changes to Overview presentation or metrics freshness rules.
 
 ## Review Focus

@@ -3,6 +3,7 @@
 import hashlib
 import json
 import sqlite3
+from collections import OrderedDict
 
 from app.mission.package.archive_errors import ArchiveCapacityError
 
@@ -11,6 +12,7 @@ class SeriesIndex:
     def __init__(self, path, max_bytes):
         self.path = path
         self.max_bytes = max_bytes
+        self.series_cache = OrderedDict()
         self.db = sqlite3.connect(path)
         try:
             self.db.execute("PRAGMA journal_mode=OFF")
@@ -32,6 +34,10 @@ class SeriesIndex:
 
     def identify(self, sample):
         labels = json.dumps(sample["labels"], sort_keys=True)
+        key = sample["metric"], labels
+        if key in self.series_cache:
+            self.series_cache.move_to_end(key)
+            return self.series_cache[key]
         identity = json.dumps([sample["metric"], labels], ensure_ascii=True)
         series = hashlib.sha256(identity.encode()).hexdigest()
         try:
@@ -43,6 +49,12 @@ class SeriesIndex:
             if getattr(error, "sqlite_errorcode", None) == sqlite3.SQLITE_FULL:
                 raise ArchiveCapacityError("compact-index", self.max_bytes) from error
             raise
+        # Keep at most 1 MiB of label text. High-cardinality/large identities
+        # remain in the bounded disk index, without growing a history-sized map.
+        if len(labels) <= 1024:
+            self.series_cache[key] = series
+            if len(self.series_cache) > 1024:
+                self.series_cache.popitem(last=False)
         return series
 
     def rows(self):
@@ -87,5 +99,6 @@ class SeriesIndex:
             cursor.close()
 
     def close(self):
+        self.series_cache.clear()
         self.db.close()
         self.path.unlink(missing_ok=True)

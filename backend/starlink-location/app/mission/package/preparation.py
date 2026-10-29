@@ -21,7 +21,7 @@ from .customer_artifacts import (
     MissionPackageDownload,
     build_mission_package_download,
 )
-from .frozen_planning import capture_planning
+from .frozen_planning import CaptureCancel, capture_planning
 from .json_stream import iter_json
 from .preparation_store import ExportPreparation, PreparationStore
 from .preparation_worker import PreparationWorker
@@ -134,19 +134,22 @@ class ExportPreparationService(PreparationWorker):
             )
             with ownership as owner:
                 return self._start(
-                    mission_id, owner=owner, telemetry_format=telemetry_format
+                    mission_id,
+                    owner=owner,
+                    telemetry_format=telemetry_format,
+                    cancel=CaptureCancel(owner.check if owner else check),
                 )
         finally:
             self.capture_guard.release()
 
-    def _start(self, mission_id, *, owner=None, telemetry_format="full"):
+    def _start(self, mission_id, *, owner=None, telemetry_format="full", cancel=None):
         if self.stop.is_set():
             raise RuntimeError("Export preparation is stopping")
         now = self.clock()
         capture_started = time.monotonic()
         raw = self.capture(mission_id)
         enabled = self.enabled() if callable(self.enabled) else self.enabled
-        planning = capture_planning(raw, self.cache, enabled=enabled)
+        planning = capture_planning(raw, self.cache, enabled=enabled, cancel=cancel)
         if owner is not None:
             owner.leg_ids = tuple(leg.leg_id for leg in planning.snapshot.legs)
         planning_captured_at = self.clock()
