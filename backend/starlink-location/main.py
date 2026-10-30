@@ -9,6 +9,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.api import (
     active_x_link,
     aviation_weather,
@@ -97,12 +104,6 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.run_runtime import SimulationRunRuntime
 from app.simulation.run_service import SimulationRunService
 from app.simulation.run_wakeup import ReplayWakeup
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -614,12 +615,18 @@ async def startup_event():
 
         if _background_updates_enabled:
             from app.mission.active_context_owner import ActiveContextOwner
+            from app.services.flight_events.maintenance import FlightMaintenanceOwner
 
             context_owner = ActiveContextOwner(
                 _route_manager, lambda: _current_runtime_config().mode
             )
             app.state.active_context_owner = context_owner
             await context_owner.start()
+            maintenance_owner = FlightMaintenanceOwner(
+                app.state.flight_event_lifecycle.tick
+            )
+            app.state.flight_maintenance_owner = maintenance_owner
+            await maintenance_owner.start()
             run_service.wakeup = ReplayWakeup()
             logger.info_json("Starting background update task")
             _background_task = asyncio.create_task(_background_update_loop(poi_manager))
@@ -707,6 +714,11 @@ async def _shutdown_resources():
         if context_owner is not None:
             await context_owner.close()
             del app.state.active_context_owner
+
+        maintenance_owner = getattr(app.state, "flight_maintenance_owner", None)
+        if maintenance_owner is not None:
+            await maintenance_owner.close()
+            del app.state.flight_maintenance_owner
 
         from app.core.metrics.prometheus_metrics import FRAME_STORE
 
@@ -1180,14 +1192,6 @@ def _background_update_tick(poi_manager, refresh_interval, update_count, error_c
     if lifecycle is not None:
         with get_active_leg_lock():
             lifecycle.reconcile(_current_runtime_config().mode)
-        lifecycle.tick()
-    else:
-        runtime = getattr(app.state, "flight_event_runtime", None)
-        if runtime is not None:
-            try:
-                runtime.tick()
-            except (OSError, sqlite3.Error, ValueError):
-                logger.warning_json("Telemetry archive recovery pending")
     if _coordinator:
         run_service = getattr(app.state, "simulation_run_service", None)
         paced = (

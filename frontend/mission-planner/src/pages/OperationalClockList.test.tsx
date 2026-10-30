@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { OperationalClockList } from './OperationalClockList';
 afterEach(() => {
@@ -72,5 +72,16 @@ describe('OperationalClockList', () => {
     expect(screen.getByText('Washington, DC')).not.toBeNull();
     expect(screen.getByText('Omaha, NE')).not.toBeNull();
     expect(screen.getByText('Tokyo, JP')).not.toBeNull();
+    for (const [label, time] of [
+      ['Zulu / UTC', '00:05:06'],
+      ['Washington, DC', '19:05:06'],
+      ['Omaha, NE', '18:05:06'],
+      ['Tokyo, JP', '09:05:06'],
+    ]) {
+      const clock = screen.getByRole('region', {
+        name: `${label} operational clock`,
+      });
+      expect(within(clock).getByText(time)).not.toBeNull();
+    }
   });
 });

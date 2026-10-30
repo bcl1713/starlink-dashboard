@@ -46,6 +46,7 @@ class FlightEventLifecycle:
         )
         self.clock = clock
         self.lock = RLock()
+        self.maintenance_lock = RLock()
         self.mode = "simulation"
         self.closed = False
         self.next_attempt = 0.0
@@ -106,10 +107,12 @@ class FlightEventLifecycle:
         try:
             completed = action()
         except RECOVERABLE as error:
-            self._failed(stage, error)
+            with self.lock:
+                self._failed(stage, error)
             return False
         if completed is not False:
-            self.failures.pop(stage, None)
+            with self.lock:
+                self.failures.pop(stage, None)
         return True
 
     def report_failure(self, stage, error):
@@ -118,9 +121,11 @@ class FlightEventLifecycle:
             self._failed(stage, error)
 
     def tick(self):
-        with self.lock:
-            self.reconcile(self.mode)
-            runtime = self.state.flight_event_runtime if not self.closed else None
+        # Recovery can wait on Prometheus, package sealed flights, or scan old
+        # captures. Never hold the state lock needed by detection/status here.
+        with self.maintenance_lock:
+            with self.lock:
+                runtime = self.state.flight_event_runtime if not self.closed else None
             if runtime is not None:
                 self._run("maintenance", runtime.tick)
 
@@ -193,7 +198,7 @@ class FlightEventLifecycle:
             }
 
     def close(self):
-        with self.lock:
+        with self.maintenance_lock, self.lock:
             if self.closed:
                 return
             self.closed = True

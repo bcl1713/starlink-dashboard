@@ -28,10 +28,14 @@ export function OperationalClockSettingsForm({
   error,
 }: OperationalClockSettingsFormProps) {
   const [editableClocks, setEditableClocks] = useState(() =>
-    clocks.map((clock) => ({ ...clock, time_zone: 'UTC' }))
+    clocks.map((clock) => ({ ...clock }))
   );
 
-  const updateClock = (index: number, field: 'label', value: string) => {
+  const updateClock = (
+    index: number,
+    field: 'label' | 'time_zone',
+    value: string
+  ) => {
     setEditableClocks((currentClocks) =>
       currentClocks.map((clock, clockIndex) =>
         clockIndex === index ? { ...clock, [field]: value } : clock
@@ -52,8 +56,7 @@ export function OperationalClockSettingsForm({
             Operational clocks
           </h2>
           <CardDescription>
-            Set the labels displayed on Overview. All operational clocks use
-            Zulu (UTC).
+            Set the labels and IANA time zones displayed on Overview.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -94,9 +97,10 @@ export function OperationalClockSettingsForm({
                     <Input
                       className="space-y-2"
                       id={`clock-${clockNum}-timezone`}
-                      value="UTC"
-                      readOnly
-                      aria-description="Zulu time basis"
+                      value={clock.time_zone}
+                      onChange={(event) => {
+                        updateClock(index, 'time_zone', event.target.value);
+                      }}
                     />
                   </div>
                 </div>

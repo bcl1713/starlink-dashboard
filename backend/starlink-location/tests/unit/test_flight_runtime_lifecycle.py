@@ -7,6 +7,33 @@ from types import SimpleNamespace
 from tests.unit.test_flight_events import START
 
 
+def test_slow_maintenance_does_not_block_recording_health(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    entered, release = Event(), Event()
+    owner = lifecycle(tmp_path)
+    runtime = owner.reconcile("live")
+
+    def slow_recovery():
+        entered.set()
+        assert release.wait(5)
+
+    monkeypatch.setattr(runtime, "tick", slow_recovery)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            maintenance = pool.submit(owner.tick)
+            try:
+                assert entered.wait(2)
+                health = pool.submit(owner.status)
+                assert health.result(timeout=1)["detection_available"]
+            finally:
+                release.set()
+                maintenance.result(timeout=2)
+    finally:
+        owner.close()
+
+
 def lifecycle(tmp_path, clock=None):
     from app.services.flight_events.lifecycle import FlightEventLifecycle
 

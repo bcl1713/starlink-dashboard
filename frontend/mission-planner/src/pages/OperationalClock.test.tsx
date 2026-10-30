@@ -17,4 +17,16 @@ describe('OperationalClock', () => {
     expect(screen.getByText('Zulu / UTC')).not.toBeNull();
     expect(screen.getByText('00:05:06')).not.toBeNull();
   });
+  it('shows a configured local clock without labeling it Zulu', () => {
+    render(
+      <OperationalClock
+        label="Washington, DC"
+        timeZone="America/New_York"
+        currentTime={Date.UTC(2026, 6, 2, 0, 5, 6)}
+      />
+    );
+    expect(screen.getByText('Washington, DC')).not.toBeNull();
+    expect(screen.getByText('20:05:06')).not.toBeNull();
+    expect(screen.queryByText('Zulu')).toBeNull();
+  });
 });
